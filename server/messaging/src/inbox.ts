@@ -6,11 +6,11 @@ import { inTransaction, type Db } from "./db.js";
 import { searchMemories, type MemoryHit } from "./memorySearch.js";
 
 // The notes inbox and the memory copy, shared by phone calls (routes/elevenlabs.ts) and texts to
-// Doddy (textReplies.ts). A note is not a memory: it waits until the user confirms or discards it
+// Doddy (textsIn.ts). A note is not a memory: it waits until the user confirms or discards it
 // in the app (DOD-06).
 
-/** call: Doddy took it on a call. text: the user's text, word for word. doddy: Claude wrote it while answering a text. */
-export type NoteSource = "call" | "text" | "doddy";
+/** call: Doddy took it on a call. text: the user's own text to Doddy, word for word. */
+export type NoteSource = "call" | "text";
 
 /** Leaves a note in the inbox, encrypted. Undefined when the inbox is full (MAX_PENDING_NOTES). */
 export async function saveNote(

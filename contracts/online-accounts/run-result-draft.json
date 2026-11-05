@@ -6,7 +6,7 @@
   "truncated": false,
   "externalId": "draft_demo_1",
   "receipt": {
-    "operationId": "90d7aac3-c693-4de9-a749-31e59d69a44a",
+    "operationId": "b279ea05-9e83-4af3-bd9a-9c4f64d84639",
     "operation": "write",
     "toolkit": "gmail",
     "tool": "draft_email",
@@ -15,6 +15,6 @@
     "status": "succeeded",
     "summary": "Gmail draft created (not sent).",
     "errorCode": null,
-    "providerReference": "mock_log_20c45d2c"
+    "providerReference": "mock_log_b079e3e6"
   }
 }

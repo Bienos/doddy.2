@@ -1,25 +1,26 @@
 import Foundation
 
-// Audio privacy signal and stop (OP-024, ADR-361). Doddy has three things that can have the
-// microphone open: a voice conversation, "Hey Doddy" waiting for its wake word, and a voice memo
-// being recorded. While any of them has it, Doddy shows one indicator that says which, above
+// Audio privacy signal and stop (OP-024, ADR-361). Doddy has two things that can have the
+// microphone open: a voice conversation, a voice memo being recorded, and a DODDY Capture
+// recording (ADR-588; "Hey Doddy", another, was removed in ADR-549). While any has it, Doddy shows one indicator that says which, above
 // every screen, with Stop listening. "Stop listening" (the indicator, or Siri) ends the
-// conversation, turns "Hey Doddy" off and stops the memo, then reads each one's own state again:
+// conversation and stops the memo, then reads each one's own state again:
 // "Stopped" only when every one says it is closed and iOS let go of Doddy's audio. Nothing is
 // saved by stopping: a note Doddy was asking about and the memo stay as drafts.
 // Plain Swift for the Linux tests; ListeningStop.swift in the app uses it.
 
 /// What in Doddy can have the microphone open.
 public enum MicrophoneUser: String, CaseIterable, Sendable {
-    case conversation, heyDoddy, voiceMemo
+    case conversation, voiceMemo, capture
 
     public func name(_ language: NotificationLanguage) -> String {
         switch (self, language) {
         case (.conversation, .english): "the conversation"
         case (.conversation, .polish): "rozmowa"
-        case (.heyDoddy, _): "“Hey Doddy”"
         case (.voiceMemo, .english): "the voice memo"
         case (.voiceMemo, .polish): "notatka głosowa"
+        case (.capture, .english): "the recording"
+        case (.capture, .polish): "nagranie"
         }
     }
 }
@@ -40,36 +41,23 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
     }
 
     public var conversation: Conversation
-    /// What "Hey Doddy" would do now (`WakeListenerPolicy`).
-    public var heyDoddy: WakeListenerState
-    /// Porcupine's recorder is running.
-    public var heyDoddyRunning: Bool
     public var voiceMemoRecording: Bool
+    /// A DODDY Capture recording is writing audio now (`CaptureStateMachine.isCapturingAudio`).
+    public var captureRecording: Bool
 
-    public init(conversation: Conversation = .none, heyDoddy: WakeListenerState = .off,
-                heyDoddyRunning: Bool = false, voiceMemoRecording: Bool = false) {
+    public init(conversation: Conversation = .none, voiceMemoRecording: Bool = false, captureRecording: Bool = false) {
         self.conversation = conversation
-        self.heyDoddy = heyDoddy
-        self.heyDoddyRunning = heyDoddyRunning
         self.voiceMemoRecording = voiceMemoRecording
+        self.captureRecording = captureRecording
     }
 
     /// Everything that has the microphone open, or may open it any moment by itself.
     public var open: [MicrophoneUser] {
         var users: [MicrophoneUser] = []
         if conversation != .none { users.append(.conversation) }
-        if heyDoddyRunning || heyDoddy == .listening { users.append(.heyDoddy) }
         if voiceMemoRecording { users.append(.voiceMemo) }
+        if captureRecording { users.append(.capture) }
         return users
-    }
-
-    /// "Hey Doddy" is switched on in some way that can start listening without the user: paused,
-    /// waiting for Doddy to open, or listening. Stop listening turns it off, so it can't.
-    public var heyDoddyCouldListen: Bool {
-        switch heyDoddy {
-        case .off, .needsSetUp, .microphoneDenied, .failed: heyDoddyRunning
-        case .waitingForApp, .listening, .paused: true
-        }
     }
 }
 
@@ -77,7 +65,7 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
 /// has it, so it never says "listening" when nothing is.
 public struct ListeningIndicator: Equatable, Sendable {
     public enum Kind: Equatable, Sendable {
-        case connecting, conversation, muted, longTurn, voiceMemo, heyDoddy
+        case connecting, conversation, muted, longTurn, voiceMemo, capture
     }
 
     /// In the order they are shown; the first decides the symbol.
@@ -93,7 +81,7 @@ public struct ListeningIndicator: Equatable, Sendable {
         case .longTurn: kinds.append(.longTurn)
         }
         if snapshot.voiceMemoRecording { kinds.append(.voiceMemo) }
-        if snapshot.heyDoddyRunning || snapshot.heyDoddy == .listening { kinds.append(.heyDoddy) }
+        if snapshot.captureRecording { kinds.append(.capture) }
         return kinds.isEmpty ? nil : ListeningIndicator(kinds: kinds)
     }
 
@@ -113,7 +101,7 @@ public struct ListeningIndicator: Equatable, Sendable {
         case .muted: "mic.slash.fill"
         case .longTurn: "waveform"
         case .voiceMemo: "record.circle"
-        case .heyDoddy: "ear"
+        case .capture: "record.circle.fill"
         }
     }
 
@@ -129,7 +117,7 @@ public struct ListeningIndicator: Equatable, Sendable {
         case .muted: return polish ? "Mikrofon wyciszony" : "Microphone muted"
         case .longTurn: return polish ? "Słucham, aż skończysz" : "Listening until you finish"
         case .voiceMemo: return polish ? "Nagrywanie notatki głosowej" : "Recording a voice memo"
-        case .heyDoddy: return polish ? "Czeka na „Hey Doddy”" : "Listening for “Hey Doddy”"
+        case .capture: return CapturePresentation.pillTitle(language)
         }
     }
 
@@ -146,8 +134,8 @@ public struct ListeningIndicator: Equatable, Sendable {
             return polish ? "Nagrywane na tym iPhonie; po Gotowe wysyłane są tylko słowa." : "Recorded on this iPhone; only the words are sent when you tap Done."
         case .voiceMemo:
             return polish ? "Tylko na tym iPhonie." : "On this iPhone only."
-        case .heyDoddy:
-            return polish ? "Tylko na tym iPhonie; nic nie jest zachowywane ani wysyłane, dopóki tego nie powiesz." : "On this iPhone only; nothing is kept or sent until you say it."
+        case .capture:
+            return CapturePresentation.pillDetail(language)
         }
     }
 }
@@ -174,33 +162,34 @@ public enum AudioRelease: Equatable, Sendable {
 
 public struct ListeningStopReport: Equatable, Sendable {
     public let conversation: MicrophoneStopOutcome
-    public let heyDoddy: MicrophoneStopOutcome
     public let voiceMemo: MicrophoneStopOutcome
+    public let capture: MicrophoneStopOutcome
     public let release: AudioRelease
     /// The "Save this note?" card that was showing is kept as a draft on the voice screen.
     public let keptNoteDraft: Bool
     /// The memo recorded so far is kept on the note being written, not saved.
     public let keptMemoDraft: Bool
+    /// The recording was closed and saved (read back from the store), not merely stopped.
+    public let captureSaved: Bool
 
     /// `before` is read before anything is stopped, `after` once each has been asked to stop.
     public init(before: MicrophoneSnapshot, after: MicrophoneSnapshot, release: AudioRelease,
-                keptNoteDraft: Bool = false, keptMemoDraft: Bool = false) {
+                keptNoteDraft: Bool = false, keptMemoDraft: Bool = false, captureSaved: Bool = false) {
         func outcome(_ user: MicrophoneUser, wasOn: Bool) -> MicrophoneStopOutcome {
             if after.open.contains(user) { return .stillOpen }
             return wasOn ? .closed : .wasOff
         }
         conversation = outcome(.conversation, wasOn: before.open.contains(.conversation))
-        // "Hey Doddy" that could start by itself counts as on: stopping must turn it off.
-        heyDoddy = after.heyDoddyCouldListen
-            ? .stillOpen : outcome(.heyDoddy, wasOn: before.open.contains(.heyDoddy) || before.heyDoddyCouldListen)
         voiceMemo = outcome(.voiceMemo, wasOn: before.open.contains(.voiceMemo))
+        capture = outcome(.capture, wasOn: before.open.contains(.capture))
         self.release = release
         self.keptNoteDraft = keptNoteDraft
         self.keptMemoDraft = keptMemoDraft
+        self.captureSaved = captureSaved
     }
 
     public var stillOpen: [MicrophoneUser] {
-        [(MicrophoneUser.conversation, conversation), (.heyDoddy, heyDoddy), (.voiceMemo, voiceMemo)]
+        [(MicrophoneUser.conversation, conversation), (.voiceMemo, voiceMemo), (.capture, capture)]
             .filter { $0.1 == .stillOpen }.map(\.0)
     }
 
@@ -212,7 +201,7 @@ public struct ListeningStopReport: Equatable, Sendable {
     }
 
     public var nothingWasOn: Bool {
-        [conversation, heyDoddy, voiceMemo].allSatisfy { $0 == .wasOff }
+        [conversation, voiceMemo, capture].allSatisfy { $0 == .wasOff }
     }
 
     /// What Siri says and the indicator shows. "Stopped" only when `stopped`.
@@ -237,13 +226,15 @@ public struct ListeningStopReport: Equatable, Sendable {
         if keptNoteDraft {
             parts.append(polish ? "Notatka, o którą pytał Doddy, czeka jako szkic; nic nie zostało zapisane." : "The note Doddy was asking about is kept as a draft; nothing was saved.")
         }
-        if heyDoddy == .closed {
-            parts.append(polish ? "„Hey Doddy” jest wyłączone; włączysz je z powrotem w Ustawieniach." : "“Hey Doddy” is off; turn it back on in Settings.")
-        }
         if voiceMemo == .closed {
             parts.append(keptMemoDraft
                 ? (polish ? "Nagranie czeka przy notatce jako szkic, dopóki go nie zapiszesz albo nie odrzucisz." : "The recording is kept with your note as a draft until you save or drop it.")
                 : (polish ? "Nagrywanie zatrzymane; było za krótkie, żeby je zachować." : "Recording stopped; it was too short to keep."))
+        }
+        if capture == .closed {
+            parts.append(captureSaved
+                ? (polish ? "Nagranie zapisane w Nagraniach." : "The recording is saved in Recordings.")
+                : (polish ? "Nagranie zatrzymane. Doddy nie potwierdził zapisu; sprawdź Nagrania." : "Recording stopped. Doddy hasn't confirmed it was saved; check Recordings."))
         }
         return parts.joined(separator: " ")
     }

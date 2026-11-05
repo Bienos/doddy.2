@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ConnectionReason, Mode, ReceiptStatus } from "../contracts.js";
 import { TOOLKIT_IDS } from "./catalog.js";
+import { CLAUDE_SECTION_ID } from "./claude.js";
 import { WEB_SECTION_ID } from "./websearch.js";
 
 /**
@@ -10,8 +11,8 @@ import { WEB_SECTION_ID } from "./websearch.js";
 
 export const ToolkitIdSchema = z.enum(TOOLKIT_IDS as [string, ...string[]]);
 
-/** A Settings section: a Composio account, or web search (Monid), which needs no account. */
-export const SectionIdSchema = z.enum([WEB_SECTION_ID, ...TOOLKIT_IDS] as [string, ...string[]]);
+/** A Settings section: a Composio account, web search (Monid) or Claude (ADR-564); the last two need no account. */
+export const SectionIdSchema = z.enum([WEB_SECTION_ID, CLAUDE_SECTION_ID, ...TOOLKIT_IDS] as [string, ...string[]]);
 export const ToolStatus = z.enum(["unavailable", "disconnected", "connecting", "connected", "permission_insufficient", "expired", "error"]);
 
 export const ToolViewSchema = z
@@ -65,7 +66,14 @@ export type ToolkitResult = z.infer<typeof ToolkitResultSchema>;
 
 export const SwitchRequestSchema = z.object({ tool: z.string().min(1).max(64), enabled: z.boolean() }).strict();
 
-export const PrepareRequestSchema = z.object({ tool: z.string().min(1).max(64), arguments: z.record(z.unknown()) }).strict();
+export const PrepareRequestSchema = z
+  .object({
+    tool: z.string().min(1).max(64),
+    arguments: z.record(z.unknown()),
+    /** IANA zone; needed by tools that find an item by its local time (calendar events). */
+    timeZone: z.string().min(1).max(64).optional(),
+  })
+  .strict();
 
 export const RunRequestSchema = z
   .object({
@@ -126,6 +134,14 @@ export const RunResultSchema = z
     externalId: z.string().optional(),
     /** True when this answers a repeated run of an approval that already succeeded: nothing ran again. */
     replayed: z.boolean().optional(),
+    /**
+     * make_document (ADR-564): the file Claude is making. `url` is a private link for the app to
+     * show as a button, never for the voice agent; it shows "still making" until the file is ready.
+     */
+    document: z
+      .object({ url: z.string().url(), name: z.string(), kind: z.string(), status: z.enum(["working", "ready", "failed"]) })
+      .strict()
+      .optional(),
     receipt: ToolReceiptSchema,
   })
   .strict();

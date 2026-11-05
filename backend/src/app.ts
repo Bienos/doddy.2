@@ -1,26 +1,52 @@
 import { createServer, type Server } from "node:http";
-import { DevSessionVerifier, type SessionVerifier, SignedSessionVerifier } from "./auth.js";
+import { AccountEraser } from "./account.js";
+import { AssistService } from "./assist.js";
+import { AnyOfSessionVerifier, DevSessionVerifier, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
+import { DeviceSessionIssuer } from "./deviceSession.js";
+import { DocumentLinks } from "./documents.js";
+import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider } from "./tools/claude.js";
 import { createHandler } from "./http.js";
+import { MemoryChat } from "./memory/chat.js";
+import { MemoryCipher } from "./memory/crypto.js";
+import { MEMORY_KEPT_DAYS } from "./memory/contract.js";
+import { MemoryService } from "./memory/service.js";
+import { ThreadService } from "./messages/service.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
 import type { CalendarProvider } from "./providers/types.js";
-import { ConnectedAppsService } from "./service.js";
+import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
 import { Store } from "./store.js";
+import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
+import { AccountContext } from "./web/chatContext.js";
+import { WebRoutes } from "./web/routes.js";
+import { oldestKeptDay } from "./web/logbook.js";
+import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
+import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
-export function buildApp(
+export async function buildApp(
   config: Config,
-  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null } = {},
+  overrides: {
+    provider?: CalendarProvider;
+    toolsProvider?: ToolsProvider;
+    webSearch?: WebSearchProvider | null;
+    claude?: ClaudeProvider | null;
+    /** The model that chats with a person's kept notes and conversations (ADR-603). */
+    chatClaude?: ClaudeProvider | null;
+    store?: Store;
+    verifier?: SessionVerifier;
+  } = {},
 ) {
-  const store = new Store(config.dbPath);
+  const store =
+    overrides.store ?? (await Store.open({ url: config.databaseUrl ?? undefined, caCert: config.databaseCaCert ?? undefined, dataDir: config.dbPath }));
   let provider: CalendarProvider;
   if (overrides.provider) provider = overrides.provider;
   else if (config.mode === "live") {
@@ -28,8 +54,10 @@ export function buildApp(
     provider = config.composio ? new ComposioCalendarProvider(config.composio) : new UnconfiguredCalendarProvider();
   } else provider = new MockCalendarProvider();
 
-  const verifier: SessionVerifier =
-    config.authMode === "signed" ? new SignedSessionVerifier(config.sessionSigningKey!) : new DevSessionVerifier();
+  // A person's cut-off second (ADR-709): deleting the account ends every token issued before it, for
+  // any verifier this server builds. A verifier handed in by a test is used as it is.
+  const floors = new TokenFloors(store);
+  const verifier: SessionVerifier = overrides.verifier ?? new RevocableSessionVerifier(sessionVerifier(config), floors);
 
   const service = new ConnectedAppsService({
     store,
@@ -56,16 +84,86 @@ export function buildApp(
           ? new MonidWebSearchProvider(config.monid)
           : null
         : new MockWebSearchProvider();
+  // Claude (ADR-564): live only with an Anthropic key; mock mode uses offline demo text.
+  const claude =
+    overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
+  // Document links are signed with the session key; without one, make_document says "not set up".
+  const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
   const tools = new CloudToolsService({
     store,
     provider: toolsProvider,
+    claude,
+    documentLinks,
     webSearch,
     limits: config.limits,
     publicBaseUrl: config.publicBaseUrl,
     appReturnUrl: config.appReturnUrl,
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
+    log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  const handler = createHandler({ service, tools, verifier, appReturnUrl: config.appReturnUrl, maxBodyBytes: config.limits.maxBodyBytes });
+  // Beta device sign-in (ADR-563): first-device, open (ADR-587: other iPhones get Ask Doddy only) or
+  // invite codes, and a signing key (config checks both). Whether the first caller may claim a server
+  // with no owner yet (ADR-707) and the invite limits (ADR-709) come from config.
+  const deviceSessions =
+    (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
+      ? new DeviceSessionIssuer(config.sessionSigningKey, {
+          signup: config.deviceSignup,
+          inviteCodes: config.deviceInviteCodes,
+          store,
+          ownerClaim: config.ownerClaim,
+          inviteLimits: config.inviteLimits,
+          log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
+        })
+      : null;
+  // Doddy Web (ADR-600): only when DODDY_WEB_ORIGIN is set.
+  const webAuth = config.web
+    ? new WebAuth(store, config.web.origin, config.web.trustProxy, { ...REDEEM_LIMITS, perClientPerQuarter: config.web.signInTriesPerClient })
+    : null;
+  // Notes and conversations kept on request, and chat over them (ADR-603). Without DODDY_MEMORY_KEY the
+  // routes answer "not set up"; chat uses its own (smaller) model, live only with an Anthropic key.
+  const log = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
+  const memory = new MemoryService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
+  const chatClaude =
+    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : null) : claude;
+  // The chat also reads the account's other parts (ADR-604): Logbook, apps, documents, receipts.
+  const account = new AccountContext({ store, memory, tools });
+  const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, account, log });
+  // The Messages copy for the web, with the same key; without it the routes answer "not set up".
+  const thread = new ThreadService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
+  const web =
+    config.web && webAuth
+      ? {
+          auth: webAuth,
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread),
+          pages: new WebStatic(config.web.distDir, config.web.origin),
+        }
+      : null;
+  // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
+  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
+  // Deleting the account (ADR-674): each connection is removed by the provider that made it.
+  const accountEraser = new AccountEraser({
+    store,
+    removers: [
+      { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
+      { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
+    ],
+    timeoutMs: config.limits.providerTimeoutMs,
+    floors,
+    log,
+  });
+  const handler = createHandler({
+    service,
+    tools,
+    verifier,
+    deviceSessions,
+    web,
+    assist,
+    account: accountEraser,
+    documents: documentLinks ? { links: documentLinks, store } : null,
+    appReturnUrl: config.appReturnUrl,
+    maxBodyBytes: config.limits.maxBodyBytes,
+    trustProxy: config.trustProxy,
+  });
   // Last line of defence: a handler failure closes that one connection, never the process.
   const server: Server = createServer((req, res) => {
     handler(req, res).catch(() => res.destroy());
@@ -77,11 +175,34 @@ export function buildApp(
   const housekeeping = () => {
     void Promise.allSettled([service.sweepAbandoned(), tools.sweepAbandoned()])
       .then(() => store.prune(Date.now()))
+      .then(() => store.pruneDocuments(Date.now()))
+      .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
+      .then(() => store.pruneTokenFloors(Date.now()))
+      .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
+    // Kept memory (ADR-603) is swept on its own, so a failure in the steps above can't skip it, and its
+    // own failure is logged (the step's name only, never a row) instead of going unseen.
+    const cutoff = Date.now() - MEMORY_KEPT_DAYS * 86_400_000;
+    for (const [step, sweep] of [
+      ["conversations", () => store.pruneMemoryConversations(cutoff)],
+      ["notes", () => store.pruneMemoryNotes(cutoff)],
+      ["messages", () => store.pruneMessageThreads(cutoff)],
+    ] as const) {
+      sweep().catch(() => log({ level: "warn", event: "memory_sweep_failed", step }));
+    }
   };
   housekeeping();
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, provider };
+  return { server, store, service, tools, provider, assist };
+}
+
+/** Which sign-ins this server accepts (ADR-526). */
+export function sessionVerifier(config: Config): SessionVerifier {
+  if (config.authMode === "dev") return new DevSessionVerifier();
+  if (config.authMode === "signed") return new SignedSessionVerifier(config.sessionSigningKey!);
+  const supabase = new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
+  // Development only (config enforces it): the owner's minted token still works next to Supabase.
+  return config.sessionSigningKey ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.sessionSigningKey), supabase]) : supabase;
 }

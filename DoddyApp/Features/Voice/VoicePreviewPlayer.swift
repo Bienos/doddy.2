@@ -16,6 +16,10 @@ final class VoicePreviewPlayer {
     @ObservationIgnored private var player: AVAudioPlayer?
     @ObservationIgnored private var delegate: FinishDelegate?
 
+    init() {
+        AudioSessionOwner.shared.register(self, as: .voicePreview, isUsing: { $0.playing != nil }, stop: { $0.stop() })
+    }
+
     /// Plays `style`'s sample, or stops it if that voice is already playing.
     func toggle(_ style: VoiceStyle) {
         if playing == style.voice {
@@ -28,16 +32,21 @@ final class VoicePreviewPlayer {
     func play(_ style: VoiceStyle) {
         stop()
         problem = nil
-        guard !VoiceSessionController.conversationInProgress else {
+        // One owner of the audio session (ADR-695): never over something that listens.
+        switch AudioSessionOwner.shared.claim(.voicePreview, by: self) {
+        case .refused(.captureRecording), .refused(.memoRecording):
+            problem = NSLocalizedString("Samples don't play while Doddy is recording.", comment: "")
+            return
+        case .refused:
             problem = NSLocalizedString("Samples don't play while you're talking to Doddy.", comment: "")
             return
+        case .go:
+            break
         }
         guard let url = Bundle.main.url(forResource: style.voice.previewResourceName, withExtension: "mp3") else {
             problem = NSLocalizedString("This sample is missing from the app.", comment: "")
             return
         }
-        // "Hey Doddy" listening (ADR-254) steps aside while a sample plays.
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: true)
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
@@ -79,9 +88,10 @@ final class VoicePreviewPlayer {
         deactivateSession()
     }
 
+    /// Switched off only when nothing else of Doddy's uses it (ADR-695): a conversation started while
+    /// a sample played keeps its microphone.
     private func deactivateSession() {
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
+        AudioSessionOwner.shared.release(.voicePreview, by: self)
     }
 }
 

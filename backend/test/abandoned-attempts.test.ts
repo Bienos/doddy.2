@@ -32,7 +32,8 @@ const complete = (h: Harness, s: { attemptId: string; nonce: string; pending: st
     body: { attemptId: s.attemptId, nonce: s.nonce, result: { kind: "callback", status: "success", connectedAccountId: s.pending } },
   });
 
-const cleanupRows = (store: Store) => store.db.prepare("SELECT * FROM cleanups").all() as { connection_id: string; state: string; attempts: number }[];
+const cleanupRows = async (store: Store) =>
+  (await store.db.query<{ connection_id: string; state: string; attempts: number }>("SELECT * FROM cleanups")).rows;
 
 test("finished at Google after the attempt expired: the late completion is refused and the grant removed", async () => {
   const fake = new FakeComposio();
@@ -44,7 +45,7 @@ test("finished at Google after the attempt expired: the late completion is refus
   assert.equal(late.body.error.code, "attempt_invalid");
   assert.ok(!fake.accounts.has(s.pending), "the late grant is gone at the provider");
   assert.equal((await h.call("GET", CAL)).body.status, "disconnected");
-  assert.equal(cleanupRows(h.store).length, 0);
+  assert.equal((await cleanupRows(h.store)).length, 0);
 });
 
 test("abandoned: the user never comes back to Doddy; the hourly sweep removes the grant before prune forgets it", async () => {
@@ -57,9 +58,9 @@ test("abandoned: the user never comes back to Doddy; the hourly sweep removes th
   assert.ok(!fake.accounts.has(s.pending));
   // A day later prune drops the attempt row; nothing is left queued or live.
   h.clock.advance(25 * HOUR);
-  h.store.prune(h.clock.ms);
-  assert.equal(cleanupRows(h.store).length, 0);
-  assert.equal(h.store.db.prepare("SELECT COUNT(*) AS n FROM attempts").get()!.n, 0);
+  (await h.store.prune(h.clock.ms));
+  assert.equal((await cleanupRows(h.store)).length, 0);
+  assert.equal((await h.store.db.query<{ n: number }>("SELECT COUNT(*)::int AS n FROM attempts")).rows[0]!.n, 0);
 });
 
 test("the sweep leaves open attempts and recorded connections alone", async () => {
@@ -94,30 +95,30 @@ test("a removal that fails stays queued and visible, and the sweep retries it un
   assert.equal((await h.call("GET", CAL)).body.remoteCleanup, "none");
 });
 
-test("the sweep stops retrying a removal after a day of failures; the row stays visible", () => {
-  const store = new Store(":memory:");
+test("the sweep stops retrying a removal after a day of failures; the row stays visible", async () => {
+  const store = await Store.memory();
   try {
-    store.queueCleanup("ca_stuck", "u1", "google_calendar", 0);
-    for (let i = 0; i < CLEANUP_RETRY.maxTries; i++) store.failCleanup("ca_stuck", "remote_cleanup_failed");
-    assert.deepEqual(store.cleanupsToRetry(["google_calendar"], HOUR, CLEANUP_RETRY.maxTries, 20), []);
-    assert.equal(store.cleanupFor("u1", "google_calendar")?.state, "failed");
+    (await store.queueCleanup("ca_stuck", "u1", "google_calendar", 0));
+    for (let i = 0; i < CLEANUP_RETRY.maxTries; i++) (await store.failCleanup("ca_stuck", "remote_cleanup_failed"));
+    assert.deepEqual((await store.cleanupsToRetry(["google_calendar"], HOUR, CLEANUP_RETRY.maxTries, 20)), []);
+    assert.equal((await store.cleanupFor("u1", "google_calendar"))?.state, "failed");
   } finally {
-    store.close();
+    (await store.close());
   }
 });
 
-test("a link made for an attempt that was superseded meanwhile is queued for removal, never stored on it", () => {
-  const store = new Store(":memory:");
+test("a link made for an attempt that was superseded meanwhile is queued for removal, never stored on it", async () => {
+  const store = await Store.memory();
   try {
-    store.composioUserId("u1", 0);
-    const a = store.createAttempt({ userId: "u1", provider: "google_calendar", authConfigId: "ac", now: 0, ttlSeconds: 600 });
-    const b = store.createAttempt({ userId: "u1", provider: "google_calendar", authConfigId: "ac", now: 1, ttlSeconds: 600 });
+    (await store.composioUserId("u1", 0));
+    const a = (await store.createAttempt({ userId: "u1", provider: "google_calendar", authConfigId: "ac", now: 0, ttlSeconds: 600 }));
+    const b = (await store.createAttempt({ userId: "u1", provider: "google_calendar", authConfigId: "ac", now: 1, ttlSeconds: 600 }));
     assert.deepEqual(b.superseded, [], "a had no link yet");
-    assert.equal(store.setPendingConnection(a.attemptId, "ca_late_link", 2), false);
-    assert.deepEqual(cleanupRows(store).map((r) => r.connection_id), ["ca_late_link"]);
-    assert.equal(store.setPendingConnection(b.attemptId, "ca_b", 3), true);
+    assert.equal((await store.setPendingConnection(a.attemptId, "ca_late_link", 2)), false);
+    assert.deepEqual((await cleanupRows(store)).map((r) => r.connection_id), ["ca_late_link"]);
+    assert.equal((await store.setPendingConnection(b.attemptId, "ca_b", 3)), true);
   } finally {
-    store.close();
+    (await store.close());
   }
 });
 
@@ -131,5 +132,5 @@ test("online-account tools: a superseded Gmail sign-in and an abandoned one are 
   rig.clock.advance(TTL_MS + 1_000);
   await rig.tools.sweepAbandoned();
   assert.equal(rig.provider.calls.filter((c) => c === "removeConnection").length, 2, "the abandoned one too");
-  assert.equal(cleanupRows(rig.store).length, 0);
+  assert.equal((await cleanupRows(rig.store)).length, 0);
 });

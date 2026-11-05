@@ -5,7 +5,7 @@ import CryptoKit
 import Crypto
 #endif
 
-/// What an approval is bound to (ADR-490, DOD-07): SHA-256 over each field in order, each written
+/// What an approval is bound to (ADR-750, DOD-07): SHA-256 over each field in order, each written
 /// as its UTF-8 byte length in decimal, a colon, then its UTF-8 bytes. Length prefixes rather than
 /// JSON, so Swift and JavaScript can't disagree on escaping. Nothing is trimmed or normalised: the
 /// hash covers exactly the characters the card showed.
@@ -32,7 +32,7 @@ public enum ApprovalHash {
     }
 }
 
-/// Texts Doddy may send from its own number (ADR-490 unit U2). Mirrored in
+/// Texts Doddy may send from its own number (ADR-750 unit U2). Mirrored in
 /// `docs/trust/config/doddy_rules.yaml` (contact_policy) and in the server's `routes/texts.ts`.
 public enum ApprovedTextLimits {
     /// UTF-16 code units, as the server counts them. Longer is refused, never cut.
@@ -131,7 +131,7 @@ public enum TextReadiness: Equatable, Sendable {
 }
 
 extension VoiceToolReply {
-    // MARK: text_me (ADR-490 unit U2)
+    // MARK: text_me (ADR-750 unit U2)
     //
     // "delivered:" is the only done result: the carrier reported the text reached the phone.
     // Twilio accepting it ("sent:") or the server holding it ("queued:") is not delivery, so the
@@ -194,9 +194,11 @@ extension VoiceToolReply {
         case "approval_mismatch":
             "the user's number changed after the card was shown, so the approval didn't match."
         case "daily_limit":
-            "Doddy has already sent the most texts allowed for today (\(ContactCaps.approvedTextsPerDay))."
+            "Doddy has already sent the most texts allowed for today."
         case "server_daily_limit":
             "Doddy's server has reached its daily limit for texts."
+        case "phone_not_allowed":
+            "the user's number is in a country Doddy doesn't text."
         case "sms_not_configured":
             "Doddy's phone number isn't set up on the server yet."
         case "rate_limited":
@@ -245,8 +247,8 @@ extension VoiceToolReply {
     }
 }
 
-/// How many calls and texts Doddy may make. Mirrored in `docs/trust/config/doddy_rules.yaml`
-/// (contact_policy.caps_default), which is the server's to enforce; a test keeps them equal.
-public enum ContactCaps {
-    public static let approvedTextsPerDay = 20
-}
+/// How many calls Doddy may make per account. Mirrored in `docs/trust/config/doddy_rules.yaml`
+/// (contact_policy.caps_default), which is the server's to enforce; a test keeps them equal. The daily
+/// text caps and the allowed countries are the server's abuse limits (ADR-704), not repeated here: the
+/// server may lower them, so no wording in the app names a number for them.
+public enum ContactCaps {}

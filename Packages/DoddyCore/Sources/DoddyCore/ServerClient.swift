@@ -109,15 +109,34 @@ public enum UpdateChannel: String, Sendable, Codable, CaseIterable {
 public struct PhoneStatus: Equatable, Sendable, Decodable {
     public let phone: String?
     public let smsEnabled: Bool
+    /// Texting Doddy (SMS_CHAT.md): a text from this number gets an answer by text. Needs `smsEnabled` too.
+    public let smsChatEnabled: Bool
+    /// The number to text; nil until the owner set it on the server.
+    public let doddyNumber: String?
     /// The user replied STOP; only texting START re-opens SMS (carrier rule).
     public let optedOut: Bool
 
     public static let none = PhoneStatus(phone: nil, smsEnabled: false, optedOut: false)
 
-    public init(phone: String?, smsEnabled: Bool, optedOut: Bool) {
+    public init(phone: String?, smsEnabled: Bool, smsChatEnabled: Bool = false, doddyNumber: String? = nil, optedOut: Bool) {
         self.phone = phone
         self.smsEnabled = smsEnabled
+        self.smsChatEnabled = smsChatEnabled
+        self.doddyNumber = doddyNumber
         self.optedOut = optedOut
+    }
+
+    private enum CodingKeys: String, CodingKey { case phone, smsEnabled, smsChatEnabled, doddyNumber, optedOut }
+
+    /// A server from before texting Doddy sends neither new field: it reads as off, with no number.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            phone: try c.decodeIfPresent(String.self, forKey: .phone),
+            smsEnabled: try c.decode(Bool.self, forKey: .smsEnabled),
+            smsChatEnabled: try c.decodeIfPresent(Bool.self, forKey: .smsChatEnabled) ?? false,
+            doddyNumber: try c.decodeIfPresent(String.self, forKey: .doddyNumber),
+            optedOut: try c.decode(Bool.self, forKey: .optedOut))
     }
 }
 
@@ -133,7 +152,7 @@ public struct UpdateStatus: Equatable, Sendable, Decodable {
     public let state: String
     public let deliveryStatus: String?
     public let errorCode: String?
-    /// For a text whose outcome was unknown: what Twilio's own records showed (ADR-490 U2).
+    /// For a text whose outcome was unknown: what Twilio's own records showed (ADR-750 U2).
     /// "found" (the row is then sent), "not_found", "failed" (couldn't check), or nil.
     public let lookup: String?
 
@@ -183,6 +202,13 @@ public enum SMSConsent {
     public static let text = "Doddy may text this number with the updates you turn on. Message frequency varies. Message and data rates may apply. Reply STOP to stop or HELP for help."
 }
 
+/// The exact wording for texting Doddy, stored with its version like `SMSConsent`. Any change to
+/// `text` must come with a new version.
+public enum SMSChatConsent {
+    public static let textVersion = "sms-chat-v1"
+    public static let text = "Text Doddy from this number and he answers by text. Your message goes to Doddy's server and to Anthropic, whose Claude writes the answer; neither keeps the words after the answer is sent. By text Doddy can't read your notes and can't send, buy or change anything. Other numbers get no answer. The daily limit is the same as in Messages. Message and data rates may apply. Reply STOP to stop all texts."
+}
+
 public enum PhoneNumberInput {
     /// Turns typed input into E.164 (`+48500100200`). Numbers without `+` or `00` get the
     /// default calling code. Returns nil when the result can't be a valid E.164 number.
@@ -205,9 +231,9 @@ public actor DoddyServerClient {
     private let credentials: any ServerCredentialStore
     /// Idempotency keys of updates not yet accepted by the server, by text and channels.
     private var pendingUpdateKeys: [UpdateBody: String] = [:]
-    /// The same for approved texts, by approval hash (ADR-490 U2).
+    /// The same for approved texts, by approval hash (ADR-750 U2).
     private var pendingTextKeys: [String: String] = [:]
-    /// The same for calls booked for later, by approval hash (ADR-495, `scheduleCall`).
+    /// The same for calls booked for later, by approval hash (ADR-754, `scheduleCall`).
     var pendingCallKeys: [String: String] = [:]
     /// The account being created right now, if any (see `ensureAccount`).
     private var accountCreation: Task<String, any Error>?
@@ -268,6 +294,13 @@ public actor DoddyServerClient {
                          ConsentBody(consent: consent, textVersion: consent ? SMSConsent.textVersion : nil))
     }
 
+    /// Records consent to `SMSChatConsent.text` (with its version), or withdraws it. The server refuses
+    /// a yes while texts are off (`smsNotEnabled`-style 409).
+    public func setSMSChatConsent(_ consent: Bool) async throws {
+        try await expect(204, .put, "/v1/phone/sms-chat",
+                         ConsentBody(consent: consent, textVersion: consent ? SMSChatConsent.textVersion : nil))
+    }
+
     public func removePhone() async throws {
         try await expect(204, .delete, "/v1/phone")
     }
@@ -294,7 +327,7 @@ public actor DoddyServerClient {
     }
 
     /// A text the user approved on a card, from Doddy's number to their own verified number
-    /// (ADR-490 U2). `approvalHash` is `ApprovalHash.text` of the number and text the card showed;
+    /// (ADR-750 U2). `approvalHash` is `ApprovalHash.text` of the number and text the card showed;
     /// the server recomputes it with the number it holds and refuses on any difference.
     ///
     /// One idempotency key per approval: trying the same approved text again after an unknown
@@ -444,7 +477,7 @@ private struct UpdateBody: Encodable, Hashable { let text: String; let channels:
 private struct QueuedList: Decodable { let messages: [QueuedUpdate] }
 private struct TextBody: Encodable { let body: String; let approvalHash: String; let idempotencyKey: String }
 
-/// What happened to an approved text (ADR-490 U2).
+/// What happened to an approved text (ADR-750 U2).
 public enum ApprovedTextOutcome: Equatable, Sendable {
     /// The server queued it, or had queued it on an earlier try of the same approval.
     case queued(QueuedUpdate)

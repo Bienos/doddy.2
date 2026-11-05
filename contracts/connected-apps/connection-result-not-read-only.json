@@ -17,7 +17,7 @@
     }
   },
   "receipt": {
-    "operationId": "3139a4be-ef1d-4347-b8e6-c1c565a2c14d",
+    "operationId": "9ffc3b2a-4e33-412e-8547-b2832a3bdd42",
     "operation": "connect",
     "capability": "connection.connect",
     "provider": "google_calendar",

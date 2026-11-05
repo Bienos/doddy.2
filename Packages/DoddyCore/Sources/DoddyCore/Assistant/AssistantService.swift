@@ -26,7 +26,7 @@ public enum AssistantLimits {
     public static let maxTurns = 6
 }
 
-/// recall -> selected notes -> gateway -> citation check. Stateless: the chat lives in the UI, in memory.
+/// recall -> selected notes -> Doddy's server (ADR-587) -> citation check. Stateless: the chat lives in the UI, in memory.
 public struct AssistantService: Sendable {
     private let recall: any RecallService
     private let client: any AssistantClient
@@ -51,6 +51,7 @@ public struct AssistantService: Sendable {
         sessionID: UUID,
         history: [ConversationTurn] = [],
         locale: String = "en",
+        image: AssistantImage? = nil,
         policy: AssistantPolicy
     ) async throws(AssistantError) -> AssistantAnswer {
         guard policy.consentGranted else { throw .consentRequired }
@@ -78,7 +79,8 @@ public struct AssistantService: Sendable {
             userText: question,
             groundingMemories: selected,
             recentTurns: Self.prepare(history),
-            locale: Self.safeLocale(locale))
+            locale: Self.safeLocale(locale),
+            image: image)
 
         let reply = try await send(request)
         let verified = try CitationVerifier.verify(reply, for: request)
@@ -121,7 +123,7 @@ public struct AssistantService: Sendable {
             }
     }
 
-    /// The gateway accepts only plain language tags like "en" or "pl-PL".
+    /// The server accepts only plain language tags like "en" or "pl-PL".
     static func safeLocale(_ locale: String) -> String {
         let parts = locale.split(separator: "-", omittingEmptySubsequences: false)
         guard let language = parts.first, (2...3).contains(language.count),

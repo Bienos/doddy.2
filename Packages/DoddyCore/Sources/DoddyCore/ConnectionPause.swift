@@ -13,15 +13,27 @@ public enum ConnectionPause {
         switch request {
         case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator,
              .calculate, .convertUnits, .parkingSpot, .addIngredients,
-             .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap:
+             .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap,
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan:
+            // The stopwatch is Doddy's own tool on this iPhone (ADR-652), and so is the plan screen
+            // (ADR-626): no other app or account.
             false
+        case .checkErrands:
+            // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
+            false
+        case .handOverErrand:
+            // Doddy's server searches and reads the web for it (ADR-570).
+            true
+        case .findDeals:
+            // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
+            true
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
-             .openMap, .runShortcut, .draftMessage, .cloudTool, .changeCalendarEvent, .changeReminder,
+             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
              .convertCurrency, .textMe, .callMeLater:
             // Currency rates come from the ECB's public file, another service (ADR-300). A text,
-            // or a call booked for later, goes through Doddy's server and Twilio (ADR-490).
+            // or a call booked for later, goes through Doddy's server and Twilio (ADR-750).
             true
         case .remindAboutNote(let draft):
             // A time stays inside Doddy; a place is looked up in Apple Maps, another service.

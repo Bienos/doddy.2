@@ -251,4 +251,55 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         let listed = try await repo.list(limit: nil)
         XCTAssertEqual(listed, [corrected], "same id, original and corrected text, dates")
     }
+
+    // MARK: Gone from the file, not only from the queries (ADR-584)
+
+    private func tempPath() -> String {
+        FileManager.default.temporaryDirectory.appendingPathComponent("doddy-\(UUID()).sqlite").path
+    }
+
+    func testDeletedNotesAreNotLeftInTheDatabaseFile() async throws {
+        let path = tempPath()
+        defer { DatabaseFileBytes.remove(path) }
+        let single = "qzxvsinglewolf", everything = "qzxvallwolf"
+        do {
+            let repo = try SQLiteMemoryRepository(path: path)
+            let one = try await repo.save(NewMemory(text: "The \(single) is in the shed.", capturedAt: t0))
+            _ = try await repo.save(NewMemory(text: "The \(everything) is in the attic.", capturedAt: t0))
+            let found = try await repo.query(single, limit: 5)
+            XCTAssertEqual(found.map(\.record.id), [one.id])
+            for word in [single, everything] {
+                XCTAssertTrue(try DatabaseFileBytes.indexFinds(word, in: "memories_fts", at: path), "\(word) was really indexed")
+                XCTAssertGreaterThan(DatabaseFileBytes.occurrences(of: word, at: path), 0, "\(word) is in the file before the delete")
+            }
+
+            try await repo.delete(id: one.id)
+            XCTAssertEqual(DatabaseFileBytes.occurrences(of: single, at: path), 0, "a deleted note's words are gone from the file")
+            XCTAssertTrue(try DatabaseFileBytes.indexFinds(everything, in: "memories_fts", at: path), "a note that stays is still indexed")
+            XCTAssertGreaterThan(DatabaseFileBytes.occurrences(of: everything, at: path), 0)
+
+            try await repo.deleteAll()
+        }
+        XCTAssertEqual(DatabaseFileBytes.occurrences(of: everything, at: path), 0, "Delete all leaves no words in the file")
+        XCTAssertFalse(DatabaseFileBytes.contents(at: path).isEmpty)
+    }
+
+    /// A correction keeps the note's first wording on purpose (`rawText`, ADR-252); the word it
+    /// corrected away must be nowhere else, and deleting the note takes that copy too.
+    func testCorrectedAwayWordsStayOnlyInTheOriginalWording() async throws {
+        let path = tempPath()
+        defer { DatabaseFileBytes.remove(path) }
+        let marker = "qzxvmisheardwolf"
+        let repo = try SQLiteMemoryRepository(path: path)
+        let note = try await repo.save(NewMemory(text: "Put the \(marker) in the shed.", capturedAt: t0))
+        XCTAssertTrue(try DatabaseFileBytes.indexFinds(marker, in: "memories_fts", at: path), "the marker was really indexed")
+
+        let corrected = try await repo.update(id: note.id, currentText: "Put the spade in the shed.")
+        XCTAssertEqual(corrected.rawText, "Put the \(marker) in the shed.")
+        XCTAssertFalse(try DatabaseFileBytes.indexFinds(marker, in: "memories_fts", at: path))
+        XCTAssertEqual(DatabaseFileBytes.occurrences(of: marker, at: path), 1, "only the original wording (rawText) keeps it")
+
+        try await repo.delete(id: note.id)
+        XCTAssertEqual(DatabaseFileBytes.occurrences(of: marker, at: path), 0, "deleting the note takes its original wording too")
+    }
 }

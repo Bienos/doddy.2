@@ -34,14 +34,18 @@ final class ToolCatalogTests: XCTestCase {
         // The spec tells the agent to wait for a tap; the app must show a card for exactly those.
         for tool in try spec() {
             let approval = try XCTUnwrap(ToolCatalog.descriptor(tool.name)?.approval, tool.name)
-            XCTAssertEqual(tool.confirmOnScreen, approval != .none, "\(tool.name): confirm_on_screen vs \(approval)")
+            let tap = approval == .card || approval == .serverApproval
+            XCTAssertEqual(tool.confirmOnScreen, tap, "\(tool.name): confirm_on_screen vs \(approval)")
+            // ASK-01: the spec says how the user answers, and it matches what the app asks for.
+            XCTAssertEqual(tool.ask, tap ? .tap : approval == .runsNow ? .runsNow : .yesOrTap, tool.name)
         }
     }
 
     func testACardHasTimeToBeTapped() throws {
         // The agent's wait covers the user reading the card; a short timeout would end the call
         // before the tap and leave the change unanswered.
-        for tool in try spec() where ToolCatalog.descriptor(tool.name)?.approval != ToolDescriptor.Approval.none {
+        // ASK-01: every tool waits for an answer now, reads included.
+        for tool in try spec() where tool.ask != .runsNow {
             XCTAssertGreaterThanOrEqual(tool.timeoutSeconds, 60, tool.name)
         }
     }
@@ -57,20 +61,40 @@ final class ToolCatalogTests: XCTestCase {
 
     // MARK: Rules between effect and approval
 
-    func testOnlyListedLocalChangesRunWithoutACard() {
-        // L1 list changes the user named (ADR-216, with a receipt and Undo) and the capability-gap
-        // row (ADR-440). A new tool that changes something without a card must be added here on purpose.
-        let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval == .none }.map(\.name))
-        XCTAssertEqual(withoutCard, [
-            VoiceToolName.addToList, VoiceToolName.checkOff, VoiceToolName.removeFromList,
-            VoiceToolName.noteCapabilityGap, VoiceToolName.startTranslator, VoiceToolName.stopTranslator,
-        ])
+    func testNoChangeRunsWithoutACard() {
+        // ASK-01: since 2026-10-18 list changes and the capability-gap row show a card too. Only
+        // translator mode, which changes no data, runs without a card: since ADR-619 (owner,
+        // 24 Oct 2026) it starts and stops at once, without asking.
+        let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval != .card && $0.approval != .serverApproval }.map(\.name))
+        XCTAssertEqual(withoutCard, [VoiceToolName.startTranslator, VoiceToolName.stopTranslator])
+        for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name) }
     }
 
-    func testLookupsNeverAskForATap() {
+    func testLookupsAskFirstExceptPublicOnes() {
+        // ASK-01: reads of the user's own data ask (a spoken yes or a tap). Since ADR-575 only public
+        // lookups, which read nothing of the user's, run at once.
         for tool in ToolCatalog.all where tool.effect == .lookup {
-            XCTAssertEqual(tool.approval, .none, tool.name)
+            let expected: ToolDescriptor.Approval = AskFirst.publicLookups.contains(tool.name)
+                ? .runsNow : tool.isCloud ? .serverAsk : .askFirst
+            XCTAssertEqual(tool.approval, expected, tool.name)
         }
+        XCTAssertEqual(Set(ToolCatalog.all.filter { $0.approval == .runsNow }.map(\.name)),
+                       AskFirst.publicLookups.union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator]),
+                       "public lookups, and translator start and stop (ADR-619)")
+        XCTAssertEqual(AskFirst.publicLookups, ["calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
+                                                "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
+        for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }
+    }
+
+    func testEveryToolThatAsksRunsOnThePhoneWhereTheAppCanAsk() throws {
+        // ElevenLabs runs web tools itself, so the app could never ask before them (ASK-01). Only
+        // the public lookups that run at once may run there (ADR-575).
+        for tool in try spec() where tool.runsOn != .phone {
+            XCTAssertEqual(tool.runsOn, .web, tool.name)
+            XCTAssertEqual(tool.ask, .runsNow, tool.name)
+            XCTAssertTrue(ToolCatalog.webLookups.contains(tool.name), tool.name)
+        }
+        XCTAssertEqual(Set(try spec().filter { $0.runsOn == .web }.map(\.name)), ToolCatalog.webLookups)
     }
 
     func testAccountWritesAreExactlyTheServerApprovedOnes() {
@@ -114,10 +138,20 @@ final class ToolCatalogTests: XCTestCase {
         let source = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/catalog.ts"), encoding: .utf8)
         let server = Self.serverRisks(source)
         XCTAssertFalse(server.isEmpty, "couldn't read CLOUD_TOOLS from catalog.ts")
-        XCTAssertEqual(Set(server.keys).union([CloudToolName.webSearch]), CloudToolName.all)
+        // websearch.ts also holds the fixed Monid tools (ADR-489); claude.ts the Claude tools (ADR-564).
+        XCTAssertEqual(
+            Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.askClaude, CloudToolName.makeDocument]),
+            CloudToolName.all)
+        let claude = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/claude.ts"), encoding: .utf8)
+        for name in [CloudToolName.askClaude, CloudToolName.makeDocument] {
+            XCTAssertTrue(claude.contains("\"\(name)\""), "\(name) not in claude.ts")
+            XCTAssertFalse(CloudToolName.isWrite(name), "\(name) changes nothing outside Doddy")
+            XCTAssertFalse(CloudToolName.needsAccount(name), name)
+        }
         XCTAssertEqual(Set(server.filter { $0.value == "write" }.keys), CloudToolName.writes)
         let websearch = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/websearch.ts"), encoding: .utf8)
         XCTAssertTrue(websearch.contains("\"\(CloudToolName.webSearch)\""), "web_search not found in websearch.ts")
+        for name in ["news_search", "find_places"] { XCTAssertTrue(websearch.contains("\(name): {"), "\(name) not in MONID_TOOLS") }
         for name in CloudToolName.all {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.isCloud, true, name)
         }

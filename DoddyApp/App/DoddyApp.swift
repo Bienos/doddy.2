@@ -14,15 +14,36 @@ struct DoddyApp: App {
     @State private var noteReminders: NoteReminderStore
 
     init() {
+        LaunchWork.appInitBegan()
+        defer { LaunchWork.appInitEnded() }
         // The screens' language is read when the app starts: English unless the person picked another (ADR-459).
         AppLanguageStore.applyAtLaunch()
+        // Back Tap's old "Small island" becomes Settings › "Expand when Doddy speaks" (ADR-579),
+        // before anything reads either preference.
+        Self.migrateLaunchPreferences()
+        // A shipped build ignores the server address typed in Settings; one saved by an earlier build is
+        // removed, before anything can read it (ADR-720).
+        DeviceSession.removeSavedServerOverride()
+        // Shortcuts, links, notifications and Siri ask the Face ID lock through this (ADR-723). Set here,
+        // not when the lock is first used, because iOS can start the app just to run an intent.
+        AppLockGate.isLocked = { AppLock.shared.isLocked }
+        #if DEBUG
+        // UI tests of "Before we start" (ADR-581) start without an acceptance from an earlier test.
+        if ProcessInfo.processInfo.arguments.contains("-resetLegalAcceptanceForUITests") {
+            UserDefaults.standard.removeObject(forKey: LegalAcceptance.preferenceKey)
+        }
+        #endif
         VoiceSessionKeychain.removeLegacySetup()
         // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
         ServerKeychainStore.clearLeftoversOnFreshInstall()
+        // The same for the keys a person pasted in for their own accounts (ADR-640).
+        AccountKeyStore.clearLeftoversOnFreshInstall()
         let environment = AppEnvironment.shared
         let store = MemoryStore(environment: environment)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
         store.noteReminders = noteReminders
+        // The title of a reminder that rings like an alarm (ADR-651) is the note's own text.
+        noteReminders.noteText = { [weak store] id in store?.memories.first { $0.id == id }?.currentText }
         // The learning loop (ADR-440) listens to "What Doddy did" for what was corrected.
         let learning = LearningStore(service: environment.learningService)
         learning.attach(to: ActivityLogStore.shared)
@@ -47,15 +68,34 @@ struct DoddyApp: App {
         _noteReminders = State(initialValue: noteReminders)
         let profiles = ProfileStore(environment: environment)
         _profiles = State(initialValue: profiles)
+        // Talk in the Island (ADR-577) greets by name with the app in the background.
+        IntentStores.profiles = profiles
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
         // A focus timer does survive one (it is saved); this also lets its island's buttons work
-        // when iOS starts the app just to run them (ADR-241). Breathing and read-aloud don't.
+        // when iOS starts the app just to run them (ADR-241). Read-aloud doesn't.
         FocusController.shared.refresh()
-        ToolLiveActivity.endLeftovers(keeping: [.focus])
-        // "Hey Doddy" (ADR-254) starts conversations with the same notes and profile.
-        WakeWordListener.shared.store = store
-        WakeWordListener.shared.profiles = profiles
+        // The stopwatch (ADR-652) is saved too, and its island's buttons must work the same way.
+        StopwatchController.shared.refresh()
+        ToolLiveActivity.endLeftovers(keeping: [.focus, .stopwatch])
+        // A call Doddy makes for the user runs on the server, so its island may outlive a
+        // relaunch; its Take over and End buttons reach the server from here (ADR-504).
+        CallLiveActivity.shared.registerActions()
+        // DODDY Capture (ADR-588): the island's Stop, Pause and Resume reach the recorder from here, and
+        // iOS starting the app just to run one of them finds it ready.
+        RecordingCoordinator.shared.install()
+    }
+
+    private static func migrateLaunchPreferences(_ defaults: UserDefaults = .standard) {
+        let stored = LaunchPreferencesMigration.Values(
+            backTapAction: defaults.string(forKey: PreferenceKey.backTapAction),
+            islandExpands: defaults.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool)
+        let moved = LaunchPreferencesMigration.migrate(stored)
+        guard moved != stored else { return }
+        defaults.set(moved.backTapAction, forKey: PreferenceKey.backTapAction)
+        if let expands = moved.islandExpands {
+            defaults.set(expands, forKey: LaunchPreferencesMigration.islandExpandsKey)
+        }
     }
 
     var body: some Scene {
@@ -65,22 +105,14 @@ struct DoddyApp: App {
                 .environment(profiles)
                 .environment(noteReminders)
                 .environment(\.appEnvironment, store.environment)
-                // If the user turned Doddy's notifications on earlier, re-send the (possibly new) token.
-                .task { await UpdatesModel().syncPushTokenIfOn() }
-                .task { await SystemNoteNotifications.registerCategory() }
-                .task { await store.learning?.reload() }
-                .task { ShoppingModeController.shared.reattach() }
-                .task {
-                    await SharedListsController.shared.load()
-                    await SharedListsController.shared.syncAll()
-                    await SharedListsController.shared.startLiveUpdates()
+                // Start-up work waits for the first screen (ADR-547): the cheap local jobs at once,
+                // the network and notification jobs a moment later, one at a time (`LaunchWork`).
+                .task(id: profiles.hasLoaded) {
+                    guard profiles.hasLoaded else { return }
+                    LaunchWork.firstScreenShown()
+                    await LaunchWork.afterFirstScreen(store: store)
+                    await LaunchWork.later()
                 }
-                // Keeps the morning check-in's words in the iPhone's current language (ADR-220).
-                .task { if MorningCheckInSettings.stored().isOn { _ = await MorningCheckInScheduler.apply(.stored()) } }
-                .task { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }
-                .task { if EveningWrapUpSettings.stored().isOn { _ = await EveningWrapUpScheduler.apply(.stored()) } }
-                .task { if WeeklyLookBackSettings.stored().isOn { _ = await WeeklyLookBackScheduler.apply(.stored()) } }
-                .task { await BirthdayScheduler.refresh() }
         }
     }
 }

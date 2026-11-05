@@ -8,7 +8,7 @@ import Observation
 final class CallsModel {
     private(set) var client: DoddyServerClient?
     private(set) var settings: CallSettings?
-    /// Texts to Doddy (ADR-494); nil until the server answered.
+    /// Texts to Doddy (ADR-753); nil until the server answered.
     private(set) var textSettings: TextSettings?
     /// Why the texts settings couldn't be loaded, or nil. A failed load never reads as "not set up".
     private(set) var textsProblem: String?
@@ -23,7 +23,7 @@ final class CallsModel {
     /// only retries the removal, so the memory isn't saved twice (DOD-06).
     private(set) var savedNoteIDs: Set<UUID> = []
     private(set) var recent: [CallRecord] = []
-    /// Calls booked for later (ADR-495), newest first, as the server lists them.
+    /// Calls booked for later (ADR-754), newest first, as the server lists them.
     private(set) var scheduled: [ScheduledCall] = []
     /// Why the booked calls couldn't be loaded, or nil. A failed load is never shown as "none".
     private(set) var scheduledProblem: String?
@@ -52,7 +52,7 @@ final class CallsModel {
                 self.textsProblem = String(
                     format: NSLocalizedString("Couldn't load the settings for texts to Doddy. %@", comment: ""), Self.text(for: error))
             }
-            // The inbox holds notes from calls and from texts (ADR-494).
+            // The inbox holds notes from calls and from texts (ADR-753).
             if settings.available.inbound || self.textSettings?.available.notes == true {
                 do {
                     let inbox = try await client.callInbox()
@@ -88,7 +88,8 @@ final class CallsModel {
     /// On: switch the copy on, then upload what is on the phone now. Off: the server deletes it.
     /// If the upload fails after the server switched the copy on, the switch shows on (as the
     /// server reports), the message says the memories aren't copied yet, and the upload is tried
-    /// again when Doddy next comes to the front (DOD-08/11).
+    /// again when Doddy next comes to the front (DOD-08/11). `records` may be every note:
+    /// `MemoryCopySync` leaves private notes out of every upload (ADR-310).
     func setMemoryCopy(_ on: Bool, records: [MemoryRecord]) async {
         await change { client in
             try await client.setMemoryCopy(enabled: on)
@@ -107,11 +108,9 @@ final class CallsModel {
         }
     }
 
-    // MARK: Texts to Doddy (ADR-494)
+    // MARK: Texts to Doddy (ADR-753)
 
     func setTextsToDoddy(_ on: Bool) async { await changeTexts { try await $0.setTextsToDoddy(on, language: .current) } }
-    func setTextReplies(_ on: Bool) async { await changeTexts { try await $0.setTextReplies(on, language: .current) } }
-    func setTextRepliesUseMemories(_ on: Bool) async { await changeTexts { try await $0.setTextRepliesUseMemories(on) } }
 
     /// Writes, then reads back what the server now holds, as `change` does for calls.
     private func changeTexts(_ work: @escaping (DoddyServerClient) async throws -> Void) async {
@@ -138,7 +137,6 @@ final class CallsModel {
     /// What leaves this iPhone reads these; the server's answer is the only source.
     private static func mirror(_ texts: TextSettings) {
         UserDefaults.standard.set(texts.inboundEnabled, forKey: PreferenceKey.textsToDoddyOn)
-        UserDefaults.standard.set(texts.inboundEnabled && texts.repliesEnabled, forKey: PreferenceKey.textRepliesOn)
     }
 
     /// The server's JSON, saved to a file this iPhone shares from. Nothing else is added to it.
@@ -177,7 +175,7 @@ final class CallsModel {
         }
     }
 
-    // MARK: Calls booked for later (ADR-495)
+    // MARK: Calls booked for later (ADR-754)
 
     /// The list, and the iPhone's zone when a call is waiting and the server has another one, so
     /// quiet hours are checked where the user is now. The zone is sent only then.
@@ -226,8 +224,8 @@ final class CallsModel {
         guard let client else { return }
         await run {
             if !self.savedNoteIDs.contains(note.id) {
-                // The user's own text is a typed note; anything Doddy wrote, on a call or while
-                // answering a text, is Doddy's note that the user saved (ADR-494).
+                // The user's own text is a typed note; a note Doddy took on a call is Doddy's note
+                // that the user saved (ADR-753).
                 _ = try await store.save(
                     text: note.text, category: .other, source: note.fromText ? .explicitText : .notedByDoddy,
                     capturedAt: note.createdDate ?? Date())
@@ -292,9 +290,8 @@ final class CallsModel {
         switch error as? ServerError {
         case .notEnabled("no_verified_phone"): NSLocalizedString("Verify your phone number first, in Settings → Notifications and texts.", comment: "")
         case .notEnabled("outbound_not_enabled"): NSLocalizedString("Turn on \"Doddy may call me\" first.", comment: "")
-        case .notEnabled("sms_not_enabled"): TextsBlocker.textsFromDoddyOff.localized
-        case .notEnabled("memory_copy_off"): TextsBlocker.memoryCopyOff.localized
-        case .notConfigured("replies_not_configured"): TextsBlocker.repliesNotSetUp.localized
+        case .notEnabled("sms_not_enabled"): NSLocalizedString("Texts from Doddy are off: turn on texts in Notifications and texts first. If you sent STOP, text START to Doddy's number.", comment: "")
+        case .notEnabled("phone_not_allowed"): NSLocalizedString("Doddy doesn't text or call numbers in that country.", comment: "")
         case .rateLimited: NSLocalizedString("That's the limit for now. Try again later.", comment: "")
         case .notConfigured: NSLocalizedString("Doddy's phone line isn't set up on the server yet.", comment: "")
         default: UpdatesModel.text(for: error)
@@ -308,11 +305,6 @@ extension TextsBlocker {
         switch self {
         case .notSetUp: NSLocalizedString("Texts to Doddy aren't set up on Doddy's server yet.", comment: "")
         case .noVerifiedPhone: NSLocalizedString("Verify your phone number in Notifications and texts first.", comment: "")
-        case .repliesNotSetUp: NSLocalizedString("Replies aren't set up on Doddy's server yet.", comment: "")
-        case .textsToDoddyOff: NSLocalizedString("Turn on Texts to Doddy first.", comment: "")
-        case .textsFromDoddyOff: NSLocalizedString("Replies are texts from Doddy: turn on texts in Notifications and texts first. If you sent STOP, text START to Doddy's number.", comment: "")
-        case .repliesOff: NSLocalizedString("Turn on replies first.", comment: "")
-        case .memoryCopyOff: NSLocalizedString("Turn on Memory on calls first: replies use the same copy of your notes.", comment: "")
         }
     }
 }
@@ -322,15 +314,12 @@ extension TextsPause {
     var localized: String {
         switch self {
         case .notReceiving: NSLocalizedString("Doddy's server can't receive texts right now, so nothing you text it is kept.", comment: "")
-        case .repliesNotSetUp: NSLocalizedString("Replies are paused: they aren't set up on Doddy's server. Your texts wait as notes.", comment: "")
-        case .repliesCantText: NSLocalizedString("Replies are paused: Doddy can't text you (texts are off in Notifications and texts, or you sent STOP). Your texts wait as notes.", comment: "")
-        case .memoriesWithoutCopy: NSLocalizedString("Memory on calls is off, so replies can't use your notes.", comment: "")
         }
     }
 }
 
 /// Tells Doddy's server the iPhone's time zone when Doddy comes to the front while a call it
-/// booked may still be waiting (ADR-495), so quiet hours are checked where the user is. Sends
+/// booked may still be waiting (ADR-754), so quiet hours are checked where the user is. Sends
 /// nothing otherwise, and never creates a server account to do it.
 @MainActor
 enum CallZoneSender {

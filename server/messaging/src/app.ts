@@ -3,11 +3,10 @@ import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
+import type { AbuseLimits } from "./config.js";
 import type { Db } from "./db.js";
 import type { TextCipher } from "./crypto.js";
-import type {
-  CallRegistrar, OutboundCaller, PhoneVerifier, PushSender, SmsSender, TextReplyWriter,
-} from "./providers/types.js";
+import type { CallRegistrar, OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
 import { callRoutes } from "./routes/calls.js";
 import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { newsRoutes } from "./routes/news.js";
@@ -21,6 +20,28 @@ import { textSettingsRoutes } from "./routes/textSettings.js";
 import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
 import { twilioVoiceRoutes } from "./routes/twilioVoice.js";
 import { scheduledCallRoutes } from "./routes/scheduledCalls.js";
+import { callCaseRoutes } from "./routes/callCases.js";
+import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
+import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
+import { errandRoutes } from "./routes/errands.js";
+import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
+import { assistantRoutes } from "./routes/assistant.js";
+import { dealsRoutes } from "./routes/deals.js";
+import type { DealsDeps } from "./deals/service.js";
+import type { AssistantDeps } from "./assistant/deps.js";
+import { watchRoutes } from "./routes/watches.js";
+import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
+
+declare module "fastify" {
+  interface FastifyInstance {
+    /** The call-case context the routes use (null when the feature is off); tests run worker passes on it. */
+    taskCallContext: TaskCallContext | null;
+    /** The errand context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
+    errandContext: ErrandContext | null;
+    /** The price-watch context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
+    watchContext: WatchContext | null;
+  }
+}
 
 export interface Deps {
   db: Db;
@@ -30,7 +51,7 @@ export interface Deps {
   /** Needed (with publicBaseUrl) to verify Twilio webhook signatures. */
   twilioAuthToken?: string;
   publicBaseUrl?: string;
-  /** Phone calls (S2, routed through this server since ADR-490): Twilio rings the user's number... */
+  /** Phone calls (S2, routed through this server since ADR-750): Twilio rings the user's number... */
   outbound?: OutboundCaller;
   /** ...and ElevenLabs register-call connects an answered call to the phone agent. */
   registrar?: CallRegistrar;
@@ -38,9 +59,7 @@ export interface Deps {
   /** Shared with ElevenLabs; authenticates the phone agent's tool requests. */
   toolSecret?: string;
   doddyPhoneNumber?: string;
-  /** Writes replies to the user's texts when they turn replies on (Claude, ADR-494). */
-  replyWriter?: TextReplyWriter;
-  /** No scheduled call rings inside these hours unless its card allowed it (ADR-495). Default 21:00–08:00. */
+  /** No scheduled call rings inside these hours unless its card allowed it (ADR-754). Default 21:00–08:00. */
   quietHours?: QuietHours;
   /** News digests: feeds always; keyword search and AI writer when configured. */
   news?: NewsDeps;
@@ -49,6 +68,28 @@ export interface Deps {
   trustProxyHops?: number;
   /** Verify codes the whole server may start per UTC day. Default 200. */
   verifyDailyCap?: number;
+  /** Account, verification, text and call caps and the countries whose numbers are allowed (ADR-702, ADR-704). Defaults: DEFAULT_ABUSE_LIMITS. */
+  limits?: Partial<AbuseLimits>;
+  /** Calls Doddy places for the user (ADR-500). Needs `cipher` and `publicBaseUrl` too. */
+  taskCalls?: TaskCallDeps;
+  /** Where task-call log lines go (tests capture them); default: the request logger. */
+  taskCallLog?: (msg: string, extra?: object) => void;
+  /** Errands (ADR-570): settings and the researcher (needs an Anthropic key). Needs `cipher` too. */
+  errands?: ErrandDeps;
+  /** Leaflets (ADR-609, SHOPPING.md section 2): settings, the polite fetcher and the Haiku reader. */
+  deals?: DealsDeps;
+  /** Where errand log lines go (tests capture them); default: the request logger. */
+  errandLog?: (msg: string, extra?: object) => void;
+  /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
+  assistant?: AssistantDeps;
+  /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
+  watches?: WatchDeps;
+  /** Where price-watch log lines go (tests capture them); default: the request logger. */
+  watchLog?: (msg: string, extra?: object) => void;
+  /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
+  smsChatLog?: (msg: string, extra?: object) => void;
+  /** Called with each inbound text's answer in flight (tests await it). */
+  onSmsChat?: (done: Promise<import("./smsChat.js").SmsChatOutcome>) => void;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
@@ -61,7 +102,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
       level: "info",
       // Never log bearer tokens or signatures. Request bodies are not logged at all.
       redact: ["req.headers.authorization", 'req.headers["x-twilio-signature"]',
-        'req.headers["x-doddy-tool-secret"]', 'req.headers["x-doddy-session"]'],
+        'req.headers["x-doddy-tool-secret"]', 'req.headers["x-doddy-session"]', 'req.headers["elevenlabs-signature"]'],
     },
   });
   await app.register(formbody);
@@ -93,7 +134,18 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     }
   });
 
-  await app.register(accountRoutes(deps));
+  // Logs carry ids, states, durations and codes only (calls.md, "Privacy summary").
+  const taskCtx = taskCallContext(deps.db, deps.taskCalls, deps.cipher, deps.publicBaseUrl, deps.push,
+    deps.taskCallLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("taskCallContext", taskCtx ?? null);
+  const errandCtx = errandContext(deps.db, deps.errands, deps.cipher, deps.push,
+    deps.errandLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("errandContext", errandCtx ?? null);
+  const watchCtx = watchContext(deps.db, deps.watches, deps.cipher, deps.push,
+    deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("watchContext", watchCtx ?? null);
+
+  await app.register(accountRoutes(deps, taskCtx));
   await app.register(phoneRoutes(deps));
   await app.register(updateRoutes(deps));
   await app.register(textRoutes(deps));
@@ -104,6 +156,12 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(scheduledCallRoutes(deps));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));
+  await app.register(callCaseRoutes(deps, taskCtx));
+  await app.register(taskCallWebhookRoutes(deps, taskCtx));
+  await app.register(errandRoutes(deps, errandCtx));
+  await app.register(assistantRoutes(deps));
+  await app.register(dealsRoutes(deps));
+  await app.register(watchRoutes(deps, watchCtx));
   return app;
 }
 

@@ -4,7 +4,7 @@ import type { CallRegistrar, RegisterOutcome } from "./types.js";
 
 /**
  * Connects an answered Twilio call to the "Doddy (phone)" agent with ElevenLabs register-call
- * (ADR-490): the number stays on Doddy's Twilio account and this server decides who reaches the
+ * (ADR-750): the number stays on Doddy's Twilio account and this server decides who reaches the
  * agent. The call's variables, including the secret__ session key, travel in
  * conversation_initiation_client_data, as they did with ElevenLabs' own outbound-call API.
  */

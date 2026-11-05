@@ -11,13 +11,13 @@ import { ElevenLabsCallRegistrar } from "../src/providers/elevenlabs.js";
 import { isValidTwilioSignature, TwilioClient, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
 import { approvalHash, callApprovalHash, textApprovalHash } from "../src/approval.js";
 import { callOpening, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
-import { APPROVED_TEXTS_PER_DAY, APPROVED_TEXTS_SERVER_PER_DAY, TEXT_MAX_LENGTH } from "../src/routes/texts.js";
+import { DEFAULT_ABUSE_LIMITS } from "../src/config.js";
+import { DEFAULT_ALLOWED_COUNTRY_CODES } from "../src/phoneCountries.js";
+import { TEXT_MAX_LENGTH } from "../src/routes/texts.js";
 import { readFileSync } from "node:fs";
 import { connectTwiml, sayAndHangUp, type FixedLine } from "../src/voiceTwiml.js";
 import { classifySms, smsSegments } from "../src/sms.js";
-import {
-  AI_REPLIES_PER_DAY, AI_REPLY_BUDGET_USD_PER_DAY, AI_REPLY_MAX_SEGMENTS, AI_REPLY_WINDOW_MINUTES, FIXED, INBOUND_TEXTS_PER_HOUR,
-} from "../src/textReplies.js";
+import { FIXED, INBOUND_TEXTS_PER_HOUR } from "../src/textsIn.js";
 import {
   DEFAULT_TIME_ZONE, formatClock, inQuietHours, isValidTimeZone, localClock, parseClock, QUIET_HOURS_DEFAULT,
 } from "../src/quietHours.js";
@@ -169,7 +169,7 @@ test("approval hashes reproduce the shared vectors (contracts/phone/approval-vec
       assert.equal(callApprovalHash(to!, at!, reason!, quiet === "1").toString("hex"), v.sha256, v.description);
     }
   }
-  assert.ok(file.vectors.some((v) => v.fields[1] === "call"), "call vectors are there too (ADR-495)");
+  assert.ok(file.vectors.some((v) => v.fields[1] === "call"), "call vectors are there too (ADR-754)");
 });
 
 test("a text through Twilio: a server error after the request may have been sent is unknown, never retried", async () => {
@@ -213,17 +213,19 @@ test("the contact policy in doddy_rules.yaml matches what the server enforces", 
   assert.ok(block, "contact_policy missing from doddy_rules.yaml");
   const value = (key: string) => block.match(new RegExp(`^\\s+${key}: (\\S+)`, "m"))?.[1];
   assert.deepEqual(
-    [value("text_max_length"), value("calls_per_hour"), value("calls_per_day"), value("approved_texts_per_day"), value("approved_texts_server_per_day")].map(Number),
-    [TEXT_MAX_LENGTH, OUTBOUND_HOURLY_LIMIT, OUTBOUND_DAILY_LIMIT, APPROVED_TEXTS_PER_DAY, APPROVED_TEXTS_SERVER_PER_DAY]);
-  assert.deepEqual([value("approval"), value("recording"), value("allowlist_max_numbers")], ["exact_payload_hash", "off", "1"]);
-  // Texts to Doddy (U3, ADR-494).
+    [value("text_max_length"), value("calls_per_hour"), value("calls_per_day")].map(Number),
+    [TEXT_MAX_LENGTH, OUTBOUND_HOURLY_LIMIT, OUTBOUND_DAILY_LIMIT]);
+  // The caps and countries are the default branch's abuse limits (ADR-704); the rules file only mirrors them, so a
+  // change there that is not made in config.ts (or the other way round) fails here. This feature has no caps of its own.
   assert.deepEqual(
-    [value("inbound_texts_per_hour"), value("ai_replies_per_day"), value("ai_reply_budget_usd_per_day"),
-      value("ai_reply_window_minutes"), value("ai_reply_max_segments"), value("ai_replies_per_text")].map(Number),
-    [INBOUND_TEXTS_PER_HOUR, AI_REPLIES_PER_DAY, AI_REPLY_BUDGET_USD_PER_DAY, AI_REPLY_WINDOW_MINUTES, AI_REPLY_MAX_SEGMENTS, 1]);
-  assert.deepEqual([value("texts_to_doddy"), value("ai_replies"), value("ai_reply_memories"), value("inbound_text_is_instructions")],
-    ["off_by_default", "off_by_default", "off_by_default", "false"]);
-  // Scheduled calls and quiet hours (U4, ADR-495).
+    [value("texts_per_account_day"), value("texts_per_server_day"), value("calls_per_server_day")].map(Number),
+    [DEFAULT_ABUSE_LIMITS.smsPerAccountDay, DEFAULT_ABUSE_LIMITS.smsPerServerDay, DEFAULT_ABUSE_LIMITS.outboundCallsPerServerDay]);
+  assert.equal(value("allowed_calling_codes"), `"${DEFAULT_ALLOWED_COUNTRY_CODES.join(",")}"`);
+  assert.deepEqual([value("approval"), value("recording"), value("allowlist_max_numbers")], ["exact_payload_hash", "off", "1"]);
+  // Texts to Doddy (U3, ADR-753): notes only; answers by text are Text with Doddy (ADR-656), not this switch.
+  assert.deepEqual([value("inbound_texts_per_hour")].map(Number), [INBOUND_TEXTS_PER_HOUR]);
+  assert.deepEqual([value("texts_to_doddy"), value("inbound_text_is_instructions")], ["off_by_default", "false"]);
+  // Scheduled calls and quiet hours (U4, ADR-754).
   assert.deepEqual(
     [value("scheduled_call_max_days_ahead"), value("scheduled_call_late_minutes"), value("scheduled_calls_pending_max"),
       value("call_reason_max_length")].map(Number),
@@ -232,6 +234,29 @@ test("the contact policy in doddy_rules.yaml matches what the server enforces", 
     [`"${formatClock(QUIET_HOURS_DEFAULT.start)}"`, `"${formatClock(QUIET_HOURS_DEFAULT.end)}"`, DEFAULT_TIME_ZONE, "[scheduled_calls]",
       "never_placed_again"]);
   assert.doesNotMatch(block, /\+\d{6,}/, "no phone number in the rules file");
+});
+
+test("SMS send: a 500, 502 or 504 is unknown and never resent; 429 and 503 can be tried again (ADR-755)", async () => {
+  const original = globalThis.fetch;
+  let status = 201;
+  let body: object = { sid: "SM1" };
+  globalThis.fetch = (async () => new Response(JSON.stringify(body), { status })) as never;
+  try {
+    const client = new TwilioClient({ accountSid: "AC1", authToken: "t", messagingServiceSid: "MG1", verifyServiceSid: "VA1" });
+    assert.deepEqual(await client.send("+48500000000", "hi"), { kind: "accepted", providerId: "SM1" });
+    for (const s of [500, 502, 504]) {
+      status = s; body = {};
+      assert.deepEqual(await client.send("+48500000000", "hi"), { kind: "unknown", code: `twilio_${s}` });
+    }
+    for (const s of [429, 503]) {
+      status = s; body = {};
+      assert.deepEqual(await client.send("+48500000000", "hi"), { kind: "transient", code: `twilio_${s}` });
+    }
+    status = 400; body = { code: 21610 };
+    assert.deepEqual(await client.send("+48500000000", "hi"), { kind: "rejected", code: "twilio_21610", unsubscribed: true });
+  } finally {
+    globalThis.fetch = original;
+  }
 });
 
 test("a database that never answers fails within the connect timeout, not minutes later", async () => {
@@ -305,10 +330,10 @@ test("POMOC is a help word, so it never becomes a note or a reply", () => {
   assert.equal(classifySms("pomoc z zakupami"), "other");
 });
 
-test("Doddy's fixed texts fit the reply limit in both languages", () => {
+test("Doddy's fixed notifications are short in both languages", () => {
   for (const lang of ["en", "pl"] as const) {
     for (const [name, text] of Object.entries(FIXED[lang])) {
-      assert.ok(smsSegments(text) <= AI_REPLY_MAX_SEGMENTS, `${lang}.${name} is ${smsSegments(text)} parts`);
+      assert.ok(smsSegments(text) <= 3, `${lang}.${name} is ${smsSegments(text)} parts`);
     }
   }
 });

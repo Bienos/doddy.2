@@ -22,6 +22,96 @@ a status line, and under a connected account one switch per tool. Everything sta
 | `add_todoist_task` | Todoist | **write** | Adds one task after a tap on a card | Anything else |
 | `web_search` | — (Monid, no account) | read | Up to 5 web results: title, site, 300-char snippet | Open pages, pick other endpoints |
 
+## 2026-10-18: always ask first (ASK-01, ADR-483) and Gmail writes (ADR-485)
+
+**Every tool asks first, reads included.** `POST /v1/tools/prepare` now works for every tool and web search: it returns
+the card (`preview`) and a single-use approval bound to user, tool, account and the exact arguments (two minutes).
+For a read nothing is read to make the card. `POST /v1/tools/run` refuses any tool without that approval: 403
+`capability_disabled`, receipt `ask_first_required` (reads) or `confirmation_required` (writes), before any provider
+call. Older app builds that run reads directly are refused. Details and tests: `docs/trust/ASK_FIRST.md`.
+
+**New Gmail tools** (mock-tested only; never run against a real account), each a write behind a tap on its card:
+
+| Tool | Composio slug | Card shows | "Done" only when |
+|---|---|---|---|
+| `send_email` | `GMAIL_SEND_EMAIL` | To, subject, full text; "can't be taken back" | Gmail returns the sent message's id |
+| `reply_to_email` | `GMAIL_REPLY_TO_THREAD` | To (Gmail's sender of the newest match), "Re: subject", full text | Gmail returns the message id |
+| `forward_email` | `GMAIL_FORWARD_MESSAGE` | To, the email's sender and subject from Gmail, the note | Gmail returns the message id |
+| `change_email` | `GMAIL_ADD_LABEL_TO_EMAIL` | The email; archive, mark read/unread, star/unstar, back to inbox | Gmail's `labelIds` show the change |
+| `trash_email` | `GMAIL_MOVE_TO_TRASH` | The email; "back from Trash for 30 days" | Gmail's `labelIds` include `TRASH` |
+
+No custom labels yet (they need `GMAIL_LIST_LABELS` for ids), no cc/bcc, attachments or HTML, no permanent or bulk
+delete. Every send passes `include_signature: false`, so exactly the card's text goes out. An answer that doesn't show
+the change is reported as "may or may not have gone through" (DOD-08), never as done.
+
+**Scopes.** Doddy now asks Google for `gmail.readonly`, `gmail.compose`, `gmail.send` and `gmail.modify` (plus the
+identity scopes) and accepts exactly those. `https://mail.google.com/` (full access, including permanent delete) is
+still refused as too broad. A connection made with only read + compose keeps working for drafts and sending (compose
+allows sending) but can't switch on archive/Trash. On every completed connect the server logs one line
+`{"event":"grant_checked","toolkit","verdict","scopes","notAllowed"}` with scope **names** only, so the live grant can be
+compared with what Doddy accepts. The Composio auth config (`ac_XUGmWDS79r-R` on Render) must be set to these four
+Gmail scopes; whether Composio's managed Google app grants exactly those is not verified.
+
+## 2026-10-18: calendars (ADR-486) and Outlook mail (ADR-487)
+
+Mock-tested only; never run against a real Google or Microsoft account. Every write is behind a tap on its card.
+
+| Tool | Slug | Card shows | "Done" only when |
+|---|---|---|---|
+| `read_google_calendar` (read) | `GOOGLECALENDAR_EVENTS_LIST` | The days | — |
+| `create_google_event` | `GOOGLECALENDAR_CREATE_EVENT` | Title, start–end in the user's zone, place; no guests, no Meet link, no emails | Google's event has the card's start |
+| `change_google_event` | `GOOGLECALENDAR_PATCH_EVENT` | The event as Google has it, the new start/end/title; "guests are told" | Google's event shows the new start/title |
+| `delete_google_event` | `GOOGLECALENDAR_DELETE_EVENT` | The event; "trash for 30 days" | `response_data.status: "success"` |
+| `answer_google_invite` | `GOOGLECALENDAR_PATCH_EVENT` (`rsvp_response`) | The invitation and organizer | The user's attendee entry shows the answer |
+| `create/change/delete_outlook_event` | `OUTLOOK_CALENDAR_CREATE_EVENT`, `OUTLOOK_UPDATE_CALENDAR_EVENT`, `OUTLOOK_DELETE_CALENDAR_EVENT` | Same as Google; delete goes to Deleted Items | An event id / title back, or Composio's success |
+| `accept/decline_outlook_invite` | `OUTLOOK_ACCEPT_EVENT`, `OUTLOOK_DECLINE_EVENT` | The invitation and organizer | Composio's `success` |
+| `send/reply/forward_outlook_email` | `OUTLOOK_SEND_EMAIL`, `OUTLOOK_REPLY_EMAIL`, `OUTLOOK_FORWARD_MESSAGE` | Recipient, subject, full text (reply: the sender from Outlook) | A 2xx `status_code` (or Composio's success) |
+| `move_outlook_email` | `OUTLOOK_MOVE_MESSAGE` | The email; Archive / Deleted Items / inbox | The moved message's new id |
+| `mark_outlook_email` | `OUTLOOK_UPDATE_USER_MAIL_FOLDER_MESSAGE` | The email; read/unread/flag | Outlook's answer shows the change |
+
+An event is found by its **title and start exactly as the calendar read gave them** (one match; none or several:
+nothing changes and the agent asks). Lookups use the user's time zone, which `prepare` now accepts (`timeZone`, sent by
+the app). Guests are told about changes and deletions; the card says so. No guests, attendees, recurrence, Meet/Teams
+links or other calendars can be set from the agent.
+
+**Google Calendar is a new account section** (`gcalendar`, Composio toolkit `googlecalendar`), configured with
+`COMPOSIO_GCALENDAR_AUTH_CONFIG_ID` / `_TOOLKIT_VERSION`. It is separate from the older read-only Connected Apps path
+(`COMPOSIO_GOOGLECALENDAR_*`). Scope: `calendar.events` (read-only event scopes also accepted for reading); full
+`calendar` access is "too broad". **Outlook** now also asks for `Mail.Send` and `Calendars.ReadWrite`; shared-mailbox,
+mailbox-settings and contacts permissions stay "too broad".
+
+**Apple Calendar** (and Google or Exchange calendars added to the iPhone) already had add, change and delete behind a
+card on the phone (`create_calendar_event`, `change_calendar_event`, `delete_calendar_event`, ADR-229/259). Answering
+invitations there isn't possible: Apple's EventKit lets apps read a participant's status, not set it. Use the Google or
+Outlook account tools for invitations.
+
+## 2026-10-18: Todoist, Notion and Drive writes (ADR-488)
+
+Mock-tested only. Each behind a tap on its card.
+- `rename_todoist_task` (`TODOIST_UPDATE_TASK` `content`): the card shows the task as Todoist has it; done when Todoist's
+  task has the new text. **No Todoist delete**: Todoist has no trash, so a delete is permanent (out of scope).
+- `create_notion_page` (`NOTION_CREATE_NOTION_PAGE`, inside the page the search found), `append_notion_page`
+  (`NOTION_APPEND_TEXT_BLOCKS`, paragraphs of at most 2000 characters; done when Notion lists as many new blocks),
+  `trash_notion_page` (`NOTION_ARCHIVE_NOTION_PAGE`, Notion's trash; done when the page is in the trash).
+- `create_drive_doc` (`GOOGLEDRIVE_CREATE_FILE_FROM_TEXT`, a private Google Doc). Drive now also asks for `drive.file`,
+  which covers only files Doddy makes. **Sharing or trashing the user's other Drive files is not built**: it needs full
+  Drive access (`https://www.googleapis.com/auth/drive`), which can also delete for good; that scope stays "too broad"
+  until the owner decides.
+
+## 2026-10-18: news and places through Monid (ADR-489)
+
+Two more fixed Monid endpoints in the Web search section (no account, one switch each, off by default), behind ASK-01.
+The card shows the words and what Doddy pays. Read with Monid's free search and inspection; **nothing was run**, so
+neither answer has been seen live.
+- `news_search`: Search1API `/news`, about $0.001 per search (free when nothing is found). Answer read as `results[]`
+  with `title`, `link`, `snippet`, `published_date` (as `/search`); anything else is an error.
+- `find_places`: Litescrape `/google/local`, about $0.00015 per search, `q` + `location` as query parameters. Answer read
+  as `local_results[]` with `title`, `rating`, `reviews`, `address`, `hours`. Litescrape marks it "alpha"; Monid showed it
+  "degraded" on 2026-10-18.
+- **Weather not built:** every Monid weather endpoint (AccuWeather $0.05, Weather Underground $0.02, an Open-Meteo relay
+  $0.0055) documents its input but not its answer. Seeing the answer needs one paid run, which needs the owner's yes.
+  Not verified either: whether Monid's REST `/v1/run` takes a GET endpoint's input as `{queryParams}`.
+
 ## Web search (Monid), added 2026-10-10 (ADR-173)
 
 Web search is the one section with **no account**: Settings → Online accounts shows "Web search · Ready, no sign-in"
@@ -113,6 +203,10 @@ Contract fixtures: `contracts/online-accounts/*.json` (written by `npm run fixtu
    hosted connect link, completion mode, whether Composio reports granted scopes for Gmail/Drive (if not, they show
    "Needs attention" and stay blocked on purpose), and every tool slug/argument/output shape (read from Composio's
    schemas, not executed).
+   **Gmail, 2026-10-18, on Render (no app):** hosted link, Google consent, callback completion, the ownership check,
+   the scope report and Disconnect all worked live. Composio reports Gmail's granted scopes. The auth config
+   granted more than read + compose, so the account was blocked (`grant_too_broad`) and no tool ran. Still unverified:
+   any Gmail tool call and its output shape. Details in `DEPLOY_RENDER.md`.
 2. **Mac build** of the app: `OnlineAccountsView`, the voice card, Settings link, `OnlineAccountsClientFactory`.
 3. **A real conversation** on a phone: tool calls arriving, card → tap → result, "DEMO DATA" wording, Polish.
 4. That the installed app build matches the agent: an older build answers the new tools with "not supported in this version".

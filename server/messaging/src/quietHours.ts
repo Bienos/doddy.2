@@ -1,4 +1,4 @@
-// Quiet hours (ADR-490 unit U4, ADR-495): no scheduled call rings inside them, in the user's own
+// Quiet hours (ADR-750 unit U4, ADR-754): no scheduled call rings inside them, in the user's own
 // time zone, unless the user switched on "Call even in quiet hours" on that call's card. Times are
 // read on the wall clock of the zone through Intl, so a day that changes between summer and
 // winter time is handled by the platform's time zone data, not by arithmetic here.

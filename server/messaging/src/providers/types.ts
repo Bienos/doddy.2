@@ -3,7 +3,8 @@
  * - accepted:  the provider took it (we have its id).
  * - rejected:  the provider refused it for good (bad number, unsubscribed, bad token…).
  * - transient: the provider refused it *before* accepting (429/5xx); safe to try again later.
- * - unknown:   the request may or may not have been accepted (timeout, connection drop).
+ * - unknown:   the request may or may not have been accepted (timeout, connection drop, a
+ *              gateway's 502 or 504).
  *              Never retried automatically, so the user is not messaged twice.
  */
 export type SendOutcome =
@@ -54,7 +55,7 @@ export interface OutboundCall {
   statusCallbackUrl: string;
 }
 
-/** Rings someone from Doddy's own number (Twilio, ADR-490). */
+/** Rings someone from Doddy's own number (Twilio, ADR-750). */
 export interface OutboundCaller {
   placeCall(call: OutboundCall): Promise<CallOutcome>;
 }
@@ -69,7 +70,7 @@ export interface CallRegistrar {
 }
 
 /**
- * Deleting one of Doddy's records at the phone provider (Twilio, ADR-494).
+ * Deleting one of Doddy's records at the phone provider (Twilio, ADR-753).
  * - deleted: gone (also when the provider had no such record).
  * - retry:   not yet (Twilio 20009: the record isn't final yet), rate limited, or no answer.
  * - failed:  refused for good; not tried again.
@@ -78,39 +79,6 @@ export type DeleteOutcome = { kind: "deleted" } | { kind: "retry"; code: string 
 
 export interface RecordDeleter {
   deleteRecord(kind: "message" | "call", sid: string): Promise<DeleteOutcome>;
-}
-
-/** What a reply to one text may use. search is absent unless the user allowed memories in replies. */
-export interface TextReplyTools {
-  searchMemories?: (query: string) => Promise<{ text: string; saved: string }[]>;
-  /** "saved" only after the note is stored; it still waits for the user's confirmation in the app. */
-  saveNote: (text: string) => Promise<"saved" | "inbox_full">;
-}
-
-export interface TextReplyRequest {
-  /** The user's text, exactly as received. */
-  text: string;
-  /** The language of the user's settings; the reply follows the text's own language. */
-  language: "en" | "pl";
-  receivedAt: Date;
-  maxSegments: number;
-}
-
-/**
- * - reply:    the answer, at most maxSegments SMS parts.
- * - too_long: the model's answer stayed too long after one request to shorten it.
- * - failed:   no usable answer (provider error, refusal, cut off, no text).
- * costMicroUsd is an estimate from the tokens used, at the model's list price.
- */
-export type TextReplyOutcome =
-  | { kind: "reply"; text: string; costMicroUsd: number }
-  | { kind: "too_long"; costMicroUsd: number }
-  | { kind: "failed"; code: string; costMicroUsd: number };
-
-/** Writes Doddy's reply to the user's text (Claude, ADR-494). */
-export interface TextReplyWriter {
-  readonly provider: "anthropic";
-  reply(request: TextReplyRequest, tools: TextReplyTools): Promise<TextReplyOutcome>;
 }
 
 export class ProviderError extends Error {

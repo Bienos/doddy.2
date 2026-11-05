@@ -70,10 +70,12 @@ export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
     const json = (await res.json().catch(() => ({}))) as TwilioError & { sid?: string };
     if (res.status === 201 && json.sid) return { kind: "accepted", providerId: json.sid };
     const code = `twilio_${json.code ?? res.status}`;
-    // Refused before it was accepted: safe to try again later.
+    // Refused before it was accepted: safe to try again later (429 rate limit, 503 overloaded).
     if (res.status === 429 || res.status === 503) return { kind: "transient", code };
-    // Any other server error can come after Twilio created the message (ADR-490, DOD-09): unknown,
-    // never resent automatically, and looked up later (outbox reconcileUnknownSms).
+    // Any other server error (500, 502, 504, ...) can come after Twilio created the message, or from a gateway that
+    // gave up waiting (ADR-750, DOD-09): `unknown`, never resent automatically, and looked up in Twilio's message list
+    // later (outbox reconcileUnknownSms). The default branch's ADR-670 left 500 retryable; for a text the user approved
+    // on a card a second copy is the worse mistake, so 500 stays `unknown` here (ADR-755).
     if (res.status >= 500) return { kind: "unknown", code };
     // 21610: the recipient replied STOP to this sender.
     return { kind: "rejected", code, unsubscribed: json.code === 21610 };
@@ -101,7 +103,7 @@ export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
   }
 
   /**
-   * Deletes a message or call record from Twilio's logs (ADR-494). Twilio answers 20009 until a
+   * Deletes a message or call record from Twilio's logs (ADR-753). Twilio answers 20009 until a
    * record is final, so that is "retry"; a record Twilio no longer has counts as deleted. Twilio
    * says deleted message bodies can stay in its backups for up to 30 days.
    */
@@ -145,7 +147,7 @@ export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
 }
 
 /**
- * Doddy's calls to the user, from Doddy's own number (ADR-490). Twilio asks `answerUrl` for TwiML
+ * Doddy's calls to the user, from Doddy's own number (ADR-750). Twilio asks `answerUrl` for TwiML
  * when the user picks up, and reports each step to `statusCallbackUrl`. No recording is requested.
  */
 export class TwilioVoiceCaller implements OutboundCaller {

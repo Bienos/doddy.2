@@ -1,5 +1,7 @@
 # "Hey Doddy" — status
 
+> **Removed 20 Oct 2026 (ADR-549).** "Hey Doddy" and the Picovoice package are gone: the listener, its Settings section, the Home card, the data-flow row, the token server's `picovoice` provider and the `PICOVOICE_ACCESS_KEY` secret. It never ran on a device (no keyword file, no key). Kept: `WakeGreeting`, the opening line the Talk to Doddy shortcut and Back Tap use. The notes below describe it as it was.
+
 Date: 2026-10-11. Owner request: "create a Dodi that can listen in the background and can be waken up on a call, hey
 Dodi, and then … the Dodi dynamic island pop-up shows up and says, hey bud, what's up? … for me right now … just Pat".
 Owner choices: "Own listening mode", detector "Picovoice (Recommended)". Decision: `DECISIONS.md` ADR-254.

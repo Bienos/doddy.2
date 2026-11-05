@@ -11,7 +11,7 @@ The workflow `.github/workflows/ios.yml` already does the whole build. It has tw
 **What happens now:** every run since the workflow was added ends within 2–6 seconds. Both jobs, including the cheap Linux one, finish without running a single step. On run 70 (2026-10-10, `core` 2 s, `ci` 6 s), no log was written. That is GitHub refusing to start jobs for the account, not a failure in the code. The usual causes are:
 1. **Billing:** "The job was not started because recent account payments have failed or your spending limit needs to be increased."
    - Fix: GitHub → Settings → Billing and plans → Payment information. Then Spending limits / Budgets → Actions: set a budget above $0, or remove the $0 stop.
-   - macOS minutes are billed at 10× Linux minutes on private repositories. A full `ci` run is roughly 20–40 macOS minutes.
+   - On a private repository a macOS minute costs about 10 times a Linux minute ($0.062 against $0.006). A full `ci` run took a median 52 macOS minutes on 12–14 October (BUILD_AND_TEST.md, ADR-497).
 2. **Actions turned off** for the account or the repository: repository → Settings → Actions → General → "Allow all actions".
 3. **A private repository on a plan with no Actions minutes left** for the month.
 

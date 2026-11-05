@@ -2,9 +2,29 @@ import DoddyCore
 import Foundation
 import Observation
 
+/// How the rest of the app asks whether the Face ID lock is up (ADR-723). `DoddyApp.init` sets it to
+/// `AppLock`'s answer. It lives here, not in `AppLock`, because the router and Siri's note lookup import
+/// no UI framework and still compile in `scripts/typecheck_app_logic.sh`. Until it is set, and with the
+/// lock off, nothing is locked.
+@MainActor
+enum AppLockGate {
+    static var isLocked: @MainActor () -> Bool = { false }
+
+    /// True when `entry` may go ahead now. Siri and Shortcuts can't wait for a face, so an intent that
+    /// reads or changes what Doddy keeps asks this first and answers `AppLockPolicy.lockedAnswer` when it
+    /// is false (ADR-723). With the lock off it is always true.
+    static func allows(_ entry: AppLockEntry) -> Bool {
+        AppLockPolicy.allows(entry, isLocked: isLocked())
+    }
+}
+
 /// Single owner of "what the app shows because a shortcut ran". The Talk to Doddy intent and
 /// the UI both go through it, so a second invocation focuses the open conversation instead of
 /// starting a second one, and a tap test can claim the invocation as its receipt.
+///
+/// Every way in that shows notes or opens a screen asks the Face ID lock first (ADR-723, the rules
+/// are `AppLockPolicy` in DoddyCore): while Doddy is locked the request is kept for a couple of
+/// minutes and goes ahead after the unlock (`runHeldAfterUnlock`). With the lock off, nothing is kept.
 @MainActor
 @Observable
 final class ShortcutRouter {
@@ -24,6 +44,8 @@ final class ShortcutRouter {
     var isWrapUpPresented = false
     /// The weekly look-back (ADR-306).
     var isLookBackPresented = false
+    /// The weekly plan (ADR-651), from its notification or Settings.
+    var isWeeklyPlanPresented = false
     /// "Talk it through": the conversation that opens next starts with this briefing.
     private var checkInBriefing: MorningBriefing?
     /// "Ask me about it" on a recently saved note (ADR-403), for the conversation that is starting.
@@ -45,16 +67,67 @@ final class ShortcutRouter {
     private(set) var findRequest: FindRequest?
     private var unclaimedFindQuery: String?
 
+    /// Requests that came in while the Face ID lock was up, to go ahead after the unlock (ADR-723).
+    @ObservationIgnored private var held = AppLockHold<@MainActor () -> Void>()
+
     init(setup: BackTapSetupModel = BackTapSetupModel()) {
         self.setup = setup
+    }
+
+    // MARK: The Face ID lock (ADR-723)
+
+    /// True when `entry` may go ahead now. While the lock is up it is false, and `again` (if given and the
+    /// policy says to wait) is kept to run after the unlock. With the lock off it is always true and
+    /// nothing is kept, so Doddy behaves exactly as it did before the lock was looked at here.
+    private func mayGoAhead(_ entry: AppLockEntry, again: (@MainActor () -> Void)? = nil) -> Bool {
+        guard !AppLockPolicy.allows(entry, isLocked: AppLockGate.isLocked()) else { return true }
+        if AppLockPolicy.whenLocked(entry) == .afterUnlock, let again { held.hold(again, for: entry, at: .now) }
+        return false
+    }
+
+    /// Runs `action` now, or after the unlock if the lock is up. For a way in whose screen isn't the
+    /// router's (the saved parking spot opens in Maps).
+    func runWhenUnlocked(_ entry: AppLockEntry, _ action: @escaping @MainActor () -> Void) {
+        if mayGoAhead(entry, again: action) { action() }
+    }
+
+    /// The Face ID cover is gone: what was asked for while it was up goes ahead now, oldest first. Each
+    /// request goes through its own checks again, as it would have at the time it came in.
+    func runHeldAfterUnlock() {
+        for action in held.release(at: .now) { action() }
+        showWaitingDraft()
+    }
+
+    /// The Face ID lock came back (the app was away long enough): every screen the router presents is
+    /// closed, and what was prepared for a conversation is dropped, so nothing stays above the cover and
+    /// nothing opens by itself later. A capture screen's words are already kept as an unfinished note (ADR-362).
+    func dismissForLock() {
+        isVoicePresented = false
+        isSetupPresented = false
+        isCheckInPresented = false
+        isTidyUpPresented = false
+        isWrapUpPresented = false
+        isLookBackPresented = false
+        isWeeklyPlanPresented = false
+        isRecordingsPresented = false
+        translatorPreset = nil
+        talkToDoddyOpened = false
+        checkInBriefing = nil
+        noteToAsk = nil
+        recordingToOpen = nil
+        if drafts.shown != nil { drafts.shownClosed() }
     }
 
     /// Called from `TalkToDoddyIntent.perform()`. If a tap test is active the invocation is its
     /// receipt and the setup sheet takes over; otherwise the voice conversation opens.
     func talkToDoddyInvoked(at now: Date = .now) {
+        guard mayGoAhead(.startConversation, again: { [self] in talkToDoddyInvoked(at: now) }) else { return }
         // A shared draft's capture sheet is up on the same view as the conversation cover: a
         // second presentation would be dropped and leave drafts queued behind it for good.
         if drafts.shown != nil { return }
+        // Whatever started it, the shortcut ran: the card and the weekly reminder have done their job.
+        setup.noteShortcutRan()
+        Task { await OpenWaysReminderScheduler.refresh(setup) }
         if setup.deliver(ShortcutReceipt(receivedAt: now)) {
             isVoicePresented = false
             isSetupPresented = true
@@ -69,24 +142,45 @@ final class ShortcutRouter {
         }
     }
 
+    /// The "Talk to Doddy" control brought Doddy forward (Settings › Action Button › Open App,
+    /// Automatic's fallback, or pressed with Doddy on screen; ADR-579). Opens the conversation
+    /// with the shortcut greeting. Unlike `talkToDoddyInvoked` it isn't a Back Tap test receipt
+    /// and ignores Back Tap's "Only open Doddy": the user chose to talk. Never over a shared
+    /// draft's sheet; the "Before we start" step (ADR-581) covers the app until it is done.
+    func talkButtonOpenedApp() {
+        guard mayGoAhead(.startConversation, again: { [self] in talkButtonOpenedApp() }) else { return }
+        if drafts.shown != nil { return }
+        isSetupPresented = false
+        if !isVoicePresented { talkToDoddyOpened = true }
+        isVoicePresented = true
+    }
+
     /// Called by the opening when Settings → "Start listening when I open Doddy" is on (ADR-225).
     /// Opens the conversation unless one is already open or something else is on screen; it
     /// never starts a second conversation and never pushes a sheet aside.
     func startListeningOnOpen() {
-        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented, !isOnboardingShown, drafts.shown == nil else { return }
+        guard mayGoAhead(.startConversation, again: { [self] in startListeningOnOpen() }) else { return }
+        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented, !isWeeklyPlanPresented, !isOnboardingShown, drafts.shown == nil else { return }
         isVoicePresented = true
     }
 
-    /// Shows the conversation "Hey Doddy" started while Doddy was in the background (ADR-254).
-    /// Same rules as listening on open: never over another sheet. Returns whether it opened.
-    func showWakeConversation() -> Bool {
-        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isOnboardingShown, drafts.shown == nil else { return false }
+    /// Call only while a conversation is running (`VoiceSessionController.runningConversation`).
+    /// Doddy came to the front, or Talk in the Island was pressed with him on screen, and no screen
+    /// shows that conversation: it was started without opening the app (ADR-577), and the user
+    /// just tapped its island. Shows it; the voice screen takes the running conversation instead
+    /// of starting another. Never over another sheet or the introduction.
+    func showConversationStartedElsewhere() {
+        // Not over the Face ID cover; the app brings it forward itself after the unlock (ADR-577, ADR-723).
+        guard mayGoAhead(.showRunningConversation) else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented,
+              !isLookBackPresented, !isWeeklyPlanPresented, !isOnboardingShown, drafts.shown == nil else { return }
+        isSetupPresented = false
         isVoicePresented = true
-        return true
     }
 
     /// Opens the conversation in translator mode, unless one is already open.
     func openTranslator(_ setup: TranslatorSetup) {
+        guard mayGoAhead(.startConversation) else { return }
         guard !isVoicePresented, drafts.shown == nil else { return }
         isSetupPresented = false
         translatorPreset = setup
@@ -96,28 +190,50 @@ final class ShortcutRouter {
     /// The check-in notification was tapped: show the check-in screen, unless a conversation or
     /// a shared draft is already up (the user is busy; the notification stays in history).
     func morningCheckInOpened() {
-        guard !isVoicePresented, !isWrapUpPresented, drafts.shown == nil else { return }
+        guard mayGoAhead(.openNoteSheet, again: { [self] in morningCheckInOpened() }) else { return }
+        guard !isVoicePresented, !isWrapUpPresented, !isWeeklyPlanPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isCheckInPresented = true
     }
 
+    /// The weekly "Open Doddy faster" reminder was tapped: show the ways, unless something else is up.
+    func openWaysOpened() {
+        guard mayGoAhead(.openWays, again: { [self] in openWaysOpened() }) else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented, !isWeeklyPlanPresented,
+              !isOnboardingShown, drafts.shown == nil else { return }
+        isSetupPresented = true
+    }
+
     /// The tidy-up notification was tapped, or Settings asked for it.
     func tidyUpOpened() {
-        guard !isVoicePresented, !isCheckInPresented, !isWrapUpPresented, drafts.shown == nil else { return }
+        guard mayGoAhead(.openNoteSheet, again: { [self] in tidyUpOpened() }) else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isWrapUpPresented, !isWeeklyPlanPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isTidyUpPresented = true
     }
 
     /// The wrap-up notification was tapped, or Settings asked for it.
     func eveningWrapUpOpened() {
-        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, drafts.shown == nil else { return }
+        guard mayGoAhead(.openNoteSheet, again: { [self] in eveningWrapUpOpened() }) else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWeeklyPlanPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isWrapUpPresented = true
     }
 
+    /// The weekly plan's notification was tapped, or Settings asked for it (ADR-651).
+    func weeklyPlanOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in weeklyPlanOpened() }) else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented,
+              drafts.shown == nil else { return }
+        isSetupPresented = false
+        isWeeklyPlanPresented = true
+    }
+
     /// The look-back notification was tapped, or Settings asked for it (ADR-306).
     func weeklyLookBackOpened() {
-        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, drafts.shown == nil else { return }
+        guard mayGoAhead(.openNoteSheet, again: { [self] in weeklyLookBackOpened() }) else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isWeeklyPlanPresented,
+              drafts.shown == nil else { return }
         isSetupPresented = false
         isLookBackPresented = true
     }
@@ -125,17 +241,51 @@ final class ShortcutRouter {
     /// "Talk it through" on the check-in screen. The sheet closes first; the conversation opens
     /// from `checkInSheetDismissed()`, once it has gone (one presentation at a time).
     func openCheckInConversation(_ briefing: MorningBriefing) {
+        guard mayGoAhead(.startConversation) else { return }
         guard !isVoicePresented, drafts.shown == nil else { return }
         checkInBriefing = briefing
         isCheckInPresented = false
     }
 
     func checkInSheetDismissed() {
-        if checkInBriefing != nil, !isVoicePresented { isVoicePresented = true } else { showWaitingDraft() }
+        if checkInBriefing != nil, !isVoicePresented, !AppLockGate.isLocked() { isVoicePresented = true } else { showWaitingDraft() }
+    }
+
+    /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and
+    /// "Open Latest Recording" all come here. Navigation only: it never starts or stops anything.
+    var isRecordingsPresented = false
+    private var recordingToOpen: UUID?
+
+    func openRecordings() {
+        guard mayGoAhead(.openRecordings, again: { [self] in openRecordings() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isRecordingsPresented = true
+    }
+
+    /// The newest recording's page, or the list if there is none.
+    func openLatestRecording() async {
+        // Nothing is looked up while the lock is up; the whole request is made again after the unlock (ADR-723).
+        guard mayGoAhead(.openRecordings, again: { [self] in Task { await self.openLatestRecording() } }) else { return }
+        if let repository = AppEnvironment.shared.recordingRepository,
+           let latest = try? await repository.recordings(category: .all, limit: 1, offset: 0).first {
+            recordingToOpen = latest.recording.id
+        }
+        openRecordings()
+    }
+
+    /// True from "Open Latest Recording" until the Recordings screen has taken it.
+    var hasRecordingToOpen: Bool { recordingToOpen != nil }
+
+    /// The recording to open once, when Recordings appears.
+    func takeRecordingToOpen() -> UUID? {
+        defer { recordingToOpen = nil }
+        return recordingToOpen
     }
 
     /// "Ask me about it" on Home (ADR-403): a conversation about that note. Never over another sheet.
     func askAboutNote(_ id: UUID) {
+        guard mayGoAhead(.startConversation) else { return }
         guard !isVoicePresented, !isSetupPresented, drafts.shown == nil else { return }
         noteToAsk = id
         isVoicePresented = true
@@ -169,6 +319,7 @@ final class ShortcutRouter {
     /// Called from `SaveToDoddyIntent.perform()`. Shows the text on the capture screen, or keeps
     /// it until the conversation or another capture screen closes. Never saves anything.
     func saveToDoddyInvoked(text: String) {
+        guard mayGoAhead(.openCapture, again: { [self] in saveToDoddyInvoked(text: text) }) else { return }
         drafts.receive(SharedDraft(text: text), blocked: closeSetupSheet() || isCaptureBlocked)
     }
 
@@ -176,6 +327,7 @@ final class ShortcutRouter {
     /// is already open the user is already where they asked to be, so nothing else opens; and an
     /// empty screen never takes the place of shared text that is waiting to be shown.
     func newNoteInvoked() {
+        guard mayGoAhead(.openCapture, again: { [self] in newNoteInvoked() }) else { return }
         let setupWasOpen = closeSetupSheet()
         guard openCaptureScreens == 0, drafts.shown == nil, drafts.waiting == nil else { return }
         drafts.receive(.newNote(), blocked: setupWasOpen || isCaptureBlocked)
@@ -192,6 +344,7 @@ final class ShortcutRouter {
     /// Called from `FindInDoddyIntent.perform()`. Closes the setup sheet; an open conversation
     /// or capture screen stays open and Find is ready underneath when it closes.
     func findInDoddyInvoked(query: String) {
+        guard mayGoAhead(.openFind, again: { [self] in findInDoddyInvoked(query: query) }) else { return }
         isSetupPresented = false
         let request = FindRequest(query: query)
         unclaimedFindQuery = request.query
@@ -220,6 +373,8 @@ final class ShortcutRouter {
     /// Call when something that blocks the capture sheet has finished closing (the conversation
     /// cover's or setup sheet's `onDismiss`, the end of onboarding, a capture screen).
     func showWaitingDraft() {
+        // Not over the Face ID cover (ADR-723): a draft that is waiting comes after the unlock.
+        guard !AppLockGate.isLocked() else { return }
         drafts.unblocked(stillBlocked: isCaptureBlocked)
     }
 
@@ -235,20 +390,59 @@ final class ShortcutRouter {
 @Observable
 final class BackTapSetupModel {
     private(set) var coordinator: BackTapSetupCoordinator
+    /// What decides when the Home card comes back and when the weekly reminder stops (ADR-559).
+    /// Counts and flags only.
+    private(set) var offer: OpenWaysOfferState
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard, now: Date = .now) {
         self.defaults = defaults
         coordinator = BackTapSetupCoordinator(summary: Self.load(from: defaults), now: now)
+        offer = Self.loadOffer(from: defaults)
     }
 
     var phase: BackTapSetupPhase { coordinator.phase }
+
+    /// The user is using a way (Doddy's shortcut ran) or said their Back Tap test worked.
+    var isUsingAWay: Bool { OpenWaysOffer.isDone(phase: phase, state: offer) }
+
+    func cardDue(connectedConversations: Int) -> Bool {
+        OpenWaysOffer.cardDue(phase: phase, state: offer, connectedConversations: connectedConversations)
+    }
+
+    func reminderWanted(connectedConversations: Int) -> Bool {
+        OpenWaysOffer.reminderWanted(phase: phase, state: offer, connectedConversations: connectedConversations)
+    }
 
     @discardableResult
     func send(_ event: BackTapSetupEvent) -> BackTapSetupOutcome {
         let outcome = coordinator.handle(event)
         persist()
+        if event == .deferSetup, outcome == .accepted {
+            offer.deferred(atConversations: defaults.integer(forKey: PreferenceKey.connectedConversations))
+            persistOffer()
+        }
         return outcome
+    }
+
+    /// Doddy's "Talk to Doddy" shortcut ran, from Back Tap, the Action Button, a control, Siri or
+    /// the Shortcuts app. Doddy can't tell which; it is enough to stop offering and reminding.
+    func noteShortcutRan() {
+        guard !offer.usedAWay else { return }
+        offer.wayUsed()
+        persistOffer()
+    }
+
+    /// Settings → "Remind me about ways to open Doddy".
+    func setReminders(on: Bool) {
+        offer.setReminders(on: on)
+        persistOffer()
+    }
+
+    /// A round of weekly reminders was put in iOS just now.
+    func reminderRoundArmed(at date: Date) {
+        offer.remindersArmedAt = date
+        persistOffer()
     }
 
     /// True when the receipt matched an active test (the coordinator decides; stale, early or
@@ -261,6 +455,19 @@ final class BackTapSetupModel {
         if let data = try? JSONEncoder().encode(coordinator.summary) {
             defaults.set(data, forKey: PreferenceKey.backTapSetup)
         }
+    }
+
+    private func persistOffer() {
+        if let data = try? JSONEncoder().encode(offer) {
+            defaults.set(data, forKey: PreferenceKey.openWaysOffer)
+        }
+    }
+
+    private static func loadOffer(from defaults: UserDefaults) -> OpenWaysOfferState {
+        guard let data = defaults.data(forKey: PreferenceKey.openWaysOffer),
+              let state = try? JSONDecoder().decode(OpenWaysOfferState.self, from: data)
+        else { return OpenWaysOfferState() }
+        return state
     }
 
     private static func load(from defaults: UserDefaults) -> BackTapSetupSummary {

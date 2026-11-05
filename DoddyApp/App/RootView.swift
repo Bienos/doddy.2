@@ -20,8 +20,6 @@ enum PreferenceKey {
     /// The Apple Watch app shows pinned notes, reminders and lists (ADR-232); on unless turned off.
     static let watchShowContent = "watchShowContent"
     static let hideCharacterArt = "hideCharacterArt"
-    /// Settings → Voice → Dynamic Island style (`IslandStyle` raw value); display only (ADR-239).
-    static let islandStyle = "islandStyle"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
     /// The one-time basketball introduction has been shown or skipped on this installation.
@@ -29,10 +27,19 @@ enum PreferenceKey {
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
-    /// Settings → Back Tap and Siri: "Talk to Doddy" starts a conversation (default) or only opens the app (`BackTapAction`).
+    /// Settings → Siri and Back Tap: "Talk to Doddy" starts a conversation (default) or only opens the app (`BackTapAction`).
+    /// Its old "Small island" moved to `islandExpands` at launch (ADR-579).
     static let backTapAction = "backTapAction"
+    /// Settings → Action Button: what the "Talk to Doddy" control does (`TalkLaunchMode`, ADR-579).
+    static let talkLaunchMode = TalkLaunchMode.preferenceKey
+    /// Settings → Expand when Doddy speaks (`IslandExpansion`, ADR-577, ADR-579). On unless turned off.
+    static let islandExpands = LaunchPreferencesMigration.islandExpandsKey
+    /// JSON `LegalAcceptanceRecord`: the Terms and Privacy Policy versions accepted, when, where (ADR-581).
+    static let legalAcceptance = LegalAcceptance.preferenceKey
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
+    /// JSON `OpenWaysOfferState`: counts and flags for the Home card's return and the weekly reminder (ADR-559).
+    static let openWaysOffer = "openWaysOffer"
     /// UI-test override of the outcome: "-backTapSetupStatus deferred".
     static let backTapSetupStatus = "backTapSetupStatus"
     /// Settings toggle: send the last few conversations to Doddy at the start of the next one.
@@ -59,28 +66,27 @@ enum PreferenceKey {
     static let shareLearnedWithVoice = "learning.shareWithVoice"
     /// HTTPS address of `server/voice-token`. Empty = development public agent.
     static let voiceTokenServer = "voiceTokenServer"
-    /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
+    /// Development setting: base URL of the Doddy Connected Apps server (not a secret). Only a Debug build
+    /// reads it, and only through `DeviceSession.serverURL()` (ADR-720); a shipped build ignores it and
+    /// removes a value an earlier build saved.
     static let connectedAppsServerURL = "connectedAppsServerURL"
-    /// Ask Doddy: the user agreed that questions go to the gateway and OpenAI. Off by default.
+    /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-587). Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
-    static let gatewayAddress = "gatewayAddress"
     /// Development setting: https origin of the Doddy messaging server (`server/messaging`).
     static let messagingServerURL = "messagingServerURL"
     /// The user turned Doddy's notifications on (re-registers the APNs token at launch).
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
-    /// Texts to Doddy and replies to them (ADR-494), as the server last reported; for What leaves this iPhone.
+    /// Texts to Doddy (ADR-753), as the server last reported; for What leaves this iPhone.
     static let textsToDoddyOn = "textsToDoddyOn"
-    static let textRepliesOn = "textRepliesOn"
+    // Notes and conversations kept on Doddy's server (ADR-603) are `WebMemoryModel.notesKey` and
+    // `WebMemoryModel.conversationsKey` in DoddyCore, off by default.
     /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
     static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
     /// Siri may read saved notes aloud (ADR-248). On unless turned off; the phone must be unlocked.
     static let siriReadsNotes = "siriReadsNotes"
-    /// "Hey Doddy" listening (ADR-254). Off unless turned on. The AccessKey is in the Keychain and
-    /// the keyword file in Application Support, never here.
-    static let heyDoddyOn = "heyDoddy.on"
     /// The Quick start screen (ADR-324) was shown once, at the end of first use; never again.
     static let quickStartOffered = "quickStartOffered"
     /// A voice conversation has really connected once on this iPhone (the provider said it is
@@ -88,14 +94,33 @@ enum PreferenceKey {
     /// and the voice picker (ADR-443).
     static let hadFirstConversation = "hadFirstConversation"
     /// Voice conversations that really connected on this iPhone (the provider said Listening),
-    /// counted once each; only for when the Hey Doddy card may show (ADR-328).
+    /// counted once each; for when the "Open Doddy faster" card returns (ADR-559). It was the
+    /// Hey Doddy card's (ADR-328); PR #108 removed it with that card, and this PR keeps it.
     static let connectedConversations = "connectedConversations"
-    /// The Home card offering "Hey Doddy" was answered (Turn on or Not now); it never shows again.
-    static let heyDoddyOfferDone = "heyDoddy.offerDone"
+    /// The first-launch welcome (ADR-598) has been finished or skipped on this installation.
+    static let welcomeSeen = "welcomeSeen"
+    /// Settings › "Show the welcome again": the welcome shows once more, then clears this.
+    static let welcomeReplay = "welcomeReplay"
+    /// Cheapest this week › My loyalty apps (ADR-661): the programs the user said they don't use
+    /// (`DealsPrograms.stored`). Empty means every leaflet price counts. Stays on this iPhone.
+    static let dealsProgramsNotUsed = "deals.programsNotUsed"
+    /// Cheapest this week › My shops (ADR-663): the shops the user picked (`MyShops.stored`, JSON). Stays on this iPhone.
+    static let dealsMyShops = "deals.myShops"
+    /// Basket › a second shop only when it saves at least this much, in grosze (ADR-664). 0 means any saving.
+    static let dealsMinimumSaving = "deals.minimumSaving"
 }
 
 enum AppTab: Hashable {
     case home, memories, settings
+
+    /// The tab as a screen in Doddy's motion world.
+    var motionScreen: MotionScreen {
+        switch self {
+        case .home: .home
+        case .memories: .memories
+        case .settings: .settings
+        }
+    }
 }
 
 struct RootView: View {
@@ -105,12 +130,14 @@ struct RootView: View {
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
     @State private var homePath: [UUID] = []
+    /// How tall the transcript sheet opens (ADR-595): full for Transcript, half for a card.
+    @State private var voiceDetent: PresentationDetent = .large
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.openURL) private var openURL
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
+    @Environment(\.dynamicTypeSize) private var textSize
     @Bindable private var router = ShortcutRouter.shared
     @State private var opening = OpeningModel()
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
@@ -120,6 +147,30 @@ struct RootView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
     /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
     @State private var lockCovered = false
+    /// Counts the times the Face ID lock came back; the screens under the cover are made new each time,
+    /// so no sheet state of theirs can open a screen over it (ADR-723).
+    @State private var lockEpoch = 0
+    /// Settings › "Show the welcome again" (ADR-598).
+    @AppStorage(PreferenceKey.welcomeReplay) private var welcomeReplay = false
+    /// The welcome was finished in this run, so it doesn't show again until a replay is asked for.
+    @State private var welcomeDone = false
+
+    /// The first-launch welcome (ADR-598) is on screen. It covers Home and the opening, and the first-use
+    /// introduction waits until it is over. Only read once the store has loaded (`isFirstInstallation`).
+    private var welcomeVisible: Bool {
+        !welcomeDone && WelcomeRule.shouldShow(
+            seen: WelcomePreferences.seen(), firstInstallation: profiles.isFirstInstallation,
+            replayRequested: welcomeReplay, override: WelcomePreferences.override())
+    }
+
+    private func finishWelcome() {
+        WelcomePreferences.markSeen()
+        welcomeReplay = false
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { welcomeDone = true }
+    }
+
+    /// The Terms acceptance (ADR-581); the "Before we start" step shows until it is stored.
+    @AppStorage(PreferenceKey.legalAcceptance) private var legalRecordData: Data?
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -129,86 +180,181 @@ struct RootView: View {
         }
     }
 
+    /// The launched app's hooks, part one: the tab content with the Face ID lock, the launch work, the
+    /// scene phase and the weekly reminder. The chain that used to be all of `body` is three pieces
+    /// (this, `rootWithMotion` and what `body` adds): one expression of 24 modifiers is over the compiler's
+    /// limit (Xcode 26.6: "unable to type-check this expression in reasonable time", RootView.swift:288).
+    private var rootHooks: some View {
+        // The VStack exists so the onboarding cover and the voice/setup presentations hang off
+        // different views.
+        VStack(spacing: 0) {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-islandBaseline") {
+                NativeIslandBaselineView()
+            } else {
+                tabs
+            }
+            #else
+            tabs
+            #endif
+        }
+        .preferredColorScheme(colorScheme)
+        // The Face ID lock (ADR-310) covers everything until iOS says yes.
+        // After a real unlock the cover stays up a moment while Doddy's door opens (ADR-380).
+        .overlay { if AppLock.shared.isLocked || lockCovered { AppLockView(skip: { lockCovered = false; lockLifted() }) } }
+        .onAppear { lockCovered = AppLock.shared.isLocked }
+        .onChange(of: AppLock.shared.isLocked) { _, locked in
+            guard !locked else {
+                lockCovered = true
+                lockEngaged()
+                return
+            }
+            // Unlocked with a conversation from Talk in the Island running (ADR-577): its screen
+            // waited for Face ID, because a full-screen cover would sit above the lock.
+            if VoiceSessionController.runningConversation != nil { router.showConversationStartedElsewhere() }
+            guard lockCovered, !reduceMotion, !hideArt else { lockCovered = false; lockLifted(); return }
+            Task {
+                try? await Task.sleep(for: .seconds(AppLockView.doorTime))
+                withAnimation(.easeOut(duration: 0.25)) { lockCovered = false }
+                lockLifted()
+            }
+        }
+        .task {
+            let notesLoad = LaunchWork.signposter.beginInterval("Notes load")
+            await store.reload()
+            LaunchWork.signposter.endInterval("Notes load", notesLoad)
+            // Memory on calls, at launch: once after the update, the server copy is replaced with
+            // one that has no private notes (ADR-310), only if the notes were read successfully.
+            MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
+                                                notesLoaded: store.hasLoaded && store.loadError == nil)
+            // Notes and conversations kept on Doddy's server (ADR-603), only if the person turned that on:
+            // the list again if the last send failed, and conversations that couldn't be sent.
+            WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
+                                           notesLoaded: store.hasLoaded && store.loadError == nil)
+            await WebMemory.shared.retryConversations(from: ConversationLogStore.shared.logs, language: WebMemory.language())
+            await noteReminders.refreshOnForeground()
+            if scenePhase == .active { listeningIndicatorBecameActive() }
+            pickUpSharedItem()
+            // The weekly "Open Doddy faster" reminder, if it is still wanted (ADR-559).
+            await OpenWaysReminderScheduler.refresh(router.setup)
+        }
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            // MV5: today's welcome (once a day; a hop in place first after three days away).
+            if phase == .active { DoddyDirector.shared.appBecameActive() }
+            // A conversation started without opening Doddy (Talk in the Island, ADR-577): tapping
+            // its island brings him forward, and the conversation's screen comes with him. Also
+            // on the first screen, when iOS started Doddy in the background for that conversation.
+            // Not over the Face ID lock: then it comes after the unlock (the lock's onChange above).
+            // (The welcome, if it is up, holds back the opening: see `welcomeVisible`.)
+            if phase == .active, !AppLock.shared.isLocked, VoiceSessionController.runningConversation != nil {
+                router.showConversationStartedElsewhere()
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await noteReminders.refreshOnForeground() }
+                // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged.
+                Task { await ErrandsModel.shared.refresh() }
+                FocusController.shared.refresh()
+                StopwatchController.shared.refresh()
+                // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
+                // A cold launch also syncs (LaunchWork), so one that just ran is not repeated (ADR-547).
+                Task { await SharedListsController.shared.syncAllUnlessRecent() }
+                // Memory on calls: a copy upload that failed or was cut off is sent again, and once
+                // after the update, a copy that may hold private notes is replaced (ADR-310).
+                MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
+                                                    notesLoaded: store.hasLoaded && store.loadError == nil)
+                // Notes kept on Doddy's server (ADR-603): the same, for a send that failed.
+                WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
+                                               notesLoaded: store.hasLoaded && store.loadError == nil)
+                // Quiet hours for a booked call are checked in this iPhone's zone (ADR-754).
+                CallZoneSender.sendIfNeeded()
+                pickUpSharedItem()
+                Task { await OpenWaysReminderScheduler.refresh(router.setup) }
+                // Doddy's free server sleeps when idle (ADR-686): one health ping now starts its
+                // wake-up before a request needs it. Only for an iPhone that has a session with it.
+                if let server = DeviceSession.serverURL(), KeychainSessionStore.read()?.token(for: server) != nil {
+                    Task { await ServerWarmUp.shared.wake(server: server, transport: URLSessionTransport.shared) }
+                }
+            }
+            // The app switcher's picture of Doddy: with the Face ID lock on, an opaque cover while he isn't in front (ADR-723).
+            if phase != .active { PrivacyCover.shared.update(sceneIsActive: false) }
+            if phase == .background {
+                // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
+                UnfinishedNoteStore.shared.flush()
+                WidgetSync.shared.refresh()
+                AppLock.shared.wentToBackground()
+                QuickActions.install()
+            }
+            if phase == .active {
+                AppLock.shared.cameBack()
+                // Away long enough for the lock to come back: whatever was open is closed before the cover goes (ADR-723).
+                if AppLock.shared.isLocked, !lockCovered { lockEngaged() }
+                PrivacyCover.shared.update(sceneIsActive: true)
+            }
+            if phase == .active { listeningIndicatorBecameActive() }
+            // On later returns, only the separately opted-in listen-on-open preference applies.
+            switch phase {
+            case .background: opening.appWentToBackground()
+            // While the first-launch welcome is up the opening waits for it (ADR-598).
+            case .active: if !welcomeVisible { opening.appBecameActive(openingConditions) }
+            default: break
+            }
+        }
+        // A tested or used way ends the weekly reminder at once (ADR-559).
+        .onChange(of: router.setup.isUsingAWay) { Task { await OpenWaysReminderScheduler.refresh(router.setup) } }
+    }
+
+    /// Part two: the widget refreshes and Motion v2's hooks, on top of `rootHooks`.
+    private var rootWithMotion: some View {
+        rootHooks
+        // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
+        .onChange(of: store.revision) { WidgetSync.shared.refresh() }
+        // Siri learns the list names for "Add to my shopping list in Doddy" (ADR-226).
+        .onChange(of: store.lists.map(\.name)) { DoddyShortcuts.updateAppShortcutParameters() }
+        .onChange(of: noteReminders.reminders) { WidgetSync.shared.refresh() }
+        .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
+        .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
+        .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
+        .onChange(of: hideArt) { WidgetSync.shared.refresh() }
+        // Motion v2: the one persistent Doddy lives on iPhone layouts with his pictures shown
+        // (Q13: iPad's sidebar keeps today's pictures; "Hide Doddy's pictures" turns him off).
+        .onChange(of: motionWorldOn, initial: true) { _, on in
+            DoddyDirector.shared.isActive = on
+            if on, scenePhase == .active { DoddyDirector.shared.appBecameActive() }
+        }
+        .onAppear {
+            DoddyClock.install()
+            // MV5: a tap or hold on him talks, as Home's Talk button does: on Home (ADR-595).
+            let store = store
+            let profiles = profiles
+            DoddyDirector.shared.onTalk = {
+                // As Home's own Talk button: not while voice input isn't available.
+                if store.environment.capabilities.isAvailable(.voiceInput) {
+                    HomeConversation.shared.talk(store: store, profile: profiles.profile)
+                }
+            }
+        }
+        // MV5's listening pose read the wake word's conversation, the only one that could be
+        // live on Home. "Hey Doddy" is gone (ADR-549, PR #108) and the voice screen hides him
+        // while it is up, so nothing calls DoddyDirector.voiceListening here any more.
+        // Reduce Motion: his hops become fades (brief rule 12).
+        .onChange(of: reduceMotion || DoddyMotionDebug.forcesReduceMotion, initial: true) { _, on in
+            DoddyDirector.shared.setReduceMotion(on)
+        }
+        // Q12: at accessibility text sizes he stays 1.0× on Home.
+        .onChange(of: textSize.isAccessibilitySize, initial: true) { _, large in
+            DoddyDirector.shared.setHomeScale(large ? 1.0 : 1.4)
+        }
+        // The first-use introduction and the Face ID cover are over the app: he is hidden.
+        .coversDoddy(profiles.isIntroductionPresented || AppLock.shared.isLocked || lockCovered || welcomeVisible)
+        // Settings › "Show the welcome again": it shows even though it was seen (ADR-598).
+        .onChange(of: welcomeReplay) { _, on in if on { welcomeDone = false } }
+    }
+
     var body: some View {
         if profiles.hasLoaded {
-            // The VStack exists so the onboarding cover and the voice/setup presentations hang off
-            // different views.
-            VStack(spacing: 0) {
-                #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("-islandBaseline") {
-                    NativeIslandBaselineView()
-                } else {
-                    tabs
-                }
-                #else
-                tabs
-                #endif
-            }
-            .preferredColorScheme(colorScheme)
-            // The Face ID lock (ADR-310) covers everything until iOS says yes.
-            // After a real unlock the cover stays up a moment while Doddy's door opens (ADR-380).
-            .overlay { if AppLock.shared.isLocked || lockCovered { AppLockView(skip: { lockCovered = false }) } }
-            .onAppear { lockCovered = AppLock.shared.isLocked }
-            .onChange(of: AppLock.shared.isLocked) { _, locked in
-                guard !locked else { lockCovered = true; return }
-                guard lockCovered, !reduceMotion, !hideArt else { lockCovered = false; return }
-                Task {
-                    try? await Task.sleep(for: .seconds(AppLockView.doorTime))
-                    withAnimation(.easeOut(duration: 0.25)) { lockCovered = false }
-                }
-            }
-            .task {
-                await store.reload()
-                await noteReminders.refreshOnForeground()
-                if scenePhase == .active { heyDoddyAppBecameActive() }
-                pickUpSharedItem()
-            }
-            .onChange(of: scenePhase) { _, phase in
-                if phase == .active {
-                    Task { await noteReminders.refreshOnForeground() }
-                    FocusController.shared.refresh()
-                    BreathingController.shared.refresh()
-                    // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
-                    Task { await SharedListsController.shared.syncAll() }
-                    // Memory on calls: a copy upload that failed or was cut off is sent again.
-                    // Private notes (ADR-310) are never in the server copy.
-                    if store.hasLoaded && store.loadError == nil {
-                        MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories))
-                    }
-                    // Quiet hours for a booked call are checked in this iPhone's zone (ADR-495).
-                    CallZoneSender.sendIfNeeded()
-                    pickUpSharedItem()
-                }
-                if phase == .background {
-                    // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
-                    UnfinishedNoteStore.shared.flush()
-                    WidgetSync.shared.refresh()
-                    AppLock.shared.wentToBackground()
-                    QuickActions.install()
-                }
-                if phase == .active { AppLock.shared.cameBack() }
-                // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
-                switch phase {
-                case .active: heyDoddyAppBecameActive()
-                case .background: WakeWordListener.shared.appWentToBackground()
-                default: break
-                }
-                // On later returns, only the separately opted-in listen-on-open preference applies.
-                switch phase {
-                case .background: opening.appWentToBackground()
-                case .active: opening.appBecameActive(openingConditions)
-                default: break
-                }
-            }
-            // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
-            .onChange(of: store.revision) { WidgetSync.shared.refresh() }
-            // Siri learns the list names for "Add to my shopping list in Doddy" (ADR-226).
-            .onChange(of: store.lists.map(\.name)) { DoddyShortcuts.updateAppShortcutParameters() }
-            .onChange(of: noteReminders.reminders) { WidgetSync.shared.refresh() }
-            .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
-            .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
-            .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
-            .onChange(of: hideArt) { WidgetSync.shared.refresh() }
+            rootWithMotion
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -223,10 +369,25 @@ struct RootView: View {
             .onChange(of: store.revision) {
                 guard store.hasLoaded, store.loadError == nil else { return }
                 MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
+                // Notes kept on Doddy's server (ADR-603), if the person turned that on: the whole current
+                // list, private notes left out by `WebMemoryModel`, after the same successful read.
+                WebMemory.shared.scheduleNotes(store.memories, privateNotes: PrivateNotesStore.current())
             }
+            // First use: "Before we start" (ADR-581), then the introduction, in one cover.
             .fullScreenCover(isPresented: introductionPresentation) {
-                OnboardingFlowView()
-                    .preferredColorScheme(colorScheme)
+                Group {
+                    if legalGateUp {
+                        LegalAcceptanceView(source: LegalAcceptance.source(
+                            hasUsedDoddyBefore: !profiles.isFirstInstallation, previous: LegalAcceptanceStore.record))
+                    } else {
+                        OnboardingFlowView()
+                    }
+                }
+                .preferredColorScheme(colorScheme)
+            }
+            // Drafts and listen-on-open wait while the terms step is up, as during first use.
+            .onChange(of: legalGateUp, initial: true) { _, up in
+                router.isOnboardingShown = up || profiles.route != .home
             }
         } else {
             // A moment while the store opens, so Home doesn't flash before first-use onboarding.
@@ -235,26 +396,62 @@ struct RootView: View {
         }
     }
 
-    /// Starts "Hey Doddy" listening if it is on, and opens the conversation the wake word
-    /// started while Doddy was in the background, if it is running or left notes to look at.
     /// Text or a link shared from another app with "Save to Doddy" (ADR-311): opens the capture
     /// screen with it, as the shortcut does. Nothing is saved until Save there.
     private func pickUpSharedItem() {
-        guard let item = ShareInboxFile.take() else { return }
+        // While the Face ID lock is up the shared text stays in the inbox; it is picked up after the unlock (ADR-723).
+        guard !AppLock.shared.isLocked, let item = ShareInboxFile.take() else { return }
         ShortcutRouter.shared.saveToDoddyInvoked(text: item.text)
     }
 
-    private func heyDoddyAppBecameActive() {
-        let listener = WakeWordListener.shared
-        if listener.hasConversationToShow {
-            // Never over another sheet: then it opens the next time Doddy comes to the front.
-            _ = router.showWakeConversation()
-        } else {
-            listener.forgetFinishedConversation()
-        }
-        listener.appBecameActive()
+    /// The shared-list invitation sheet's binding. Not over the Face ID cover (ADR-723): an invitation that comes
+    /// in while Doddy is locked waits for the unlock, and the sheet closing because the lock came back is not
+    /// the person declining it.
+    private var inviteSheet: Binding<SharedListsController.Invite?> {
+        Binding(
+            get: { AppLock.shared.isLocked ? nil : SharedListsController.shared.invite },
+            set: { if $0 == nil, !AppLock.shared.isLocked { SharedListsController.shared.declineInvite() } })
+    }
+
+    /// The Face ID lock came back (ADR-723). Its cover is part of this view, so a sheet or cover presented
+    /// over the app would stay above it: they are all closed, the screens under it start over, and the router
+    /// forgets what it was about to open.
+    private func lockEngaged() {
+        lockEpoch += 1
+        router.dismissForLock()
+        PresentedScreens.dismissAll()
+    }
+
+    /// The Face ID cover and its door are gone: what was asked for while it was up goes ahead now (ADR-723).
+    private func lockLifted() {
+        router.runHeldAfterUnlock()
+        pickUpSharedItem()
+        presentTranscriptIfNeeded()
+    }
+
+    /// A conversation with a card waiting for the user opens its transcript, half height (ADR-595). Not over
+    /// the Face ID cover: `lockLifted` does it after the unlock.
+    private func presentTranscriptIfNeeded() {
+        guard HomeConversation.shared.needsYou, !router.isVoicePresented, !AppLock.shared.isLocked else { return }
+        voiceDetent = .medium
+        router.isVoicePresented = true
+    }
+
+    private func listeningIndicatorBecameActive() {
         // The listening indicator above every screen (ADR-361).
         ListeningIndicatorWindow.shared.install()
+    }
+
+    /// A sheet or cover from the router is up (motion v2: Doddy is hidden while it is).
+    private var routerCovers: Bool {
+        router.isVoicePresented || router.isSetupPresented || router.isTidyUpPresented
+            || router.isWrapUpPresented || router.isLookBackPresented || router.isWeeklyPlanPresented || router.isCheckInPresented
+            || router.shownDraft != nil || SharedListsController.shared.invite != nil
+    }
+
+    /// Whether the motion world is on (motion v2): an iPhone layout, Doddy's pictures shown.
+    private var motionWorldOn: Bool {
+        !hideArt && !(horizontalSizeClass == .regular && DeviceSupport.hasSidebar)
     }
 
     /// What the opening's rules need to know right now (ADR-225). Read at decision time, so a
@@ -275,18 +472,27 @@ struct RootView: View {
                 && !OpeningPreferences.firstLaunchIntroSeen())
     }
 
+    /// "Before we start" is due (ADR-581). Not over the Face ID lock: it comes after the unlock.
+    private var legalGateUp: Bool {
+        LegalAcceptanceStore.isNeeded(legalRecordData) && !AppLock.shared.isLocked
+    }
+
     private var introductionPresentation: Binding<Bool> {
         Binding(
-            get: { profiles.isIntroductionPresented },
+            // The introduction, and the Terms step inside it, wait until the first-launch welcome is over (ADR-598, ADR-581).
+            get: { (legalGateUp || profiles.isIntroductionPresented) && !welcomeVisible },
             set: { presented in
-                guard !presented, profiles.isIntroductionPresented else { return }
+                // The terms step can't be closed without its Continue.
+                guard !presented, !legalGateUp, profiles.isIntroductionPresented else { return }
                 Task { await profiles.finishIntroduction(saved: false) }
             })
     }
 
     private var tabs: some View {
         ZStack {
-            tabContent
+            tabContent.id(lockEpoch)
+            // Motion v2: the one Doddy in the air (flights and fades). Under every sheet and cover.
+            DoddyOverlay()
             // The opening (ADR-225) sits over the ready app and fades away to reveal it; a tap
             // ends it early. It is removed from the hierarchy entirely once it is done.
             if let play = opening.play {
@@ -297,21 +503,47 @@ struct RootView: View {
                     onFinished: { opening.finish() })
                 .zIndex(1)
             }
+            // The first-launch welcome (ADR-598) sits over everything here; the Face ID cover is
+            // drawn above all of it by the view that owns this one.
+            if welcomeVisible {
+                WelcomeView(finish: finishWelcome)
+                    .zIndex(2)
+                    .transition(.opacity)
+            }
         }
         .environment(opening)
         .tint(Theme.accentText)
         .background(Theme.canvas)
+        // The opening, and Home's ready pose after it, are a story that covers him (Q4).
+        .coversDoddy(opening.play != nil || opening.ready != nil)
+        // Every sheet and cover the router presents hides him in the frame it starts.
+        .coversDoddy(routerCovers)
+        // A tab changed without the tab bar (a link, a shortcut, a reminder): he follows.
+        .onChange(of: selectedTab) { _, tab in DoddyDirector.shared.screenChanged(tab.motionScreen) }
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
         // Waiting drafts appear only once a cover or sheet has finished going away.
-        .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: { router.showWaitingDraft() }) { VoiceView() }
+        // The conversation itself is on Home (ADR-595); this sheet is its transcript, and it comes
+        // up from the bottom, half height, when a card needs the user.
+        .sheet(isPresented: $router.isVoicePresented, onDismiss: {
+            voiceDetent = .large
+            router.showWaitingDraft()
+        }) {
+            VoiceView()
+                .presentationDetents([.medium, .large], selection: $voiceDetent)
+                .presentationDragIndicator(.visible)
+        }
+        .onChange(of: HomeConversation.shared.needsYou) { _, needsYou in
+            guard needsYou else { return }
+            presentTranscriptIfNeeded()
+        }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
-            BackTapSetupView(model: router.setup)
+            OpenDoddyWaysView(model: router.setup)
         }
         // The weekly tidy-up (ADR-228), from its notification or Settings.
         .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }
         // A shared list's link (ADR-263): nothing is joined until Join.
-        .sheet(item: Binding(get: { SharedListsController.shared.invite }, set: { if $0 == nil { SharedListsController.shared.declineInvite() } })) { invite in
+        .sheet(item: inviteSheet) { invite in
             SharedListInviteView(invite: invite) { list in
                 selectedTab = .home
                 homePath = [list.id]
@@ -323,6 +555,8 @@ struct RootView: View {
         }
         // The weekly look-back (ADR-306), from its notification or Settings.
         .sheet(isPresented: $router.isLookBackPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyLookBackView() }
+        // The weekly plan (ADR-651), from its notification or Settings.
+        .sheet(isPresented: $router.isWeeklyPlanPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyPlanView() }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })
@@ -337,15 +571,26 @@ struct RootView: View {
             showFind = true
         }
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
-            router.isOnboardingShown = !atHome
+            router.isOnboardingShown = !atHome || legalGateUp
             // The first time Home is ready and on screen is the launch (OpeningModel decides).
-            opening.homeReady(openingConditions, isActive: scenePhase == .active)
+            // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-598).
+            if !welcomeVisible { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
+        }
+        .onChange(of: welcomeVisible) { was, now in
+            // The welcome is over: the opening and the introduction go on as they always did.
+            if was, !now { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
         }
         // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
         .onChange(of: router.isVoicePresented) { _, presented in
             if presented { opening.conversationOpened() }
-            // "Hey Doddy" pauses while the voice screen is open and listens again when it closes.
-            WakeWordListener.shared.refresh()
+        }
+        // So does one started on Home (ADR-595).
+        .onChange(of: HomeConversation.shared.live != nil) { _, live in
+            if live { opening.conversationOpened() }
+        }
+        // Recordings (ADR-588) is a sheet on Home, so a link or intent from any tab comes back to it.
+        .onChange(of: router.isRecordingsPresented) { _, presented in
+            if presented { selectedTab = .home }
         }
         // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
         .onContinueUserActivity(CSSearchableItemActionType) { activity in
@@ -366,9 +611,23 @@ struct RootView: View {
             case .home: selectedTab = .home
             case .memories: selectedTab = .memories
             case .settings: selectedTab = .settings
-            // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens.
+            // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens. With the
+            // Face ID lock up it opens after the unlock (ADR-723).
             case .parking:
-                if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { openURL(maps) }
+                router.runWhenUnlocked(.openParking) { QuickActions.openParkingSpot() }
+            // DODDY Capture (ADR-588): the island's Open button. Navigation only.
+            case .recordings:
+                router.openRecordings()
+            // The voice island's Show (ADR-616): the conversation's sheet, on the card that waits or
+            // what Doddy made. Navigation only: the card still needs its own tap. With no
+            // conversation left (an island from before the app stopped) it is just Home, so
+            // opening the sheet never starts a new one.
+            case .conversation:
+                selectedTab = .home
+                if HomeConversation.shared.forTranscript != nil || VoiceSessionController.runningConversation != nil {
+                    voiceDetent = .medium
+                    router.showConversationStartedElsewhere()
+                }
             }
         }
     }
@@ -397,7 +656,7 @@ struct RootView: View {
                     MemoriesView(showFind: $showFind)
                         .tabItem { Label("Memories", systemImage: "note.text") }
                         .tag(AppTab.memories)
-                    SettingsView()
+                    SettingsView(openMemories: { openMemories($0) })
                         .tabItem { Label("Settings", systemImage: "gearshape") }
                         .tag(AppTab.settings)
                 }
@@ -411,9 +670,26 @@ struct RootView: View {
                 }
                 // A sibling reserves real viewport space. A TabView-level safeAreaInset
                 // left nested NavigationStack's final action behind the bar on iOS 27.
-                DoddyTabBar(selectedTab: $selectedTab)
+                // Home has its own bar and ••• menu, which reach Settings (ADR-545); notes and lists
+                // are reached from Settings › Doddy's memory (ADR-633).
+                if selectedTab != .home {
+                    DoddyTabBar(selectedTab: $selectedTab)
+                }
             }
         }
+    }
+
+    /// Settings › Doddy's memory opens notes, lists or search (ADR-633): the Memories screen, which no
+    /// longer has a tab of its own. Lists or notes is the screen's own switch (ADR-216).
+    private func openMemories(_ opening: MemoryOpening) {
+        switch opening {
+        case .notes: UserDefaults.standard.set(false, forKey: PreferenceKey.memoriesShowsLists)
+        case .lists: UserDefaults.standard.set(true, forKey: PreferenceKey.memoriesShowsLists)
+        case .find: break
+        }
+        // Doddy follows through `onChange(of: selectedTab)`, as for a link.
+        selectedTab = .memories
+        if opening == .find { showFind = true }
     }
 
     /// The sidebar's detail column shows one screen at a time. Home's path lives here, so Home
@@ -423,7 +699,7 @@ struct RootView: View {
         switch selectedTab {
         case .home: HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
         case .memories: MemoriesView(showFind: $showFind)
-        case .settings: SettingsView()
+        case .settings: SettingsView(openMemories: { openMemories($0) })
         }
     }
 }
@@ -457,11 +733,15 @@ private struct UndoDeleteBar: View {
                 .frame(minHeight: 44)
                 .disabled(isUndoing)
                 .accessibilityIdentifier("undoDelete")
+                .motionMark("undo")
             }
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 52)
         .background(Theme.quietSurface)
+        // Motion v2 (Q3): the bar above the tab bar is "the strip if showing", a surface that
+        // comes and goes under him.
+        .motionSurface(.panel)
         .foregroundStyle(Theme.ink)
         .accessibilityElement(children: .contain)
         .task(id: deleted.deletedAt) {

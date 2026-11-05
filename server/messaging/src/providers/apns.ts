@@ -49,12 +49,30 @@ export class ApnsPushSender implements PushSender {
 
   async send(target: PushTarget, alert: { title: string; body: string }, messageId: string): Promise<SendOutcome> {
     const payload = JSON.stringify({ aps: { alert, sound: "default" } });
+    return this.post(target, payload, { "apns-topic": this.config.bundleId, "apns-push-type": "alert", "apns-id": messageId });
+  }
+
+  /**
+   * ActivityKit push to a Live Activity's own token (call cases). The content state carries a phase
+   * and times only, never anything said: the Lock Screen is visible to anyone (ADR-240).
+   */
+  async sendLiveActivity(target: PushTarget, contentState: Record<string, unknown>, end: boolean): Promise<SendOutcome> {
+    const now = Math.floor(Date.now() / 1000);
+    const aps: Record<string, unknown> = { timestamp: now, event: end ? "end" : "update", "content-state": contentState };
+    if (end) aps["dismissal-date"] = now + 15 * 60;
+    return this.post(target, JSON.stringify({ aps }), {
+      "apns-topic": `${this.config.bundleId}.push-type.liveactivity`, "apns-push-type": "liveactivity",
+    });
+  }
+
+  private post(target: PushTarget, payload: string, headers: Record<string, string>): Promise<SendOutcome> {
     let s: http2.ClientHttp2Session;
     try {
       s = this.session(HOSTS[target.environment]);
     } catch {
-      return { kind: "transient", code: "apns_connect_failed" };
+      return Promise.resolve({ kind: "transient", code: "apns_connect_failed" });
     }
+    const messageId = headers["apns-id"] ?? "";
     return new Promise<SendOutcome>((resolve) => {
       let status = 0;
       let data = "";
@@ -64,11 +82,9 @@ export class ApnsPushSender implements PushSender {
         ":method": "POST",
         ":path": `/3/device/${target.deviceToken}`,
         authorization: `bearer ${this.token()}`,
-        "apns-topic": this.config.bundleId,
-        "apns-push-type": "alert",
         "apns-priority": "10",
-        "apns-id": messageId,
         "content-type": "application/json",
+        ...headers,
       });
       req.setTimeout(this.timeoutMs, () => { req.close(); done({ kind: "unknown", code: "apns_timeout" }); });
       req.on("response", (h) => { status = Number(h[":status"]); });

@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 
 /// Settings → Phone calls: call Doddy's number, let Doddy call you, PIN, memory on calls, texts
-/// to Doddy (ADR-494), notes from calls and texts (waiting for your confirmation), and the export
+/// to Doddy (ADR-753), notes from calls and texts (waiting for your confirmation), and the export
 /// of your phone and text history.
 struct CallsSettingsView: View {
     @Environment(MemoryStore.self) private var store
@@ -143,6 +143,19 @@ struct CallsSettingsView: View {
                 .foregroundStyle(Theme.secondaryText)
         }
 
+        Section {
+            NavigationLink {
+                CallCasesView()
+            } label: {
+                Label("Calls for you", systemImage: "phone.arrow.up.right")
+            }
+            .accessibilityIdentifier("calls.callCases")
+        } header: {
+            Text("Doddy calls for you")
+        } footer: {
+            Text("Doddy calls a business in Polish to ask one question for you, after you approve a card.")
+        }
+
         Section("Doddy calls you") {
             Toggle("Doddy may call me", isOn: Binding(
                 get: { s.outboundConsent },
@@ -175,7 +188,7 @@ struct CallsSettingsView: View {
         }
     }
 
-    /// Calls booked for later by voice (ADR-495): when, what Doddy will say, and Cancel while waiting.
+    /// Calls booked for later by voice (ADR-754): when, what Doddy will say, and Cancel while waiting.
     @ViewBuilder
     private func scheduledSection(_ s: CallSettings) -> some View {
         let quiet = s.quietHours ?? .standard
@@ -233,7 +246,7 @@ struct CallsSettingsView: View {
         }
     }
 
-    /// Texts to Doddy (ADR-494): each switch only once the server says the one before it is on.
+    /// Texts to Doddy (ADR-753): the switch is shown as on only once the server says so.
     @ViewBuilder
     private func textsSection(_ calls: CallSettings) -> some View {
         let t = model.textSettings ?? .off
@@ -258,23 +271,11 @@ struct CallsSettingsView: View {
             Text(TextsToDoddyConsent.text)
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
-            Toggle("Doddy replies by text", isOn: Binding(
-                get: { t.repliesEnabled },
-                set: { on in Task { await model.setTextReplies(on) } }))
-                .disabled(model.textSettings == nil || (!t.repliesEnabled && t.repliesBlocker != nil))
-                .accessibilityIdentifier("texts.replies")
-            if t.repliesEnabled {
-                Toggle("Replies may use my memories", isOn: Binding(
-                    get: { t.repliesUseMemories },
-                    set: { on in Task { await model.setTextRepliesUseMemories(on) } }))
-                    .disabled(!t.repliesUseMemories && t.memoriesBlocker != nil)
-                    .accessibilityIdentifier("texts.memories")
-            }
             if model.textSettings != nil, let blocker = nextBlocker(t) {
                 Label(blocker.localized, systemImage: "info.circle")
                     .font(.footnote)
             }
-            Text("Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Without replies, each text waits here as a note, while there's room for 20 notes and up to 30 texts an hour. With replies, Doddy answers each text once and only to your number, if it can start within 10 minutes (otherwise the text becomes a note), up to 30 a day while the server's daily budget lasts; it can leave a note for you to confirm. With memories allowed, the saved notes that match your text go to Anthropic too, a reply can quote one, and texts aren't encrypted between phone networks.")
+            Text("Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Each text waits here as a note, while there's room for 20 notes and up to 30 texts an hour. Doddy does not answer them, and no AI reads them. Texts aren't encrypted between phone networks.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -291,23 +292,19 @@ struct CallsSettingsView: View {
         }
     }
 
-    /// Where a waiting note came from: a call, your text word for word, or Doddy's words (ADR-494).
+    /// Where a waiting note came from: a call, or your text word for word (ADR-753).
     private func noteOrigin(_ note: CallNote) -> String {
         let when = DateText.full(note.createdDate)
-        if note.writtenByDoddy { return String(format: NSLocalizedString("Doddy noted this from your text · %@", comment: ""), when) }
         if note.fromText { return String(format: NSLocalizedString("From your text · %@", comment: ""), when) }
         return String(format: NSLocalizedString("Said on a call · %@", comment: ""), when)
     }
 
-    /// Why the next switch down is off and can't be turned on yet; nil when nothing is in the way.
+    /// Why the switch is off and can't be turned on yet; nil when nothing is in the way.
     private func nextBlocker(_ t: TextSettings) -> TextsBlocker? {
-        if !t.inboundEnabled { return t.inboundBlocker }
-        if !t.repliesEnabled { return t.repliesBlocker }
-        if !t.repliesUseMemories, let blocker = t.memoriesBlocker, blocker != .repliesOff { return blocker }
-        return nil
+        t.inboundEnabled ? nil : t.inboundBlocker
     }
 
-    /// How a call went, as Twilio reported it to Doddy's server (ADR-490). Nothing is added while
+    /// How a call went, as Twilio reported it to Doddy's server (ADR-750). Nothing is added while
     /// there is nothing to say, such as a call that is still being placed.
     private func outcomeNote(_ call: CallRecord) -> String {
         let word: String?

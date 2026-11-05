@@ -1,6 +1,9 @@
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
 import { providersFrom, scheduledCallsFrom } from "./providers/index.js";
+import { taskCallContext } from "./taskCalls/context.js";
+import { errandContext } from "./errands/context.js";
+import { watchContext } from "./watches/context.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 // Stand-alone worker process (render.yaml: doddy-messaging-worker). A single web service can run
@@ -9,15 +12,23 @@ const config = loadConfig();
 const db = createPool(config.databaseUrl);
 await migrateOrExit(db, log);
 const providers = providersFrom(config);
-const { push, sms, cipher, news, replyWriter, deleter, deleteAfterMinutes } = providers;
+const { push, sms, cipher, news, taskCalls, errands, watches, limits, deleter, deleteAfterMinutes } = providers;
 const scheduledCalls = scheduledCallsFrom(config, providers);
-log("worker started", { push: !!push, sms: !!sms, scheduledCalls: !!scheduledCalls });
+const taskCtx = taskCallContext(db, taskCalls, cipher, config.publicBaseUrl, push, log);
+const errandCtx = errandContext(db, errands, cipher, push, log);
+const watchCtx = watchContext(db, watches, cipher, push, log);
+log("worker started", {
+  push: !!push, sms: !!sms, scheduledCalls: !!scheduledCalls, taskCalls: !!taskCtx, killSwitch: config.taskCallSettings.killSwitch,
+  errands: !!errandCtx?.enabled, watches: !!watchCtx?.enabled,
+});
 
 let stopping = false;
 process.on("SIGTERM", () => { stopping = true; });
 process.on("SIGINT", () => { stopping = true; });
 
-await runWorkerLoop(db, { push, sms, cipher, news, replyWriter, deleter, deleteAfterMinutes, scheduledCalls }, () => stopping);
+await runWorkerLoop(db, {
+  push, sms, cipher, news, taskCalls: taskCtx, errands: errandCtx, watches: watchCtx, limits, deleter, deleteAfterMinutes, scheduledCalls,
+}, () => stopping);
 push?.close();
 await db.end();
 log("worker stopped");

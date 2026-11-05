@@ -9,7 +9,7 @@ import { forgetCallReason, scheduledPurpose } from "../scheduledCalls.js";
 import { sayAndHangUp } from "../voiceTwiml.js";
 import { formValue, verifiedTwilioForm } from "./twilioAuth.js";
 
-// Calls reach Doddy's server before any AI (ADR-490). Twilio posts here; the server decides who
+// Calls reach Doddy's server before any AI (ADR-750). Twilio posts here; the server decides who
 // is handed to the phone agent, through ElevenLabs register-call. Everyone else hears one fixed
 // sentence and the call ends.
 
@@ -45,7 +45,7 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
     callId: string; accountId: string; direction: "inbound" | "outbound"; from: string; to: string;
   }): Promise<string> {
     try {
-      // A scheduled call says its approved reason first (ADR-495); "Call me now" has none.
+      // A scheduled call says its approved reason first (ADR-754); "Call me now" has none.
       const purpose = call.direction === "outbound" ? await scheduledPurpose(db, deps.cipher, call.callId) : undefined;
       const variables = await openSession(db, call.accountId, call.callId, call.direction, purpose);
       const outcome = await deps.registrar!.register({
@@ -148,7 +148,7 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
       // A scheduled call's reason is erased once the call is over.
       await forgetCallReason(db, row.id);
     }
-    // A finished call's record is deleted at Twilio later, a refused stranger's too (ADR-494).
+    // A finished call's record is deleted at Twilio later, a refused stranger's too (ADR-753).
     if (rank(next) === 3) await scheduleDeletion(db, "call", callSid);
     return reply.code(204).send();
   });

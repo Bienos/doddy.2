@@ -7,22 +7,16 @@ final class BackTapSetupTests: XCTestCase {
     private func coordinatorAtTest(now: Date) -> BackTapSetupCoordinator {
         var c = BackTapSetupCoordinator()
         XCTAssertEqual(c.handle(.start), .accepted)
-        XCTAssertEqual(c.handle(.shortcutReady), .accepted)
+        XCTAssertEqual(c.phase, .guiding)
         XCTAssertEqual(c.handle(.startTest(now: now)), .accepted)
         return c
     }
 
-    func testGuideHasSixNonEmptyStepsAndTheManualPath() {
-        XCTAssertEqual(BackTapGuide.steps.count, 6)
-        for step in BackTapGuide.steps {
-            XCTAssertFalse(step.title.isEmpty); XCTAssertFalse(step.instruction.isEmpty); XCTAssertFalse(step.reportLabel.isEmpty)
-        }
-        XCTAssertEqual(Set(BackTapGuide.steps.map(\.id)).count, 6, "step ids are unique")
+    func testGuideNamesTheManualPathAndBothShortcuts() {
         XCTAssertEqual(BackTapGuide.settingsPath, ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", "Talk to Doddy"])
         XCTAssertEqual(BackTapGuide.appShortcutTitle, "Talk to Doddy")
         XCTAssertEqual(BackTapGuide.fallbackShortcutName, "Open Doddy")
-        XCTAssertEqual(BackTapGuide.reportableSteps.count, 5)
-        XCTAssertEqual(BackTapGuide.steps[BackTapGuide.chooseShortcutStepIndex].id, "double-tap")
+        XCTAssertEqual(BackTapGuide.version, 2, "the guide changed from six cards to one screen")
     }
 
     func testHappyPathEndsInUserReportedTested() {
@@ -49,9 +43,9 @@ final class BackTapSetupTests: XCTestCase {
         var c = BackTapSetupCoordinator()
         XCTAssertEqual(c.handle(.receipt(ShortcutReceipt(receivedAt: t0))), .ignored("no active test"))
         XCTAssertEqual(c.phase, .notStarted)
-        c.handle(.start); c.handle(.shortcutReady)
+        c.handle(.start)
         XCTAssertEqual(c.handle(.receipt(ShortcutReceipt(receivedAt: t0))), .ignored("no active test"))
-        XCTAssertEqual(c.phase, .guiding(step: 0))
+        XCTAssertEqual(c.phase, .guiding)
     }
 
     func testStaleAndEarlyReceiptsAreIgnored() {
@@ -76,53 +70,52 @@ final class BackTapSetupTests: XCTestCase {
         var c = coordinatorAtTest(now: t0)
         c.handle(.receipt(ShortcutReceipt(receivedAt: t0.addingTimeInterval(1))))
         XCTAssertEqual(c.handle(.otherTrigger), .accepted)
-        XCTAssertEqual(c.phase, .guiding(step: BackTapGuide.chooseShortcutStepIndex))
+        XCTAssertEqual(c.phase, .guiding)
         XCTAssertFalse(c.isDone)
         XCTAssertEqual(c.summary.status, .notStarted)
+        XCTAssertNil(c.summary.activeTest, "the discarded receipt leaves no test window behind")
     }
 
-    func testReportedPageJumpsToThatStepAndUnknownPagesAreNotGuessed() {
-        var c = BackTapSetupCoordinator()
-        c.handle(.start); c.handle(.shortcutReady)
-        XCTAssertEqual(c.handle(.report(page: "I’m in Touch")), .accepted)
-        XCTAssertEqual(c.phase, .guiding(step: 2))
-        XCTAssertEqual(c.handle(.report(page: "back tap")), .accepted)
-        XCTAssertEqual(c.phase, .guiding(step: 3))
-        XCTAssertEqual(c.handle(.report(page: "Control Center")), .ignored("unknown page"))
-        XCTAssertEqual(c.phase, .guiding(step: 3), "an unknown report changes nothing")
-        XCTAssertEqual(c.handle(.report(page: "")), .ignored("unknown page"))
+    func testBackToStepsLeavesATestWithoutMarkingAnything() {
+        var c = coordinatorAtTest(now: t0)
+        XCTAssertEqual(c.handle(.backToSteps), .accepted)
+        XCTAssertEqual(c.phase, .guiding)
+        XCTAssertEqual(c.summary, BackTapSetupSummary())
+        c.handle(.startTest(now: t0))
+        c.handle(.receipt(ShortcutReceipt(receivedAt: t0.addingTimeInterval(1))))
+        XCTAssertEqual(c.handle(.backToSteps), .accepted, "also after a receipt the user doubts")
+        XCTAssertFalse(c.isDone)
+        XCTAssertEqual(c.handle(.backToSteps), .ignored("no test to leave"))
     }
 
-    func testNextPreviousAndBounds() {
+    func testTheTestCannotStartBeforeTheStepsAreShown() {
         var c = BackTapSetupCoordinator()
-        c.handle(.start); c.handle(.shortcutReady)
-        XCTAssertEqual(c.handle(.previous), .accepted)
-        XCTAssertEqual(c.phase, .shortcutPreparation)
-        XCTAssertEqual(c.handle(.next), .ignored("not guiding"))
-        c.handle(.shortcutReady)
-        for expected in 1..<BackTapGuide.steps.count {
-            XCTAssertEqual(c.handle(.next), .accepted)
-            XCTAssertEqual(c.phase, .guiding(step: expected))
-        }
-        XCTAssertEqual(c.handle(.next), .ignored("last step; start the test"))
-        XCTAssertEqual(c.currentStep?.id, "assigned")
+        XCTAssertEqual(c.handle(.startTest(now: t0)), .ignored("show the steps first"))
+        XCTAssertEqual(c.phase, .notStarted)
+        c.handle(.deferSetup)
+        XCTAssertEqual(c.handle(.startTest(now: t0)), .ignored("show the steps first"))
+        XCTAssertEqual(c.handle(.backToSteps), .ignored("no test to leave"))
+        XCTAssertEqual(c.handle(.otherTrigger), .ignored("no receipt to discard"))
     }
 
     func testDeferAndRevisit() {
         var c = BackTapSetupCoordinator()
-        c.handle(.start); c.handle(.shortcutReady); c.handle(.next)
+        c.handle(.start)
+        XCTAssertEqual(c.handle(.start), .ignored("already started"))
         XCTAssertEqual(c.handle(.deferSetup), .accepted)
         XCTAssertEqual(c.phase, .deferred)
         XCTAssertEqual(c.summary.status, .deferred)
         XCTAssertEqual(c.handle(.start), .accepted, "deferred setup can be started again")
-        XCTAssertEqual(c.phase, .shortcutPreparation)
+        XCTAssertEqual(c.phase, .guiding)
 
         var done = coordinatorAtTest(now: t0)
         done.handle(.receipt(ShortcutReceipt(receivedAt: t0.addingTimeInterval(1))))
         done.handle(.confirmDoubleTap(now: t0.addingTimeInterval(2)))
         XCTAssertEqual(done.handle(.deferSetup), .ignored("already tested"))
+        XCTAssertEqual(done.handle(.start), .ignored("already started"), "a finished setup is reopened with revisit")
         XCTAssertEqual(done.handle(.revisit), .accepted)
-        XCTAssertEqual(done.phase, .shortcutPreparation)
+        XCTAssertEqual(done.phase, .guiding)
+        XCTAssertFalse(done.isDone, "going through the steps again is not done until it is tested again")
     }
 
     func testSummaryRoundTripResumesAnActiveTestAfterRelaunch() throws {
@@ -149,7 +142,6 @@ final class BackTapSetupTests: XCTestCase {
         var c = BackTapSetupCoordinator()
         c.handle(.start)
         XCTAssertEqual(c.summary, BackTapSetupSummary())
-        c.handle(.shortcutReady); c.handle(.next)
         XCTAssertEqual(c.summary.status, .notStarted)
         XCTAssertNil(c.summary.activeTest)
     }

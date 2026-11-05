@@ -8,7 +8,7 @@ import { ADD_TODOIST_TASK, CHECK_EMAIL, DRAFT_EMAIL, driveQuoted, FIND_DRIVE_FIL
 import { ComposioToolsProvider, type ComposioToolsLike } from "../src/tools/composio.js";
 import { CloudToolsService } from "../src/tools/service.js";
 import { USER_A, USER_B } from "./helpers.js";
-import { connect, on, type Rig, ready, run, start } from "./toolsRig.js";
+import { connect, off, on, type Rig, ready, run, start } from "./toolsRig.js";
 
 let rig: Rig;
 afterEach(async () => rig?.close());
@@ -59,45 +59,50 @@ test("strict bodies: user, connection and slug fields are rejected, not ignored"
 
 // ------------------------------------------------------------------ switches
 
-test("everything starts off and nothing runs until the user switches it on", async () => {
+test("accounts start disconnected; connecting turns an account's tools on (ADR-563); the user's off blocks at once", async () => {
   rig = await start();
   const catalog = await rig.call("GET", "/v1/tools");
   assert.equal(catalog.status, 200);
-  assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "websearch"]);
+  assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "gcalendar", "websearch"]);
   for (const toolkit of catalog.body.toolkits) {
-    // Web search has no account (test/websearch.test.ts); every account starts disconnected.
+    // Web search has no account and starts on (test/websearch.test.ts); every account starts disconnected, so nothing of it is usable.
     assert.equal(toolkit.status, toolkit.id === "websearch" ? "connected" : "disconnected");
-    for (const tool of toolkit.tools) assert.equal(tool.enabled, false);
+    for (const tool of toolkit.tools) assert.equal(tool.enabled, toolkit.id === "websearch");
   }
-  // Not connected: a switch cannot be turned on, and running is refused.
+  // Not connected: a switch cannot be turned on, and running says "not connected" (the app offers Connect).
   assert.equal((await on(rig, "check_email")).status, 409);
-  assert.equal((await run(rig, "check_email", {})).status, 403);
+  const unconnected = await run(rig, "check_email", {});
+  assert.equal(unconnected.status, 409);
+  assert.equal(unconnected.body.error.code, "not_connected");
+  assert.equal(rig.provider.executed.length, 0);
 
-  // Connected but switch still off: connecting does not switch tools on.
+  // Connected: the tools are on with it, and a read still runs only after its yes (run() asks first).
   assert.equal((await connect(rig, "gmail")).status, 200);
+  const ok = await run(rig, "check_email", {});
+  assert.equal(ok.status, 200, ok.text);
+  assert.equal(rig.provider.executed.length, 1);
+
+  // The user's own off blocks at once and is recorded.
+  assert.equal((await off(rig, "check_email")).status, 200);
   const blocked = await run(rig, "check_email", {});
   assert.equal(blocked.status, 403);
   assert.equal(blocked.body.error.code, "capability_disabled");
   assert.equal(blocked.body.error.receipt.status, "blocked");
-  assert.equal(rig.provider.executed.length, 0);
-
-  assert.equal((await on(rig, "check_email")).status, 200);
-  const ok = await run(rig, "check_email", {});
-  assert.equal(ok.status, 200, ok.text);
   assert.equal(rig.provider.executed.length, 1);
 });
 
 test("switching one tool does not switch its neighbours, and off is immediate", async () => {
   rig = await start();
   await ready(rig, "todoist", "list_todoist_tasks");
+  assert.equal((await off(rig, "add_todoist_task")).status, 200);
   const catalog = await rig.call("GET", "/v1/tools");
   const todoist = catalog.body.toolkits.find((t: any) => t.id === "todoist");
   assert.equal(todoist.tools.find((t: any) => t.name === "list_todoist_tasks").enabled, true);
   assert.equal(todoist.tools.find((t: any) => t.name === "add_todoist_task").enabled, false);
   assert.equal((await run(rig, "add_todoist_task", { content: "x" })).status, 403);
 
-  const off = await rig.call("PUT", "/v1/tools/switch", { body: { tool: "list_todoist_tasks", enabled: false } });
-  assert.equal(off.status, 200);
+  const switchedOff = await rig.call("PUT", "/v1/tools/switch", { body: { tool: "list_todoist_tasks", enabled: false } });
+  assert.equal(switchedOff.status, 200);
   const after = await run(rig, "list_todoist_tasks", {});
   assert.equal(after.status, 403);
   assert.equal(after.body.error.code, "capability_disabled");
@@ -107,7 +112,8 @@ test("switches and connections are per user", async () => {
   rig = await start();
   await ready(rig, "gmail", "check_email", USER_A);
   const b = await run(rig, "check_email", {}, {}, USER_B);
-  assert.equal(b.status, 403);
+  assert.equal(b.status, 409);
+  assert.equal(b.body.error.code, "not_connected");
   assert.equal((await rig.call("GET", "/v1/tools", { token: USER_B })).body.toolkits[0].status, "disconnected");
   assert.equal((await on(rig, "check_email", USER_B)).status, 409);
   // B's receipts never show A's operations.
@@ -122,10 +128,14 @@ test("disconnect switches the account's tools off and blocks them at once", asyn
   assert.equal(gone.body.toolkit.status, "disconnected");
   assert.equal(gone.body.receipt.status, "succeeded");
   const res = await run(rig, "list_todoist_tasks", {});
-  assert.equal(res.status, 403);
-  // Reconnecting does not bring the old switch back.
+  assert.equal(res.status, 409);
+  assert.equal(res.body.error.code, "not_connected");
+  // A fresh connection never inherits old switches: it starts with every tool on (ADR-563), not the old set.
+  await off(rig, "add_todoist_task");
   await connect(rig, "todoist");
-  assert.equal((await run(rig, "list_todoist_tasks", {})).status, 403);
+  const view = (await rig.call("GET", "/v1/tools")).body.toolkits.find((t: any) => t.id === "todoist");
+  for (const tool of view.tools) assert.equal(tool.enabled, true, tool.name);
+  assert.equal((await run(rig, "list_todoist_tasks", {})).status, 200);
 });
 
 // ------------------------------------------------------------------ grants
@@ -204,11 +214,11 @@ test("check_email and list_todoist_tasks also list their items as data, without 
   assert.equal(tasks.body.items.length, tasks.body.count);
   assert.ok(tasks.body.items.every((i: any) => i.kind === "task" && i.from === null));
 
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "empty");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "empty");
   const none = await run(rig, "check_email", {});
   assert.deepEqual(none.body.items, [], "nothing listed is an empty list, not a missing one");
 
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "normal");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "normal");
   await ready(rig, "notion", "search_notion");
   const search = await run(rig, "search_notion", { query: "trip" });
   assert.equal(search.body.items, undefined, "other tools don't send items");
@@ -217,13 +227,13 @@ test("check_email and list_todoist_tasks also list their items as data, without 
 test("empty and malformed provider answers become honest text or an error, never invented data", async () => {
   rig = await start();
   await ready(rig, "gmail", "check_email");
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "empty");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "empty");
   const empty = await run(rig, "check_email", {});
   assert.equal(empty.status, 200);
   assert.equal(empty.body.count, 0);
   assert.match(empty.body.text, /No emails matched/);
 
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "malformed");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "malformed");
   const bad = await run(rig, "check_email", {});
   assert.equal(bad.status, 502);
   assert.equal(bad.body.error.code, "malformed_provider_result");
@@ -243,7 +253,7 @@ test("search_notion hides archived pages and reads titles only", async () => {
 test("a rate-limited read retries once; a second failure is reported", async () => {
   rig = await start();
   await ready(rig, "todoist", "list_todoist_tasks");
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "rate_limited");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "rate_limited");
   const res = await run(rig, "list_todoist_tasks", { when: "today" });
   assert.equal(res.status, 429);
   assert.equal(res.body.error.code, "rate_limited");
@@ -253,7 +263,7 @@ test("a rate-limited read retries once; a second failure is reported", async () 
 test("an expired account switches its tools off and asks to reconnect", async () => {
   rig = await start();
   await ready(rig, "todoist", "list_todoist_tasks");
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "expired");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "expired");
   const res = await run(rig, "list_todoist_tasks", {});
   assert.equal(res.status, 409);
   assert.equal(res.body.error.code, "connection_expired");
@@ -319,14 +329,17 @@ test("an approval expires", async () => {
   assert.equal(rig.provider.executed.length, 0);
 });
 
-test("prepare refuses reads and tools that are switched off", async () => {
+test("prepare refuses tools that are switched off; a read gets a card too, and nothing is read for it (ASK-01)", async () => {
   rig = await start();
   await connect(rig, "gmail");
-  const off = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "draft_email", arguments: { to: "anna@example.com", subject: "Hi", body: "Hello" } } });
-  assert.equal(off.status, 403);
-  await on(rig, "check_email");
+  await off(rig, "draft_email");
+  const switchedOff = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "draft_email", arguments: { to: "anna@example.com", subject: "Hi", body: "Hello" } } });
+  assert.equal(switchedOff.status, 403);
   const read = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "check_email", arguments: {} } });
-  assert.equal(read.status, 400);
+  assert.equal(read.status, 200, read.text);
+  assert.equal(read.body.preview.title, "Check your Gmail?");
+  assert.deepEqual(read.body.preview.lines, ["Your Gmail inbox", "Doddy reads the newest 5: sender, subject, time and a short preview."]);
+  assert.deepEqual(rig.provider.executed, [], "asking reads nothing");
 });
 
 test("a draft is created with the exact text the user saw, and is never sent", async () => {
@@ -351,11 +364,43 @@ test("a write that fails is never retried and says the outcome may be unknown", 
   await ready(rig, "todoist", "add_todoist_task");
   const args = { content: "Pay rent" };
   const prepared = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "add_todoist_task", arguments: args } });
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "provider_error");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "provider_error");
   const res = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 502);
   assert.equal(res.body.error.receipt.status, "outcome_unknown");
   assert.equal(rig.provider.executed.length, 1, "no automatic retry for a write");
+  // The message the app shows must not contradict the receipt.
+  assert.match(res.body.error.message, /Todoist didn't confirm; it may or may not have gone through/);
+  assert.doesNotMatch(res.body.error.message, /Nothing was changed/);
+});
+
+test("a failed read names its own account, not Google Calendar", async () => {
+  rig = await start();
+  await ready(rig, "gmail", "check_email");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "provider_error");
+  const res = await run(rig, "check_email", {});
+  assert.equal(res.status, 502);
+  assert.equal(res.body.error.message, "Gmail couldn't be reached. Nothing was changed.");
+});
+
+test("Connect names the account when Composio refuses the request (e.g. a wrong project key)", async () => {
+  const store = await Store.memory();
+  const refused = Object.assign(new Error("401 Invalid API key"), { status: 401 });
+  const fake = { connectedAccounts: { link: async () => { throw refused; } } } as unknown as ComposioToolsLike;
+  const provider = new ComposioToolsProvider("key", { gmail: { authConfigId: "ac_1", toolkitVersion: "20260101_00" } }, fake);
+  const tools = new CloudToolsService({
+    store,
+    provider,
+    limits: testLimits(),
+    publicBaseUrl: "https://api.doddy.test",
+    appReturnUrl: "doddy-dev://connected-apps/return",
+    completionMode: "callback",
+  });
+  await assert.rejects(
+    () => tools.connect("8b0c7f1e-2d3a-4b5c-9d8e-0f1a2b3c4d5e", "gmail", {}),
+    (e: unknown) => e instanceof Error && (e as { code?: string }).code === "provider_unavailable" && e.message === "Gmail couldn't be reached. Nothing was changed.",
+  );
+  (await store.close());
 });
 
 test("a write whose answer can't be read is reported as maybe done, not as failed", async () => {
@@ -363,7 +408,7 @@ test("a write whose answer can't be read is reported as maybe done, not as faile
   await ready(rig, "todoist", "add_todoist_task");
   const args = { content: "Call the plumber" };
   const prepared = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "add_todoist_task", arguments: args } });
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "malformed");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "malformed");
   const res = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.notEqual(res.status, 200);
   assert.equal(rig.provider.executed.length, 1, "the provider ran it");
@@ -376,7 +421,7 @@ test("a write refused by the provider's rate limit is reported as not done", asy
   await ready(rig, "todoist", "add_todoist_task");
   const args = { content: "Water plants" };
   const prepared = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "add_todoist_task", arguments: args } });
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "rate_limited");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "rate_limited");
   const res = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.equal(res.body.error.receipt.status, "failed");
 });
@@ -393,11 +438,11 @@ test("a write refused by a Doddy limit keeps its confirmation for a later try", 
   const refused = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.equal(refused.body.error.code, "quota_exceeded");
   assert.equal(rig.provider.executed.filter((e) => e.slug === "TODOIST_CREATE_TASK").length, 0);
-  const still = rig.store.consumeApproval(
+  const still = (await rig.store.consumeApproval(
     { approvalId: prepared.body.approvalId, userId: DEV_IDENTITIES[USER_A]!, capability: "add_todoist_task",
-      accountId: rig.store.getConnection(DEV_IDENTITIES[USER_A]!, "todoist")!.connection_id, argsDigest: argumentDigest(args), now: rig.clock.ms },
+      accountId: (await rig.store.getConnection(DEV_IDENTITIES[USER_A]!, "todoist"))!.connection_id, argsDigest: argumentDigest(args), now: rig.clock.ms },
     { checkOnly: true },
-  );
+  ));
   assert.equal(still, true, "the confirmation was not used up by the refusal");
 });
 
@@ -424,7 +469,7 @@ test("receipts and logs keep no email, task or file content", async () => {
 });
 
 test("mock demo scenarios cannot be used against a live provider", async () => {
-  const store = new Store(":memory:");
+  const store = await Store.memory();
   const fake = {} as ComposioToolsLike;
   const provider = new ComposioToolsProvider("key", { todoist: { authConfigId: "ac_1", toolkitVersion: "20260101_00" } }, fake);
   const tools = new CloudToolsService({
@@ -435,12 +480,12 @@ test("mock demo scenarios cannot be used against a live provider", async () => {
     appReturnUrl: "doddy-dev://connected-apps/return",
     completionMode: "verifier",
   });
-  assert.throws(() => tools.applyMockScenario("u", "empty"), /only in mock mode/);
+  await assert.rejects(() => tools.applyMockScenario("u", "empty"), /only in mock mode/);
   // Only toolkits with their own settings are connectable.
-  assert.equal(tools.catalog("u").toolkits.find((t) => t.id === "gmail")!.status, "unavailable");
-  assert.equal(tools.catalog("u").toolkits.find((t) => t.id === "todoist")!.status, "disconnected");
+  assert.equal((await tools.catalog("u")).toolkits.find((t) => t.id === "gmail")!.status, "unavailable");
+  assert.equal((await tools.catalog("u")).toolkits.find((t) => t.id === "todoist")!.status, "disconnected");
   await assert.rejects(() => tools.connect("u", "gmail", {}), /isn't set up/);
-  store.close();
+  (await store.close());
 });
 
 // ------------------------------------------------------------------ tool arguments (what Composio would receive)
@@ -505,7 +550,7 @@ test("config: a toolkit needs both values, a pinned version, and a live key", ()
 });
 
 /** The Composio user ID the store assigned to a dev identity (the mock keys scenarios by it). */
-function rigComposioUser(r: Rig, token: string): string {
+function rigComposioUser(r: Rig, token: string): Promise<string> {
   return r.store.composioUserId(DEV_IDENTITIES[token]!, r.clock.now());
 }
 
@@ -570,7 +615,7 @@ test("a repeat after an answer that was lost says it may have gone through, neve
   await todoistReady(rig);
   const args = { content: "Pay rent" };
   const prepared = await prepare(rig, "add_todoist_task", args);
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "lost_answer");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "lost_answer");
   const lost = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.equal(lost.status, 504);
   assert.equal(lost.body.error.receipt.status, "outcome_unknown");
@@ -586,7 +631,7 @@ test("a write that provably didn't run needs a fresh confirmation on a repeat, a
   await todoistReady(rig);
   const args = { content: "Water plants" };
   const prepared = await prepare(rig, "add_todoist_task", args);
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "rate_limited");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "rate_limited");
   await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   const again = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.equal(again.body.error.receipt.errorCode, "confirmation_required");
@@ -614,14 +659,15 @@ test("after a lost answer, a Todoist task is looked for, only with the list read
   await todoistReady(rig);
   const args = { content: "Pay rent" };
   const prepared = await prepare(rig, "add_todoist_task", args);
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "lost_answer");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "lost_answer");
   await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "normal");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "normal");
 
-  // "List my tasks" is off: Doddy doesn't read the user's tasks; the card only warns.
-  const off = await prepare(rig, "add_todoist_task", args);
-  assert.equal(off.body.earlier.status, "outcome_unknown");
-  assert.match(off.body.preview.lines.at(-1), /may have gone through\. Check Todoist before doing it again\./);
+  // "List my tasks" switched off by the user: Doddy doesn't read the user's tasks; the card only warns.
+  await off(rig, "list_todoist_tasks");
+  const unlisted = await prepare(rig, "add_todoist_task", args);
+  assert.equal(unlisted.body.earlier.status, "outcome_unknown");
+  assert.match(unlisted.body.preview.lines.at(-1), /may have gone through\. Check Todoist before doing it again\./);
   assert.equal(rig.provider.executed.filter((e) => e.slug === "TODOIST_GET_ALL_TASKS").length, 0);
 
   await on(rig, "list_todoist_tasks");
@@ -638,9 +684,9 @@ test("after a lost answer, a task that isn't listed is still only 'may have gone
   await on(rig, "list_todoist_tasks");
   const args = { content: "Pay rent" };
   const prepared = await prepare(rig, "add_todoist_task", args);
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "provider_error");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "provider_error");
   await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "normal");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "normal");
   const again = await prepare(rig, "add_todoist_task", args);
   assert.equal(again.body.earlier.status, "outcome_unknown", "not listed proves nothing");
 });
@@ -650,9 +696,9 @@ test("a Gmail draft whose answer was lost warns on the next card; drafts can't b
   await ready(rig, "gmail", "draft_email");
   const args = { to: "anna@example.com", subject: "Lunch", body: "1pm?" };
   const prepared = await prepare(rig, "draft_email", args);
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "lost_answer");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "lost_answer");
   await run(rig, "draft_email", args, { approvalId: prepared.body.approvalId });
-  rig.provider.setScenario(rigComposioUser(rig, USER_A), "normal");
+  rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "normal");
   const again = await prepare(rig, "draft_email", args);
   assert.equal(again.body.earlier.status, "outcome_unknown");
   assert.match(again.body.preview.lines.at(-1), /Check Gmail before doing it again/);
@@ -664,28 +710,27 @@ test("the server keeps what happened to a write, never its words", async () => {
   const args = { content: "Secret surprise party for Ola" };
   const prepared = await prepare(rig, "add_todoist_task", args);
   await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
-  const rows = (rig.store as any).db.prepare("SELECT * FROM approvals").all() as Record<string, unknown>[];
+  const rows = (await rig.store.db.query<Record<string, unknown>>("SELECT * FROM approvals")).rows;
   assert.equal(rows.length, 1);
   assert.equal(rows[0]!.outcome, "succeeded");
   assert.equal(rows[0]!.external_id, "task_demo_1");
   assert.ok(!JSON.stringify(rows).includes("Ola"), "no task text on the server");
 });
 
-test("an approvals table from before ADR-322 gets the new columns", async () => {
+test("the store keeps a write's outcome across a restart, and opening it again is safe (ADR-525)", async () => {
   const { mkdtempSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
-  const { DatabaseSync } = await import("node:sqlite");
-  const path = join(mkdtempSync(join(tmpdir(), "doddy-")), "old.db");
-  const old = new DatabaseSync(path);
-  old.exec(`CREATE TABLE approvals (approval_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, capability TEXT NOT NULL, account_id TEXT NOT NULL,
-    args_digest TEXT NOT NULL, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, consumed_at INTEGER);
-    INSERT INTO approvals VALUES ('a', 'u', 'add_todoist_task', 'c', 'd', 1, 2, 1);`);
-  old.close();
-  const store = new Store(path);
-  store.finishApproval("a", "succeeded", "task_1", 5);
-  assert.deepEqual(store.latestWrite({ userId: "u", capability: "add_todoist_task", argsDigest: "d", since: 0 }), { outcome: "succeeded", finishedAt: 5 });
-  store.close();
+  const dataDir = join(mkdtempSync(join(tmpdir(), "doddy-")), "pglite");
+  const first = await Store.open({ dataDir });
+  const { approvalId } = await first.createApproval({ userId: "u", capability: "add_todoist_task", accountId: "c", argsDigest: "d", now: 1, ttlSeconds: 120 });
+  assert.equal(await first.consumeApproval({ approvalId, userId: "u", capability: "add_todoist_task", accountId: "c", argsDigest: "d", now: 2 }), true);
+  await first.finishApproval(approvalId, "succeeded", "task_1", 5);
+  await first.close();
+  const again = await Store.open({ dataDir }); // the schema step runs again on existing tables
+  assert.deepEqual(await again.latestWrite({ userId: "u", capability: "add_todoist_task", argsDigest: "d", since: 0 }), { outcome: "succeeded", finishedAt: 5 });
+  assert.equal(await again.consumeApproval({ approvalId, userId: "u", capability: "add_todoist_task", accountId: "c", argsDigest: "d", now: 3 }), false, "used stays used");
+  await again.close();
 });
 
 test("a repeat while the first run hasn't finished is 'may have gone through', not 'needs a confirmation'", async () => {
@@ -694,9 +739,9 @@ test("a repeat while the first run hasn't finished is 'may have gone through', n
   const args = { content: "Pay rent" };
   const prepared = await prepare(rig, "add_todoist_task", args);
   const userId = DEV_IDENTITIES[USER_A]!;
-  const accountId = rig.store.getConnection(userId, "todoist")!.connection_id;
+  const accountId = (await rig.store.getConnection(userId, "todoist"))!.connection_id;
   // Used, as the first run does just before calling Todoist, and never finished.
-  assert.equal(rig.store.consumeApproval({ approvalId: prepared.body.approvalId, userId, capability: "add_todoist_task", accountId, argsDigest: argumentDigest(args), now: rig.clock.ms }), true);
+  assert.equal((await rig.store.consumeApproval({ approvalId: prepared.body.approvalId, userId, capability: "add_todoist_task", accountId, argsDigest: argumentDigest(args), now: rig.clock.ms })), true);
   const again = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.equal(again.body.error.receipt.errorCode, "earlier_outcome_unknown");
   assert.equal(creates(rig), 0);

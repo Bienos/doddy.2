@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Raport zakupowy Doddy'ego (przykład)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@600;700&display=swap">
+<style>
+/* A4, two pages. Brand Guidelines V2.2 tokens (CandidateTokens.swift, light). Orange is decoration only, never text. */
+:root{
+  --paper:#FFF7E9; --ink:#171715; --orange:#FF6A00; --quiet:#F5EAD8; --line:#DFD5C6;
+  --muted:#655F56; --accent-text:#A64B00; --ok:#326746; --err:#A3342E;
+  --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --hand:"Caveat", "Bradley Hand", "Segoe Print", cursive;
+}
+@page{size:A4;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink)}
+body{font-family:var(--display);font-variation-settings:"opsz" 14;font-size:10pt;line-height:1.42;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;padding:14mm 15mm 12mm;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:6mm;page-break-after:always;break-after:page}
+.page:last-child{page-break-after:auto;break-after:auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:6mm;border-bottom:1.2pt solid var(--ink);padding-bottom:3mm}
+.top img.wm{height:9.5mm;display:block}
+.top .meta{text-align:right;font-size:8.5pt;color:var(--muted);line-height:1.35}
+.top .meta b{color:var(--ink);font-weight:650;font-size:9.5pt;letter-spacing:.02em;text-transform:uppercase}
+.example{position:absolute;top:5mm;right:15mm;font-size:7.5pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--err);border:1pt solid var(--err);border-radius:3pt;padding:.6mm 2mm;background:var(--paper)}
+h1{font-variation-settings:"opsz" 60;font-size:25pt;line-height:1.02;font-weight:760;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-variation-settings:"opsz" 28;font-size:12.5pt;font-weight:720;margin:0 0 2.2mm}
+.ticks{display:inline-block;width:7mm;height:5mm;vertical-align:top;margin-left:1.5mm}
+.lede{display:grid;grid-template-columns:1fr auto;gap:6mm;align-items:start}
+.words{margin:2.5mm 0 0;font-size:11.5pt;line-height:1.35;border-left:2.4pt solid var(--orange);padding:1mm 0 1mm 4mm}
+.words small{display:block;font-size:7.5pt;color:var(--muted);margin-top:1.2mm;letter-spacing:.04em;text-transform:uppercase}
+.prio{display:flex;gap:2mm;flex-wrap:wrap;margin-top:3mm;align-items:center;font-size:8.5pt;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:1.4mm;border:1pt solid var(--ink);border-radius:20pt;padding:.7mm 2.6mm .8mm 1mm;font-size:9pt;color:var(--ink);font-weight:600;background:var(--paper)}
+.chip i{font-style:normal;width:4.4mm;height:4.4mm;border-radius:50%;background:var(--ink);color:var(--paper);display:inline-grid;place-items:center;font-size:7.5pt}
+.pick{background:var(--quiet);border-radius:5mm;padding:5mm 5.5mm;display:grid;grid-template-columns:1fr 34mm;gap:4mm;position:relative}
+.label{font-size:7.5pt;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-text)}
+.pick .name{font-size:13.5pt;font-weight:700;line-height:1.2;margin:1.2mm 0 3mm;font-variation-settings:"opsz" 30}
+.price{font-variation-settings:"opsz" 96;font-weight:800;font-size:34pt;line-height:.9;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.price sup{font-size:.42em;vertical-align:.95em;margin-left:.6mm;letter-spacing:0}
+.price span{font-size:.36em;font-weight:650;margin-left:1mm}
+.where{display:flex;flex-wrap:wrap;gap:1.6mm 4mm;margin-top:2.6mm;font-size:9pt}
+.where b{font-weight:650}
+.checked{color:var(--ok);font-weight:600}
+.why{margin:3.4mm 0 0;padding:0;list-style:none;display:grid;gap:1.4mm;font-size:9.5pt}
+.why li{display:grid;grid-template-columns:4mm 1fr;gap:1mm}
+.why li::before{content:"";width:2.2mm;height:2.2mm;border-radius:50%;background:var(--orange);margin-top:1.5mm}
+.pick figure{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.pick figure img{width:30mm;display:block;mix-blend-mode:multiply}
+.note{font-family:var(--hand);font-size:14.5pt;line-height:1.02;color:var(--ink);text-align:center;margin-top:1mm}
+table{width:100%;border-collapse:collapse;font-size:8.8pt;font-variant-numeric:tabular-nums}
+th{font-size:7pt;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:650;text-align:left;padding:0 2mm 1.6mm 0;border-bottom:1pt solid var(--ink)}
+td{padding:2.1mm 2mm 2.1mm 0;border-bottom:.6pt solid var(--line);vertical-align:top}
+td.num,th.num{text-align:right}
+td .tag{display:block;font-size:7pt;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-text);margin-bottom:.4mm}
+td .sub{display:block;color:var(--muted);font-size:7.8pt}
+tr.mine td{background:color-mix(in srgb, var(--quiet) 70%, var(--paper))}
+tr.mine td:first-child{box-shadow:inset 2.4pt 0 0 var(--orange);padding-left:2.2mm}
+.over{color:var(--err);font-weight:600}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;counter-reset:step}
+.how div{border-top:1.2pt solid var(--ink);padding-top:2.4mm;font-size:9pt}
+.how div b{display:block;font-size:9.6pt;margin-bottom:.8mm}
+.how div b::before{counter-increment:step;content:counter(step) ". ";color:var(--accent-text)}
+.foot{margin-top:auto;display:flex;justify-content:space-between;gap:6mm;font-size:7.6pt;color:var(--muted);border-top:.6pt solid var(--line);padding-top:2.4mm}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:7mm}
+.box{border:1pt solid var(--ink);border-radius:4mm;padding:4mm 4.5mm}
+.box ul{margin:0;padding:0;list-style:none;display:grid;gap:2.2mm;font-size:9.4pt}
+.box li{display:grid;grid-template-columns:5mm 1fr;gap:1mm}
+.box li b{font-weight:650}
+.mark{font-weight:800;line-height:1.2}
+.mark.warn{color:var(--accent-text)}
+.mark.q{color:var(--muted)}
+.mark.no{color:var(--err)}
+.mark.yes{color:var(--ok)}
+.unknown{display:grid;grid-template-columns:1fr 30mm;gap:3mm;align-items:end}
+.unknown img{width:28mm;mix-blend-mode:multiply}
+.next{background:var(--ink);color:var(--paper);border-radius:4mm;padding:4.5mm 5mm;display:grid;gap:2.4mm;font-size:9.6pt}
+.next h2{color:var(--paper)}
+.next .say{font-family:var(--hand);font-size:15pt;line-height:1}
+.sources ol{margin:0;padding-left:5mm;display:grid;gap:1.3mm;font-size:8.3pt}
+.sources li span{color:var(--muted)}
+.sources code{font-family:inherit;font-size:8pt;color:var(--ink);word-break:break-all}
+.basis{font-size:8pt;color:var(--muted);line-height:1.45;max-width:150mm}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 -->
+<section class="page">
+  <div class="example">Przykład · ceny zmyślone do makiety</div>
+  <header class="top">
+    <img class="wm" src="../img/wordmark.svg" alt="Doddy">
+    <div class="meta"><b>Raport zakupowy</b><br>sobota, 24 października 2026, 14:05<br>dla: Ciebie, z Twojej sprawy „Cicha zmywarka”</div>
+  </header>
+
+  <div class="lede">
+    <div>
+      <h1>Cicha zmywarka 45&nbsp;cm do&nbsp;zabudowy</h1>
+      <p class="words">„Szukam cichej zmywarki do zabudowy, 45 cm, do 2000&nbsp;zł. Najważniejsza cisza, potem cena.”<small>Twoje słowa, bez zmian</small></p>
+      <div class="prio">Tak to ułożyłeś:
+        <span class="chip"><i>1</i>Cisza</span><span class="chip"><i>2</i>Cena</span><span class="chip"><i>3</i>Gwarancja</span>
+      </div>
+    </div>
+  </div>
+
+  <article class="pick">
+    <div>
+      <div class="label">Mój wybór</div>
+      <div class="name">Zmywarka do zabudowy 45 cm · 42 dB · 10 kompletów · klasa C</div>
+      <div class="price">1&nbsp;899<sup>,00</sup><span>zł</span></div>
+      <div class="where"><span>w <b>Media Expert</b></span><span>dostawa jutro, 0&nbsp;zł</span><span class="checked">✓ cena sprawdzona na stronie sklepu 14:02</span></div>
+      <ul class="why">
+        <li>Najcichsza z ofert do 2000&nbsp;zł: 42 dB. Następna ma 44 dB.</li>
+        <li>Najniższa cena z 30 dni przed obniżką: 1&nbsp;949&nbsp;zł. Obniżka jest prawdziwa (50&nbsp;zł).</li>
+        <li>2 lata gwarancji sklepu, plus 3 lata producenta po rejestracji online.</li>
+      </ul>
+    </div>
+    <figure>
+      <img src="../img/kneeling_inspect.png" alt="">
+      <figcaption class="note">23 oferty,<br>6 sklepów.<br>Ta wygrywa ciszą.</figcaption>
+    </figure>
+  </article>
+
+  <section>
+    <h2>Cztery z dziewięciu, które przeszły sito</h2>
+    <table>
+      <thead><tr><th>Oferta</th><th class="num">Głośność</th><th class="num">Komplety</th><th class="num">Cena</th><th>Sklep</th><th>Dostawa</th><th class="num">Sprawdzone</th></tr></thead>
+      <tbody>
+        <tr class="mine"><td><span class="tag">Mój wybór</span>45 cm, klasa C</td><td class="num">42 dB</td><td class="num">10</td><td class="num"><b>1&nbsp;899&nbsp;zł</b></td><td>Media Expert</td><td>jutro, 0&nbsp;zł</td><td class="num">14:02</td></tr>
+        <tr><td><span class="tag">Najtańsza</span>45 cm, klasa E<span class="sub">głośniejsza o 5 dB</span></td><td class="num">47 dB</td><td class="num">9</td><td class="num"><b>1&nbsp;449&nbsp;zł</b></td><td>RTV Euro AGD</td><td>2–3 dni, 0&nbsp;zł</td><td class="num">14:03</td></tr>
+        <tr><td><span class="tag">Środek</span>45 cm, klasa D</td><td class="num">44 dB</td><td class="num">10</td><td class="num"><b>1&nbsp;699&nbsp;zł</b></td><td>Allegro<span class="sub">sprzedawca firmowy, 99,1% ocen poz.</span></td><td>3–5 dni<span class="sub">dostawa 29&nbsp;zł</span></td><td class="num">14:04</td></tr>
+        <tr><td><span class="tag">Bez kompromisów</span>45 cm, klasa B</td><td class="num">39 dB</td><td class="num">10</td><td class="num"><b>2&nbsp;299&nbsp;zł</b><span class="sub over">299&nbsp;zł ponad budżet</span></td><td>x-kom</td><td>jutro, 0&nbsp;zł</td><td class="num">14:04</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Jak wybierałem</h2>
+    <div class="how">
+      <div><b>Odsiałem</b>Za duże, bez potwierdzonej ceny i „promocje” bez obniżki. Zostało 9 z 23.</div>
+      <div><b>Ułożyłem po Twojej kolejności</b>Najpierw cisza, potem cena, potem gwarancja. Budżet 2000&nbsp;zł to granica, nie cel.</div>
+      <div><b>Pokazałem też inne</b>Najtańszą, żebyś widział, ile kosztuje cisza, i jedną ponad budżet, z dopłatą na wierzchu.</div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>Doddy to AI. Ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz.</span>
+    <span>1 / 2</span>
+  </footer>
+</section>
+
+<!-- PAGE 2 -->
+<section class="page">
+  <div class="example">Przykład · ceny zmyślone do makiety</div>
+  <header class="top">
+    <img class="wm" src="../img/wordmark.svg" alt="Doddy">
+    <div class="meta"><b>Raport zakupowy</b><br>Cicha zmywarka 45 cm · ciąg dalszy</div>
+  </header>
+
+  <div class="cols">
+    <section class="box">
+      <h2>Na co uważać</h2>
+      <ul>
+        <li><span class="mark warn">!</span><span><b>Montaż nie jest w cenie.</b> Media Expert liczy za niego 149&nbsp;zł. RTV Euro AGD 129&nbsp;zł.</span></li>
+        <li><span class="mark warn">!</span><span><b>Najtańsza zużywa więcej prądu:</b> ok. 38&nbsp;zł rocznie więcej niż mój wybór (4 cykle w tygodniu, 1,10&nbsp;zł za kWh, dane z etykiet).</span></li>
+        <li><span class="mark warn">!</span><span><b>Allegro:</b> zwrot 14 dni, ale odesłanie dużego sprzętu to Twój koszt, o ile sprzedawca nie napisał inaczej.</span></li>
+      </ul>
+    </section>
+    <section class="box">
+      <h2>Odrzucone i dlaczego</h2>
+      <ul>
+        <li><span class="mark no">×</span><span><b>2 oferty bez potwierdzonej ceny.</b> Strona sklepu nie pokazała ceny, więc ich nie liczę.</span></li>
+        <li><span class="mark no">×</span><span><b>1 oferta 60 cm.</b> Nie zmieści się we wnęce 45 cm.</span></li>
+        <li><span class="mark no">×</span><span><b>1 „promocja” bez obniżki.</b> Najniższa cena z 30 dni była taka sama.</span></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="unknown">
+    <div class="box">
+      <h2>Czego nie wiem</h2>
+      <ul>
+        <li><span class="mark q">?</span><span>Czy cena 1&nbsp;899&nbsp;zł utrzyma się po niedzieli. Sklepy jej nie gwarantują.</span></li>
+        <li><span class="mark q">?</span><span>Czy sklep stacjonarny obok Ciebie ma ją na miejscu. Sprawdzałem tylko sklepy internetowe.</span></li>
+        <li><span class="mark q">?</span><span>Jak cicha jest naprawdę w Twojej kuchni. 42 dB to dane producenta, nie mój pomiar.</span></li>
+      </ul>
+    </div>
+    <img src="../img/shrug.png" alt="">
+  </section>
+
+  <section class="next">
+    <h2>Co dalej</h2>
+    <div><b>Kupujesz?</b> Stuknij „Kup w Media Expert” w aplikacji. Otworzy się strona sklepu i tam płacisz: Apple Pay, BLIK albo kartą. Doddy nie widzi płatności.</div>
+    <div><b>Wolisz poczekać?</b> Powiedz:</div>
+    <div class="say">„Doddy, daj znać, jak spadnie poniżej 1&nbsp;800&nbsp;zł.”</div>
+  </section>
+
+  <section class="sources">
+    <h2>Źródła, które otworzyłem</h2>
+    <ol>
+      <li><code>mediaexpert.pl/…/zmywarka-45-przyklad</code> <span>· otwarte 14:02 · cena, dostawa, gwarancja</span></li>
+      <li><code>euro.com.pl/…/zmywarka-45-przyklad</code> <span>· otwarte 14:03 · cena, klasa energetyczna</span></li>
+      <li><code>allegro.pl/oferta/…-przyklad</code> <span>· otwarte 14:04 · cena, koszt dostawy, oceny sprzedawcy</span></li>
+      <li><code>x-kom.pl/…/zmywarka-45-przyklad</code> <span>· otwarte 14:04 · cena, głośność</span></li>
+      <li><code>ceneo.pl/…/porownanie-przyklad</code> <span>· otwarte 13:58 · lista sklepów do sprawdzenia</span></li>
+      <li><code>eprel.ec.europa.eu/…/etykieta-przyklad</code> <span>· otwarte 14:00 · zużycie prądu z etykiety UE</span></li>
+    </ol>
+  </section>
+
+  <p class="basis">Raport złożył Doddy (AI) z ofert, które sam otworzył 24.10.2026 między 13:58 a 14:04. Ceny bez strony, która je pokazała, są pominięte. Kolejność ofert nie zależy od prowizji: jeśli link jest partnerski, w aplikacji jest to napisane przy przycisku. Plik złożono na tym iPhonie z wyniku sprawy; nikt inny go nie dostał.</p>
+
+  <footer class="foot">
+    <span>Doddy to AI. Ceny i dostępność mogą się zmienić po godzinie sprawdzenia.</span>
+    <span>2 / 2</span>
+  </footer>
+</section>
+
+</body>
+</html>

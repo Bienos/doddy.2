@@ -128,12 +128,12 @@ struct IslandLabelView: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Text(scene.label)
+            IslandText(scene.label)
                 .foregroundStyle(Color.islandSecondary)
             if scene.live {
                 HStack(spacing: 3) {
                     Circle().fill(Color.islandOrange).frame(width: 5, height: 5)
-                    Text("LIVE").foregroundStyle(Color.islandOrange)
+                    IslandText("LIVE").foregroundStyle(Color.islandOrange)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Live, Doddy can hear you")
@@ -155,7 +155,7 @@ struct IslandTimeView: View {
             switch scene.time {
             case .elapsed: IslandElapsedText(startedAt: startedAt)
             case .countdown(let end): IslandCountdownText(end: end)
-            case .text(let text): Text(text)
+            case .text(let text): IslandText(text)
             }
         }
         .font(.system(size: 11.5, weight: .semibold))
@@ -192,8 +192,10 @@ struct IslandSignView: View {
                 .font(presentation == .expanded ? .body : .caption)
                 .foregroundStyle(color(tint))
         case .text(let text):
-            Text(text)
+            IslandText(text)
                 .font(.system(size: presentation == .minimal ? 12 : 13, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .monospacedDigit()
                 .foregroundStyle(presentation == .minimal && live ? Color.islandOrange : Color.islandCream)
         case .elapsed:
@@ -248,38 +250,60 @@ struct IslandSignView: View {
 }
 
 /// The boards' 34 pt pill: dark fill and cream label, or cream fill for the main action.
+/// When three pills and a sign don't fit beside Doddy, the pills drop their symbols (as the
+/// Figma island's "Wycisz" and "Zakończ") instead of cutting their words to "U…" (ADR-615).
 struct IslandPillLabel: View {
     let title: String
     let systemImage: String
     var prominent = false
 
+    /// Words a pill keeps as they are in every language: "Stop" fits beside Doddy where
+    /// "Zatrzymaj" didn't (owner, 24 Oct 2026, ADR-617). The Lock Screen's End is still translated.
+    static let keptAsIs: Set<String> = ["Stop"]
+
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage).font(.system(size: 10, weight: .bold))
-            Text(title)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 5) {
+                Image(systemName: systemImage).font(.system(size: 10, weight: .bold))
+                word
+            }
+            word
+                .minimumScaleFactor(0.8)
         }
         .font(.system(size: 13, weight: .semibold))
+        .lineLimit(1)
         .foregroundStyle(prominent ? Color.islandBlack : Color.islandCream)
-        .padding(.horizontal, 15)
+        .padding(.horizontal, 12)
         .frame(height: 34)
         .background(prominent ? Color.islandCream : Color.islandPill, in: Capsule())
         .contentShape(Capsule())
     }
+
+    @ViewBuilder
+    private var word: some View {
+        if Self.keptAsIs.contains(title) {
+            Text(verbatim: title)
+        } else {
+            IslandText(title)
+        }
+    }
 }
 
 /// The expanded island under the camera: the board's drawing, status, buttons and sign.
-/// Editorial is typography-led: big status on the left, small Doddy and buttons on the right.
 struct IslandBottomView<Controls: View>: View {
     let scene: IslandScene
     let startedAt: Date
     @ViewBuilder let controls: () -> Controls
+    @Environment(\.islandLanguage) private var language
+
+    /// What iOS leaves for the expanded island's bottom region is about 110 pt (measured on the
+    /// native screenshot); everything here stays within it, so nothing is cut (ADR-615).
+    static var fitsHeight: CGFloat { 110 }
+    static var figureHeight: CGFloat { 104 }
+    static var waveBand: CGFloat { 24 }
 
     var body: some View {
-        if scene.board == .editorial {
-            editorial
-        } else {
-            standard
-        }
+        standard
     }
 
     @ViewBuilder
@@ -291,18 +315,25 @@ struct IslandBottomView<Controls: View>: View {
                 .font(.system(size: 32, weight: .medium))
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
-                .accessibilityLabel(scene.title)
+                .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
         case .bigText(let text):
-            Text(text)
+            IslandText(text)
                 .font(.system(size: 32, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
-                .accessibilityLabel(scene.title)
+                .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
+        case .elapsed:
+            // The stopwatch (ADR-652): counting up, ticking with no app updates.
+            IslandElapsedText(startedAt: startedAt)
+                .font(.system(size: 32, weight: .medium))
+                .foregroundStyle(Color.islandCream)
+                .lineLimit(1)
+                .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
         case .text(let text):
-            Text(text).font(.system(size: 21, weight: .medium)).foregroundStyle(Color.islandCream).lineLimit(1)
+            IslandText(text).font(.system(size: 21, weight: .medium)).foregroundStyle(Color.islandCream).lineLimit(1)
         case nil:
-            Text(scene.title)
+            IslandText(scene.title)
                 .font(.system(size: 21, weight: .medium))
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
@@ -311,7 +342,7 @@ struct IslandBottomView<Controls: View>: View {
     }
 
     private var subtitle: some View {
-        Text(scene.subtitle)
+        IslandText(scene.subtitle)
             .font(.system(size: 12.5, weight: .medium))
             .foregroundStyle(scene.subtitleIsWarning ? Color.yellow : Color.islandSecondary)
             .lineLimit(1)
@@ -322,7 +353,12 @@ struct IslandBottomView<Controls: View>: View {
         HStack(alignment: .center, spacing: 12) {
             Group {
                 if let pose = scene.pose {
-                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: 100))
+                    // Whole Doddy at his largest the island allows (owner, 22 Oct, ADR-596), with a
+                    // 1.5 pt cream edge and a faint light, so his black lines read on the black
+                    // island (ADR-615). 104 pt: iOS gives the expanded island's bottom region about
+                    // 110 pt, and at 118 it cut his shoes off (native screenshot, run 40083307695).
+                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: Self.figureHeight), edgeWidth: 1.5)
+                        .background { IslandDoddyLight() }
                 } else {
                     IslandArtView(art: scene.art(.expanded), face: scene.face, live: scene.live,
                                   showsHands: scene.showsHands, maxSize: CGSize(width: 82, height: 92),
@@ -330,67 +366,49 @@ struct IslandBottomView<Controls: View>: View {
                 }
             }
             .frame(width: 82)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 VStack(alignment: .leading, spacing: 2) {
                     title
                     subtitle
                 }
                 .accessibilityElement(children: .combine)
+                // ADR-596: his waves sit under what he is doing, in one 24 pt band: a calm line
+                // while he hears you; while he talks a livelier one that starts beside him
+                // (owner, 24 Oct: not across the whole island, ADR-615).
+                if scene.waves == .listening {
+                    IslandWavesView(kind: .line, live: scene.live)
+                        .frame(height: Self.waveBand)
+                } else if scene.waves == .speaking {
+                    IslandWavesView(kind: .speech, live: scene.live)
+                        .frame(height: Self.waveBand)
+                        // ADR-683: they ease with his voice while Doddy isn't on screen, never
+                        // taller than their band.
+                        .scaleEffect(x: 1, y: CGFloat(scene.beatWaveScale), anchor: .center)
+                        .animation(.easeOut(duration: 0.38), value: scene.voiceBeat)
+                        .padding(.leading, -6)
+                }
                 HStack(spacing: 8) {
                     controls()
-                    IslandSignView(sign: scene.expandedSign, presentation: .expanded, live: scene.live, startedAt: startedAt)
+                    if scene.waves == .none {
+                        IslandSignView(sign: scene.expandedSign, presentation: .expanded, live: scene.live, startedAt: startedAt)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-
-    /// Board E: 29 pt status, an orange caret line while live, Doddy at 25 pt top right.
-    private var editorial: some View {
-        HStack(alignment: .top, spacing: 8) {
-            VStack(alignment: .leading, spacing: 4) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(scene.title)
-                        .font(.system(size: 29, weight: .medium))
-                        .tracking(-1.2)
-                        .foregroundStyle(Color.islandCream)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                    subtitle
-                }
-                .accessibilityElement(children: .combine)
-                HStack(spacing: 8) {
-                    Capsule()
-                        .fill(scene.live ? Color.islandOrange : Color.islandSecondary)
-                        .frame(width: 1.7, height: 14)
-                    Text(scene.live ? "Doddy can hear you" : " ")
-                        .font(.system(size: 10.5, weight: .medium))
-                        .foregroundStyle(Color.islandSecondary)
-                }
-                .accessibilityHidden(true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            VStack(alignment: .trailing, spacing: 10) {
-                IslandArtView(art: Self.editorialFace, face: scene.face ?? .listening, live: scene.live)
-                controls()
-            }
-        }
-    }
-
-    /// The editorial board's face: translate(330 74) scale(0.625), drawn on its own.
-    private static var editorialFace: IslandArt {
-        IslandArt(viewBox: IslandRect(x: -13.5, y: -13.5, width: 27, height: 27),
-                  elements: [.face(x: 0, y: 0, scale: 0.625, .listening)])
     }
 }
 
 struct IslandCompactLeadingView: View {
     let scene: IslandScene
+    @Environment(\.islandLanguage) private var language
 
     var body: some View {
         Group {
             if let pose = scene.pose {
-                IslandPoseFaceView(pose: pose, size: 24)
+                // Only his head (owner, 24 Oct, ADR-615): the whole of him at 30 pt was a few
+                // hairlines. The expanded island shows all of him.
+                IslandPoseFaceView(pose: pose, size: 26)
             } else {
                 IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live, showsHands: scene.showsHands)
             }
@@ -398,7 +416,7 @@ struct IslandCompactLeadingView: View {
         // The drawings are hidden from VoiceOver, so the compact island says what Doddy is doing
         // ("Listening", "Muted"), the same status the expanded island and Lock Screen show.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(scene.title)
+        .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
     }
 }
 
@@ -407,7 +425,48 @@ struct IslandCompactTrailingView: View {
     let startedAt: Date
 
     var body: some View {
-        IslandSignView(sign: scene.compactSign, presentation: .compact, live: scene.live, startedAt: startedAt)
+        // ADR-596: his voice while he hears you or talks; the sign otherwise. Since ADR-683 (owner,
+        // 1 Nov: option C) it is Home's fine lines, moving with each beat outside the app.
+        if scene.waves != .none {
+            IslandAuroraView(scene: scene)
+        } else {
+            IslandSignView(sign: scene.compactSign, presentation: .compact, live: scene.live, startedAt: startedAt)
+        }
+    }
+}
+
+/// His voice on the small island as Home's fine lines (owner, 1 Nov 2026: option C, "Aurora, like
+/// Home", ADR-683): orange to amber to rose, highest in the middle, fading at their ends. Calm while
+/// he hears you. While he talks outside the app, each beat (about every 0.6 s) gives the lines a new
+/// height and iOS moves to it with its own short animation; the one asked for here is a request iOS
+/// may replace with its own timing. No glow, and nothing drawn outside its frame.
+struct IslandAuroraView: View {
+    let scene: IslandScene
+
+    static let size = CGSize(width: 48, height: 26)
+    static let lineWidth: CGFloat = 1.35
+
+    var body: some View {
+        let columns = scene.aurora
+        let gaps = CGFloat(max(1, columns.count - 1))
+        let spacing = max(0, (Self.size.width - CGFloat(columns.count) * Self.lineWidth) / gaps)
+        HStack(alignment: .center, spacing: spacing) {
+            ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
+                let colour = scene.live
+                    ? Color(red: column.colour.red, green: column.colour.green, blue: column.colour.blue)
+                    : Color.islandSecondary
+                Capsule()
+                    .fill(LinearGradient(stops: [
+                        .init(color: colour.opacity(0), location: 0),
+                        .init(color: colour.opacity(0.92), location: 0.5),
+                        .init(color: colour.opacity(0), location: 1),
+                    ], startPoint: .top, endPoint: .bottom))
+                    .frame(width: Self.lineWidth, height: max(1.5, Self.size.height * CGFloat(column.height)))
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .animation(.easeOut(duration: 0.38), value: scene.voiceBeat)
+        .accessibilityHidden(true)
     }
 }
 
@@ -416,6 +475,11 @@ struct IslandCompactTrailingView: View {
 struct IslandMinimalView: View {
     let scene: IslandScene
     let startedAt: Date
+
+    private static func isText(_ sign: IslandSign) -> Bool {
+        if case .text = sign { return true }
+        return false
+    }
 
     var body: some View {
         ZStack(alignment: scene.minimalSignCentred ? .center : .trailing) {
@@ -427,7 +491,8 @@ struct IslandMinimalView: View {
                 IslandArtView(art: scene.art(.minimal), face: scene.face, live: scene.live, showsHands: false)
             }
             IslandSignView(sign: scene.minimalSign, presentation: .minimal, live: scene.live, startedAt: startedAt)
-                .frame(width: scene.minimalSignCentred ? 36 : 16)
+                // A language code ("EN") needs more than the bars' 16 pt, or it breaks into two lines.
+                .frame(width: scene.minimalSignCentred ? 36 : (Self.isText(scene.minimalSign) ? 22 : 16))
                 .padding(.trailing, scene.minimalSignCentred ? 0 : 2)
         }
     }
@@ -441,9 +506,12 @@ struct IslandPoseView: View {
     let maxSize: CGSize
     /// The cream edge for black backgrounds; off on the cream Lock Screen card.
     var edged = true
+    /// The edge's width; the expanded island's is 1.5 pt and round (ADR-615).
+    var edgeWidth: CGFloat = 1
 
     var body: some View {
-        IslandFigureView(assetName: pose.assetName, figure: pose.figure, maxSize: maxSize, edged: edged)
+        IslandFigureView(assetName: pose.assetName, figure: pose.figure, maxSize: maxSize, edged: edged,
+                         edgeWidth: edgeWidth)
     }
 }
 
@@ -455,20 +523,43 @@ struct IslandFigureView: View {
     let figure: IslandRect
     let maxSize: CGSize
     var edged = true
+    /// Up to 1 pt: the four-shadow edge. Wider: a round edge of sixteen cream copies of the
+    /// picture's shape, which has no gaps on the diagonals (ADR-615).
+    var edgeWidth: CGFloat = 1
 
     var body: some View {
+        if edged, edgeWidth > 1 {
+            ZStack {
+                ForEach(0..<16, id: \.self) { i in
+                    let angle = Double(i) * .pi / 8
+                    picture(.template)
+                        .foregroundStyle(Color.islandCream)
+                        .offset(x: edgeWidth * CGFloat(cos(angle)), y: edgeWidth * CGFloat(sin(angle)))
+                }
+                picture(.original)
+            }
+            .frame(width: maxSize.width, height: maxSize.height, alignment: .bottom)
+            .accessibilityHidden(true)
+        } else {
+            picture(.original)
+                .islandCreamEdge(edged)
+                .frame(width: maxSize.width, height: maxSize.height, alignment: .bottom)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// The picture cropped to the figure box; `.template` draws only its shape.
+    private func picture(_ mode: Image.TemplateRenderingMode) -> some View {
         let box = figure
         // Picture width (points) so the figure fits; the picture is 2:3.
         let width = min(maxSize.width / CGFloat(box.width), maxSize.height / (CGFloat(box.height) * 1.5))
         let height = width * 1.5
-        Image(assetName)
+        return Image(assetName)
+            .renderingMode(mode)
             .resizable()
             .frame(width: width, height: height)
             .offset(x: -CGFloat(box.x) * width, y: -CGFloat(box.y) * height)
             .frame(width: CGFloat(box.width) * width, height: CGFloat(box.height) * height, alignment: .topLeading)
-            .islandCreamEdge(edged)
-            .frame(width: maxSize.width, height: maxSize.height, alignment: .bottom)
-            .accessibilityHidden(true)
     }
 }
 
@@ -492,13 +583,42 @@ struct IslandPoseFaceView: View {
     }
 }
 
+/// A faint light behind Whole Doddy on the expanded island, after the Figma island's
+/// "Światło za Doddym" (frame "A 2 · Słucham", file `yqoQlkN6BpevFGW3ySnNJU`) but at a fifth of
+/// its strength: the owner didn't want him lit up (24 Oct, ADR-615). His 1.5 pt cream edge is
+/// what makes his black lines read on black; the light only lifts him off the island a little.
+struct IslandDoddyLight: View {
+    static let peak = 0.2
+    /// Fades out smoothly (a smoothstep) to nothing at the edge of a 110 x 120 pt ellipse.
+    static let stops: [Gradient.Stop] = [
+        .init(color: .islandCream.opacity(peak), location: 0),
+        .init(color: .islandCream.opacity(peak * 0.84), location: 0.25),
+        .init(color: .islandCream.opacity(peak * 0.5), location: 0.5),
+        .init(color: .islandCream.opacity(peak * 0.16), location: 0.75),
+        .init(color: .islandCream.opacity(0), location: 1),
+    ]
+
+    var body: some View {
+        EllipticalGradient(stops: Self.stops, center: .center, startRadiusFraction: 0, endRadiusFraction: 0.5)
+            .frame(width: 110, height: 120)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
 extension View {
     /// A 1 pt cream edge around a picture's opaque pixels, so black outlines read on black.
+    /// Off, it adds nothing: four invisible shadows were still four offscreen passes per frame on
+    /// Doddy's moving sprite in light appearance (ADR-604).
+    @ViewBuilder
     func islandCreamEdge(_ on: Bool = true) -> some View {
-        let edge = on ? Color.islandCream : .clear
-        return shadow(color: edge, radius: 0, x: 1, y: 0)
-            .shadow(color: edge, radius: 0, x: -1, y: 0)
-            .shadow(color: edge, radius: 0, x: 0, y: 1)
-            .shadow(color: edge, radius: 0, x: 0, y: -1)
+        if on {
+            shadow(color: .islandCream, radius: 0, x: 1, y: 0)
+                .shadow(color: .islandCream, radius: 0, x: -1, y: 0)
+                .shadow(color: .islandCream, radius: 0, x: 0, y: 1)
+                .shadow(color: .islandCream, radius: 0, x: 0, y: -1)
+        } else {
+            self
+        }
     }
 }

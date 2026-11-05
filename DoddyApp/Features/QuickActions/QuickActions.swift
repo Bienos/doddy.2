@@ -21,9 +21,16 @@ enum QuickActions {
         case .find: router.findInDoddyInvoked(query: "")
         case .parking:
             // The saved spot in Maps, as the parking widget does (ADR-315). No spot, nothing opens.
-            if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { UIApplication.shared.open(maps) }
+            // With the Face ID lock up it waits for the unlock (ADR-723).
+            router.runWhenUnlocked(.openParking) { openParkingSpot() }
         }
         return true
+    }
+
+    /// The saved parking spot in Apple Maps; no spot, nothing opens. The icon's menu and the parking
+    /// widget's link (`RootView`) both come here, after the Face ID lock (ADR-723).
+    static func openParkingSpot() {
+        if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { UIApplication.shared.open(maps) }
     }
 
     private static func item(_ action: QuickAction) -> UIApplicationShortcutItem {

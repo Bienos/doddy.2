@@ -75,7 +75,7 @@ final class ActionStatusTextTests: XCTestCase {
     }
 
     func testEveryWayAConversationEndsHasPolish() {
-        let ends: [VoiceSessionEnd] = [.userEnded, .doddyEnded, .quietTimeout, .stoppedListening, .dropped(.offline), .dropped(.connectionLost), .dropped(.error(""))]
+        let ends: [VoiceSessionEnd] = [.userEnded, .doddyEnded, .stoppedListening, .dropped(.offline), .dropped(.connectionLost), .dropped(.error(""))]
         for end in ends {
             for connected in [true, false] {
                 let english = SessionRecovery.status(end, connected: connected)
@@ -87,5 +87,30 @@ final class ActionStatusTextTests: XCTestCase {
         }
         XCTAssertEqual(SessionRecovery.status(.dropped(.connectionLost), connected: true, language: .polish).title, "Rozmowa została przerwana")
         XCTAssertEqual(SessionRecovery.status(.dropped(.error("Token server down.")), connected: false, language: .polish).detail, "Token server down.", "a service's reason is kept as it was")
+    }
+
+    /// ADR-687: Home's own words after a drop in the middle of a conversation.
+    func testHomeSaysADropInTheMiddleInTheOwnersWords() {
+        let polish = SessionRecovery.homeNotice(.dropped(.connectionLost), connected: true, language: .polish)
+        XCTAssertEqual(polish?.title, "Chwila, nie słyszę Cię")
+        XCTAssertEqual(polish?.line, "Połączenie padło. Spróbuj jeszcze raz.")
+        XCTAssertEqual(polish?.button, "Połącz ponownie")
+        let english = SessionRecovery.homeNotice(.dropped(.error("")), connected: true, language: .english)
+        XCTAssertEqual(english?.title, "Hold on, I can't hear you")
+        XCTAssertEqual(english?.button, "Reconnect")
+        // A service's own reason still gets this notice; the reason stays in the transcript.
+        XCTAssertNotNil(SessionRecovery.homeNotice(.dropped(.error("Token server down.")), connected: true, language: .polish))
+    }
+
+    func testHomeStaysQuietForEveryOtherEnd() {
+        for language in [NotificationLanguage.english, .polish] {
+            for end in [VoiceSessionEnd.userEnded, .doddyEnded, .stoppedListening] {
+                XCTAssertNil(SessionRecovery.homeNotice(end, connected: true, language: language), "\(end)")
+            }
+            XCTAssertNil(SessionRecovery.homeNotice(.dropped(.offline), connected: true, language: language), "offline has its own note card")
+            XCTAssertNil(SessionRecovery.homeNotice(.dropped(.audioInterrupted), connected: true, language: language),
+                         "a phone call took the microphone: not \"the connection dropped\"")
+            XCTAssertNil(SessionRecovery.homeNotice(.dropped(.connectionLost), connected: false, language: language), "never connected: Couldn't connect")
+        }
     }
 }

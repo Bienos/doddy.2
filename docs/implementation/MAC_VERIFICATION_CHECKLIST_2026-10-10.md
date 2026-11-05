@@ -1,5 +1,7 @@
 # Mac and iPhone verification checklist (branch `claude/hopeful-fermat-1a63x0`)
 
+> **20 Oct 2026 (ADR-549):** every row about "Hey Doddy" or the Picovoice AccessKey is void: the wake word was removed. The rows stay as history.
+
 Date: 2026-10-10 (updated for ADR-210 to ADR-225). Everything below was written and tested only on Linux (`scripts/ci.sh --core-only`,
 486 Swift package tests, gateway and backend tests). **None of the app code has been compiled with Xcode or
 run on a device.** Nothing here is verified until a person ticks it. Record the Xcode version, the device
@@ -116,7 +118,7 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | O11 | With O8 on: tap a note reminder's "Done" from the Lock Screen (a background launch), then open Doddy | Nothing listened in the background; the scene (and the conversation) only once the app is on screen |
 
 ## 4e. "Hey Doddy" (ADR-254, `HEY_DODDY_STATUS.md`)
-Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section train **Hey Doddy**, English, platform **iOS**; download the `.ppn` to the iPhone (Files → On My iPhone). Voice must already work (token server or the development agent). Turn off "Start listening when I open Doddy" first, so only the wake word starts conversations.
+Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section train **Hey Doddy**, English, platform **iOS**; download the `.ppn` to the iPhone (Files → On My iPhone). Voice must already work: signed in with Apple through the voice token server (rows V0a–V0f in section 5). The development agent is gone since `754e5d6` (ADR-522). Turn off "Start listening when I open Doddy" first, so only the wake word starts conversations.
 
 | # | Do this | Expect |
 |---|---|---|
@@ -138,8 +140,17 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | H14 | What leaves this iPhone | A Picovoice row: active only while the switch is on; the "stays on this iPhone" line for Hey Doddy; Settings → Privacy → Microphone mentions it while on |
 
 ## 5. Voice (needs a real conversation)
+**First, the voice sign-in (ADR-521, ADR-522).** Needs the token server's settings (`server/voice-token/README.md`) and Sign in with Apple on the App ID. Record the commit you built in the result log.
+
 | # | Do this | Expect |
 |---|---|---|
+| V0a | Fresh install. Tap Talk to Doddy | The sign-in screen: Sign in with Apple, then a consent switch for the voice provider. No microphone prompt yet. Notes and lists work without signing in |
+| V0b | Sign in with Apple, turn on the consent switch, continue | A conversation starts and Doddy answers. "Voice isn't set up yet" means the server is missing a setting (Upstash or the signing key). "Apple sign-in couldn't be verified" usually means `APPLE_BUNDLE_ID` is missing or isn't this build's bundle ID (`com.bienos.doddy2.dev` for a dev build), or the App ID lacks Sign in with Apple |
+| V0c | End, force-quit, open again, talk | No new sign-in: the refresh token in the Keychain works |
+| V0d | Settings → Voice: Ask again before sharing voice, then talk | The consent switch shows again before the conversation |
+| V0e | Settings → Voice: Sign out of voice, then talk | The sign-in screen again |
+| V0f | Settings → Voice: Delete voice account | Signed out. Signing in again makes a new account. Note whether Settings → Apple ID → Sign in with Apple still lists Doddy (checklist C8) |
+| V0g | Only once the server has the Sign in with Apple key (ADR-524): sign in fresh, then Settings → Voice: Delete voice account | Signed out. The server's log line for the deletion says `apple: revoked`, and within a few minutes Settings → Apple ID → Sign in with Apple no longer lists Doddy. `failed` means Apple refused the key or timed out; `no_token` means the code swap at sign-in didn't keep a token |
 | V1 | Settings → Voice and personality: play each voice sample, change speed and expressiveness | Samples play at the chosen speed. They refuse to play during a conversation (ADR-105, ADR-122) |
 | V2 | Start a conversation with a non-default voice, speed and starting language | The voice and language are used. The dev agent allows the overrides. If it connects but sounds default, check the agent's override switches |
 | V3 | Set a nickname | Doddy uses it now and then (ADR-127) |
@@ -160,6 +171,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | # | Do this | Expect |
 |---|---|---|
 | R1 | The device checks in `VOICE_NOTE_REMINDERS_STATUS.md`, `PLACE_REMINDERS_STATUS.md` and `REPEAT_SNOOZE_STATUS.md` | As listed there. Key ones: a place reminder fires when arriving, "While Using" only; a weekly repeat rings on the right weekday; "In an hour" moves a one-off |
+| R2 | The shared limit (ADR-523): turn on 20 birthdays (Settings › Birthdays), then set note reminders until Doddy refuses | Refused at the lower limit with the number shown (about 30 with nothing else pending, fewer with routines and timers on), never a reminder that just doesn't fire. Turning birthdays off frees the room again |
 
 ## 8. Languages and translator (ADR-212 to ADR-215, ADR-221)
 | # | Do this | Expect |
@@ -521,3 +533,16 @@ These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_
 | LT4 | Turn off Speech Recognition for Doddy in Settings; try again | The draft card says it's off; type the words and tap Send; Doddy answers |
 | LT5 | Start, then tap End mid-recording | Nothing sent; no DoddyTurn-*.m4a left in the app's tmp folder (Xcode › Devices › container) |
 | LT6 | Start, wait past 3:00 | It finishes by itself and sends what it heard |
+
+## 4z. Allowing a function from the conversation (ADR-578, `docs/design/SETTINGS_AND_CONNECTIONS.md` §3.6)
+| # | Do this | Expect |
+|---|---|---|
+| AC1 | Fresh install (Calendar never asked). Settings › Connections › Calendar off. Ask "What's on tomorrow?" | No Settings mention. Doddy says "Allow it on screen and I'll carry on"; the card "Allow Doddy to use Calendar?" scrolls into view with Allow, Not now and Details |
+| AC2 | Tap Allow | iOS's own Calendar prompt; Allow there → the card goes, Doddy asks "Read your calendar?" (ASK-01) by itself, yes → the events. Settings › Connections shows Calendar On |
+| AC3 | Same as AC1, but Don't Allow in iOS's prompt | The card goes; Doddy doesn't retry or ask again; Calendar still Off |
+| AC4 | Calendar refused earlier in iOS. Ask again; tap Open iPhone Settings; allow Full Access there; come back | The card says iPhone has it turned off; the button opens Doddy's page in iPhone Settings. Back in Doddy the switch turns on and Doddy carries on by itself. Coming back without allowing: the card stays |
+| AC5 | Timers off (notifications never asked). "Set a timer for ten minutes" → Allow | iOS notification prompt, then the timer card |
+| AC6 | Card up, tap Not now | Nothing changes; Doddy says nothing more about it |
+| AC7 | Card up, tap End, start a new conversation | No card in the new conversation |
+| AC8 | Card up, tap Details, turn it on in the sheet, close the sheet | The card goes and Doddy carries on |
+| AC9 | ElevenLabs conversation log for AC1 to AC5 | The "(app) The user just allowed …" message reached the agent and it called the tool again once |

@@ -81,6 +81,8 @@ final class TranslatorTests: XCTestCase {
         let reply = VoiceToolReply.translatorStarted(faceToFace())
         XCTAssertTrue(reply.hasPrefix("started:"))
         XCTAssertTrue(reply.contains(lang("es").hello))
+        // ADR-619: it started without asking, so Doddy asks what to translate if he wasn't told.
+        XCTAssertTrue(reply.contains("what to translate"))
         let detect = VoiceToolReply.translatorStarted(faceToFace("pl", nil))
         XCTAssertTrue(detect.contains("let them say something first"))
         let listen = VoiceToolReply.translatorStarted(TranslatorSetup(kind: .listen, owner: lang("pl"), other: lang("it"))!)
@@ -119,11 +121,14 @@ final class TranslatorTests: XCTestCase {
         XCTAssertEqual(router.route(agentLine: "OK", after: nil), .translation(.toOwner))
     }
 
-    func testDoddyAtTheStartIsAQuietWord() {
+    func testDoddyAtTheStartIsTranslatedLikeEverythingElse() {
+        // ADR-574: the owner opened with "Yo, Doddy, …" and got answers instead of translations.
         var router = TranslatorRouter(setup: faceToFace())
-        XCTAssertEqual(router.route(agentLine: "Powiedz: „¿Podría ir más despacio?”", after: "Doddy, jak poprosić, żeby jechał wolniej?"), .aside)
-        XCTAssertEqual(router.route(agentLine: "x", after: "Hej Doddy, co znaczy despacio?"), .aside)
-        XCTAssertFalse(TranslatorRouter.isAside("Mój kolega Doddy mówi, że jest blisko"))
+        XCTAssertFalse(TranslatorRouter.isAside("Yo, Doddy. I want to tell you something."))
+        XCTAssertFalse(TranslatorRouter.isAside("Doddy, jak poprosić, żeby jechał wolniej?"))
+        XCTAssertEqual(router.route(agentLine: "¿Cómo le pido que vaya más despacio?", after: "Doddy, jak poprosić, żeby jechał wolniej?"),
+                       .translation(.toOther))
+        XCTAssertNotEqual(router.route(agentLine: "x", after: "Hej Doddy, co znaczy despacio?"), .aside)
     }
 
     func testDoddyFromTheOtherPersonIsNotAQuietWord() {
@@ -133,7 +138,7 @@ final class TranslatorTests: XCTestCase {
                        .translation(.toOwner))
         // Their hold-to-talk button was held.
         XCTAssertNotEqual(router.route(agentLine: "x", after: "Doddy, ok", held: .toOther), .aside)
-        XCTAssertEqual(router.route(agentLine: "x", after: "Doddy, ok", held: .toOwner), .aside)
+        XCTAssertNotEqual(router.route(agentLine: "x", after: "Doddy, ok", held: .toOwner), .aside)
         // In listen mode, the guide naming Doddy in Italian still goes to the owner as a translation.
         var listen = TranslatorRouter(setup: TranslatorSetup(kind: .listen, owner: lang("pl"), other: lang("it"))!)
         XCTAssertEqual(listen.route(agentLine: "Doddy, to jest kaplica", after: "Doddy, questa è la cappella."), .translation(.toOwner))

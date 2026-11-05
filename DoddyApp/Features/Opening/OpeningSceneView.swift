@@ -30,7 +30,8 @@ struct OpeningSceneView: View {
 
     var body: some View {
         GeometryReader { geo in
-            TimelineView(.animation(paused: done)) { context in
+            // 60 frames a second at most (ADR-604): uncapped it ran at 120 Hz over a live Home.
+            TimelineView(.animation(minimumInterval: 1.0 / 60, paused: done)) { context in
                 let t = time(context.date)
                 scene(OpeningScene.frame(at: t, reducedMotion: play.reducedMotion), at: t, in: geo)
             }

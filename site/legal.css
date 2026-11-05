@@ -1,0 +1,58 @@
+/* Terms and Privacy pages (site/terms, site/privacy, site/pl/terms, site/pl/privacy).
+   Hand-written; builds on tokens.css + styles.css + blog.css (.post, .post-body, .table-wrap).
+   Colours only from tokens. No inline styles: the production CSP has no style allowance. */
+
+.legal .post-header .display-m { font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem); }
+
+.legal-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 0.9375rem; color: var(--secondary-text); }
+.legal-meta li { margin: 0; }
+.legal-meta strong { color: var(--reading-ink); font-weight: 650; }
+
+/* The draft notice: visible on every page until the owner and a lawyer approve the text. */
+.legal-draft {
+  margin: 0 0 clamp(24px, 4vw, 36px); padding: 16px 20px;
+  background: color-mix(in srgb, var(--orange-cue) 10%, var(--paper));
+  border: 1.5px solid var(--accent-text); border-radius: 16px;
+  font-size: 1rem; line-height: 1.55;
+}
+.legal-draft p { margin: 0 0 8px; }
+.legal-draft p:last-child { margin-bottom: 0; }
+.legal-draft .legal-draft-title { font-family: var(--display); font-weight: 720; font-size: 1.125rem; color: var(--accent-text); }
+
+/* A gap the owner still has to fill: easy to spot, and easy to find with a search for "[OWNER" / "[WŁAŚCICIEL". */
+.ph {
+  background: color-mix(in srgb, var(--orange-cue) 18%, #fff); color: var(--reading-ink);
+  outline: 1px dashed var(--accent-text); outline-offset: 0; border-radius: 4px;
+  padding: 0 4px; font-weight: 600; font-size: 0.95em;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+
+/* "The short version" box, same family as the blog's TL;DR. */
+.legal-summary {
+  margin: 0 0 clamp(28px, 4vw, 40px); padding: 18px 22px 8px;
+  background: var(--paper); border: 1px solid var(--rule); border-left: 4px solid var(--orange-cue);
+  border-radius: 0 18px 18px 0; box-shadow: var(--lift);
+}
+.legal-summary h2 { font-family: var(--display); font-weight: 720; font-size: 1.25rem; margin: 0 0 10px; }
+.legal-summary ul { margin: 0 0 12px; padding-left: 1.2em; }
+.legal-summary li { margin-bottom: 6px; }
+.legal-summary li::marker { color: var(--accent-text); }
+
+.legal-toc { margin: 0 0 clamp(28px, 4vw, 40px); font-size: 1rem; }
+.legal-toc h2 { font-family: var(--display); font-weight: 720; font-size: 1.125rem; margin: 0 0 8px; }
+.legal-toc ol { margin: 0; padding-left: 1.4em; columns: 2 16rem; column-gap: 32px; }
+.legal-toc li { margin: 0 0 4px; break-inside: avoid; }
+.legal-toc a { text-decoration-color: var(--separator); text-underline-offset: 3px; }
+.legal-toc a:hover { text-decoration-color: var(--orange-cue); }
+
+/* styles.css pads anchors by 80px for the sticky nav; on a phone the nav is taller (language row), so add a little. */
+.legal .post-body h2, .legal .post-body h3 { scroll-margin-top: 32px; }
+.legal .post-body h2 { margin-top: 48px; }
+.legal .post-body h3 { font-size: 1.15rem; margin: 28px 0 8px; }
+.legal .post-body { font-size: 1.0625rem; }
+.legal .post-body p, .legal .post-body li { overflow-wrap: anywhere; }
+.legal .post-body td, .legal .post-body th { overflow-wrap: break-word; }
+
+.legal-note { font-size: 0.9375rem; color: var(--secondary-text); }
+
+.legal-other { margin: 40px 0 0; padding-top: 20px; border-top: 1px solid var(--separator); font-size: 0.9375rem; color: var(--secondary-text); }

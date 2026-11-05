@@ -383,8 +383,22 @@ struct TranslatorStartView: View {
     /// Set when the user taps Start; Home opens the conversation after this sheet has closed.
     @Binding var chosen: TranslatorSetup?
     @State private var kind = TranslatorKind.faceToFace
-    @State private var owner = VoiceSessionController.ownerLanguage
+    @State private var owner: TranslatorLanguage
     @State private var other: TranslatorLanguage?
+
+    /// The two languages picked last time (ADR-574), so a second go is one tap.
+    private static let lastOwnerKey = "translator.lastOwner"
+    private static let lastOtherKey = "translator.lastOther"
+
+    init(chosen: Binding<TranslatorSetup?>) {
+        _chosen = chosen
+        let pair = TranslatorLanguages.startingPair(
+            lastOwner: UserDefaults.standard.string(forKey: Self.lastOwnerKey),
+            lastOther: UserDefaults.standard.string(forKey: Self.lastOtherKey),
+            ownerDefault: VoiceSessionController.ownerLanguage)
+        _owner = State(initialValue: pair.owner)
+        _other = State(initialValue: pair.other)
+    }
 
     var body: some View {
         NavigationStack {
@@ -398,13 +412,15 @@ struct TranslatorStartView: View {
                     } else {
                         Text("For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.")
                     }
-                    Text("Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number.")
+                    Text("Both voices go to ElevenLabs, or OpenAI if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number.")
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .font(.footnote)
                 Section {
                     Button("Start translating") {
                         chosen = TranslatorSetup(kind: kind, owner: owner, other: other)
+                        UserDefaults.standard.set(owner.code, forKey: Self.lastOwnerKey)
+                        UserDefaults.standard.set(other?.code ?? TranslatorLanguages.detectCode, forKey: Self.lastOtherKey)
                         dismiss()
                     }
                     .disabled(owner == other)

@@ -37,6 +37,7 @@ final class VoiceMemoRecorder {
 
     init() {
         Self.deleteLeftovers()
+        AudioSessionOwner.shared.register(self, as: .memoRecording, isUsing: { $0.isCapturing })
     }
 
     /// Recordings left in the temporary folder by a crash or a force-quit before their note was
@@ -55,6 +56,17 @@ final class VoiceMemoRecorder {
     /// Asks for the microphone once (the same permission as talking to Doddy), then records.
     func start() async {
         guard !isRecording else { return }
+        // A memo would take the microphone and audio setup of whatever else listens (ADR-676, ADR-695).
+        switch AudioSessionOwner.shared.claim(.memoRecording, by: self) {
+        case .refused(.captureRecording):
+            state = .failed(NSLocalizedString("Doddy is recording. Stop the recording to record a voice memo.", comment: ""))
+            return
+        case .refused:
+            state = .failed(NSLocalizedString("Recording couldn't start. If you're talking to Doddy or on a call, finish that first.", comment: ""))
+            return
+        case .go:
+            break
+        }
         guard await AVAudioApplication.requestRecordPermission() else {
             state = .failed(NSLocalizedString("The microphone is off for Doddy. Turn it on in the Settings app to record.", comment: ""))
             return
@@ -66,8 +78,6 @@ final class VoiceMemoRecorder {
             AVNumberOfChannelsKey: 1,
             AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue,
         ]
-        // "Hey Doddy" listening (ADR-254) steps aside while a memo is recorded.
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: true)
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
@@ -97,8 +107,8 @@ final class VoiceMemoRecorder {
             }
         } catch {
             try? FileManager.default.removeItem(at: url)
-            WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
             state = .failed(NSLocalizedString("Recording couldn't start. If you're talking to Doddy or on a call, finish that first.", comment: ""))
+            AudioSessionOwner.shared.release(.memoRecording, by: self)
         }
     }
 
@@ -111,8 +121,8 @@ final class VoiceMemoRecorder {
         recorder.stop()
         self.recorder = nil
         state = .idle
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
+        // Kept on for anything else of Doddy's still using it, a conversation first (ADR-676, ADR-695).
+        AudioSessionOwner.shared.release(.memoRecording, by: self)
         MicrophoneHolders.shared.recording(self, false)
         let milliseconds = min(Int((seconds * 1000).rounded()), VoiceMemoLimits.maxSeconds * 1000)
         guard MemoryAudio.isValidDuration(milliseconds), FileManager.default.fileExists(atPath: recorder.url.path) else {
@@ -153,9 +163,19 @@ final class VoiceMemoPlayer {
     private var player: AVAudioPlayer?
     private var ticker: Task<Void, Never>?
 
+    init() {
+        AudioSessionOwner.shared.register(self, as: .memoPlayback, isUsing: { $0.isPlaying }, stop: { $0.stop() })
+    }
+
     func toggle(_ url: URL) {
         if isPlaying {
             pause()
+            return
+        }
+        // Playing switches the audio session to playback only, which turns off the microphone of
+        // whatever listens while Home still says Listening (ADR-676). Another player stops for this one.
+        if case .refused(let holder) = AudioSessionOwner.shared.claim(.memoPlayback, by: self) {
+            problem = AudioPlaybackRefusal.message(by: holder)
             return
         }
         do {
@@ -163,8 +183,6 @@ final class VoiceMemoPlayer {
                 player = try AVAudioPlayer(contentsOf: url)
                 position = 0
             }
-            // "Hey Doddy" listening (ADR-254) steps aside while a memo plays.
-            WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: true)
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
             try AVAudioSession.sharedInstance().setActive(true)
             guard player?.play() == true else { throw CocoaError(.fileReadUnknown) }
@@ -184,7 +202,6 @@ final class VoiceMemoPlayer {
         } catch {
             problem = NSLocalizedString("This recording couldn't be played.", comment: "")
             isPlaying = false
-            WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
         }
     }
 
@@ -193,7 +210,7 @@ final class VoiceMemoPlayer {
         ticker?.cancel()
         ticker = nil
         isPlaying = false
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
+        release()
     }
 
     func stop() {
@@ -203,8 +220,7 @@ final class VoiceMemoPlayer {
         ticker = nil
         isPlaying = false
         position = 0
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
+        release()
     }
 
     private func finished() {
@@ -212,7 +228,13 @@ final class VoiceMemoPlayer {
         isPlaying = false
         position = 0
         player?.currentTime = 0
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
+        release()
+    }
+
+    /// Lets go of the audio session, which stays on for anything else of Doddy's still using it: a
+    /// conversation started meanwhile keeps what it plays and hears (ADR-676, ADR-695).
+    private func release() {
+        AudioSessionOwner.shared.release(.memoPlayback, by: self)
     }
 }
+

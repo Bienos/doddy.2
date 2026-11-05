@@ -3,6 +3,7 @@ import XCTest
 
 /// OP-024, ADR-361: one indicator while anything in Doddy has the microphone open, and a Stop
 /// listening that says "Stopped" only when each one says it is closed and iOS let go of the audio.
+/// ("Hey Doddy" was the third microphone user until ADR-549.)
 final class ListeningPrivacyTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_791_630_000)
 
@@ -11,14 +12,6 @@ final class ListeningPrivacyTests: XCTestCase {
     func testOnlyWhatIsActuallyOpenCounts() {
         XCTAssertEqual(MicrophoneSnapshot().open, [])
         XCTAssertEqual(MicrophoneSnapshot(conversation: .muted).open, [.conversation], "muted may still capture (OpenAI test voice)")
-        XCTAssertEqual(MicrophoneSnapshot(heyDoddy: .listening, heyDoddyRunning: true).open, [.heyDoddy])
-        // The switch is on but iOS hasn't let it start: nothing is open, but it could start by itself.
-        let waiting = MicrophoneSnapshot(heyDoddy: .waitingForApp)
-        XCTAssertEqual(waiting.open, [])
-        XCTAssertTrue(waiting.heyDoddyCouldListen)
-        XCTAssertFalse(MicrophoneSnapshot(heyDoddy: .off).heyDoddyCouldListen)
-        XCTAssertFalse(MicrophoneSnapshot(heyDoddy: .microphoneDenied).heyDoddyCouldListen)
-        XCTAssertTrue(MicrophoneSnapshot(heyDoddy: .off, heyDoddyRunning: true).heyDoddyCouldListen, "a running engine always counts")
         XCTAssertEqual(MicrophoneSnapshot(voiceMemoRecording: true).open, [.voiceMemo])
     }
 
@@ -26,13 +19,6 @@ final class ListeningPrivacyTests: XCTestCase {
 
     func testTheIndicatorShowsOnlyWhileSomethingListens() throws {
         XCTAssertNil(ListeningIndicator.current(MicrophoneSnapshot()))
-        XCTAssertNil(ListeningIndicator.current(MicrophoneSnapshot(heyDoddy: .paused(.lowPowerMode))), "paused isn't listening")
-        XCTAssertNil(ListeningIndicator.current(MicrophoneSnapshot(heyDoddy: .waitingForApp)))
-
-        let wake = try XCTUnwrap(ListeningIndicator.current(MicrophoneSnapshot(heyDoddy: .listening, heyDoddyRunning: true)))
-        XCTAssertEqual(wake.title(.english), "Listening for “Hey Doddy”")
-        XCTAssertEqual(wake.detail(.english), "On this iPhone only; nothing is kept or sent until you say it.")
-        XCTAssertEqual(wake.symbol, "ear")
 
         let muted = try XCTUnwrap(ListeningIndicator.current(MicrophoneSnapshot(conversation: .muted)))
         XCTAssertEqual(muted.title(.english), "Microphone muted")
@@ -47,7 +33,7 @@ final class ListeningPrivacyTests: XCTestCase {
     func testEveryIndicatorLineHasPolish() throws {
         let kinds: [MicrophoneSnapshot] = [
             .init(conversation: .connecting), .init(conversation: .listening), .init(conversation: .muted),
-            .init(voiceMemoRecording: true), .init(heyDoddy: .listening, heyDoddyRunning: true),
+            .init(voiceMemoRecording: true),
         ]
         for snapshot in kinds {
             let indicator = try XCTUnwrap(ListeningIndicator.current(snapshot))
@@ -64,7 +50,6 @@ final class ListeningPrivacyTests: XCTestCase {
         let report = ListeningStopReport(before: before, after: MicrophoneSnapshot(), release: .released)
         XCTAssertTrue(report.stopped)
         XCTAssertEqual(report.conversation, .closed)
-        XCTAssertEqual(report.heyDoddy, .wasOff)
         XCTAssertEqual(report.reply(.english), "Stopped. Doddy isn't listening. The conversation is ended.")
 
         // The conversation still says it is live after being stopped: never "Stopped".
@@ -73,22 +58,6 @@ final class ListeningPrivacyTests: XCTestCase {
         XCTAssertEqual(stuck.stillOpen, [.conversation])
         XCTAssertFalse(stuck.reply(.english).contains("Stopped"))
         XCTAssertTrue(stuck.reply(.english).hasPrefix("Doddy couldn't stop the conversation. Try again"))
-    }
-
-    func testHeyDoddyMustBeSwitchedOffNotJustPaused() {
-        let before = MicrophoneSnapshot(heyDoddy: .listening, heyDoddyRunning: true)
-        // The engine stopped but the switch is still on: it would start again by itself.
-        let paused = ListeningStopReport(before: before, after: MicrophoneSnapshot(heyDoddy: .waitingForApp), release: .released)
-        XCTAssertEqual(paused.heyDoddy, .stillOpen)
-        XCTAssertFalse(paused.stopped)
-
-        let off = ListeningStopReport(before: before, after: MicrophoneSnapshot(heyDoddy: .off), release: .released)
-        XCTAssertEqual(off.heyDoddy, .closed)
-        XCTAssertEqual(off.reply(.english), "Stopped. Doddy isn't listening. “Hey Doddy” is off; turn it back on in Settings.")
-
-        // Switched on but not listening yet (waiting for Doddy to open) is turned off too.
-        let waiting = ListeningStopReport(before: MicrophoneSnapshot(heyDoddy: .paused(.conversation)), after: MicrophoneSnapshot(heyDoddy: .off), release: .notNeeded)
-        XCTAssertEqual(waiting.heyDoddy, .closed)
     }
 
     func testIOSNotLettingGoIsNotStopped() {
@@ -119,8 +88,8 @@ final class ListeningPrivacyTests: XCTestCase {
     func testEveryReplyHasPolish() {
         let reports = [
             ListeningStopReport(before: MicrophoneSnapshot(), after: MicrophoneSnapshot(), release: .notNeeded),
-            ListeningStopReport(before: MicrophoneSnapshot(conversation: .listening, heyDoddy: .paused(.conversation), voiceMemoRecording: true),
-                                after: MicrophoneSnapshot(heyDoddy: .off), release: .released, keptNoteDraft: true),
+            ListeningStopReport(before: MicrophoneSnapshot(conversation: .listening, voiceMemoRecording: true),
+                                after: MicrophoneSnapshot(), release: .released, keptNoteDraft: true),
             ListeningStopReport(before: MicrophoneSnapshot(conversation: .listening), after: MicrophoneSnapshot(conversation: .listening), release: .released),
             ListeningStopReport(before: MicrophoneSnapshot(conversation: .listening), after: MicrophoneSnapshot(), release: .failed("x")),
         ]

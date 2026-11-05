@@ -28,6 +28,7 @@ Date: 2026-10-08. Updated 2026-10-09 after a read-only live check of the ElevenL
 | `open_map` `tool_6101m4gj36nbe1tv5mpj73rzbqsa` | phone, Maps switch | Card with **Open in Maps**; opens Apple Maps, which leaves the app. |
 | `run_shortcut` `tool_1601m4gj37f5etbres37pgtvrq3c` | phone, Shortcuts switch | Card with **Run**; asks Shortcuts to run it. Doddy cannot see whether it finished. |
 | `draft_message` `tool_9001m4gj38k8fmwbr3gy4qz3wygw` | phone, Messages switch + Contacts | Looks up the contact; card with **Open in Messages** or **Open in Mail**. The user sends it there. Doddy never sends. |
+| `draft_blik_transfer` `tool_5701m57c1717fmebcs14kbrjqmdq` | phone, BLIK transfers switch (+ Contacts if allowed) | Card with the person, their numbers, the amount in złoty and the title, and **I'll send it myself**. The user sends it in their bank app; Doddy never sends money (ADR-510, `BLIK_TRANSFER_STATUS.md`). |
 | `geocode_place`, `get_weather` | ElevenLabs → Open-Meteo | Cannot be switched off from the phone. Place name and coordinates go to Open-Meteo. |
 | `wikipedia_search`, `wikipedia_summary` | ElevenLabs → Wikipedia | Cannot be switched off from the phone. Search words go to Wikipedia. |
 

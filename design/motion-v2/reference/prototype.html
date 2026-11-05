@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doddy Motion Prototype v2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: the v1 motion spec sheet, continued. One column of sections; clip cards pair a phone-shaped video with its measured numbers; the prototype bench breaks out to 1180px. */
+:root {
+  --paper: #F2F2EE; --paper-2: #E9E8E2; --card: #FFFFFF; --ink: #1A1916; --ink-2: #3B3832; --ink-3: #8B867C; --muted: #67635B; --line: #D9D7CF; --wash: #ECEBE5;
+  --accent: #A64B19;
+  --keep: #2C7350; --refine: #9A6410; --cut: #A3382F; --rare: #6549A3;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --device: #1D1B19; --vidbg: #F3EDDF;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141412; --paper-2: #1B1A17; --card: #1F1E1B; --ink: #ECEAE4; --ink-2: #CFCBC2; --ink-3: #8E897F; --muted: #A29D93; --line: #36342F; --wash: #292823;
+    --accent: #E2864F; --keep: #63B98C; --refine: #E2A645; --cut: #EA776B; --rare: #AE93EE; --device: #0B0A09;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #141412; --paper-2: #1B1A17; --card: #1F1E1B; --ink: #ECEAE4; --ink-2: #CFCBC2; --ink-3: #8E897F; --muted: #A29D93; --line: #36342F; --wash: #292823;
+  --accent: #E2864F; --keep: #63B98C; --refine: #E2A645; --cut: #EA776B; --rare: #AE93EE; --device: #0B0A09;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--paper); color: var(--ink); font: 400 16.5px/1.62 var(--body); -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, summary:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+code { font-family: var(--mono); font-size: 0.86em; overflow-wrap: anywhere; }
+.num { font-variant-numeric: tabular-nums; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; margin: 0; color: var(--ink); }
+p { margin: 0; }
+
+/* masthead */
+.mast { padding-block: 44px 28px; border-bottom: 1px solid var(--line); }
+.eyebrow { font: 500 12.5px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.eyebrow .wm { font-family: var(--body); text-transform: none; letter-spacing: -0.03em; font-weight: 700; font-size: 17px; color: var(--ink); }
+.eyebrow .wm i { font-style: normal; color: var(--accent); }
+.mast h1 { font-size: clamp(40px, 7vw, 76px); line-height: 0.98; letter-spacing: -0.045em; margin: 18px 0 22px; max-width: 14ch; }
+.lede { font-size: 18.5px; line-height: 1.6; max-width: 74ch; color: var(--ink-2); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-top: 22px; padding: 0; list-style: none; }
+.facts li { font: 500 13px/1.3 var(--mono); padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink-2); }
+.facts b { color: var(--ink); font-weight: 600; }
+.facts .ok b { color: var(--keep); }
+.facts .open b { color: var(--refine); }
+
+/* section nav + video controls */
+.secnav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.secnav .wrap { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; padding-block: 8px; }
+.secnav ol { list-style: none; margin: 0; padding: 0; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 1 1 420px; }
+.secnav ol::-webkit-scrollbar { display: none; }
+.secnav a { display: block; padding: 6px 10px; border-radius: 8px; text-decoration: none; white-space: nowrap; font-size: 14px; color: var(--muted); }
+.secnav a:hover { background: var(--wash); color: var(--ink); }
+.vctl { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+@media (max-width: 640px) {
+  .secnav .wrap { gap: 4px 10px; padding-block: 6px; }
+  .nav-l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .vctl { gap: 8px; }
+}
+.ctl { display: flex; align-items: center; gap: 8px; }
+.ctl-label { font: 500 12px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
+.seg button { font: 500 13px/1 var(--mono); padding: 8px 11px; background: transparent; color: var(--ink); border: 0; cursor: pointer; min-height: 34px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+/* sections */
+.sec { padding-block: 56px 8px; scroll-margin-top: 64px; }
+.sec-h { display: grid; gap: 6px; margin-bottom: 22px; }
+.sec-k { font: 600 12.5px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.sec-h h2 { font-size: clamp(28px, 3.6vw, 40px); line-height: 1.05; letter-spacing: -0.035em; }
+.sec-h p { color: var(--muted); max-width: 74ch; }
+.sub { font-size: 21px; letter-spacing: -0.02em; margin: 36px 0 12px; }
+.note { font-size: 14px; color: var(--muted); max-width: 78ch; }
+
+/* verdict chips (v1) */
+.v { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--mono); letter-spacing: 0.02em; padding: 5px 8px 5px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.v::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.v-keep { color: var(--keep); } .v-refine { color: var(--refine); } .v-cut { color: var(--cut); } .v-rare { color: var(--rare); }
+
+/* clip cards */
+.clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 540px), 1fr)); gap: 14px; }
+.clip { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 12px 16px 14px 12px; min-width: 0; }
+.vid { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 390 / 844; border-radius: 22px; background: var(--vidbg); border: 1px solid var(--line); }
+.clip-body { min-width: 0; display: grid; gap: 10px; align-content: start; font-size: 15px; line-height: 1.55; }
+.clip-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.clip-h .code { font: 600 13px/1 var(--mono); color: var(--accent); }
+.clip-h h3 { font-size: 19px; line-height: 1.2; }
+.clip-h .dur { margin-left: auto; font: 12.5px/1 var(--mono); color: var(--muted); }
+.chg { font-size: 14px; color: var(--ink-2); border-left: 2px solid var(--line); padding-left: 10px; }
+.meas { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--wash); display: grid; gap: 4px; font-size: 13px; line-height: 1.45; color: var(--ink-2); list-style: none; }
+.meas li { padding-left: 14px; position: relative; overflow-wrap: anywhere; }
+.meas li::before { content: ""; position: absolute; left: 2px; top: 0.6em; width: 5px; height: 5px; border-radius: 50%; background: var(--keep); }
+.meas b { color: var(--ink); font-weight: 600; }
+.clip-foot { display: grid; gap: 6px; }
+.art { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.art li { font: 12px/1.3 var(--mono); padding: 4px 8px; border-radius: 999px; border: 1px dashed var(--ink-3); color: var(--ink-2); }
+.art::before { content: "Stands in for"; font: 600 11px/2 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.files { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.files code { font-size: 12px; color: var(--muted); }
+@media (max-width: 600px) {
+  .clip { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .clip-media { width: min(240px, 100%); margin-inline: auto; }
+}
+
+/* journey */
+.jgrid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 760px) { .jgrid { grid-template-columns: minmax(0, 1fr); } .jgrid .jmedia { width: min(300px, 100%); margin-inline: auto; } }
+.vid-big { border-radius: 30px; }
+.beats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; counter-reset: beat; }
+@media (max-width: 1000px) { .beats { grid-template-columns: minmax(0, 1fr); } }
+.beat { width: 100%; display: grid; grid-template-columns: 4.2em minmax(0, 1fr); gap: 10px; align-items: baseline; text-align: left; font: 400 14.5px/1.4 var(--body); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; }
+.beat:hover { border-color: var(--ink-3); }
+.beat span { font: 600 12.5px/1.4 var(--mono); color: var(--accent); }
+.jside { display: grid; gap: 16px; min-width: 0; }
+
+/* tables */
+.tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.5; }
+th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+thead th { font: 600 12px/1.3 var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); background: var(--paper-2); }
+tbody tr:last-child td { border-bottom: 0; }
+.checks { min-width: 900px; }
+.checks td:first-child { font-weight: 600; width: 26%; }
+.checks td:nth-child(2) { color: var(--ink-2); width: 30%; }
+.checks td:last-child { white-space: nowrap; }
+.artt { min-width: 640px; }
+.artt td:first-child { font-weight: 600; width: 34%; }
+.artt td:last-child { font-family: var(--mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.filest { min-width: 640px; font-size: 13.5px; }
+.filest td { padding-block: 7px; }
+.filest td:nth-child(3), .filest td:nth-child(4) { text-align: right; white-space: nowrap; font-family: var(--mono); font-size: 12.5px; }
+.filest th:nth-child(3), .filest th:nth-child(4) { text-align: right; }
+
+/* flags */
+.flags { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.flags article { border: 1px solid var(--line); border-radius: 14px; background: var(--card); padding: 14px 16px; min-width: 0; display: grid; gap: 6px; align-content: start; }
+.flags h4 { font-size: 16.5px; }
+.flags p { font-size: 14.5px; color: var(--ink-2); }
+
+/* prototype bench */
+.bench { background: var(--paper-2); border-block: 1px solid var(--line); padding-block: 28px; margin-top: 18px; }
+.pb { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: start; }
+@media (max-width: 920px) { .pb { grid-template-columns: minmax(0, 1fr); } }
+.pb-stagecol { min-width: 0; display: grid; gap: 10px; justify-items: center; }
+#pb-stagewrap { position: relative; width: 410px; height: 864px; max-width: 100%; }
+#pb-scaler { position: absolute; left: 0; top: 0; width: 410px; height: 864px; transform-origin: 0 0; }
+.pb-device { width: 410px; height: 864px; padding: 10px; border-radius: 62px; background: var(--device); box-shadow: 0 30px 60px -28px rgba(20,16,10,.55); }
+.pb-caption { font-size: 13px; color: var(--muted); max-width: 48ch; text-align: center; }
+.pb-side { min-width: 0; display: grid; gap: 14px; align-content: start; }
+.pb-box { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px 14px; background: var(--card); min-width: 0; display: grid; gap: 10px; }
+.pb-box h3 { font: 600 12px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pb-row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.sw { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; min-height: 32px; }
+.sw input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btns button { font: 500 13.5px/1 var(--body); padding: 9px 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; min-height: 36px; }
+.btns button:hover { border-color: var(--ink-3); }
+.btns.codes button { font: 600 12.5px/1 var(--mono); min-width: 46px; }
+.btns .primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pb-study { font-size: 13.5px; color: var(--ink-2); }
+.pb-toast { font-size: 13.5px; padding: 9px 12px; border-radius: 10px; background: var(--ink); color: var(--paper); }
+.ro { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
+@media (max-width: 560px) { .ro { grid-template-columns: minmax(0, 1fr); } }
+.ro div { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 13px; }
+.ro .wide { grid-column: 1 / -1; }
+.ro dt { color: var(--muted); }
+.ro dd { margin: 0; font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+#ro-checks[data-state="ok"] { color: var(--keep); }
+#ro-checks[data-state="bad"] { color: var(--cut); }
+.log { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; line-height: 1.4; }
+.log li { overflow-wrap: anywhere; }
+.log .t { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-right: 6px; }
+.foot { border-top: 1px solid var(--line); margin-top: 56px; padding-block: 24px 48px; font-size: 13.5px; color: var(--muted); }
+.foot p + p { margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+<div class="bench" id="bench">
+    <div class="wrap">
+      <div class="pb">
+        <div class="pb-stagecol">
+          <div id="pb-stagewrap"><div id="pb-scaler"><div class="pb-device"><div id="pb-phone"></div></div></div></div>
+          <p class="pb-caption">Simulation on the stand-in rig. Everything inside the phone responds; the side panel adds events the app can’t trigger by itself.</p>
+        </div>
+        <div class="pb-side">
+          <p class="pb-study" id="pb-study" role="status"></p>
+          <p class="pb-toast" id="pb-toast" role="status" hidden></p>
+          <div class="pb-box">
+            <h3>View</h3>
+            <div class="pb-row">
+              <div class="ctl"><span class="ctl-label" id="pb-speed-l">Playback</span><div class="seg" role="group" aria-labelledby="pb-speed-l" id="pb-speed"><button type="button" data-speed="1" aria-pressed="true">1×</button><button type="button" data-speed="0.5" aria-pressed="false">0.5×</button><button type="button" data-speed="0.25" aria-pressed="false">0.25×</button></div></div>
+              <div class="ctl"><span class="ctl-label" id="pb-size-l">Home size</span><div class="seg" role="group" aria-labelledby="pb-size-l" id="pb-size"><button type="button" data-size="1.3" aria-pressed="false">1.3×</button><button type="button" data-size="1.4" aria-pressed="true">1.4×</button><button type="button" data-size="1.5" aria-pressed="false">1.5×</button></div></div>
+            </div>
+            <div class="pb-row">
+              <label class="sw" for="pb-rm"><input type="checkbox" id="pb-rm">Reduce Motion</label>
+              <label class="sw" for="pb-path"><input type="checkbox" id="pb-path">Flight path</label>
+              <label class="sw" for="pb-anchors"><input type="checkbox" id="pb-anchors">Anchors</label>
+              <label class="sw" for="pb-anno"><input type="checkbox" id="pb-anno">Annotate</label>
+              <label class="sw" for="pb-lowpower"><input type="checkbox" id="pb-lowpower">Low Power Mode</label>
+              <label class="sw" for="pb-focus"><input type="checkbox" id="pb-focus">Focus the field when he’s tapped</label>
+            </div>
+          </div>
+          <div class="pb-box">
+            <h3>Events</h3>
+            <div class="btns"><button type="button" data-act="send">Send a message</button><button type="button" data-act="saved">Save a memory</button><button type="button" data-act="draft">Draft a message</button><button type="button" data-act="banner">Offline banner</button><button type="button" data-act="toast">Toast</button><button type="button" data-act="mic">Microphone button</button></div>
+            <div class="pb-row">
+              <div class="ctl"><span class="ctl-label" id="pb-delay-l">Reply after</span><div class="seg" role="group" aria-labelledby="pb-delay-l" id="pb-delay"><button type="button" data-delay="500" aria-pressed="false">0.5 s</button><button type="button" data-delay="2000" aria-pressed="true">2 s</button><button type="button" data-delay="5000" aria-pressed="false">5 s</button></div></div>
+              <label class="sw" for="pb-fail"><input type="checkbox" id="pb-fail">Reply fails</label>
+            </div>
+            <div class="pb-row">
+              <div class="ctl"><span class="ctl-label" id="pb-result-l">Apple’s composer Send returns</span><div class="seg" role="group" aria-labelledby="pb-result-l" id="pb-result"><button type="button" data-result="sent" aria-pressed="true">Sent</button><button type="button" data-result="failed" aria-pressed="false">Failed</button></div></div>
+            </div>
+            <p class="note">Cancel in Apple’s composer returns cancelled.</p>
+          </div>
+          <div class="pb-box">
+            <h3>Moments</h3>
+            <div class="btns"><button type="button" data-act="wave">Wave</button><button type="button" data-act="stretch">Stretch</button><button type="button" data-act="welcome">Welcome</button><button type="button" data-act="welcomeEvening">Welcome after 21:00</button><button type="button" data-act="welcomeBack">Welcome back after 3 days</button></div>
+            <div class="btns"><button type="button" data-act="skip">Skip ahead 10 s</button><button type="button" data-act="budgets">Reset session budgets</button></div>
+            <p class="note">Playful moments follow the brief’s rules: Home only, after 8 s idle, not on a visit that had the welcome, one per session. A refused one says why.</p>
+          </div>
+          <div class="pb-box">
+            <h3>Play a study</h3>
+            <div class="btns codes" aria-label="Fixed studies"><button type="button" data-study="02" title="Tab hop">02</button><button type="button" data-study="09a" title="Introduce the draft">09</button><button type="button" data-study="09b" title="Editing ends the introduction">09b</button><button type="button" data-study="12" title="Return to his spot at Home size">12</button><button type="button" data-study="14" title="Behind the page">14</button><button type="button" data-study="16" title="Change direction mid-flight">16</button></div>
+            <div class="btns codes" aria-label="New studies"><button type="button" data-study="N1" title="Home size">N1</button><button type="button" data-study="N2" title="Home touch">N2</button><button type="button" data-study="N3" title="Home play">N3</button><button type="button" data-study="N4" title="Hold to talk">N4</button><button type="button" data-study="N5" title="Home life">N5</button><button type="button" data-study="N6a" title="Welcome: default">N6a</button><button type="button" data-study="N6b" title="Welcome: after 21:00">N6b</button><button type="button" data-study="N6c" title="Welcome: back after 3 days">N6c</button><button type="button" data-study="N7" title="Home and review">N7</button><button type="button" data-study="N8" title="Shuffle">N8</button><button type="button" data-study="N9" title="Scroll riding">N9</button><button type="button" data-study="N10" title="Brace">N10</button><button type="button" data-study="N11" title="Thinking">N11</button><button type="button" data-study="N12" title="Noticing">N12</button><button type="button" data-study="N13" title="Sitting on the strip edge">N13</button><button type="button" data-study="N14" title="Stretch">N14</button><button type="button" data-study="N15" title="Ducking under a toast">N15</button></div>
+            <div class="btns codes" aria-label="Other clips"><button type="button" data-study="RM" title="Reduce Motion">RM</button><button type="button" data-study="J" title="Journey v2: one 30-second take">J</button><button type="button" class="primary" data-act="live">Live</button></div>
+          </div>
+          <div class="pb-box">
+            <h3>Live readout</h3>
+            <dl class="ro">
+              <div><dt>Screen</dt><dd id="ro-screen"></dd></div>
+              <div><dt>Surface</dt><dd id="ro-surface"></dd></div>
+              <div><dt>State</dt><dd id="ro-mode"></dd></div>
+              <div><dt>Scale</dt><dd id="ro-scale"></dd></div>
+              <div><dt>Scroll speed</dt><dd id="ro-scroll"></dd></div>
+              <div><dt>Eyes on</dt><dd id="ro-gaze"></dd></div>
+              <div><dt>Mood</dt><dd id="ro-mood"></dd></div>
+              <div><dt>Tab commit</dt><dd id="ro-commit"></dd></div>
+              <div class="wide"><dt>Last hop</dt><dd id="ro-hop"></dd></div>
+              <div class="wide"><dt>Checks</dt><dd id="ro-checks"></dd></div>
+            </dl>
+          </div>
+          <div class="pb-box">
+            <h3>What he just did</h3>
+            <ol class="log" id="pb-log"></ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script src="engine-core.js"></script>
+<script src="rig.js"></script>
+<script src="engine.js"></script>
+<script src="scripts.js"></script>
+<script src="proto.js"></script>
+</body>
+</html>

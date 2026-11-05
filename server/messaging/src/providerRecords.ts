@@ -6,7 +6,7 @@ import type { RecordDeleter } from "./providers/types.js";
 
 type Queryable = pg.Pool | pg.PoolClient;
 
-// Doddy deletes its message and call records at Twilio a while after they become final (ADR-494),
+// Doddy deletes its message and call records at Twilio a while after they become final (ADR-753),
 // so Twilio's logs don't keep the user's texts and calls. Only Twilio's id is queued here.
 
 /** Default wait before deleting, so the owner can still look at Twilio's logs while testing. */

@@ -17,7 +17,7 @@
   "retrievedAt": "2026-10-09T10:00:00.000Z",
   "expiresAt": "2026-10-09T10:15:00.000Z",
   "receipt": {
-    "operationId": "bcae66a3-e893-431e-afe0-d5577f103c27",
+    "operationId": "8933e5cb-b951-4784-92f2-1c597573d4a1",
     "operation": "read",
     "capability": "calendar.listEvents",
     "provider": "google_calendar",

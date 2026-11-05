@@ -1,10 +1,12 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { Deps } from "../app.js";
+import { abuseLimits } from "../config.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
 import { scheduleDeletion } from "../providerRecords.js";
 import { classifySms } from "../sms.js";
-import { receiveText } from "../textReplies.js";
+import { handleSmsChat, type SmsChatOutcome } from "../smsChat.js";
+import { receiveText } from "../textsIn.js";
 import { formValue as str, verifiedTwilioForm } from "./twilioAuth.js";
 
 const EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response/>';
@@ -21,18 +23,21 @@ const DELIVERY_RANK_SQL = `CASE WHEN delivery_status IS NULL THEN -1
 export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const verified = verifiedTwilioForm.bind(undefined, deps);
+  const limits = abuseLimits(deps.limits);
+  const smsChatLog = deps.smsChatLog ?? ((msg: string, extra: object = {}) => app.log.info(extra, msg));
 
-  // Inbound SMS. STOP / START / HELP change state only; Twilio's Advanced Opt-Out sends the
-  // confirmation replies. Any other text from the user's own number, with texts to Doddy on,
-  // becomes a note or a reply job (textReplies.ts, ADR-494); from anyone else it is dropped, with
-  // no reply and nothing stored. The answer to Twilio is always empty TwiML.
+  // Inbound SMS. STOP / START / HELP change state only; Twilio's Advanced Opt-Out sends the confirmation replies.
+  // Any other text goes to exactly one handler, never both, and only for the user's own verified number:
+  //  1. "Texts to Doddy" (ADR-753, off by default): the text becomes a note in the inbox, with no reply.
+  //  2. Otherwise "Text with Doddy" (ADR-656, off by default, smsChat.ts): one answer by text, queued for the worker.
+  // From anyone else the text is dropped: no reply, nothing stored. The answer to Twilio is always empty TwiML.
   app.post("/webhooks/twilio/sms", async (req, reply) => {
     const form = verified(req, reply);
     if (!form) return;
     const from = str(form.From);
     const sid = str(form.MessageSid);
     const body = str(form.Body);
-    // Every inbound record is deleted at Twilio later, a stranger's too (ADR-494).
+    // Every inbound record is deleted at Twilio later, a stranger's too (ADR-753).
     await scheduleDeletion(db, "message", sid);
     const kind = classifySms(body);
     if (kind === "opt_out") {
@@ -46,13 +51,23 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
       await db.query(
         "UPDATE phone_numbers SET sms_opted_out_at = NULL, updated_at = now() WHERE e164 = $1", [from]);
     } else if (kind === "other") {
-      await receiveText(deps, { from, sid, body });
+      const kept = await receiveText(deps, { from, sid, body });
+      if (kept === "dropped") {
+        // Texts to Doddy are off for this sender (or it is nobody's number): Text with Doddy decides. Twilio waits at
+        // most 15 s for this answer and a model call can take longer, so the answer is made after it.
+        const done = handleSmsChat({ db, cipher: deps.cipher, assistant: deps.assistant, log: smsChatLog, smsCaps: { perAccount: limits.smsPerAccountDay, perServer: limits.smsPerServerDay } }, from, body, sid)
+          .catch((err: unknown): SmsChatOutcome => {
+            smsChatLog("sms chat failed", { kind: String((err as { name?: unknown }).name) });
+            return "unavailable";
+          });
+        deps.onSmsChat?.(done);
+      }
     }
     return reply.type("text/xml").send(EMPTY_TWIML);
   });
 
   // Delivery receipts for messages we sent (queued → sending → sent → delivered / undelivered /
-  // failed). They can arrive out of order, so a status only moves forward (ADR-490): a late "sent"
+  // failed). They can arrive out of order, so a status only moves forward (ADR-750): a late "sent"
   // never hides "delivered".
   app.post("/webhooks/twilio/status", async (req, reply) => {
     const form = verified(req, reply);

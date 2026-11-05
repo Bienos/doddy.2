@@ -5,14 +5,16 @@ import { parse, type Deps } from "../app.js";
 import { callApprovalHash } from "../approval.js";
 import { principal, requireDevice } from "../auth.js";
 import { OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
+import { abuseLimits } from "../config.js";
 import { inTransaction, type Db } from "../db.js";
+import { isAllowedNumber } from "../phoneCountries.js";
 import { inQuietHours, isValidTimeZone, QUIET_HOURS_DEFAULT } from "../quietHours.js";
 import {
   CALL_REASON_MAX_LENGTH, capExceeded, SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALLS_PENDING_MAX, sealReason,
 } from "../scheduledCalls.js";
 import { callsAvailable } from "./twilioVoice.js";
 
-// "Call me later" (ADR-490 unit U4, ADR-495): a call approved on a card with its time, the exact
+// "Call me later" (ADR-750 unit U4, ADR-754): a call approved on a card with its time, the exact
 // reason Doddy will say, and whether it may ring inside quiet hours. The worker places it
 // (scheduledCalls.ts placeDueCall), after checking it all again.
 
@@ -69,6 +71,7 @@ class Refused extends Error {
 export const scheduledCallRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
+  const limits = abuseLimits(deps.limits);
 
   // 30 requests an hour, as for texts; the caps on calls themselves are checked below.
   app.post("/v1/calls/scheduled", { preHandler: auth, config: { rateLimit: { max: 30, timeWindow: "1 hour" } } }, async (req, reply) => {
@@ -81,6 +84,8 @@ export const scheduledCallRoutes = (deps: Deps): FastifyPluginAsync => async (ap
     const who = await caller(db, accountId);
     if (!who.e164) return reply.code(409).send({ error: "no_verified_phone" });
     if (!who.consent) return reply.code(409).send({ error: "outbound_not_enabled" });
+    // A number verified before the country list existed (or before it changed) is not called either (ADR-704).
+    if (!isAllowedNumber(who.e164, limits.allowedCountryCodes)) return reply.code(409).send({ error: "phone_not_allowed" });
     // The number, time, reason and quiet-hours choice the card showed; any difference is refused.
     const expected = callApprovalHash(who.e164, body.at, body.reason, body.allowQuietHours);
     if (!timingSafeEqual(expected, Buffer.from(body.approvalHash, "hex"))) {

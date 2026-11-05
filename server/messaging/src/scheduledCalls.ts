@@ -1,15 +1,18 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { callApprovalHash } from "./approval.js";
 import { lang, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT, type Language } from "./calls.js";
+import { DEFAULT_ABUSE_LIMITS, type AbuseLimits } from "./config.js";
 import type { TextCipher } from "./crypto.js";
 import type pg from "pg";
 import { inTransaction, type Db } from "./db.js";
 import { log } from "./log.js";
 import { canPush, enqueue } from "./outbox.js";
+import { isAllowedNumber } from "./phoneCountries.js";
 import type { OutboundCaller } from "./providers/types.js";
 import { DEFAULT_TIME_ZONE, inQuietHours, localClock, QUIET_HOURS_DEFAULT, type QuietHours } from "./quietHours.js";
+import { returnServerSlot, takeServerSlot } from "./serverUsage.js";
 
-// Calls the user asked Doddy to make later (ADR-490 unit U4, ADR-495). The card showed the time,
+// Calls the user asked Doddy to make later (ADR-750 unit U4, ADR-754). The card showed the time,
 // the exact reason Doddy will say, and whether quiet hours apply; the tap approved exactly that
 // (callApprovalHash). When the time comes the worker checks everything again: the number and
 // consent, quiet hours where the user is now, the daily cap, and whether it is too late. A call
@@ -57,6 +60,8 @@ export interface ScheduledCallDeps {
   doddyPhoneNumber?: string;
   publicBaseUrl?: string;
   quietHours?: QuietHours;
+  /** The countries a call may go to and the server's calls per UTC day (ADR-704): the same limits as "call me now". Default DEFAULT_ABUSE_LIMITS. */
+  limits?: Pick<AbuseLimits, "allowedCountryCodes" | "outboundCallsPerServerDay">;
   now?: () => Date;
 }
 
@@ -106,6 +111,9 @@ export async function placeDueCall(deps: ScheduledCallDeps): Promise<boolean> {
      LEFT JOIN call_settings s ON s.account_id = a.account_id`, [due.account_id]);
   const zone = who?.zone ?? due.time_zone ?? DEFAULT_TIME_ZONE;
   if (!who?.e164 || !who.consent) return end("cancelled", who?.e164 ? "consent_off" : "no_verified_phone", NOTICE[language].cancelled, zone);
+  // A number verified before the country list existed (or before it changed) is not called either (ADR-704).
+  const limits = { ...DEFAULT_ABUSE_LIMITS, ...deps.limits };
+  if (!isAllowedNumber(who.e164, limits.allowedCountryCodes)) return end("cancelled", "country_not_allowed", NOTICE[language].cancelled, zone);
 
   let reason: string;
   try {
@@ -129,6 +137,9 @@ export async function placeDueCall(deps: ScheduledCallDeps): Promise<boolean> {
        FROM calls WHERE account_id = $1 AND direction = 'outbound' AND created_at > $2::timestamptz - interval '1 day'`,
       [due.account_id, now]);
     if ((made?.day ?? 0) >= OUTBOUND_DAILY_LIMIT || (made?.hour ?? 0) >= OUTBOUND_HOURLY_LIMIT) return false;
+    // And the cap for the whole server per UTC day, shared with "call me now" and taken in the same transaction as the
+    // call row (ADR-704): the account's own caps alone do not bound what a flood of accounts costs.
+    if (!(await takeServerSlot(c, "outbound_calls", limits.outboundCallsPerServerDay))) return false;
     await c.query("INSERT INTO calls (id, account_id, direction, status) VALUES ($1, $2, 'outbound', 'requested')", [callId, due.account_id]);
     await c.query("UPDATE scheduled_calls SET call_id = $2, updated_at = now() WHERE id = $1", [due.id, callId]);
     return true;
@@ -145,7 +156,12 @@ export async function placeDueCall(deps: ScheduledCallDeps): Promise<boolean> {
     `UPDATE calls SET status = CASE WHEN status = 'requested' THEN $2 ELSE status END,
        call_sid = coalesce(call_sid, $3), error_code = $4 WHERE id = $1`,
     [callId, callStatus, outcome.kind === "accepted" ? outcome.callSid : null, outcome.kind === "accepted" ? null : outcome.code]);
-  if (outcome.kind === "rejected") return end("failed", outcome.code, NOTICE[language].failed, zone);
+  // Refused by the provider: no call was placed, so it doesn't use up the server's day. (An unknown outcome might be
+  // ringing, so that one stays counted.)
+  if (outcome.kind === "rejected") {
+    await returnServerSlot(db, "outbound_calls").catch(() => {});
+    return end("failed", outcome.code, NOTICE[language].failed, zone);
+  }
   // Placed: the reason stays until the call ends, so Doddy can say it on answering. Unknown: it
   // is never placed again (DOD-09), and it can't be connected either (the answer webhook takes
   // only calls Twilio accepted), so its reason goes now.

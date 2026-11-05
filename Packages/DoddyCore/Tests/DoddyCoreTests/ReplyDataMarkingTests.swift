@@ -97,12 +97,8 @@ final class ReplyDataMarkingTests: XCTestCase {
         }
         assertMarked("failed: Apple Maps found no place for the search below.") { VoiceToolReply.placeNotFound($0) }
         assertMarked("not found: Apple Maps found no place for the search below.") { VoiceToolReply.leaveByNoPlace($0) }
-        assertMarked("not found: no event with the title below") { VoiceToolReply.eventNotFound($0) }
-        assertMarked("not found: no open reminder with the title below") { VoiceToolReply.reminderNotFound($0) }
         assertMarked("not found: there is no list template with the name below.") { VoiceToolReply.templateNotFound($0, templates: ListTemplates()) }
-        assertMarked("not found: no Reminders list with the name below.") {
-            VoiceToolReply.reminderListNotFound($0, lists: [ReminderListRef(id: "w", title: "Work")])
-        }
+        assertMarked("not changed: Doddy couldn't use a Reminders list with the name below") { VoiceToolReply.reminderListNotPrepared($0) }
         try assertMarked("not found: there is no list with the name below.") { VoiceToolReply.listNotFound($0, lists: [try list("Shopping")]) }
         assertMarked("not found: there is no list with the name below.") { VoiceToolReply.listNotFound($0, lists: []) }
         try assertMarked("not changed: the name below matches more than one list.") {
@@ -168,9 +164,8 @@ final class ReplyDataMarkingTests: XCTestCase {
         assertMarked("changed: the reminder below: renamed (new title below), moved to another list (below).") { text in
             VoiceToolReply.reminderDetailsChanged(text, change: ReminderDetailsChange(toList: ReminderListRef(id: "w", title: text), newTitle: text), due: nil)
         }
-        assertMarked("not changed: more than one Reminders list has that name.") {
-            VoiceToolReply.reminderListAmbiguous([ReminderListRef(id: "a", title: $0), ReminderListRef(id: "b", title: $0)])
-        }
+        // ADR-718: the reply for several Reminders lists with one name carries none of their names (see
+        // PreTapRepliesTests), so there is no list text left to mark here.
         assertMarked("free time: gaps of at least 30 minutes") { title in
             let request = FreeTimeRequest(firstDay: at(day: 12, 0), days: 1, minMinutes: 30, earliest: 9 * 60, latest: 18 * 60)
             let event = CalendarEventSummary(title: title, start: at(day: 12, 0), end: at(day: 13, 0), allDay: true)

@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { CAL, connectMock, harness, tomorrow } from "./helpers.js";
-import { connect, on, ready, run as runTool, start as startRig } from "./toolsRig.js";
+import { connect, off as switchOff, on, ready, run as runTool, start as startRig } from "./toolsRig.js";
 
 /**
  * Regenerates contracts/connected-apps/*.json from the mock server (fixed clock), so the Swift
@@ -48,13 +48,17 @@ mkdirSync(outTools, { recursive: true });
 const writeTool = (name: string, body: unknown) => writeFileSync(join(outTools, `${name}.json`), `${JSON.stringify(body, null, 2)}\n`);
 const t = await startRig();
 writeTool("catalog-disconnected", (await t.call("GET", "/v1/tools")).body);
-writeTool("error-tool-disabled", (await runTool(t, "check_email", {})).body);
+// ADR-563: an account that isn't connected answers not_connected first (the app offers Connect).
+writeTool("error-not-connected", (await runTool(t, "check_email", {})).body);
 const begin = await t.call("POST", "/v1/tools/gmail/connect", { body: {} });
 writeTool("connect-response-mock", begin.body);
 const connected = await t.call("POST", "/v1/tools/gmail/complete", {
   body: { attemptId: begin.body.attemptId, nonce: begin.body.nonce, result: { kind: "mock", outcome: "approve" } },
 });
 writeTool("toolkit-result-connected", connected.body);
+// Connecting turns the tools on (ADR-563); the user's own off is what "tool disabled" is now.
+await switchOff(t, "check_email");
+writeTool("error-tool-disabled", (await runTool(t, "check_email", {})).body);
 writeTool("switch-result-on", (await on(t, "check_email")).body);
 writeTool("run-result-email", (await runTool(t, "check_email", { max: 5 })).body);
 await on(t, "draft_email");
@@ -73,7 +77,7 @@ const t2 = await startRig();
 writeTool("toolkit-result-too-broad", (await connect(t2, "gmail", "dev-user-a", "broad_scope")).body);
 writeTool("error-permission-insufficient", (await on(t2, "check_email")).body);
 await ready(t2, "todoist", "list_todoist_tasks");
-t2.provider.setScenario(t2.store.composioUserId("00000000-0000-4000-8000-00000000000a", t2.clock.now()), "rate_limited");
+t2.provider.setScenario((await t2.store.composioUserId("00000000-0000-4000-8000-00000000000a", t2.clock.now())), "rate_limited");
 writeTool("error-rate-limited", (await runTool(t2, "list_todoist_tasks", {})).body);
 await on(t2, "web_search");
 writeTool("run-result-web-search", (await runTool(t2, "web_search", { query: "Demo Café opening hours" })).body);

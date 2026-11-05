@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: call_me_later (ADR-490 unit U4, ADR-495)
+// MARK: call_me_later (ADR-750 unit U4, ADR-754)
 //
 // "Call me at six about the cake." The agent proposes a time and a reason; the card shows the time,
 // the last digits of the number, the exact sentence Doddy will say when the call is answered, and
@@ -77,7 +77,7 @@ public struct QuietHours: Equatable, Sendable, Codable {
 }
 
 extension ApprovalHash {
-    /// A call Doddy places later (ADR-495): to `to` (E.164), at `at` (UTC, YYYY-MM-DDTHH:MM:SSZ),
+    /// A call Doddy places later (ADR-754): to `to` (E.164), at `at` (UTC, YYYY-MM-DDTHH:MM:SSZ),
     /// saying `reason`, and whether the user allowed it inside quiet hours.
     public static func call(to: String, at: String, reason: String, allowQuietHours: Bool) -> String {
         hex([version, "call", to, at, reason, allowQuietHours ? "1" : "0"])
@@ -185,7 +185,7 @@ extension VoiceToolRequest {
     }
 }
 
-/// When the app tells the server its time zone again (ADR-495): quiet hours for a booked call are
+/// When the app tells the server its time zone again (ADR-754): quiet hours for a booked call are
 /// checked in the zone the server last heard, so the app sends a new one when it comes to the
 /// front while a call it booked may still be waiting. Nothing is sent when no call is waiting.
 public enum CallZoneSync {
@@ -241,7 +241,7 @@ extension DoddyServerClient {
 
     func forgetCallKey(_ hash: String) { pendingCallKeys[hash] = nil }
 
-    /// A call the user approved on a card (ADR-495). `allowQuietHours` is the card's switch; the
+    /// A call the user approved on a card (ADR-754). `allowQuietHours` is the card's switch; the
     /// approval covers it with the number, time and reason. One idempotency key per approval, kept
     /// until the server booked it, so a try-again after an unknown outcome books it at most once.
     /// Throws `ServerError` when it certainly wasn't booked.
@@ -374,6 +374,8 @@ extension VoiceToolReply {
             "calls from Doddy are switched off in Settings, Phone calls."
         case "no_verified_phone":
             "the user has no verified number in Settings, Notifications and texts."
+        case "phone_not_allowed":
+            "the user's number is in a country Doddy doesn't call."
         case "not_configured":
             "Doddy's phone line isn't set up on its server yet."
         case "rate_limited":

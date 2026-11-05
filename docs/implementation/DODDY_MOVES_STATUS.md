@@ -90,7 +90,7 @@ pictures. Checklist 4j, Z1–Z7. Not compiled for iOS or watchOS.
   decides and the app keeps only the day, on this iPhone (`home.lastWaveDay`). The morning check-in and
   the note-reminder explainer wave once too.
 - **Storyboards:** `PanelStory` (page, phone, door, ink, keys) and `PanelStoryView` cross-fade the pack's
-  panels, once. Page: the welcome (as before). Phone: Back Tap intro. Ink: "What I can do". Door: the Face ID
+  panels, once. Page: the welcome (as before). Phone: Back Tap intro. Ink: "What I can do" (that sheet, `CapabilitiesSheet`, was removed 20 Oct 2026; no screen shows ink or keys now). Door: the Face ID
   cover; it opens only after iOS says yes, for 0.8 s, and a tap skips it. Keys: a six-picture example with
   captions under "What I can do", never the user's data.
 - **Not built:** the five foreground layers (see ADR-380) and the umbrella pose (weather needs the owner).

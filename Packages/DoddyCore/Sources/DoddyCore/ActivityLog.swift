@@ -11,6 +11,18 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case web
     /// The ECB's public rates file (ADR-300).
     case exchangeRates
+    /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
+    case blik
+    /// A presentation file made on the iPhone (ADR-567).
+    case presentations
+    /// Motion & Fitness step counts (ADR-568).
+    case steps
+    /// The photo library and Doddy's camera (ADR-569).
+    case photos, camera
+    /// Apple Health, read only (ADR-621, ADR-623).
+    case health
+    /// The training plan screen (ADR-626).
+    case training
 
     public var title: String {
         switch self {
@@ -29,6 +41,13 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .outlook: "Outlook"
         case .web: "Web search"
         case .exchangeRates: "Exchange rates"
+        case .blik: "BLIK transfers"
+        case .presentations: "Presentations"
+        case .steps: "Steps"
+        case .photos: "Photos"
+        case .camera: "Camera"
+        case .health: "Apple Health"
+        case .training: "Training plan"
         }
     }
 }
@@ -48,6 +67,9 @@ public enum ActivityOutcome: String, Codable, Sendable {
     case declined
     /// Written before a change runs. If Doddy closes before the result, it becomes `notSure`.
     case inProgress
+    /// Shown on a card for the user to do themselves, as a BLIK transfer in their bank app
+    /// (ADR-510). Doddy did nothing and can't see whether the user did.
+    case shown
 
     public var text: String {
         switch self {
@@ -59,7 +81,20 @@ public enum ActivityOutcome: String, Codable, Sendable {
         case .notDone: "Didn't happen"
         case .declined: "You said no"
         case .inProgress: "In progress"
+        case .shown: "Shown for you to send"
         }
+    }
+}
+
+/// What a save writes beyond its title and time, as a plan card's step line says it (ADR-718): the
+/// place of an event and the notes of an event or reminder, each in full and in the user's words.
+/// Empty when there is neither, so a step without them reads as it always did.
+enum WrittenFields {
+    static func line(place: String? = nil, notes: String? = nil) -> String {
+        var text = ""
+        if let place, !place.isEmpty { text += " · place “\(place)”" }
+        if let notes, !notes.isEmpty { text += " · notes “\(notes)”" }
+        return text
     }
 }
 
@@ -142,15 +177,19 @@ public struct ActivityRequest: Equatable, Sendable {
         case .createCalendarEvent(let draft):
             let time = draft.allDay ? "\(when(draft.start, hasTime: false)), all day" : when(draft.start, hasTime: true)
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            let kept = "“\(draft.title)” · \(time)\(repeats)"
+            // ADR-718: the save also writes the place and the notes, so the plan card's step names them in
+            // full; the 30-day log keeps what it always kept.
             return ActivityRequest(
-                app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)\(repeats)", isLookup: false,
-                operationKey: EventIdempotency.key(draft))
+                app: .calendar, title: "Add event", detail: kept + WrittenFields.line(place: draft.location, notes: draft.notes),
+                logDetail: kept, isLookup: false, operationKey: EventIdempotency.key(draft))
         case .createReminder(let draft):
             let due = draft.due.map { " · due \(ReminderText.due($0))" } ?? ""
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            let kept = "“\(draft.title)”\(due)\(repeats)"
             return ActivityRequest(
-                app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)\(repeats)", isLookup: false,
-                reminderKey: ReminderWrite(draft).key)
+                app: .reminders, title: "Add reminder", detail: kept + WrittenFields.line(notes: draft.notes),
+                logDetail: kept, isLookup: false, reminderKey: ReminderWrite(draft).key)
         case .remindAboutNote(let draft):
             let target: String
             switch draft.target {
@@ -193,11 +232,30 @@ public struct ActivityRequest: Equatable, Sendable {
             // The card shows the text; the log keeps none of it (review C2).
             return ActivityRequest(app: .messages, title: "Text you from Doddy's number", detail: nil, isLookup: false)
         case .callMeLater(let draft):
-            // The time, never the reason (ADR-495): the log is kept on the iPhone longer than the call.
+            // The time, never the reason (ADR-754): the log is kept on the iPhone longer than the call.
             var local = calendar
             local.timeZone = draft.timeZone
             let time = VoiceToolReply.localText(draft.at, hasTime: true, calendar: local)
             return ActivityRequest(app: .messages, title: "Call you later from Doddy's number", detail: time, logDetail: time, isLookup: false)
+        case .draftBlikTransfer(let draft):
+            // The amount and title are on the card; the 30-day log keeps only who it was for.
+            return ActivityRequest(
+                app: .blik, title: "Prepare a BLIK transfer", detail: "\(draft.amount.agentText) to \(draft.recipientName)",
+                logDetail: "to \(draft.recipientName)", isLookup: false)
+        case .makePresentation(let draft):
+            return ActivityRequest(
+                app: .presentations, title: "Make a presentation", detail: "“\(draft.title)” · \(draft.slideCount) slides",
+                logDetail: "\(draft.slideCount) slides", isLookup: false)
+        case .readSteps(let day):
+            return ActivityRequest(app: .steps, title: "Read steps", detail: day.text, isLookup: true)
+        case .readHealthWeek:
+            return ActivityRequest(app: .health, title: "Read the week from Apple Health", detail: "Last 7 days", isLookup: true)
+        case .openTrainingPlan(let ask):
+            return ActivityRequest(app: .training, title: "Open the training plan", detail: PlanAsk.goalTitle(ask.goal), isLookup: false)
+        case .findPhotos(let request):
+            return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
+        case .openCamera:
+            return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
         case .cloudTool(let call):
             // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
@@ -252,6 +310,12 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .timers, title: "Read alarms", detail: "Doddy's alarms", isLookup: true)
         case .cancelAlarm(let clock, let label):
             return ActivityRequest(app: .timers, title: "Turn off alarm", detail: [clock, label.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+        case .startStopwatch(let label):
+            return ActivityRequest(app: .timers, title: "Start stopwatch", detail: label.map { "“\($0)”" } ?? "Counts up", isLookup: false)
+        case .stopStopwatch:
+            return ActivityRequest(app: .timers, title: "Stop stopwatch", detail: "Doddy's stopwatch", isLookup: false)
+        case .checkStopwatch:
+            return ActivityRequest(app: .timers, title: "Read stopwatch", detail: "Doddy's stopwatch", isLookup: true)
         case .deleteCalendarEvents(let range):
             return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
         case .moveReminders(let dueBy, let to):
@@ -278,6 +342,18 @@ public struct ActivityRequest: Equatable, Sendable {
         case .noteCapabilityGap:
             // A category Doddy notes for itself (ADR-440); no app is used and nothing changes.
             return nil
+        case .handOverErrand(let draft):
+            // ADR-570: the 30-day log keeps that a task was handed over, not its title or words.
+            return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
+        case .checkErrands:
+            return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
+        case .findDeals(let request):
+            // SHOPPING.md: the card shows the items; the 30-day log keeps only how many and where.
+            let count = request.items.count
+            let chains = request.chainsAsked.map(\.name).joined(separator: ", ")
+            return ActivityRequest(
+                app: .web, title: "Checked the leaflets", detail: request.items.joined(separator: ", ") + " · " + chains,
+                logDetail: "\(count) item\(count == 1 ? "" : "s") · \(chains)", isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and
@@ -288,11 +364,29 @@ public struct ActivityRequest: Equatable, Sendable {
 
     /// Online-account calls: names only. Email subjects, file names and task text are not kept.
     static func describe(cloud name: String) -> ActivityRequest? {
-        switch name {
+        // ADR-486/487: Google Calendar is listed under Calendar, Outlook's under Outlook.
+        if let more = CloudToolName.more[name] {
+            let app: ActivityApp = switch more.account {
+            case "Outlook": .outlook
+            case "Todoist": .todoist
+            case "Notion": .notion
+            case "Google Drive": .drive
+            // ADR-564: Claude is listed with the web lookups (no account, Doddy's server).
+            case "Web search", "Claude": .web
+            default: .calendar
+            }
+            return ActivityRequest(app: app, title: more.title, detail: nil, isLookup: !more.write)
+        }
+        return switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
         case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)
         case CloudToolName.draftEmailReply: ActivityRequest(app: .gmail, title: "Create a reply draft", detail: nil, isLookup: false)
+        case CloudToolName.sendEmail: ActivityRequest(app: .gmail, title: "Send an email", detail: nil, isLookup: false)
+        case CloudToolName.replyToEmail: ActivityRequest(app: .gmail, title: "Send a reply", detail: nil, isLookup: false)
+        case CloudToolName.forwardEmail: ActivityRequest(app: .gmail, title: "Forward an email", detail: nil, isLookup: false)
+        case CloudToolName.changeEmail: ActivityRequest(app: .gmail, title: "Archive or mark an email", detail: nil, isLookup: false)
+        case CloudToolName.trashEmail: ActivityRequest(app: .gmail, title: "Move an email to Trash", detail: nil, isLookup: false)
         case CloudToolName.readNotionPage: ActivityRequest(app: .notion, title: "Read a Notion page", detail: nil, isLookup: true)
         case CloudToolName.completeTodoistTask: ActivityRequest(app: .todoist, title: "Complete a task", detail: nil, isLookup: false)
         case CloudToolName.moveTodoistTask: ActivityRequest(app: .todoist, title: "Move a task", detail: nil, isLookup: false)
@@ -476,7 +570,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
-        // Texts from Doddy's number (ADR-490 U2): accepted is not delivered, so not done.
+        // Texts from Doddy's number (ADR-750 U2): accepted is not delivered, so not done.
         if text.hasPrefix("sent:") { return (.notSure, "Twilio accepted the text; delivery isn't confirmed.") }
         if text.hasPrefix("queued:") { return (.notSure, "Doddy's server has the text; it wasn't confirmed as sent yet.") }
         if text.hasPrefix("not found:") { return (.notDone, "Doddy couldn't find it, so nothing changed.") }
@@ -494,6 +588,8 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if starts(["added:", "saved:"]), alreadyThereTails.contains(where: withoutCheckedFirst(text).hasSuffix) { return (.alreadyThere, nil) }
         if starts(VoiceToolReply.donePrefixes) || starts(VoiceToolReply.listDonePrefixes) { return (.done, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
+        // A BLIK transfer card (ADR-510): the user sends it in their bank app; Doddy can't see it.
+        if text.hasPrefix("shown:") { return (.shown, "Doddy didn't send any money. You send it in your bank app.") }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
     }

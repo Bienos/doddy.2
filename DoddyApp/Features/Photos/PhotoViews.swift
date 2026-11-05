@@ -6,6 +6,7 @@ import UIKit
 /// "Add a photo" while writing a note (ADR-218). Apple's photo picker runs outside Doddy, so no
 /// photo library permission is asked and Doddy sees only the one photo the user picks. Its text
 /// is read on this iPhone and added to the editor for the user to check before saving.
+/// "Take a photo" (ADR-569) opens Doddy's camera instead; the photo is read the same way.
 struct CapturePhotoPicker: View {
     @Binding var text: String
     @Binding var prepared: PhotoTextReader.Prepared?
@@ -13,6 +14,9 @@ struct CapturePhotoPicker: View {
     @State private var item: PhotosPickerItem?
     @State private var isReading = false
     @State private var problem: String?
+    @State private var showingCamera = false
+    /// The photo just taken, read once the camera screen has gone.
+    @State private var taken: Data?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -22,9 +26,11 @@ struct CapturePhotoPicker: View {
                     item = nil
                 }
             } else {
+                // PhotosPicker's label isn't on the main actor, so it gets a copy of the state.
+                let reading = isReading
                 PhotosPicker(selection: $item, matching: .images, photoLibrary: .shared()) {
                     HStack {
-                        Text(isReading ? "Reading the photo…" : "Add a photo")
+                        Text(reading ? "Reading the photo…" : "Add a photo")
                         Spacer()
                         Image(systemName: "photo")
                     }
@@ -32,6 +38,18 @@ struct CapturePhotoPicker: View {
                 .buttonStyle(SecondaryButtonStyle())
                 .disabled(isDisabled || isReading)
                 .accessibilityIdentifier("capture.addPhoto")
+                if CameraCapture.isAvailable {
+                    Button(action: openCamera) {
+                        HStack {
+                            Text("Take a photo")
+                            Spacer()
+                            Image(systemName: "camera")
+                        }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .disabled(isDisabled || isReading)
+                    .accessibilityIdentifier("capture.takePhoto")
+                }
                 Text("A receipt, a label, where you parked. Doddy reads its text on this iPhone; the photo is never sent anywhere.")
                     .font(.caption).foregroundStyle(Theme.secondaryText)
             }
@@ -41,16 +59,48 @@ struct CapturePhotoPicker: View {
             guard let item else { return }
             Task { await read(item) }
         }
+        .fullScreenCover(isPresented: $showingCamera, onDismiss: {
+            guard let data = taken else { return }
+            taken = nil
+            Task { await read(data) }
+        }) {
+            CameraCapture(
+                onPhoto: { data in
+                    taken = data
+                    showingCamera = false
+                },
+                onCancel: { showingCamera = false })
+                .ignoresSafeArea()
+        }
+    }
+
+    /// iOS asks the first time; once refused, only iPhone Settings can allow it again.
+    private func openCamera() {
+        problem = nil
+        guard CameraAccess.access() != .denied else {
+            problem = NSLocalizedString("The camera is off for Doddy. You can allow it in iPhone Settings, Doddy, Camera.", comment: "")
+            return
+        }
+        showingCamera = true
     }
 
     private func read(_ item: PhotosPickerItem) async {
         isReading = true
         problem = nil
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            isReading = false
+            problem = NSLocalizedString("That photo couldn't be read, so nothing was added. Try another one.", comment: "")
+            self.item = nil
+            return
+        }
+        await read(data)
+    }
+
+    private func read(_ data: Data) async {
+        isReading = true
+        problem = nil
         defer { isReading = false }
         do {
-            guard let data = try await item.loadTransferable(type: Data.self) else {
-                throw PhotoTextReader.ReadError.unreadable
-            }
             let result = try await PhotoTextReader.prepare(data)
             prepared = result
             text = RecognizedText.adding(result.text.text, to: text)
@@ -170,9 +220,11 @@ struct ListPhotoPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // PhotosPicker's label isn't on the main actor, so it gets a copy of the state.
+            let reading = isReading
             PhotosPicker(selection: $item, matching: .images, photoLibrary: .shared()) {
                 HStack {
-                    if isReading { Text("Reading the photo…") } else { Text("Read a list from a photo") }
+                    if reading { Text("Reading the photo…") } else { Text("Read a list from a photo") }
                     Spacer()
                     Image(systemName: "text.viewfinder")
                 }

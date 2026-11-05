@@ -296,6 +296,28 @@ public struct ReminderWrite: Equatable, Sendable {
     }
 
     public var markerURL: String { ReminderIdempotency.markerURL(key: key) }
+
+    /// When Reminders should alert (ADR-650): at a timed due, as the Reminders app itself sets it.
+    /// Without an alarm iOS lists the reminder but never alerts, so before ADR-650 Doddy's
+    /// reminders came with no sound and no banner. A whole-day due gets none: Reminders' own
+    /// "Today" notification covers those.
+    public func alertDate(local: Calendar) -> Date? {
+        ReminderAlert.date(for: due, local: local)
+    }
+}
+
+/// The one alert a timed reminder gets (ADR-650).
+public enum ReminderAlert {
+    public static func date(for due: ReminderDue?, local: Calendar) -> Date? {
+        guard let due, due.hasTime else { return nil }
+        return EventChange.moment(due, local: local)
+    }
+
+    /// When a due moves and the reminder has no alarm of its own, it gets one at the new time if
+    /// that has one: a timed reminder without an alarm can only be one an older Doddy wrote.
+    public static func addOnMove(hasAlarms: Bool, newDue: ReminderDue?, local: Calendar) -> Date? {
+        hasAlarms ? nil : date(for: newDue, local: local)
+    }
 }
 
 /// A reminder as read back from the iPhone. Stays on the phone; only the title and due of the
@@ -525,7 +547,8 @@ extension ReminderOutcome {
         case .notAdded(.notAllowed):
             return ReminderScreenText(
                 headline: "Not added",
-                lines: asked + ["Doddy isn't allowed to use Reminders. Turn it on in Settings, Connections."], isProblem: true)
+                // ADR-578: the access card below asks for it; Doddy tries again after the tap.
+                lines: asked + ["Doddy isn't allowed to use Reminders yet. Allow it on the card below and Doddy will try again."], isProblem: true)
         case .notAdded(.couldNotCheck):
             return ReminderScreenText(
                 headline: "Not added",

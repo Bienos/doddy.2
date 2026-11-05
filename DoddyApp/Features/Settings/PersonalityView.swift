@@ -13,7 +13,7 @@ struct PersonalityView: View {
     @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
     @AppStorage(PreferenceKey.personalityMood) private var moodRaw = PersonalitySettings.doddyDefault.mood.rawValue
 
-    @AppStorage(PreferenceKey.voiceLanguage) private var languageRaw = ConversationLanguage.auto.rawValue
+    @AppStorage(PreferenceKey.voiceLanguage) private var languageRaw = ConversationLanguage.default.rawValue
     @AppStorage(PreferenceKey.nickname) private var nickname = ""
 
     @State private var preview = VoicePreviewPlayer()
@@ -90,7 +90,7 @@ struct PersonalityView: View {
             } header: {
                 Text("What Doddy calls you")
             } footer: {
-                Text("Optional. When set, it's sent to OpenAI, or ElevenLabs if you switch Home's voice to it with each voice conversation so Doddy can use it now and then. Leave it empty to send nothing.")
+                Text("Optional. When set, it's sent to ElevenLabs, or OpenAI if you switch Home's voice to it with each voice conversation so Doddy can use it now and then. Leave it empty to send nothing.")
             }
 
             Section("Quick picks") {

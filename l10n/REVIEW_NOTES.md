@@ -13,6 +13,43 @@ Eight languages were machine-translated in one pass, each by a separate Claude a
 
 Answers on 2026-10-13: Japanese ぼく, Croatian gender handling and the Siri read-aloud test were accepted as they are (the Siri test still has to be done on a device). The three new Settings strings for the language picker ("App language", "Same as this iPhone" and the footer) were written by the same agent that made this page, not by the translation agents, and need the same native review.
 
+## Added 20 October 2026 (ADR-556, Brand Guidelines V2.2)
+
+Written by the agent that applied the guide, not by the translation agents; the same native review applies:
+
+- "Working on it…" (the voice screen's pending state, was "Thinking…") in all nine tables.
+- The microphone prompt now opens with "To hear you, Doddy needs the microphone."; each `<code>_infoplist.json` got that sentence in front of its existing text.
+- "Development build. Doddy is an AI assistant…" is the same string with "Doddy" instead of "DODDY".
+- Spoken, not in the tables (DoddyCore `WakeGreeting`): the Polish opening lines "Cześć, tu Doddy. Co ci chodzi po głowie?" (first conversation) and "Jestem. Co słychać?" (after that). A Polish speaker should say them aloud; "Co ci chodzi po głowie?" is meant as the informal "What's on your mind?".
+
+## Added 21 October 2026 (ADR-570, tasks handed to Doddy)
+
+Polish only, written by the agent that built the Tasks screens; the other eight languages show these in English until they are translated. The same native review applies:
+
+- "Tasks" is "Sprawy" (the owner's word for what you hand Doddy), "Your tasks" "Twoje sprawy", "No tasks yet." "Jeszcze nie ma spraw."
+- "You said" became the gender-neutral "Twoje słowa".
+- The budget line is "Budżet: „…”" with "mieści się", "przekracza" or "nie wiadomo".
+- The task list's intro, the result card, Home's "Gotowe: %@" / "Nie udało się dokończyć: %@" card and the error lines in `ErrandsModel`.
+- Not in the tables: the failure explanations come from DoddyCore (`ErrandFailureCode.explanation`) in English.
+
+## Added 22 October 2026 (ADR-579 to 581: Action Button, Settings, Terms)
+
+- 73 new Polish lines, machine-written, for the Settings groups and pages, the Action Button choice and the "Before we start" step. The other eight tables have none: those rows show in English there.
+- **Check first:** "Przełączniki" for iOS's Action Button › *Controls* and "Przycisk czynności" for the Action Button: use exactly the words Polish iOS shows. "Regulamin" for Terms & Conditions and "Polityka prywatności" for the Privacy Policy, to match the website's Polish legal pages (`site/pl/terms/`, `site/pl/privacy/`) and the lawyer's wording. "Akceptuję Regulamin" on the unticked box.
+- 31 Polish lines and 23 lines in each other table were removed with the Settings paragraphs they translated.
+
+## Added 2 November 2026 (ADR-693, App Store validation)
+
+- **New permission prompt** `NSHealthUpdateUsageDescription` in all ten languages; the nine translations are machine drafts, not read by a native speaker. It says Doddy never writes to Health and only asks to read, and that iOS asks for the text because its permission screen covers reading and writing. The Health app's own names are the same as for the read prompt above.
+
+## Added 24 October 2026 (ADR-621, Apple Health)
+
+- **New permission prompt** `NSHealthShareUsageDescription` in all ten languages; the nine translations are machine drafts. The Health app's own names used: Zdrowie, Health (de), Salud, Santé, Salute, Zdravlje, ヘルスケア, Saúde, 健康. "Apple Health" is kept as the name of Doddy's screen.
+- **Motion & Fitness prompt:** the clause "and reads nothing from Health" was removed in all ten languages (no other words changed).
+- **40 Polish lines** for the Apple Health screen (`l10n/pl.json`), machine-drafted; the other languages show English.
+- **Same day, ADR-622:** the Health prompt changed again (a summary may now leave the iPhone when the person sends it in Messages), all ten languages redrafted by machine; 22 more Polish lines (the week summary and its consent sheet).
+- **Same day, ADR-623:** the Health prompt changed a third time (the summary may also go to Doddy's voice), ten languages redrafted by machine; 10 more Polish lines (the voice section and its consent). Workout kinds use new keys ("Running", not "Run", which already means "Uruchom").
+
 ## Per language
 
 **French (fr).** Uses non-breaking spaces before `? ! : ;` and inside « ». Unsure: "Receipts" → "Confirmations" (#782); "is now due" (#1357); "Item" → "Objet" (#449); "Way" → "Moyen" (#1233); "Focusing" (#384); "Grounded" → "Posé" (#405). Terms: memories = souvenirs; Morning check-in = Point du matin; Evening wrap-up = Bilan du soir; Weekly look-back = Retour sur la semaine; Shopping mode = Mode courses; Focus = Concentration (also Doddy's own focus timer); "Hey Siri" = « Dis Siri ».
@@ -59,3 +96,55 @@ One agent per language made each table (`l10n/site/<code>.json`, 187 strings). E
 - **Polish:** "Dołącz do wczesnego dostępu" is about 60% longer; "Później" drops "ask"; "Poziom B2" may read as a language level; "...and Polish alongside English" states Polish support as in testing, so check it does not read as available.
 
 **Terms for a native reviewer:** Doddy's pronoun in each language (the app's table decides); "mate" as the app translates it (companion, Begleiter, compañero, tip, compagnon); "receipt" (Bestätigung, potwierdzenie, Tiques, justificatif); "wake word" (palabra de activación, not in the app's table); "Blog" with the English note "(English)" in brackets after it.
+
+## Seven texts back in English after ADR-546 (20 Oct)
+
+ElevenLabs became the default voice (ADR-546), so seven privacy texts that named OpenAI first were rewritten. English and Polish were rewritten; the microphone prompt was rewritten by hand in all nine languages. For **de, es, fr, hr, it, ja, pt-BR and zh-Hans** the old translations of these seven texts were removed, because swapping the two company names would have left pronouns such as "darauf" or "a ella" pointing at the wrong company. Until retranslated they show English. New English keys (first 90 characters):
+
+- `Both voices go to ElevenLabs, or OpenAI if you switch Home's voice to it to be translated.…`
+- `Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls i…`
+- `Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they…`
+- `Optional. When set, it's sent to ElevenLabs, or OpenAI if you switch Home's voice to it wi…`
+- `Stored on this iPhone with your memories, but separately: forgetting these doesn't delete …`
+- `Talking sends these reminders and list names to ElevenLabs, or OpenAI if you switch Home's…`
+- `While you talk, your voice, this conversation, your saved notes, your list names (and a li…`
+
+## Doddy on the web (ADR-600, 22 Oct 2026)
+- **App:** 22 new strings for Settings › Doddy on the web have Polish written by the agent (`l10n/pl.json`, the last lines). The other eight languages show them in English until `tools/l10n_batch.py` is run for them.
+- **Web app:** `web/src/i18n/messages.ts` holds the whole page in Polish (default) and English, Polish written by the agent. A native speaker should read the sign-in steps and the safety line first ("Wpisuj kod tylko tutaj…"), since they are what stops someone being talked into reading their code out. Receipt summaries and connected-app descriptions come from the server in English on both.
+
+- **Ask Doddy now names Anthropic (ADR-587, 22 Oct):** the consent dialog, the Ask screen's footer, the Settings footer and two new status lines ("Needs Doddy's server", "On, through Doddy's server") were rewritten in all nine languages by the agent, and the Polish privacy summary now says Anthropic instead of OpenAI. Read the consent first: its last sentence ("How long Anthropic keeps them isn't something Doddy can verify") is the retention claim the owner has not checked. The long privacy paragraph in Settings is still English-only in every language.
+
+## Legal pages in Polish (22 Oct 2026)
+
+`site/pl/terms/index.html` (Regulamin) and `site/pl/privacy/index.html` (Polityka prywatności) were written in Polish by the agent that wrote the English drafts, not by a translation agent and not with `tools/l10n_batch.py`. **They need a native Polish speaker and the lawyer** before the draft banner comes off; the pages say so themselves. Legal text is never machine-translated into the other eight languages: their footers link to the English pages, labelled "(English)" in each language (`Terms` and `Privacy Policy` in `l10n/site/<code>.json`, also unreviewed).
+
+Check first:
+- Legal terms: "Regulamin" for Terms and Conditions; "administrator", "inspektor ochrony danych", "umowa powierzenia przetwarzania", "prawnie uzasadniony interes" and the RODO article references in the legal-bases table.
+- Apple's own Polish names: "Zaloguj się przez Apple" (Sign in with Apple), "Ruch i sprawność" (Motion & Fitness), "pęk kluczy" (Keychain), "Mapy Apple".
+- Tone: informal "Ty" with capitals (Twoje, Ciebie), as in the app; gendered past forms are masculine ("jeśli korzystałeś"), which a reviewer may want to make neutral.
+- App labels quoted in English because the Polish app still shows them in English: "What leaves this iPhone", "Delete Doddy voice account", "Sign out of voice", "Ask again before sharing voice". Once the app translates them, the pages should use the Polish labels.
+- The Siri phrase is quoted from `l10n/pl_shortcuts.json` ("Zapytaj aplikację Doddy, co mam zapisane").
+
+## Timers ring through AlarmKit (ADR-650, 24 Oct 2026)
+
+- **The alarm permission prompt** (`NSAlarmKitUsageDescription`) now names timers: "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start…". The nine translations in `l10n/*_infoplist.json` were rewritten by the agent from the earlier ones, reusing each table's words for Set alarm, Start and Alarms. Not reviewed by a native speaker.
+- **Four Polish lines in `l10n/pl.json`:** the Start card's "It rings even in Silent mode or a Focus…" and the three timer button intents. Agent-written.
+- **Timer and focus notification text** is in DoddyCore (`TimerCopy`, Polish and English only, like the other notifications): "Czas minął", "Minutnik na 10 min skończył odliczanie.", "Koniec skupienia", "Minęło 25 min skupienia.", buttons "Zatrzymaj", "Powtórz", "Pauza", "Wznów". Agent-written; a Polish speaker should read them.
+
+## Ringing reminders, the weekly plan, quiet hours (ADR-651, 24 Oct 2026)
+
+Twenty-one new Polish lines in `l10n/pl.json`, agent-written: the "Ring like an alarm" switch and its notes ("Dzwoń jak budzik", "Dzwoni jak budzik, także w trybie cichym"), the weekly plan's screen and Settings section ("Plan na tydzień", "Twój tydzień\nprzed Tobą", "Nic zaplanowanego", "Prywatna notatka"), the quiet-hours sentence in Settings › Check-ins and reminders, and "Jutro". Notification and alarm words are in DoddyCore: "Nowy tydzień · Zerknąć, co Cię czeka?", "Za 10 min", "Zatrzymaj", "Przypomnienie Doddy'ego". The other eight languages show these in English until translated.
+
+## The stopwatch and a list's reminder at a place (ADR-652, 24 Oct 2026)
+
+At the merge with the island's Polish (ADR-617, 25 Oct): the stopwatch's island label and state are now looked up like the others, with two new agent-written lines, "STOPWATCH" → "STOPER" and "Running" → "Liczy". "Nicely timed" and "Paused at …" still show in English on the island: the catalog tool doesn't pick them up from where the scene builds them.
+
+Eleven new Polish lines in `l10n/pl.json`, agent-written: "Skupienie i stoper" (the ••• menu row that holds Focus and the stopwatch), "Stoper", "Stoper · włączony", "Liczy w górę, dopóki go nie zatrzymasz.", the label field's help line, "Włącz stoper", "Liczy w górę", "Gotowy, kiedy Ty", "Zatrzymany na %@", "Pauza", "Wznów". The other nine languages show these in English until reviewed.
+
+- **Notification text is in DoddyCore** (`NoteReminderCopy.itemsOnList`, Polish and English only, like the other notifications): "4 rzeczy na liście", "1 rzecz na liście", "wszystko odhaczone". "rzecz" has one plural form, "rzeczy", from 2 up; a native check of the three phrases is wanted.
+- **Voice replies** for the stopwatch (`VoiceToolReply`) are English instructions to the agent, like every other tool reply; the activity-log rows have a Polish form in `ActivityText` ("Włącz stoper", "Zatrzymaj stoper", "Odczytano stoper").
+
+## Dynamic Island and Lock Screen, Polish (24 Oct 2026, ADR-617)
+
+92 lines in `l10n/pl.json` for the island's words: labels (GŁOS, SMS, PRZYPOMNIENIE, …), titles ("SMS do sprawdzenia", "Twój dokument jest gotowy"), second lines and the Lock Screen. Written in a coding session, not read by another Polish speaker. Check on a device first: whether PRZYPOMNIENIE fits beside the camera with LIVE, and whether "Wysyłasz go Ty, w Wiadomościach" reads naturally.

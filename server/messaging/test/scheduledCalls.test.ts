@@ -15,7 +15,7 @@ import {
   twilioRequest,
 } from "./helpers.js";
 
-// Calls the user asks Doddy to make later (ADR-490 unit U4, ADR-495), against real Postgres with
+// Calls the user asks Doddy to make later (ADR-750 unit U4, ADR-754), against real Postgres with
 // stand-ins for Twilio and ElevenLabs. The worker is run with a chosen clock.
 
 const ZONES = ["Europe/Warsaw", "America/New_York", "Asia/Tokyo", "America/Los_Angeles", "Australia/Sydney", "Asia/Kolkata", "Pacific/Honolulu", "UTC"];
@@ -364,6 +364,59 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal(await worker(inMinutes(80)), true);
     assert.equal((await row(dayLater.id)).state, "limit");
     assert.equal(outbound.calls.length, before);
+  });
+
+  test("the server's calls per UTC day (ADR-704) are shared with Call me now, and a provider refusal gives its slot back", async () => {
+    const o = await owner("+48500200060", { push: true });
+    const at = inMinutes(400);
+    const { id } = (await book(o, { at, allowQuietHours: true })).json() as { id: string };
+    const usage = async () => Number((await db.query("SELECT requests AS n FROM server_daily_usage WHERE feature = 'outbound_calls' AND day = (now() AT TIME ZONE 'UTC')::date")).rows[0]?.n ?? 0);
+    await db.query("DELETE FROM server_daily_usage WHERE feature = 'outbound_calls'");
+    // Someone else's calls used the server's day up: the booked call doesn't ring, and the user is told.
+    await db.query("INSERT INTO server_daily_usage (feature, day, requests) VALUES ('outbound_calls', (now() AT TIME ZONE 'UTC')::date, 1)");
+    const before = outbound.calls.length;
+    assert.equal(await worker(at, { limits: { allowedCountryCodes: ["48"], outboundCallsPerServerDay: 1 } }), true);
+    assert.deepEqual([(await row(id)).state, (await row(id)).error_code], ["limit", "daily_limit"]);
+    assert.equal(outbound.calls.length, before, "nothing was handed to Twilio");
+    assert.equal(await usage(), 1, "the cap did not move");
+
+    // Under the cap: placed, and counted in the same counter Call me now uses.
+    await db.query("DELETE FROM server_daily_usage WHERE feature = 'outbound_calls'");
+    const second = (await book(o, { at: inMinutes(401), allowQuietHours: true, reason: "Second" })).json() as { id: string };
+    assert.equal(await worker(inMinutes(401), { limits: { allowedCountryCodes: ["48"], outboundCallsPerServerDay: 1 } }), true);
+    assert.equal((await row(second.id)).state, "placed");
+    assert.equal(await usage(), 1);
+
+    // A call Twilio refuses was never placed, so it gives the slot back.
+    const third = (await book(o, { at: inMinutes(402), allowQuietHours: true, reason: "Third" })).json() as { id: string };
+    await db.query("DELETE FROM server_daily_usage WHERE feature = 'outbound_calls'");
+    outbound.next = [{ kind: "rejected", code: "twilio_21215" }];
+    assert.equal(await worker(inMinutes(402)), true);
+    assert.deepEqual([(await row(third.id)).state, (await row(third.id)).error_code], ["failed", "twilio_21215"]);
+    assert.equal(await usage(), 0, "a refused call does not use up the server's day");
+  });
+
+  test("a number outside the allowed countries is neither booked nor called, even if it was verified before the list changed (ADR-704)", async () => {
+    const o = await owner("+48500200061");
+    const at = inMinutes(410);
+    const { id } = (await book(o, { at, allowQuietHours: true })).json() as { id: string };
+    // Simulates a number verified before PHONE_ALLOWED_COUNTRY_CODES existed: +380 (Ukraine) is not on the default list.
+    await db.query("UPDATE phone_numbers SET e164 = '+380501234567' WHERE account_id = $1", [o.accountId]);
+    const refused = await book({ h: o.h, phone: "+380501234567" }, { at: inMinutes(411), allowQuietHours: true, reason: "Other" });
+    assert.deepEqual([refused.statusCode, refused.json().error], [409, "phone_not_allowed"], "not booked");
+    // The call booked earlier: the worker refuses it too (the approval no longer matches the number either).
+    const before = outbound.calls.length;
+    assert.equal(await worker(at), true);
+    assert.equal((await row(id)).state, "cancelled");
+    assert.equal(outbound.calls.length, before, "nothing was handed to Twilio");
+    // With the number itself unchanged in the hash, the country check is what stops it.
+    await db.query("UPDATE phone_numbers SET e164 = '+48500200061' WHERE account_id = $1", [o.accountId]);
+    const ok = (await book(o, { at: inMinutes(420), allowQuietHours: true, reason: "Again" })).json() as { id: string };
+    await db.query("UPDATE phone_numbers SET e164 = '+380501234567' WHERE account_id = $1", [o.accountId]);
+    await db.query("UPDATE scheduled_calls SET approval_hash = $2 WHERE id = $1",
+      [ok.id, callApprovalHash("+380501234567", iso(inMinutes(420)), "Again", true)]);
+    assert.equal(await worker(inMinutes(420)), true);
+    assert.deepEqual([(await row(ok.id)).state, (await row(ok.id)).error_code], ["cancelled", "country_not_allowed"]);
   });
 
   test("turning calls off and booking can't cross: both take the same lock", async () => {

@@ -12,12 +12,21 @@ enum MemoryNavigationRoute: Hashable {
     case note(UUID)
 }
 
+/// The guide's logo: "Doddy" in Caveat Bold, Brand Guidelines V2.2 p.18 option C (ADR-562). A vector
+/// template cut from the guide's own glyphs (tools/brand/extract_wordmark.py), so no font ships; it
+/// takes the ink colour, paper on night in dark appearance. Grows with Dynamic Type up to xxLarge's
+/// size, as the old text did.
 struct DoddyWordmark: View {
+    @ScaledMetric(relativeTo: .title) private var height: CGFloat = 34
+
     var body: some View {
-        (Text("doddy").foregroundColor(Theme.ink) + Text(".").foregroundColor(Theme.accentText))
-            .font(.title.weight(.medium))
-            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
-            .tracking(-1.5)
+        Image("DoddyWordmark")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(height: min(height, 42))
+            .foregroundStyle(Theme.ink)
+            .accessibilityElement()
             .accessibilityLabel("Doddy")
     }
 }
@@ -217,6 +226,9 @@ struct MemoryLinkCard: View {
     var isPinned = false
     /// A private note before Face ID (ADR-310): its words are not shown.
     var hidesText = false
+    /// Room kept free on the card's right side, from its edge (motion v2, Q5: 66 pt in Memories,
+    /// where Doddy stands on the card below). 0: the usual 18 pt padding.
+    var gutter: CGFloat = 0
 
     var body: some View {
         NavigationLink(value: MemoryNavigationRoute.note(record.id)) {
@@ -241,7 +253,9 @@ struct MemoryLinkCard: View {
                         .font(.caption).foregroundStyle(Theme.accentText)
                 }
             }
-            .padding(18).frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .padding(.trailing, max(0, gutter - 18))
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 17))
             .overlay(RoundedRectangle(cornerRadius: 17).strokeBorder(Theme.separator, lineWidth: 1))
         }
@@ -251,17 +265,21 @@ struct MemoryLinkCard: View {
     }
 }
 
+/// Home and Settings (ADR-633). Notes and lists are reached from Settings › Doddy's memory, so while
+/// they are open Settings is the selected tab, and tapping it goes back to Settings' first page.
 struct DoddyTabBar: View {
     @Binding var selectedTab: AppTab
 
     var body: some View {
         HStack(spacing: 4) {
             tab(.home, title: "Home", icon: "house", id: "tab.home")
-            tab(.memories, title: "Memories", icon: "book.closed", id: "tab.memories")
             tab(.settings, title: "Settings", icon: "slider.horizontal.3", id: "tab.settings")
         }
         .padding(8).background(Theme.quietSurface, in: Capsule())
         .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 1))
+        // Motion v2: the capsule's top edge is "the rail", where Doddy waits during rapid
+        // switching, under the selected tab.
+        .motionSurface(.rail)
         .padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 8)
         .background(Theme.canvas)
         // Like the system tab bar, keep navigation compact; the screen's content
@@ -271,18 +289,31 @@ struct DoddyTabBar: View {
         .accessibilityLabel("App navigation")
     }
 
+    /// Doddy's memory belongs to Settings (ADR-633).
+    private func isSelected(_ tab: AppTab) -> Bool {
+        selectedTab == tab || (tab == .settings && selectedTab == .memories)
+    }
+
     private func tab(_ tab: AppTab, title: String, icon: String, id: String) -> some View {
-        Button { selectedTab = tab } label: {
+        Button {
+            // Motion v2 (MV3): Doddy hears of the tap in the same transaction as the tab change, so
+            // he leaves the old screen's surface in the frame its content goes (rule 2: the
+            // interface never waits for him).
+            DoddyDirector.shared.tabTapped(tab.motionScreen)
+            selectedTab = tab
+        } label: {
             VStack(spacing: 5) {
                 Image(systemName: icon).font(.body).accessibilityHidden(true)
-                Text(title).font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
+                Text(LocalizedStringKey(title)).font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
-            .foregroundStyle(selectedTab == tab ? Theme.ink : Theme.secondaryText)
+            .foregroundStyle(isSelected(tab) ? Theme.ink : Theme.secondaryText)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain).accessibilityIdentifier(id).accessibilityLabel(title)
-        .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+        .buttonStyle(.plain).accessibilityIdentifier(id).accessibilityLabel(Text(LocalizedStringKey(title)))
+        .accessibilityAddTraits(isSelected(tab) ? .isSelected : [])
+        // Where the rail spot under this tab is, and where his eyes go when he looks at it.
+        .motionMark(id)
     }
 }
 

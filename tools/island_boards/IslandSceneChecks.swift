@@ -4,13 +4,84 @@ import Foundation
 enum IslandSceneChecks {
     typealias State = DoddyVoiceAttributes.ContentState
 
+    /// ADR-616: every card that waits, and every result, has its own fixed words on the island and
+    /// a Show button that opens it in Doddy; nothing from the card itself is carried.
+    static func actions() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: actions: \(message)"); failures += 1 }
+        }
+        var titles: Set<String> = []
+        for action in IslandAction.allCases {
+            var s = State(status: .needsConfirmation, isMuted: false)
+            s.moment = .actionWaiting(action)
+            s.islandStyle = .wholeDoddy
+            let scene = s.islandScene(isStale: false)
+            expect(scene.title == action.island.title && !scene.title.isEmpty, "\(action) has its title")
+            expect(!scene.subtitle.isEmpty && !scene.label.isEmpty, "\(action) has a label and a second line")
+            expect(scene.showsInDoddy, "\(action) offers Show")
+            expect(scene.pose == .reachingHigh, "\(action): Doddy reaches for the card")
+            expect(scene.waves == .none, "\(action): no waves while a card waits")
+            expect(scene.compactSign == .symbol("hand.tap.fill", .accent), "\(action): the compact island's hand")
+            expect(!scene.title.contains("Save or Don't save") && !scene.subtitle.contains("Save or Don't save"),
+                   "\(action) doesn't say Save or Don't save")
+            titles.insert(scene.title)
+            // Stale: the card can't be shown any more, so no Show and no moment.
+            let stale = s.islandScene(isStale: true)
+            expect(!stale.showsInDoddy && stale.title.hasPrefix("Lost"), "\(action) stale has no Show")
+            // The payload carries the kind word only.
+            if let data = try? JSONEncoder().encode(s), let text = String(data: data, encoding: .utf8) {
+                expect(text.contains("\"\(action.rawValue)\""), "\(action) encodes its kind")
+                let back = try? JSONDecoder().decode(State.self, from: data)
+                expect(back?.moment == .actionWaiting(action), "\(action) decodes")
+            } else {
+                expect(false, "\(action) encodes")
+            }
+        }
+        expect(titles.count == IslandAction.allCases.count, "each kind of card has its own title")
+
+        for result in IslandResult.allCases {
+            var s = State(status: .speaking, isMuted: false)
+            s.moment = .resultReady(result)
+            s.islandStyle = .wholeDoddy
+            let scene = s.islandScene(isStale: false)
+            expect(scene.showsInDoddy && scene.title == result.island.title, "\(result) shows with Show")
+            expect(scene.waves == .none, "\(result): the moment replaces the waves for its seconds")
+            let says = (scene.title + " " + scene.subtitle).lowercased()
+            if result == .documentStarted {
+                expect(!says.contains("ready") && scene.pose == .tiptoe, "a file still being made never says ready")
+            } else {
+                expect(says.contains("ready") || result == .photos, "\(result) says it is ready")
+                expect(scene.pose == .fistpump, "\(result): fist pump")
+            }
+        }
+
+        // A card that waits with no moment of its own still offers Show; plain talking doesn't.
+        let bare = State(status: .needsConfirmation, isMuted: false).islandScene(isStale: false)
+        expect(bare.showsInDoddy, "Confirm in Doddy offers Show")
+        expect(State(status: .needsConfirmation, isMuted: false).detail?.contains("Save or Don't save") == false,
+               "the Lock Screen line fits every card")
+        expect(!State(status: .listening, isMuted: false).islandScene(isStale: false).showsInDoddy, "listening has Open")
+        var note = State(status: .needsConfirmation, isMuted: false)
+        note.moment = .noteWaiting
+        expect(note.islandScene(isStale: false).showsInDoddy, "a note waiting offers Show")
+        var saved = State(status: .listening, isMuted: false)
+        saved.moment = .noteSaved
+        expect(!saved.islandScene(isStale: false).showsInDoddy, "a saved note has nothing to show")
+        // An unknown kind from a newer build falls back to no moment instead of failing.
+        let newer = Data(#"{"status":"needsConfirmation","isMuted":false,"moment":{"actionWaiting":{"_0":"teleport"}}}"#.utf8)
+        let decoded = try? JSONDecoder().decode(State.self, from: newer)
+        expect(decoded != nil && decoded?.moment == nil, "an unknown kind decodes without a moment")
+        return failures
+    }
+
     static func run() -> Int {
         var failures = 0
         func expect(_ ok: Bool, _ message: String) {
             if !ok { print("FAIL: scene: \(message)"); failures += 1 }
         }
 
-        // Live listening on every style: orange allowed, bars, Doddy listening.
+        // Live listening: orange allowed, bars, Doddy listening.
         for style in IslandStyle.allCases {
             var s = State(status: .listening, isMuted: false)
             s.islandStyle = style
@@ -21,10 +92,24 @@ enum IslandSceneChecks {
             expect(scene.minimalSign == .bars, "\(style) minimal bars")
         }
 
-        // Muted: not live, calm face, mic-slash, Lean In's hand gone.
+        // Muted: not live, calm face, mic-slash.
         let muted = State(status: .listening, isMuted: true).islandScene(isStale: false)
-        expect(!muted.live && muted.face == .calm && !muted.showsHands, "muted")
+        expect(!muted.live && muted.face == .calm, "muted")
         expect(muted.compactSign == .symbol("mic.slash.fill", .secondary), "muted symbol")
+
+        // ADR-596: Whole Doddy's waves come only from live listening and speaking.
+        func waves(_ status: State.Status, muted: Bool = false, stale: Bool = false,
+                   style: IslandStyle = .wholeDoddy) -> IslandWaveState {
+            var s = State(status: status, isMuted: muted)
+            s.islandStyle = style
+            return s.islandScene(isStale: stale).waves
+        }
+        expect(waves(.listening) == .listening, "waves while listening")
+        expect(waves(.speaking) == .speaking, "whole island in waves while speaking")
+        expect(waves(.listening, muted: true) == .none, "no waves while muted")
+        expect(waves(.speaking, stale: true) == .none, "no waves when stale")
+        expect(waves(.thinking) == .none && waves(.connecting) == .none, "no waves thinking or connecting")
+        expect(waves(.ended) == .none, "no waves once ended")
 
         // Connecting is not live (no orange before the conversation is up).
         expect(!State(status: .connecting, isMuted: false).islandScene(isStale: false).live, "connecting not live")
@@ -33,11 +118,8 @@ enum IslandSceneChecks {
         let stale = State(status: .speaking, isMuted: false).islandScene(isStale: true)
         expect(!stale.live && stale.subtitleIsWarning && stale.title.hasPrefix("Lost"), "stale")
 
-        // Speaking face; Here With You thinking uses its second board.
+        // Speaking face.
         expect(State(status: .speaking, isMuted: false).islandScene(isStale: false).face == .speaking, "speaking face")
-        var thinking = State(status: .thinking, isMuted: false)
-        thinking.islandStyle = .hereWithYou
-        expect(thinking.islandScene(isStale: false).scenario == 1, "here with you thinking board")
 
         // "Hey Doddy" waiting (ADR-254) is not a conversation, on every style: not live, no timer,
         // its own label; a stale one says nothing is listening any more.
@@ -56,8 +138,17 @@ enum IslandSceneChecks {
         var greeted = State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")
         expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while connecting")
         expect(greeted.islandScene(isStale: false).label == "VOICE", "greeting is a conversation")
+        // ADR-577: Doddy's first message is the greeting, so the island shows it while he says it
+        // (the moment the island opens up), not "Speaking".
+        greeted.status = .speaking
+        expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while he says it")
+        expect(greeted.islandScene(isStale: false).live, "greeting while speaking is live")
         greeted.status = .thinking
-        expect(greeted.islandScene(isStale: false).title == "Thinking…", "greeting gone once thinking")
+        expect(greeted.islandScene(isStale: false).title == "Working on it…", "greeting gone once thinking")
+        var answered = State(status: .speaking, isMuted: false)
+        expect(answered.islandScene(isStale: false).title == "Speaking", "no greeting: Speaking")
+        answered.isMuted = true
+        expect(answered.islandScene(isStale: false).title == "Muted", "muted while speaking")
         let greetedMuted = State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")
         expect(greetedMuted.islandScene(isStale: false).title == "Muted", "muted beats greeting")
         let wakeConversation = State(
@@ -86,16 +177,19 @@ enum IslandSceneChecks {
         // A stale island never shows a moment.
         expect(reminder.islandScene(isStale: true).board == .leanIn, "stale hides moment")
 
-        // Old content (no moment / style) still decodes; an unknown style falls back to Lean In.
+        // Old content (no moment / style) still decodes; a style stored by an older build (Lean In,
+        // Orbit, …) or an unknown one reads as Whole Doddy, the only look left.
         let old = #"{"status":"listening","isMuted":false}"#
         let decodedOld = try? JSONDecoder().decode(State.self, from: Data(old.utf8))
-        expect(decodedOld?.islandStyle == .leanIn && decodedOld?.moment == nil, "old content decodes")
-        let future = #"{"status":"listening","isMuted":false,"islandStyle":"somethingNew"}"#
-        expect((try? JSONDecoder().decode(State.self, from: Data(future.utf8)))?.islandStyle == .leanIn, "unknown style")
+        expect(decodedOld?.islandStyle == .wholeDoddy && decodedOld?.moment == nil, "old content decodes")
+        for stored in ["somethingNew", "leanIn", "orbit", "hereWithYou"] {
+            let json = #"{"status":"listening","isMuted":false,"islandStyle":""# + stored + #""}"#
+            expect((try? JSONDecoder().decode(State.self, from: Data(json.utf8)))?.islandStyle == .wholeDoddy, "\(stored) reads as whole doddy")
+        }
 
         // Round trip keeps style and moment.
         var round = State(status: .speaking, isMuted: false)
-        round.islandStyle = .orbit
+        round.islandStyle = .wholeDoddy
         round.moment = .planWaiting(steps: 4)
         if let data = try? JSONEncoder().encode(round) {
             expect((try? JSONDecoder().decode(State.self, from: data)) == round, "round trip")
@@ -218,11 +312,23 @@ enum IslandSceneChecks {
         expect(pose(State.wakePaused) == .leaning, "hey doddy paused")
         expect(pose(State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves")
         expect(pose(State(status: .listening, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves until you speak")
-        expect(pose(State(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")) == .shrug, "greeting gone once speaking")
+        // ADR-577: the greeting is his first message, so he waves while he says it too.
+        expect(pose(State(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "waves while saying the greeting")
+        expect(pose(State(status: .thinking, isMuted: false, greeting: "Hey Pat, what's up?")) == .kneelingInspect, "greeting gone once thinking")
         expect(pose(State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")) == .shush, "muted beats greeting")
         var ended = State(status: .ended, isMuted: false)
         ended.savedCount = 1
         expect(pose(ended) == .fistpump, "ended")
+        // ADR-579: a failed start or a dropped connection is a final card, never live or muted.
+        var failed = State(status: .failed, isMuted: true)
+        failed.savedCount = 1
+        expect(pose(failed) == .facepalm, "failed is the facepalm, even with a note saved")
+        expect(pose(failed, stale: true) == .facepalm, "failed while stale")
+        expect(failed.isEnded && !failed.isLiveCue && !failed.showsMuted, "failed is final, not live, not muted")
+        expect(failed.title == "Conversation stopped", "failed title: \(failed.title)")
+        expect(failed.detail == "Doddy isn't listening · 1 note saved", "failed detail: \(failed.detail ?? "nil")")
+        expect(State(status: .failed, isMuted: false).detail == "Doddy isn't listening · open Doddy to try again", "failed detail, nothing saved")
+        expect(!State(status: .failed, isMuted: false).islandScene(isStale: true).live, "a failed card is never live")
         let moments: [(State.Moment, IslandPose?)] = [
             (.noteWaiting, .reachingHigh), (.noteSaved, .fistpump), (.reminderWaiting, .reachingHigh),
             (.reminderAdding, .reachingHigh), (.reminderSet, .fistpump), (.planWaiting(steps: 3), .tiptoe),
@@ -241,23 +347,14 @@ enum IslandSceneChecks {
         var saved = State(status: .listening, isMuted: false)
         saved.moment = .noteSaved
         expect(pose(saved, stale: true) == .facepalm, "stale moment")
-        // Every other style draws its board, never a pose.
-        for style in IslandStyle.allCases where style != .wholeDoddy {
-            var s = State(status: .listening, isMuted: false)
-            s.islandStyle = style
-            expect(s.islandScene(isStale: false).pose == nil, "\(style) has no pose")
-        }
-        // The style round-trips and an unknown one still falls back to Lean In.
+        // The style round-trips, and Whole Doddy is the only look left.
         var styled = State(status: .listening, isMuted: false)
         styled.islandStyle = .wholeDoddy
         if let data = try? JSONEncoder().encode(styled) {
             expect((try? JSONDecoder().decode(State.self, from: data))?.islandStyle == .wholeDoddy, "style round trip")
         }
-        // The default (ADR-267): Whole Doddy until the user picks a style; a picked one is kept.
-        expect(IslandStyle.preferredDefault == .wholeDoddy, "default is whole doddy")
-        expect(IslandStyle.stored(nil) == .wholeDoddy && IslandStyle.stored("not-a-style") == .wholeDoddy, "nothing stored")
-        expect(IslandStyle.stored("leanIn") == .leanIn && IslandStyle.stored("orbit") == .orbit, "a picked style is kept")
-        expect(IslandStyle.allCases.first == .wholeDoddy, "listed first in Settings")
+        expect(IslandStyle.allCases == [.wholeDoddy], "whole doddy is the only island style")
+        expect(styled.islandScene(isStale: false).pose != nil, "whole doddy draws a pose")
         // Pictures: each figure box inside its picture; every face pose has a head inside it.
         for p in IslandPose.allCases {
             let b = p.figure
@@ -307,6 +404,86 @@ enum IslandSceneChecks {
         let box = VoiceScreenArt.talkingFigure
         expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= 1 && box.y + box.height <= 1, "talking box")
         failures += motions()
+        return failures
+    }
+
+    /// ADR-683: his beat outside the app shows only over his talking waves, and swells the island
+    /// with his voice within fixed bounds.
+    static func voiceBeat() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: voice beat: \(message)"); failures += 1 }
+        }
+        func state(_ status: State.Status, beat: Int?, muted: Bool = false, moment: State.Moment? = nil) -> State {
+            var s = State(status: status, isMuted: muted)
+            s.moment = moment
+            s.voiceBeat = beat
+            return s
+        }
+        let talking = state(.speaking, beat: 3).islandScene(isStale: false)
+        expect(talking.waves == .speaking && talking.voiceBeat == 3, "the beat reaches the island while he talks")
+        expect(state(.speaking, beat: 3).islandScene(isStale: true).voiceBeat == nil, "a stale island never pulses")
+        expect(state(.speaking, beat: 3, muted: true).islandScene(isStale: false).voiceBeat == nil, "no beat while muted")
+        expect(state(.listening, beat: 3).islandScene(isStale: false).voiceBeat == nil, "no beat while he listens")
+        expect(state(.thinking, beat: 3).islandScene(isStale: false).voiceBeat == nil, "no beat while working")
+        expect(state(.speaking, beat: 3, moment: .resultReady(.document)).islandScene(isStale: false).voiceBeat == nil,
+               "a moment keeps its own island")
+        expect(state(.speaking, beat: 99).islandScene(isStale: false).voiceBeat == IslandScene.maxBeat
+               && state(.speaking, beat: -2).islandScene(isStale: false).voiceBeat == 0, "a beat out of range is clamped")
+
+        // Only when the island draws his talking waves does the app send a beat.
+        expect(state(.speaking, beat: nil).wantsVoiceBeat, "talking wants a beat")
+        expect(!state(.speaking, beat: nil, muted: true).wantsVoiceBeat, "muted wants none")
+        expect(!state(.listening, beat: nil).wantsVoiceBeat && !state(.thinking, beat: nil).wantsVoiceBeat,
+               "listening and working want none")
+        expect(!state(.speaking, beat: nil, moment: .noteSaved).wantsVoiceBeat, "a moment wants none")
+        expect(!state(.ended, beat: nil).wantsVoiceBeat, "an ended island wants none")
+
+        // Option C (owner, 1 Nov): the small island's aurora, Home's fine lines.
+        let still = state(.speaking, beat: nil).islandScene(isStale: false)
+        expect(still.beatWaveScale == 1, "no beat draws the big island's waves as before")
+        expect(still.aurora.count == IslandScene.auroraColumnCount, "21 lines while he talks")
+        expect(state(.speaking, beat: 3, muted: true).islandScene(isStale: false).aurora.isEmpty, "no lines while muted")
+        expect(state(.speaking, beat: 3).islandScene(isStale: true).aurora.isEmpty, "no lines when stale")
+        expect(state(.thinking, beat: nil).islandScene(isStale: false).aurora.isEmpty, "no lines while working")
+        let hearing = state(.listening, beat: nil).islandScene(isStale: false)
+        expect(hearing.aurora.count == IslandScene.auroraColumnCount && hearing.auroraLevel == 0.5,
+               "calm lines while he hears you, at Home's listening level")
+        expect(hearing.aurora == state(.listening, beat: 4).islandScene(isStale: false).aurora,
+               "a beat never moves the lines while he listens")
+        func total(_ scene: IslandScene) -> Double { scene.aurora.reduce(0) { $0 + $1.height } }
+        var previous: IslandScene?
+        for beat in 0...IslandScene.maxBeat {
+            let scene = state(.speaking, beat: beat).islandScene(isStale: false)
+            expect(scene.beatWaveScale >= 0.75 && scene.beatWaveScale <= 1, "big island waves \(beat): never taller than their band")
+            expect(scene.aurora.allSatisfy { $0.height >= 0.06 && $0.height <= 1 }, "lines \(beat) stay in their band")
+            if let previous {
+                expect(scene.auroraLevel > previous.auroraLevel && scene.beatWaveScale > previous.beatWaveScale,
+                       "beat \(beat) is stronger than \(beat - 1)")
+                expect(scene.aurora != previous.aurora, "beats \(beat - 1) and \(beat) have their own shapes")
+            }
+            previous = scene
+        }
+        expect(total(state(.speaking, beat: 4).islandScene(isStale: false))
+               > 2 * total(state(.speaking, beat: 0).islandScene(isStale: false)),
+               "his loudest beat draws the lines more than twice as tall as a pause")
+        let colours = still.aurora.map(\.colour)
+        if let first = colours.first, let middle = colours.dropFirst(colours.count / 2).first, let last = colours.last {
+            expect(first.red > 0.9 && first.blue < 0.3, "orange at the left")
+            expect(middle.green > first.green, "amber in the middle")
+            expect(last.blue > first.blue && last.green < middle.green, "rose at the right")
+        } else {
+            expect(false, "the lines have colours")
+        }
+
+        // The beat survives the trip to the widget, and older content without it still decodes.
+        let encoded = try? JSONEncoder().encode(state(.speaking, beat: 2))
+        let back = encoded.flatMap { try? JSONDecoder().decode(State.self, from: $0) }
+        expect(back?.voiceBeat == 2, "the beat encodes and decodes")
+        let old = #"{"status":"speaking","isMuted":false}"#.data(using: .utf8)!
+        expect((try? JSONDecoder().decode(State.self, from: old))?.voiceBeat == nil, "content from an older build decodes")
+        let noBeat = (try? JSONEncoder().encode(state(.speaking, beat: nil))).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        expect(!noBeat.contains("voiceBeat"), "no beat adds nothing to the content")
         return failures
     }
 
@@ -365,11 +542,36 @@ enum IslandSceneChecks {
         expect(b.board == .calmTide && b.time == .countdown(end), "breathing")
         expect(!b.title.contains("in") || b.title == "Breathing", "breathing shows no phase")
 
+        // The stopwatch counts up (ADR-652): a ticking clock with no end, never stale.
+        let watch = DoddyToolAttributes(kind: .stopwatch, startedAt: now, duration: 0)
+        let from = now.addingTimeInterval(-90)
+        let counting = watch.islandScene(.init(isPaused: false, endsAt: nil, label: "Bieg", countsFrom: from), isStale: false, now: now)
+        expect(counting.board == .tinyPromise && counting.scenario == 0 && counting.live, "stopwatch running")
+        expect(counting.bigTitle == .elapsed && counting.compactSign == .elapsed && counting.subtitle == "Bieg", "stopwatch counts up")
+        expect(counting.label == "STOPWATCH" && counting.time == .text("Running"), "stopwatch label")
+        expect(watch.clockStart(.init(isPaused: false, countsFrom: from)) == from, "the clock starts where the last resume put it")
+        expect(watch.clockStart(.init(isPaused: true)) == now, "no count-from falls back to the start")
+        expect(DoddyToolAttributes(kind: .focus, startedAt: now, duration: 60).clockStart(.init(isPaused: false, countsFrom: from)) == now,
+               "only a stopwatch moves its clock")
+        let stopwatchPaused = watch.islandScene(.init(isPaused: true, endsAt: nil, elapsed: 727), isStale: false, now: now)
+        expect(stopwatchPaused.scenario == 1 && !stopwatchPaused.live && stopwatchPaused.bigTitle == .bigText("12:07"), "stopwatch paused 12:07")
+        expect(stopwatchPaused.compactSign == .text("12:07"), "stopwatch paused compact shows the reading")
+        let stopwatchStopped = watch.islandScene(.init(isPaused: false, endsAt: nil, isFinished: true, elapsed: 3_727), isStale: false, now: now)
+        expect(stopwatchStopped.title == "Stopped at 1:02:07" && !stopwatchStopped.live && stopwatchStopped.compactSign == .check, "stopwatch stopped")
+        func watchPose(_ state: DoddyToolAttributes.ContentState) -> IslandPose? {
+            var s = state
+            s.islandStyle = .wholeDoddy
+            return watch.islandScene(s, isStale: false, now: now).pose
+        }
+        expect(watchPose(.init(isPaused: false, countsFrom: from)) == .tiptoe, "whole doddy on his toes while it runs")
+        expect(watchPose(.init(isPaused: true, elapsed: 5)) == .crosslegged, "whole doddy waits while paused")
+        expect(watchPose(.init(isPaused: false, isFinished: true, elapsed: 5)) == .fistpump, "whole doddy when stopped")
+
         let read = DoddyToolAttributes(kind: .readAloud, startedAt: now, duration: 0)
         expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).compactSign == .bars, "reading")
         let lost = read.islandScene(.init(isPaused: false), isStale: true, now: now)
         expect(!lost.live && lost.subtitleIsWarning, "read aloud lost")
-        // Whole Doddy reads lying on his front (ADR-299); other styles and older builds keep the board.
+        // Whole Doddy reads lying on his front (ADR-299); older builds keep the board.
         func readPose(_ state: DoddyToolAttributes.ContentState, stale: Bool = false) -> IslandPose? {
             var s = state
             s.islandStyle = .wholeDoddy
@@ -380,9 +582,10 @@ enum IslandSceneChecks {
         expect(readPose(.init(isPaused: false, isFinished: true)) == .fistpump, "whole doddy finished reading")
         expect(readPose(.init(isPaused: false), stale: true) == .facepalm, "whole doddy lost")
         expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).pose == nil, "no style, no pose")
-        var leanIn = DoddyToolAttributes.ContentState(isPaused: false)
-        leanIn.islandStyle = .leanIn
-        expect(read.islandScene(leanIn, isStale: false, now: now).pose == nil, "lean in keeps the board")
+        // A look an older build stored for a tool ("leanIn") reads as Whole Doddy.
+        let storedTool = Data(#"{"isPaused":false,"remaining":0,"isFinished":false,"islandStyle":"leanIn"}"#.utf8)
+        expect((try? JSONDecoder().decode(DoddyToolAttributes.ContentState.self, from: storedTool))?.islandStyle == .wholeDoddy,
+               "an older tool style reads as whole doddy")
         // Focus dribbles and breathing balances (ADR-313); paused waits, done is the fist pump.
         let wholeFocus = { (s: DoddyToolAttributes.ContentState, stale: Bool) in
             var s = s

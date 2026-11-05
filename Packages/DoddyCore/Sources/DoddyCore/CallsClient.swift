@@ -23,7 +23,7 @@ public struct CallSettings: Equatable, Sendable, Decodable {
     public let pinLocked: Bool
     public let outboundConsent: Bool
     public let memoryCopy: MemoryCopy
-    /// When booked calls don't ring, on the user's clock (ADR-495); nil from servers before U4.
+    /// When booked calls don't ring, on the user's clock (ADR-754); nil from servers before U4.
     public let quietHours: QuietHours?
     /// The zone the server last heard from this iPhone; nil until it has heard one.
     public let timeZone: String?
@@ -34,7 +34,7 @@ public struct CallNote: Equatable, Sendable, Decodable, Identifiable {
     public let text: String
     /// When it was said on the call, or the text arrived (ISO 8601 from the server).
     public let createdAt: String
-    /// "call" or "text" (ADR-494); nil from servers before texts to Doddy.
+    /// "call" or "text" (ADR-753); nil from servers before texts to Doddy.
     public var source: String? = nil
 
     public var createdDate: Date? { ServerDates.parse(createdAt) }
@@ -76,7 +76,7 @@ public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
 public struct CallRequest: Equatable, Sendable, Decodable {
     /// Nil when the server's answer never reached the phone.
     public let callId: UUID?
-    /// `requested` (Twilio accepted it, ADR-490) or `unknown` (no answer from Twilio, or the
+    /// `requested` (Twilio accepted it, ADR-750) or `unknown` (no answer from Twilio, or the
     /// server's answer was lost on the way back; the phone may already be ringing; not redialled).
     /// How the call then went arrives later in `CallRecord.status`: ringing, answered, completed,
     /// busy, no_answer, canceled or failed.
@@ -107,11 +107,32 @@ public struct MemoryCopyItem: Equatable, Sendable, Encodable {
     public let text: String
     public let capturedAt: String?
 
-    /// Sample fixtures are never copied; they are not the user's memories.
-    public static func from(_ records: [MemoryRecord]) -> [MemoryCopyItem] {
-        records.filter { $0.source != .sampleFixture }.map {
+    /// Private notes (ADR-310) are never copied, so the set of private notes must be passed in:
+    /// there is no way to build upload items without it. Sample fixtures are never copied either;
+    /// they are not the user's memories.
+    public static func from(_ records: [MemoryRecord], excluding privateNotes: PrivateNotes) -> [MemoryCopyItem] {
+        privateNotes.shareable(records).filter { $0.source != .sampleFixture }.map {
             MemoryCopyItem(id: $0.id, text: $0.currentText, capturedAt: $0.capturedAt.map(ServerDates.format))
         }
+    }
+}
+
+/// When the app sends the server copy again without a note having changed.
+///
+/// Before 18 October 2026 the first upload after switching "Memory on calls" on sent every note,
+/// private ones included (ADR-310). Such a copy stayed until the next note change. So once after
+/// the update, the copy is replaced with a filtered one. That counts as done only when the server
+/// confirmed an upload made after the fix; a failed or cut-off upload is tried again (DOD-08).
+public enum MemoryCopyResend {
+    /// Set once the server confirmed an upload made after the fix. A new key, so it starts unset.
+    public static let privateNotesCleanupKey = "memoryCopy.privateNotesCleanupConfirmed"
+
+    /// Due after a failed upload, or once for the private-notes cleanup. Never while the copy is
+    /// off, and never before the notes were read successfully: an empty or stale list would wipe
+    /// or roll back the server copy (DOD-06).
+    public static func isDue(copyOn: Bool, notesLoaded: Bool, lastUploadFailed: Bool, cleanupConfirmed: Bool) -> Bool {
+        guard copyOn, notesLoaded else { return false }
+        return lastUploadFailed || !cleanupConfirmed
     }
 }
 
@@ -140,18 +161,25 @@ extension DoddyServerClient {
     }
 
     /// Waits longer than the server's own ElevenLabs timeout (15 s). A request that may have
-    /// reached the server without an answer coming back is `unknown`, never "offline, try again".
+    /// reached the server without an answer coming back is `unknown`, never "offline, try again":
+    /// no reply, a 500, 502 or 504, or a 202 whose body can't be read (ADR-672).
     public func callMeNow() async throws -> CallRequest {
+        let unknown = CallRequest(callId: nil, status: "unknown")
         let response: ServerResponse
         do {
             response = try await authorized(.post, "/v1/calls/outbound", body: nil, startsSomething: true, timeout: 30)
         } catch is OutcomeUnknown {
-            return CallRequest(callId: nil, status: "unknown")
+            return unknown
         }
-        guard response.status == 202, let request = try? JSONDecoder().decode(CallRequest.self, from: response.body)
-        else { throw Self.error(from: response) }
+        if Self.mayHaveStarted(response.status) { return unknown }
+        guard response.status == 202 else { throw Self.error(from: response) }
+        guard let request = try? JSONDecoder().decode(CallRequest.self, from: response.body) else { return unknown }
         return request
     }
+
+    /// A 500, 502 or 504 can come after the server already started the call (a proxy or gateway
+    /// timing out behind it), so the outcome is open. 503 is the server saying calls are off.
+    static func mayHaveStarted(_ status: Int) -> Bool { [500, 502, 504].contains(status) }
 
     public func recentCalls() async throws -> [CallRecord] {
         let list: CallList = try await getJSON("/v1/calls")

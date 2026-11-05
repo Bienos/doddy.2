@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// Calls Doddy books for later, approved on a card (ADR-490 unit U4, ADR-495).
+/// Calls Doddy books for later, approved on a card (ADR-750 unit U4, ADR-754).
 final class ScheduledCallTests: XCTestCase {
     private let repoRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

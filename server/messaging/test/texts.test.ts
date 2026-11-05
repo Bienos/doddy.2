@@ -6,10 +6,10 @@ import { textApprovalHash } from "../src/approval.js";
 import { sha256 } from "../src/crypto.js";
 import type { Db } from "../src/db.js";
 import { dispatchDue, reconcileUnknownSms } from "../src/outbox.js";
-import { APPROVED_TEXTS_PER_DAY } from "../src/routes/texts.js";
+import { DEFAULT_ABUSE_LIMITS } from "../src/config.js";
 import { dbSkip, FakeSms, freshDb, testApp, testCipher, twilioRequest } from "./helpers.js";
 
-// Texts the user approves on a card (ADR-490, unit U2): bound to the exact number and text.
+// Texts the user approves on a card (ADR-750, unit U2): bound to the exact number and text.
 describe("approved texts against real Postgres", { skip: dbSkip }, () => {
   let db: Db;
   let app: FastifyInstance;
@@ -177,23 +177,63 @@ describe("approved texts against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual([cancelled.state, cancelled.body_ciphertext, cancelled.body_hash], ["cancelled", null, null]);
   });
 
-  test(`daily limits: ${APPROVED_TEXTS_PER_DAY} per account, then 300 across the server`, async () => {
-    const { h } = await texter("+48500200008");
-    for (let i = 0; i < APPROVED_TEXTS_PER_DAY; i++) {
-      assert.equal((await send(h, `Note ${i}`, approve("+48500200008", `Note ${i}`))).statusCode, 202, `text ${i}`);
-    }
-    const over = await send(h, "One more", approve("+48500200008", "One more"));
-    assert.equal(over.statusCode, 429);
-    assert.equal(over.json().error, "daily_limit");
+  test("the daily caps are the default branch's abuse limits (ADR-704), applied to approved texts: per account, then across the server", async () => {
+    assert.equal(DEFAULT_ABUSE_LIMITS.smsPerAccountDay, 30, "the defaults this feature inherits");
+    const limited = (limits: object) => testApp(db, { limits: { accountsPerIpDay: 100_000, ...limits } });
+    const account = async (on: Awaited<ReturnType<typeof testApp>>, phone: string, n: number) => {
+      const r = await on.app.inject({ method: "POST", url: "/v1/accounts", remoteAddress: `10.1.7.${n}` });
+      const h = { authorization: `Bearer ${r.json().deviceToken}` };
+      await on.app.inject({ method: "POST", url: "/v1/phone/verification/check", headers: h, payload: { phone, code: "123456" } });
+      await on.app.inject({ method: "PUT", url: "/v1/phone/sms-consent", headers: h, payload: { consent: true, textVersion: "sms-v1" } });
+      return h;
+    };
+    const post = (on: Awaited<ReturnType<typeof testApp>>, h: object, to: string, body: string) =>
+      on.app.inject({ method: "POST", url: "/v1/texts", headers: h as Record<string, string>,
+        payload: { body, approvalHash: approve(to, body), idempotencyKey: randomUUID() } });
 
-    const other = await texter("+48500200009");
-    await db.query(
-      `INSERT INTO outbound_messages (id, account_id, channel, idempotency_key, send_at, state, approved_text)
-       SELECT gen_random_uuid(), $1, 'sms', 'bulk' || g, now(), 'sent', true FROM generate_series(1, 300) g`, [other.accountId]);
-    const third = await texter("+48500200010");
-    const serverOver = await send(third.h, "Hello", approve("+48500200010", "Hello"));
-    assert.equal(serverOver.statusCode, 429);
-    assert.equal(serverOver.json().error, "server_daily_limit");
+    // Per account: the third text of a cap of three is the last.
+    await db.query("DELETE FROM server_daily_usage WHERE feature = 'sms'");
+    const perAccount = await limited({ smsPerAccountDay: 3, smsPerServerDay: 1000 });
+    try {
+      const h = await account(perAccount, "+48500200008", 1);
+      for (let i = 0; i < 3; i++) assert.equal((await post(perAccount, h, "+48500200008", `Note ${i}`)).statusCode, 202, `text ${i}`);
+      const over = await post(perAccount, h, "+48500200008", "One more");
+      assert.equal(over.statusCode, 429);
+      assert.equal(over.json().error, "daily_limit");
+      // A retry of a text that was already queued still gets its answer at the cap (same key, same text).
+      const first = await db.query("SELECT idempotency_key FROM outbound_messages WHERE approved_text ORDER BY created_at DESC LIMIT 1");
+      const again = await perAccount.app.inject({ method: "POST", url: "/v1/texts", headers: h,
+        payload: { body: "Note 2", approvalHash: approve("+48500200008", "Note 2"), idempotencyKey: first.rows[0].idempotency_key } });
+      assert.equal(again.statusCode, 202, "a replay takes no slot");
+    } finally {
+      await perAccount.app.close();
+    }
+
+    // Across the server: the counter that also bounds every other text (updates, digests, Text with Doddy).
+    await db.query("DELETE FROM server_daily_usage WHERE feature = 'sms'");
+    const perServer = await limited({ smsPerAccountDay: 1000, smsPerServerDay: 2 });
+    try {
+      const a = await account(perServer, "+48500200009", 2);
+      const b = await account(perServer, "+48500200010", 3);
+      assert.equal((await post(perServer, a, "+48500200009", "A1")).statusCode, 202);
+      assert.equal((await post(perServer, a, "+48500200009", "A2")).statusCode, 202);
+      const serverOver = await post(perServer, b, "+48500200010", "B1");
+      assert.equal(serverOver.statusCode, 429);
+      assert.equal(serverOver.json().error, "server_daily_limit");
+      assert.equal((await db.query("SELECT 1 FROM outbound_messages WHERE body_hash = $1", [sha256("B1")])).rowCount, 0, "nothing queued over the cap");
+    } finally {
+      await perServer.app.close();
+      await db.query("DELETE FROM server_daily_usage WHERE feature = 'sms'");
+    }
+  });
+
+  test("a number outside the allowed countries is not texted, even if it was verified before the list changed (ADR-704)", async () => {
+    const { accountId, h } = await texter("+48500200011");
+    // Simulates a number verified before PHONE_ALLOWED_COUNTRY_CODES existed: +380 (Ukraine) is not on the default list.
+    await db.query("UPDATE phone_numbers SET e164 = '+380501234567' WHERE account_id = $1", [accountId]);
+    const r = await send(h, "Hello", approve("+380501234567", "Hello"));
+    assert.deepEqual([r.statusCode, r.json().error], [409, "phone_not_allowed"]);
+    assert.equal((await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1", [accountId])).rowCount, 0);
   });
 
   test("without SMS or the encryption key on the server, texts say not configured", async () => {

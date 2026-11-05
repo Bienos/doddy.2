@@ -5,12 +5,16 @@ import Foundation
 // Lists from Siri, Shortcuts and the Action Button (ADR-226). App target only: these run in the
 // app's process (iOS starts it in the background when needed), through the same store calls as
 // the list screen and voice, and Siri says only what the store read back. Changing or reading a
-// list needs the iPhone unlocked, so nothing is read out on a locked phone.
+// list needs the iPhone unlocked, so nothing is read out on a locked phone. With the Face ID lock on
+// (ADR-310), Doddy has to be unlocked too: a list intent answers "Doddy is locked" and does nothing
+// until he is (ADR-723).
 
 /// The store the intents use; set once in `DoddyApp.init`.
 @MainActor
 enum IntentStores {
     static weak var store: MemoryStore?
+    /// The reviewed profile, for Talk in the Island's "Hey <name>" (ADR-577).
+    static weak var profiles: ProfileStore?
 
     static func loaded() async -> MemoryStore? {
         guard let store else { return nil }
@@ -83,6 +87,8 @@ struct AddToListIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        // The Face ID lock covers the lists too (ADR-723); Siri can't wait for a face, so it says so.
+        guard AppLockGate.allows(.changeList) else { return .result(dialog: "\(AppLockPolicy.lockedAnswer)") }
         let language = NotificationLanguage.current
         guard let store = await IntentStores.loaded() else { return .result(dialog: "\(ListSiri.failed(language))") }
         guard let current = store.list(id: list.id) else { return .result(dialog: "\(ListSiri.listGone(language))") }
@@ -120,6 +126,8 @@ struct ReadListIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        // Nothing is read out while Doddy is locked (ADR-723).
+        guard AppLockGate.allows(.readListAloud) else { return .result(dialog: "\(AppLockPolicy.lockedAnswer)") }
         let language = NotificationLanguage.current
         guard let store = await IntentStores.loaded() else { return .result(dialog: "\(ListSiri.failed(language))") }
         guard let current = store.list(id: list.id) else { return .result(dialog: "\(ListSiri.listGone(language))") }
@@ -153,6 +161,8 @@ struct CheckOffListItemIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        // Nothing is ticked, and no item is named, while Doddy is locked (ADR-723).
+        guard AppLockGate.allows(.changeList) else { return .result(dialog: "\(AppLockPolicy.lockedAnswer)") }
         let language = NotificationLanguage.current
         guard let store = await IntentStores.loaded() else { return .result(dialog: "\(ListSiri.failed(language))") }
         guard let current = store.list(id: list.id) else { return .result(dialog: "\(ListSiri.listGone(language))") }

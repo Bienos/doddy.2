@@ -15,6 +15,9 @@ enum SiriNoteLookup {
         now: Date = .now, calendar: Calendar = .current
     ) async -> String {
         guard isAllowed(defaults) else { return SiriReadback.switchedOff }
+        // The Face ID lock covers the notes Siri would read out (ADR-723). Siri can't wait for a face, so the answer
+        // says so; with the lock off this never happens.
+        guard AppLockPolicy.allows(.readNotesAloud, isLocked: AppLockGate.isLocked()) else { return AppLockPolicy.lockedAnswer }
         guard environment.storageProblem == nil else { return SiriReadback.storageUnavailable }
         guard !query.allSatisfy(\.isWhitespace) else { return SiriReadback.emptyQuery }
         do {
@@ -32,7 +35,7 @@ enum SiriNoteLookup {
     /// the notes couldn't be searched, shush when reading aloud is switched off.
     static func pose(forAnswer answer: String) -> IslandPose {
         switch answer {
-        case SiriReadback.switchedOff: return .shush
+        case SiriReadback.switchedOff, AppLockPolicy.lockedAnswer: return .shush
         case SiriReadback.storageUnavailable, SiriReadback.searchFailed: return .facepalm
         case SiriReadback.emptyQuery: return .listening
         case RecallCopy.noMatch: return .shrug

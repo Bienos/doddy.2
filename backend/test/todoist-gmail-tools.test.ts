@@ -3,8 +3,9 @@ import { afterEach, test } from "node:test";
 import { DEV_IDENTITIES } from "../src/auth.js";
 import { ProviderError } from "../src/errors.js";
 import { COMPLETE_TODOIST_TASK, EMAIL_TEXT_MAX, emailText, MOVE_TODOIST_TASK, READ_EMAIL, TOOL_COPY, TOOLKITS } from "../src/tools/catalog.js";
+import { LOOKUP_FAILED } from "../src/tools/service.js";
 import { USER_A, USER_B } from "./helpers.js";
-import { connect, on, type Rig, ready, run, start } from "./toolsRig.js";
+import { connect, off, on, type Rig, ready, run, start } from "./toolsRig.js";
 
 /**
  * complete_todoist_task, move_todoist_task (writes that look the real task up first) and
@@ -16,7 +17,7 @@ afterEach(async () => rig?.close());
 const prepare = (r: Rig, tool: string, args: Record<string, unknown>, token = USER_A) =>
   r.call("POST", "/v1/tools/prepare", { token, body: { tool, arguments: args } });
 const slugs = (r: Rig) => r.provider.executed.map((e) => e.slug);
-const approvals = (r: Rig) => ((r.store as any).db.prepare("SELECT COUNT(*) AS n FROM approvals").get() as { n: number }).n;
+const approvals = async (r: Rig) => (await r.store.db.query<{ n: number }>("SELECT COUNT(*)::int AS n FROM approvals")).rows[0]!.n;
 const composioUser = (r: Rig, token = USER_A) => r.store.composioUserId(DEV_IDENTITIES[token]!, r.clock.now());
 
 // ------------------------------------------------------------------ list_todoist_tasks ids
@@ -35,7 +36,7 @@ test("list_todoist_tasks text gives each task's id, says ids are for the two Tod
 
 // ------------------------------------------------------------------ switches start off
 
-test("the three new switches start off; the writes and read_email refuse until switched on", async () => {
+test("the three new switches come on with the connection (ADR-563); switched off, the writes and read_email refuse", async () => {
   rig = await start();
   await connect(rig, "todoist");
   await connect(rig, "gmail");
@@ -44,12 +45,13 @@ test("the three new switches start off; the writes and read_email refuse until s
   for (const name of ["read_email", "complete_todoist_task", "move_todoist_task"]) {
     const tool = tools.find((t: any) => t.name === name);
     assert.ok(tool, name);
-    assert.equal(tool.enabled, false, name);
+    assert.equal(tool.enabled, true, name);
     assert.equal(tool.blurb, TOOL_COPY[name]!.blurb);
+    assert.equal((await off(rig, name)).status, 200, name);
   }
   assert.equal(tools.find((t: any) => t.name === "read_email").risk, "read");
   assert.equal(tools.find((t: any) => t.name === "complete_todoist_task").risk, "write");
-  assert.equal(TOOL_COPY.read_email!.blurb, "Reads one email aloud when you ask, the newest that matches. Off until you switch it on.");
+  assert.equal(TOOL_COPY.read_email!.blurb, "Reads one email aloud when you ask, the newest that matches. On when you connect the account; switch it off any time.");
   assert.match(TOOLKITS.gmail.access, /read one email aloud when you ask/);
 
   const email = await run(rig, "read_email", { query: "from:anna" });
@@ -108,12 +110,12 @@ test("an unknown or already completed task is refused at prepare, with a receipt
     const res = await prepare(rig, tool, args);
     assert.equal(res.status, 404, `${tool} ${JSON.stringify(args)}`);
     assert.equal(res.body.error.code, "not_found");
-    assert.match(res.body.error.message, /wasn't found, or it's already done/);
+    assert.equal(res.body.error.message, LOOKUP_FAILED, "ADR-708: unknown and already done answer alike");
     assert.equal(res.body.error.receipt.status, "blocked");
     assert.equal(res.body.error.receipt.errorCode, "not_found");
     assert.equal(res.body.error.receipt.operation, "write");
   }
-  assert.equal(approvals(rig), 0, "no approval was created");
+  assert.equal((await approvals(rig)), 0, "no approval was created");
   assert.ok(slugs(rig).every((s) => s === "TODOIST_GET_TASK2"), "only lookups ran");
 });
 
@@ -204,7 +206,7 @@ test("a task that disappeared after the card is not written, and the refusal say
   rig = await start();
   await ready(rig, "todoist", "complete_todoist_task");
   const prepared = await prepare(rig, "complete_todoist_task", { task_id: "t1" });
-  rig.provider.setScenario(composioUser(rig), "empty"); // the lookup now answers 404
+  rig.provider.setScenario((await composioUser(rig)), "empty"); // the lookup now answers 404
   const res = await run(rig, "complete_todoist_task", { task_id: "t1" }, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 404);
   assert.equal(res.body.error.receipt.status, "blocked");
@@ -216,7 +218,7 @@ test("move: an update answer without the new due date is 'outcome_unknown', neve
   await ready(rig, "todoist", "move_todoist_task");
   const args = { task_id: "t1", due: "friday" };
   const prepared = await prepare(rig, "move_todoist_task", args);
-  rig.provider.setScenario(composioUser(rig), "malformed_write");
+  rig.provider.setScenario((await composioUser(rig)), "malformed_write");
   const res = await run(rig, "move_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 502);
   assert.equal(res.body.error.code, "malformed_provider_result");
@@ -229,7 +231,7 @@ test("a lookup failure right before the write is 'failed' (nothing written), not
   rig = await start();
   await ready(rig, "todoist", "complete_todoist_task");
   const prepared = await prepare(rig, "complete_todoist_task", { task_id: "t1" });
-  rig.provider.setScenario(composioUser(rig), "provider_error");
+  rig.provider.setScenario((await composioUser(rig)), "provider_error");
   const res = await run(rig, "complete_todoist_task", { task_id: "t1" }, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 502);
   assert.equal(res.body.error.receipt.status, "failed");
@@ -280,7 +282,7 @@ test("read_email reads only the newest match, as information, with a content-fre
   const kept = JSON.stringify(res.body.receipt) + (await rig.call("GET", "/v1/tools/receipts")).text + rig.logs.join("\n");
   for (const secret of ["Lunch", "Are you free", "Anna", "from:anna", "demo.example"]) assert.ok(!kept.includes(secret), secret);
 
-  rig.provider.setScenario(composioUser(rig), "empty");
+  rig.provider.setScenario((await composioUser(rig)), "empty");
   const none = await run(rig, "read_email", { query: "from:nobody" });
   assert.equal(none.status, 200);
   assert.equal(none.body.count, 0);

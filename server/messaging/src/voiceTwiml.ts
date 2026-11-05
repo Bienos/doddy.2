@@ -1,4 +1,4 @@
-// What a caller hears when Doddy's server answers without connecting the phone agent (ADR-490).
+// What a caller hears when Doddy's server answers without connecting the phone agent (ADR-750).
 // Each line says Doddy is an AI (DOD-03), in Polish and then English, and the call ends.
 // Nothing here records the call: recording stays off.
 

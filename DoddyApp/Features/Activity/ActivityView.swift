@@ -232,7 +232,7 @@ struct ActivityView: View {
         case .done, .alreadyThere: Theme.confirmed
         case .notDone: Theme.error
         case .notSure: Theme.accentText
-        case .lookedUp, .opened, .declined, .inProgress: Theme.secondaryText
+        case .lookedUp, .opened, .declined, .inProgress, .shown: Theme.secondaryText
         }
     }
 

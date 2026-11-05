@@ -1,0 +1,105 @@
+# PAUSED (ADR-572): the Apple Watch app. Nothing builds, tests or signs it today: project.yml, CI and
+# scripts/ci.sh no longer contain it. This spec keeps the exact target definitions that were in
+# project.yml, so turning the Watch back on is cheap. The source is untouched in DoddyWatch/ and
+# DoddyWatchWidgets/ (plus Config/DoddyWatch*), and the iPhone side is still in
+# DoddyApp/Features/Watch/. It never compiled (docs/implementation/APPLE_WATCH_STATUS.md).
+#
+# What it is: project.yml with the Watch app embedded in the iPhone app, as before the pause.
+#   make project-watch ENABLE_WATCH=1   -> DoddyWithWatch.xcodeproj   (schemes Doddy and DoddyWatch)
+# To make the Watch part of the shipping project again, follow "Re-enabling" in docs/platforms/watch.md.
+# scripts/check_platform_specs.py keeps this file in step with project.yml.
+include:
+  - project.yml
+name: DoddyWithWatch
+options:
+  deploymentTarget:
+    watchOS: "10.0"
+settings:
+  base:
+    # Watch complications (ADR-262) read the snapshot from the watch's App Group (used by the
+    # watch app and its widget extension).
+    DODDY_WATCH_ENTITLEMENTS: Config/DoddyWatch.entitlements
+targets:
+  Doddy:
+    # project.yml's list plus the Watch app.
+    dependencies:REPLACE:
+      - target: DoddyWidgets
+      # "Save to Doddy" in the Share Sheet (ADR-311).
+      - target: DoddyShare
+      # The Apple Watch app (ADR-232), embedded in the iPhone app.
+      - target: DoddyWatch
+      - package: DoddyCore
+        product: DoddyCore
+      - package: DoddyCore
+        product: DoddyDesignTokens
+      - package: DoddyCore
+        product: DoddyPersistence
+      - package: ElevenLabs
+      - package: LiveKit
+  DoddyWatch:
+    # Apple Watch app (ADR-232): shows the snapshot the iPhone sends (pinned notes, next note
+    # reminders, lists) and asks the iPhone to tick an item or save a note. No database, no
+    # networking; WatchConnectivity only. Needs the iPhone app; not usable on its own.
+    type: application
+    platform: watchOS
+    sources:
+      - path: DoddyWatch
+        # Agent notes for this folder, not app content.
+        excludes: ["CLAUDE.md"]
+      - path: Shared/Widgets/WidgetSnapshotFile.swift
+    dependencies:
+      # Watch face complications and the Smart Stack (ADR-262), embedded in the watch app.
+      - target: DoddyWatchWidgets
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
+        # The watch app's icon is the iPhone's candidate icon, byte-identical (ADR-050, ADR-336):
+        # DoddyWatch/Assets.xcassets/AppIcon. It changes with the iPhone's when the owner decides.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_FILE: Config/DoddyWatch-Info.plist
+        PRODUCT_NAME: DoddyWatch
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: $(DODDY_APP_BUNDLE_IDENTIFIER)
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: NO
+        # A single-target watchOS app (watchOS 7+), not a WatchKit extension.
+        INFOPLIST_KEY_WKApplication: YES
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+  DoddyWatchWidgets:
+    # Watch face complications and the Smart Stack (ADR-262). Reads only the snapshot the watch
+    # app saves in the watch's App Group; shows times, counts and list names, never note words.
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: DoddyWatchWidgets
+        # Agent notes for this folder, not app content.
+        excludes: ["CLAUDE.md"]
+      - path: Shared/Widgets/WidgetSnapshotFile.swift
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp.widgets
+        PRODUCT_NAME: DoddyWatchWidgets
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyWatchWidgets-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+schemes:
+  # The Apple Watch app on its own (no iPhone app build), for quick watch-only compiles.
+  # It still needs the iPhone app to run: it only shows what the iPhone sends (ADR-232).
+  DoddyWatch:
+    build:
+      targets:
+        DoddyWatch: all

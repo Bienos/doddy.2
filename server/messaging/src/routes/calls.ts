@@ -5,18 +5,21 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
+import { abuseLimits } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import type { NoteSource } from "../inbox.js";
+import { isAllowedNumber } from "../phoneCountries.js";
 import { formatClock, isValidTimeZone, QUIET_HOURS_DEFAULT } from "../quietHours.js";
 import { cancelScheduledCalls } from "../scheduledCalls.js";
+import { returnServerSlot, takeServerSlot } from "../serverUsage.js";
 import { callsAvailable } from "./twilioVoice.js";
 
 const settingsBody = z.object({
   inboundEnabled: z.boolean().optional(),
   outboundConsent: z.boolean().optional(),
   outboundConsentTextVersion: z.string().max(32).optional(),
-  /** The iPhone's current time zone, for quiet hours on scheduled calls (ADR-495). */
+  /** The iPhone's current time zone, for quiet hours on scheduled calls (ADR-754). */
   timeZone: z.string().refine(isValidTimeZone, "unknown time zone").optional(),
 }).refine((b) => b.outboundConsent !== true || OUTBOUND_CONSENT_VERSIONS.has(b.outboundConsentTextVersion ?? ""),
   { path: ["outboundConsentTextVersion"] });
@@ -39,6 +42,7 @@ const forgetPinOnCalls = (c: pg.PoolClient, accountId: string) =>
 export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
+  const limits = abuseLimits(deps.limits);
   const ensureRow = (accountId: string) =>
     db.query("INSERT INTO call_settings (account_id) VALUES ($1) ON CONFLICT DO NOTHING", [accountId]);
 
@@ -93,7 +97,7 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
          WHERE account_id = $1`,
         [accountId, body.inboundEnabled ?? null, body.outboundConsent ?? null, body.outboundConsentTextVersion ?? null,
           body.timeZone ?? null]);
-      // Turning calls from Doddy off also cancels the calls booked for later (ADR-495).
+      // Turning calls from Doddy off also cancels the calls booked for later (ADR-754).
       if (body.outboundConsent === false) await cancelScheduledCalls(c, accountId, "consent_off");
     });
     return reply.code(204).send();
@@ -126,7 +130,7 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
 
   // "Call me now". Doddy only calls the verified number, only after explicit consent. Twilio rings
   // it from Doddy's number; the phone agent and the call's session start only when it is answered
-  // (routes/twilioVoice.ts, ADR-490).
+  // (routes/twilioVoice.ts, ADR-750).
   app.post("/v1/calls/outbound", {
     preHandler: auth, config: { rateLimit: { max: OUTBOUND_HOURLY_LIMIT, timeWindow: "1 hour" } },
   }, async (req, reply) => {
@@ -138,6 +142,8 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const target = rows[0];
     if (!target) return reply.code(409).send({ error: "no_verified_phone" });
     if (!target.consent) return reply.code(409).send({ error: "outbound_not_enabled" });
+    // A number verified before the country list existed (or before it changed) is not called either (ADR-704).
+    if (!isAllowedNumber(target.e164, limits.allowedCountryCodes)) return reply.code(409).send({ error: "phone_not_allowed" });
     const callId = randomUUID();
     const underLimit = await inTransaction(db, async (c) => {
       // Count and insert under one per-account lock, so parallel taps can't pass the limit together.
@@ -146,6 +152,9 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
         `SELECT count(*)::int AS n FROM calls WHERE account_id = $1 AND direction = 'outbound'
          AND created_at > now() - interval '1 day'`, [accountId]);
       if ((today.rows[0]?.n ?? 0) >= OUTBOUND_DAILY_LIMIT) return false;
+      // And a cap for the whole server per UTC day, taken in the same transaction as the call row (ADR-704): the
+      // account's ten a day are free to make, so on their own they would not bound what a flood of accounts costs.
+      if (!(await takeServerSlot(c, "outbound_calls", limits.outboundCallsPerServerDay))) return false;
       await c.query(
         "INSERT INTO calls (id, account_id, direction, status) VALUES ($1, $2, 'outbound', 'requested')", [callId, accountId]);
       return true;
@@ -164,7 +173,12 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       [callId, status,
         outcome.kind === "accepted" ? outcome.callSid : null,
         outcome.kind === "accepted" ? null : outcome.code]);
-    if (status === "failed") return reply.code(502).send({ error: "provider_unavailable", callId });
+    // Refused by the provider: no call was placed, so it doesn't use up the server's day. (An unknown outcome might be
+    // ringing, so that one stays counted.) The account's own count stays, as before.
+    if (status === "failed") {
+      await returnServerSlot(db, "outbound_calls").catch(() => {});
+      return reply.code(502).send({ error: "provider_unavailable", callId });
+    }
     return reply.code(202).send({ callId, status });
   });
 
@@ -184,7 +198,7 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const cipher = deps.cipher;
     // A note that won't decrypt (e.g. after a key change) must not hide the others; it is listed
     // separately (older apps ignore the field) so it can still be discarded.
-    // `source`: taken on a call, the user's text word for word, or written by Doddy from a text (ADR-494).
+    // `source`: taken on a call, the user's text word for word, or written by Doddy from a text (ADR-753).
     const notes: { id: string; text: string; createdAt: Date; source: NoteSource }[] = [];
     const unreadable: { id: string; createdAt: Date }[] = [];
     for (const r of rows) {

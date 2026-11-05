@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 
 /// First use: the optional introduction. It can be skipped; Home is reachable without it.
-/// The Back Tap guide is not part of first use: it is V2's `BackTapSetupView`, offered from a
+/// The Back Tap guide is not part of first use: it is V2's `OpenDoddyWaysView` (ways to open Doddy, ADR-558), offered from a
 /// Home card and Settings (DECISIONS.md ADR-040, ADR-089).
 struct OnboardingFlowView: View {
     @Environment(ProfileStore.self) private var profiles
@@ -50,23 +50,6 @@ struct DoddySaysCard: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityElement(children: .combine)
-    }
-}
-
-struct CalloutView: View {
-    let title: String
-    let message: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.headline)
-            Text(message).foregroundStyle(Theme.secondaryText)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: 1))
         .accessibilityElement(children: .combine)
     }
 }

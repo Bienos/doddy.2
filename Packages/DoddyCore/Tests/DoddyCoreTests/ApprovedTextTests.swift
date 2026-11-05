@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// Texts from Doddy's number to the user's own number, approved on a card (ADR-490 unit U2).
+/// Texts from Doddy's number to the user's own number, approved on a card (ADR-750 unit U2).
 final class ApprovedTextTests: XCTestCase {
     private let repoRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -102,7 +102,6 @@ final class ApprovedTextTests: XCTestCase {
         // same lines against its own constants.
         let rules = try String(contentsOf: repoRoot.appendingPathComponent("docs/trust/config/doddy_rules.yaml"), encoding: .utf8)
         XCTAssertTrue(rules.contains("text_max_length: \(ApprovedTextLimits.maxLength)"))
-        XCTAssertTrue(rules.contains("approved_texts_per_day: \(ContactCaps.approvedTextsPerDay)"))
     }
 
     // MARK: Where it runs
@@ -185,7 +184,8 @@ final class ApprovedTextTests: XCTestCase {
             XCTAssertEqual(ActivityEntry.outcome(of: reply, isLookup: false).0, .notDone, reply)
         }
         XCTAssertTrue(VoiceToolReply.textResult(status("failed", error: "twilio_21610")).contains("STOP"))
-        XCTAssertTrue(VoiceToolReply.textRefused("daily_limit").contains("\(ContactCaps.approvedTextsPerDay)"))
+        XCTAssertTrue(VoiceToolReply.textRefused("daily_limit").contains("most texts allowed for today"))
+        XCTAssertTrue(VoiceToolReply.textRefused("phone_not_allowed").hasPrefix("failed:"))
         // Twilio took it but the carrier didn't deliver: not "nothing was sent", but not done either.
         let undelivered = VoiceToolReply.textResult(status("sent", delivery: "undelivered"))
         XCTAssertEqual(ActivityEntry.outcome(of: undelivered, isLookup: false).0, .notDone)

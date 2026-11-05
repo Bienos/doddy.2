@@ -66,7 +66,11 @@ final class AppEnvironmentTests: XCTestCase {
 
         let profiles = ProfileStore(environment: environment, arguments: ["-inMemoryStore"])
         await profiles.load()
-        XCTAssertEqual(Set(profiles.introductionDraft.values.keys), Set(ProfileKey.introductionQuestions))
+        // Only the reviewed fields, and only those that have a value: a stored `help` is never a
+        // hidden edit in the introduction, and `style` isn't set here.
+        XCTAssertTrue(Set(profiles.introductionDraft.values.keys).isSubset(of: Set(ProfileKey.introductionQuestions)))
+        XCTAssertEqual(profiles.introductionDraft[.name], "Mika")
+        XCTAssertNil(profiles.introductionDraft[.help])
 
         var intro = profiles.introductionDraft
         intro[.name] = "M"

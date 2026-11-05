@@ -14,19 +14,20 @@ const search = (r: Rig, query: unknown, token = USER_A, extra: Record<string, un
 
 // ------------------------------------------------------------------ Settings section and switch
 
-test("web search is its own section: no account, starts off, demo provider in mock mode", async () => {
+test("web search is its own section: no account, starts on (ADR-563), demo provider in mock mode", async () => {
   rig = await start();
   const catalog = (await rig.call("GET", "/v1/tools")).body;
   const web = section(catalog);
   assert.equal(web.title, "Web search");
   assert.equal(web.needsAccount, false);
   assert.equal(web.status, "connected");
-  assert.deepEqual(web.tools.map((t: any) => [t.name, t.risk, t.enabled]), [["web_search", "read", false]]);
+  assert.deepEqual(web.tools.map((t: any) => [t.name, t.risk, t.enabled]), [["web_search", "read", true], ["news_search", "read", true], ["find_places", "read", true]]);
   for (const account of catalog.toolkits.filter((t: any) => t.id !== "websearch")) assert.equal(account.needsAccount, true);
 });
 
 test("a search while the switch is off is blocked, recorded, and never reaches the provider", async () => {
   rig = await start();
+  await rig.call("PUT", "/v1/tools/switch", { body: { tool: "web_search", enabled: false } });
   const res = await search(rig, "Demo Café opening hours");
   assert.equal(res.status, 403);
   assert.equal(res.body.error.code, "capability_disabled");
@@ -110,8 +111,11 @@ test("strict input: extra fields, empty or long queries and approvals are refuse
   assert.equal((await search(rig, "   ")).status, 400);
   assert.equal((await search(rig, "x".repeat(201))).status, 400);
   assert.equal((await search(rig, 42)).status, 400);
-  assert.equal((await search(rig, "x", USER_A, { approvalId: "00000000-0000-4000-8000-000000000001" })).status, 400);
-  assert.equal((await rig.call("POST", "/v1/tools/prepare", { body: { tool: "web_search", arguments: { query: "x" } } })).status, 400);
+  // ASK-01: an approval the server never issued is not a yes.
+  const made = await search(rig, "x", USER_A, { approvalId: "00000000-0000-4000-8000-000000000001" });
+  assert.equal(made.status, 403);
+  assert.equal(made.body.error.receipt.errorCode, "ask_first_required");
+  assert.equal((await rig.call("POST", "/v1/tools/prepare", { body: { tool: "web_search", arguments: { query: "x", provider: "apify" } } })).status, 400);
   assert.deepEqual(rig.webSearch!.queries, []);
 });
 

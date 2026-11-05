@@ -1,7 +1,7 @@
 {
   "format": "doddy-approval-vectors/1",
-  "note": "Approval hashes (ADR-490, DOD-07), shared by server/messaging/src/approval.ts and DoddyCore ApprovalHash. Generated independently of both; each must reproduce every vector.",
-  "encoding": "SHA-256 over each field in order, written as its UTF-8 byte length in decimal, a colon, then its UTF-8 bytes. Lowercase hex. A text approval is the fields [\"doddy-approval-1\", \"text\", recipient in E.164, the exact text]. A call approval (ADR-495) is [\"doddy-approval-1\", \"call\", recipient in E.164, the time in UTC as YYYY-MM-DDTHH:MM:SSZ, the exact reason, \"1\" if allowed in quiet hours else \"0\"].",
+  "note": "Approval hashes (ADR-750, DOD-07), shared by server/messaging/src/approval.ts and DoddyCore ApprovalHash. Generated independently of both; each must reproduce every vector.",
+  "encoding": "SHA-256 over each field in order, written as its UTF-8 byte length in decimal, a colon, then its UTF-8 bytes. Lowercase hex. A text approval is the fields [\"doddy-approval-1\", \"text\", recipient in E.164, the exact text]. A call approval (ADR-754) is [\"doddy-approval-1\", \"call\", recipient in E.164, the time in UTC as YYYY-MM-DDTHH:MM:SSZ, the exact reason, \"1\" if allowed in quiet hours else \"0\"].",
   "vectors": [
     {
       "description": "plain text",

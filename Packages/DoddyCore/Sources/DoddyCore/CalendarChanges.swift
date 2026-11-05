@@ -290,16 +290,12 @@ extension String {
 }
 
 extension VoiceToolReply {
-    /// The title is the agent's words, so it follows as data (ToolData).
-    public static func eventNotFound(_ title: String) -> String {
-        "not found: no event with the title below at that time on the user's calendar. Nothing changed. Call read_calendar for that day and use the exact title and start it returns.\n"
-            + eventTitle(title)
-    }
-
-    public static func eventAmbiguous(_ events: [CalendarEventSummary], calendar: Calendar) -> String {
-        let times = events.prefix(4).map { "- \"\(ToolData.clean($0.title))\" \(localText($0.start, hasTime: !$0.allDay, calendar: calendar))" }
-        return "not changed: more than one event matches. Ask the user which one:\n" + ToolData.block(times)
-    }
+    /// ADR-725: one answer for "no event matches" and "several do". It is said before the user taps
+    /// anything, so it names no event, shows no time and doesn't say whether one exists; `read_calendar`
+    /// is the way to see them, and that asks first.
+    public static let eventNotPrepared =
+        "not changed: Doddy couldn't prepare that change to an event, so no card was shown. Nothing changed. "
+        + "Ask the user for the event's exact title and its start, or call read_calendar for that day (that asks the user first), then try once more."
 
     public static let eventChangeInvalid = "failed: that change doesn't make sense (the end would be before the start, or nothing would change). Nothing changed. Ask the user what they want."
 
@@ -343,17 +339,11 @@ extension VoiceToolReply {
     public static let changeNothingNew = "not changed: it already looks like that. Nothing changed."
     public static let changeDeclined = "declined: the user chose not to make this change. Nothing changed."
 
-    public static func reminderNotFound(_ title: String) -> String {
-        "not found: no open reminder with the title below in Reminders. Nothing changed. Ask the user for its exact name.\n"
-            + eventTitle(title)
-    }
-
-    public static func reminderAmbiguous(_ reminders: [ReminderSnapshot]) -> String {
-        let lists = reminders.prefix(4).map {
-            "- \"\(ToolData.clean($0.title))\" in \(ToolData.clean($0.listTitle))\($0.due.map { ", due \(ReminderText.due($0))" } ?? "")"
-        }
-        return "not changed: more than one open reminder matches. Ask the user which one:\n" + ToolData.block(lists)
-    }
+    /// ADR-725: one answer for "no open reminder matches" and "several do", for the same reason as `eventNotPrepared`:
+    /// it names no reminder, list or due date, and the user is asked for the exact name instead.
+    public static let reminderNotPrepared =
+        "not changed: Doddy couldn't prepare that change to a reminder, so no card was shown. Nothing changed. "
+        + "Ask the user for the reminder's exact name, then try once more."
 
     public static func reminderChanged(_ title: String, due: ReminderDue?) -> String {
         "changed: the reminder is now due \(due.map(ReminderText.due) ?? "with no date"). Checked in Reminders.\n" + eventTitle(title)

@@ -21,7 +21,7 @@ export const MAX_PENDING_NOTES = 20;
 
 /**
  * Variables handed to the phone agent at the start of every call it takes (through ElevenLabs
- * register-call, ADR-490). The agent defines all of them, so every call must carry all of them.
+ * register-call, ADR-750). The agent defines all of them, so every call must carry all of them.
  * Only verified callers reach the agent now; the other caller values stay for the prompt's sake.
  * `secret__doddy_session` is only ever placed in tool request headers by ElevenLabs and is
  * never sent to the language model.
@@ -32,7 +32,7 @@ export interface CallVariables {
   doddy_memory: "on" | "off";
   doddy_pin: "set" | "not_set";
   doddy_direction: "inbound" | "outbound";
-  /** A scheduled call's reason as the user approved it on the card, or "none" (ADR-495). */
+  /** A scheduled call's reason as the user approved it on the card, or "none" (ADR-754). */
   doddy_call_reason: string;
   /** The agent's first sentence, written by the server (callOpening below). */
   doddy_call_opening: string;

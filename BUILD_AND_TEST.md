@@ -53,7 +53,7 @@ address (https).
 
 ```sh
 brew install xcodegen
-make project                   # xcodegen generate --spec project.yml  -> Doddy.xcodeproj
+make project                   # xcodegen generate --spec project.yml  -> Doddy.xcodeproj (iPhone/iPad; Watch and Mac are paused, ADR-572)
 xcodebuild -list -project Doddy.xcodeproj
 xcodebuild test -project Doddy.xcodeproj -scheme Doddy \
   -destination 'platform=iOS Simulator,name=iPhone 17'   # pick any installed iPhone simulator
@@ -61,15 +61,43 @@ xcodebuild test -project Doddy.xcodeproj -scheme Doddy \
 scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 ```
 
-**Hosted macOS CI (`.github/workflows/ios.yml`, ADR-123) has never run a step.** As of 2026-10-10 all
-58 runs (pull requests and one manual dispatch) end in failure within seconds, for the macOS job *and*
-the Ubuntu job alike: no runner is ever assigned (`runner_id: 0`) and there are no logs to download.
-The API gives no reason; it is shown as a banner on the run page (e.g.
-<https://github.com/Bienos/doddy.2/actions/runs/38085624065>). The usual causes for a private repo are
-Actions billing (included minutes used up, spending limit at 0, or a failed payment: GitHub Settings →
-Billing and plans → Spending limits → Actions) or an Actions policy that blocks the actions used
-(repo Settings → Actions → General → "Allow all actions and reusable workflows"). Nothing in the workflow
-file is known to be wrong. Until a run starts, every iOS build is a manual Mac build.
+**Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-684)** runs these jobs side by side:
+- `changes` (Ubuntu, seconds): `scripts/ci_needs_mac.sh` decides whether the pull request needs the macOS build
+  (any changed file that can reach an Xcode target or its tests), and `scripts/ci_groups.sh` decides which Linux
+  groups it needs. An unlisted path, or no list, runs everything.
+- Linux groups, each `scripts/ci.sh --only <group>`: `checks` (Python generators, guards, specs; always),
+  `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
+  (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
+- `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
+- `ci` (macOS): `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
+  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561). It no longer
+  waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
+  tests → Run workflow) and it always runs.
+
+Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs.
+
+**Timings measured 1 Nov 2026** (runs 41330977302 on the Mac side, 41340906950 on the Linux side), before
+ADR-684: `core` 14.5 min (backend tests 411 s, Swift package tests 214 s, messaging 40 s, the rest under 45 s each);
+the Mac job 62 min (UI tests 40.7 min, unit tests 4.3, build 4.3, `xcodebuild -list` 1.3, and about 14 min of Linux
+checks it repeated, 413 s of them the backend tests). With the Mac waiting for `core`, a pull request took about
+79 minutes.
+
+**Historical #166 run before reconciliation with #164** (first hosted run of the new workflow, run 41344675285, 1 Nov): all jobs green. The Linux side
+finished in 7.5 min (`swift` 6.7 min on a cold SwiftPM cache, `backend` 4.0, `messaging` 0.8, `node` 0.6,
+`checks` 0.3); the Mac job took 48.6 min (the historical `ci.sh --skip-node` path 47.4), so the whole pull request took 48.8 min
+instead of about 79. The npm caches and the SwiftPM cache were empty on that run; the next run shows their effect.
+
+**Cost:** the repository is now public, so standard hosted Actions runners are free (ADR-543). Historical private-repository costs follow. A macOS run took about 52 minutes
+(34 of them UI tests) at $0.062 a minute, about $3.20, on 14 October; ADR-499 should take about 10 minutes
+off the UI tests (not yet measured). From 12 to 14 October CI used about $250.
+
+**When jobs end in seconds with no logs** (no runner assigned, `runner_id: 0`, both jobs), GitHub is
+refusing to start them for the account: it happened on 10–11 October and again from 16 October. The
+reason is shown only as a banner on the run page, not in the API. For a private repo it is usually
+Actions billing: included minutes used up, a budget reached, or a failed payment (GitHub Settings →
+Billing and licensing → Usage, Budgets and alerts, Payment information). Less often, an Actions policy
+blocks the actions used (repo Settings → Actions → General). While it lasts, every iOS build is a manual
+Mac build.
 
 Why `Doddy.xcodeproj` is not committed: no Xcode could open or build a generated project when M0 was
 authored, and the architecture notes forbid presenting an unverified project file as working. The
@@ -109,14 +137,21 @@ docs/ schemas/ assets/ design/ reference/ prompts/   imported pack (read-only re
 
 None are committed. The app needs none. The Connected Apps backend needs secrets only in live mode
 (`COMPOSIO_API_KEY`, `DODDY_SESSION_SIGNING_KEY`); keep them in the ignored `backend/.env.local` or a secret
-manager — `backend/.env.example` lists names with empty values. No signing team, provider key, token or production identifier is committed;
+manager — `backend/.env.example` lists names with empty values.
+
+**1Password (ADR-493).**
+- **The record:** project secrets are recorded in 1Password. `secrets/manifest.json` lists each one and its hosts, and each service's `.env.op` holds 1Password references only.
+- **Local runs:** `npm run start:op` (backend, messaging server) or `op run --env-file=.env.op -- <command>`.
+- **Hosts:** the owner pushes changes with `tools/secrets/sync.mjs` (dry run by default; `--apply` needs the plan's code).
+- **Checks:** `node tools/secrets/sync.mjs check` and `node --test "tools/secrets/test/*.test.mjs"` run in `scripts/ci.sh`. They need no 1Password account and no network.
+- **Guide:** `docs/security/SECRETS_1PASSWORD.md`. No signing team, provider key, token or production identifier is committed;
 `DEVELOPMENT_TEAM` is blank (choose your own team in Xcode to run on a device). The bundle identifier
 `com.bienos.doddy2.dev` is a **development placeholder** pending an owner decision.
 
 **App Group (on since 2026-10-11, owner has a paid Apple Developer account).** The widgets (ADR-219), the
 watch complications (ADR-262), "Save to Doddy" in the Share Sheet (ADR-311) and the parking widget (ADR-315)
 share a folder, the App Group `group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default).
-`project.yml` signs the app, the widget extension, the share extension and the watch targets with it. Choose
+`project.yml` signs the app, the widget extension and the share extension with it (the watch targets, paused, are in `project-watch.yml`). Choose
 your team in Xcode for each target; automatic signing adds the App Groups capability and registers the group.
 If you also use push, set `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements`. To build without it
 (a free Apple ID, whose support for App Groups isn't verified here), set `DODDY_APP_ENTITLEMENTS`,
@@ -137,7 +172,7 @@ memory. Settings › Connected Apps.
 ### Prerequisites
 | Need | For |
 |---|---|
-| Node.js ≥ 22.22.3 (tests ran on 22.22.0) | `backend/` (uses `node:sqlite`) |
+| Node.js ≥ 22.22.3 (tests ran on 22.22.0) | `backend/` (Postgres; PGlite in tests, ADR-525) |
 | Swift 6 toolchain | `Packages/DoddyCore` tests (any OS) |
 | macOS + Xcode 16+ and XcodeGen | the iOS app (see `BUILD_AND_TEST.md`) |
 | Composio account, Google account, HTTPS URL | live mode only |
@@ -195,4 +230,3 @@ Without the backend you can drive the same flow with curl, e.g.
 | "Needs attention" after connecting | Granted access isn't provably read-only (auth config scopes too broad, or scopes not reported). Fix the auth config and reconnect |
 | Simulator can't reach `http://localhost:8787` | App Transport Security may block plain http (unverified); use an HTTPS tunnel |
 | `Not starting. Invalid configuration: …` | Read the named variables; values are never printed |
-| `ExperimentalWarning: SQLite` | Expected on Node 22 (`node:sqlite`) |

@@ -11,19 +11,24 @@ The app calls two routes:
   DODDY voice-session deletion. The selected provider must be configured before a voice account
   session can be created.
 - `POST /api/voice-token`: validates an active DODDY session and returns an ElevenLabs conversation
-  token, OpenAI Realtime client secret, or the configured Picovoice key.
+  token or OpenAI Realtime client secret.
 
 Access tokens last 10 minutes and stay in app memory. Opaque refresh tokens rotate on use and last
 30 days; the app stores the current refresh token and Apple user identifier in the iOS Keychain with
 device-only accessibility. A revoked Apple credential, DODDY sign-out, or invalid refresh token
 requires a new Apple sign-in. The server stores only a keyed pseudonymous Apple subject, session
-records, refresh-token hashes, and replay/rate-limit counters. Request logs contain action/provider,
-outcome, status, and duration only.
+records, refresh-token hashes (the current one and the one it replaced), and replay/rate-limit
+counters (the sign-in ones are keyed by a hash of the caller's address, never the address), plus, when the Apple key below is set,
+Apple's refresh token for the person, sealed (AES-256-GCM) with a key derived from the signing key.
+Request logs contain action/provider, outcome, status, and duration only (and, for account deletion,
+whether Apple revoked the link).
 
 ## Owner configuration required before deployment
 
 Set these as server environment variables in the owner-controlled host. Do not put values in this
-repository, app configuration, or build settings.
+repository, app configuration, or build settings. The secret ones live in 1Password and reach the
+Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
+`docs/security/SECRETS_1PASSWORD.md`). The signing key is recorded there but never written by the tool.
 
 | Name | Purpose |
 |---|---|
@@ -34,11 +39,38 @@ repository, app configuration, or build settings.
 | `ELEVENLABS_API_KEY` | Owner-held ElevenLabs API credential. |
 | `ELEVENLABS_AGENT_ID` | The DODDY agent ID configured by the owner. |
 | `OPENAI_API_KEY` | Owner-held OpenAI API credential, if OpenAI voice is enabled. |
-| `OPENAI_REALTIME_MODEL` | Optional server default; the app's model is restricted to the allowlist in `src/handler.js`. |
+| `OPENAI_REALTIME_MODEL` | Optional server default, used when the app names no model. |
+| `OPENAI_ALLOWED_MODELS` | Optional comma-separated list of the model ids the app may ask for. Empty means both `gpt-realtime-2.1` and `gpt-realtime-2.1-mini`, because the app's voice picker offers both in every build (ADR-712). Set it to `gpt-realtime-2.1-mini` to refuse the pricier one. A list that doesn't parse makes OpenAI requests answer `500 server_not_configured`. |
+| `OPENAI_OPEN_ACCESS` | Optional, off when unset. `1`, `true` or `on` lets an OpenAI request through with no voice account (ADR-726). Those requests share one limit bucket under the normal per-hour, per-day and global caps, so a stranger can use up the allowance, which also blocks you. ElevenLabs is never opened by it. Remove it and redeploy to close the door again. |
 | `OPENAI_REALTIME_VOICE` | Optional server default voice. |
-| `PICOVOICE_ACCESS_KEY` | Optional owner-held key for one-tap Hey Doddy setup. |
 | `DODDY_TOKENS_PER_HOUR` | Optional shared per-account issuance limit; defaults to `30`. |
+| `DODDY_TOKENS_PER_DAY` | Optional per-account issuance limit per UTC day, on top of the hourly one; defaults to `150` (ADR-712). |
 | `DODDY_GLOBAL_TOKENS_PER_HOUR` | Optional shared global issuance limit; defaults to `100`. |
+| `DODDY_SIGNINS_PER_CLIENT_HOUR` | Optional: sign-ins one caller address may complete per hour; defaults to `10` (ADR-712). |
+| `DODDY_SIGNINS_PER_CLIENT_DAY` | Optional: the same per UTC day; defaults to `30`. |
+| `APPLE_TEAM_ID` | Optional, with the next two: the Apple Developer team ID. Lets "Delete voice account" also revoke Sign in with Apple (ADR-524). |
+| `APPLE_SIGN_IN_KEY_ID` | The key ID of a Sign in with Apple key (Apple Developer › Certificates, Identifiers & Profiles › Keys). |
+| `APPLE_SIGN_IN_PRIVATE_KEY` | That key's `.p8` file contents (PEM; literal `\n` line breaks work). Secret: 1Password only. |
+
+### Revoking Sign in with Apple when an account is deleted (ADR-524)
+
+App Store guideline 5.1.1(v) expects an app with Sign in with Apple to revoke the user's tokens when
+they delete their account. With the three `APPLE_*` key settings above:
+
+1. At sign-in the app also sends Apple's one-time `authorizationCode`. The server swaps it at
+   `https://appleid.apple.com/auth/token` (an ES256 client secret signed with the key, valid 5
+   minutes) and keeps Apple's refresh token only if the `id_token` in Apple's reply names the same
+   person whose identity token was just verified. It is stored sealed, never logged, and expires
+   with the DODDY session (30 days, extended on refresh).
+2. "Delete voice account" first posts that token to `https://appleid.apple.com/auth/revoke`, then
+   deletes everything, the sealed token included. The reply is `{ deleted: true, appleRevoked }`.
+   Apple failing or timing out (5 seconds) never keeps the account: `appleRevoked` is `false` and
+   the log line says `failed`, `no_token` or `not_configured`.
+
+Without the key, sign-in and deletion work as before and nothing is sent to Apple's token
+endpoints. Accounts made before the key was set have no token to revoke until they sign in again.
+To make the key: Apple Developer › Keys › +, tick Sign in with Apple, pick the app's primary App ID,
+download the `.p8` once (Apple keeps no copy), note the key ID.
 
 Apple Developer setup is also required: enable Sign in with Apple for each real app identifier and
 provision the matching entitlement/profile. The app's active iOS entitlement includes the capability,
@@ -56,10 +88,30 @@ agent IDs are cleared on launch; the old tester code Keychain item is deleted.
 - Apple identity tokens are verified against Apple's published signing keys, issuer, audience,
   expiry, issue time, and the hashed nonce.
 - Refresh tokens are opaque, stored server-side only as hashes, and rotated after each refresh;
-  replay fails closed.
+  replay fails closed. The hash a refresh replaced is remembered for the life of the session, and if
+  it is ever presented again the whole session ends (refresh token and access token), because the
+  token was copied or two devices hold it (ADR-712). The caller gets the same `401 session_expired`
+  as for any dead token; only the log line carries `reuse: true`. An app that loses the reply to a
+  refresh and tries again with the old token is signed out the same way and has to sign in with Apple
+  again. Only the latest replaced token is remembered, so one from two refreshes ago is just unknown.
 - Every provider-token request checks the signed access token against the active durable session.
-- Shared atomic per-account and global rate limits run before any paid provider request.
-- Request sizes, method, provider, model, upstream timeout, and provider response shape are checked.
+- Shared atomic per-account (hourly and daily) and global rate limits run before any paid provider
+  request. Only a token that is actually issued is counted, so a refused request never uses up the
+  global budget or the account's own allowance (ADR-671, ADR-712). A `429` log line says which limit
+  it was (`user_hour`, `user_day`, `global`); the app sees the same `rate_limited` for all three.
+- Sign-in is limited per caller address (`DODDY_SIGNINS_PER_CLIENT_HOUR` / `_DAY`), in the same
+  Redis store and failing closed like the rest (ADR-712). It counts sign-ins that carry a token Apple
+  verified, not junk, and not refresh or sign-out. The address is only believed from the header
+  Vercel sets itself (`x-vercel-forwarded-for`), and only when the host is Vercel (`VERCEL` is set);
+  an IPv6 address counts as its /64. Without a usable address every caller shares one "unknown"
+  bucket with ten times the limit, and the log line carries `noClientAddress: true`. This is a brake
+  on making many accounts from one place, not a defence against a network of addresses: add a Vercel
+  Firewall rate limit on `/api/voice-auth` for that (dashboard setting).
+- With the defaults a handful of accounts can still use the hourly global budget (30 per account,
+  100 for everyone). Lower `DODDY_TOKENS_PER_HOUR` or raise `DODDY_GLOBAL_TOKENS_PER_HOUR` to move
+  that; it is the owner's choice of cost against convenience.
+- Request sizes, method, provider, model (against the allowlist above), upstream timeout, and provider
+  response shape are checked. The OpenAI client secret lasts 120 seconds.
 - No content, credentials, Apple subject, or user/account identifier is written to application logs.
 - The server has no in-memory session or rate-limit fallback.
 

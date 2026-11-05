@@ -153,6 +153,21 @@ public enum AlarmMatch {
         }
     }
 
+    /// What the app does with "turn off the alarm at HH:MM" before the user has tapped anything
+    /// (ADR-718): show the one alarm that matched on a card, or answer the agent with the same
+    /// words whether none matched or several did. Nothing about the alarms reaches the agent.
+    public enum Preparation: Equatable, Sendable {
+        case card(AlarmEntry)
+        case refuse(String)
+    }
+
+    public static func prepare(clock: String, label: String?, in alarms: [AlarmEntry]) -> Preparation {
+        switch match(clock: clock, label: label, in: alarms) {
+        case .one(let alarm): .card(alarm)
+        case .none, .several: .refuse(VoiceToolReply.alarmNotPrepared)
+        }
+    }
+
     /// "HH:MM" from "7:05", "07:05" or "07:05:00"; nil otherwise.
     public static func clock(_ text: String) -> String? {
         let parts = text.trimmingCharacters(in: .whitespaces).split(separator: ":")
@@ -183,13 +198,12 @@ extension VoiceToolReply {
     /// AlarmKit's list couldn't be read (review F5): not "none set".
     public static let alarmsUnreadable = "unknown: the iPhone couldn't read Doddy's alarms just now. Nothing changed. Ask the user to check Settings, Alarms in Doddy."
 
-    public static func alarmNotFound(_ clock: String) -> String {
-        "not found: Doddy has no alarm at \(clock). Nothing changed. (Doddy can't see or change the Clock app's alarms.)"
-    }
-
-    public static func alarmAmbiguous(_ alarms: [AlarmEntry]) -> String {
-        "not changed: more than one alarm matches (\(alarms.map(\.summary).joined(separator: "; "))). Ask the user which one."
-    }
+    /// ADR-718: one answer for "no alarm matches" and "several do". It is said before the user taps
+    /// anything, so it names no alarm and doesn't say whether one exists; `list_alarms` is the way to
+    /// read them, and that asks first.
+    public static let alarmNotPrepared =
+        "not changed: Doddy couldn't prepare turning off an alarm for that time and label, so no card was shown. Nothing changed. "
+        + "Ask the user for the alarm's exact time and its label, then try once more. (Doddy can't see or change the Clock app's alarms.)"
 
     public static func alarmCancelled(_ alarm: AlarmEntry) -> String {
         "turned off: the alarm at \(alarm.summary) is off. Checked."

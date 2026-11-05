@@ -1,0 +1,18 @@
+{
+  "answer": "Nie udało mi się potwierdzić ceny na stronie żadnego sklepu, więc nie podaję żadnych cen. Znalazłem tylko oferty z listy Google Shopping.",
+  "sections": [
+    {
+      "heading": "Bez potwierdzonej ceny",
+      "kind": "brief",
+      "items": [
+        {
+          "title": "Zmywarka do zabudowy 45 cm, 44 dB, 9 kompletów",
+          "detail": "Neonet · cena niepotwierdzona na stronie sklepu, więc bez ceny"
+        }
+      ]
+    }
+  ],
+  "next": ["Spróbuj jeszcze raz za jakiś czas albo opisz dokładniej, czego szukasz."],
+  "sources": [],
+  "checkedAt": "2026-10-24T12:05:00.000Z"
+}

@@ -8,7 +8,7 @@
 //
 // --dry-run prints every request instead of sending it.
 //
-// Calls reach this server first (ADR-490): don't import the Twilio number into ElevenLabs. The
+// Calls reach this server first (ADR-750): don't import the Twilio number into ElevenLabs. The
 // server lets a call through and connects it to this agent with ElevenLabs register-call, so the
 // agent speaks and hears Twilio's μ-law 8 kHz audio and never fetches a conversation-start webhook.
 // Afterwards set ELEVENLABS_PHONE_AGENT_ID and DODDY_PHONE_NUMBER on the server, then point the
@@ -90,6 +90,9 @@ const agent = await api("POST", "/v1/convai/agents/create", {
     },
     tts: { agent_output_audio_format: el.audio.agent_output_audio_format },
     asr: { user_input_audio_format: el.audio.user_input_audio_format },
+    // The longest call (ADR-704): ElevenLabs ends it there. Without this the platform's own default applies, so a call
+    // to a number someone else controls could run for as long as that default allows.
+    ...(el.max_duration_seconds ? { conversation: { max_duration_seconds: el.max_duration_seconds } } : {}),
   },
   platform_settings: {
     overrides: el.overrides,

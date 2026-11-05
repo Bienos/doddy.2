@@ -11,7 +11,7 @@
 
   // Logical court; scaled to the canvas size.
   const W = 800, H = 520, GROUND = 496, G = 1500;
-  const INK = "#171715", ORANGE = "#F58A24", SOFT = "#DFD5C6", ACCENT = "#A64B00";
+  const INK = "#171715", ORANGE = "#FF6A00", SOFT = "#DFD5C6", ACCENT = "#A64B00";
 
   // Doddy, drawn from the app's pose art (512 x 512 artboard).
   const DODDY = { x: 0, size: 270 };

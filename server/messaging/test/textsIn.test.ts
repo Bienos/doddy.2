@@ -6,25 +6,25 @@ import type { Db } from "../src/db.js";
 import { MAX_PENDING_NOTES } from "../src/calls.js";
 import { dispatchDue } from "../src/outbox.js";
 import { MAX_DELETE_ATTEMPTS, runDueDeletions } from "../src/providerRecords.js";
+import type { SmsChatOutcome } from "../src/smsChat.js";
+import { FIXED, INBOUND_TEXTS_PER_HOUR } from "../src/textsIn.js";
 import {
-  AI_REPLIES_PER_DAY, AI_REPLY_WINDOW_MINUTES, FIXED, INBOUND_TEXTS_PER_HOUR, processTextReply,
-} from "../src/textReplies.js";
-import {
-  dbSkip, DODDY_NUMBER, FakeDeleter, FakePush, FakeReplyWriter, FakeSms, freshDb, testApp, testCipher, twilioRequest,
+  dbSkip, DODDY_NUMBER, FakeDeleter, FakePush, FakeSms, freshDb, testApp, testCipher, twilioRequest,
 } from "./helpers.js";
 
-// Texts the user sends to Doddy's number (ADR-490 unit U3, ADR-494), against real Postgres with
-// stand-ins for Twilio and Claude.
+// Texts the user sends to Doddy's number (ADR-750 unit U3, ADR-753), against real Postgres with
+// a stand-in for Twilio. No model is involved: a text to Doddy becomes a note and gets no reply (ADR-755).
 describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
   let db: Db;
   let app: FastifyInstance;
   let sms: FakeSms;
   let push: FakePush;
-  let replyWriter: FakeReplyWriter;
+  /** What Text with Doddy (ADR-656) was asked to handle: only texts this feature did not take. */
+  const chatCalls: Promise<SmsChatOutcome>[] = [];
 
   before(async () => {
     db = await freshDb();
-    ({ app, sms, push, replyWriter } = await testApp(db));
+    ({ app, sms, push } = await testApp(db, { onSmsChat: (done) => { chatCalls.push(done); } }));
   });
   after(async () => {
     await app?.close();
@@ -57,12 +57,11 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
   const textIn = (from: string, body: string, messageSid = sid()) =>
     app.inject(twilioRequest("/webhooks/twilio/sms", { From: from, To: DODDY_NUMBER, Body: body, MessageSid: messageSid }));
   const rows = async (accountId: string) => (await db.query(
-    "SELECT state, error_code, body_ciphertext, cost_microusd FROM inbound_texts WHERE account_id = $1 ORDER BY received_at",
+    "SELECT state FROM inbound_texts WHERE account_id = $1 ORDER BY received_at",
     [accountId])).rows;
   const notes = async (h: object) =>
     ((await app.inject({ method: "GET", url: "/v1/call-notes", headers: h as Record<string, string> })).json()).notes as
       { text: string; source: string }[];
-  const process = () => processTextReply({ db, cipher: testCipher, replyWriter });
   const deliver = () => dispatchDue(db, { sms, push, cipher: testCipher });
 
   test("a stranger's text, or the user's with texts to Doddy off, is dropped: no reply, nothing stored", async () => {
@@ -83,30 +82,22 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
     assert.equal(forged.statusCode, 403);
   });
 
-  test("settings: off by default, each switch needs the one before it and its consent", async () => {
+  test("settings: off by default, and the switch needs the consent wording", async () => {
     const me = await owner("+48500300002", { textsFromDoddy: false });
     const start = await getSettings(me.h);
-    assert.deepEqual([start.inboundEnabled, start.repliesEnabled, start.repliesUseMemories], [false, false, false]);
-    assert.deepEqual(start.available, { notes: true, replies: true });
+    assert.equal(start.inboundEnabled, false);
+    assert.deepEqual(start.available, { notes: true });
+    assert.equal("repliesEnabled" in start, false, "no answers by text from this switch (ADR-755)");
     assert.equal((await settings(me.h, { inboundEnabled: true })).statusCode, 400, "no consent wording");
     assert.equal((await settings(me.h, { inboundEnabled: true, consentTextVersion: "texts-in-v0" })).statusCode, 400);
+    assert.equal((await settings(me.h, { repliesEnabled: true })).statusCode, 400, "an old app's replies switch is refused, not ignored");
     await turnOn(me.h);
     assert.equal((await db.query("SELECT consent_text_version FROM text_settings WHERE account_id = $1", [me.accountId])).rows[0].consent_text_version, "texts-in-v1");
-    // Replies are texts from Doddy: they need that consent first.
-    const noConsent = await settings(me.h, { repliesEnabled: true });
-    assert.deepEqual([noConsent.statusCode, noConsent.json().error], [409, "sms_not_enabled"]);
-    await app.inject({ method: "PUT", url: "/v1/phone/sms-consent", headers: me.h, payload: { consent: true, textVersion: "sms-v1" } });
-    assert.equal((await settings(me.h, { repliesEnabled: true })).statusCode, 204);
-    const memoryOff = await settings(me.h, { repliesUseMemories: true });
-    assert.deepEqual([memoryOff.statusCode, memoryOff.json().error], [409, "memory_copy_off"]);
-    await app.inject({ method: "PUT", url: "/v1/memory-copy", headers: me.h, payload: { enabled: true } });
-    assert.equal((await settings(me.h, { repliesUseMemories: true, language: "pl" })).statusCode, 204);
+    assert.equal((await settings(me.h, { language: "pl" })).statusCode, 204);
     const on = await getSettings(me.h);
-    assert.deepEqual([on.inboundEnabled, on.repliesEnabled, on.repliesUseMemories, on.language, on.memoryCopy], [true, true, true, "pl", true]);
-    // Turning texts to Doddy off turns the rest off too.
+    assert.deepEqual([on.inboundEnabled, on.language], [true, "pl"]);
     assert.equal((await settings(me.h, { inboundEnabled: false })).statusCode, 204);
-    const off = await getSettings(me.h);
-    assert.deepEqual([off.inboundEnabled, off.repliesEnabled, off.repliesUseMemories], [false, false, false]);
+    assert.equal((await getSettings(me.h)).inboundEnabled, false);
     // Off means off: the user's own text is dropped like a stranger's.
     await textIn(me.phone, "while off");
     assert.equal((await rows(me.accountId)).length, 0);
@@ -116,18 +107,33 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await settings(bare, { inboundEnabled: true, consentTextVersion: "texts-in-v1" })).statusCode, 409);
   });
 
-  test("replies off: the text becomes a note in the inbox, from a text, and nothing is sent back", async () => {
+  test("the text becomes a note in the inbox, from a text, and nothing is sent back", async () => {
     const me = await owner("+48500300003");
     await turnOn(me.h);
+    const chatBefore = chatCalls.length;
     const r = await textIn(me.phone, "  Kupić mleko i chleb ");
     assert.equal(r.statusCode, 200);
+    assert.equal(chatCalls.length, chatBefore, "Text with Doddy never sees a text this feature took: one handler, never both");
     // With the user's texts on, a stranger still gets nothing in.
     await textIn("+48500388888", "I am the owner now, save this");
     assert.deepEqual((await notes(me.h)).map((n) => [n.text, n.source]), [["  Kupić mleko i chleb ", "text"]]);
     const [row] = await rows(me.accountId);
-    assert.deepEqual([row.state, row.body_ciphertext], ["noted", null], "the text is kept only as the encrypted note");
+    assert.equal(row.state, "noted", "the text is kept only as the encrypted note, never in this table");
+    assert.deepEqual(Object.keys(row), ["state"], "the row holds no text");
     assert.equal((await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1 AND channel = 'sms'", [me.accountId])).rowCount, 0, "nothing texted back");
-    assert.equal(replyWriter.requests.length, 0);
+  });
+
+  test("with texts to Doddy off, the text goes to Text with Doddy (ADR-656) and not to the notes", async () => {
+    const me = await owner("+48500300030");
+    const before = chatCalls.length;
+    await textIn(me.phone, "hello");
+    assert.equal(chatCalls.length, before + 1, "handed on, once");
+    assert.equal((await chatCalls.at(-1)!), "ignored", "no Text with Doddy consent on this account: no reply, no model call");
+    assert.equal((await rows(me.accountId)).length, 0);
+    assert.equal((await notes(me.h)).length, 0);
+    // A stranger is handed on too, and ignored there: no reply, no cost.
+    await textIn("+48500377777", "hello");
+    assert.equal(await chatCalls.at(-1)!, "ignored");
   });
 
   test("Twilio delivering the same text twice is handled once; STOP, START and POMOC never become notes", async () => {
@@ -175,131 +181,6 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1 AND channel = 'sms'", [me.accountId])).rowCount, 0, "nothing texted back");
   });
 
-  test("replies on: one reply per text, to the user's number only, and the text is erased once answered", async () => {
-    const me = await owner("+48500300007");
-    await turnOn(me.h, { repliesEnabled: true });
-    const mark = sms.sent.length;
-    await textIn(me.phone, "What's on my list?");
-    const [queued] = await rows(me.accountId);
-    assert.equal(queued.state, "reply_queued");
-    assert.ok(queued.body_ciphertext, "kept encrypted while the reply is written");
-    assert.equal(await process(), true);
-    assert.equal(await process(), false, "nothing left to answer");
-    const [done] = await rows(me.accountId);
-    assert.deepEqual([done.state, done.body_ciphertext, done.cost_microusd], ["replied", null, 6000]);
-    // The reply waits in the outbox encrypted (it may quote memories), then goes to the user only.
-    const out = (await db.query("SELECT body, body_ciphertext FROM outbound_messages WHERE account_id = $1 AND channel = 'sms'", [me.accountId])).rows;
-    assert.equal(out.length, 1);
-    assert.deepEqual([out[0].body, !!out[0].body_ciphertext], [null, true]);
-    await deliver();
-    assert.deepEqual(sms.sent.slice(mark), [{ to: me.phone, body: "Reply to: What's on my list?" }]);
-    assert.equal(replyWriter.requests.at(-1)!.request.text, "What's on my list?");
-    assert.equal(replyWriter.requests.at(-1)!.tools.searchMemories, undefined, "no memories unless allowed");
-  });
-
-  test("the tools: notes come from texts, and memories only with both switches on", async () => {
-    const me = await owner("+48500300008");
-    await app.inject({ method: "PUT", url: "/v1/memory-copy", headers: me.h, payload: { enabled: true } });
-    await app.inject({ method: "PUT", url: "/v1/memory-copy/snapshot", headers: me.h,
-      payload: { items: [{ id: "6f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a10", text: "Gate code 4417", capturedAt: "2026-10-01T10:00:00Z" }] } });
-    await turnOn(me.h, { repliesEnabled: true, repliesUseMemories: true });
-    replyWriter.script = async (_r, tools) => {
-      const found = await tools.searchMemories!("gate code");
-      const saved = await tools.saveNote("Ask about the gate");
-      return { kind: "reply", text: `${found[0]?.text} (${saved})`, costMicroUsd: 9000 };
-    };
-    await textIn(me.phone, "What's the gate code?");
-    await process();
-    await deliver();
-    assert.equal(sms.sent.at(-1)!.body, "Gate code 4417 (saved)");
-    // Claude's words are labelled as Doddy's note, never as the user's text.
-    assert.deepEqual((await notes(me.h)).map((n) => [n.text, n.source]), [["Ask about the gate", "doddy"]]);
-    replyWriter.script = async (r) => ({ kind: "reply", text: `Reply to: ${r.text}`, costMicroUsd: 6000 });
-  });
-
-  test("no answer: the text is kept as a note and one fixed text says so; too long gets its own text", async () => {
-    const me = await owner("+48500300009");
-    await turnOn(me.h, { repliesEnabled: true, language: "pl" });
-    replyWriter.script = async () => ({ kind: "failed", code: "refusal", costMicroUsd: 3000 });
-    await textIn(me.phone, "Pytanie");
-    await process();
-    replyWriter.script = async () => ({ kind: "too_long", costMicroUsd: 3000 });
-    await textIn(me.phone, "Długie pytanie");
-    await process();
-    replyWriter.script = async (r) => ({ kind: "reply", text: `Reply to: ${r.text}`, costMicroUsd: 6000 });
-    const states = (await rows(me.accountId)).map((r) => [r.state, r.error_code]);
-    assert.deepEqual(states, [["reply_failed", "refusal"], ["reply_failed", "too_long"]]);
-    assert.deepEqual((await notes(me.h)).map((n) => n.text), ["Pytanie"]);
-    const mark = sms.sent.length;
-    await deliver();
-    assert.deepEqual(sms.sent.slice(mark).map((s) => s.body).sort(), [FIXED.pl.failedNoted, FIXED.pl.tooLong].sort());
-  });
-
-  test(`a text not answered within ${AI_REPLY_WINDOW_MINUTES} minutes becomes a note, with no late reply`, async () => {
-    const me = await owner("+48500300010");
-    await turnOn(me.h, { repliesEnabled: true });
-    await textIn(me.phone, "Old question");
-    await db.query("UPDATE inbound_texts SET received_at = now() - make_interval(mins => $2) WHERE account_id = $1",
-      [me.accountId, AI_REPLY_WINDOW_MINUTES + 1]);
-    const before = replyWriter.requests.length;
-    await process();
-    assert.equal(replyWriter.requests.length, before, "Claude isn't asked");
-    assert.deepEqual((await rows(me.accountId)).map((r) => [r.state, r.error_code]), [["noted", "late"]]);
-    assert.equal((await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1", [me.accountId])).rowCount, 0);
-  });
-
-  test(`over ${AI_REPLIES_PER_DAY} replies a day, or over the budget: notes, and one text a day saying so`, async () => {
-    const me = await owner("+48500300011");
-    await turnOn(me.h, { repliesEnabled: true });
-    await db.query(
-      `INSERT INTO inbound_texts (id, account_id, message_sid, state, received_at)
-       SELECT gen_random_uuid(), $1, 'SMx' || replace(gen_random_uuid()::text, '-', ''), 'replied', now() - interval '2 hours' FROM generate_series(1, $2) g`,
-      [me.accountId, AI_REPLIES_PER_DAY]);
-    const before = replyWriter.requests.length;
-    await textIn(me.phone, "one more");
-    await process();
-    await textIn(me.phone, "and another");
-    await process();
-    assert.equal(replyWriter.requests.length, before);
-    const last = (await rows(me.accountId)).slice(-2).map((r) => [r.state, r.error_code]);
-    assert.deepEqual(last, [["noted", "daily_limit"], ["noted", "daily_limit"]]);
-    const limitTexts = (await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1 AND idempotency_key LIKE 'text-limit:%'", [me.accountId])).rowCount;
-    assert.equal(limitTexts, 1, "said once a day, not per text");
-
-    // The server-wide budget: someone else's replies used it up.
-    const other = await owner("+48500300012");
-    await turnOn(other.h, { repliesEnabled: true });
-    await db.query("UPDATE inbound_texts SET cost_microusd = 1000000 WHERE id = (SELECT id FROM inbound_texts WHERE account_id = $1 LIMIT 1)", [me.accountId]);
-    await textIn(other.phone, "hello");
-    await process();
-    assert.deepEqual((await rows(other.accountId)).map((r) => [r.state, r.error_code]), [["noted", "budget"]]);
-    await db.query("UPDATE inbound_texts SET cost_microusd = 0 WHERE account_id = $1", [me.accountId]);
-  });
-
-  test("replies turned off, or STOP sent, before the reply: the text becomes a note instead", async () => {
-    const me = await owner("+48500300013");
-    await turnOn(me.h, { repliesEnabled: true });
-    await textIn(me.phone, "first");
-    await settings(me.h, { repliesEnabled: false });
-    await process();
-    await settings(me.h, { repliesEnabled: true });
-    await textIn(me.phone, "STOP");
-    await textIn(me.phone, "after stop");
-    assert.deepEqual((await rows(me.accountId)).map((r) => r.state), ["noted", "noted"], "after STOP no reply is even queued");
-    assert.deepEqual((await notes(me.h)).map((n) => n.text), ["first", "after stop"]);
-  });
-
-  test("a reply job the worker never finished becomes a note, and is never answered twice", async () => {
-    const me = await owner("+48500300014");
-    await turnOn(me.h, { repliesEnabled: true });
-    await textIn(me.phone, "interrupted");
-    await db.query("UPDATE inbound_texts SET state = 'replying', updated_at = now() - interval '10 minutes' WHERE account_id = $1", [me.accountId]);
-    await process();
-    assert.deepEqual((await rows(me.accountId)).map((r) => [r.state, r.error_code, r.body_ciphertext]), [["reply_failed", "worker_interrupted", null]]);
-    assert.deepEqual((await notes(me.h)).map((n) => n.text), ["interrupted"]);
-    assert.equal((await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1", [me.accountId])).rowCount, 0);
-  });
-
   test("history export: the user's own calls, texts and waiting notes, nobody else's", async () => {
     const me = await owner("+48500300015");
     await turnOn(me.h);
@@ -344,9 +225,10 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
 
   test("records are queued for deletion: sent texts when Twilio takes them, calls when they end", async () => {
     const me = await owner("+48500300017");
-    await turnOn(me.h, { repliesEnabled: true });
     await textIn(me.phone, "queue my reply");
-    await process();
+    await db.query("DELETE FROM provider_deletions WHERE sid = $1", ["SM" + "9".repeat(32)]);
+    const { enqueue } = await import("../src/outbox.js");
+    await enqueue(db, me.accountId, ["sms"], "from Doddy", new Date(), "deletion-test", { cipher: testCipher });
     sms.next = [{ kind: "accepted", providerId: "SM" + "9".repeat(32) }];
     await deliver();
     assert.equal((await db.query("SELECT kind FROM provider_deletions WHERE sid = $1", ["SM" + "9".repeat(32)])).rows[0]?.kind, "message");
@@ -359,12 +241,12 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
 
   test("texts to Doddy switch off when the number is removed, replaced, or proved by another account", async () => {
     const on = async (accountId: string) =>
-      (await db.query("SELECT inbound_enabled, replies_enabled FROM text_settings WHERE account_id = $1", [accountId])).rows[0];
+      (await db.query("SELECT inbound_enabled FROM text_settings WHERE account_id = $1", [accountId])).rows[0];
     // Removed.
     const a = await owner("+48500300020");
-    await turnOn(a.h, { repliesEnabled: true });
+    await turnOn(a.h);
     assert.equal((await app.inject({ method: "DELETE", url: "/v1/phone", headers: a.h })).statusCode, 204);
-    assert.deepEqual(await on(a.accountId), { inbound_enabled: false, replies_enabled: false });
+    assert.deepEqual(await on(a.accountId), { inbound_enabled: false });
     // Replaced by another number: new consent needed.
     const b = await owner("+48500300021");
     await turnOn(b.h);
@@ -386,7 +268,7 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
     await turnOn(me.h);
     const bare = await testApp(db, { publicBaseUrl: undefined });
     const put = (payload: object) => bare.app.inject({ method: "PUT", url: "/v1/texts/settings", headers: me.h, payload });
-    assert.equal((await put({ repliesEnabled: true })).statusCode, 503, "nothing new is turned on");
+    assert.equal((await put({ inboundEnabled: true, consentTextVersion: "texts-in-v1" })).statusCode, 503, "nothing new is turned on");
     assert.equal((await put({ inboundEnabled: false })).statusCode, 204);
     assert.equal((await db.query("SELECT inbound_enabled FROM text_settings WHERE account_id = $1", [me.accountId])).rows[0].inbound_enabled, false);
     await bare.app.close();
@@ -413,10 +295,5 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
       assert.equal((await bare.app.inject({ method: "GET", url: "/v1/texts/settings", headers: h })).json().available.notes, false);
       await bare.app.close();
     }
-    const noClaude = await testApp(db, { replyWriter: undefined });
-    const me = await noClaude.app.inject({ method: "POST", url: "/v1/accounts", remoteAddress: "10.3.8.9" });
-    const h = { authorization: `Bearer ${me.json().deviceToken}` };
-    assert.equal((await noClaude.app.inject({ method: "GET", url: "/v1/texts/settings", headers: h })).json().available.replies, false);
-    await noClaude.app.close();
   });
 });

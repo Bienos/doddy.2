@@ -1,6 +1,6 @@
 # Doddy's phone number: setup for texts (unit U0)
 
-This is the runbook for unit U0 of ADR-490 (`docs/implementation/PHONE_SMS_MILESTONE.md`). At the end, Doddy has a Polish Twilio mobile number. It sends you texts and handles STOP and START through the messaging server (`server/messaging/`).
+This is the runbook for unit U0 of ADR-750 (`docs/implementation/PHONE_SMS_MILESTONE.md`). At the end, Doddy has a Polish Twilio mobile number. It sends you texts and handles STOP and START through the messaging server (`server/messaging/`).
 
 **Calls are not connected in U0.** Anyone who calls the number hears one fixed sentence and the call ends. Calls come in unit U1: see "Unit U1: connect calls" below, once the U0 checks pass.
 
@@ -49,7 +49,7 @@ Written 2026-10-17. Console paths are from Twilio's and Render's documentation o
 
 In U1 "A call comes in" changes to the server. The fallback keeps this bin, so callers still hear an honest sentence if the server is down.
 
-This TwiML records nothing. Don't add `<Record>`: recording stays off (ADR-490, ADR-158).
+This TwiML records nothing. Don't add `<Record>`: recording stays off (ADR-750, ADR-158).
 
 ## 5. Verify service (the code that proves the number is yours)
 1. Open **Verify → Services → Create new**.
@@ -98,7 +98,7 @@ What Claude saw on 2026-10-18 through Render's tools:
    - The free database expires on **2026-11-10**. Render then deletes it with everything in it, after a short grace period. **doddy-messaging-db → Upgrade** to a paid plan (Basic-256mb is enough) before then.
    - Render shows each price before you confirm.
 2. **doddy-messaging → Settings:**
-   - **Branch:** `claude/awesome-cray-2lb9ia`, where U1 to U4 are until they're merged into the default branch. Its database updates (migrations 008 to 011) run by themselves at start-up. U1 to U4 stay off until their keys and switches are set.
+   - **Branch:** `claude/rebase-phone-number`, where U1 to U4 are until they're merged into the default branch (ADR-729: approved for review only, not for use). Its database updates (migrations 017 to 020) run by themselves at start-up. U1 to U4 stay off until their keys and switches are set.
    - **Health Check Path:** `/healthz`, so Render switches to a new deploy only once it answers.
 3. **doddy-messaging → Environment:**
    - Check that `PUBLIC_BASE_URL` is exactly `https://doddy-messaging-zw1n.onrender.com`, with no path. Twilio's signatures are checked against it.
@@ -116,7 +116,6 @@ Leave these out for now:
 - `ELEVENLABS_*` and `DODDY_PHONE_NUMBER`: calls, unit U1;
 - `APNS_*`: notifications, optional, needs Apple's `.p8` key.
 
-If the daily-news key is `ANTHROPIC_API_KEY`, replies to your texts (U3) can use it too.
 
 4. **Manual Deploy → Deploy latest commit**, or ask Claude, who can start the deploy and read the log with Render's tools. Then check:
    - The log line `configured features` should show `"sms":true` and `"webhooks":true`.
@@ -151,9 +150,9 @@ Send Claude the results: what you saw, the app's wording, or Twilio's error code
 Optional: tap **Delete my Doddy messaging data**, check that the number is gone from Settings, then verify again.
 
 ## Unit U1: connect calls (after the U0 checks pass)
-Calls reach the messaging server first (ADR-490). It lets your number through to the "Doddy (phone)" agent at ElevenLabs. Anyone else hears one fixed sentence and the call ends. **Don't import the number into ElevenLabs.**
+Calls reach the messaging server first (ADR-750). It lets your number through to the "Doddy (phone)" agent at ElevenLabs. Anyone else hears one fixed sentence and the call ends. **Don't import the number into ElevenLabs.**
 
-1. **Deploy the U1 code.** It is on branch `claude/awesome-cray-2lb9ia` until it is merged. In Render, set the `doddy-messaging` service's branch to it, or to the default branch once U1 is merged, and deploy. The database update (migration 008) runs by itself at start-up. If step 7 already set this branch, U1 to U4 are deployed and there's nothing to do here.
+1. **Deploy the U1 code.** It is on branch `claude/rebase-phone-number` until it is merged. In Render, set the `doddy-messaging` service's branch to it, or to the default branch once U1 is merged, and deploy. The database update (migration 008) runs by itself at start-up. If step 7 already set this branch, U1 to U4 are deployed and there's nothing to do here.
 2. **Twilio voice permissions:** under **Voice → Settings → Geo permissions**, tick Poland (low-risk numbers), so Doddy can call your Polish number. Without it, Twilio refuses with error 21215.
 3. **Make the tool secret:** run `openssl rand -base64 32` and keep the output for the next two steps. The server refuses a secret shorter than 32 characters.
 4. **Create the phone agent** from a checkout of the repo on your computer:
@@ -197,9 +196,9 @@ Send Claude what you saw and heard. Never send the PIN, keys or the tool secret.
 | 9 | Twilio → Monitor → Logs → Calls | Your calls, with no recordings |
 
 ## Unit U2: texts you approve (after the U0 checks pass)
-Doddy can text your own number, and only yours, when you ask it to in a conversation ("text me the parcel code"). A card shows the exact text first; nothing is sent until you tap **Send text** (ADR-493).
+Doddy can text your own number, and only yours, when you ask it to in a conversation ("text me the parcel code"). A card shows the exact text first; nothing is sent until you tap **Send text** (ADR-752).
 
-1. **Deploy the U2 code**, the same way as U1 (branch `claude/awesome-cray-2lb9ia` until it is merged). The database update (migration 009) runs by itself at start-up. No new Render keys are needed.
+1. **Deploy the U2 code**, the same way as U1 (branch `claude/rebase-phone-number` until it is merged). The database update (migration 018) runs by itself at start-up. No new Render keys are needed.
 2. **Build the iPhone app from the same branch** in Xcode. With OpenAI voice (the default), the app brings the new `text_me` tool with it.
 3. **ElevenLabs voice:** the live agent has had `text_me` since 2026-10-18 (`voice-agent/README.md`), so there is nothing to do here.
 4. **On your iPhone, Settings → Notifications and texts:** your number must be verified and texts turned on (U0 checks 3 and 4).
@@ -219,42 +218,37 @@ Send Claude what you saw. Never send codes or keys.
 | 8 | Render logs | No text of any message, only ids and codes |
 
 ## Unit U3: texts to Doddy (after the U0 checks pass)
-You can text Doddy's number. Each text waits as a note in the app, or, with replies on, Doddy (Claude, on the server) answers by text. Texts from any other number are dropped without a reply (ADR-494).
+You can text Doddy's number. With **Accept texts from my number** on, each text waits as a note in the app and gets no answer. Texts from any other number are dropped without a reply (ADR-753). Answers by text are a different feature, **Text with Doddy** (ADR-656, `docs/implementation/SMS_CHAT.md`, its own switch and wording): a text goes to exactly one of the two, and when this switch is on, this one takes it. The old plan for Claude replies with notes and memories (decision 4 of `docs/implementation/PHONE_SMS_MILESTONE.md`, "AI replies") was not brought forward when this branch was brought up to date with the default branch (ADR-755).
 
-1. **Deploy the U3 code**, as for U1 and U2. The database update (migration 010) runs by itself at start-up.
-2. **For replies only, Render → doddy-messaging → Environment:**
+1. **Deploy the U3 code**, as for U1 and U2. The database update (migration 019) runs by itself at start-up.
+2. **Render → doddy-messaging → Environment (optional):**
 
    | Key | Value |
    |---|---|
-   | `ANTHROPIC_API_KEY` | **secret.** Anthropic Console → API keys. Also turns on the AI writer for daily news if it wasn't on. Set a monthly spending limit in the Anthropic Console too. |
-   | `TEXT_REPLY_MODEL` | Optional. Default `claude-opus-5-5` (decision 7), about $0.03 a reply. |
    | `TWILIO_RECORD_DELETE_AFTER_HOURS` | Optional. Default 24: Doddy deletes its message and call records at Twilio a day after they finish. `0` deletes them after about 2 minutes. |
 
-   The log line `configured features` should show `"textReplies":true` and `"twilioDeleteAfterMinutes":1440`.
+   The log line `configured features` should show `"twilioDeleteAfterMinutes":1440`.
 3. **Twilio:** nothing new. Texts already reach the server through the Messaging Service webhook from U0 step 6.
-4. **Build the iPhone app from the same branch.** In **Settings → Phone calls → Texts to Doddy**, turn on **Accept texts from my number** (read the wording under it). For replies, also **Doddy replies by text**; for answers from your notes, **Replies may use my memories** (it needs **Memory on calls**).
+4. **Build the iPhone app from the same branch.** In **Settings → Phone calls → Texts to Doddy**, turn on **Accept texts from my number** (read the wording under it).
 
 ### The U3 checks
 Send Claude what you saw. Never send codes or keys.
 
 | # | Check | Expected |
 |---|---|---|
-| 1 | Replies off: text Doddy's number "Kupić mleko" | No answer. In **Settings → Phone calls**, a note "Kupić mleko" under **Notes waiting for you**, marked "From your text" |
+| 1 | Text Doddy's number "Kupić mleko" | No answer. In **Settings → Phone calls**, a note "Kupić mleko" under **Notes waiting for you**, marked "From your text" |
 | 2 | Tap **Save to memories** on it | It's in your memories; the note leaves the list |
 | 3 | Text Doddy from another phone | Nothing back, no note. Render shows `text dropped` with `not_allowed` and no number |
-| 4 | Replies on: text "What can you do by text?" | One answer from Doddy's number within a minute, at most 3 SMS parts |
-| 5 | Text "Remember to buy batteries" | The answer says it left a note to confirm; the note appears in the app, marked "Doddy noted this from your text" |
-| 6 | Text "Text my sister that I'm late" | The answer says Doddy can't text anyone else |
-| 7 | With **Replies may use my memories** on, ask by text about something you saved | The answer uses that note. With it off, Doddy says it can't see your notes by text |
-| 8 | Text `POMOC` | Only Twilio's help message; no note, no AI answer |
-| 9 | **Export phone and text history**, then share it to yourself | A JSON file with your calls, text statuses and waiting notes; no other numbers |
-| 10 | The next day, Twilio Console → Monitor → Logs → Messaging | Yesterday's texts are gone (Twilio may keep deleted bodies in backups for up to 30 days) |
-| 11 | Render logs | `text received` and `text reply` lines with ids, states and costs only, never a text |
+| 4 | Turn the switch off, then text Doddy | No note. If **Text with Doddy** is on, that feature decides; otherwise nothing comes back |
+| 5 | Text `POMOC` | Only Twilio's help message; no note |
+| 6 | **Export phone and text history**, then share it to yourself | A JSON file with your calls, text statuses and waiting notes; no other numbers |
+| 7 | The next day, Twilio Console → Monitor → Logs → Messaging | Yesterday's texts are gone (Twilio may keep deleted bodies in backups for up to 30 days) |
+| 8 | Render logs | `text received` lines with ids and states only, never a text |
 
 ## Unit U4: Doddy calls you later (after the U1 checks pass)
-In a conversation, ask Doddy to call you later ("call me at six about the cake"). A card shows the time, the sentence Doddy will say when you answer, and a **Call even in quiet hours** switch; nothing is booked until you tap **Book call**. Doddy's server places the call at that time, from Doddy's number, after checking everything again (ADR-495).
+In a conversation, ask Doddy to call you later ("call me at six about the cake"). A card shows the time, the sentence Doddy will say when you answer, and a **Call even in quiet hours** switch; nothing is booked until you tap **Book call**. Doddy's server places the call at that time, from Doddy's number, after checking everything again (ADR-754).
 
-1. **Deploy the U4 code**, as for U1 to U3. The database update (migration 011) runs by itself at start-up. Calls are placed by the worker, which runs inside the web service with `RUN_WORKER_IN_WEB=1` (step 7), so it already has the U1 keys.
+1. **Deploy the U4 code**, as for U1 to U3. The database update (migration 020) runs by itself at start-up. Calls are placed by the worker, which runs inside the web service with `RUN_WORKER_IN_WEB=1` (step 7), so it already has the U1 keys.
 2. **Optional, Render → doddy-messaging → Environment:**
 
    | Key | Value |
@@ -293,21 +287,19 @@ Send Claude what you saw and heard. Never send codes, the PIN or keys.
 | U1: you hear "I can't talk right now" | The server didn't get a usable answer from ElevenLabs `register-call`. Render's log shows `call_not_connected` with a code, such as `elevenlabs_401` for a wrong key or `elevenlabs_422` for a wrong agent id. |
 | U1: Call me now says the phone service couldn't place the call | Twilio refused it. Error 21215 means Poland isn't ticked under Voice → Settings → Geo permissions. |
 | U2: Doddy says your number changed after the card was shown | You verified a different number while the card was open. Ask again for a new card. |
-| U2: Doddy says it reached the most texts allowed for today | 20 approved texts a day per account (`contact_policy` in `docs/trust/config/doddy_rules.yaml`) |
+| U2: Doddy says it reached the most texts allowed for today | The server's text cap per account and day (30 by default, `SMS_DAILY_PER_ACCOUNT`; 300 for the whole server, `SMS_DAILY_PER_SERVER`; ADR-702, ADR-704). Every text counts, not only approved ones. |
 | U3: your text gets no note and no answer | **Accept texts from my number** is off, or the Messaging Service webhook isn't the server. Render's `text dropped` line gives the reason. |
-| U3: "Doddy couldn't answer that just now" | Render's `text reply` line has the code: `anthropic_401` (wrong key), `anthropic_429` (rate or spending limit), `refusal`, `deadline`. Your text is kept as a note. |
 | U4: no call came, and a notification says the server couldn't place it in time | The worker wasn't running at the time (the web service was restarting or deploying) or was held up. A call more than 15 minutes late is never placed. On Render's starter plan the service doesn't sleep. |
 | U4: a notification says it was quiet hours in your iPhone's time zone | The server checks quiet hours in the time zone your iPhone last sent: when you booked, or when you last opened Doddy while a call was waiting. Book again with **Call even in quiet hours** on, or for another time. |
 | U4: Doddy answers a booked call with only "How can I help?" | The phone agent was created before U4 (step 3) |
-| U3: the replies switch can't be turned on | Replies are texts from Doddy, so texts in **Notifications and texts** must be on (and no STOP since), and `ANTHROPIC_API_KEY` must be set |
 
-**Since U2:** a Twilio 500, 502 or 504 is never retried. The text shows as "Unclear whether it was sent" while the server looks for it in Twilio's message list; it is never sent twice (ADR-493).
+**Since U2:** a Twilio 500, 502 or 504 is never retried. The text shows as "Unclear whether it was sent" while the server looks for it in Twilio's message list; it is never sent twice (ADR-752, ADR-755).
 
 ## What leaves your iPhone
 - Your phone number and your consent go to the messaging server (Render, Frankfurt) and to Twilio, which checks the number and delivers texts.
 - The text of an update is erased from the server's database once it reaches a final status (ADR-144).
 - Twilio keeps its own message logs. Deleting them is built in unit U3.
-- **U3:** texts you send Doddy's number go through Twilio to the messaging server and wait there as encrypted notes until you save or discard them. With replies on, your text (and, if you allowed it, the notes it finds) goes to Anthropic to write the answer. Doddy deletes its records at Twilio a day after each text or call by default.
+- **U3:** texts you send Doddy's number go through Twilio to the messaging server and wait there as encrypted notes until you save or discard them. No model reads it. Doddy deletes its records at Twilio a day after each text or call by default.
 - **U2:** a text you approve goes to the messaging server and then to Twilio. The server stores it encrypted with `MEMORY_ENCRYPTION_KEY` (set in step 7) and erases it once the text has a final status. It keeps a hash of it only while an unclear outcome is being checked.
 - **U4:** a call you book sends its time, its reason and your iPhone's time zone to the messaging server. The reason is stored encrypted and erased when the call is over or won't happen; Doddy says it when the call is answered, and ElevenLabs processes the call as in U1. Twilio places the call.
 - Your memories stay on your iPhone.

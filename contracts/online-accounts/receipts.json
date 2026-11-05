@@ -1,7 +1,7 @@
 {
   "receipts": [
     {
-      "operationId": "b2a1f601-f3d1-4f27-a586-8dc4974c79f5",
+      "operationId": "a15f1643-3770-4df5-9706-0ffd6d10bad6",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -13,7 +13,7 @@
       "providerReference": null
     },
     {
-      "operationId": "da367d4e-df7b-4912-9799-8f9f89f39ef4",
+      "operationId": "7a49b714-e844-4ff4-aae7-525661d0f5d3",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -25,7 +25,7 @@
       "providerReference": null
     },
     {
-      "operationId": "90d7aac3-c693-4de9-a749-31e59d69a44a",
+      "operationId": "b279ea05-9e83-4af3-bd9a-9c4f64d84639",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -34,10 +34,10 @@
       "status": "succeeded",
       "summary": "Gmail draft created (not sent).",
       "errorCode": null,
-      "providerReference": "mock_log_20c45d2c"
+      "providerReference": "mock_log_b079e3e6"
     },
     {
-      "operationId": "b1907d30-26ee-4e3e-8010-fe8b5539bd1e",
+      "operationId": "c0229939-4f11-4031-820c-4a4567d91720",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -49,7 +49,7 @@
       "providerReference": null
     },
     {
-      "operationId": "5667317a-3f8e-482c-b688-5054c12d119f",
+      "operationId": "7b3af2fc-e93b-4de5-9f26-ff6a2200ad4d",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -58,10 +58,10 @@
       "status": "succeeded",
       "summary": "Checked email: 2 messages listed.",
       "errorCode": null,
-      "providerReference": "mock_log_dd440651"
+      "providerReference": "mock_log_ae9c994e"
     },
     {
-      "operationId": "68a8f9c1-711b-4089-9d16-ea6315f13f55",
+      "operationId": "af878ed1-a3f3-4a05-ad09-16de73a67c3f",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -73,19 +73,7 @@
       "providerReference": null
     },
     {
-      "operationId": "160a7026-ec51-468b-8574-ae0af7d71e41",
-      "operation": "connect",
-      "toolkit": "gmail",
-      "tool": null,
-      "timestamp": "2026-10-10T10:00:00.000Z",
-      "mode": "mock",
-      "status": "succeeded",
-      "summary": "Gmail connected. Its tools are off until you switch them on.",
-      "errorCode": null,
-      "providerReference": null
-    },
-    {
-      "operationId": "cf97f066-9b66-440a-b456-f102d99c57b2",
+      "operationId": "876f0160-f365-4c67-a4cd-32b96081d209",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -94,6 +82,42 @@
       "status": "blocked",
       "summary": "Not done: Check my email is turned off in Settings.",
       "errorCode": "capability_disabled",
+      "providerReference": null
+    },
+    {
+      "operationId": "6f03048f-e9ce-4b3a-b4c0-5361a40d01f4",
+      "operation": "switch",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Check my email switched off.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "675bb46a-c124-4b07-94ec-48188a143205",
+      "operation": "connect",
+      "toolkit": "gmail",
+      "tool": null,
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Gmail connected. Doddy can use it now; he still asks before every look and every change.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "1ea7e374-5714-4f11-b0a8-3579748a8c2f",
+      "operation": "read",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: Gmail isn't connected.",
+      "errorCode": "not_connected",
       "providerReference": null
     }
   ]

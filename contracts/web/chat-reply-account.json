@@ -1,0 +1,13 @@
+{
+  "text": "DEMO: here is what your account's logbook shows.",
+  "sources": [
+    {
+      "kind": "account",
+      "part": "logbook"
+    }
+  ],
+  "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+  }
+}
