@@ -27,6 +27,25 @@ enum VoiceConfig {
     static var directVoiceEnabled: Bool { false }
     #endif
 
+    /// Settings key of the Debug-only switch "OpenAI without a voice account" (ADR-726).
+    static let openAIWithoutAccountKey = "developer.openAIWithoutAccount"
+
+    #if DEBUG
+    /// Owner decision (ADR-726): a Debug build may ask the token server for an OpenAI voice with no
+    /// Doddy voice account. It works only while the server has OPENAI_OPEN_ACCESS on; otherwise the
+    /// server answers 401 and the app says the voice account is needed. On by default in Debug;
+    /// Release and TestFlight builds compile this to `false` and always need the account.
+    static var openAIWithoutAccount: Bool { UserDefaults.standard.object(forKey: openAIWithoutAccountKey) as? Bool ?? true }
+    #else
+    static var openAIWithoutAccount: Bool { false }
+    #endif
+
+    /// True when `provider` can start with no Doddy voice account: the ElevenLabs developer
+    /// connection (ADR-551) or OpenAI through the open token server (ADR-726).
+    static func talksWithoutAccount(for provider: VoiceProvider) -> Bool {
+        usesDirectAgent(for: provider) || (provider == .openAIRealtime && openAIWithoutAccount)
+    }
+
     /// The voice the next conversation uses (ElevenLabs unless the user picked OpenAI, ADR-546).
     static var chosenProvider: VoiceProvider {
         VoiceProvider.effective(stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)

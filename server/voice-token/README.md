@@ -41,6 +41,7 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `OPENAI_API_KEY` | Owner-held OpenAI API credential, if OpenAI voice is enabled. |
 | `OPENAI_REALTIME_MODEL` | Optional server default, used when the app names no model. |
 | `OPENAI_ALLOWED_MODELS` | Optional comma-separated list of the model ids the app may ask for. Empty means both `gpt-realtime-2.1` and `gpt-realtime-2.1-mini`, because the app's voice picker offers both in every build (ADR-712). Set it to `gpt-realtime-2.1-mini` to refuse the pricier one. A list that doesn't parse makes OpenAI requests answer `500 server_not_configured`. |
+| `OPENAI_OPEN_ACCESS` | Optional, off when unset. `1`, `true` or `on` lets an OpenAI request through with no voice account (ADR-726). Those requests share one limit bucket under the normal per-hour, per-day and global caps, so a stranger can use up the allowance, which also blocks you. ElevenLabs is never opened by it. Remove it and redeploy to close the door again. |
 | `OPENAI_REALTIME_VOICE` | Optional server default voice. |
 | `DODDY_TOKENS_PER_HOUR` | Optional shared per-account issuance limit; defaults to `30`. |
 | `DODDY_TOKENS_PER_DAY` | Optional per-account issuance limit per UTC day, on top of the hourly one; defaults to `150` (ADR-712). |
