@@ -18,3 +18,6 @@ Owner, 28 Oct 2026: "Do all", in answer to a list that said photos need the owne
 - Swift not compiled or run (no Xcode or Swift here): `MessagePhotoTests` (5), the new persistence test, `MessagePhotoPicker.swift`, the composer changes.
 - No real photo has gone to Anthropic; cost per photo not measured (an image adds roughly 1,000 to 1,600 input tokens at this size).
 - Privacy pages (`site/privacy/`) and Settings' "What leaves this iPhone" do not mention photos yet.
+
+## Home's + menu (ADR-727, 5 Nov 2026)
+Home's + is a menu: **Take a photo** (iOS's own camera screen) and **Choose a photo** (Apple's picker) both open Messages with the photo above the box, made smaller the same way (`AskAboutPhoto.swift`, `MessagesView(photo:)`); **New note** is the old + behaviour. Nothing is sent until the person taps Send, and Messages still needs Ask Doddy turned on. **Not compiled, not run, not seen on a device.** Attaching a document is not built (new data flow, needs the owner's decision).

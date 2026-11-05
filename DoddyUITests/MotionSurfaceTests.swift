@@ -73,7 +73,7 @@ final class MotionSurfaceTests: XCTestCase {
     @MainActor
     func testNoteCardIsARuleItsPageHasASpotAndTheUndoBarIsTheStrip() {
         let app = launch()
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.tap(); editor.typeText("Synthetic blue kettle is on the top shelf.")
