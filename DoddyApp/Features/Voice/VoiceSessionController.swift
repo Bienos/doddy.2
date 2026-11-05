@@ -998,7 +998,11 @@ final class VoiceSessionController {
         let sessionUpdate: String
         do {
             let instructions = try RealtimeInstructions.render(spec.template, variables: variables)
-            sessionUpdate = try OpenAIRealtimeWire.sessionUpdate(instructions: instructions, toolsJSON: spec.tools, eagerness: .high)
+            // Patient turn-taking: .high answered on the first pause and cut people off (owner, 5 Nov).
+            // The language is the user's choice, else Polish when the phone is set to Polish.
+            let phoneIsPolish = Locale.preferredLanguages.first?.hasPrefix("pl") == true
+            let languageCode = ConversationLanguage.stored().overrideCode ?? (phoneIsPolish ? "pl" : nil)
+            sessionUpdate = try OpenAIRealtimeWire.sessionUpdate(instructions: instructions, toolsJSON: spec.tools, eagerness: .low, languageCode: languageCode)
         } catch {
             fail("Doddy's prompt couldn't be prepared for OpenAI (\(error)). Switch Home to ElevenLabs.")
             return

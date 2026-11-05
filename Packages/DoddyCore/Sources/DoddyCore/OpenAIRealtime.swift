@@ -136,6 +136,10 @@ public enum OpenAIRealtimeWire {
     /// Model for the user's side of the transcript (shown on screen, kept in the conversation log).
     public static let transcriptionModel = "gpt-4o-mini-transcribe"
 
+    /// Added to the instructions when the conversation is in Polish: OpenAI's voices drift into
+    /// English or a foreign accent without it. Doddy is a he, so the masculine forms stay.
+    static let polishLine = "\n\nThe user speaks Polish. Answer in natural, fluent Polish with a Polish accent, at a calm pace, unless they speak another language. Speak about yourself in the masculine (\"sprawdzę\", \"sprawdziłem\"). Wait until the user has clearly finished; never cut in on a pause."
+
     public enum SpecError: Error, Equatable {
         case unreadableTools
     }
@@ -162,16 +166,25 @@ public enum OpenAIRealtimeWire {
 
     /// The first thing sent after connecting: Doddy's rendered prompt, tools and turn-taking.
     /// The voice and model were fixed by the token server and are not changed here.
-    public static func sessionUpdate(instructions: String, toolsJSON: Data, eagerness: RealtimeTurnEagerness) throws -> String {
+    /// `languageCode` (ISO 639-1, from the user's choice or the phone) tells the speech-to-text
+    /// which language to expect; for Polish it also adds a line telling the model to speak Polish.
+    /// Without it OpenAI guesses the language on every turn.
+    public static func sessionUpdate(instructions: String, toolsJSON: Data, eagerness: RealtimeTurnEagerness, languageCode: String? = nil) throws -> String {
+        var transcription: [String: Any] = ["model": transcriptionModel]
+        var spokenInstructions = instructions
+        if let code = languageCode, !code.isEmpty {
+            transcription["language"] = code
+            if code == "pl" { spokenInstructions += polishLine }
+        }
         let session: [String: Any] = [
             "type": "realtime",
-            "instructions": instructions,
+            "instructions": spokenInstructions,
             "tools": try realtimeTools(fromToolsJSON: toolsJSON),
             "tool_choice": "auto",
             "audio": [
                 "input": [
                     "format": ["type": "audio/pcm", "rate": sampleRate],
-                    "transcription": ["model": transcriptionModel],
+                    "transcription": transcription,
                     "turn_detection": [
                         "type": "semantic_vad",
                         "eagerness": eagerness.rawValue,
