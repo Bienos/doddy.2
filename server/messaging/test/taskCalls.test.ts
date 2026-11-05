@@ -251,7 +251,9 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
   test("an account that is not the owner gets the answer without the words (ADR-730)", async () => {
     const w = await world();
     const u = await user(w);
-    assert.deepEqual(w.settings.transcriptAccountIds ?? [], [], "nobody reads transcripts by default");
+    assert.deepEqual(w.settings.transcriptPhoneNumbers ?? [], [], "nobody reads transcripts by default");
+    // Even with an owner configured, this account did not verify that number.
+    w.settings.transcriptPhoneNumbers = [nextPhone()];
     const d = await dialled(w, u.h);
     await status(w, d, "ringing", 1);
     await answer(w, d);
@@ -280,8 +282,8 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
   test("full call: live lines, answer card quoting the reply, costs, ack with receipts, ElevenLabs deletion", async () => {
     const w = await world();
     const u = await user(w);
-    // The owner's account: the live words and the saved transcript are its logs (ADR-730).
-    w.settings.transcriptAccountIds = [u.accountId];
+    // The owner's number: the account that verified it reads the live words and the saved transcript (ADR-730).
+    w.settings.transcriptPhoneNumbers = [u.phone];
     const d = await dialled(w, u.h);
     await status(w, d, "ringing", 1);
     await answer(w, d);

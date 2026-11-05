@@ -105,14 +105,16 @@ const schema = z.object({
     }
     return [...new Set(items)];
   }),
-  // Accounts that may read what the other side said on a call (the live words and the saved transcript): the owner's own,
-  // for logs in the app (ADR-730). UUIDs, comma-separated. Empty (the default): nobody; every other account gets the
-  // answer card without the transcript, and the words never leave the server for it.
-  CALL_TRANSCRIPT_ACCOUNT_IDS: z.string().default("").transform((v, ctx) => {
-    const items = v.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
-    const bad = items.findIndex((x) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(x));
+  // Who may read what the other side said on a call (the live words and the saved transcript): the owner's logs in the
+  // app (ADR-730). The owner's own verified phone number(s), E.164, comma-separated: the account that verified one of them
+  // is the owner's. Empty (the default): nobody; every other account gets the answer card without the transcript, and the
+  // words never leave the server for it.
+  CALL_TRANSCRIPT_PHONE_NUMBERS: z.string().default("").transform((v, ctx) => {
+    const items = v.split(",").map((x) => x.replace(/[\s-]/g, "")).filter(Boolean);
+    const bad = items.findIndex((x) => !/^\+[1-9][0-9]{6,14}$/.test(x));
     if (bad >= 0) {
-      ctx.addIssue({ code: "custom", message: `CALL_TRANSCRIPT_ACCOUNT_IDS: entry ${bad + 1} is not an account id (a UUID)` });
+      // The position, not the number: a startup error is logged and a phone number is personal data.
+      ctx.addIssue({ code: "custom", message: `CALL_TRANSCRIPT_PHONE_NUMBERS: entry ${bad + 1} is not an E.164 number such as +48221234567` });
       return z.NEVER;
     }
     return [...new Set(items)];
@@ -232,8 +234,8 @@ export interface TaskCallSettings {
   killSwitch: boolean; notice: RecordingNotice; limits: TaskCallLimits; prices: TaskCallPrices; sayVoice: string;
   /** Numbers Doddy must not call for anyone (TASK_CALL_BLOCKED_NUMBERS, ADR-705). Absent: none. */
   blockedNumbers?: readonly string[];
-  /** Accounts that may read the live words and the saved transcript (CALL_TRANSCRIPT_ACCOUNT_IDS, ADR-730). Absent: none. */
-  transcriptAccountIds?: readonly string[];
+  /** Verified numbers whose account may read the live words and the saved transcript (CALL_TRANSCRIPT_PHONE_NUMBERS, ADR-730). Absent: none. */
+  transcriptPhoneNumbers?: readonly string[];
 }
 
 export type ErrandEffort = "low" | "medium" | "high" | "xhigh" | "max";
@@ -383,7 +385,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       },
       sayVoice: e.TASK_CALL_SAY_VOICE,
       blockedNumbers: e.TASK_CALL_BLOCKED_NUMBERS,
-      transcriptAccountIds: e.CALL_TRANSCRIPT_ACCOUNT_IDS,
+      transcriptPhoneNumbers: e.CALL_TRANSCRIPT_PHONE_NUMBERS,
     },
     errandSettings: {
       enabled: e.ERRANDS_ENABLED === "1",
@@ -440,7 +442,7 @@ export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
   prices: {},
   sayVoice: "Polly.Ewa",
   blockedNumbers: [],
-  transcriptAccountIds: [],
+  transcriptPhoneNumbers: [],
 };
 
 /** Settings for an injected ErrandDeps without its own (tests): on, Opus 5.5 at high effort, 30 min, 5 open,

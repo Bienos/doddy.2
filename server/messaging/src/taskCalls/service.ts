@@ -385,7 +385,7 @@ export async function liveView(ctx: TaskCallContext, accountId: string, caseId: 
      WHERE attempt_id = $1 AND ($2::timestamptz IS NULL OR received_at > $2::timestamptz)
      ORDER BY received_at, transcription_sid, seq LIMIT 200`, [a.id, after ?? null]);
   // The live words are the owner's logs (ADR-730): another account sees the phase and times, never the words.
-  const lines = !mayReadTranscripts(ctx, accountId) ? [] : rows.flatMap((r) => {
+  const lines = !(await mayReadTranscripts(ctx, accountId)) ? [] : rows.flatMap((r) => {
     try {
       return [{ key: `${r.transcription_sid}:${r.seq}`, speaker: r.speaker, text: ctx.cipher.decrypt(r.ciphertext, liveAad(accountId, a.id, r.transcription_sid, r.seq)) }];
     } catch {
