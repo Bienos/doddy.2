@@ -154,7 +154,7 @@ final class MotionHopTests: XCTestCase {
     func testASheetHidesHimAndHeIsBackAfter() {
         let app = launch()
         waitUntilHeStands(on: "stage", in: app)
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 5))
         XCTAssertFalse(app.marker("doddy.motion.idle").exists, "hidden under the sheet")
         // Nothing typed: Cancel closes the sheet.

@@ -304,7 +304,8 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
-        // Settings › Advanced › Try a plan card (ADR-633).
+        // Settings › About › Advanced › Try a plan card (ADR-633).
+        app.openSettingsPage("settings.advanced", under: "settings.about")
         app.openSettingsPage("settings.planPractice", under: "settings.advanced")
         XCTAssertTrue(app.navigationBars["Try a plan card"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["practice.banner"].exists)
