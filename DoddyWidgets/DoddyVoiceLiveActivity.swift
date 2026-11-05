@@ -180,8 +180,7 @@ private struct IslandControls: View {
                 .buttonStyle(.plain)
             }
             Button(intent: EndDoddyConversationIntent()) {
-                IslandPillLabel(title: shown.isStale ? islandWord("Dismiss")
-                                    : (shown.state.isWakeMode ? islandWord("Stop listening") : islandWord("Stop")),
+                IslandPillLabel(title: shown.isStale ? islandWord("Dismiss") : islandWord("Stop"),
                                 systemImage: shown.isStale ? "xmark" : "stop.fill")
             }
             .buttonStyle(.plain)
@@ -211,7 +210,8 @@ private struct Controls: View {
 
     private var endTitle: String {
         if shown.isStale { return islandWord("Dismiss") }
-        return shown.state.isWakeMode ? islandWord("Stop listening") : islandWord("End")
+        // ADR-727: no "Stop listening" in "Hey Doddy" mode either; Stop turns it off.
+        return shown.state.isWakeMode ? islandWord("Stop") : islandWord("End")
     }
 
     private var endSymbol: String {

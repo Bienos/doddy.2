@@ -1861,47 +1861,6 @@
         }
       }
     },
-    "Listening on this iPhone for “Hey Doddy” only": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Listening on this iPad for “Hey Doddy” only"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Listening on this iPhone for “Hey Doddy” only"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Na tym iPadzie słucham tylko „Hej Doddy”"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Na tym iPhonie słucham tylko „Hej Doddy”"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Live, Doddy can hear you": {
       "extractionState": "manual",
       "localizations": {
@@ -2388,17 +2347,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有即将到来的提醒。"
-          }
-        }
-      }
-    },
-    "Not listening right now": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Teraz nie słucham"
           }
         }
       }
@@ -4682,65 +4630,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymaj nagrywanie DODDY"
-          }
-        }
-      }
-    },
-    "Stop listening": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nicht mehr zuhören"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dejar de escuchar"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arrêter d’écouter"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prestani slušati"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Smetti di ascoltare"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聞き取りを停止"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przestań słuchać"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar de escutar"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "停止聆听"
           }
         }
       }

@@ -37697,47 +37697,6 @@
         }
       }
     },
-    "Listening on this iPhone for “Hey Doddy” only": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Listening on this iPad for “Hey Doddy” only"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Listening on this iPhone for “Hey Doddy” only"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Na tym iPadzie słucham tylko „Hej Doddy”"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Na tym iPhonie słucham tylko „Hej Doddy”"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Listening…": {
       "extractionState": "manual",
       "localizations": {
@@ -45284,17 +45243,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieznane: %@. Nigdy nie liczone jako zero."
-          }
-        }
-      }
-    },
-    "Not listening right now": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Teraz nie słucham"
           }
         }
       }

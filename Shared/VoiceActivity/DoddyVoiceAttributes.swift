@@ -235,8 +235,9 @@ extension DoddyVoiceAttributes.ContentState {
             }
         // Every card, not only a note's (ADR-616: a text or a transfer said "Save or Don't save").
         case .needsConfirmation: return islandWord("Open Doddy to see it and decide")
-        case .wakeListening: return islandWord("Listening on this iPhone for “Hey Doddy” only")
-        case .wakePaused: return islandWord("Not listening right now")
+        // ADR-727 (owner, 5 Nov 2026): no sentence about listening here; the title already says
+        // "Say “Hey Doddy”" or that it is paused.
+        case .wakeListening, .wakePaused: return nil
         default: return nil
         }
     }
