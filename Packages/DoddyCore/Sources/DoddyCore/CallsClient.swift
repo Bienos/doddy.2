@@ -24,7 +24,7 @@ public struct CallSettings: Equatable, Sendable, Decodable {
     public let outboundConsent: Bool
     public let memoryCopy: MemoryCopy
     /// When booked calls don't ring, on the user's clock (ADR-754); nil from servers before U4.
-    public let quietHours: QuietHours?
+    public let quietHours: CallQuietHours?
     /// The zone the server last heard from this iPhone; nil until it has heard one.
     public let timeZone: String?
 }

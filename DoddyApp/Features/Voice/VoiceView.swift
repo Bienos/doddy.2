@@ -1212,7 +1212,7 @@ struct VoiceView: View {
     /// sentence Doddy says when the call is answered, and the quiet-hours switch the approval covers.
     @ViewBuilder
     private func callLaterContent(
-        _ draft: CallLaterDraft, to: String, quietHours: QuietHours, controller: VoiceSessionController
+        _ draft: CallLaterDraft, to: String, quietHours: CallQuietHours, controller: VoiceSessionController
     ) -> some View {
         Text("Call you later?")
             .font(.headline)

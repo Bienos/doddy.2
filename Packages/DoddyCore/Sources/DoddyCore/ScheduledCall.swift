@@ -39,9 +39,9 @@ public enum ScheduledCallLimits {
     }
 }
 
-/// Quiet hours as the server sends them, on the user's own clock: no scheduled call rings inside
+/// Quiet hours for calls as the server sends them (not the check-ins' `QuietHours`), on the user's own clock: no scheduled call rings inside
 /// them unless its card allowed it. A window whose start is after its end crosses midnight.
-public struct QuietHours: Equatable, Sendable, Codable {
+public struct CallQuietHours: Equatable, Sendable, Codable {
     public let start: String
     public let end: String
 
@@ -51,7 +51,7 @@ public struct QuietHours: Equatable, Sendable, Codable {
     }
 
     /// Also in doddy_rules.yaml (contact_policy.quiet_hours_default).
-    public static let standard = QuietHours(start: "21:00", end: "08:00")
+    public static let standard = CallQuietHours(start: "21:00", end: "08:00")
 
     /// "HH:MM" to minutes after midnight.
     static func minutes(_ text: String) -> Int? {
@@ -122,7 +122,7 @@ public struct CallLaterDraft: Equatable, Sendable {
         ApprovalHash.call(to: to, at: atText, reason: reason, allowQuietHours: allowQuietHours)
     }
 
-    public func inQuietHours(_ quiet: QuietHours) -> Bool { quiet.contains(at, timeZone: timeZone) }
+    public func inQuietHours(_ quiet: CallQuietHours) -> Bool { quiet.contains(at, timeZone: timeZone) }
 
     /// What Doddy says first when the call is answered, as the server writes it (callOpening).
     public func opening(_ language: NotificationLanguage) -> String {
@@ -135,7 +135,7 @@ public struct CallLaterDraft: Equatable, Sendable {
 /// Whether a call can be proposed at all: the user verified their number, agreed to calls from
 /// Doddy, and the server can place calls.
 public enum CallReadiness: Equatable, Sendable {
-    case ready(to: String, quietHours: QuietHours)
+    case ready(to: String, quietHours: CallQuietHours)
     case noPhone
     case callsOff
     case notSetUp
@@ -354,7 +354,7 @@ extension VoiceToolReply {
 
     /// `mayBeBooked`: an earlier try of this call had an unclear outcome, so a refusal now doesn't
     /// mean nothing is booked (the earlier one may be).
-    public static func callRefused(_ code: String, quietHours: QuietHours = .standard, mayBeBooked: Bool = false) -> String {
+    public static func callRefused(_ code: String, quietHours: CallQuietHours = .standard, mayBeBooked: Bool = false) -> String {
         let reason = switch code {
         case "quiet_hours":
             "that time is inside quiet hours (\(quietHours.start) to \(quietHours.end)) where the user is. Ask for another time, or whether to call even in quiet hours, which the user can switch on on the card."

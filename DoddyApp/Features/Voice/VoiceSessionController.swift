@@ -85,7 +85,7 @@ final class VoiceSessionController {
         /// "Call you later?" (ADR-754): from Doddy's number to the user's own verified number `to`,
         /// at `draft.at`, saying `draft.reason` first. The tap approves that with the card's
         /// quiet-hours switch (`callLaterAllowQuiet`).
-        case callLater(toolCallID: String, draft: CallLaterDraft, to: String, quietHours: QuietHours)
+        case callLater(toolCallID: String, draft: CallLaterDraft, to: String, quietHours: CallQuietHours)
         /// ASK-01 (ADR-483): "Doddy wants to …" before a tool with no card of its own runs. A read
         /// runs on a tap or the user's own spoken yes; a change (`needsTap`) only on a tap. The
         /// call is kept as it came, and handled again after the yes.
@@ -3783,7 +3783,7 @@ final class VoiceSessionController {
     /// After the tap: the time, reason and quiet-hours choice go to the server with the approval
     /// hash of exactly what the card showed. The server books it; the call is placed later.
     private func bookCall(
-        _ draft: CallLaterDraft, to: String, quietHours: QuietHours, allowQuietHours: Bool
+        _ draft: CallLaterDraft, to: String, quietHours: CallQuietHours, allowQuietHours: Bool
     ) async -> (reply: String, attempted: Bool) {
         // An earlier try of this call (either switch) had an unclear outcome: a refusal now
         // doesn't mean nothing is booked.

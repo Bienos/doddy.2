@@ -122,7 +122,7 @@ final class ScheduledCallTests: XCTestCase {
     // MARK: Quiet hours
 
     func testQuietHoursFollowTheClockAcrossTheSummerTimeChange() {
-        let quiet = QuietHours.standard
+        let quiet = CallQuietHours.standard
         let zone = TimeZone(identifier: "Europe/Warsaw")!
         func at(_ iso: String) -> Date { ServerDates.parse(iso)! }
         // The same UTC time is 08:30 the day before the change and 07:30 the morning after.
@@ -135,12 +135,12 @@ final class ScheduledCallTests: XCTestCase {
         XCTAssertTrue(quiet.contains(at("2027-03-27T06:30:00Z"), timeZone: zone))
         XCTAssertFalse(quiet.contains(at("2027-03-28T06:30:00Z"), timeZone: zone))
         // Another window, and an empty one.
-        XCTAssertTrue(QuietHours(start: "13:00", end: "15:00").contains(at("2026-10-19T13:30:00Z"), timeZone: TimeZone(identifier: "UTC")!))
-        XCTAssertFalse(QuietHours(start: "13:00", end: "15:00").contains(at("2026-10-19T15:00:00Z"), timeZone: TimeZone(identifier: "UTC")!))
-        XCTAssertFalse(QuietHours(start: "10:00", end: "10:00").contains(at("2026-10-19T10:00:00Z"), timeZone: TimeZone(identifier: "UTC")!))
-        XCTAssertNil(QuietHours.minutes("24:00"))
-        XCTAssertNil(QuietHours.minutes("9:00"))
-        XCTAssertEqual(QuietHours.minutes("21:00"), 1260)
+        XCTAssertTrue(CallQuietHours(start: "13:00", end: "15:00").contains(at("2026-10-19T13:30:00Z"), timeZone: TimeZone(identifier: "UTC")!))
+        XCTAssertFalse(CallQuietHours(start: "13:00", end: "15:00").contains(at("2026-10-19T15:00:00Z"), timeZone: TimeZone(identifier: "UTC")!))
+        XCTAssertFalse(CallQuietHours(start: "10:00", end: "10:00").contains(at("2026-10-19T10:00:00Z"), timeZone: TimeZone(identifier: "UTC")!))
+        XCTAssertNil(CallQuietHours.minutes("24:00"))
+        XCTAssertNil(CallQuietHours.minutes("9:00"))
+        XCTAssertEqual(CallQuietHours.minutes("21:00"), 1260)
     }
 
     func testTheDraftKnowsWhetherItsTimeIsQuiet() {
@@ -173,7 +173,7 @@ final class ScheduledCallTests: XCTestCase {
         XCTAssertEqual(CallReadiness(settings: try settings(), phone: try phone("+48500100200")),
                        .ready(to: "+48500100200", quietHours: .standard), "a server before U4 sends no quiet hours: the standard ones")
         XCTAssertEqual(CallReadiness(settings: try settings(quiet: #"{"start":"22:30","end":"07:00"}"#), phone: try phone("+48500100200")),
-                       .ready(to: "+48500100200", quietHours: QuietHours(start: "22:30", end: "07:00")))
+                       .ready(to: "+48500100200", quietHours: CallQuietHours(start: "22:30", end: "07:00")))
         XCTAssertEqual(CallReadiness(settings: try settings(consent: false), phone: try phone("+48500100200")), .callsOff)
         XCTAssertEqual(CallReadiness(settings: try settings(verified: false), phone: try phone(nil)), .noPhone)
         XCTAssertEqual(CallReadiness(settings: try settings(outbound: false), phone: try phone("+48500100200")), .notSetUp)
@@ -381,7 +381,7 @@ final class ScheduledCallTests: XCTestCase {
             "scheduled_call_late_minutes: \(ScheduledCallLimits.lateMinutes)",
             "scheduled_calls_pending_max: \(ScheduledCallLimits.pendingMax)",
             "call_reason_max_length: \(ScheduledCallLimits.reasonMaxLength)",
-            "start: \"\(QuietHours.standard.start)\"", "end: \"\(QuietHours.standard.end)\"",
+            "start: \"\(CallQuietHours.standard.start)\"", "end: \"\(CallQuietHours.standard.end)\"",
             "calls_per_hour: \(ContactCaps.callsPerHour)", "calls_per_day: \(ContactCaps.callsPerDay)",
         ] {
             XCTAssertTrue(rules.contains(line), line)
