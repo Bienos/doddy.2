@@ -2585,5 +2585,8 @@
   "The calls kept on this iPhone couldn't be read.": "Nie udało się odczytać rozmów zapisanych na tym iPhonie.",
   "Worth a look": "Warto sprawdzić",
   "No audio is recorded. A text transcript is made to write the answer; the server deletes its copies after the call, and the answer is kept on this iPhone.": "Dźwięk nie jest nagrywany. Powstaje tekstowy zapis rozmowy, z którego powstaje odpowiedź; serwer kasuje swoje kopie po rozmowie, a na tym iPhonie zostaje odpowiedź.",
-  "Doddy is on the call. You get the answer when it ends.": "Doddy rozmawia. Odpowiedź dostaniesz, gdy rozmowa się skończy."
+  "Doddy is on the call. You get the answer when it ends.": "Doddy rozmawia. Odpowiedź dostaniesz, gdy rozmowa się skończy.",
+  "Calls Doddy made": "Rozmowy, które Doddy odbył",
+  "Doddy called %@.": "Doddy zadzwonił do: %@.",
+  "See the recap.": "Zobacz recap."
 }

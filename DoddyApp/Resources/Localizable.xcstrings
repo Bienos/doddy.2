@@ -9871,6 +9871,17 @@
         }
       }
     },
+    "Calls Doddy made": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowy, które Doddy odbył"
+          }
+        }
+      }
+    },
     "Calls by Doddy are switched off on the server right now.": {
       "extractionState": "manual",
       "localizations": {
@@ -18170,6 +18181,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy zada to pytanie dosłownie, może dopytać jeden raz, potem podziękuje i zakończy. Pytaj, nie umawiaj: „Czy laptop jest gotowy?”, a nie „Proszę mnie zapisać”."
+          }
+        }
+      }
+    },
+    "Doddy called %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zadzwonił do: %@."
           }
         }
       }
@@ -66200,6 +66222,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zobacz inne sposoby"
+          }
+        }
+      }
+    },
+    "See the recap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz recap."
           }
         }
       }
