@@ -123,6 +123,8 @@ struct HomeView: View {
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
             .sheet(isPresented: $showFiles) { FilesSheet() }
+            // A finished call's push, tapped (ADR-730): Files, where Calls lists the recaps.
+            .sheet(isPresented: Binding(get: { router.isCallRecapsPresented }, set: { router.isCallRecapsPresented = $0 })) { FilesSheet() }
             .sheet(isPresented: $showToday) {
                 HomeTodaySheet(openSettings: { showToday = false; selectedTab = .settings })
             }

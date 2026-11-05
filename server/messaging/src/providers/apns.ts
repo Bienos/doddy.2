@@ -1,7 +1,7 @@
 import { createPrivateKey, sign, type KeyObject } from "node:crypto";
 import http2 from "node:http2";
 import type { ApnsConfig } from "../config.js";
-import type { PushSender, PushTarget, SendOutcome } from "./types.js";
+import type { PushData, PushSender, PushTarget, SendOutcome } from "./types.js";
 
 const HOSTS = {
   production: "https://api.push.apple.com",
@@ -47,8 +47,8 @@ export class ApnsPushSender implements PushSender {
     return s;
   }
 
-  async send(target: PushTarget, alert: { title: string; body: string }, messageId: string): Promise<SendOutcome> {
-    const payload = JSON.stringify({ aps: { alert, sound: "default" } });
+  async send(target: PushTarget, alert: { title: string; body: string }, messageId: string, data?: PushData): Promise<SendOutcome> {
+    const payload = JSON.stringify({ aps: { alert, sound: "default" }, ...(data ? { doddy: data } : {}) });
     return this.post(target, payload, { "apns-topic": this.config.bundleId, "apns-push-type": "alert", "apns-id": messageId });
   }
 

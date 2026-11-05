@@ -110,6 +110,7 @@ final class ShortcutRouter {
         isLookBackPresented = false
         isWeeklyPlanPresented = false
         isRecordingsPresented = false
+        isCallRecapsPresented = false
         translatorPreset = nil
         talkToDoddyOpened = false
         checkInBriefing = nil
@@ -249,6 +250,17 @@ final class ShortcutRouter {
 
     func checkInSheetDismissed() {
         if checkInBriefing != nil, !isVoicePresented, !AppLockGate.isLocked() { isVoicePresented = true } else { showWaitingDraft() }
+    }
+
+    /// A finished call's push was tapped (ADR-730): Files opens on Home, where Calls lists the recaps.
+    /// Navigation only: it starts nothing and sends nothing.
+    var isCallRecapsPresented = false
+
+    func callRecapsOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in callRecapsOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isCallRecapsPresented = true
     }
 
     /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and
