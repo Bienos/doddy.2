@@ -300,3 +300,32 @@ One line per branch; the full reason is in the table. Flagged branches are marke
 
 ---
 Generated from nine read-only reviews; the owner acts on this list. Nothing was deleted, merged, rebased, pushed or closed by the review.
+
+## Owner decisions, 5 Nov 2026 (group B, features)
+
+Owner: "i want these" for all 20 features below, read as **yes, keep**. No branch in this list is to be deleted. Nothing was built, merged or rebased by this decision.
+
+| feature | branches | commits ahead | note |
+|---|---|---|---|
+| Page transition | quirky-allen-11ijel | 1 | small |
+| Voice picker with server allowlist | jolly-clarke-hclp82 | 1 | voice-agent flag; live agent changes only on the owner's separate instruction |
+| OpenAI web search | intelligent-albattani-fe7gdf | 1 | secrets flag |
+| Voice-screen sound wave | trusting-dirac-o8ajzc | 2 | voice-agent flag; Home-first design |
+| Action Button in the island | action-button-island-again, magical-cray-4299gg | 2 / 33 | **reverses ADR-593** ("Action Button opens Doddy"): needs a new ADR |
+| Pictures on notifications | sweet-newton-2z7asj | 3 | never compiled |
+| One-off pose | youthful-pasteur-25tuhv | 3 | breaks the pack-only art rule (CLAUDE.md): needs the owner's written exception |
+| Speed plan | youthful-pasteur-j4orlu | 3 | live prompt changes only on the owner's separate instruction |
+| Brain coordinator | wizardly-planck-xmn06p | 4 | ADR-442 number clash |
+| Unlock as you go | lucid-johnson-pmwwg4, hopeful-fermat-1a63x0 | 4 / 18 | decide the two together |
+| Following | message-tracking-plugin-rd0cbn | 5 | `follow_news` is already on the live agent |
+| Call recaps | call-recap | 5 | sends call words to Anthropic |
+| Tapbacks | welcome-dark-no-plate | 5 | |
+| Uber Eats handoff | work | 5 | opens the site only, no order or payment |
+| Messages step 2 | messages-step2 | 7 | |
+| Island strip | island-strip-and-decks | 7 | |
+| Send-only model | inspiring-volta-bkuat4 | 8 | check against ADR-563 |
+| Pay-for-pages with USDC | fervent-hamilton-ot5z1f | 10 | payments: needs its own milestone approval (CLAUDE.md rule 6) |
+| Doddy's own phone number | awesome-cray-2lb9ia | 11 | texts and booked calls: needs its own milestone approval |
+| DODDY Studio | new-session-ayk8tq | 14 | paid Anthropic research jobs: needs its own milestone approval |
+| Sound wave and Big Brain card | zealous-albattani-7ay32v | 28 | large |
+| Home control (HomeKit) | magical-cray-4299gg (also draft PR #149) | 33 | `control_home` is on the live agent |
