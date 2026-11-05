@@ -63,7 +63,7 @@ The free (Personal) team build has only the HealthKit entitlement (`project-ipho
 
 | Apple app or service | What it would do | Needs |
 |---|---|---|
-| Home (HomeKit) | Lights, scenes, "I'm leaving" | HomeKit entitlement |
+| Home (HomeKit) | Lights, outlets, fans and scenes by voice after a tap (written, not compiled, ADR-658, `HOME_COMMANDS_STATUS.md`); no locks, garage doors, alarms or cameras; "I'm leaving" not built | HomeKit entitlement: a paid Apple team |
 | Weather (WeatherKit) | Weather from Apple | Entitlement and App ID; weather today comes from ElevenLabs |
 | Focus status | Know when you're in a Focus | Communication Notifications entitlement |
 | CarPlay | Doddy in the car (rules are written, ADR-338) | Apple's CarPlay entitlement |

@@ -1,16 +1,16 @@
 import AppIntents
 
-/// "Talk to Doddy" as the Action Button, Control Center or the Lock Screen runs it (ADR-579).
-/// What a press does follows Settings › Action Button (`TalkLaunchMode`): talk in the Dynamic
-/// Island without opening Doddy (the default), open Doddy on the conversation, or Automatic.
-/// Pressed again while a conversation runs, it ends it (`TalkLaunchPlanner`).
+/// "Talk to Doddy" as the Action Button, Control Center or the Lock Screen runs it (ADR-579,
+/// ADR-632): both Talk to Doddy controls run it. A press talks in the Dynamic Island without
+/// opening Doddy; pressed again while a conversation runs, it ends it (`TalkLaunchPlanner`).
+/// Settings has no choice for it since ADR-593, so `TalkButton.press` always uses the island.
 ///
 /// Why a second intent next to `TalkToDoddyIntent`: talking without opening needs
 /// `AudioRecordingIntent` (iOS 18) and `openAppWhenRun = false`, while Siri, the Shortcuts app and
-/// Back Tap use the App Shortcut, which must stay an iOS 17 type that opens the app. A press that
-/// should open Doddy continues in the foreground: on iOS 26 without asking when Automatic or Open
-/// App is chosen (`supportedModes`), on iOS 18 to 25 after iOS's own "Open Doddy?" confirmation
-/// (`ForegroundContinuableIntent`), because that is the only supported way there.
+/// Back Tap use the App Shortcut, which must stay an iOS 17 type that opens the app. When something
+/// only the app can fix is missing, the press continues in the foreground after iOS's own "Open
+/// Doddy?" confirmation (`supportedModes` on iOS 26, `ForegroundContinuableIntent` on iOS 18 to
+/// 25, the only supported way there).
 ///
 /// Compiled into the app and the widget extension (the control needs the type). Only the app's
 /// copy does anything, so it is pinned to the app (ADR-131). Not listed in Shortcuts: there it is
@@ -19,7 +19,7 @@ import AppIntents
 struct TalkButtonIntent: AudioRecordingIntent, LiveActivityIntent {
     static let title: LocalizedStringResource = "Talk to Doddy"
     static var description: IntentDescription {
-        IntentDescription("Talks to Doddy the way you chose in Doddy's Settings, Action Button: in the Dynamic Island without opening him, or in the app. Press again to end.")
+        IntentDescription("Talks to Doddy in the Dynamic Island, without opening him. Press again to end.")
     }
     static let isDiscoverable = false
     static let openAppWhenRun = false

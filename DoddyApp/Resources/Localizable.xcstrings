@@ -100988,6 +100988,256 @@
           }
         }
       }
+    },
+    "Couldn't save this story. Nothing was kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zapisać tego artykułu. Nic nie zostało zachowane."
+          }
+        }
+      }
+    },
+    "Doddy's server looks for these words in the stories of your other follows.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego szuka tych słów w artykułach z pozostałych śledzonych tematów."
+          }
+        }
+      }
+    },
+    "Doddy's server searches news sources for these words.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego przeszukuje źródła wiadomości pod kątem tych słów."
+          }
+        }
+      }
+    },
+    "Follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledź"
+          }
+        }
+      }
+    },
+    "Follow these words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledź te słowa"
+          }
+        }
+      }
+    },
+    "Following": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledzone"
+          }
+        }
+      }
+    },
+    "Following needs a Doddy messaging server, and none is connected in this build yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledzone wymaga serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
+          }
+        }
+      }
+    },
+    "Give it a name and at least one word of two or more letters.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nadaj nazwę i podaj co najmniej jedno słowo z dwóch lub więcej liter."
+          }
+        }
+      }
+    },
+    "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPad and is sent with each refresh to your Doddy server, which keeps none of it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nagłówki, streszczenia i zdjęcia pochodzą od wydawców, z ich publicznych kanałów; link otwiera cały artykuł. Żadna AI niczego tu nie napisała ani nie wybrała. To, co śledzisz, zostaje na tym iPadzie i jest wysyłane przy każdym odświeżeniu do Twojego serwera Doddy’ego, który nic z tego nie zachowuje."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nagłówki, streszczenia i zdjęcia pochodzą od wydawców, z ich publicznych kanałów; link otwiera cały artykuł. Żadna AI niczego tu nie napisała ani nie wybrała. To, co śledzisz, zostaje na tym iPhonie i jest wysyłane przy każdym odświeżeniu do Twojego serwera Doddy’ego, który nic z tego nie zachowuje."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Loading topics…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytywanie tematów…"
+          }
+        }
+      }
+    },
+    "My own words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje własne słowa"
+          }
+        }
+      }
+    },
+    "Name, e.g. CPK": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa, np. CPK"
+          }
+        }
+      }
+    },
+    "Nothing from the last two days for what you follow. Pull down to look again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic z ostatnich dwóch dni o tym, co śledzisz. Pociągnij w dół, żeby sprawdzić ponownie."
+          }
+        }
+      }
+    },
+    "Open the full story": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz cały artykuł"
+          }
+        }
+      }
+    },
+    "Saved to your notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano w Twoich notatkach."
+          }
+        }
+      }
+    },
+    "Swipe to stop following. Drag to change the order of the row at the top.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń, aby przestać śledzić. Przeciągnij, aby zmienić kolejność w rzędzie na górze."
+          }
+        }
+      }
+    },
+    "What you follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co śledzisz"
+          }
+        }
+      }
+    },
+    "Words to look for, comma separated": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Słowa do wyszukania, oddzielone przecinkami"
+          }
+        }
+      }
+    },
+    "You already follow that, or you follow ten things already.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Już to śledzisz albo śledzisz już dziesięć rzeczy."
+          }
+        }
+      }
+    },
+    "You're not following anything. Add a topic or your own words above.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie śledzisz. Dodaj temat albo własne słowa powyżej."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

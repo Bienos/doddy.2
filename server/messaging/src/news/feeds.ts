@@ -6,6 +6,8 @@ export interface NewsItem {
   source: string;
   summary: string;
   publishedAt: string | null; // ISO
+  /** A picture the publisher put in the feed (enclosure, media:content/thumbnail or the first <img>), https only. Absent when there is none. */
+  imageUrl?: string;
 }
 
 const parser = new XMLParser({
@@ -39,6 +41,37 @@ function isoDate(value: unknown): string | null {
   return Number.isNaN(t) ? null : new Date(t).toISOString();
 }
 
+/** An https image address from the feed, or undefined. Only https: the app shows pictures over a secure connection only. */
+export function imageUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const u = httpUrl(value);
+  return u && u.startsWith("https:") ? u : undefined;
+}
+
+const MEDIA_TYPES = /^image\//i;
+
+/** The first picture an RSS item or Atom entry carries, if any. Attributes are read as strings only. */
+export function itemImage(it: Record<string, any>, html: unknown): string | undefined {
+  const candidates: unknown[] = [];
+  const attr = (node: unknown, name: string): unknown =>
+    node && typeof node === "object" ? (node as Record<string, unknown>)[name] : undefined;
+  for (const node of [it["media:content"], it["media:thumbnail"], it.enclosure].flat()) {
+    if (!node) continue;
+    const type = attr(node, "@type");
+    const medium = attr(node, "@medium");
+    if (typeof type === "string" && !MEDIA_TYPES.test(type)) continue;
+    if (typeof medium === "string" && medium !== "image") continue;
+    candidates.push(attr(node, "@url") ?? attr(node, "@href")); // Atom enclosures say href
+  }
+  const img = typeof html === "string" ? /<img[^>]+src=["']([^"']+)["']/i.exec(html) : null;
+  if (img) candidates.push(img[1]);
+  for (const c of candidates) {
+    const u = imageUrl(c);
+    if (u) return u;
+  }
+  return undefined;
+}
+
 export function httpUrl(value: string): string | null {
   try {
     const u = new URL(value.trim());
@@ -58,8 +91,9 @@ export function parseFeed(xml: string, fallbackSource: string, limit = 60): { ti
       const url = httpUrl(plainText(link, 500) || (typeof it.guid === "string" ? it.guid : plainText(it.guid, 500)));
       const t = plainText(it.title, 200);
       if (!url || !t) return [];
+      const image = itemImage(it, it["content:encoded"] ?? it.description);
       return [{ title: t, url, source: title, summary: plainText(it.description ?? it["content:encoded"], 300),
-        publishedAt: isoDate(it.pubDate ?? it["dc:date"]) }];
+        publishedAt: isoDate(it.pubDate ?? it["dc:date"]), ...(image ? { imageUrl: image } : {}) }];
     });
     return { title, items };
   }
@@ -71,8 +105,10 @@ export function parseFeed(xml: string, fallbackSource: string, limit = 60): { ti
       const url = alt ? httpUrl(String(alt["@href"] ?? "")) : null;
       const t = plainText(e.title, 200);
       if (!url || !t) return [];
+      const enclosure = links.find((l) => l["@rel"] === "enclosure");
+      const image = itemImage({ ...e, enclosure }, e.content ?? e.summary);
       return [{ title: t, url, source: title, summary: plainText(e.summary ?? e.content, 300),
-        publishedAt: isoDate(e.published ?? e.updated) }];
+        publishedAt: isoDate(e.published ?? e.updated), ...(image ? { imageUrl: image } : {}) }];
     });
     return { title, items };
   }
