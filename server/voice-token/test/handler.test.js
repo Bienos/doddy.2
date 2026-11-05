@@ -216,3 +216,53 @@ test("only POST and bounded valid provider requests are accepted", async () => {
   assert.equal(oversized.response.status, 400);
   assert.equal(oversized.calls.length, 0);
 });
+
+test("OpenAI without a voice account is refused unless OPENAI_OPEN_ACCESS is on (ADR-726)", async () => {
+  for (const environment of [ENV, { ...ENV, OPENAI_OPEN_ACCESS: "" }, { ...ENV, OPENAI_OPEN_ACCESS: "0" }, { ...ENV, OPENAI_OPEN_ACCESS: "yes please" }]) {
+    const { response, body, calls } = await run(request({ provider: "openai" }), {
+      environment, authenticateSession: async () => null,
+      upstream: Response.json({ value: "ek_test", session: { model: "gpt-realtime-2.1-mini" } }),
+    });
+    assert.equal(response.status, 401);
+    assert.deepEqual(body, { error: "session_expired" });
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("with OPENAI_OPEN_ACCESS on, OpenAI works without a session, in one shared limit bucket", async () => {
+  const authStore = store();
+  const { response, body, calls, logs } = await run(request({ provider: "openai" }, ""), {
+    environment: { ...ENV, OPENAI_OPEN_ACCESS: "1" }, authStore, authenticateSession: async () => null,
+    upstream: Response.json({ value: "ek_test", session: { model: "gpt-realtime-2.1-mini" } }),
+  });
+  assert.equal(response.status, 200);
+  assert.equal(body.token, "ek_test");
+  assert.equal(calls.length, 1);
+  assert.equal(authStore.calls[0].userId, "open-access-openai");
+  assert.ok(!JSON.stringify(logs).includes("ek_test"));
+});
+
+test("with OPENAI_OPEN_ACCESS on, the limits still apply to the shared bucket", async () => {
+  const { response, body, calls } = await run(request({ provider: "openai" }, ""), {
+    environment: { ...ENV, OPENAI_OPEN_ACCESS: "true" }, authenticateSession: async () => null,
+    limits: { allowed: false, limit: "hour" },
+  });
+  assert.equal(response.status, 429);
+  assert.equal(body.error, "rate_limited");
+  assert.equal(calls.length, 0);
+});
+
+test("OPENAI_OPEN_ACCESS never opens ElevenLabs, and a valid session keeps its own bucket", async () => {
+  const environment = { ...ENV, OPENAI_OPEN_ACCESS: "1" };
+  const eleven = await run(request(null, ""), { environment, authenticateSession: async () => null });
+  assert.equal(eleven.response.status, 401);
+  assert.equal(eleven.calls.length, 0);
+
+  const authStore = store();
+  const signedIn = await run(request({ provider: "openai" }), {
+    environment, authStore,
+    upstream: Response.json({ value: "ek_test", session: { model: "gpt-realtime-2.1-mini" } }),
+  });
+  assert.equal(signedIn.response.status, 200);
+  assert.equal(authStore.calls[0].userId, USER_ID);
+});

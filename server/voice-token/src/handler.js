@@ -30,6 +30,14 @@ export const OPENAI_DEFAULT_MODEL = "gpt-realtime-2.1-mini";
 export const OPENAI_ALLOWED_MODELS = Object.freeze(["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]);
 export const OPENAI_DEFAULT_VOICE = "marin";
 
+/** The one shared limit bucket for OpenAI requests made without a voice account (ADR-726). */
+export const OPEN_ACCESS_BUCKET = "open-access-openai";
+
+/** True only for the exact words "1", "true" or "on" in OPENAI_OPEN_ACCESS; anything else is off. */
+function openAccessEnabled(env) {
+  return ["1", "true", "on"].includes(String(env.OPENAI_OPEN_ACCESS ?? "").trim().toLowerCase());
+}
+
 /**
  * @typedef {object} Env
  * @property {string} [ELEVENLABS_API_KEY]  server-only secret
@@ -90,7 +98,13 @@ export async function handleTokenRequest(request, env, deps = {}) {
     if (error instanceof VoiceAuthStoreUnavailable) return finish(503, "server_not_configured", { provider });
     return finish(503, "server_not_configured", { provider });
   }
-  if (!session) return finish(401, "session_expired", { provider });
+  // Owner decision (ADR-726): with OPENAI_OPEN_ACCESS on, an OpenAI request needs no voice account.
+  // It is off unless the owner sets it. Without a session the request counts against one shared
+  // bucket, so the per-hour, per-day and global limits below still cap what strangers can spend.
+  // A valid session is still used as before. ElevenLabs always needs a session.
+  const openAccess = !session && provider === "openai" && openAccessEnabled(env);
+  if (!session && !openAccess) return finish(401, "session_expired", { provider });
+  const userId = session ? session.userId : OPEN_ACCESS_BUCKET;
 
   const perHour = limitSetting(env.DODDY_TOKENS_PER_HOUR, DEFAULT_TOKENS_PER_HOUR);
   const perDay = limitSetting(env.DODDY_TOKENS_PER_DAY, DEFAULT_TOKENS_PER_DAY);
@@ -104,7 +118,7 @@ export async function handleTokenRequest(request, env, deps = {}) {
 
   let decision;
   try {
-    decision = await store.hitLimits(session.userId, perHour, globalPerHour, now(), perDay);
+    decision = await store.hitLimits(userId, perHour, globalPerHour, now(), perDay);
   } catch {
     return finish(503, "server_not_configured", { provider });
   }

@@ -14,28 +14,37 @@ struct VoiceTokenClient: Sendable {
 
     /// OpenAI Realtime client secret for the chosen model.
     func fetchOpenAIGrant(model: OpenAIRealtimeModel) async throws(VoiceTokenError) -> OpenAIRealtimeGrant {
-        let (status, data, retryAfter) = try await post(VoiceTokenServer.requestBody(for: .openAIRealtime, model: model))
+        // A Debug build may go without a voice account (ADR-726); the server decides whether to allow it.
+        let (status, data, retryAfter) = try await post(
+            VoiceTokenServer.requestBody(for: .openAIRealtime, model: model), anonymousAllowed: VoiceConfig.openAIWithoutAccount)
         return try VoiceTokenServer.openAIGrant(status: status, body: data, retryAfter: retryAfter).get()
     }
 
     /// The status, the body and the reply's Retry-After header, which says how long a 429 lasts (the
     /// message reads it in minutes, hours or "tomorrow", ADR-712).
-    private func post(_ body: Data?) async throws(VoiceTokenError) -> (Int, Data, String?) {
+    private func post(_ body: Data?, anonymousAllowed: Bool = false) async throws(VoiceTokenError) -> (Int, Data, String?) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"
-        let accessToken: String
+        let accessToken: String?
         do { accessToken = try await VoiceAuthSession.shared.bearerToken() }
         catch let error as VoiceAuthFailure {
-            switch error {
-            case .offline: throw .offline
-            case .sessionExpired: throw .sessionExpired
-            case .serverNotConfigured: throw .serverNotConfigured
-            case .rejected, .badResponse: throw .badResponse
-            // Only a failed sign-in leaves this behind, and then no session is saved: a new sign-in is what's needed.
-            case .tooManySignIns: throw .sessionExpired
+            if anonymousAllowed {
+                // No session: ask without one. The server refuses with 401 unless it allows this (ADR-726).
+                accessToken = nil
+            } else {
+                switch error {
+                case .offline: throw .offline
+                case .sessionExpired: throw .sessionExpired
+                case .serverNotConfigured: throw .serverNotConfigured
+                case .rejected, .badResponse: throw .badResponse
+                // Only a failed sign-in leaves this behind, and then no session is saved: a new sign-in is what's needed.
+                case .tooManySignIns: throw .sessionExpired
+                }
             }
-        } catch { throw .badResponse }
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        } catch {
+            if anonymousAllowed { accessToken = nil } else { throw .badResponse }
+        }
+        if let accessToken { request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization") }
         if let body {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -54,7 +63,7 @@ struct VoiceTokenClient: Sendable {
             throw VoiceTokenServer.loadingFailure(error)
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        if status == 401 { await VoiceAuthSession.shared.serverRejectedSession() }
+        if status == 401, !anonymousAllowed { await VoiceAuthSession.shared.serverRejectedSession() }
         return (status, data, (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After"))
     }
 }

@@ -219,7 +219,12 @@ struct VoiceProviderPicker: View {
                 .font(.caption2).foregroundStyle(Theme.secondaryText)
             // ADR-633: a Debug build's developer connection reaches ElevenLabs only, so OpenAI asks for
             // Sign in with Apple, which needs a paid Apple team (not `make project-iphone`).
-            if provider == .openAIRealtime && VoiceConfig.directVoiceEnabled {
+            if provider == .openAIRealtime && VoiceConfig.openAIWithoutAccount {
+                // ADR-726: this Debug build asks for OpenAI with no voice account. The server must allow it.
+                Text(verbatim: "This build asks for OpenAI without a Doddy voice account. It works only while the token server allows it; otherwise sign in with Apple.")
+                    .font(.caption2).foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("\(idPrefix).openAIWithoutAccount")
+            } else if provider == .openAIRealtime && VoiceConfig.directVoiceEnabled {
                 Text(verbatim: "OpenAI needs your Doddy voice account: Sign in with Apple, which needs a paid Apple team. The developer connection only reaches ElevenLabs.")
                     .font(.caption2).foregroundStyle(Theme.secondaryText)
                     .accessibilityIdentifier("\(idPrefix).openAINeedsAccount")
