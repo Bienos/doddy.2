@@ -21,8 +21,8 @@ public enum ConnectionPause {
         case .checkErrands:
             // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
             false
-        case .handOverErrand:
-            // Doddy's server searches and reads the web for it (ADR-570).
+        case .handOverErrand, .makeSomething:
+            // Doddy's server searches and reads the web for it (ADR-570, ADR-740).
             true
         case .findDeals:
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).

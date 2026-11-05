@@ -3052,6 +3052,16 @@ final class VoiceSessionController {
             await reply(call.toolCallId, await ErrandsModel.shared.handOver(draft))
         case .checkErrands(let about):
             await reply(call.toolCallId, await ErrandsModel.shared.agentReply(about: about))
+        case .makeSomething(let job):
+            // ADR-740: after the user's tap on the ask card above (a spoken yes can't start it, ADR-742),
+            // the app creates the job on Doddy's server and approves it with the digest of that job. That
+            // one tap covers its web look-ups and making its files, within the server's dollar limits;
+            // it is never approved twice.
+            if let issue = job.validationIssues().first {
+                await reply(call.toolCallId, VoiceToolReply.failed(issue.reason), isError: true)
+                return
+            }
+            await reply(call.toolCallId, await StudioModel.shared.make(job))
         case .findDeals(let request):
             // SHOPPING.md 2: after the ask card's yes, one request to Doddy's server, which reads the
             // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.

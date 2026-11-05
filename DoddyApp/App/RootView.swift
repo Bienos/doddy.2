@@ -253,6 +253,8 @@ struct RootView: View {
                 Task { await noteReminders.refreshOnForeground() }
                 // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged.
                 Task { await ErrandsModel.shared.refresh() }
+                // Studio (ADR-740): asked again only while something is being made.
+                if StudioModel.shared.hasOpenItems { Task { await StudioModel.shared.refresh() } }
                 FocusController.shared.refresh()
                 StopwatchController.shared.refresh()
                 // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.

@@ -211,6 +211,17 @@
         }
       }
     },
+    "%@ · seen %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · odczytano %@"
+          }
+        }
+      }
+    },
     "%@: %lld × %lld–%lld s, stop before your form slips": {
       "extractionState": "manual",
       "localizations": {
@@ -7771,6 +7782,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Każdą z tych rzeczy możesz zlecić Doddy’emu w rozmowie."
+          }
+        }
+      }
+    },
+    "Ask Doddy in a conversation to research something, like \"research heat pumps for a Polish house\". After one yes, Doddy searches the web, writes a research brief (PDF) and makes an infographic, in the background. You get a notification when it's ready. Nothing is published or sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poproś Doddy’ego w rozmowie, żeby coś zbadał, na przykład „sprawdź pompy ciepła do polskiego domu”. Po jednym „tak” Doddy szuka w sieci, pisze raport (PDF) i robi infografikę, w tle. Dostaniesz powiadomienie, gdy będzie gotowe. Nic nie jest publikowane ani wysyłane."
           }
         }
       }
@@ -16545,6 +16567,17 @@
         }
       }
     },
+    "Delete this item?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć ten element?"
+          }
+        }
+      }
+    },
     "Delete this memory?": {
       "extractionState": "manual",
       "localizations": {
@@ -20376,6 +20409,17 @@
         }
       }
     },
+    "Doddy is already making as many things as the server allows. Try again when one is ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przygotowuje już tyle rzeczy, ile pozwala serwer. Spróbuj ponownie, gdy coś będzie gotowe."
+          }
+        }
+      }
+    },
     "Doddy is an AI, not a doctor or a coach, and this plan isn't medical advice. Stop at once if you get pain in your chest, neck, jaw or arm, feel faint or dizzy, are unusually short of breath, or your heart races. In an emergency call 112.": {
       "extractionState": "manual",
       "localizations": {
@@ -20937,6 +20981,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy jeszcze nad tym pracuje"
+          }
+        }
+      }
+    },
+    "Doddy is still working on this. You'll get a notification when it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy wciąż nad tym pracuje. Dostaniesz powiadomienie, gdy będzie gotowe."
           }
         }
       }
@@ -22844,6 +22899,17 @@
         }
       }
     },
+    "Doddy's checks found something to look at before you share this:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzanie Doddy’ego znalazło coś do przejrzenia, zanim to udostępnisz:"
+          }
+        }
+      }
+    },
     "Doddy's default": {
       "extractionState": "manual",
       "localizations": {
@@ -23253,6 +23319,17 @@
         }
       }
     },
+    "Doddy's server couldn't be reached. Check your internet connection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z serwerem Doddy’ego. Sprawdź połączenie z internetem."
+          }
+        }
+      }
+    },
     "Doddy's server couldn't be reached. Nothing was checked; try again when you're online.": {
       "extractionState": "manual",
       "localizations": {
@@ -23327,6 +23404,17 @@
         }
       }
     },
+    "Doddy's server didn't confirm the item is gone, so it isn't shown as deleted. Pull down to check again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie potwierdził, że element zniknął, więc nie jest pokazany jako usunięty. Przeciągnij w dół, aby sprawdzić ponownie."
+          }
+        }
+      }
+    },
     "Doddy's server doesn't keep this file any more. Ask him to make it again.": {
       "extractionState": "manual",
       "localizations": {
@@ -23360,6 +23448,17 @@
         }
       }
     },
+    "Doddy's server isn't set up in this build, so Studio can't make anything yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc Studio nie może jeszcze nic przygotować."
+          }
+        }
+      }
+    },
     "Doddy's server isn't set up in this build, so its copy of this task can't be deleted from here.": {
       "extractionState": "manual",
       "localizations": {
@@ -23389,6 +23488,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc sprawy nie mogą jeszcze działać."
+          }
+        }
+      }
+    },
+    "Doddy's server isn't set up in this build, so this item can't be deleted from here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc nie można stąd usunąć tego elementu."
           }
         }
       }
@@ -31871,6 +31981,17 @@
         }
       }
     },
+    "Infographic": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Infografika"
+          }
+        }
+      }
+    },
     "Intention": {
       "extractionState": "manual",
       "localizations": {
@@ -33407,6 +33528,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "它从未被保存，所以无法恢复。"
+          }
+        }
+      }
+    },
+    "It's deleted from Doddy's server and this iPhone. Doddy's server also deletes Anthropic's working copies.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's deleted from Doddy's server and this iPad. Doddy's server also deletes Anthropic's working copies."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's deleted from Doddy's server and this iPhone. Doddy's server also deletes Anthropic's working copies."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięty z serwera Doddy’ego i z tego iPada. Serwer Doddy’ego usuwa też kopie robocze u Anthropic."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięty z serwera Doddy’ego i z tego iPhone’a. Serwer Doddy’ego usuwa też kopie robocze u Anthropic."
+                }
+              }
+            }
           }
         }
       }
@@ -38195,6 +38357,17 @@
         }
       }
     },
+    "Loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytywanie"
+          }
+        }
+      }
+    },
     "Loading notes": {
       "extractionState": "manual",
       "localizations": {
@@ -38250,6 +38423,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在加载笔记"
+          }
+        }
+      }
+    },
+    "Loading the files": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytywanie plików"
           }
         }
       }
@@ -46807,6 +46991,17 @@
         }
       }
     },
+    "Nothing here yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na razie nic tu nie ma."
+          }
+        }
+      }
+    },
     "Nothing in particular.": {
       "extractionState": "manual",
       "localizations": {
@@ -52660,6 +52855,17 @@
         }
       }
     },
+    "Open the brief (PDF)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz raport (PDF)"
+          }
+        }
+      }
+    },
     "Open the camera?": {
       "extractionState": "manual",
       "localizations": {
@@ -53927,6 +54133,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Strona odczytana: %@."
+          }
+        }
+      }
+    },
+    "Paid from Doddy's account at Anthropic, as measured by the server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opłacone z konta Doddy’ego w Anthropic, według pomiaru serwera."
           }
         }
       }
@@ -72402,6 +72619,17 @@
         }
       }
     },
+    "Stop making this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań to przygotowywać"
+          }
+        }
+      }
+    },
     "Stop recording to play this.": {
       "extractionState": "manual",
       "localizations": {
@@ -72847,6 +73075,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trening siłowy"
+          }
+        }
+      }
+    },
+    "Studio": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Studio"
+          }
+        }
+      }
+    },
+    "Studio is switched off or not set up on Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Studio jest wyłączone albo nieskonfigurowane na serwerze Doddy’ego."
           }
         }
       }
@@ -74818,6 +75068,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "验证码不正确。请检查短信后重试。"
+          }
+        }
+      }
+    },
+    "That couldn't be done: the item has already finished or changed. Pull down to check again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się: element już się zakończył albo zmienił. Przeciągnij w dół, aby sprawdzić ponownie."
           }
         }
       }
@@ -77844,6 +78105,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "The file that arrived isn't the one Doddy's server described, so it isn't opened.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik, który dotarł, nie jest tym, który opisał serwer Doddy’ego, więc nie zostanie otwarty."
           }
         }
       }
@@ -83121,6 +83393,17 @@
         }
       }
     },
+    "This item isn't on Doddy's server any more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego elementu nie ma już na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
     "This line shows on your Lock Screen and in the Dynamic Island while the stopwatch runs. Leave it empty to show only the time.": {
       "extractionState": "manual",
       "localizations": {
@@ -83423,6 +83706,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这条记忆已不存在。"
+          }
+        }
+      }
+    },
+    "This month's spending limit for Studio is reached. Try again next month.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miesięczny limit wydatków Studia został osiągnięty. Spróbuj w przyszłym miesiącu."
           }
         }
       }
@@ -86281,6 +86575,17 @@
         }
       }
     },
+    "Today's spending limit for Studio is reached. Try again tomorrow.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzisiejszy limit wydatków Studia został osiągnięty. Spróbuj jutro."
+          }
+        }
+      }
+    },
     "Tomorrow": {
       "extractionState": "manual",
       "localizations": {
@@ -89127,6 +89432,17 @@
         }
       }
     },
+    "Untitled": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez tytułu"
+          }
+        }
+      }
+    },
     "Up to %lld items of up to %lld characters are checked at once. Not checked: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -91855,6 +92171,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 对你的了解"
+          }
+        }
+      }
+    },
+    "What Doddy made in Studio stays on Doddy's server until you delete it in Studio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co Doddy przygotował w Studiu, zostaje na serwerze Doddy’ego, dopóki tego nie usuniesz w Studiu."
           }
         }
       }
@@ -95317,6 +95644,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你问 Doddy 它们在哪里。"
+          }
+        }
+      }
+    },
+    "You asked for": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja prośba"
           }
         }
       }

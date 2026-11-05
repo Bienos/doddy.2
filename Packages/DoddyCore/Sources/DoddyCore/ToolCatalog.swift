@@ -148,6 +148,9 @@ public enum ToolCatalog {
         // its text goes to a server that opens what it names. Checking what it found is a read.
         .init(VoiceToolName.handOverErrand, .handoff, .card),
         .init(VoiceToolName.checkErrands, .lookup, .askFirst),
+        // A Studio job (ADR-740): web research and files made on Doddy's server, paid from Doddy's account.
+        // A tap and not a spoken yes (ADR-742), like a handed-over task: it spends money.
+        .init(VoiceToolName.makeSomething, .handoff, .card),
         // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
         // changes; it asks first until the owner decides whether it joins the public look-ups.
         .init(VoiceToolName.findDeals, .lookup, .askFirst),

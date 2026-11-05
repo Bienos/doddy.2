@@ -10,6 +10,8 @@ adding one adapter, not rewriting the app or the agent.
 | `tools.json` | 10 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy` | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
+**`make_something` (Studio, ADR-740, ADR-742) is in `tools.json` and `instructions.md` only; it is NOT on the live ElevenLabs agent** (`elevenlabs_tool_id` is `not_synced`, and its prompt lines were not applied). The agent is changed only on the owner's separate instruction, and Studio is off on the server by default. An app build that has it answers the tool; the live agent never calls it.
+
 **OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
 **Applied to the live agent 1 Nov 2026, in two steps, about 14:20 and 15:32 UTC (ADR-667 and ADR-669, `find_deals`'s wording: the shops of #156 and #157; owner: "Yes" to putting the new `find_deals` text live, then "Approved").**
 - **Read first:** `tool_9201m5rpyjhfe2kv0yd5xbbfk6k3` with the text of 29 Oct (ADR-660): Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka read; `chains` lists ten ids. **Rollback:** re-send that text (`git show ef3ff50:voice-agent/tools.json`, the `find_deals` entry, rendered with `voice_agent_spec.py elevenlabs`).

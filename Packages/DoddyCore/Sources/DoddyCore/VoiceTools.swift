@@ -23,6 +23,8 @@ public enum VoiceToolName {
     public static let handOverErrand = "hand_over_errand"
     /// What Doddy found for the tasks handed over, as saved on this iPhone.
     public static let checkErrands = "check_errands"
+    /// "Research X": a research brief and an infographic made in the background (ADR-740, Studio.swift).
+    public static let makeSomething = "make_something"
     /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
     public static let findDeals = "find_deals"
 }
@@ -274,6 +276,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case handOverErrand(ErrandDraft)
     /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
     case checkErrands(about: String?)
+    /// A Studio job (ADR-740): one yes covers its web look-ups (capped on the server) and making its
+    /// files in Anthropic's container, nothing else; nothing is published or sent.
+    case makeSomething(StudioJob)
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
@@ -385,6 +390,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseHandOverErrand(args, name: name)
         case VoiceToolName.checkErrands:
             return parseCheckErrands(args)
+        case VoiceToolName.makeSomething:
+            return parseMakeSomething(args, name: name)
         case VoiceToolName.findDeals:
             return parseFindDeals(args, name: name)
         default:
@@ -620,6 +627,9 @@ public enum VoiceTextLimits {
         // A task handed over (ADR-570): the user's words and Doddy's brief, as the server allows.
         case "words": ErrandDraft.maxWords
         case "brief": ErrandDraft.maxBrief
+        // A Studio job (ADR-740): the topic and the user's own words, as the server allows.
+        case "topic": StudioJob.maxTopic
+        case "details": StudioJob.maxDetails
         case "query", "place": search
         case "slides": PresentationLimits.slidesJSON
         default: line

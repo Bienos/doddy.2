@@ -18,6 +18,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Notes from calls | `GET /v1/call-notes` · `DELETE /v1/call-notes/:id` (after the user confirms or discards) |
 | ElevenLabs (S2) | `POST /webhooks/elevenlabs/call-start` · `POST /webhooks/elevenlabs/tools/{verify-pin,search-memories,save-note}`; all need `X-Doddy-Tool-Secret`, tools also `X-Doddy-Session` |
 | Errands (ADR-570) | `POST /v1/errands` · `POST /v1/errands/:id/{approve,cancel,ack}` · `GET /v1/errands` · `GET/DELETE /v1/errands/:id` (below) |
+| Studio (ADR-740) | `POST /v1/studio` · `POST /v1/studio/:id/{approve,cancel}` · `GET /v1/studio` · `GET/DELETE /v1/studio/:id` · `GET /v1/studio/:id/files/:name` (below) |
 | News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` |
 | Health | `GET /healthz` |
 
@@ -118,7 +119,27 @@ Contract: `docs/implementation/SHOPPING_WATCH.md` and `schemas/fixtures/watch_cr
 - **Env:** `ASSISTANT_ENABLED` (default `0`; runs only when `ANTHROPIC_API_KEY` is also set, otherwise `503 notConfigured`), `ASSISTANT_MODEL` (default `claude-haiku-5-5`), `ASSISTANT_EFFORT` (`low|medium|high`, default `medium`), `ASSISTANT_DAILY_PER_ACCOUNT`, `ASSISTANT_DAILY_PER_SERVER`.
 - **Sent to Anthropic:** the question, up to six earlier turns, and the notes the app chose to send (none for a private note, ADR-310). Not cost-priced in code; the token counts are in `assistant_usage`.
 
-## News digests## News digests
+## Studio: research it, make it, keep it (ADR-740)
+The owner says "research X"; after one yes the worker plans, researches the web, writes the content, has Claude render a research brief (PDF) and an infographic (SVG and PNGs) with Doddy's own skills in Anthropic's container, checks the files in code, and keeps them until the owner deletes the item. Contract: `docs/implementation/STUDIO.md`. **Off by default and never run against the real Anthropic API, APNs or a device**; the tests use a fake model API.
+
+| Route | Body | Reply |
+|---|---|---|
+| `POST /v1/studio` | the job `{kind: "brief", topic ≤300, audience? ≤120, length, style, language, details? ≤1000, sources? 1–5}` | `201 {id, digest, job, expiresAt}`: a draft, nothing runs |
+| `POST /v1/studio/:id/approve` | `{digest}` | `202 {id, state: "queued"}` · `409 digest_mismatch` · `409 not_approvable {state}` · `409 too_many_open_items` · `409 daily_cap_reached {capUsd, spentUsd}` · `429 studio_daily_limit {scope}` · `429 studio_monthly_limit` · `503 studio_disabled` |
+| `GET /v1/studio` | | `{items: [{id, kind, title, state, createdAt, finishedAt, failure?, costUsd}]}`, newest first, no drafts |
+| `GET /v1/studio/:id` | | the job, title, state (`queued`, `researching`, `making`, `checking`, `ready`, `needs_look`, `failed`, `cancelled`), summary, sources with fetched dates, checks, files, cost, model, skills |
+| `GET /v1/studio/:id/files/:name` | | the file (`brief.pdf`, `infographic.svg`, `infographic.png`, `infographic-a4.png`), `private, no-store`, sandboxed CSP |
+| `POST /v1/studio/:id/cancel` | | `204` |
+| `DELETE /v1/studio/:id` | | `200 {deleted: true, files, anthropicFiles: {pending}}` after the item and files read back as gone |
+
+- **Steps** (`src/studio/pipeline.ts`): plan (structured output) → research (`web_search_20260209` and `web_fetch_20260209` only, `max_uses` from `STUDIO_MAX_SEARCHES`/`STUDIO_MAX_FETCHES`, `blocked_domains` from `STUDIO_BLOCKED_DOMAINS`, a task budget, server-side fallbacks) → pack (claims whose page the run never saw are dropped; fewer than 3 is `too_little_found`) → write (structured output, checked by `contentProblems`, one retry) → make (`code_execution_20250825` with Doddy's custom skills from `STUDIO_SKILLS` only) → check (`src/studio/checks.ts`, one retry, then `needs_look`). Files made at Anthropic are deleted there and the delete is read back; unconfirmed ones are retried by the worker, also after the item or the account is deleted (`studio_orphan_files`).
+- **Models:** one per step (`src/studio/models.ts`): Haiku 5.5 plans, extracts claims (`pack`) and runs the render recipe (`make`); Sonnet 5.5 researches and writes. Set `STUDIO_MODEL` (all steps) and/or `STUDIO_MODEL_PLAN|RESEARCH|PACK|WRITE|MAKE`. Server-side refusal fallbacks are sent only for models that have them (not Haiku 5.5).
+- **Money:** each job's cost from the API's usage, each call at its own model's list prices, plus $10 per 1,000 searches (container time recorded, counted $0 inside the free hours); a per-job limit (`STUDIO_JOB_LIMIT_USD`, default $2, checked in code after every request) and a daily cap per account checked at approve (`STUDIO_DAILY_CAP_USD`, default $3, with a $1 reserve per open job). Fitted onto the abuse limits (ADR-742): approvals per account (`STUDIO_DAILY_PER_ACCOUNT`, 3) and for the server (`STUDIO_DAILY_PER_SERVER`, 10) per UTC day, a closed pool for accounts still new (`STUDIO_DAILY_NEW_ACCOUNTS`, 0) the server's dollars per day (`STUDIO_DAILY_SERVER_CAP_USD`, 10, each approval holding the job limit until its real cost is known) and the server's hard ceiling per UTC calendar month (`STUDIO_MONTHLY_SERVER_CAP_USD`, **100**, the same holding rule; `studio_server_spend_month`; the owner gave no period with "100usd cap", so this is the safest reading and the owner can change it), all counted where deleting an item or an account can't give them back; a refusal is `429 studio_daily_limit {scope}` or, for the month, `429 studio_monthly_limit`, and takes nothing. No automatic retries of a model request.
+- **Kept on the server:** the job and the result encrypted (`MEMORY_ENCRYPTION_KEY`), the files encrypted in `studio_files` (AAD bound to account, item and file name), until the owner deletes the item or the account. Migration `017_studio.sql` (new tables, and a wider CHECK on `server_daily_usage`; numbered after the default branch's 016).
+- **Push:** no words from the item: "Gotowe. Twój materiał czeka w Studiu." / "Ready. Your Studio item is waiting in the app." (needs a look, failed: their own lines).
+- **Cross-check:** `scripts/check_studio_crosscheck.sh` (repository root) renders the skills' samples with the real renderers and runs this server's checks on them (`scripts/check-studio-render.mjs`).
+
+## News digests
 Once a day at the user's local time, the worker builds a short news message:
 1. **Gather:** curated RSS feeds per topic, the user's own feeds, and GNews keyword search for their own topics. Fetches are cached 30–60 minutes and shared across users.
 2. **Shortlist:** deterministic. Stories from the last 36 hours, not sent in the past 14 days, deduplicated by URL (tracking parameters ignored) and title, scored by topic fit and freshness, at most 3 per source.

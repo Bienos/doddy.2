@@ -6,7 +6,10 @@ import Foundation
 // its single yes covers every web search and page read Doddy's server makes for that task, with no
 // limit, and nothing else (owner, 21 Oct 2026, ADR-570). That yes is a tap since ADR-716: the task's
 // text goes to a server that opens whatever it names, so a spoken "yes" (to another question, or
-// anything the microphone heard) must not start one. Anything that changes, sends, deletes, books or shares
+// anything the microphone heard) must not start one. A Studio job (`make_something`, ADR-740) is the
+// second such action, a tap too (ADR-742: it spends money): its tap covers that job's web look-ups
+// (capped by the server's max_uses) and the making of its files in Anthropic's container, within the
+// server's dollar limits, and nothing else. Anything that changes, sends, deletes, books or shares
 // something needs a tap on a card with the exact payload: a spoken yes is not enough there,
 // because the model hears it (model-only approval is forbidden, DOD-07). No yes, a no, an unclear
 // answer or a timeout: nothing runs, and the agent is told so. Text from emails, the web or
@@ -28,11 +31,14 @@ public struct AskCard: Equatable, Sendable {
     public let title: String
     public let lines: [String]
     public let confirmLabel: String
+    /// The other button; nil shows the app's own "No".
+    public let declineLabel: String?
 
-    public init(title: String, lines: [String], confirmLabel: String) {
+    public init(title: String, lines: [String], confirmLabel: String, declineLabel: String? = nil) {
         self.title = title
         self.lines = lines
         self.confirmLabel = confirmLabel
+        self.declineLabel = declineLabel
     }
 }
 
@@ -124,6 +130,11 @@ public enum AskFirst {
             return .tapFirst(ErrandAsk.handOverCard(draft))
         case .checkErrands:
             return .yesFirst(ErrandAsk.checkCard)
+        case .makeSomething(let job):
+            // ADR-740: web research and files made in Anthropic's container, paid from Doddy's account.
+            // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
+            // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
+            return .tapFirst(StudioAsk.card(job))
         case .findDeals(let request):
             // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
             // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.

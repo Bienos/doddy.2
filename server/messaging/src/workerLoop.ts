@@ -11,6 +11,8 @@ import type { TaskCallContext } from "./taskCalls/context.js";
 import { runTaskCallPasses } from "./taskCalls/worker.js";
 import type { ErrandContext } from "./errands/context.js";
 import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
+import type { StudioContext } from "./studio/context.js";
+import { newStudioLoopState, runStudioPasses, stopStudioRuns } from "./studio/worker.js";
 import type { WatchContext } from "./watches/context.js";
 import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
 
@@ -35,6 +37,7 @@ async function pause(ms: number, shouldStop: () => boolean) {
 export async function runWorkerLoop(
   db: Db, deps: {
     push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext;
+    studio?: StudioContext;
     watches?: WatchContext;
     /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
     limits?: Pick<AbuseLimits, "allowedCountryCodes">;
@@ -44,8 +47,28 @@ export async function runWorkerLoop(
   const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
+  if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
   await Promise.all(loops);
+}
+
+/**
+ * Studio (ADR-740): starts queued jobs (up to 2 at once in this process), reaps interrupted ones,
+ * deletes expired drafts and keeps deleting copies left at Anthropic. On shutdown, running jobs stop
+ * and are stored as `interrupted`.
+ */
+async function studioLoop(ctx: StudioContext, shouldStop: () => boolean) {
+  const state = newStudioLoopState();
+  while (!shouldStop()) {
+    try {
+      const counts = await runStudioPasses(ctx, state);
+      if (Object.keys(counts).length) log("studio passes", counts);
+    } catch (err) {
+      log("studio passes failed", { error: (err as Error).message });
+    }
+    await pause(2000, shouldStop);
+  }
+  await stopStudioRuns(state);
 }
 
 /**

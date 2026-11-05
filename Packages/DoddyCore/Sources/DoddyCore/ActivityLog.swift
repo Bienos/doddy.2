@@ -338,6 +338,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
         case .checkErrands:
             return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
+        case .makeSomething(let job):
+            // ADR-740: the 30-day log keeps that a Studio job was asked for, not its topic.
+            return ActivityRequest(app: .web, title: "Make a research brief", detail: "\u{201C}\(job.topic)\u{201D}", logDetail: nil, isLookup: false)
         case .findDeals(let request):
             // SHOPPING.md: the card shows the items; the 30-day log keeps only how many and where.
             let count = request.items.count

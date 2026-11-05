@@ -20,6 +20,8 @@ import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
 import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
 import { errandRoutes } from "./routes/errands.js";
 import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
+import { studioRoutes } from "./routes/studio.js";
+import { studioContext, type StudioContext, type StudioDeps } from "./studio/context.js";
 import { assistantRoutes } from "./routes/assistant.js";
 import { dealsRoutes } from "./routes/deals.js";
 import type { DealsDeps } from "./deals/service.js";
@@ -33,6 +35,8 @@ declare module "fastify" {
     taskCallContext: TaskCallContext | null;
     /** The errand context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     errandContext: ErrandContext | null;
+    /** The Studio context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
+    studioContext: StudioContext | null;
     /** The price-watch context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     watchContext: WatchContext | null;
   }
@@ -71,6 +75,10 @@ export interface Deps {
   deals?: DealsDeps;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
+  /** Studio (ADR-740): settings and the model API (needs an Anthropic key and Doddy's skills). Needs `cipher` too. */
+  studio?: StudioDeps;
+  /** Where Studio log lines go (tests capture them); default: the request logger. */
+  studioLog?: (msg: string, extra?: object) => void;
   /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
   assistant?: AssistantDeps;
   /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
@@ -132,6 +140,9 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const errandCtx = errandContext(deps.db, deps.errands, deps.cipher, deps.push,
     deps.errandLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("errandContext", errandCtx ?? null);
+  const studioCtx = studioContext(deps.db, deps.studio, deps.cipher, deps.push,
+    deps.studioLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("studioContext", studioCtx ?? null);
   const watchCtx = watchContext(deps.db, deps.watches, deps.cipher, deps.push,
     deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("watchContext", watchCtx ?? null);
@@ -146,6 +157,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(callCaseRoutes(deps, taskCtx));
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));
+  await app.register(studioRoutes(deps, studioCtx));
   await app.register(assistantRoutes(deps));
   await app.register(dealsRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));
