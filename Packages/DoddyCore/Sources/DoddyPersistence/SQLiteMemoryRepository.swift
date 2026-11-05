@@ -4,7 +4,9 @@ import GRDB
 
 /// Local SQLite memory store (ADR-003). Every write runs in one transaction and is read back
 /// before success is returned, so a returned record is a committed record.
-/// The FTS5 index is kept in sync by triggers; deleted rows are overwritten (`secure_delete`).
+/// The FTS5 index is kept in sync by triggers. A deleted row's pages are overwritten
+/// (`secure_delete`); the index is merged in the same transaction as every delete and every
+/// rewrite of a note's words, because `secure_delete` does not reach the index (ADR-584).
 public final class SQLiteMemoryRepository: MemoryRepository {
     private let dbQueue: DatabaseQueue
     private let now: @Sendable () -> Date
@@ -143,6 +145,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                     corrected.currentText, Self.milliseconds(date), SearchFolding.fold(corrected.currentText),
                     id.uuidString,
                 ])
+            try DoddyDatabase.compactSearchIndex("memories_fts", in: db)
             guard try Self.fetch(id, db) == corrected, try Self.corrections(id, db).last == correction else {
                 throw MemoryStoreError.verificationFailed
             }
@@ -181,6 +184,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM memories WHERE id = ?", arguments: [id.uuidString])
             guard db.changesCount > 0 else { throw MemoryStoreError.notFound(id) }
+            try DoddyDatabase.compactSearchIndex("memories_fts", in: db)
         }
     }
 
@@ -188,6 +192,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM memories")
             try db.execute(sql: "INSERT INTO memories_fts(memories_fts) VALUES('rebuild')")
+            try DoddyDatabase.compactSearchIndex("memories_fts", in: db)
             // Read back before "deleted" is reported (DOD-06): no note, list item or correction left.
             for table in ["memories", "list_items", "memory_corrections"] {
                 guard try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM \(table)") == 0 else {

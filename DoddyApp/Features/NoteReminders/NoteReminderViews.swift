@@ -32,6 +32,7 @@ struct NoteReminderSection: View {
             }
         }
         .sheet(isPresented: $showSheet) { NoteReminderSheet(memoryID: memoryID, startAtTime: sheetAtTime) }
+        .coversDoddy(showSheet)
         .confirmationDialog(stopQuestion, isPresented: $confirmStop, titleVisibility: .visible) {
             Button("Stop", role: .destructive) { Task { await reminders.cancel(memoryID: memoryID) } }
             Button("Keep it", role: .cancel) {}
@@ -82,6 +83,16 @@ struct NoteReminderSection: View {
                     }
                     if let place = reminder.place {
                         Text("Within \(place.radiusMeters) m, each time, until you mark it Done.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    // Said only when AlarmKit lists its alarm (ADR-651).
+                    if reminders.ringing.contains(reminder.memoryID) {
+                        Label("Rings like an alarm, even in Silent mode", systemImage: "alarm")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.accentText)
+                    } else if reminders.wantsToRing(memoryID: reminder.memoryID), ReminderRing.plan(for: reminder, now: .now) != nil {
+                        Label("Set to ring like an alarm, but the iPhone hasn't confirmed the alarm. Check that Doddy may set alarms in iPhone Settings.", systemImage: "alarm.waves.left.and.right")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
@@ -232,7 +243,12 @@ struct DueRemindersView: View {
         VStack(alignment: .leading, spacing: 8) {
             NavigationLink(value: record.id) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(record.currentText).lineLimit(4)
+                    // A private note's words only after Face ID (ADR-310); Home showed them here before.
+                    if PrivateNotesStore.current().contains(record.id) && !AppLock.shared.privateUnlocked {
+                        Label("Private note", systemImage: "lock.fill").foregroundStyle(Theme.secondaryText)
+                    } else {
+                        Text(record.currentText).lineLimit(4)
+                    }
                     Text("You asked to see this again · \(ReminderFormat.short(reminder))")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)

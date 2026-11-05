@@ -3,6 +3,11 @@
 <!-- Doddy app with push (ADR-142), the widgets' App Group (ADR-219) and iCloud for shared lists (ADR-263). Needs a paid team; use with DODDY_CLOUD_CONTAINER. -->
 <plist version="1.0">
 <dict>
+	<key>com.apple.developer.applesignin</key>
+	<array><string>Default</string></array>
+	<!-- Timers, reminders and "time to leave" come through a Focus where the user allows it (ADR-650). -->
+	<key>com.apple.developer.usernotifications.time-sensitive</key>
+	<true/>
 	<key>aps-environment</key>
 	<string>development</string>
 	<key>com.apple.security.application-groups</key>
@@ -18,5 +23,10 @@
 	<array>
 		<string>CloudKit</string>
 	</array>
+	<!-- Sport mode step 1 (ADR-621): read Apple Health. No clinical records. -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
 </dict>
 </plist>

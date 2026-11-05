@@ -18,7 +18,11 @@ export type ToolsMockScenario =
   | "rate_limited"
   | "expired"
   | "broad_scope"
-  | "missing_scope";
+  | "missing_scope"
+  /** Gmail granted only what Doddy asked for before ADR-485: read and compose (no send, no modify). */
+  | "read_compose_only"
+  /** A write goes through, then its answer is lost (a timeout): the case ADR-322 settles. */
+  | "lost_answer";
 
 export class MockToolsProvider implements ToolsProvider {
   readonly mode = "mock" as const;
@@ -28,6 +32,8 @@ export class MockToolsProvider implements ToolsProvider {
   readonly calls: string[] = [];
   /** Arguments of every execute call, to prove what would be sent to Composio. */
   readonly executed: { slug: string; arguments: Record<string, unknown> }[] = [];
+  /** Todoist tasks made through this adapter, per Composio user, listed after the demo ones. */
+  private readonly madeTasks = new Map<string, { id: string; content: string }[]>();
 
   setScenario(composioUserId: string, scenario: ToolsMockScenario): void {
     this.scenarios.set(composioUserId, scenario);
@@ -81,10 +87,12 @@ export class MockToolsProvider implements ToolsProvider {
       toolkit.allowedGrants === null
         ? null
         : scenario === "broad_scope"
-          ? [...toolkit.requestedScopes, microsoft ? "Mail.Send" : "https://mail.google.com/"]
+          ? [...toolkit.requestedScopes, microsoft ? "MailboxSettings.ReadWrite" : "https://mail.google.com/"]
           : scenario === "missing_scope"
             ? [microsoft ? "User.Read" : "https://www.googleapis.com/auth/userinfo.email"]
-            : [...toolkit.requestedScopes];
+            : scenario === "read_compose_only" && input.toolkit === "gmail"
+              ? ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.compose"]
+              : [...toolkit.requestedScopes];
     return { connectionId: pending.id };
   }
 
@@ -113,7 +121,16 @@ export class MockToolsProvider implements ToolsProvider {
     if (scenario === "expired") throw new ProviderError("connection_expired");
     if (scenario === "malformed") return { raw: { successful: true, data: { messages: "not a list", files: "x", results: 5, tasks: {}, value: "not a list" } }, providerReference: null };
     if (scenario === "malformed_write") return { raw: malformedWrite(call.slug, call.arguments), providerReference: null };
-    return { raw: envelope(call.slug, call.arguments, scenario === "empty"), providerReference: `mock_log_${randomBytes(4).toString("hex")}` };
+    const made = this.madeTasks.get(call.composioUserId) ?? [];
+    const raw = envelope(call.slug, call.arguments, scenario === "empty", made);
+    if (call.slug === "TODOIST_CREATE_TASK") {
+      made.push({ id: `task_demo_${made.length + 1}`, content: String(call.arguments.content) });
+      this.madeTasks.set(call.composioUserId, made);
+    }
+    if (scenario === "lost_answer" && (call.slug === "TODOIST_CREATE_TASK" || call.slug === "GMAIL_CREATE_EMAIL_DRAFT")) {
+      throw new ProviderError("provider_timeout");
+    }
+    return { raw, providerReference: `mock_log_${randomBytes(4).toString("hex")}` };
   }
 
   async removeConnection(input: { connectionId: string }) {
@@ -125,7 +142,7 @@ export class MockToolsProvider implements ToolsProvider {
 
 const ok = (data: unknown) => ({ successful: true, data, error: null });
 
-function envelope(slug: string, args: Record<string, unknown>, empty: boolean): unknown {
+function envelope(slug: string, args: Record<string, unknown>, empty: boolean, made: { id: string; content: string }[] = []): unknown {
   switch (slug) {
     case "GMAIL_FETCH_EMAILS": {
       // Bodies (`messageText`) come only with verbose: true, as Composio documents.
@@ -135,7 +152,7 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
       if (/nomatch/i.test(query)) return ok({ messages: [], nextPageToken: "", resultSizeEstimate: 0 });
       if (/newsletter/i.test(query) && !empty) {
         return ok({
-          messages: [{ messageId: "m3", threadId: "t3", sender: "Demo Newsletter", subject: "Demo: weekly digest", messageTimestamp: "2026-10-10T06:00:00Z", preview: { body: "This week in demo news." }, ...text("Demo: this week in demo news.") }],
+          messages: [{ messageId: "18f0a3", threadId: "t3", sender: "Demo Newsletter", subject: "Demo: weekly digest", messageTimestamp: "2026-10-10T06:00:00Z", preview: { body: "This week in demo news." }, ...text("Demo: this week in demo news.") }],
           nextPageToken: "",
           resultSizeEstimate: 1,
         });
@@ -145,8 +162,8 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
         messages: empty
           ? []
           : [
-              { messageId: "m1", threadId: "t1", sender: "Demo Bank <noreply@demo.example>", subject: "Your statement is ready", messageTimestamp: "2026-10-08T07:00:00Z", preview: { body: "Your September statement is now available." }, ...text("Demo: your September statement is now available in online banking.") },
-              { messageId: "m2", threadId: "t2", sender: "Anna Demo <anna@demo.example>", subject: "Lunch on Friday?", messageTimestamp: "2026-10-09T09:30:00Z", preview: { body: "Are you free around 1pm? There's a new place near the office." }, ...text("Demo: Are you free around 1pm on Friday?\r\nThere's a new place near the office: https://demo.example/menu\r\n\r\nAnna") },
+              { messageId: "18f0a1", threadId: "t1", sender: "Demo Bank <noreply@demo.example>", subject: "Your statement is ready", messageTimestamp: "2026-10-08T07:00:00Z", preview: { body: "Your September statement is now available." }, ...text("Demo: your September statement is now available in online banking.") },
+              { messageId: "18f0a2", threadId: "t2", sender: "Anna Demo <anna@demo.example>", subject: "Lunch on Friday?", messageTimestamp: "2026-10-09T09:30:00Z", preview: { body: "Are you free around 1pm? There's a new place near the office." }, ...text("Demo: Are you free around 1pm on Friday?\r\nThere's a new place near the office: https://demo.example/menu\r\n\r\nAnna") },
             ],
         nextPageToken: "",
         resultSizeEstimate: empty ? 0 : 2,
@@ -155,6 +172,21 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
     case "GMAIL_CREATE_EMAIL_DRAFT":
       // A reply draft lands in the thread it names, as Composio documents for a valid thread_id.
       return ok({ id: "draft_demo_1", message: { id: "msg_demo_1", threadId: typeof args.thread_id === "string" ? args.thread_id : "t_demo" } });
+    // Gmail writes (ADR-485): Gmail's message resource, as Composio's output schemas give it.
+    case "GMAIL_SEND_EMAIL":
+      return ok({ id: "18f0b1", threadId: "18f0b1", labelIds: ["SENT"] });
+    case "GMAIL_REPLY_TO_THREAD":
+      return ok({ id: "18f0b2", threadId: typeof args.thread_id === "string" ? args.thread_id : "t_demo", labelIds: ["SENT"] });
+    case "GMAIL_FORWARD_MESSAGE":
+      return ok({ id: "18f0b3", threadId: "18f0b3", labelIds: ["SENT"] });
+    case "GMAIL_ADD_LABEL_TO_EMAIL": {
+      const add = Array.isArray(args.add_label_ids) ? (args.add_label_ids as string[]) : [];
+      const remove = Array.isArray(args.remove_label_ids) ? (args.remove_label_ids as string[]) : [];
+      const labels = [...new Set([...["INBOX", "UNREAD"].filter((l) => !remove.includes(l)), ...add])];
+      return ok({ id: String(args.message_id), threadId: "t2", labelIds: labels });
+    }
+    case "GMAIL_MOVE_TO_TRASH":
+      return ok({ id: String(args.message_id), threadId: "t2", labelIds: ["TRASH"] });
     case "GOOGLEDRIVE_FIND_FILE":
       return ok({
         files: empty
@@ -188,10 +220,11 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
           : [
               { id: "t1", content: "Demo: renew passport", priority: 4, due: { date: "2026-10-10", string: "today", is_recurring: false } },
               { id: "t2", content: "Demo: buy milk", priority: 1 },
+              ...made.map((t) => ({ id: t.id, content: t.content, priority: 1 })),
             ],
       });
     case "TODOIST_CREATE_TASK":
-      return ok({ id: "task_demo_1", content: String(args.content), priority: 1, ...(args.due_string ? { due: { date: "2026-10-11", string: String(args.due_string), is_recurring: false } } : {}) });
+      return ok({ id: `task_demo_${made.length + 1}`, content: String(args.content), priority: 1, ...(args.due_string ? { due: { date: "2026-10-11", string: String(args.due_string), is_recurring: false } } : {}) });
     case "TODOIST_GET_TASK2": {
       // Any other id (or the empty scenario) answers like Todoist's 404.
       const task = empty ? undefined : DEMO_TASKS[String(args.task_id)];
@@ -203,8 +236,19 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
     case "TODOIST_UPDATE_TASK": {
       const task = empty ? undefined : DEMO_TASKS[String(args.task_id)];
       if (!task) return notFound();
+      // A rename (ADR-488) changes the text and keeps the due date; a move changes the due date.
+      if (typeof args.content === "string") return ok({ ...task, content: args.content, updated_at: "2026-10-11T08:00:00Z" });
       return ok({ ...task, due: { date: "2026-10-12", string: String(args.due_string), lang: String(args.due_lang ?? "en"), is_recurring: false }, updated_at: "2026-10-11T08:00:00Z" });
     }
+    // Notion and Drive writes (ADR-488), as Composio's output schemas give them.
+    case "NOTION_CREATE_NOTION_PAGE":
+      return ok({ object: "page", id: "33333333-3333-4333-8333-333333333333", archived: false, in_trash: false, parent: { type: "page_id", page_id: String(args.parent_id) }, properties: {}, url: "https://www.notion.so/demo" });
+    case "NOTION_APPEND_TEXT_BLOCKS":
+      return ok({ object: "list", type: "block", block: {}, has_more: false, results: (args.children as unknown[]).map((_, i) => ({ object: "block", id: `b${i}`, type: "paragraph" })) });
+    case "NOTION_ARCHIVE_NOTION_PAGE":
+      return ok({ object: "page", id: String(args.page_id), archived: args.archive === true, in_trash: args.archive === true });
+    case "GOOGLEDRIVE_CREATE_FILE_FROM_TEXT":
+      return ok({ kind: "drive#file", id: "drivedoc1", name: String(args.file_name), mimeType: String(args.mime_type), display_url: "https://docs.google.com/demo", link_label: "Open" });
     case "OUTLOOK_LIST_MESSAGES": {
       // Only the selected fields come back, as with Graph's $select. "nomatch" finds nothing.
       const fields = Array.isArray(args.select) ? (args.select as string[]) : ["id", "subject", "from", "receivedDateTime", "bodyPreview"];
@@ -214,6 +258,50 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
     }
     case "OUTLOOK_CREATE_DRAFT":
       return ok({ id: "outlook_draft_demo_1", isDraft: true, subject: String(args.subject), toRecipients: (args.to_recipients as string[]).map((address) => ({ emailAddress: { address } })) });
+    // Google Calendar (ADR-486): times in the zone asked for, as Google does with `timeZone`.
+    case "GOOGLECALENDAR_EVENTS_LIST": {
+      const q = typeof args.q === "string" ? args.q.toLowerCase() : "";
+      const items = empty ? [] : DEMO_GOOGLE_EVENTS.filter((e) => q === "" || String(e.summary).toLowerCase().includes(q));
+      return ok({ kind: "calendar#events", items, nextPageToken: "" });
+    }
+    case "GOOGLECALENDAR_CREATE_EVENT":
+      return ok({ response_data: { id: "gnew1", status: "confirmed", summary: args.summary, start: { dateTime: `${String(args.start_datetime)}+02:00` }, end: { dateTime: `${String(args.end_datetime)}+02:00` } } });
+    case "GOOGLECALENDAR_PATCH_EVENT": {
+      const before = DEMO_GOOGLE_EVENTS.find((e) => e.id === args.event_id);
+      if (!before) return { successful: false, data: {}, error: "404 Not Found" };
+      const attendees = Array.isArray(before.attendees)
+        ? (before.attendees as Record<string, unknown>[]).map((a) => (a.self === true && typeof args.rsvp_response === "string" ? { ...a, responseStatus: args.rsvp_response } : a))
+        : undefined;
+      return ok({
+        ...before,
+        ...(typeof args.summary === "string" ? { summary: args.summary } : {}),
+        ...(typeof args.start_time === "string" ? { start: { dateTime: `${args.start_time}+02:00` } } : {}),
+        ...(attendees ? { attendees } : {}),
+      });
+    }
+    case "GOOGLECALENDAR_DELETE_EVENT":
+      return ok({ response_data: { status: "success" } });
+    // Outlook writes (ADR-486, ADR-487), as Composio's output schemas give them.
+    case "OUTLOOK_CALENDAR_CREATE_EVENT":
+      return ok({ id: "onew1", subject: args.subject, start: { dateTime: args.start_datetime, timeZone: args.time_zone } });
+    case "OUTLOOK_UPDATE_CALENDAR_EVENT":
+      return ok({ id: String(args.event_id), subject: typeof args.subject === "string" ? args.subject : "Demo: dentist" });
+    case "OUTLOOK_DELETE_CALENDAR_EVENT":
+      return ok({});
+    case "OUTLOOK_ACCEPT_EVENT":
+      return ok({ message: "Event response recorded successfully.", success: true, event_id: args.event_id, response_type: args.response_type });
+    case "OUTLOOK_DECLINE_EVENT":
+      return ok({ message: "Event declined successfully.", success: true });
+    case "OUTLOOK_SEND_EMAIL":
+      return ok({ status_code: 202, body: null });
+    case "OUTLOOK_REPLY_EMAIL":
+      return ok({ status_code: 202, response_body: null });
+    case "OUTLOOK_FORWARD_MESSAGE":
+      return ok({});
+    case "OUTLOOK_MOVE_MESSAGE":
+      return ok({ id: `${String(args.message_id)}-moved`, subject: "Demo: budget for Q4", parentFolderId: String(args.destination_id) });
+    case "OUTLOOK_UPDATE_USER_MAIL_FOLDER_MESSAGE":
+      return ok({ id: String(args.message_id), isRead: typeof args.isRead === "boolean" ? args.isRead : false, flag: args.flag ?? { flagStatus: "notFlagged" } });
     case "OUTLOOK_GET_CALENDAR_VIEW": {
       // Times come back in the zone asked for, as the schema's `timezone` says.
       const zone = String(args.timezone ?? "UTC");
@@ -222,7 +310,7 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
         value: empty
           ? []
           : [
-              { id: "e1", subject: "Demo: dentist", start: at("2026-10-12T09:00:00.0000000"), end: at("2026-10-12T10:00:00.0000000"), isAllDay: false, isCancelled: false, location: { displayName: "Demo Clinic" } },
+              { id: "e1", subject: "Demo: dentist", start: at("2026-10-12T09:00:00.0000000"), end: at("2026-10-12T10:00:00.0000000"), isAllDay: false, isCancelled: false, location: { displayName: "Demo Clinic" }, isOrganizer: true, attendees: [] },
               { id: "e2", subject: "Demo: Anna's birthday", start: at("2026-10-13T00:00:00.0000000"), end: at("2026-10-14T00:00:00.0000000"), isAllDay: true, isCancelled: false, location: { displayName: "" } },
               { id: "e3", subject: "Demo: cancelled meeting", start: at("2026-10-13T12:00:00.0000000"), end: at("2026-10-13T13:00:00.0000000"), isAllDay: false, isCancelled: true, location: {} },
               {
@@ -233,6 +321,10 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
                 isAllDay: false,
                 isCancelled: false,
                 location: { displayName: "Online https://teams.demo.example/join/123" },
+                isOrganizer: false,
+                attendees: [{ emailAddress: { address: "marta@demo.example" } }, { emailAddress: { address: "me@demo.example" } }],
+                responseStatus: { response: "notResponded" },
+                organizer: { emailAddress: { name: "Marta Demo", address: "marta@demo.example" } },
               },
             ],
       });
@@ -270,6 +362,24 @@ const notFound = () => ({ successful: false, data: {}, error: "404 Not Found: ta
  * Demo Outlook inbox, deliberately unsorted. The newer one is HTML with a request inside it, a link,
  * an entity and invisible characters, so the cleaning and framing are exercised.
  */
+/** Google Calendar demo events, in Europe/Warsaw time (the tests' zone). */
+const DEMO_GOOGLE_EVENTS: Record<string, unknown>[] = [
+  { id: "gev1", status: "confirmed", summary: "Demo: dentist", start: { dateTime: "2026-10-12T15:00:00+02:00" }, end: { dateTime: "2026-10-12T16:00:00+02:00" }, location: "Demo Clinic" },
+  {
+    id: "gev2",
+    status: "confirmed",
+    summary: "Demo: team lunch",
+    start: { dateTime: "2026-10-13T13:00:00+02:00" },
+    end: { dateTime: "2026-10-13T14:00:00+02:00" },
+    organizer: { email: "anna@demo.example", displayName: "Anna Demo" },
+    attendees: [
+      { email: "me@demo.example", self: true, responseStatus: "needsAction" },
+      { email: "anna@demo.example", organizer: true, responseStatus: "accepted" },
+    ],
+  },
+  { id: "gev3", status: "cancelled", summary: "Demo: dentist", start: { dateTime: "2026-10-12T15:00:00+02:00" }, end: { dateTime: "2026-10-12T16:00:00+02:00" } },
+];
+
 const DEMO_OUTLOOK_MESSAGES: Record<string, unknown>[] = [
   {
     id: "om1",

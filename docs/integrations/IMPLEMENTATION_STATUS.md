@@ -66,6 +66,7 @@ RESULT: PASS for core-only scope; iOS app NOT verified
 | Read tomorrow (events, empty, many/truncated, malformed, error, timeout, rate limit, expired) | tested | **not run** |
 | Grants: read-only / missing / not read-only / unverifiable | tested | **not run** — whether Composio exposes Google's granted scope is unverified |
 | Disconnect incl. remote cleanup failure | tested (fake SDK failure) | **not run** |
+| Superseded, abandoned or late sign-in: its connection removed, never left live (ADR-445) | tested (fake SDK; hourly sweep called directly) | **not run** |
 | Constructing the real SDK client | opens **0** sockets (after `disableVersionCheck: true`; before, it contacted registry.npmjs.org) | — |
 
 ## Native build / simulator / device

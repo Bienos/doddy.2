@@ -22,8 +22,8 @@ final class MemoryBaselineTests: XCTestCase {
 
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.buttons["tab.memories"].waitForExistence(timeout: 8))
-        app.buttons["tab.memories"].tap()
+        XCTAssertTrue(app.waitForTab("memories", timeout: 8))
+        app.goToTab("memories")
         app.buttons["memories.find"].tap()
         let search = app.textFields["memories.query"]
         XCTAssertTrue(search.waitForExistence(timeout: 5))
@@ -42,8 +42,8 @@ final class MemoryBaselineTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["memories.noMatch"].waitForExistence(timeout: 5))
         app.terminate()
         app.launch()
-        app.buttons["tab.memories"].tap()
-        XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
+        app.goToTab("memories")
+        XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -79,15 +79,25 @@ final class MemoryBaselineTests: XCTestCase {
         unmute.tap()
         app.activate()
         XCTAssertTrue(app.buttons["island.fixture.end"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture active", timeout: 5), "System Unmute must reach the app handler.")
+        // The system button reaches the app's handler a few seconds later, as with Stop below
+        // (20a6e031). 5 s was too short once on CI (run 39147513810, 18 Oct), and 10 s twice on
+        // 1 and 2 Nov when the hosted Mac reached the UI tests sooner after it started (ADR-680:
+        // runs 41341166440, 41368047283). The handler is iOS's to call, so the wait is iOS's
+        // latency, not Doddy's: 20 s, the same check.
+        XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture active", timeout: 20), "System Unmute must reach the app handler.")
         XCUIDevice.shared.press(.home)
         let activeCompact = springboard.descendants(matching: .any).matching(NSPredicate(format: "label == 'Test activity'")).firstMatch
         XCTAssertTrue(activeCompact.waitForExistence(timeout: 15))
+        // Unmuted: Doddy's head on the compact island, all of him on the expanded one (ADR-615).
+        attach(springboard, name: "Native compact Island, not muted - offline labelled fixture")
         activeCompact.press(forDuration: 1.2)
-        XCTAssertTrue(springboard.buttons["End"].waitForExistence(timeout: 8))
-        springboard.buttons["End"].tap()
+        // The island's end control is labelled "Stop" ("Stop listening" in Hey Doddy mode).
+        XCTAssertTrue(springboard.buttons["Stop"].waitForExistence(timeout: 8))
+        attach(springboard, name: "Native expanded Island, not muted - offline labelled fixture")
+        springboard.buttons["Stop"].tap()
         app.activate()
-        XCTAssertEqual(app.staticTexts["island.fixture.status"].label, "Fixture ended")
+        // Like Unmute above, the system button reaches the app's handler a few seconds later (20 s).
+        XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture ended", timeout: 20), "System Stop must reach the app handler.")
         XCTAssertTrue(count.waitForLabel("0 native activities", timeout: 5))
     }
 

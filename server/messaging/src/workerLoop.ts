@@ -1,10 +1,18 @@
 import { purgeExpiredSessions } from "./calls.js";
+import type { AbuseLimits } from "./config.js";
 import type { TextCipher } from "./crypto.js";
+import { pruneCounters } from "./dailyCounters.js";
 import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue } from "./outbox.js";
 import type { PushSender, SmsSender } from "./providers/types.js";
+import type { TaskCallContext } from "./taskCalls/context.js";
+import { runTaskCallPasses } from "./taskCalls/worker.js";
+import type { ErrandContext } from "./errands/context.js";
+import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
+import type { WatchContext } from "./watches/context.js";
+import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
 
 import { log } from "./log.js";
 
@@ -25,20 +33,96 @@ async function pause(ms: number, shouldStop: () => boolean) {
  * FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps }, shouldStop: () => boolean,
+  db: Db, deps: {
+    push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext;
+    watches?: WatchContext;
+    /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
+    limits?: Pick<AbuseLimits, "allowedCountryCodes">;
+  },
+  shouldStop: () => boolean,
 ): Promise<void> {
-  await Promise.all([dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)]);
+  const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)];
+  if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
+  if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
+  if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
+  await Promise.all(loops);
 }
 
-async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }, shouldStop: () => boolean) {
+/**
+ * Price watches (shopping stage 2): checks the watches that are due, one at a time and politely, and tidies
+ * drafts and finished watches. Its own loop, so a slow shop never holds back pushes. A watch is checked about
+ * every 6 hours, so the loop looks every 10 seconds (one cheap index lookup) and goes straight on while a full
+ * batch was due. On shutdown the check in flight is given back unrecorded.
+ */
+async function watchLoop(ctx: WatchContext, shouldStop: () => boolean) {
+  const state = newWatchLoopState();
+  const stopWatcher = setInterval(() => { if (shouldStop()) state.shutdown.abort(); }, 500);
+  try {
+    while (!shouldStop()) {
+      let more = false;
+      try {
+        const counts = await runWatchPasses(ctx, state);
+        if (Object.keys(counts).length) log("watch passes", counts);
+        more = (counts.claimed ?? 0) >= BATCH;
+      } catch (err) {
+        log("watch passes failed", { error: (err as Error).message });
+      }
+      if (!more) await pause(10_000, shouldStop);
+    }
+  } finally {
+    clearInterval(stopWatcher);
+  }
+}
+
+/**
+ * Errands (ADR-570): starts queued research runs (up to 3 at once in this process, each up to the
+ * time limit) and tidies expired drafts and unacknowledged results. Its own loop, so a long run never
+ * holds back pushes. On shutdown, running errands stop and are stored as `interrupted`.
+ */
+async function errandLoop(ctx: ErrandContext, shouldStop: () => boolean) {
+  const state = newErrandLoopState();
+  while (!shouldStop()) {
+    try {
+      const counts = await runErrandPasses(ctx, state);
+      if (Object.keys(counts).length) log("errand passes", counts);
+    } catch (err) {
+      log("errand passes failed", { error: (err as Error).message });
+    }
+    await pause(2000, shouldStop);
+  }
+  await stopErrandRuns(state);
+}
+
+/**
+ * Call cases (ADR-500): scheduled dials, the goodbye at the time limit, the kill switch, answer
+ * cards, costs and deletions. Its own loop, so a slow provider call never holds back pushes.
+ */
+async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
+  const state = { lastSweep: 0 };
+  while (!shouldStop()) {
+    try {
+      const counts = await runTaskCallPasses(ctx, state);
+      if (Object.keys(counts).length) log("task-call passes", counts);
+    } catch (err) {
+      log("task-call passes failed", { error: (err as Error).message });
+    }
+    await pause(2000, shouldStop);
+  }
+}
+
+async function dispatchLoop(
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; limits?: Pick<AbuseLimits, "allowedCountryCodes"> },
+  shouldStop: () => boolean,
+) {
   let lastTidy = 0;
   while (!shouldStop()) {
     try {
-      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher });
+      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher, allowedCountryCodes: deps.limits?.allowedCountryCodes });
       if (Date.now() - lastTidy > 3_600_000) {
         lastTidy = Date.now();
         // Expired sessions are already refused by findSession; this only reclaims space.
         const sessions = await purgeExpiredSessions(db);
+        await pruneCounters(db); // daily counts older than two days (ADR-702)
         const pruned = await pruneNewsCache(db);
         if (sessions || pruned) log("tidied", { sessions, newsCacheRows: pruned });
       }

@@ -114,7 +114,8 @@ struct CallsSettingsView: View {
         Section("Calling Doddy") {
             if let number = s.doddyNumber, let url = URL(string: "tel:\(number)") {
                 StatusRow(title: "Doddy's number", value: number)
-                Link("Call Doddy", destination: url)
+                // iPad has no phone; the number above is for calling from a phone (ADR-437).
+                if DeviceSupport.hasPhoneCalls { Link("Call Doddy", destination: url) }
             }
             Toggle("Answer calls from my number", isOn: Binding(
                 get: { s.inboundEnabled },
@@ -138,6 +139,19 @@ struct CallsSettingsView: View {
             Text("Off by default. When on, an encrypted copy of your memories is kept on the Doddy messaging server so Doddy can answer from them on a call, after your PIN. The server can read this copy in order to answer, so it is not end-to-end encrypted. What Doddy reads out is processed by ElevenLabs. Turning this off deletes the copy.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        }
+
+        Section {
+            NavigationLink {
+                CallCasesView()
+            } label: {
+                Label("Calls for you", systemImage: "phone.arrow.up.right")
+            }
+            .accessibilityIdentifier("calls.callCases")
+        } header: {
+            Text("Doddy calls for you")
+        } footer: {
+            Text("Doddy calls a business in Polish to ask one question for you, after you approve a card.")
         }
 
         Section("Doddy calls you") {

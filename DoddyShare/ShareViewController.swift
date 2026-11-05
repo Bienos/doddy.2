@@ -19,9 +19,10 @@ final class ShareViewController: UIViewController {
         host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(host.view)
         host.didMove(toParent: self)
-        let items = extensionContext?.inputItems.compactMap { $0 as? NSExtensionItem } ?? []
+        // Item providers aren't Sendable: they are read off the main actor and only the strings come
+        // back. Nothing on the main actor touches `items` after this, so handing them over is safe.
+        nonisolated(unsafe) let items = extensionContext?.inputItems.compactMap { $0 as? NSExtensionItem } ?? []
         let model = model
-        // Item providers aren't Sendable: they are read off the main actor and only the strings come back.
         Task.detached {
             let shared = await ShareModel.extract(items)
             await model.show(text: shared.text, link: shared.link)

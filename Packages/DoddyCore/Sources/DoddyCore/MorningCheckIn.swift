@@ -5,7 +5,8 @@ import Foundation
 // on the Lock Screen. A tap opens Doddy on a check-in screen built on this iPhone: today's note
 // reminders and the lists with things left to do. Nothing goes to ElevenLabs until the user taps
 // "Talk it through"; then the same facts go in the `{{morning_checkin}}` variable, and the agent
-// reads the calendar only with its usual tool and the user's Calendar switch.
+// reads the calendar only with its usual tool and the user's Calendar switch. A Private note's
+// reminder is shown as "Private note" and never given to the agent (ADR-722).
 
 public struct MorningCheckInSettings: Equatable, Sendable {
     public var isOn: Bool
@@ -56,11 +57,15 @@ public enum MorningCheckIn {
 
     public static func requests(_ settings: MorningCheckInSettings) -> [Request] {
         guard settings.isOn else { return [] }
+        // Never in quiet hours (ADR-651): a time inside them moves to 07:00 or 21:30.
+        let time = QuietHours.adjusted(hour: settings.hour, minute: settings.minute)
         guard settings.weekdaysOnly else {
-            return [Request(id: "\(notificationPrefix).daily", weekday: nil, hour: settings.hour, minute: settings.minute)]
+            return [Request(id: "\(notificationPrefix).daily", weekday: nil, hour: time.hour, minute: time.minute)]
         }
-        return (2...6).map {
-            Request(id: "\(notificationPrefix).weekday\($0)", weekday: $0, hour: settings.hour, minute: settings.minute)
+        // A named parameter: `$0` here was read as an optional (it is passed on as `Int?`), which put
+        // "Optional(2)" in the id.
+        return (2...6).map { (weekday: Int) in
+            Request(id: "\(notificationPrefix).weekday\(weekday)", weekday: weekday, hour: time.hour, minute: time.minute)
         }
     }
 
@@ -77,11 +82,18 @@ public enum MorningCheckIn {
 }
 
 /// What the check-in screen shows and, after "Talk it through", what the agent is given.
+///
+/// The words of a Private note (ADR-310) never enter it (ADR-722): `make` needs the private set and
+/// puts `PrivateNotes.hiddenText` in the place of such a note's words. The screen still lists the
+/// reminder (so "None set for today" stays true); the agent's prompt leaves it out altogether.
 public struct MorningBriefing: Equatable, Sendable {
     public struct ReminderLine: Equatable, Sendable {
         public let memoryID: UUID
         public let time: Date
+        /// The note's words, shortened; for a Private note `PrivateNotes.hiddenText`, never its words.
         public let text: String
+        /// The note is Private: the screen shows its time with "Private note", the agent hears nothing of it.
+        public let isPrivate: Bool
     }
 
     public struct ListLine: Equatable, Sendable {
@@ -101,9 +113,11 @@ public struct MorningBriefing: Equatable, Sendable {
 
     public var isEmpty: Bool { reminders.isEmpty && lists.isEmpty }
 
+    /// `privateNotes` is required on purpose (ADR-722): a caller cannot build a briefing without
+    /// saying which notes are Private, so none of their words can reach the screen's text or the prompt.
     public static func make(
         now: Date, memories: [MemoryRecord], lists: [DoddyList], reminders: [MemoryReminder],
-        calendar: Calendar = .current
+        privateNotes: PrivateNotes, calendar: Calendar = .current
     ) -> MorningBriefing {
         // The next midnight, not 24 hours on: a clock-change day has 23 or 25.
         let start = calendar.startOfDay(for: now)
@@ -111,7 +125,11 @@ public struct MorningBriefing: Equatable, Sendable {
         let byID = Dictionary(memories.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let today = reminders.compactMap { reminder -> ReminderLine? in
             guard let fire = reminder.nextFire(after: now), fire < end, let note = byID[reminder.memoryID] else { return nil }
-            return ReminderLine(memoryID: note.id, time: fire, text: WidgetSnapshot.shortened(note.currentText))
+            let isPrivate = privateNotes.contains(note.id)
+            return ReminderLine(
+                memoryID: note.id, time: fire,
+                text: isPrivate ? PrivateNotes.hiddenText : WidgetSnapshot.shortened(note.currentText),
+                isPrivate: isPrivate)
         }
         .sorted { $0.time < $1.time }
         let open = lists.filter { !$0.open.isEmpty }
@@ -137,11 +155,13 @@ public enum MorningCheckInPrompt {
         day.locale = Locale(identifier: "en_GB")
         day.dateFormat = "EEEE d MMMM"
         // Reminder text and list names are the user's words: between the data markers (review C4).
+        // A Private note's reminder is left out altogether (ADR-722): the agent is not told it exists.
+        let shareable = briefing.reminders.filter { !$0.isPrivate }
         var lines: [String] = []
-        if briefing.reminders.isEmpty {
+        if shareable.isEmpty {
             lines.append("Doddy reminders today: none.")
         } else {
-            lines.append("Doddy reminders today: " + briefing.reminders.map { "\(time.string(from: $0.time)) \(ToolData.clean($0.text))" }.joined(separator: "; ") + ".")
+            lines.append("Doddy reminders today: " + shareable.map { "\(time.string(from: $0.time)) \(ToolData.clean($0.text))" }.joined(separator: "; ") + ".")
         }
         if briefing.lists.isEmpty {
             lines.append("Lists with things left: none.")

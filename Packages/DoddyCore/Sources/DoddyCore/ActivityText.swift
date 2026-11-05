@@ -21,6 +21,13 @@ extension ActivityApp {
         case .gmail, .drive, .notion, .todoist, .outlook: return title
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
+        case .blik: return "Przelewy BLIK"
+        case .presentations: return "Prezentacje"
+        case .steps: return "Kroki"
+        case .photos: return "Zdjęcia"
+        case .camera: return "Aparat"
+        case .health: return "Zdrowie"
+        case .training: return "Plan treningowy"
         }
     }
 }
@@ -37,6 +44,7 @@ extension ActivityOutcome {
         case .notDone: return "Nie zrobiono"
         case .declined: return "Odrzucone"
         case .inProgress: return "W toku"
+        case .shown: return "Pokazano do wysłania"
         }
     }
 }
@@ -58,6 +66,13 @@ public enum ActivityText {
         "Open in Maps": "Otwórz w Mapach",
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
+        "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
+        "Make a presentation": "Przygotuj prezentację",
+        "Read steps": "Odczytano kroki",
+        "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
+        "Looked through photos": "Przejrzano zdjęcia",
+        "Open the camera": "Otwórz aparat",
+        "Open the training plan": "Otwórz plan treningowy",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
@@ -68,6 +83,11 @@ public enum ActivityText {
         "Read your tasks": "Odczytano zadania",
         "Add a task": "Dodaj zadanie",
         "Searched the web": "Wyszukano w sieci",
+        // Errands (ADR-570): "sprawa" is the user's word for a task handed over.
+        "Hand over a task": "Przekaż sprawę",
+        "Checked your tasks": "Sprawdzono sprawy",
+        // Leaflets (SHOPPING.md).
+        "Checked the leaflets": "Sprawdzono gazetki",
         "Add to a list": "Dodaj do listy",
         "Read a list": "Odczytano listę",
         "Tick on a list": "Odhacz na liście",
@@ -82,6 +102,9 @@ public enum ActivityText {
         // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
         "Read alarms": "Odczytano budziki",
         "Turn off alarm": "Wyłącz budzik",
+        "Start stopwatch": "Włącz stoper",
+        "Stop stopwatch": "Zatrzymaj stoper",
+        "Read stopwatch": "Odczytano stoper",
         "Delete events": "Usuń wydarzenia",
         "Move reminders": "Przenieś przypomnienia",
         // Round 4 (ADR-300 onwards).
@@ -95,6 +118,36 @@ public enum ActivityText {
         "Add ingredients to a list": "Dodaj składniki do listy",
         // Round 5.
         "Create a reply draft": "Utwórz szkic odpowiedzi",
+        "Send an email": "Wyślij e-mail",
+        "Send a reply": "Wyślij odpowiedź",
+        "Forward an email": "Przekaż e-mail",
+        "Archive or mark an email": "Zarchiwizuj lub oznacz e-mail",
+        "Move an email to Trash": "Przenieś e-mail do kosza",
+        "Read the Google Calendar": "Odczytano Kalendarz Google",
+        "Add a Google Calendar event": "Dodaj wydarzenie w Kalendarzu Google",
+        "Change a Google Calendar event": "Zmień wydarzenie w Kalendarzu Google",
+        "Delete a Google Calendar event": "Usuń wydarzenie z Kalendarza Google",
+        "Answer a Google Calendar invitation": "Odpowiedz na zaproszenie w Kalendarzu Google",
+        "Add an Outlook event": "Dodaj wydarzenie w Outlooku",
+        "Change an Outlook event": "Zmień wydarzenie w Outlooku",
+        "Delete an Outlook event": "Usuń wydarzenie z Outlooka",
+        "Accept an Outlook invitation": "Przyjmij zaproszenie w Outlooku",
+        "Decline an Outlook invitation": "Odrzuć zaproszenie w Outlooku",
+        "Send an Outlook email": "Wyślij e-mail z Outlooka",
+        "Send an Outlook reply": "Wyślij odpowiedź z Outlooka",
+        "Forward an Outlook email": "Przekaż e-mail z Outlooka",
+        "Archive or bin an Outlook email": "Zarchiwizuj lub usuń e-mail w Outlooku",
+        "Mark an Outlook email": "Oznacz e-mail w Outlooku",
+        "Rename a task": "Zmień nazwę zadania",
+        "Create a Notion page": "Utwórz stronę w Notion",
+        "Add to a Notion page": "Dodaj do strony w Notion",
+        "Move a Notion page to the trash": "Przenieś stronę Notion do kosza",
+        "Create a Google Doc": "Utwórz Dokument Google",
+        "Search the news": "Wyszukano wiadomości",
+        "Find places": "Wyszukano miejsca",
+        // ADR-564
+        "Ask Claude": "Zapytano Claude’a",
+        "Make a document with Claude": "Zlecono Claude’owi dokument",
         "Read a Notion page": "Odczytano stronę Notion",
     ]
 
@@ -104,10 +157,18 @@ public enum ActivityText {
             "Connections were paused.": "Połączenia były wstrzymane.",
             "Doddy couldn't confirm it went through.": "Doddy nie mógł potwierdzić, że się udało.",
             "Demo data from a test server, not your account.": "Dane demonstracyjne z serwera testowego, nie z Twojego konta.",
+            "Doddy didn't send any money. You send it in your bank app.": "Doddy nie wysłał żadnych pieniędzy. Wysyłasz je w aplikacji banku.",
             ActivityLog.interruptedNote: "Doddy zamknął się, zanim to się skończyło. Sprawdź, zanim poprosisz ponownie, żeby nie zrobić tego dwa razy.",
             "Found in Reminders when you checked.": "Znalezione w Przypomnieniach przy sprawdzaniu.",
             "Not in Reminders when you checked. You can ask Doddy again.": "Nie było w Przypomnieniach przy sprawdzaniu. Możesz poprosić Doddy’ego ponownie.",
             "The conversation ended before you answered.": "Rozmowa skończyła się przed Twoją odpowiedzią.",
+            // Settled from Doddy's own notes and lists (ADR-321).
+            "Found in your notes when Doddy checked.": "Znalezione w notatkach przy sprawdzaniu.",
+            "Not in your notes when Doddy checked, so it didn't happen. You can ask again.":
+                "Nie było w notatkach przy sprawdzaniu, więc to się nie stało. Możesz poprosić ponownie.",
+            "Found in your lists when Doddy checked.": "Znalezione na listach przy sprawdzaniu.",
+            "Not in your lists when Doddy checked, so it didn't happen. You can ask again.":
+                "Nie było na listach przy sprawdzaniu, więc to się nie stało. Możesz poprosić ponownie.",
             ActivityLog.partlyNote: "Zmieniono tylko część z nich.",
         ]
         for connection in VoiceConnection.allCases {
@@ -138,7 +199,7 @@ public enum ActivityText {
         return reasons
     }()
 
-    private static func polish(_ connection: VoiceConnection) -> String {
+    static func polish(_ connection: VoiceConnection) -> String {
         switch connection {
         case .calendar: "Kalendarz"
         case .reminders: "Przypomnienia"
@@ -147,6 +208,11 @@ public enum ActivityText {
         case .maps: "Mapy"
         case .shortcuts: "Skróty"
         case .messages: "Wiadomości i e-mail"
+        case .blik: "Przelewy BLIK"
+        case .presentations: "Prezentacje"
+        case .steps: "Kroki"
+        case .photos: "Zdjęcia"
+        case .camera: "Aparat"
         }
     }
 
@@ -159,6 +225,7 @@ public enum ActivityText {
     public static func note(_ english: String, _ language: NotificationLanguage) -> String {
         guard language == .polish else { return english }
         if let known = polishNotes[english] { return known }
+        if let settled = ActionStatusText.polishNote(english) { return settled }
         let prefix = "Not undone: ", suffix = " Nothing changed."
         if english.hasPrefix(prefix), english.hasSuffix(suffix), english.count > prefix.count + suffix.count {
             let reason = String(english.dropFirst(prefix.count).dropLast(suffix.count))

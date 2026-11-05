@@ -19,12 +19,28 @@ public enum VoiceToolName {
     public static let proposePlan = "propose_plan"
     /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
     public static let noteCapabilityGap = "note_capability_gap"
+    /// Hand a task over: Doddy's server researches it in the background (ADR-570, Errand.swift).
+    public static let handOverErrand = "hand_over_errand"
+    /// What Doddy found for the tasks handed over, as saved on this iPhone.
+    public static let checkErrands = "check_errands"
+    /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
+    public static let findDeals = "find_deals"
 }
 
 /// The functions a user turns on in Settings, Connections. All start off, and each one may also
 /// need an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
+    /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
+    case blik
+    /// Presentations made on the iPhone as a file Keynote opens (ADR-567). No iOS permission.
+    case presentations
+    /// Step count, walking distance and floors from Motion & Fitness (ADR-568).
+    case steps
+    /// Counting the photos in the user's library for a day or a span (ADR-569).
+    case photos
+    /// Doddy's own camera, for a photo note (ADR-569).
+    case camera
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -36,6 +52,11 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .maps: "Maps"
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
+        case .blik: "BLIK transfers"
+        case .presentations: "Presentations"
+        case .steps: "Steps"
+        case .photos: "Photos"
+        case .camera: "Camera"
         }
     }
 
@@ -54,6 +75,11 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
+        case VoiceToolName.draftBlikTransfer: .blik
+        case VoiceToolName.makePresentation: .presentations
+        case VoiceToolName.readSteps: .steps
+        case VoiceToolName.findPhotos: .photos
+        case VoiceToolName.openCamera: .camera
         default: nil
         }
     }
@@ -190,9 +216,29 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case listAlarms
     /// Turn one of Doddy's alarms off, after a card.
     case cancelAlarm(clock: String, label: String?)
+    /// A stopwatch that counts up (ADR-652): started and stopped after a card, read after a "yes".
+    case startStopwatch(label: String?)
+    case stopStopwatch
+    case checkStopwatch
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
+    /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
+    /// never sends money.
+    case draftBlikTransfer(BlikTransferDraft)
+    /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
+    case makePresentation(PresentationDraft)
+    /// One day's steps from Motion & Fitness, read only (ADR-568).
+    case readSteps(StepDay)
+    /// The last 7 days from Apple Health as a short summary, after a consent of its own (ADR-623).
+    case readHealthWeek
+    /// Opens the training plan screen with a goal chosen, after a tap (ADR-626). The person answers the
+    /// safety questions there; the agent never sees them or the plan.
+    case openTrainingPlan(PlanAsk)
+    /// Counts of the photos in the library for a span of days; pictures on screen only (ADR-569).
+    case findPhotos(PhotoSearchRequest)
+    /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
+    case openCamera
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -223,6 +269,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findFreeTime(FreeTimeRequest)
     /// "Remind me when to leave" (ADR-335): travel time from Apple Maps, then a card.
     case leaveBy(LeaveByRequest)
+    /// A task Doddy's server researches in the background (ADR-570). One tap (not a spoken yes,
+    /// ADR-716) covers every look-up of this task and nothing else; nothing is booked, bought or sent.
+    case handOverErrand(ErrandDraft)
+    /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
+    case checkErrands(about: String?)
+    /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
+    /// server, after the user's yes. Nothing about the user goes to the shops.
+    case findDeals(DealsRequest)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -289,6 +343,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .listAlarms
         case VoiceToolName.cancelAlarm:
             return parseCancelAlarm(args, name: name)
+        case VoiceToolName.startStopwatch:
+            return .startStopwatch(label: Stopwatch.cleanLabel(args.text("label")))
+        case VoiceToolName.stopStopwatch:
+            return .stopStopwatch
+        case VoiceToolName.checkStopwatch:
+            return .checkStopwatch
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place)
@@ -297,6 +357,20 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.draftBlikTransfer:
+            return parseBlikTransfer(args, name: name)
+        case VoiceToolName.makePresentation:
+            return parsePresentation(args, name: name)
+        case VoiceToolName.readSteps:
+            return parseSteps(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.readHealthWeek:
+            return .readHealthWeek
+        case VoiceToolName.openTrainingPlan:
+            return parseTrainingPlan(args, name: name)
+        case VoiceToolName.findPhotos:
+            return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.openCamera:
+            return .openCamera
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:
@@ -307,6 +381,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.addToList, VoiceToolName.readList, VoiceToolName.checkOff,
              VoiceToolName.removeFromList, VoiceToolName.createList:
             return parseList(args, name: name)
+        case VoiceToolName.handOverErrand:
+            return parseHandOverErrand(args, name: name)
+        case VoiceToolName.checkErrands:
+            return parseCheckErrands(args)
+        case VoiceToolName.findDeals:
+            return parseFindDeals(args, name: name)
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }
@@ -476,6 +556,24 @@ struct Arguments {
         return text(key).map { [$0] }
     }
 
+    /// A list that must hold only strings (priorities, leaflet items, chains). Unlike `texts`,
+    /// nothing is dropped: a number or an object in it makes the whole list `notStrings`, so the
+    /// agent hears why instead of a list that lost an entry. A single string counts as a list of
+    /// one; missing or null is `absent`. The strings are as sent (blank ones included).
+    enum StringList: Equatable {
+        case absent
+        case list([String])
+        case notStrings
+    }
+
+    func stringList(_ key: String) -> StringList {
+        guard let value = values[key], !(value is NSNull) else { return .absent }
+        if let single = value as? String { return .list([single]) }
+        guard let list = value as? [Any] else { return .notStrings }
+        let strings = list.compactMap { $0 as? String }
+        return strings.count == list.count ? .list(strings) : .notStrings
+    }
+
     func flag(_ key: String) -> Bool {
         values[key] as? Bool ?? false
     }
@@ -500,6 +598,11 @@ struct Arguments {
     func has(_ key: String) -> Bool {
         values[key] != nil
     }
+
+    /// The value as JSON gave it, for arguments with a shape of their own (presentation slides).
+    func raw(_ key: String) -> Any? {
+        values[key]
+    }
 }
 
 /// Bounds on text the model sends to a phone tool (review C11). A note, or a note quoted back,
@@ -514,13 +617,19 @@ public enum VoiceTextLimits {
         switch key {
         case "text", "note": MemoryLimits.maxTextLength
         case "notes", "body": paragraph
+        // A task handed over (ADR-570): the user's words and Doddy's brief, as the server allows.
+        case "words": ErrandDraft.maxWords
+        case "brief": ErrandDraft.maxBrief
         case "query", "place": search
+        case "slides": PresentationLimits.slidesJSON
         default: line
         }
     }
 }
 
-/// Links that open other apps. The user always taps; Doddy never sends a message or places a call.
+/// Links that open other apps. The user always taps; these links never send a message or place a
+/// call themselves. The one way Doddy places a call is a call case the user approved on its card
+/// (ADR-500, superseding ADR-065 for that case only); the voice conversation can't start one.
 public enum OpenLinks {
     public static func map(place: String) -> URL? {
         URL(string: "https://maps.apple.com/?q=\(encode(place))")
@@ -605,6 +714,8 @@ public enum VoiceToolReply {
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
         "moved:", "turned off:", "cleared:",
+        // ADR-570: Doddy's server said it has the task handed over (`errandStarted`).
+        "started:",
     ]
     /// List results: `added to the list: 1 item.`, then the list's name and the items as data
     /// (listAdded, listChanged).
@@ -679,9 +790,18 @@ public enum VoiceToolReply {
             + ToolData.block([quoted("Tool", name)])
     }
 
-    /// Used when a function is off or its iOS permission is not granted.
-    public static func notConnected(_ connection: VoiceConnection) -> String {
-        "\(connection.title) isn't connected. Tell the user they can connect it in Settings, Connections."
+    /// Used when a function is off or its iOS permission is not granted. The conversation screen
+    /// shows the access card for it at the same time (ADR-578), so the agent asks for the tap in one
+    /// line instead of sending the user to Settings. It starts "<title> isn't connected" as before,
+    /// which What Doddy did reads.
+    public static func notConnected(_ connection: VoiceConnection, card: ConnectionApproval.Card = .allow) -> String {
+        let after = "Nothing was looked up or changed. If they allow it, a message starting with \"(app)\" tells you; then try what they asked once more."
+        switch card {
+        case .allow:
+            return "\(connection.title) isn't connected yet. A card on screen asks the user to allow it. Say only: \"Allow it on screen and I'll carry on.\" Don't send them to Settings. " + after
+        case .openSystemSettings:
+            return "\(connection.title) isn't connected yet: iPhone has it turned off for Doddy, and only iPhone Settings can change that. A card on screen opens Doddy's page there. Say only: \"iPhone has this switched off for me. Tap the card to allow it and I'll carry on.\" " + after
+        }
     }
 
     public static func calendarEvents(_ events: [CalendarEventSummary], range: VoiceTimeRange, calendar: Calendar, limit: Int = 20) -> String {
@@ -713,8 +833,15 @@ public enum VoiceToolReply {
 
     /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`. A label is the
     /// agent's words, so it follows as data (ToolData).
-    public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar) -> String {
-        let text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+    /// `ring` (ADR-650) adds how it will ring, so the agent never promises a sound the iPhone
+    /// won't make; nil leaves the line as it was.
+    public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar, ring: TimerRing? = nil) -> String {
+        var text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+        switch ring {
+        case .alarm: text += " It rings like the Clock app's timer, even in Silent mode or a Focus."
+        case .notification: text += " It comes as a notification: in Silent mode it only vibrates."
+        case nil: break
+        }
         guard let label = draft.label else { return text }
         return text + " Its label:\n" + ToolData.block([quoted("Label", label)])
     }
@@ -777,7 +904,7 @@ public enum VoiceToolReply {
         "\(label): \"\(ToolData.clean(text))\""
     }
 
-    private static func durationText(_ seconds: Int) -> String {
+    static func durationText(_ seconds: Int) -> String {
         if seconds >= 60, seconds % 60 == 0 {
             let minutes = seconds / 60
             return "\(minutes) minute\(minutes == 1 ? "" : "s")"

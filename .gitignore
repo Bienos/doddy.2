@@ -7,6 +7,9 @@ DerivedData/
 build/
 # Xcode (the project is generated from project.yml; see docs/BUILD_AND_TEST.md)
 Doddy.xcodeproj/
+DoddyiPhone.xcodeproj/
+DoddyWithWatch.xcodeproj/
+DoddyMac.xcodeproj/
 DoddyApp/Info.plist
 *.xcworkspace/xcuserdata/
 xcuserdata/
@@ -16,9 +19,15 @@ xcuserdata/
 .env.*
 !.env.example
 !backend/.env.example
+# 1Password references (op://…), never values; `node tools/secrets/sync.mjs check` enforces it (ADR-493).
+!.env.op
+# The secrets sync tool's local record of what it last wrote to Vercel (fingerprints, no values).
+secrets/.sync-state.json
+secrets/.sync-state.json.tmp
 *.pem
 *.key
 *.p12
+*.p8
 *.mobileprovision
 *.xcconfig.local
 # OS
@@ -35,3 +44,10 @@ npm-debug.log*
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Temporary git worktrees made by Claude Code helper agents
+.claude/worktrees/
+# Doddy Web (ADR-600): build output and Playwright's run folders
+web/dist/
+web/test-results/
+web/playwright-report/

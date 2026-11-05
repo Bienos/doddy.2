@@ -13,11 +13,39 @@ final class OpenAIRealtimeTests: XCTestCase {
 
     // MARK: Provider choice
 
-    func testProviderDefaultsToElevenLabs() {
+    func testStoredProviderStillReadsAsBefore() {
+        // A conversation log's provider: unknown or missing stays ElevenLabs (logs from before ADR-265).
         XCTAssertEqual(VoiceProvider(stored: nil), .elevenLabs)
         XCTAssertEqual(VoiceProvider(stored: "something else"), .elevenLabs)
         XCTAssertEqual(VoiceProvider(stored: "openai"), .openAIRealtime)
         XCTAssertEqual(VoiceProvider(stored: "elevenlabs"), .elevenLabs)
+    }
+
+    func testElevenLabsIsTheDefaultVoice() {
+        // ADR-546: no choice yet means ElevenLabs, with the token server set or not.
+        XCTAssertEqual(VoiceProvider.effective(stored: nil, tokenServerSet: true), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: nil, tokenServerSet: false), .elevenLabs)
+        // The picker's empty value and anything unknown also mean "never chose".
+        XCTAssertEqual(VoiceProvider.effective(stored: "", tokenServerSet: true), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: "something else", tokenServerSet: true), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: "something else", tokenServerSet: false), .elevenLabs)
+    }
+
+    func testAChoiceTheUserMadeAlwaysWins() {
+        // Someone who picked OpenAI before this change keeps it.
+        XCTAssertEqual(VoiceProvider.effective(stored: "openai", tokenServerSet: true), .openAIRealtime)
+        XCTAssertEqual(VoiceProvider.effective(stored: "openai", tokenServerSet: false), .openAIRealtime)
+        XCTAssertEqual(VoiceProvider.effective(stored: "elevenlabs", tokenServerSet: true), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: "elevenlabs", tokenServerSet: false), .elevenLabs)
+    }
+
+    func testRealtimeModelsAreTheTwoTheServerAllows() {
+        XCTAssertEqual(OpenAIRealtimeModel.allCases.map(\.rawValue), ["gpt-realtime-2.1", "gpt-realtime-2.1-mini"])
+        XCTAssertEqual(OpenAIRealtimeModel.default, .mini)
+        XCTAssertEqual(OpenAIRealtimeModel(stored: nil), .mini)
+        XCTAssertEqual(OpenAIRealtimeModel(stored: "gpt-4o"), .mini)
+        XCTAssertEqual(OpenAIRealtimeModel(stored: "gpt-realtime-2.1"), .full)
+        XCTAssertEqual(OpenAIRealtimeModel(stored: "gpt-realtime-2.1-mini"), .mini)
     }
 
     // MARK: Token server contract
@@ -26,6 +54,9 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertNil(VoiceTokenServer.requestBody(for: .elevenLabs))
         let body = try object(String(decoding: try XCTUnwrap(VoiceTokenServer.requestBody(for: .openAIRealtime)), as: UTF8.self))
         XCTAssertEqual(body["provider"] as? String, "openai")
+        XCTAssertEqual(body["model"] as? String, "gpt-realtime-2.1-mini")
+        let full = try object(String(decoding: try XCTUnwrap(VoiceTokenServer.requestBody(for: .openAIRealtime, model: .full)), as: UTF8.self))
+        XCTAssertEqual(full["model"] as? String, "gpt-realtime-2.1")
     }
 
     func testOpenAIGrantParsing() {
@@ -35,9 +66,11 @@ final class OpenAIRealtimeTests: XCTestCase {
         let old = Data(#"{"token":"eyJ.elevenlabs.jwt"}"#.utf8)
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: old), .failure(.badResponse))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: Data(#"{"token":"","provider":"openai","model":"m"}"#.utf8)), .failure(.badResponse))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 401, body: Data()), .failure(.accessCodeRejected))
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 401, body: Data()), .failure(.sessionExpired))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 503, body: Data()), .failure(.busy))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data()), .failure(.serverNotConfigured))
+        // Since 754e5d6 a 500 or 503 means "not configured" only when the server says so (VoiceTokenTests).
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data()), .failure(.busy))
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 400, body: Data()), .failure(.serverProblem(status: 400)))
     }
 
@@ -71,6 +104,34 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual((input["transcription"] as? [String: Any])?["model"] as? String, OpenAIRealtimeWire.transcriptionModel)
     }
 
+    func testPolishSessionNamesTheLanguageAndAsksForPolishInTheMasculine() throws {
+        let tools = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/tools.json"))
+        let text = try OpenAIRealtimeWire.sessionUpdate(instructions: "Be Doddy.", toolsJSON: tools, eagerness: .low, languageCode: "pl")
+        let session = try XCTUnwrap(try object(text)["session"] as? [String: Any])
+        let input = try XCTUnwrap((session["audio"] as? [String: Any])?["input"] as? [String: Any])
+        XCTAssertEqual((input["transcription"] as? [String: Any])?["language"] as? String, "pl")
+        XCTAssertEqual((input["turn_detection"] as? [String: Any])?["eagerness"] as? String, "low")
+        let instructions = try XCTUnwrap(session["instructions"] as? String)
+        XCTAssertTrue(instructions.hasPrefix("Be Doddy."))
+        XCTAssertTrue(instructions.contains("Polish"))
+        XCTAssertTrue(instructions.contains("masculine"))
+    }
+
+    func testOtherLanguageNamesItToTheTranscriberOnlyAndNoLanguageChangesNothing() throws {
+        let tools = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/tools.json"))
+        let german = try object(try OpenAIRealtimeWire.sessionUpdate(instructions: "Be Doddy.", toolsJSON: tools, eagerness: .low, languageCode: "de"))
+        let germanSession = try XCTUnwrap(german["session"] as? [String: Any])
+        XCTAssertEqual(germanSession["instructions"] as? String, "Be Doddy.")
+        let germanInput = try XCTUnwrap((germanSession["audio"] as? [String: Any])?["input"] as? [String: Any])
+        XCTAssertEqual((germanInput["transcription"] as? [String: Any])?["language"] as? String, "de")
+
+        let none = try object(try OpenAIRealtimeWire.sessionUpdate(instructions: "Be Doddy.", toolsJSON: tools, eagerness: .low))
+        let noneSession = try XCTUnwrap(none["session"] as? [String: Any])
+        XCTAssertEqual(noneSession["instructions"] as? String, "Be Doddy.")
+        let noneInput = try XCTUnwrap((noneSession["audio"] as? [String: Any])?["input"] as? [String: Any])
+        XCTAssertNil((noneInput["transcription"] as? [String: Any])?["language"])
+    }
+
     func testToolsAreTheSpecWithoutAppOnlyMetadata() throws {
         let data = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/tools.json"))
         let spec = try RealtimeToolCatalog.decode(data)
@@ -81,8 +142,11 @@ final class OpenAIRealtimeTests: XCTestCase {
             XCTAssertEqual(tool["type"] as? String, "function")
             XCTAssertNotNil(tool["parameters"] as? [String: Any])
         }
-        // Web tools stay listed, so the model hears they're unavailable instead of inventing an answer.
-        XCTAssertTrue(spec.contains { $0.runsOn == .web })
+        // ASK-01: every tool that asks runs on the phone, where the app asks first. The only web
+        // tools are ADR-575's public lookups (weather, Wikipedia), which the app answers as not
+        // available with OpenAI (ElevenLabs runs them itself).
+        XCTAssertEqual(Set(spec.filter { $0.runsOn == .web }.map(\.name)), ToolCatalog.webLookups)
+        XCTAssertTrue(spec.filter { $0.runsOn == .web }.allSatisfy { $0.ask == .runsNow })
         XCTAssertThrowsError(try OpenAIRealtimeWire.realtimeTools(fromToolsJSON: Data("[]".utf8)))
     }
 
@@ -91,7 +155,7 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: "pl"), "Hej, tu Doddy.")
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: nil), "Hey, it's Doddy.")
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: "de"), "Hey, it's Doddy.")
-        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: Data(), languageCode: "pl"), "Hey, it's Doddy. What's up?")
+        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: Data(), languageCode: "pl"), "I'm here. What's up?")
         // The repo's spec uses {{opening_line}} (ADR-254); the fallback must still be plain words.
         let session = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/session.json"))
         XCTAssertFalse(OpenAIRealtimeWire.greetingLine(sessionJSON: session, languageCode: "pl").contains("{{"))
@@ -181,7 +245,15 @@ final class OpenAIRealtimeTests: XCTestCase {
                           askDoddyUsesNotes: false, voiceProvider: provider)
         }
         func row(_ s: DataFlowState) -> DataFlowRow? { DataFlow.rows(s).first { $0.id == "openaiVoice" } }
+        func elevenLabsRow(_ s: DataFlowState) -> DataFlowRow? { DataFlow.rows(s).first { $0.id == "elevenlabs" } }
+        func translatorRow(_ s: DataFlowState) -> DataFlowRow? { DataFlow.rows(s).first { $0.id == "translator" } }
         XCTAssertEqual(row(state(.elevenLabs))?.isActive, false)
+        // ElevenLabs is named for voice only while it is the one running it.
+        XCTAssertEqual(elevenLabsRow(state(.elevenLabs))?.isActive, true)
+        XCTAssertEqual(elevenLabsRow(state(.openAIRealtime))?.isActive, false)
+        XCTAssertEqual(elevenLabsRow(state(.openAIRealtime, tokenServer: false))?.isActive, true)
+        XCTAssertEqual(translatorRow(state(.openAIRealtime))?.destination, "OpenAI (translator mode)")
+        XCTAssertEqual(translatorRow(state(.elevenLabs))?.destination, "ElevenLabs (translator mode)")
         XCTAssertEqual(row(state(.openAIRealtime))?.isActive, true)
         XCTAssertEqual(row(state(.openAIRealtime, tokenServer: false))?.isActive, false)
         XCTAssertTrue(row(state(.openAIRealtime))?.what.contains("your saved notes") ?? false)

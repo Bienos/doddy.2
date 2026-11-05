@@ -1,27 +1,72 @@
 import SwiftUI
 import WidgetKit
 
-/// Widget extension: the voice conversation's Live Activity, the tools' Live Activity (focus,
+/// Widget extension: the voice conversation's Live Activity, Doddy's calls for the user, the tools' Live Activity (focus,
 /// breathing, read-aloud), the Home and Lock Screen widgets (ADR-219) and, on iOS 18+, the
 /// Talk to Doddy and New note controls.
 @main
 struct DoddyWidgetsBundle: WidgetBundle {
     var body: some Widget {
+        widgets()
+    }
+
+    /// From iOS 18 the tools' Live Activity is the one with an Apple Watch layout (ADR-454), and
+    /// the controls exist; before that, the plain one. Two whole lists chosen with a plain
+    /// `if #available` return (an opaque result may differ per availability branch, SE-0360):
+    /// the bundle builder only takes `if #available` without `else`, so an `if #unavailable` entry
+    /// in `body` doesn't compile (CI run 38330112860).
+    private func widgets() -> some Widget {
+        if #available(iOS 18.0, *) {
+            return iOS18Widgets
+        }
+        return iOS17Widgets
+    }
+
+    @available(iOS 18.0, *)
+    @WidgetBundleBuilder
+    private var iOS18Widgets: some Widget {
         DoddyVoiceLiveActivity()
         ShoppingLiveActivity()
-        DoddyToolLiveActivity()
+        // Doddy on a call for the user (ADR-504).
+        DoddyCallLiveActivity()
+        DoddyToolLiveActivityWithWatch()
+        // A DODDY Capture recording (ADR-588).
+        DoddyCaptureLiveActivity()
         // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
         DoddyHomeWidgets().body
-        if #available(iOS 18.0, *) {
-            TalkToDoddyControl()
-            NewNoteControl()
-        }
+        // One entry for all the controls, for the same reason.
+        DoddyControls().body
         #if canImport(AlarmKit)
         // A Doddy alarm's snooze countdown (ADR-283), iOS 26 and later.
         if #available(iOS 26.0, *) {
             AlarmLiveActivity()
         }
         #endif
+    }
+
+    @WidgetBundleBuilder
+    private var iOS17Widgets: some Widget {
+        DoddyVoiceLiveActivity()
+        ShoppingLiveActivity()
+        DoddyCallLiveActivity()
+        DoddyToolLiveActivity()
+        DoddyCaptureLiveActivity()
+        DoddyHomeWidgets().body
+    }
+}
+
+/// The controls (iOS 18+), grouped so the main bundle stays within the builder's ten entries
+/// (ADR-331, ADR-588).
+@available(iOS 18.0, *)
+struct DoddyControls: WidgetBundle {
+    var body: some Widget {
+        TalkToDoddyControl()
+        // Was "Talk in the Island" (ADR-577); opens Doddy since ADR-593. Kept so an Action Button
+        // or control already set to it keeps working.
+        TalkInIslandControl()
+        NewNoteControl()
+        // Opens Doddy and starts a recording (ADR-588).
+        StartRecordingControl()
     }
 }
 
@@ -34,6 +79,7 @@ struct DoddyHomeWidgets: WidgetBundle {
         ParkingWidget()
         ListWidget()
         TalkToDoddyWidget()
+        NewNoteWidget()
         DoddyRestWidget()
     }
 }

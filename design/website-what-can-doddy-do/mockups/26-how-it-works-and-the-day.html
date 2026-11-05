@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>One story in one order (homepage proposal, mockup 26)</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <!-- Hand-written mockup, not generated: it links the live site's own tokens and stylesheet so the look is the site's.
+       Assets come from site/assets/day (the owner's pack, WebP). Proposed copy is marked "Proposed". -->
+  <link rel="stylesheet" href="../../../site/tokens.css">
+  <link rel="stylesheet" href="../../../site/styles.css">
+  <style>
+    body { background: var(--canvas); }
+    .m-wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding-inline: var(--gutter); }
+    .m-head { padding: clamp(28px, 5vw, 56px) 0 clamp(20px, 3vw, 32px); }
+    .m-head h1 { font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 4.6vw, 3.4rem); line-height: 1.04; letter-spacing: -0.02em; margin: 14px 0 12px; }
+    .m-head p { max-width: 44rem; color: var(--secondary-text); margin: 0 0 8px; font-size: 1.0625rem; }
+    .m-tag { display: inline-block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent-text); border: 1.5px solid var(--accent-text); border-radius: 999px; padding: 4px 12px; }
+
+    /* ---- Part 1: the two orders, side by side ---- */
+    .m-part { padding: clamp(24px, 4vw, 48px) 0; border-top: 1.5px solid var(--rule); }
+    .m-part > .m-wrap > h2 { font-family: var(--display); font-weight: 700; font-size: clamp(1.5rem, 3vw, 2.1rem); letter-spacing: -0.015em; margin: 0 0 6px; }
+    .m-part > .m-wrap > .lede-s { color: var(--secondary-text); max-width: 42rem; margin: 0 0 24px; }
+    .orders { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px, 3vw, 40px); }
+    .order { background: var(--paper); border: 1.5px solid var(--rule); border-radius: 22px; padding: clamp(16px, 2.5vw, 28px); box-shadow: var(--lift); }
+    .order h3 { font-family: var(--display); font-size: 1.15rem; margin: 0 0 4px; }
+    .order .sub { color: var(--secondary-text); font-size: 0.875rem; margin: 0 0 16px; }
+    .order ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .order li { display: grid; grid-template-columns: 28px 1fr; gap: 4px 10px; align-items: start; padding: 10px 12px; border-radius: 14px; background: var(--canvas); border: 1.5px solid transparent; }
+    .order li .n { font-family: var(--display); font-weight: 700; color: var(--secondary-text); }
+    .order li .n { grid-row: 1 / span 3; }
+    .order li > b, .order li > .job { grid-column: 2; }
+    .order li > .job:empty { display: none; }
+    .order li b { display: block; font-size: 0.9375rem; }
+    .order li span.job { display: block; font-size: 0.8125rem; color: var(--secondary-text); }
+    .flag { grid-column: 2; display: inline-block; justify-self: start; margin-top: 4px; font-size: 0.75rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+    .flag.rep { color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent); }
+    .flag.con { color: var(--accent-text); background: color-mix(in srgb, var(--orange-cue) 18%, transparent); }
+    .flag.ok { color: var(--confirmed); background: color-mix(in srgb, var(--confirmed) 12%, transparent); }
+    .order li.is-rep { border-color: color-mix(in srgb, var(--error) 40%, transparent); }
+    .order li.is-con { border-color: color-mix(in srgb, var(--orange-cue) 60%, transparent); }
+    .order li.is-new { border-color: color-mix(in srgb, var(--confirmed) 45%, transparent); }
+
+    /* ---- Part 2: the proposed middle of the homepage ---- */
+    .stage { background: #fff; border: 1.5px solid var(--rule); border-radius: 28px; box-shadow: var(--lift-strong); overflow: hidden; }
+    .stage-bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--quiet-surface); border-bottom: 1.5px solid var(--rule); font-size: 0.8125rem; color: var(--secondary-text); }
+    .stage-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--separator); display: inline-block; }
+    .stage-bar span { margin-left: 8px; }
+    .stage-body { background: var(--canvas); }
+    .sec { padding: clamp(32px, 5vw, 64px) 0; }
+    .sec + .sec { border-top: 1.5px solid var(--rule); }
+    .sec .m-wrap { max-width: 1100px; }
+
+    /* what's real today */
+    .ladder { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; list-style: none; margin: 0; padding: 0; }
+    .ladder li { background: var(--paper); border: 1.5px solid var(--rule); border-radius: 20px; padding: 18px 20px 20px; box-shadow: var(--lift); }
+    .ladder li.is-later { border-style: dashed; box-shadow: none; background: transparent; }
+    .ladder h3 { font-family: var(--display); font-size: 1.05rem; margin: 10px 0 6px; }
+    .ladder p { margin: 0; color: var(--secondary-text); font-size: 0.9375rem; }
+
+    /* how it works */
+    .steps-m { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(14px, 2.4vw, 28px); list-style: none; margin: 0; padding: 0; counter-reset: s; }
+    .steps-m > li { position: relative; background: var(--paper); border: 1.5px solid var(--rule); border-radius: 24px; padding: 20px 22px 24px; box-shadow: var(--lift); display: flex; flex-direction: column; gap: 8px; }
+    .steps-m .art { position: relative; height: 210px; border-radius: 16px; background: var(--quiet-surface); overflow: hidden; display: grid; place-items: end center; }
+    .steps-m .art img { height: 100%; width: auto; object-fit: contain; }
+    .steps-m .num { font-family: var(--display); font-weight: 700; font-size: 1.1rem; color: var(--accent-text); }
+    .steps-m h3 { font-family: var(--display); font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
+    .steps-m p { margin: 0; color: var(--secondary-text); }
+    .steps-m .hand { font-family: var(--hand); font-size: 1.6rem; color: var(--accent-text); transform: rotate(-2deg); transform-origin: left; margin-top: 4px; }
+    .nomatch { margin-top: 6px; padding: 10px 14px; border-radius: 14px; background: var(--quiet-surface); font-size: 0.9375rem; display: flex; gap: 10px; align-items: center; }
+    .nomatch q { quotes: none; font-style: normal; color: var(--reading-ink); }
+    .mini-receipt { width: 86%; margin: auto; background: #fff; border: 1.5px solid var(--separator); border-radius: 12px; padding: 12px 14px; font-size: 0.8125rem; box-shadow: var(--lift); text-align: left; }
+    .mini-receipt .t { font-weight: 600; font-size: 0.875rem; color: var(--reading-ink); margin: 0 0 6px; }
+    .mini-receipt dl { margin: 0; display: grid; gap: 2px; color: var(--secondary-text); }
+    .mini-receipt dl div { display: flex; gap: 8px; }
+    .mini-receipt dt { min-width: 62px; }
+    .mini-receipt dd { margin: 0; color: var(--reading-ink); }
+    .mini-receipt .orig { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--separator); color: var(--secondary-text); }
+    .mini-receipt .orig b { display: block; font-size: 0.6875rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    .mini-search { width: 86%; margin: auto; background: #fff; border: 1.5px solid var(--separator); border-radius: 12px; padding: 12px 14px; font-size: 0.875rem; box-shadow: var(--lift); text-align: left; }
+    .mini-search .q { padding: 8px 12px; border-radius: 10px; background: var(--quiet-surface); color: var(--secondary-text); margin-bottom: 8px; }
+    .mini-search .hit { font-weight: 600; margin: 0 0 2px; }
+    .mini-search .meta { color: var(--secondary-text); font-size: 0.8125rem; margin: 0; }
+    .mini-note { width: 86%; margin: auto; background: #fff; border: 1.5px solid var(--separator); border-radius: 12px; padding: 12px 14px; font-size: 0.875rem; box-shadow: var(--lift); text-align: left; }
+    .mini-note .lbl { color: var(--secondary-text); font-size: 0.75rem; margin: 0 0 4px; }
+
+    /* bridge + scenes */
+    .bridge { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 64px; margin-bottom: clamp(24px, 4vw, 40px); align-items: end; }
+    .bridge h2 { font-family: var(--display); font-weight: 700; font-size: clamp(1.7rem, 3.6vw, 2.6rem); line-height: 1.05; letter-spacing: -0.02em; margin: 0; }
+    .bridge p { margin: 0; color: var(--secondary-text); max-width: 34rem; }
+    .scenes { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(14px, 2.4vw, 28px); list-style: none; margin: 0; padding: 0; }
+    .scene { background: var(--paper); border: 1.5px solid var(--rule); border-radius: 24px; overflow: hidden; box-shadow: var(--lift); }
+    .scene .art { position: relative; aspect-ratio: 16 / 10; background: var(--quiet-surface); overflow: hidden; }
+    .scene .art .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .scene .art .dd { position: absolute; left: 6%; bottom: -4%; height: 92%; width: auto; }
+    .scene .art .bub { position: absolute; right: 5%; top: 8%; max-width: 54%; background: #fff; border: 1.5px solid var(--reading-ink); border-radius: 14px; padding: 8px 12px; font-family: var(--hand); font-size: 1.3rem; line-height: 1.05; color: var(--reading-ink); }
+    .scene .cap-row { padding: 14px 18px 18px; display: grid; gap: 4px; }
+    .scene .when { font-family: var(--display); font-weight: 700; color: var(--accent-text); font-size: 0.9375rem; }
+    .scene h3 { font-family: var(--display); font-size: 1.2rem; margin: 0; letter-spacing: -0.01em; }
+    .scene .cap { justify-self: start; margin-top: 6px; }
+    .more { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; margin-top: clamp(20px, 3vw, 32px); }
+
+    /* voice + data line */
+    .voice-m { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: clamp(20px, 4vw, 56px); align-items: center; }
+    .voice-m .art { background: var(--quiet-surface); border-radius: 24px; height: 280px; display: grid; place-items: end center; overflow: hidden; }
+    .voice-m .art img { height: 100%; width: auto; }
+    .voice-m h2 { font-family: var(--display); font-weight: 700; font-size: clamp(1.7rem, 3.4vw, 2.4rem); letter-spacing: -0.02em; margin: 10px 0 10px; }
+    .voice-m p { color: var(--secondary-text); margin: 0 0 10px; max-width: 36rem; }
+    .dataline { margin-top: 14px; padding: 14px 18px; border-radius: 16px; background: var(--reading-ink); color: var(--canvas); font-size: 0.9375rem; max-width: 40rem; }
+    .dataline b { color: #fff; }
+
+    /* notes for the owner */
+    .notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; list-style: none; margin: 0; padding: 0; }
+    .notes li { background: var(--paper); border: 1.5px solid var(--rule); border-radius: 18px; padding: 16px 18px; }
+    .notes h3 { font-family: var(--display); font-size: 1rem; margin: 0 0 6px; }
+    .notes p { margin: 0; font-size: 0.9375rem; color: var(--secondary-text); }
+    .notes .prop { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--quiet-surface); color: var(--reading-ink); font-size: 0.875rem; }
+    .notes .prop::before { content: "Proposed: "; font-weight: 700; color: var(--accent-text); }
+
+    @media (max-width: 900px) {
+      .orders, .bridge, .voice-m { grid-template-columns: 1fr; }
+      .ladder, .steps-m, .scenes, .notes { grid-template-columns: 1fr; }
+      .bridge { gap: 10px; }
+      .voice-m .art { height: 220px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="m-head">
+    <div class="m-wrap">
+      <span class="m-tag">Mockup 26 · design proposal, not live</span>
+      <h1>One story, told once, in one order.</h1>
+      <p>The homepage tells a notes story. The new page tells a ten-moment assistant story. Today they repeat each other in the middle and quietly disagree on what's real. This board shows where, and one way to fix it.</p>
+      <p>Everything is built from the live site's own styles and the owner's pack art. Words marked <em>Proposed</em> are suggestions for the owner's ear, not approved copy. <code>site/</code> is untouched.</p>
+    </div>
+  </header>
+
+  <!-- PART 1 -->
+  <section class="m-part" aria-labelledby="p1">
+    <div class="m-wrap">
+      <h2 id="p1">Where it repeats and where it disagrees</h2>
+      <p class="lede-s">Left: the homepage order today. Right: the proposed order, each section with one job. Red means the same idea is said again. Orange means two statements that can't both be true. Green is new or changed.</p>
+      <div class="orders">
+        <div class="order" aria-labelledby="o-now">
+          <h3 id="o-now">Today</h3>
+          <p class="sub">Homepage, top to bottom</p>
+          <ol>
+            <li><span class="n">1</span><b>Hero</b><span class="job"></span><span class="flag ok">A little less to carry · notes</span></li>
+            <li><span class="n">2</span><b>Film</b><span class="job"></span></li>
+            <li><span class="n">3</span><b>Problem</b><span class="job"></span></li>
+            <li class="is-con"><span class="n">4</span><b>How it works</b><span class="job"></span><span class="flag con">"All on your iPhone. No account, no setup."</span></li>
+            <li class="is-rep"><span class="n">5</span><b>Three moments</b><span class="job"></span><span class="flag rep">18:45 saves and finds a note again</span></li>
+            <li class="is-rep"><span class="n">6</span><b>Every note keeps its receipt</b><span class="job"></span><span class="flag rep">Does step 3's job a second time</span></li>
+            <li class="is-con"><span class="n">7</span><b>Or just say it</b><span class="job"></span><span class="flag con">Voice "answers from your notes", page B shows ten things</span></li>
+            <li class="is-con"><span class="n">8</span><b>Your notes, your call</b><span class="job"></span><span class="flag con">"Everything else stays on your iPhone" vs weather and Wikipedia</span></li>
+            <li><span class="n">9</span><b>Meet Doddy · games</b><span class="job"></span></li>
+            <li class="is-rep"><span class="n">10</span><b>Join, then "Later, maybe"</b><span class="job"></span><span class="flag rep">A second not-built list that differs from page B</span></li>
+          </ol>
+        </div>
+        <div class="order" aria-labelledby="o-new">
+          <h3 id="o-new">Proposed</h3>
+          <p class="sub">Same page, one job per section</p>
+          <ol>
+            <li><span class="n">1</span><b>Hero</b><span class="job">The promise: your exact words back.</span></li>
+            <li><span class="n">2</span><b>Film</b><span class="job">The feeling. Labelled a story, not a demo.</span></li>
+            <li><span class="n">3</span><b>Problem</b><span class="job">Why: small things vanish.</span></li>
+            <li class="is-new"><span class="n">4</span><b>What's real today</b><span class="job">One strip: Built, In testing, Later, maybe. The only not-built list.</span><span class="flag ok">New, replaces the second list</span></li>
+            <li class="is-new"><span class="n">5</span><b>How it works</b><span class="job">Tell, ask, fix. Receipt folded into step 3. Built.</span><span class="flag ok">Receipt section removed</span></li>
+            <li class="is-new"><span class="n">6</span><b>The rest of the day</b><span class="job">Three moments, none about notes, all In testing, said in the heading.</span><span class="flag ok">Heading says the status</span></li>
+            <li class="is-new"><span class="n">7</span><b>Say it out loud</b><span class="job">Voice, scoped like page B. In testing.</span></li>
+            <li class="is-new"><span class="n">8</span><b>Your notes, your call</b><span class="job">One data line that lists what leaves the phone.</span></li>
+            <li><span class="n">9</span><b>Meet Doddy · games</b><span class="job">Character and play.</span></li>
+            <li><span class="n">10</span><b>Join early access</b><span class="job">The ask.</span></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART 2 -->
+  <section class="m-part" aria-labelledby="p2">
+    <div class="m-wrap">
+      <h2 id="p2">The proposed middle of the homepage</h2>
+      <p class="lede-s">Sections 4 to 8 above, drawn with the site's own styles. The notes story first, labelled Built. Then the rest of the day, labelled In testing.</p>
+
+      <div class="stage">
+        <div class="stage-bar"><i></i><i></i><i></i><span>www.doddy.lol · proposal</span></div>
+        <div class="stage-body">
+
+          <section class="sec" aria-labelledby="s-real">
+            <div class="m-wrap">
+              <div class="section-head">
+                <h2 id="s-real" class="display-m">What's real today.</h2>
+                <p>Doddy is in early testing. Here is what each part means.</p>
+              </div>
+              <ul class="ladder">
+                <li><span class="cap built">Built</span><h3>Your notes</h3><p>Save a note in your words. Find it again. Correct it, export it, delete it.</p></li>
+                <li><span class="cap testing">In testing</span><h3>Talking to Doddy</h3><p>Voice, calendar, reminders, alarms, timers, lists, maps, weather, message drafts and plans. Tried on real iPhones.</p></li>
+                <li class="is-later"><span class="cap later">Later, maybe</span><h3>Not built</h3><p>Translating other people, picking restaurants for you, Android. No dates promised.</p></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="sec" id="how" aria-labelledby="s-how">
+            <div class="m-wrap">
+              <div class="section-head">
+                <h2 id="s-how" class="display-m">How it works</h2>
+                <p>Three steps. This is the part that works today, and your notes stay on your iPhone with no account.</p>
+              </div>
+              <ol class="steps-m">
+                <li>
+                  <div class="art"><div class="mini-note"><p class="lbl">New memory · typed just now</p>The spare keys are in the blue tin above the fridge.</div></div>
+                  <span class="num">1 · <span class="cap built" style="vertical-align:middle">Built</span></span>
+                  <h3>Tell Doddy</h3>
+                  <p>Type it the way you'd say it. Doddy keeps your exact words, with when you saved them and where they came from.</p>
+                  <p class="hand" aria-hidden="true">Saved means saved.</p>
+                </li>
+                <li>
+                  <div class="art"><div class="mini-search"><div class="q">spare keys</div><p class="hit">The spare keys are in the blue tin above the fridge.</p><p class="meta">Written by you · 8 Oct 2026, 09:41</p></div></div>
+                  <span class="num">2 · <span class="cap built" style="vertical-align:middle">Built</span></span>
+                  <h3>Ask later</h3>
+                  <p>Search with the words you remember. You get the notes that match, in your words, with their date and source.</p>
+                  <div class="nomatch"><img src="../../../site/assets/day/poses/shrug-320.webp" alt="" width="40" height="60" style="height:48px;width:auto"><q>I couldn't find that in your saved memories.</q></div>
+                  <p class="hand" aria-hidden="true">Your words, not a guess.</p>
+                </li>
+                <li>
+                  <div class="art"><div class="mini-receipt"><p class="t">The spare keys are in the red tin above the fridge.</p><dl><div><dt>Saved</dt><dd>8 Oct 2026, 09:41</dd></div><div><dt>Revision</dt><dd>2, corrected 9 Oct</dd></div></dl><div class="orig"><b>Original, kept as written</b>The spare keys are in the blue tin above the fridge.</div></div></div>
+                  <span class="num">3 · <span class="cap built" style="vertical-align:middle">Built</span></span>
+                  <h3>Fix it or forget it</h3>
+                  <p>Correct a note and the original stays visible. Export everything, or delete one note or all of them.</p>
+                  <p class="hand" aria-hidden="true">The original stays.</p>
+                </li>
+              </ol>
+              <p class="caption left">Example note. Screens in the live version are design previews of the app.</p>
+            </div>
+          </section>
+
+          <section class="sec" aria-labelledby="s-rest">
+            <div class="m-wrap">
+              <div class="bridge">
+                <h2 id="s-rest">That's the notes. Here's the rest of an ordinary day.</h2>
+                <p>Three moments, all in testing. Seven more on their own page, each one saying whether it's built, in testing, or later, maybe.</p>
+              </div>
+              <ul class="scenes">
+                <li class="scene"><div class="art"><img class="bg" src="../../../site/assets/day/scenery/bedroom-800.webp" alt=""><img class="dd" src="../../../site/assets/day/poses/yawn_stretch-320.webp" alt=""><span class="bub">Well, your meeting started 15 minutes ago.</span></div><div class="cap-row"><span class="when">08:45</span><h3>You're late. Again.</h3><span class="cap testing">Calendar · in testing</span></div></li>
+                <li class="scene"><div class="art"><img class="bg" src="../../../site/assets/day/scenery/corner_cafe-800.webp" alt=""><img class="dd" src="../../../site/assets/day/poses/listening-320.webp" alt=""><span class="bub">I don't send. You send.</span></div><div class="cap-row"><span class="when">10:20</span><h3>The awkward text.</h3><span class="cap testing">Message drafts · in testing</span></div></li>
+                <li class="scene"><div class="art"><img class="bg" src="../../../site/assets/day/scenery/moonlit_hills-800.webp" alt=""><img class="dd" src="../../../site/assets/day/poses/crosslegged-320.webp" alt=""><span class="bub">Tomorrow. Morning or evening? Pick one.</span></div><div class="cap-row"><span class="when">22:30</span><h3>Don't let me forget.</h3><span class="cap testing">Reminders · in testing</span></div></li>
+              </ul>
+              <p class="more"><a class="button" href="#">See the whole day</a><a class="text-link" href="#">Start at 08:45</a></p>
+            </div>
+          </section>
+
+          <section class="sec" aria-labelledby="s-voice">
+            <div class="m-wrap">
+              <div class="voice-m">
+                <div class="art"><img src="../../../site/assets/day/poses/listening-320.webp" alt=""></div>
+                <div>
+                  <span class="cap testing">In testing</span>
+                  <h2 id="s-voice">Say any of it out loud.</h2>
+                  <p>Tap Talk to Doddy and ask. Doddy looks through your notes, and uses the calendar, reminders, lists and maps you've switched on in Settings.</p>
+                  <p>Doddy asks before it saves or changes anything, and shows a receipt only once the change is confirmed.</p>
+                  <div class="dataline"><b>What leaves your iPhone.</b> Your notes stay on it. Voice (OpenAI, or ElevenLabs if you switch the voice), weather and Wikipedia lookups, shared lists (your iCloud) and connected accounts send data off it only when you use or switch them on. The app lists each one.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART 3: reasons -->
+  <section class="m-part" aria-labelledby="p3">
+    <div class="m-wrap">
+      <h2 id="p3">What changed and why</h2>
+      <p class="lede-s">Each change maps to a finding in <code>PROMPT_how-it-works-vs-the-day.md</code>. Facts behind the proposed words still need the engineering check in that prompt.</p>
+      <ul class="notes">
+        <li><h3>Notes told once (R1, R2, S3)</h3><p>Step 2 owns "your words, not a guess" and the no-match line. Step 3 owns the receipt. The receipt section goes, and the 18:45 scene leaves the homepage teaser (it stays on the new page).</p></li>
+        <li><h3>One list of what's not built (R4)</h3><p>"What's real today" is the only place that says Built, In testing and Later, maybe. The homepage's own "Later, maybe" paragraph goes, and page B's can link to this strip or repeat it word for word.</p><p class="prop">Use the same three lines on both pages, from COPY.md "What's real today".</p></li>
+        <li><h3>No false "all on your iPhone" (C1, C4)</h3><p>The step-list lede keeps what is true of notes only. The data line names every outside service, including weather and Wikipedia.</p><p class="prop">"Your notes stay on your iPhone with no account." Drop "no setup".</p></li>
+        <li><h3>Heading says the status (S2)</h3><p>The teaser's heading and lede now say "all in testing", so a visitor can't read three scenes as shipped. None is about notes, so nothing repeats step 1 to 3.</p></li>
+        <li><h3>Voice scope matches page B (C3, S4)</h3><p>The voice section moves after the scenes and describes what the scenes show, not notes only.</p><p class="prop">"Doddy asks before it saves or changes anything." Check this against the app first.</p></li>
+        <li><h3>The 18:45 scene (C2)</h3><p>It is spoken, so it is voice, which is In testing, yet it is labelled Built. Either label it "Typed search: built · voice: in testing" on page B, or show it as the typed search in step 2.</p></li>
+      </ul>
+    </div>
+  </section>
+</body>
+</html>

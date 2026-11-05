@@ -14,6 +14,9 @@ final class ProfileStore {
     private(set) var profile: ApprovedProfile = .empty
     private(set) var progress: OnboardingProgress?
     private(set) var hasLoaded = false
+    /// The introduction is opened only by an explicit Home or Settings action. A fresh install
+    /// always starts on Home; the launch animation is owned separately by `OpeningModel`.
+    private(set) var isIntroductionPresented = false
     /// Set when setup progress couldn't be saved. The flow still moves on, so nobody is stuck.
     private(set) var progressSaveProblem: String?
 
@@ -34,10 +37,20 @@ final class ProfileStore {
     /// Without readable storage the onboarding is skipped: the app must stay usable, and Home
     /// already explains the storage problem.
     var route: OnboardingRoute {
-        guard hasLoaded, let progress else { return .home }
-        // The core's setup step is skipped: the Back Tap guide is V2's `BackTapSetupView` (Home
-        // card and Settings), not a first-use step (DECISIONS.md ADR-089).
-        return progress.introDecision == .notDecided ? .introduction : .home
+        isIntroductionPresented ? .introduction : .home
+    }
+
+    var shouldOfferIntroduction: Bool {
+        !isIntroductionPresented && (progress?.introDecision == .notDecided || progressSaveProblem != nil)
+    }
+
+    /// Only a genuinely new installation gets the one-time basketball opening. Completed or
+    /// previously used installations from before this flow are not surprised with it on upgrade.
+    var isFirstInstallation: Bool {
+        guard hasLoaded, let progress else { return false }
+        return progress.introDecision == .notDecided && profile.isEmpty
+            && !UserDefaults.standard.bool(forKey: PreferenceKey.quickStartOffered)
+            && !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation)
     }
 
     func load() async {
@@ -70,14 +83,15 @@ final class ProfileStore {
         }
     }
 
-    /// Leaving the introduction without saving. If a profile is already stored (the intro was
-    /// reopened from Settings), it still counts as saved.
+    /// Leaving the optional introduction without saving. A prior saved profile remains intact.
     func finishIntroduction(saved: Bool) async {
-        let decision: IntroDecision = saved || !profile.isEmpty ? .saved : .skipped
+        isIntroductionPresented = false
+        let decision: IntroDecision = saved ? .saved : .skipped
         await updateProgress { $0.decidingIntro(decision, at: .now) }
     }
 
     func reopenIntroduction() async {
+        isIntroductionPresented = true
         await updateProgress { $0.decidingIntro(.notDecided, at: .now) }
     }
 
@@ -97,6 +111,24 @@ final class ProfileStore {
     func forget() async throws {
         try await repository.forgetProfile()
         profile = try await repository.profile()
+    }
+
+    /// The optional first-meet flow edits only its two reviewed fields. Existing Settings profile
+    /// fields are preserved locally but never exposed as hidden edits in this conversation.
+    var introductionDraft: ProfileDraft {
+        var values: [ProfileKey: String] = [:]
+        for key in ProfileKey.introductionQuestions {
+            if let value = profile.value(key) { values[key] = value }
+        }
+        return ProfileDraft(values: values)
+    }
+
+    func commitIntroduction(_ draft: ProfileDraft) async throws -> ApprovedProfile {
+        var merged = profile.draft
+        for key in ProfileKey.introductionQuestions {
+            merged[key] = draft[key]
+        }
+        return try await commit(merged)
     }
 }
 
@@ -128,9 +160,9 @@ enum ProfileErrorText {
 extension ProfileKey {
     var question: String {
         switch self {
-        case .name: NSLocalizedString("First things first. What should I call you?", comment: "")
+        case .name: NSLocalizedString("What should I call you?", comment: "")
         case .help: NSLocalizedString("What would make me useful in your day?", comment: "")
-        case .style: NSLocalizedString("And how do you like your answers?", comment: "")
+        case .style: NSLocalizedString("How should I show up?", comment: "")
         case .language: NSLocalizedString("Which language feels natural to you?", comment: "")
         case .humor: NSLocalizedString("A little dry humor, or straight to the useful bit?", comment: "")
         case .context: NSLocalizedString("Anything you'd like a hand with these days?", comment: "")
@@ -141,7 +173,7 @@ extension ProfileKey {
         switch self {
         case .name: NSLocalizedString("A name or nickname is enough. It doesn't verify who you are.", comment: "")
         case .help: NSLocalizedString("Pick a starting point, or say it in your own words.", comment: "")
-        case .style: NSLocalizedString("You can change this whenever you want.", comment: "")
+        case .style: NSLocalizedString("Pick a starting vibe. You can change it whenever you want.", comment: "")
         case .language: NSLocalizedString("Doddy's screens follow your iPhone's language. This is for Doddy's replies.", comment: "")
         case .humor: NSLocalizedString("No jokes when something matters.", comment: "")
         case .context: NSLocalizedString("A project, hobby or routine. Share only what would help.", comment: "")

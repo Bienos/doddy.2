@@ -1,7 +1,7 @@
 {
   "receipts": [
     {
-      "operationId": "d0002b07-ea41-4eb4-b845-3e4ceda94e72",
+      "operationId": "a15f1643-3770-4df5-9706-0ffd6d10bad6",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -13,7 +13,19 @@
       "providerReference": null
     },
     {
-      "operationId": "73a4555a-42fb-438c-bbf0-f3d87c255c08",
+      "operationId": "7a49b714-e844-4ff4-aae7-525661d0f5d3",
+      "operation": "write",
+      "toolkit": "gmail",
+      "tool": "draft_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Gmail draft created (not sent). Answer from the first try; nothing ran again.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "b279ea05-9e83-4af3-bd9a-9c4f64d84639",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -22,10 +34,10 @@
       "status": "succeeded",
       "summary": "Gmail draft created (not sent).",
       "errorCode": null,
-      "providerReference": "mock_log_dec6eb31"
+      "providerReference": "mock_log_b079e3e6"
     },
     {
-      "operationId": "993a1089-f80b-47d0-944a-14c3fd5291fb",
+      "operationId": "c0229939-4f11-4031-820c-4a4567d91720",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -37,7 +49,7 @@
       "providerReference": null
     },
     {
-      "operationId": "4bb34dbe-76af-4a67-ba3f-3fb1102911c1",
+      "operationId": "7b3af2fc-e93b-4de5-9f26-ff6a2200ad4d",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -46,10 +58,10 @@
       "status": "succeeded",
       "summary": "Checked email: 2 messages listed.",
       "errorCode": null,
-      "providerReference": "mock_log_1ec7e638"
+      "providerReference": "mock_log_ae9c994e"
     },
     {
-      "operationId": "a44064b2-0ff5-4785-91da-a8c14eecfef4",
+      "operationId": "af878ed1-a3f3-4a05-ad09-16de73a67c3f",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -61,19 +73,7 @@
       "providerReference": null
     },
     {
-      "operationId": "71db1d96-d7bd-45b2-be39-047d2e094fa9",
-      "operation": "connect",
-      "toolkit": "gmail",
-      "tool": null,
-      "timestamp": "2026-10-10T10:00:00.000Z",
-      "mode": "mock",
-      "status": "succeeded",
-      "summary": "Gmail connected. Its tools are off until you switch them on.",
-      "errorCode": null,
-      "providerReference": null
-    },
-    {
-      "operationId": "47c886b6-20b3-491f-a172-9ddacd72c566",
+      "operationId": "876f0160-f365-4c67-a4cd-32b96081d209",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -82,6 +82,42 @@
       "status": "blocked",
       "summary": "Not done: Check my email is turned off in Settings.",
       "errorCode": "capability_disabled",
+      "providerReference": null
+    },
+    {
+      "operationId": "6f03048f-e9ce-4b3a-b4c0-5361a40d01f4",
+      "operation": "switch",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Check my email switched off.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "675bb46a-c124-4b07-94ec-48188a143205",
+      "operation": "connect",
+      "toolkit": "gmail",
+      "tool": null,
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Gmail connected. Doddy can use it now; he still asks before every look and every change.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "1ea7e374-5714-4f11-b0a8-3579748a8c2f",
+      "operation": "read",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: Gmail isn't connected.",
+      "errorCode": "not_connected",
       "providerReference": null
     }
   ]

@@ -38,7 +38,7 @@ public enum OutcomeRecorder {
             if let declined = event(.declined, detail()) { events.append(declined) }
         case .notDone where entry.note == ActivityLog.unansweredNote:
             if let cancelled = event(.cancelled, detail()) { events.append(cancelled) }
-        case .inProgress, .notSure, .notDone, .opened:
+        case .inProgress, .notSure, .notDone, .opened, .shown:
             break
         }
         return events

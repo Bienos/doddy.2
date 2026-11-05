@@ -66,3 +66,13 @@ public struct ComplicationContent: Equatable, Sendable {
         return Array(([now] + Set(dates).sorted()).prefix(12))
     }
 }
+
+/// The "New note" complication (ADR-434) opens the watch app on its note screen. Opening it
+/// records nothing: the person taps the text field to write or dictate, then Save or goes back.
+public enum WatchCaptureLink {
+    public static let url = URL(string: "doddy://watch/new-note")!
+
+    public static func isNewNote(_ url: URL) -> Bool {
+        url.scheme == "doddy" && url.host == "watch" && url.path == "/new-note"
+    }
+}

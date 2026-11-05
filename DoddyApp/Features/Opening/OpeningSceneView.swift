@@ -24,11 +24,14 @@ struct OpeningSceneView: View {
     /// Seconds added to the clock by a tap: the tap jumps straight to the hand-over.
     @State private var shift: TimeInterval = 0
 
-    private func time(_ date: Date) -> TimeInterval { date.timeIntervalSince(play.startedAt) + shift }
+    private func time(_ date: Date) -> TimeInterval {
+        OpeningScene.sceneTime(elapsed: date.timeIntervalSince(play.startedAt), timeScale: play.timeScale) + shift
+    }
 
     var body: some View {
         GeometryReader { geo in
-            TimelineView(.animation(paused: done)) { context in
+            // 60 frames a second at most (ADR-604): uncapped it ran at 120 Hz over a live Home.
+            TimelineView(.animation(minimumInterval: 1.0 / 60, paused: done)) { context in
                 let t = time(context.date)
                 scene(OpeningScene.frame(at: t, reducedMotion: play.reducedMotion), at: t, in: geo)
             }
@@ -110,7 +113,8 @@ struct OpeningSceneView: View {
 
     /// Everything on the court, through the camera (zoom about a moving point, and the shake).
     private func stage(_ frame: OpeningFrame, at t: TimeInterval, drawsReadyDoddy: Bool, size: CGSize) -> some View {
-        let w = size.width
+        // Full width on a phone in portrait; on a wider screen the whole stage fits the height (ADR-431).
+        let w = CGFloat(OpeningScene.stageWidth(screenWidth: Double(size.width), screenHeight: Double(size.height)))
         return ZStack {
             Group {
                 court(w)

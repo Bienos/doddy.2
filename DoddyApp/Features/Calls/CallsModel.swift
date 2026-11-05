@@ -67,7 +67,8 @@ final class CallsModel {
     /// On: switch the copy on, then upload what is on the phone now. Off: the server deletes it.
     /// If the upload fails after the server switched the copy on, the switch shows on (as the
     /// server reports), the message says the memories aren't copied yet, and the upload is tried
-    /// again when Doddy next comes to the front (DOD-08/11).
+    /// again when Doddy next comes to the front (DOD-08/11). `records` may be every note:
+    /// `MemoryCopySync` leaves private notes out of every upload (ADR-310).
     func setMemoryCopy(_ on: Bool, records: [MemoryRecord]) async {
         await change { client in
             try await client.setMemoryCopy(enabled: on)

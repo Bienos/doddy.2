@@ -59,8 +59,10 @@ struct IslandArtCheck {
             print("FAIL: hands not removed"); failures += 1
         }
         failures += IslandSceneChecks.run()
+        failures += IslandSceneChecks.actions()
         failures += IslandSceneChecks.wholeDoddy()
         failures += IslandSceneChecks.voiceScreen()
+        failures += IslandSceneChecks.voiceBeat()
         if failures > 0 {
             print("FAIL: \(failures) problem(s) in \(drawings) drawings")
             exit(1)

@@ -1,4 +1,24 @@
-# Voice provider test switch: ElevenLabs vs OpenAI Realtime (ADR-265)
+# Voice provider: ElevenLabs (default) or OpenAI Realtime (ADR-265, ADR-442, ADR-546)
+
+## Update 2026-10-20 (ADR-546): ElevenLabs is the default again
+
+Owner: "default should be elevenlabs voice agent". `VoiceProvider.effective` returns ElevenLabs for a missing, empty or unknown stored value, with the token server set or not. A stored `"openai"` or `"elevenlabs"` still wins, so someone who chose OpenAI keeps it. The OpenAI choice, the 2.1 / 2.1 mini picker (default mini) and the token server's model allowlist are unchanged. The ADR-442 section below describes the rule it replaced.
+
+## Update 2026-10-13 (ADR-442): OpenAI Realtime is the default, with a model picker
+
+Owner: change only the model, to Realtime, because it is cheaper; keep ElevenLabs; "a switcher inside the app between realtime 2.1 and 2.1 mini".
+
+- **Default:** no stored choice → OpenAI Realtime **if a token server is set** (the OpenAI key lives there), otherwise ElevenLabs (which is the only one that can start without a token server). A choice made on Home always wins (`VoiceProvider.effective`).
+- **Model picker on Home** (shown while OpenAI is the voice): `2.1` = `gpt-realtime-2.1`, `2.1 mini` = `gpt-realtime-2.1-mini`; default **mini** (about a third of the audio price: $10/$20 vs $32/$64 per 1M audio tokens in/out, `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md`; OpenAI's model page for mini confirms $10/$20). Read when the next conversation starts.
+- **Token server** takes `{"provider":"openai","model":"…"}`, refuses any model outside the two-id allowlist (`400 unknown_model`, nothing sent to OpenAI), and falls back to `OPENAI_REALTIME_MODEL` (default mini) when the app names none. The spending cap is still the OpenAI project's own limit.
+- **Privacy copy** that said conversations go to ElevenLabs now names OpenAI or ElevenLabs (English and Polish, microphone prompt included); the What-leaves-this-iPhone ElevenLabs row is off when OpenAI is running the voice. Retention of OpenAI Realtime audio/transcripts is **still not verified**.
+- **Cost, honestly:** these are list prices per audio token, not a measured bill per minute. Measure real billed minutes on both models before claiming a saving.
+- **Not done / known gaps:** weather, Wikipedia and place lookup still only work on ElevenLabs (they are ElevenLabs server tools; the user is told). Voice choice/speed/expressiveness in Settings apply to ElevenLabs only. Phone calls, the Hey Doddy wake word's conversation provider logic and everything else are unchanged. Mini's Polish and tool-calling quality are for the owner to judge on a device.
+- **Tests run:** `node --test server/voice-token/test/handler.test.js` 20 pass (14 before + 6: model pick, both allowed models, allowlist refusal incl. non-string, ElevenLabs ignores a model, default is mini). `scripts/voice_agent_spec.py check`, `scripts/check_forbidden_capabilities.sh` and `tools/build_strings_catalog.py --check` pass. **Swift (DoddyCore tests, app) NOT RUN: no Swift toolchain in this environment; the new tests in `OpenAIRealtimeTests.swift` are unrun and the app edits are unbuilt.**
+
+---
+
+Everything below is the original ADR-265 test-switch description (2026-10-11); where it says "test", "ElevenLabs is the default" or "default `gpt-realtime`", the update above governs.
 
 **Status:** built for testing. Token server and DoddyCore logic tested on Linux. **The app code is not
 compiled with Xcode, has never connected to OpenAI and has never been heard on a device.**
@@ -63,6 +83,15 @@ Home switch ──> VoiceSessionController.start
 2. **Put a monthly spending limit on that OpenAI project.** The token server has no counters (as with
    ElevenLabs, ADR-068). Realtime audio is billed per minute of audio in and out.
 3. In the app, Settings › Voice must use the token server (the public ElevenLabs agent ID can't start OpenAI).
+   **24 Oct 2026 (ADR-633):** a Debug build's "Developer: talk without Apple sign-in" (ADR-551, on by default)
+   used to send OpenAI down the developer connection too, which can't reach OpenAI, so every OpenAI
+   conversation stopped at once with "Voice isn't set up yet". Now the developer connection is used for
+   ElevenLabs only; with OpenAI chosen the app asks for the Doddy voice account (Sign in with Apple) and
+   Settings › Voice says so. Sign in with Apple needs the paid Apple team and `make project` (with
+   entitlements), not `make project-iphone`. Checked on 24 Oct without a sign-in: the token server answers
+   `401 apple_sign_in_failed` (not `503 server_not_configured`) to a dummy OpenAI sign-in, so the
+   deployed function has a non-empty `OPENAI_API_KEY`; whether the key has Realtime access and credit is
+   NOT VERIFIED (needs a real signed-in request).
 4. Build from Xcode (see `FIRST_BUILD_GUIDE.md`). This is the first compile of this code, so expect fixes.
 
 ## How to feel the difference (suggested test)

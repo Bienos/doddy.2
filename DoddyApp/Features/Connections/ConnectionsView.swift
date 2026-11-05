@@ -35,7 +35,7 @@ struct ConnectionsView: View {
                     }
                 }
 
-                Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs and are always on.")
+                Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs, are always on, and don't work when Home's voice is OpenAI.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -63,9 +63,14 @@ struct ConnectionGroup: Identifiable {
     var id: String { title }
 
     static let all: [ConnectionGroup] = [
-        ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers]),
+        ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers, .steps]),
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
-        ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts]),
+        // ADR-567: a presentation is a file made here, opened in Keynote by the user.
+        ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts, .presentations]),
+        // ADR-569: the photo library (counts, pictures on screen only) and Doddy's camera.
+        ConnectionGroup(title: "Photos and camera", items: [.photos, .camera]),
+        // ADR-510: shown, never sent; the user sends it in their bank app.
+        ConnectionGroup(title: "Money", items: [.blik]),
     ]
 }
 
@@ -322,11 +327,11 @@ struct ConnectionInfo {
                 examples: ["Set a timer for ten minutes", "Forty-five seconds for the eggs"],
                 canDo: [
                     "Start a countdown, after you tap Start",
-                    "Ring with a notification when it's done, even if the app is closed",
+                    "Ring it like the Clock app's timer, even in Silent mode or a Focus, with the time left, Pause and Stop on the Lock Screen (iOS 26 and later; before that, a notification)",
                     "Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)",
                 ],
                 leavesPhone: "The length and label of a timer, or the time and label of an alarm, when Doddy sets one.",
-                staysHere: "iPhone asks once for notification permission. Doddy doesn't keep track of the timer after it starts.")
+                staysHere: "iPhone asks once to allow alarms and timers (on iOS before 26, notifications). Doddy keeps each timer's ring time and label on this iPhone, only to find it again.")
         case .contacts:
             ConnectionInfo(
                 symbol: "person.crop.circle",
@@ -366,6 +371,63 @@ struct ConnectionInfo {
                 ],
                 leavesPhone: "The shortcut's name, when you ask Doddy to run it.",
                 staysHere: "Doddy can't see what a shortcut does or whether it finished.")
+        case .presentations:
+            // ADR-567: Apple lets no app control Keynote, so Doddy makes the file and the user opens it.
+            ConnectionInfo(
+                symbol: "rectangle.on.rectangle.angled",
+                examples: ["Make me five slides about our trip", "Turn my notes on the launch into a presentation"],
+                canDo: [
+                    "Show every slide on a card first: the title, then each slide's title and points",
+                    "Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens",
+                    "Open the share sheet, so you pick Keynote, Files or someone to send it to",
+                ],
+                leavesPhone: "What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs, or OpenAI if you chose it.",
+                staysHere: "The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.")
+        case .steps:
+            // ADR-568: Motion & Fitness, read only. Not Health.
+            ConnectionInfo(
+                symbol: "figure.walk",
+                examples: ["How many steps today?", "How far did I walk yesterday?"],
+                canDo: [
+                    "Read one day's steps, walking distance and floors climbed, after you say yes or tap",
+                    "Today and the six days before it, which is what your iPhone keeps",
+                ],
+                leavesPhone: "That day's numbers, when Doddy uses them in a conversation.",
+                staysHere: "Doddy keeps none of it. Steps come from Motion & Fitness, not from the Health app. iPhone asks once for Motion & Fitness.")
+        case .photos:
+            // ADR-569: counts and times to the voice, pictures on this screen only.
+            ConnectionInfo(
+                symbol: "photo.on.rectangle",
+                examples: ["How many photos did I take on Saturday?", "Show me my photos from last week"],
+                canDo: [
+                    "Count the photos and videos you took on a day or over up to a month, after you say yes or tap",
+                    "Show the newest of them on your screen, with a button to open Photos",
+                ],
+                leavesPhone: "Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.",
+                staysHere: "The pictures are shown on this screen only. Doddy never changes, deletes or adds anything in your photo library. If you let Doddy see only some photos, it says so.")
+        case .camera:
+            // ADR-569: iOS's own camera screen; a kept photo becomes a note the user saves.
+            ConnectionInfo(
+                symbol: "camera",
+                examples: ["Take a photo", "Open the camera"],
+                canDo: [
+                    "Open Doddy's camera, after you tap Open camera",
+                    "Put the photo you keep into a new note, with its text read on this iPhone, for you to check and save",
+                ],
+                leavesPhone: "Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.",
+                staysHere: "The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.")
+        case .blik:
+            // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
+            ConnectionInfo(
+                symbol: "banknote",
+                examples: ["Send Ania 50 zł for the pizza", "Send Tomek 20 zł with BLIK"],
+                canDo: [
+                    "Show a BLIK phone transfer on your screen: who, their number, how much in złoty, and the title",
+                    "You send it yourself in your bank app; Doddy never sends or pays money",
+                    "Finds the person's number if Contacts is allowed too",
+                ],
+                leavesPhone: "The person's name, the amount and the title you said, as part of the conversation.",
+                staysHere: "Phone numbers are shown only on your screen. Doddy has no access to your bank and can't see whether you sent it.")
         }
     }
 }

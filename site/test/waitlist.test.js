@@ -76,3 +76,10 @@ test("a failed write is reported, not hidden", async () => {
   assert.equal(status, 503);
   assert.equal(body.error, "unavailable");
 });
+
+test("a translated page's consent wording version is stored as the page sent it", async () => {
+  const { status, body } = await join({ ...signup, consent: "waitlist-note-v1-zh-hans" });
+  assert.equal(status, 200);
+  const record = JSON.parse(store.get(`waitlist/${body.id}.json`).body);
+  assert.equal(record.consent, "waitlist-note-v1-zh-hans");
+});

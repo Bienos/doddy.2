@@ -23,6 +23,8 @@ final class IslandBaselineTests: XCTestCase {
             .noteWaiting, .noteSaved, .planWaiting(steps: 2), .planRunning(step: 1, of: 2),
             .reminderWaiting, .reminderAdding, .reminderSet, .translating(from: "en", to: "?", bothWays: true),
         ]
+            + IslandAction.allCases.map { DoddyVoiceAttributes.ContentState.Moment.actionWaiting($0) }
+            + IslandResult.allCases.map { DoddyVoiceAttributes.ContentState.Moment.resultReady($0) }
         for moment in moments {
             var state = DoddyVoiceAttributes.ContentState(status: .listening, isMuted: false)
             state.moment = moment
@@ -30,7 +32,9 @@ final class IslandBaselineTests: XCTestCase {
             XCTAssertEqual(Set(json.keys), ["status", "isMuted", "savedCount", "islandStyle", "moment"], "\(moment)")
             // Every string anywhere in the payload is a fixed value: the status, the style, or a
             // language code of at most two letters ("?" while unknown).
+            // ADR-616: a card's or a result's kind is one fixed word too.
             let fixed = Set(["listening", state.islandStyle.rawValue])
+                .union(IslandAction.allCases.map(\.rawValue)).union(IslandResult.allCases.map(\.rawValue))
             for text in strings(in: json) where !fixed.contains(text) {
                 XCTAssertLessThanOrEqual(text.count, 2, "\(moment) carries text: \(text)")
             }
@@ -73,6 +77,30 @@ final class IslandBaselineTests: XCTestCase {
         let updated = await waitUntil { activity.content.state.isMuted }
         XCTAssertTrue(updated)
         island.end()
+        let ended = await waitUntil { Activity<DoddyVoiceAttributes>.activities.isEmpty }
+        XCTAssertTrue(ended)
+    }
+
+    /// ADR-577: a start without opening Doddy checks `isShowing` before it takes the microphone,
+    /// and `expand()` (the alert update that opens the island up) keeps the state it shows.
+    @MainActor
+    func testIsShowingFollowsTheActivityAndExpandKeepsItsState() async throws {
+        try requireActivities()
+        await clearActivities()
+        let island = VoiceLiveActivity()
+        defer { island.end() }
+        XCTAssertFalse(island.isShowing)
+        island.expand()  // nothing to open up: no activity is started for it
+        XCTAssertTrue(Activity<DoddyVoiceAttributes>.activities.isEmpty)
+        let greeting = DoddyVoiceAttributes.ContentState(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")
+        island.show(greeting, startedAt: .now)
+        XCTAssertTrue(island.isShowing)
+        island.expand()
+        await island.settle()
+        let activity = try XCTUnwrap(Activity<DoddyVoiceAttributes>.activities.first)
+        XCTAssertEqual(activity.content.state, greeting)
+        island.end()
+        XCTAssertFalse(island.isShowing)
         let ended = await waitUntil { Activity<DoddyVoiceAttributes>.activities.isEmpty }
         XCTAssertTrue(ended)
     }

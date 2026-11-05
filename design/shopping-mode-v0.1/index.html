@@ -1,0 +1,860 @@
+<title>Doddy na zakupach</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@600;700&display=swap">
+<style>
+/* Layout: a shop-window walk. The thesis, then three shelves of phone screens (one per job), then the report, money, plumbing, sources, costs and the plan. */
+:root{
+  --bg:#FFF7E9; --fg:#171715; --surface:#F5EAD8; --line:#DFD5C6; --muted:#655F56;
+  --accent:#FF6A00; --accent-text:#A64B00; --ok:#326746; --err:#A3342E; --stage:#F5EAD8; --chip-bg:#FFF7E9;
+  --display:"Bricolage Grotesque", ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --body:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --hand:"Caveat", "Bradley Hand", "Segoe Print", cursive;
+  /* The app screens are drawn in the app's light palette in both page themes. */
+  --app-paper:#FFF7E9; --app-ink:#171715; --app-quiet:#F5EAD8; --app-line:#DFD5C6; --app-muted:#655F56;
+  --app-accent:#A64B00; --app-ok:#326746; --app-err:#A3342E; --app-orange:#FF6A00; --app-scrim:rgba(23,23,21,.38);
+  --bezel:#0E0E0D; --island:#000000; --lock-top:#2B2A27; --lock-bottom:#5A4A3A; --lock-ink:#FFF7E9; --glass:rgba(255,247,233,.16); --glass-strong:rgba(255,247,233,.9);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#171F29; --fg:#FFF7E9; --surface:#252E39; --line:#414953; --muted:#C5BCAD;
+    --accent-text:#FFB56B; --ok:#97CEA6; --err:#FFAAA1; --chip-bg:#171F29; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#171F29; --fg:#FFF7E9; --surface:#252E39; --line:#414953; --muted:#C5BCAD;
+  --accent-text:#FFB56B; --ok:#97CEA6; --err:#FFAAA1; --chip-bg:#171F29; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:28px 64px;display:grid;grid-template-columns:minmax(0,1fr);gap:72px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(2.6rem, 7vw, 4.6rem);line-height:.95;font-weight:780;font-variation-settings:"opsz" 96}
+h2{font-size:clamp(1.6rem, 3.6vw, 2.3rem);line-height:1.05;font-weight:740;font-variation-settings:"opsz" 60}
+h3{font-size:1.15rem;line-height:1.2;font-weight:700;font-variation-settings:"opsz" 24}
+p{margin:0}
+.eyebrow{font-size:.74rem;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--accent-text)}
+.muted{color:var(--muted)}
+.prose{max-width:66ch;display:grid;gap:12px}
+a{color:inherit;text-decoration-color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+svg.wm{display:block;height:34px;width:auto}
+
+/* Hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);gap:32px;align-items:end}
+.hero .top{display:flex;align-items:center;gap:14px;margin-bottom:28px;color:var(--fg)}
+.hero .top .badge{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;border:1.5px solid var(--err);color:var(--err);border-radius:6px;padding:3px 8px}
+.hero h1 em{font-style:normal;position:relative;white-space:nowrap}
+.hero h1 em::after{content:"";position:absolute;left:2%;right:2%;bottom:.04em;height:.13em;background:var(--accent);border-radius:4px;z-index:-1;opacity:.9}
+.hero h1{position:relative;z-index:0}
+.lede{font-size:clamp(1.05rem, 1.8vw, 1.25rem);line-height:1.5;max-width:56ch;margin-top:22px}
+.stage{background:var(--stage);border-radius:50% 50% 28px 28px / 42% 42% 28px 28px;display:grid;place-items:end center;aspect-ratio:4/5;max-width:300px;width:100%;justify-self:end;overflow:hidden;position:relative}
+.stage img{width:78%;max-width:100%;display:block;mix-blend-mode:multiply}
+.stage .note{position:absolute;top:9%;left:8%;font-family:var(--hand);font-size:1.4rem;line-height:1;color:var(--app-ink);transform:rotate(-4deg);max-width:52%}
+.jobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:34px}
+.job{border-top:2px solid var(--fg);padding-top:12px;display:grid;gap:6px;align-content:start}
+.job b{font-family:var(--display);font-size:1.12rem;font-weight:720}
+.job .when{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-text)}
+
+/* Shelves of phones */
+.shelf{display:grid;gap:22px}
+.shelf-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end}
+.shelf-head .prose{gap:8px}
+.tag{display:inline-block;font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1.5px solid currentColor;border-radius:999px;padding:2px 10px;color:var(--accent-text);white-space:nowrap}
+.phones{display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:34px 22px;justify-items:center}
+.shot{display:grid;gap:12px;justify-items:center;width:100%;max-width:320px}
+.shot figcaption{font-size:.93rem;line-height:1.45;width:100%;max-width:300px}
+.shot figcaption b{font-family:var(--display);font-weight:700;display:block;font-size:1rem;margin-bottom:2px}
+.shot figcaption b span{color:var(--accent-text)}
+figure{margin:0}
+
+.phone{width:300px;max-width:100%;height:650px;border-radius:48px;background:var(--bezel);padding:9px;box-shadow:0 0 0 1px var(--line), 0 24px 40px -28px rgba(0,0,0,.55);flex:none}
+.screen{height:100%;border-radius:40px;background:var(--app-paper);color:var(--app-ink);overflow:hidden;position:relative;display:flex;flex-direction:column;font-family:var(--body);font-size:12.5px;line-height:1.38}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:15px 26px 0 30px;height:42px;font-weight:650;font-size:12.5px;flex:none}
+.sb .icons{display:flex;gap:5px;align-items:center;font-size:10.5px}
+.batt{width:21px;height:10px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.9}
+.batt::after{content:"";position:absolute;inset:1.5px 5px 1.5px 1.5px;background:currentColor;border-radius:1px}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:88px;height:25px;border-radius:13px;background:var(--island);z-index:3;display:flex;align-items:center;justify-content:space-between;padding:0 8px}
+.island.wide{width:128px}
+.island .face{width:15px;height:15px;border-radius:50%;background:var(--app-quiet);position:relative}
+.island .face::before,.island .face::after{content:"";position:absolute;top:4.5px;width:2px;height:4px;border-radius:2px;background:var(--app-ink)}
+.island .face::before{left:4.5px}.island .face::after{left:8.5px;top:4px}
+.waves{display:flex;gap:2px;align-items:center;height:14px}
+.waves i{width:2.4px;border-radius:2px;background:var(--app-orange);display:block}
+.waves i:nth-child(1){height:5px}.waves i:nth-child(2){height:11px}.waves i:nth-child(3){height:14px}.waves i:nth-child(4){height:8px}.waves i:nth-child(5){height:12px}.waves i:nth-child(6){height:6px}
+.island .lbl{color:var(--lock-ink);font-size:9.5px;font-weight:600;letter-spacing:.01em}
+.body{flex:1;padding:6px 16px 12px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.apphead{display:flex;justify-content:space-between;align-items:center;padding:2px 2px 0}
+.apphead svg.wm{height:22px;color:var(--app-ink)}
+.apphead .more{font-size:16px;letter-spacing:1px;font-weight:700}
+.navt{display:flex;align-items:center;gap:8px;font-weight:600;font-size:12.5px;color:var(--app-accent)}
+.title{font-family:var(--display);font-weight:760;font-size:22px;line-height:1.05;font-variation-settings:"opsz" 40;letter-spacing:-.01em}
+.sub{font-size:10.8px;color:var(--app-muted);line-height:1.35}
+.hand{font-family:var(--hand);font-size:17px;line-height:1.05;color:var(--app-ink)}
+.btn{display:flex;align-items:center;justify-content:center;height:40px;border-radius:20px;font-weight:650;font-size:12.5px;border:1.4px solid var(--app-ink);background:transparent;color:var(--app-ink);font-family:var(--body);width:100%}
+.btn.primary{background:var(--app-ink);color:var(--app-paper)}
+.btn.small{height:32px;font-size:11.5px}
+.row{display:flex;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1.2px solid var(--app-line);border-radius:999px;padding:1px 7px;font-size:10.2px;font-weight:600;color:var(--app-ink);background:var(--app-paper);white-space:nowrap}
+.chip.shop{border-color:var(--app-ink)}
+.chip.cond{border-color:transparent;background:var(--app-quiet);color:var(--app-accent)}
+.chip.ok{border-color:transparent;background:var(--app-quiet);color:var(--app-ok)}
+
+/* A1: Home talking */
+.home .figwrap{flex:1;display:grid;place-items:center;min-height:0}
+.home .figwrap img{height:190px;width:auto;mix-blend-mode:multiply}
+.state{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:650;color:var(--app-accent)}
+.state::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--app-orange)}
+.said{font-size:12.5px;text-align:left;align-self:flex-end;max-width:88%;background:var(--app-orange);color:var(--app-ink);border-radius:16px 16px 4px 16px;padding:7px 11px;font-weight:500}
+.line{font-size:13.5px;line-height:1.38;font-weight:500}
+.ctrls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+
+/* A2: leaflet deals */
+.deal{border-top:1px solid var(--app-line);padding-top:9px;display:grid;gap:4px}
+.deal .what{font-weight:650;font-size:12.5px}
+.deal .best{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lp{font-family:var(--display);font-weight:800;font-size:27px;line-height:.9;letter-spacing:-.02em;font-variation-settings:"opsz" 96;font-variant-numeric:tabular-nums}
+.lp sup{font-size:.48em;vertical-align:.8em;margin-left:1px}
+.lp small{font-size:.42em;font-weight:650;margin-left:2px}
+.others{font-size:10.5px;color:var(--app-muted)}
+.foot-note{font-size:10px;color:var(--app-muted);line-height:1.35;border-top:1px solid var(--app-line);padding-top:7px;margin-top:auto}
+
+/* A3: basket */
+.list{display:flex;flex-wrap:wrap;gap:4px}
+.opt{border-radius:16px;padding:10px 12px;display:grid;gap:4px;border:1.2px solid var(--app-line)}
+.opt.win{background:var(--app-quiet);border-color:transparent}
+.opt .lab{font-size:9.8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--app-accent)}
+.opt .tot{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.opt .tot b{font-weight:650;font-size:12.5px}
+.opt .tot .lp{font-size:22px}
+.opt .split{font-size:10.5px;color:var(--app-muted)}
+.mini{display:grid;grid-template-columns:1fr auto;font-size:11px;gap:2px 8px;font-variant-numeric:tabular-nums}
+.mini span:nth-child(even){text-align:right}
+.save{color:var(--app-ok);font-weight:700}
+
+/* B1: Messages thread */
+.thread{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
+.bub{max-width:82%;padding:7px 11px;border-radius:17px;font-size:12.3px;line-height:1.35}
+.bub.me{align-self:flex-end;background:var(--app-orange);color:var(--app-ink);border-bottom-right-radius:5px}
+.bub.dd{align-self:flex-start;background:var(--app-quiet);border-bottom-left-radius:5px}
+.prio{display:flex;flex-wrap:wrap;gap:5px;padding:2px 0 0}
+.prio .chip{font-size:10.8px;padding:3px 9px 3px 4px;border-color:var(--app-line)}
+.prio .chip.on{border-color:var(--app-ink)}
+.prio .chip i{font-style:normal;width:15px;height:15px;border-radius:50%;background:var(--app-ink);color:var(--app-paper);display:inline-grid;place-items:center;font-size:9px;font-weight:700}
+.prio .chip.off{padding-left:9px;color:var(--app-muted)}
+.card{border-radius:18px;background:var(--app-paper);border:1.4px solid var(--app-ink);padding:11px 12px;display:grid;gap:7px;box-shadow:0 10px 24px -18px rgba(23,23,21,.6)}
+.card h4{margin:0;font-family:var(--display);font-size:15px;font-weight:740;font-variation-settings:"opsz" 24}
+.card .q{font-size:11.6px;border-left:2.4px solid var(--app-orange);padding-left:8px}
+.card .fine{font-size:10.2px;color:var(--app-muted);line-height:1.35}
+.composer{display:flex;align-items:center;gap:6px;margin-top:auto}
+.composer .plus{width:26px;height:26px;border-radius:50%;background:var(--app-quiet);display:grid;place-items:center;font-weight:700;color:var(--app-muted)}
+.composer .field{flex:1;height:30px;border-radius:15px;border:1.2px solid var(--app-line);font-size:11.5px;color:var(--app-muted);display:flex;align-items:center;padding:0 12px}
+
+/* B2, C3: lock screen */
+.lock{background:linear-gradient(170deg, var(--lock-top), var(--lock-bottom));color:var(--lock-ink)}
+.lock .date{text-align:center;font-size:12.5px;font-weight:600;opacity:.85;margin-top:14px}
+.lock .clock{text-align:center;font-family:var(--display);font-size:68px;font-weight:650;line-height:1;letter-spacing:-.02em;font-variation-settings:"opsz" 96}
+.lock .stack{margin-top:auto;display:grid;gap:8px;padding:0 10px 14px}
+.la{background:var(--island);border-radius:24px;padding:12px 14px;display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;color:var(--lock-ink)}
+.la .bigface{width:44px;height:44px;border-radius:50%;background:var(--app-quiet);position:relative}
+.la .bigface::before,.la .bigface::after{content:"";position:absolute;top:13px;width:4px;height:9px;border-radius:3px;background:var(--app-ink)}
+.la .bigface::before{left:14px}.la .bigface::after{left:24px;top:12px}
+.la b{font-size:12.5px;font-weight:650;display:block}
+.la .s{font-size:10.5px;opacity:.75}
+.stones{display:flex;gap:4px;margin-top:6px;align-items:center}
+.stones i{height:7px;flex:1;border-radius:4px;background:rgba(255,247,233,.22)}
+.stones i.done{background:var(--lock-ink)}
+.stones i.now{background:var(--app-orange)}
+.notif{background:var(--glass-strong);color:var(--app-ink);border-radius:20px;padding:10px 12px;display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:start}
+.notif .ic{width:30px;height:30px;border-radius:8px;background:var(--app-orange);display:grid;place-items:center}
+.notif .ic span{width:17px;height:17px;border-radius:50%;background:var(--app-paper);position:relative;display:block}
+.notif .ic span::before,.notif .ic span::after{content:"";position:absolute;top:5px;width:2px;height:5px;border-radius:2px;background:var(--app-ink)}
+.notif .ic span::before{left:5.5px}.notif .ic span::after{left:9.5px;top:4.5px}
+.notif b{font-size:11.5px;display:block}
+.notif p{font-size:11.5px;line-height:1.3}
+.notif time{font-size:10px;color:var(--app-muted)}
+
+/* B3: result */
+.pick{background:var(--app-quiet);border-radius:18px;padding:11px 12px;display:grid;gap:5px;position:relative}
+.pick .lab{font-size:9.8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--app-accent)}
+.pick .name{font-weight:650;font-size:12.3px;line-height:1.3;padding-right:52px}
+.pick img{position:absolute;right:6px;top:4px;height:76px;mix-blend-mode:multiply}
+.alt{display:grid;grid-template-columns:1fr auto;gap:2px 8px;border-top:1px solid var(--app-line);padding-top:8px;font-size:11.5px}
+.alt .lab{font-size:9.6px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--app-accent);grid-column:1/-1}
+.alt .p{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.alt .m{color:var(--app-muted);font-size:10.5px}
+.alt .over{color:var(--app-err);font-weight:600;font-size:10.5px;text-align:right}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:auto}
+.actions .btn.primary{grid-column:1/-1}
+
+/* C1, C2: sheets */
+.dim{position:absolute;inset:0;background:var(--app-scrim);z-index:1}
+.under{filter:saturate(.9)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:2;background:var(--app-paper);border-radius:28px 28px 38px 38px;padding:8px 16px 18px;display:grid;gap:9px}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:var(--app-line);justify-self:center;margin-bottom:4px}
+.sheet h4{margin:0;font-family:var(--display);font-size:17px;font-weight:740;font-variation-settings:"opsz" 30;line-height:1.1}
+.ticks{margin:0;padding:0;list-style:none;display:grid;gap:5px;font-size:11.6px}
+.ticks li{display:grid;grid-template-columns:14px 1fr;gap:4px}
+.ticks li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--app-orange);margin-top:5px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:11.4px;font-variant-numeric:tabular-nums}
+.kv dt{color:var(--app-muted)}
+.kv dd{margin:0;text-align:right;font-weight:550}
+.kv .sum{font-weight:800;font-size:13px;border-top:1px solid var(--app-line);padding-top:5px}
+.paybtn{display:flex;align-items:center;justify-content:center;gap:6px;height:42px;border-radius:12px;background:var(--island);color:var(--lock-ink);font-weight:650;font-size:13px}
+.paybtn.alt2{background:transparent;color:var(--app-ink);border:1.4px solid var(--app-ink)}
+.status{display:grid;grid-template-columns:16px 1fr;gap:6px;font-size:11px;line-height:1.3;border-radius:12px;padding:8px 10px;background:var(--app-quiet)}
+.status .m{font-weight:800}
+.status.ok .m{color:var(--app-ok)}
+.status.unk .m{color:var(--app-accent)}
+
+/* Report preview */
+.report{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:36px;align-items:start}
+.pages{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pages img{width:100%;display:block;border-radius:4px;box-shadow:0 0 0 1px var(--line), 0 18px 30px -24px rgba(0,0,0,.5)}
+.facts{display:grid;gap:14px;margin-top:6px}
+.fact{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;border-top:1px solid var(--line);padding-top:10px}
+.fact b{font-family:var(--display);font-weight:700}
+
+@media (max-width: 860px){
+  .hero{grid-template-columns:1fr}
+  .stage{justify-self:start;max-width:240px}
+  .jobs{grid-template-columns:1fr}
+  .report{grid-template-columns:1fr}
+  .shelf-head{grid-template-columns:1fr}
+  .fact{grid-template-columns:1fr;gap:2px}
+}
+@media (max-width: 520px){ .pages{grid-template-columns:1fr} }
+@media (prefers-reduced-motion: no-preference){
+  .waves i{animation:wv 1.1s ease-in-out infinite alternate}
+  .waves i:nth-child(2n){animation-delay:-.4s}.waves i:nth-child(3n){animation-delay:-.7s}
+  @keyframes wv{to{transform:scaleY(.45)}}
+}
+/* Infrastructure */
+.infra{display:grid;gap:26px}
+.lanes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.lane{background:var(--surface);border-radius:20px;padding:16px;display:grid;gap:8px;align-content:start}
+.lane h3{margin-bottom:4px}
+.node{background:var(--bg);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start}
+.node b{font-weight:650;font-size:.95rem;line-height:1.3}
+.node span{grid-column:1;font-size:.86rem;color:var(--muted);line-height:1.4}
+.node i{grid-column:2;grid-row:1 / span 2;font-style:normal;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 8px;white-space:nowrap;align-self:start}
+.node i.have{color:var(--ok);border:1.5px solid var(--ok)}
+.node i.new{color:var(--accent-text);border:1.5px solid var(--accent-text)}
+.flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;counter-reset:f}
+.flow li{border-top:3px solid var(--fg);padding:10px 12px 0 0;display:grid;gap:4px;align-content:start;position:relative;counter-increment:f}
+.flow li::before{content:counter(f);position:absolute;top:-13px;left:0;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--app-ink);font-size:.75rem;font-weight:800;display:grid;place-items:center}
+.flow li b{font-family:var(--display);font-weight:700;margin-top:6px}
+.flow li span{font-size:.86rem;color:var(--muted);line-height:1.4}
+@media (max-width: 860px){ .lanes{grid-template-columns:1fr} .flow{grid-template-columns:1fr 1fr;gap:22px 12px} }
+/* Alternatives */
+.alts{display:grid;gap:22px}
+.altgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.alt-card{border:1.5px solid var(--fg);border-radius:18px;padding:16px;display:grid;gap:8px;align-content:start}
+.alt-card p{font-size:.93rem;color:var(--muted);line-height:1.5}
+.alt-card .size{justify-self:start;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--surface);border-radius:999px;padding:2px 9px;color:var(--accent-text)}
+@media (max-width: 980px){ .altgrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width: 560px){ .altgrid{grid-template-columns:1fr} }
+/* Payments */
+.pay{display:grid;gap:24px}
+.small{font-size:.88rem;line-height:1.5;max-width:80ch}
+.ladder{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+.rung{border-radius:20px;padding:18px;display:grid;gap:10px;align-content:start}
+.rung .when{font-size:.74rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.rung p{font-size:.95rem}
+.rung ul{margin:0;padding:0 0 0 18px;display:grid;gap:4px;font-size:.88rem}
+.rung.now{background:var(--fg);color:var(--bg)}
+.rung.now .when{color:inherit;opacity:.75}
+.rung.later{background:var(--surface)}
+.rung.later .when{color:var(--accent-text)}
+.rung.never{border:1.5px dashed var(--err)}
+.rung.never .when{color:var(--err)}
+.rung.never h3{text-decoration:line-through;text-decoration-color:var(--err);text-decoration-thickness:2px}
+@media (max-width: 860px){ .ladder{grid-template-columns:1fr} }
+/* Costs */
+.costs{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+.tablewrap{overflow-x:auto;min-width:0;max-width:100%;border-top:2px solid var(--fg)}
+table.cost{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:640px}
+table.cost th{font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:700;padding:10px 12px 8px 0;border-bottom:1px solid var(--line)}
+table.cost td{padding:12px 12px 12px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:.94rem}
+table.cost td span{display:block;font-size:.82rem;color:var(--muted)}
+table.cost .num{text-align:right;white-space:nowrap}
+.money-notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.money-notes p{font-size:.93rem;line-height:1.5}
+.money-notes b{font-family:var(--display);display:block;font-size:1.02rem;margin-bottom:4px}
+/* Plan */
+.plan{display:grid;gap:24px}
+.plan-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:16px}
+.plan-fig{height:150px;width:auto;background:var(--stage);border-radius:50%;padding:10px 18px 0;mix-blend-mode:normal}
+.stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.stage-card{border-top:3px solid var(--fg);padding-top:14px;display:grid;gap:8px;align-content:start}
+.stage-card .when{font-size:.74rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-text)}
+.stage-card ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:.93rem}
+.decisions{background:var(--surface);border-radius:22px;padding:22px;display:grid;gap:12px}
+.decisions ol{margin:0;padding-left:22px;display:grid;gap:8px}
+.decisions li::marker{font-family:var(--display);font-weight:800;color:var(--accent-text)}
+@media (max-width: 860px){ .money-notes,.stages{grid-template-columns:1fr} .plan-fig{height:110px} }
+.pagefoot{border-top:2px solid var(--fg);padding-top:16px;display:grid;gap:8px;font-size:.9rem;max-width:80ch}
+.pagefoot code{font-size:.85em;background:var(--surface);padding:1px 5px;border-radius:5px;word-break:break-word}
+.skipped{font-size:10.4px;color:var(--app-muted);border:1.2px dashed var(--app-line);border-radius:10px;padding:5px 8px;line-height:1.35}
+/* Data sources */
+.data{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
+.data-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end}
+.data-fig{height:150px;width:auto;background:var(--stage);border-radius:60px 60px 18px 18px;padding:6px 14px 0}
+.srcgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.src{border-top:2px solid var(--fg);padding-top:12px;display:grid;gap:10px;align-content:start}
+.srclist{list-style:none;margin:0;padding:0;display:grid}
+.srclist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.srclist b{font-weight:650}
+.srclist span{grid-column:1;font-size:.88rem;color:var(--muted);line-height:1.4}
+.srclist i{grid-column:2;grid-row:1 / span 2;align-self:start;font-style:normal;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 9px;white-space:nowrap;border:1.5px solid currentColor}
+.srclist i.go{color:var(--ok)}
+.srclist i.link{color:var(--muted)}
+.srclist i.ask{color:var(--accent-text)}
+.srclist i.no{color:var(--err)}
+.law{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.law article{background:var(--surface);border-radius:18px;padding:16px;display:grid;gap:6px;align-content:start}
+.law p{font-size:.9rem;line-height:1.5}
+.lessons{display:grid;gap:10px}
+.lessons ul{margin:0;padding-left:20px;display:grid;gap:8px;max-width:90ch}
+@media (max-width: 980px){ .law{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width: 760px){ .srcgrid,.law{grid-template-columns:1fr} .data-fig{height:90px} }
+/*MORE_CSS*/
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="wm" viewBox="0 0 113.168 51.470"><g fill="currentColor"> <path d="M 10.283 44.019 C 9.634 44.113 8.849 44.097 7.923 43.972 C 6.994 43.855 6.001 43.664 4.939 43.394 C 4.384 43.226 4.001 43.023 3.783 42.785 C 3.564 42.543 3.193 42.097 2.673 41.441 C 2.337 40.929 2.126 40.347 2.033 39.691 C 1.947 39.043 2.033 38.468 2.283 37.957 C 2.540 37.437 2.986 37.125 3.611 37.019 C 3.880 36.957 4.212 37.019 4.611 37.207 C 5.005 37.394 5.423 37.625 5.861 37.894 C 6.580 38.312 7.349 38.730 8.173 39.160 C 8.994 39.586 9.751 39.746 10.439 39.644 C 10.915 39.539 11.490 39.476 12.158 39.457 C 12.822 39.445 13.474 39.386 14.111 39.285 C 14.744 39.179 15.251 38.992 15.626 38.722 C 17.439 37.484 18.787 36.500 19.673 35.769 C 20.568 35.031 21.017 34.660 21.017 34.660 C 21.087 34.527 21.220 34.418 21.408 34.332 C 21.595 34.250 21.822 34.156 22.095 34.050 C 22.302 33.843 22.630 33.511 23.080 33.050 C 23.525 32.582 23.962 32.129 24.392 31.691 C 24.818 31.246 25.083 30.984 25.189 30.910 C 25.251 30.597 25.314 30.347 25.376 30.160 C 25.447 29.972 25.486 29.781 25.486 29.582 C 25.767 29.300 26.134 28.730 26.595 27.863 C 27.052 26.988 27.521 26.011 28.001 24.925 C 28.478 23.843 28.822 22.859 29.033 21.972 C 29.478 20.089 29.634 18.375 29.501 16.832 C 29.365 15.293 28.970 13.906 28.314 12.675 C 27.665 11.437 26.790 10.359 25.689 9.441 C 25.314 9.129 24.798 8.796 24.142 8.441 C 23.494 8.078 22.830 7.734 22.142 7.410 C 21.462 7.089 20.861 6.843 20.330 6.675 C 19.798 6.500 19.478 6.425 19.376 6.457 C 19.240 6.488 18.974 7.011 18.580 8.019 C 18.181 9.031 17.704 10.328 17.142 11.910 C 16.580 13.484 15.978 15.171 15.345 16.972 C 14.708 18.765 14.099 20.468 13.517 22.082 C 13.349 22.730 13.134 23.410 12.876 24.129 C 12.615 24.847 12.400 25.472 12.236 26.003 C 12.068 26.535 11.986 26.886 11.986 27.050 C 11.599 27.636 11.197 28.531 10.783 29.738 C 10.376 30.937 10.037 32.644 9.767 34.863 C 9.462 36.031 9.240 37.000 9.095 37.769 C 8.958 38.543 8.822 38.910 8.689 38.879 C 8.689 38.879 8.673 39.039 8.642 39.363 C 8.611 39.683 8.540 39.898 8.439 40.003 C 8.439 40.211 8.228 40.347 7.814 40.410 C 7.408 40.480 6.927 40.398 6.376 40.160 C 5.833 39.918 5.322 39.457 4.845 38.769 C 4.740 38.394 4.662 37.843 4.611 37.113 C 4.556 36.375 4.665 35.503 4.939 34.503 C 5.115 33.859 5.353 33.019 5.658 31.988 C 5.970 30.957 6.314 29.894 6.689 28.800 C 7.064 27.707 7.412 26.703 7.736 25.785 C 8.068 24.859 8.302 24.171 8.439 23.722 C 8.677 23.140 9.017 22.043 9.454 20.425 C 9.736 19.543 10.021 18.656 10.314 17.769 C 10.603 16.875 10.884 16.078 11.158 15.379 C 11.427 14.671 11.615 14.214 11.720 14.003 C 11.896 13.566 12.111 12.843 12.361 11.832 C 12.619 10.824 13.021 9.668 13.564 8.363 L 13.939 6.660 L 13.361 6.410 C 12.954 6.546 12.634 6.589 12.408 6.535 C 12.189 6.484 12.048 6.441 11.986 6.410 C 11.775 6.472 11.505 6.410 11.173 6.222 C 10.849 6.035 10.556 5.793 10.298 5.488 C 10.048 5.175 9.884 4.918 9.814 4.707 C 9.751 4.574 9.708 4.394 9.689 4.175 C 9.677 3.949 9.673 3.832 9.673 3.832 C 9.704 3.636 9.990 3.425 10.533 3.207 C 11.083 2.980 11.798 2.761 12.673 2.550 C 13.548 2.343 14.478 2.191 15.470 2.097 C 16.458 1.996 17.384 1.972 18.251 2.035 C 19.134 2.109 20.228 2.316 21.533 2.660 C 22.833 3.003 23.947 3.343 24.876 3.675 C 25.970 4.093 27.146 4.800 28.408 5.800 C 29.677 6.793 30.833 7.972 31.876 9.347 C 32.927 10.714 33.626 12.144 33.970 13.644 C 34.072 14.062 34.173 14.644 34.267 15.394 C 34.369 16.144 34.431 16.875 34.454 17.582 C 34.474 18.281 34.396 18.734 34.220 18.941 C 34.158 19.078 34.115 19.238 34.095 19.425 C 34.072 19.613 34.134 19.746 34.283 19.816 C 34.240 19.921 34.115 20.308 33.908 20.972 C 33.708 21.640 33.521 22.214 33.345 22.691 C 33.283 23.578 33.052 24.605 32.658 25.769 C 32.259 26.937 31.830 28.046 31.361 29.097 C 30.900 30.140 30.505 30.953 30.173 31.535 C 30.025 31.535 29.892 31.562 29.767 31.613 C 29.650 31.656 29.662 31.699 29.798 31.738 C 29.798 31.906 29.611 32.230 29.236 32.707 C 29.099 32.812 28.884 33.062 28.595 33.457 C 28.302 33.855 28.072 34.121 27.908 34.253 C 27.876 34.496 27.771 34.691 27.595 34.847 C 27.427 34.996 27.275 35.066 27.142 35.066 C 27.142 35.066 27.115 35.066 27.064 35.066 C 27.009 35.066 26.986 35.140 26.986 35.285 C 26.704 35.691 26.236 36.222 25.580 36.879 C 24.931 37.527 24.197 38.187 23.376 38.863 C 22.564 39.550 21.744 40.183 20.923 40.769 C 20.099 41.351 19.345 41.785 18.658 42.066 C 18.314 42.304 17.954 42.496 17.580 42.644 C 17.204 42.800 16.845 42.964 16.501 43.144 C 16.322 43.277 15.822 43.398 15.001 43.503 C 14.189 43.605 13.322 43.691 12.408 43.753 C 11.501 43.824 10.790 43.914 10.283 44.019 Z M 10.283 44.019"/> <path d="M 38.174 38.207 C 37.737 38.207 37.385 38.125 37.127 37.957 C 36.866 37.781 36.549 37.543 36.174 37.238 C 35.526 36.550 35.006 35.816 34.612 35.035 C 34.213 34.246 34.069 33.558 34.174 32.972 C 34.276 32.691 34.319 32.425 34.299 32.175 C 34.276 31.918 34.268 31.785 34.268 31.785 C 34.100 31.621 34.049 31.511 34.112 31.457 C 34.182 31.406 34.256 31.312 34.330 31.175 C 34.537 31.175 34.604 30.984 34.534 30.597 C 34.459 30.328 34.569 29.738 34.862 28.832 C 35.151 27.925 35.557 27.062 36.080 26.238 C 36.276 25.894 36.580 25.441 36.987 24.879 C 37.401 24.308 37.862 23.738 38.362 23.175 C 38.862 22.613 39.315 22.160 39.721 21.816 C 40.573 21.097 41.369 20.519 42.112 20.082 C 42.850 19.636 43.596 19.324 44.346 19.144 C 45.096 18.980 45.869 18.894 46.674 18.894 C 47.487 18.894 48.147 19.168 48.659 19.707 C 49.448 20.050 50.006 20.515 50.330 21.097 C 50.651 21.683 50.866 22.437 50.971 23.363 C 51.073 24.386 50.971 25.640 50.659 27.129 C 50.354 28.621 49.518 30.343 48.143 32.300 C 47.287 33.531 46.448 34.488 45.627 35.175 C 44.803 35.863 43.897 36.500 42.909 37.082 C 42.190 37.562 41.416 37.855 40.596 37.957 C 39.772 38.050 38.963 38.136 38.174 38.207 Z M 43.424 31.941 C 44.174 31.285 44.709 30.566 45.034 29.785 C 45.366 28.996 45.721 28.066 46.096 27.003 C 46.229 26.796 46.323 26.453 46.377 25.972 C 46.428 25.496 46.432 25.027 46.393 24.566 C 46.362 24.109 46.241 23.843 46.034 23.769 C 45.729 23.531 45.424 23.472 45.112 23.597 C 44.807 23.714 44.416 23.941 43.940 24.285 C 42.909 25.140 41.955 26.125 41.080 27.238 C 40.205 28.355 39.596 29.714 39.252 31.316 C 39.159 32.183 39.252 32.828 39.534 33.253 C 39.823 33.683 40.303 33.800 40.971 33.613 C 41.647 33.425 42.463 32.871 43.424 31.941 Z M 43.424 31.941"/> <path d="M 67.366 39.535 C 66.916 39.636 66.479 39.527 66.053 39.207 C 65.623 38.882 65.323 38.535 65.147 38.160 C 64.948 37.609 64.823 37.089 64.772 36.597 C 64.717 36.097 64.670 35.519 64.631 34.863 L 64.584 33.113 L 62.475 35.019 C 61.319 36.113 60.233 36.894 59.225 37.363 C 58.213 37.824 57.295 38.050 56.475 38.050 C 56.088 37.988 55.631 37.746 55.100 37.316 C 54.577 36.879 54.100 36.394 53.663 35.863 C 53.233 35.332 52.936 34.902 52.772 34.566 C 52.561 34.089 52.498 33.421 52.584 32.566 C 52.678 31.703 52.885 30.761 53.209 29.738 C 53.530 28.707 53.936 27.699 54.428 26.707 C 54.928 25.707 55.506 24.847 56.163 24.129 C 57.288 22.421 58.686 21.355 60.366 20.925 C 62.053 20.488 63.545 20.636 64.850 21.363 C 65.463 21.668 65.905 21.785 66.178 21.722 C 66.448 21.652 66.620 21.425 66.694 21.050 C 66.827 20.500 66.979 19.984 67.147 19.503 C 67.323 19.027 67.569 18.308 67.881 17.347 C 68.733 14.746 69.475 12.707 70.100 11.238 C 70.733 9.761 71.311 8.472 71.834 7.379 C 72.209 6.597 72.584 6.050 72.959 5.738 C 73.334 5.425 73.663 5.293 73.944 5.332 C 74.319 5.332 74.788 5.468 75.350 5.738 C 75.913 6.011 76.280 6.386 76.459 6.863 C 76.592 7.175 76.651 7.503 76.631 7.847 C 76.620 8.191 76.510 8.550 76.303 8.925 C 75.854 9.750 75.327 10.839 74.725 12.191 C 74.131 13.535 73.530 15.015 72.928 16.629 C 72.334 18.246 71.776 19.839 71.256 21.410 C 70.745 22.984 70.319 24.371 69.975 25.566 C 69.776 26.316 69.616 27.277 69.491 28.441 C 69.373 29.609 69.291 30.800 69.241 32.019 C 69.186 33.238 69.178 34.316 69.209 35.253 C 69.241 36.191 69.291 36.800 69.366 37.082 C 69.573 37.761 69.573 38.269 69.366 38.613 C 69.155 38.957 68.866 39.183 68.491 39.300 C 68.116 39.425 67.741 39.503 67.366 39.535 Z M 58.881 33.332 C 59.358 33.156 59.788 32.949 60.163 32.707 C 60.545 32.468 60.995 32.160 61.506 31.785 C 62.538 30.996 63.280 30.312 63.741 29.738 C 64.198 29.156 64.569 28.433 64.850 27.566 C 65.014 27.058 65.022 26.613 64.866 26.238 C 64.709 25.863 64.444 25.503 64.069 25.160 C 63.694 24.847 63.213 24.718 62.631 24.769 C 62.045 24.824 61.381 25.191 60.631 25.879 C 59.807 26.629 59.104 27.503 58.522 28.503 C 57.936 29.496 57.459 30.910 57.084 32.753 C 57.022 33.097 57.139 33.343 57.444 33.488 C 57.756 33.625 58.233 33.574 58.881 33.332 Z M 58.881 33.332"/> <path d="M 88.018 39.535 C 87.569 39.636 87.132 39.527 86.706 39.207 C 86.276 38.882 85.975 38.535 85.800 38.160 C 85.600 37.609 85.475 37.089 85.425 36.597 C 85.370 36.097 85.323 35.519 85.284 34.863 L 85.237 33.113 L 83.128 35.019 C 81.971 36.113 80.886 36.894 79.878 37.363 C 78.866 37.824 77.948 38.050 77.128 38.050 C 76.741 37.988 76.284 37.746 75.753 37.316 C 75.229 36.879 74.753 36.394 74.315 35.863 C 73.886 35.332 73.589 34.902 73.425 34.566 C 73.214 34.089 73.151 33.421 73.237 32.566 C 73.331 31.703 73.538 30.761 73.862 29.738 C 74.182 28.707 74.589 27.699 75.081 26.707 C 75.581 25.707 76.159 24.847 76.815 24.129 C 77.940 22.421 79.339 21.355 81.018 20.925 C 82.706 20.488 84.198 20.636 85.503 21.363 C 86.116 21.668 86.557 21.785 86.831 21.722 C 87.100 21.652 87.272 21.425 87.346 21.050 C 87.479 20.500 87.632 19.984 87.800 19.503 C 87.975 19.027 88.221 18.308 88.534 17.347 C 89.386 14.746 90.128 12.707 90.753 11.238 C 91.386 9.761 91.964 8.472 92.487 7.379 C 92.862 6.597 93.237 6.050 93.612 5.738 C 93.987 5.425 94.315 5.293 94.596 5.332 C 94.971 5.332 95.440 5.468 96.003 5.738 C 96.565 6.011 96.932 6.386 97.112 6.863 C 97.245 7.175 97.304 7.503 97.284 7.847 C 97.272 8.191 97.163 8.550 96.956 8.925 C 96.507 9.750 95.979 10.839 95.378 12.191 C 94.784 13.535 94.182 15.015 93.581 16.629 C 92.987 18.246 92.429 19.839 91.909 21.410 C 91.397 22.984 90.971 24.371 90.628 25.566 C 90.429 26.316 90.268 27.277 90.143 28.441 C 90.026 29.609 89.944 30.800 89.893 32.019 C 89.839 33.238 89.831 34.316 89.862 35.253 C 89.893 36.191 89.944 36.800 90.018 37.082 C 90.225 37.761 90.225 38.269 90.018 38.613 C 89.807 38.957 89.518 39.183 89.143 39.300 C 88.768 39.425 88.393 39.503 88.018 39.535 Z M 79.534 33.332 C 80.011 33.156 80.440 32.949 80.815 32.707 C 81.198 32.468 81.647 32.160 82.159 31.785 C 83.190 30.996 83.932 30.312 84.393 29.738 C 84.850 29.156 85.221 28.433 85.503 27.566 C 85.667 27.058 85.675 26.613 85.518 26.238 C 85.362 25.863 85.096 25.503 84.721 25.160 C 84.346 24.847 83.866 24.718 83.284 24.769 C 82.698 24.824 82.034 25.191 81.284 25.879 C 80.460 26.629 79.757 27.503 79.175 28.503 C 78.589 29.496 78.112 30.910 77.737 32.753 C 77.675 33.097 77.792 33.343 78.096 33.488 C 78.409 33.625 78.886 33.574 79.534 33.332 Z M 79.534 33.332"/> <path d="M 93.874 49.253 C 92.632 49.492 91.445 49.535 90.312 49.379 C 89.187 49.222 88.241 48.918 87.468 48.472 C 86.698 48.035 86.230 47.539 86.062 46.988 C 85.855 46.207 85.960 45.621 86.374 45.238 C 86.781 44.863 87.273 44.636 87.843 44.566 C 88.406 44.503 88.773 44.574 88.937 44.785 C 89.210 44.949 89.644 45.207 90.249 45.550 C 90.851 45.894 91.597 45.980 92.484 45.816 C 93.273 45.636 93.976 45.257 94.593 44.675 C 95.206 44.089 95.753 43.476 96.234 42.832 C 96.503 42.414 96.960 41.675 97.609 40.613 C 98.265 39.558 98.941 38.394 99.640 37.113 C 100.347 35.824 100.941 34.629 101.421 33.535 C 101.523 33.253 101.644 32.925 101.781 32.550 C 101.913 32.175 102.085 31.871 102.296 31.629 C 102.503 31.222 102.679 30.843 102.827 30.488 C 102.984 30.125 103.081 29.871 103.124 29.722 C 103.156 29.558 103.304 29.218 103.577 28.707 C 103.859 28.187 104.116 27.671 104.359 27.160 C 104.523 26.652 104.781 25.902 105.124 24.910 C 105.468 23.910 105.812 23.105 106.156 22.488 C 106.562 21.699 106.890 21.058 107.140 20.566 C 107.398 20.066 107.687 19.765 107.999 19.660 C 108.312 19.421 108.601 19.300 108.874 19.300 C 109.144 19.300 109.468 19.406 109.843 19.613 C 110.257 20.019 110.593 20.421 110.843 20.816 C 111.101 21.214 111.206 21.691 111.156 22.253 C 111.101 22.816 110.820 23.578 110.312 24.535 C 110.038 25.359 109.738 26.109 109.406 26.785 C 109.081 27.453 108.835 27.886 108.671 28.082 C 108.491 28.500 108.296 28.957 108.077 29.457 C 107.859 29.949 107.659 30.402 107.484 30.816 C 106.866 32.183 106.335 33.293 105.890 34.144 C 105.441 35.000 105.046 35.793 104.702 36.519 C 104.366 37.238 104.007 38.078 103.624 39.035 C 102.843 40.293 102.081 41.496 101.343 42.644 C 100.601 43.800 99.827 44.871 99.015 45.863 C 98.671 46.164 98.179 46.566 97.546 47.066 C 96.909 47.566 96.257 48.027 95.593 48.457 C 94.925 48.882 94.351 49.148 93.874 49.253 Z M 100.296 37.644 C 99.773 37.574 99.210 37.230 98.609 36.613 C 98.015 36.000 97.519 35.347 97.124 34.660 C 96.738 33.972 96.577 33.496 96.640 33.222 C 96.640 33.058 96.640 32.921 96.640 32.816 C 96.640 32.714 96.640 32.660 96.640 32.660 C 96.441 32.660 96.281 32.363 96.156 31.769 C 96.038 31.168 95.956 30.402 95.906 29.472 C 95.851 28.546 95.831 27.589 95.843 26.597 C 95.863 25.609 95.909 24.703 95.984 23.879 C 96.116 23.296 96.187 22.656 96.187 21.957 C 96.187 21.250 96.202 20.687 96.234 20.269 C 96.202 19.730 96.312 19.285 96.562 18.941 C 96.820 18.597 97.019 18.375 97.156 18.269 C 98.425 17.730 99.351 18.027 99.937 19.160 C 100.519 20.285 100.722 22.078 100.546 24.535 C 100.484 25.910 100.452 27.222 100.452 28.472 C 100.452 29.722 100.570 30.796 100.812 31.691 C 101.050 32.578 101.460 33.207 102.046 33.582 C 102.284 33.718 102.366 34.011 102.296 34.457 C 102.222 34.906 102.066 35.379 101.827 35.879 C 101.585 36.371 101.320 36.796 101.031 37.160 C 100.738 37.515 100.491 37.675 100.296 37.644 Z M 100.296 37.644"/> </g></symbol></svg>
+
+<main class="wrap">
+
+<header class="hero">
+  <div>
+    <div class="top"><svg class="wm" viewBox="0 0 113.168 51.470" role="img" aria-label="Doddy"><use href="#wm"></use></svg><span class="badge">Propozycja · nic z tego nie jest zbudowane</span></div>
+    <p class="eyebrow">Tryb zakupów · 24 października 2026</p>
+    <h1>Doddy <em>na zakupach</em></h1>
+    <p class="lede">Mówisz, czego szukasz. Doddy sprawdza gazetki i sklepy, pokazuje najtańszą sensowną opcję razem z warunkami i godziną sprawdzenia, a na życzenie robi raport PDF. Płacisz w sklepie. Doddy nigdy nie trzyma Twoich pieniędzy.</p>
+    <div class="jobs">
+      <div class="job"><span class="when">Etap 1</span><b>Gazetki</b><span class="muted">„Gdzie w tym tygodniu najtaniej masło?” i cały koszyk: jeden sklep czy dwa.</span></div>
+      <div class="job"><span class="when">Etap 1</span><b>Znajdź mi to</b><span class="muted">Dowolna rzecz. Jedno pytanie o to, co najważniejsze, potem 3 propozycje i raport.</span></div>
+      <div class="job"><span class="when">Etap 1–3</span><b>Kup i pilnuj</b><span class="muted">Zakup w sklepie jednym stuknięciem, alert o spadku ceny, później płatność w aplikacji.</span></div>
+    </div>
+  </div>
+  <div class="stage" aria-hidden="true">
+    <span class="note">Masło jest taniej. Z aplikacją.</span>
+    <img src="img/kneeling_inspect.png" alt="">
+  </div>
+</header>
+
+<!-- Shelf A -->
+<section class="shelf" id="gazetki">
+  <div class="shelf-head">
+    <div class="prose">
+      <p class="eyebrow">Makiety · ścieżka 1</p>
+      <h2>Gazetki: najtaniej w tym tygodniu</h2>
+      <p class="muted">Najczęstsze zakupy, najmniej klikania. Na Twoje pytanie Doddy czyta tegotygodniowe gazetki wybranych sklepów i odpowiada z warunkami promocji. Gazetki, których nie wolno albo nie da się przeczytać, dostajesz jako link. Koszyk liczy kod, nie model.</p>
+    </div>
+    <span class="tag">Etap 1</span>
+  </div>
+  <div class="phones">
+
+    <figure class="shot">
+      <div class="phone"><div class="screen home">
+        <div class="island wide"><span class="face"></span><span class="waves"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <div class="sb"><span>8:12</span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="body">
+          <div class="apphead"><svg class="wm" viewBox="0 0 113.168 51.470" role="img" aria-label="Doddy"><use href="#wm"></use></svg><span class="more">•••</span></div>
+          <div class="figwrap"><img src="img/listening.png" alt=""></div>
+          <div class="said">Gdzie w tym tygodniu najtaniej masło, pampersy czwórki i kawa?</div>
+          <div class="state">Doddy mówi</div>
+          <p class="line">Sprawdzam gazetki Biedronki, Lidla i&nbsp;Dino, czyli Twoich sklepów. Chwila.</p>
+          <div class="ctrls"><span class="btn small">Wycisz</span><span class="btn small primary">Zakończ</span></div>
+        </div>
+      </div></div>
+      <figcaption><b><span>1.</span> Pytasz jak zwykle</b>Głosem na Home albo w Wiadomościach. Gazetki to dane publiczne, więc mogą działać bez pytania o zgodę, jak pogoda (decyzja właściciela).</figcaption>
+    </figure>
+
+    <figure class="shot">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="sb"><span>8:12</span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="body">
+          <div class="navt">‹ Rozmowa</div>
+          <div><div class="title">Najtaniej w tym tygodniu</div><div class="sub">Gazetki 23–29.10 · odczytane dziś o 8:10</div></div>
+          <div class="deal">
+            <div class="what">Masło 82%, 200 g <span class="others">· 24,95 zł/kg</span></div>
+            <div class="best"><span class="lp">4<sup>,99</sup><small>zł</small></span><span class="chip shop">Biedronka</span><span class="chip cond">z aplikacją · max 4 szt.</span></div>
+            <div class="others">Bez aplikacji 6,49 · Lidl 5,49 · Dino 5,99</div>
+          </div>
+          <div class="deal">
+            <div class="what">Pieluchy rozm. 4, paczka 50 szt.</div>
+            <div class="best"><span class="lp">44<sup>,99</sup><small>zł</small></span><span class="chip shop">Lidl</span><span class="chip cond">z Lidl Plus</span></div>
+            <div class="others">Dino 47,99 · Biedronka 49,99</div>
+          </div>
+          <div class="deal">
+            <div class="what">Kawa mielona 500 g</div>
+            <div class="best"><span class="lp">19<sup>,99</sup><small>zł</small></span><span class="chip shop">Dino</span><span class="chip cond">do środy 29.10</span></div>
+            <div class="others">Biedronka 21,99 · Lidl 24,99</div>
+          </div>
+          <p class="hand">Masło taniej tylko z aplikacją. Bez niej wygrywa Lidl.</p>
+          <span class="btn small">Policz koszyk z mojej listy</span>
+          <div class="skipped">Nie sprawdzone: Kaufland, bo jego strona blokuje automaty. <u>Otwórz gazetkę</u></div>
+          <div class="foot-note">Ceny z gazetek. W sklepie mogą być inne. Każda cena ma stronę gazetki, z której pochodzi. <u>Pokaż źródło</u> · <span>Przykładowe ceny</span></div>
+        </div>
+      </div></div>
+      <figcaption><b><span>2.</span> Cena z warunkami</b>Zawsze z tym, co trzeba spełnić: aplikacja sklepu, limit sztuk, data końca. Najtańsza bez warunków jest w linijce pod spodem.</figcaption>
+    </figure>
+
+    <figure class="shot">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="sb"><span>8:14</span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="body">
+          <div class="navt">‹ Najtaniej</div>
+          <div><div class="title">Koszyk na sobotę</div><div class="sub">Twoja lista: 6 z 6 rzeczy w gazetkach</div></div>
+          <div class="list"><span class="chip">masło</span><span class="chip">pieluchy 4</span><span class="chip">cola 2 l</span><span class="chip">jajka L</span><span class="chip">kawa</span><span class="chip">banany</span></div>
+          <div class="opt">
+            <span class="lab">Jeden sklep</span>
+            <div class="tot"><b>Dino</b><span class="lp">94<sup>,24</sup><small>zł</small></span></div>
+            <span class="split">Lidl 95,74 · Biedronka 97,94</span>
+          </div>
+          <div class="opt win">
+            <span class="lab">Dwa sklepy</span>
+            <div class="tot"><b>Lidl + Dino</b><span class="lp">89<sup>,44</sup><small>zł</small></span></div>
+            <div class="mini"><span>Lidl: masło, pieluchy, jajka, banany</span><span>63,96</span><span>Dino: cola, kawa</span><span>25,48</span></div>
+            <span class="save">Taniej o 4,80&nbsp;zł</span>
+          </div>
+          <p class="hand">4,80&nbsp;zł. Warto, jeśli i tak jedziesz obok obu.</p>
+          <span class="btn primary small">Rozpisz na dwie listy</span>
+          <div class="foot-note">Sumy liczy kod z cen w gazetkach, nie AI. Listy powstają dopiero po stuknięciu w kartę z ich treścią. · Przykładowe ceny</div>
+        </div>
+      </div></div>
+      <figcaption><b><span>3.</span> Jeden sklep czy dwa</b>Doddy mówi, ile naprawdę oszczędzasz, i nie namawia na objazd za kilka złotych. Listy trafiają do istniejących list Doddy'ego.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- Shelf B -->
+<section class="shelf" id="znajdz">
+  <div class="shelf-head">
+    <div class="prose">
+      <p class="eyebrow">Makiety · ścieżka 2</p>
+      <h2>Znajdź mi to</h2>
+      <p class="muted">Każda rzecz, od zmywarki po buty do biegania. To jest istniejąca „sprawa” Doddy'ego (zadanie w tle na serwerze) z nowym, zakupowym wynikiem: jedno pytanie, jedna zgoda, wynik z godziną sprawdzenia każdej ceny.</p>
+    </div>
+    <span class="tag">Etap 1</span>
+  </div>
+  <div class="phones">
+
+    <figure class="shot">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="sb"><span>13:57</span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="body">
+          <div class="navt">‹ Doddy</div>
+          <div class="thread">
+            <div class="bub me">Szukam cichej zmywarki do zabudowy, 45 cm, do 2000&nbsp;zł</div>
+            <div class="bub dd">Co jest najważniejsze? Stuknij po kolei.</div>
+            <div class="prio">
+              <span class="chip on"><i>1</i>Cisza</span><span class="chip on"><i>2</i>Cena</span><span class="chip on"><i>3</i>Gwarancja</span>
+              <span class="chip off">Pojemność</span><span class="chip off">Dostawa jutro</span><span class="chip off">Marka</span>
+            </div>
+            <div class="card">
+              <h4>Przekazać to Doddy'emu?</h4>
+              <p class="q">„Szukam cichej zmywarki do zabudowy, 45 cm, do 2000&nbsp;zł”<br><span class="sub">Kolejność: cisza, cena, gwarancja</span></p>
+              <p class="fine">Szuka w sklepach w Polsce i czyta ich strony, w tle. Da znać, gdy skończy. Niczego nie kupuje, nie zamawia i nie wysyła.</p>
+              <div class="row"><span class="btn small">Nie</span><span class="btn small primary">Tak, szukaj</span></div>
+            </div>
+          </div>
+          <div class="composer"><span class="plus">+</span><span class="field">Wiadomość</span></div>
+        </div>
+      </div></div>
+      <figcaption><b><span>1.</span> Jedno pytanie, jedna zgoda</b>Ułożenie priorytetów to całe „opisz, co najważniejsze”. Karta pokazuje Twoje słowa bez zmian. Jedno „tak” obejmuje wszystkie wyszukiwania tej sprawy i nic więcej.</figcaption>
+    </figure>
+
+    <figure class="shot">
+      <div class="phone"><div class="screen lock">
+        <div class="island"></div>
+        <div class="sb"><span></span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="date">sobota, 24 października</div>
+        <div class="clock">14:01</div>
+        <div class="stack">
+          <div class="la">
+            <span class="bigface"></span>
+            <div><b>Szukam: cicha zmywarka</b><span class="s">4 z 6 sklepów sprawdzone</span>
+              <div class="stones"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i></div></div>
+          </div>
+          <div class="notif"><span class="ic"><span></span></span><div><b>Doddy</b><p>Gotowe. Wynik sprawy czeka w aplikacji.</p></div><time>teraz</time></div>
+        </div>
+      </div></div>
+      <figcaption><b><span>2.</span> Szuka w tle</b>Możesz zamknąć aplikację. Postęp na ekranie blokady i na wyspie. Powiadomienie nie zdradza, czego szukasz (tak jak dziś w sprawach).</figcaption>
+    </figure>
+
+    <figure class="shot">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="sb"><span>14:05</span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="body">
+          <div class="navt">‹ Sprawy</div>
+          <div><div class="title">Cicha zmywarka 45 cm</div><div class="sub">23 oferty w 6 sklepach · ceny sprawdzone 14:02–14:04</div></div>
+          <div class="pick">
+            <img src="img/fistpump.png" alt="">
+            <span class="lab">Mój wybór</span>
+            <span class="name">45 cm · 42 dB · 10 kompletów · klasa C</span>
+            <span class="lp">1&nbsp;899<small>zł</small></span>
+            <div class="row" style="flex-wrap:wrap;gap:4px"><span class="chip shop">Media Expert</span><span class="chip ok">✓ cena na stronie 14:02</span></div>
+            <span class="sub">Najcichsza w budżecie. Obniżka prawdziwa: najniższa cena z 30 dni to 1&nbsp;949&nbsp;zł.</span>
+          </div>
+          <div class="alt"><span class="lab">Najtańsza</span><span>47 dB · RTV Euro AGD</span><span class="p">1&nbsp;449&nbsp;zł</span><span class="m">o 5 dB głośniejsza</span><span></span></div>
+          <div class="alt"><span class="lab">Bez kompromisów</span><span>39 dB · x-kom</span><span class="p">2&nbsp;299&nbsp;zł</span><span class="m">najcichsza ze wszystkich</span><span class="over">+299&nbsp;zł</span></div>
+          <div class="actions">
+            <span class="btn primary small">Kup w Media Expert</span>
+            <span class="btn small">Raport PDF</span><span class="btn small">Pilnuj ceny</span>
+          </div>
+        </div>
+      </div></div>
+      <figcaption><b><span>3.</span> Trzy propozycje, nie trzydzieści</b>Mój wybór według Twojej kolejności, najtańsza (żeby było widać, ile kosztuje cisza) i jedna ponad budżet z dopłatą na wierzchu. Przykładowe ceny.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- Shelf C -->
+<section class="shelf" id="kup">
+  <div class="shelf-head">
+    <div class="prose">
+      <p class="eyebrow">Makiety · ścieżka 3</p>
+      <h2>Kup i pilnuj</h2>
+      <p class="muted">Najpierw zakup w sklepie (etap 1), alert o cenie (etap 2), a płatność wewnątrz Doddy'ego dopiero ze sklepami, które obsłużą zakupy przez asystenta (etap 3).</p>
+    </div>
+    <span class="tag">Etap 1 → 3</span>
+  </div>
+  <div class="phones">
+
+    <figure class="shot">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="sb"><span>14:06</span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="body under">
+          <div class="navt">‹ Sprawy</div>
+          <div><div class="title">Cicha zmywarka 45 cm</div><div class="sub">23 oferty w 6 sklepach</div></div>
+          <div class="pick"><span class="lab">Mój wybór</span><span class="name">45 cm · 42 dB · 10 kompletów</span><span class="lp">1&nbsp;899<small>zł</small></span></div>
+        </div>
+        <div class="dim"></div>
+        <div class="sheet">
+          <span class="grab"></span>
+          <h4>Kupujesz w Media Expert</h4>
+          <div class="kv"><dt>Zmywarka 45 cm, 42 dB</dt><dd>1&nbsp;899,00&nbsp;zł</dd><dt>Cena sprawdzona</dt><dd>14:02, 4 min temu</dd></div>
+          <ul class="ticks">
+            <li>Otworzy się strona sklepu w Doddym.</li>
+            <li>Płacisz tam: Apple Pay, BLIK albo kartą.</li>
+            <li>Doddy nie widzi płatności i nie wie, czy kupiłeś.</li>
+          </ul>
+          <p class="sub">Link partnerski: Doddy może dostać prowizję. Kolejność ofert od tego nie zależy.</p>
+          <span class="btn primary">Otwórz sklep</span>
+          <p class="sub" style="text-align:center">Kupione? Zrób zdjęcie paragonu, a Doddy zapamięta termin zwrotu.</p>
+        </div>
+      </div></div>
+      <figcaption><b><span>1.</span> Etap 1: płacisz w sklepie</b>Zero licencji płatniczych i zero pieniędzy u Doddy'ego. Sklep jest sprzedawcą, ma Twoje Apple Pay i BLIK u siebie.</figcaption>
+    </figure>
+
+    <figure class="shot">
+      <div class="phone"><div class="screen lock">
+        <div class="island"></div>
+        <div class="sb"><span></span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="date">czwartek, 29 października</div>
+        <div class="clock">9:02</div>
+        <div class="stack">
+          <div class="notif"><span class="ic"><span></span></span><div><b>Doddy · pilnuję ceny</b><p>Zmywarka 45 cm, 42 dB: 1&nbsp;779&nbsp;zł w Media Expert (było 1&nbsp;899). Sprawdzone 9:01.</p></div><time>teraz</time></div>
+          <div class="notif"><span class="ic"><span></span></span><div><b>Doddy</b><p>Pilnuję 2 rzeczy. Koniec za 25 dni albo gdy powiesz „przestań”.</p></div><time>wt.</time></div>
+        </div>
+      </div></div>
+      <figcaption><b><span>2.</span> Etap 2: pilnuj ceny</b>„Daj znać, jak spadnie poniżej 1&nbsp;800&nbsp;zł.” Tylko powiadomienie, nigdy zakup. Sprawdza kilka razy dziennie, kończy po 30 dniach.</figcaption>
+    </figure>
+
+    <figure class="shot">
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="sb"><span>14:07</span><span class="icons">5G <span class="batt"></span></span></div>
+        <div class="body under">
+          <div class="navt">‹ Sprawy</div>
+          <div><div class="title">Cicha zmywarka 45 cm</div></div>
+        </div>
+        <div class="dim"></div>
+        <div class="sheet">
+          <span class="grab"></span>
+          <h4>Zamówić to?</h4>
+          <dl class="kv">
+            <dt>Zmywarka 45 cm, 42 dB</dt><dd>1&nbsp;899,00&nbsp;zł</dd>
+            <dt>Dostawa jutro</dt><dd>0,00&nbsp;zł</dd>
+            <dt>Montaż</dt><dd>nie</dd>
+            <dt>Adres</dt><dd>ul. Przykładowa 5, Warszawa</dd>
+            <dt class="sum">Razem</dt><dd class="sum">1&nbsp;899,00&nbsp;zł</dd>
+          </dl>
+          <p class="sub">Sprzedaje Media Expert. Zwrot 14 dni i reklamacje u sklepu.</p>
+          <span class="paybtn">Kup z Apple Pay</span>
+          <span class="paybtn alt2">Zapłać BLIK-iem</span>
+          <div class="status ok"><span class="m">✓</span><span>Sklep potwierdził zamówienie. Numer i paragon w sprawie.</span></div>
+          <div class="status unk"><span class="m">?</span><span>Albo: nie wiem, czy przeszło. Sprawdź maila od sklepu. Nie ponawiam sam.</span></div>
+        </div>
+      </div></div>
+      <figcaption><b><span>3.</span> Etap 3: zapłać w Doddym</b>Tylko ze sklepami podłączonymi przez protokół zakupów (np. Stripe, dziś w wersji testowej). Zgoda na dokładny koszyk; „zamówione” dopiero po potwierdzeniu sklepu. BLIK dla asystentów jest w pilotażu. Przycisk Apple Pay to systemowy przycisk Apple.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- Report -->
+<section class="report" id="raport">
+  <div class="prose">
+    <p class="eyebrow">Raport PDF</p>
+    <h2>Raport w stylu Doddy'ego, za 0&nbsp;zł</h2>
+    <p>Tani model pisze tylko krótkie zdania do stałych pól (dlaczego ten wybór, na co uważać). Ceny, linki i godziny przychodzą z wyniku sprawy, który kod już sprawdził. Plik składa iPhone z szablonu, więc każdy raport wygląda tak samo i nic dodatkowego nie wychodzi z telefonu.</p>
+    <div class="facts">
+      <div class="fact"><b>Strona 1</b><span>Twoje słowa, Twoja kolejność, mój wybór z powodem, tabela 4 ofert, „jak wybierałem”.</span></div>
+      <div class="fact"><b>Strona 2</b><span>Na co uważać, co odrzucone i dlaczego, czego Doddy nie wie, co dalej, źródła z godziną otwarcia.</span></div>
+      <div class="fact"><b>Uczciwość</b><span>Cena bez strony sklepu nie trafia do raportu. „Czego nie wiem” jest stałą sekcją, nie wyjątkiem.</span></div>
+    </div>
+  </div>
+  <div class="pages">
+    <img src="report/raport-strona-1.png" alt="Strona 1 przykładowego raportu: cicha zmywarka 45 cm, mój wybór za 1&nbsp;899&nbsp;zł w Media Expert, tabela czterech ofert i sekcja jak wybierałem.">
+    <img src="report/raport-strona-2.png" alt="Strona 2 przykładowego raportu: na co uważać, odrzucone oferty, czego nie wiem, co dalej i lista źródeł.">
+  </div>
+</section>
+
+<!-- Data sources -->
+<section class="data" id="dane">
+  <div class="data-head">
+    <div class="prose">
+      <p class="eyebrow">Skąd dane</p>
+      <h2>Ceny tylko ze źródeł, które wolno czytać</h2>
+      <p class="muted">Sklepy i część sieci blokują automaty, a agregatory gazetek nie mają publicznego API i w regulaminach zabraniają kopiowania. Dlatego na start Doddy czyta oficjalne źródła na Twoje pytanie, a resztę daje jako link.</p>
+    </div>
+    <img src="img/belly_reading.png" alt="" class="data-fig">
+  </div>
+  <div class="srcgrid">
+    <div class="src">
+      <h3>Gazetki</h3>
+      <ul class="srclist">
+        <li><b>Lidl</b><span>czytnik i PDF; tekst stron i daty w danych strony</span><i class="go">czytamy</i></li>
+        <li><b>Biedronka</b><span>same obrazy stron, bez danych o produktach</span><i class="go">czytamy obraz</i></li>
+        <li><b>Dino</b><span>PDF i strony z kodem EAN, nazwą i ceną</span><i class="go">czytamy</i></li>
+        <li><b>Rossmann</b><span>produkty z EAN, ceną, ceną za jednostkę i „ceną z apką”</span><i class="go">czytamy</i></li>
+        <li><b>Kaufland, Carrefour, Hebe, Pepco, Action</b><span>strony blokują automaty; blokad nie obchodzimy</span><i class="link">link</i></li>
+        <li><b>Auchan, Netto, Żabka</b><span>gazetki w zewnętrznych czytnikach</span><i class="link">link na start</i></li>
+        <li><b>Blix, Ding i Okazjum, Moja Gazetka, Gazetki.pl, Kimbino</b><span>brak publicznego API, kopiowanie zabronione</span><i class="ask">tylko licencja</i></li>
+      </ul>
+    </div>
+    <div class="src">
+      <h3>Sklepy</h3>
+      <ul class="srclist">
+        <li><b>Google Shopping przez dostawcę API</b><span>SearchApi lub SerpApi, Polska i polski; szeroko, z Allegro w środku</span><i class="go">źródło ofert</i></li>
+        <li><b>Strona oferty w sklepie</b><span>cena, waluta, dostępność i EAN z danych schema.org, czytane przez kod</span><i class="go">sprawdzian ceny</i></li>
+        <li><b>Feedy partnerskie</b><span>Webepartners, Tradedoubler, Admitad: dane na licencji i prowizja</span><i class="ask">etap 2</i></li>
+        <li><b>Allegro API</b><span>wyszukiwania ofert nie ma od 16.09.2026, regulamin zakazuje pokazywania ofert u konkurencji</span><i class="no">nie</i></li>
+        <li><b>Ceneo, Amazon.pl</b><span>blokują boty Claude w robots.txt; Ceneo tylko dla partnerów</span><i class="no">nie w etapie 1</i></li>
+      </ul>
+    </div>
+  </div>
+  <div class="law">
+    <article><h3>Prawo do bazy danych</h3><p>Wyszukiwarka, która kopiuje i indeksuje dużą część cudzej bazy, może ją naruszać (TSUE, CV-Online, 2021). Wspólny indeks wszystkich gazetek bez licencji to ten przypadek. Stąd odczyt na żądanie, bez wspólnej bazy.</p></article>
+    <article><h3>Ceny to fakty, gazetka to utwór</h3><p>Cenę wolno podać. Zdjęć i układu gazetki Doddy nie przechowuje ani nie pokazuje; daje link do strony gazetki. Wyjątek na analizę danych (od 20.09.2024) pozwala kopiować do analizy, nie udostępniać.</p></article>
+    <article><h3>Najniższa cena z 30 dni</h3><p>Obowiązuje też w gazetkach i przy rabatach z aplikacją; „2+1” jej nie ma. Doddy liczy prawdziwą obniżkę i mówi, gdy „promocja” nie jest niższa od tej ceny.</p></article>
+    <article><h3>Opinia prawnika</h3><p>Przed startem gazetek: prawnik od praw do baz danych. Przed płatnością w aplikacji: prawnik od usług płatniczych. To nie jest porada prawna.</p></article>
+  </div>
+  <div class="lessons">
+    <h3>Czego uczą inni</h3>
+    <ul>
+      <li><b>Moja Gazetka, Blix, Gazetkowo, Okazjum</b> mają po kilka do kilkunastu tysięcy ocen (4,7–4,8) i wszystkie służą do przeglądania. Doddy odpowiada na pytanie.</li>
+      <li><b>Tańszy Koszyk</b> (strona www) porównuje 12 sieci, pokazuje warunki promocji, zamienniki i ile rzeczy z listy znalazł („8 z 10”). Warto to przejąć.</li>
+      <li><b>91% produktów z gazetek jest tylko w jednej sieci.</b> Porównanie idzie po cenie za kilogram lub litr i podobnym produkcie; Doddy mówi, kiedy porównuje różne marki.</li>
+      <li><b>Modele dobrze czytają cenę główną</b> (88–92% w badaniach), słabo cenę regularną, rabat i cenę za jednostkę. Kod sprawdza rachunki, a niepewne oznacza jako niepewne.</li>
+      <li><b>Wielcy też się mylą:</b> w teście 220 pytań asystenci zakupowi dali 86% odpowiedzi błędnych lub sprzecznych. Stąd zasada: żadnej ceny bez strony, którą Doddy otworzył.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Payments -->
+<section class="pay" id="platnosci">
+  <div class="prose">
+    <p class="eyebrow">Płatności · Apple Pay i BLIK</p>
+    <h2>Pieniądze nigdy nie przechodzą przez Doddy'ego</h2>
+    <p>Apple nie pozwala sprzedawać rzeczy fizycznych przez zakupy w aplikacji; zostaje Apple Pay albo inna metoda (wytyczne 3.1.3(e)). Kto zbiera pieniądze od klienta i płaci sklepowi, świadczy usługę płatniczą i potrzebuje licencji KNF. Dlatego Doddy nie pośredniczy w pieniądzach. Płaci się sklepowi, który jest sprzedawcą, przyjmuje zwroty i reklamacje.</p>
+  </div>
+  <div class="ladder">
+    <article class="rung now">
+      <span class="when">Etap 1 · teraz</span>
+      <h3>Kasa sklepu</h3>
+      <p>Strona albo aplikacja sklepu otwiera się z Doddy'ego. Płacisz tam Apple Pay, BLIK-iem lub kartą, tak jak zawsze.</p>
+      <ul><li>bez licencji, bez umów ze sklepami</li><li>Doddy zapisuje „przekazane do sklepu”, nigdy „kupione”</li><li>przychód: linki partnerskie, oznaczone przy przycisku</li></ul>
+    </article>
+    <article class="rung later">
+      <span class="when">Etap 3 · gdy sklepy dołączą</span>
+      <h3>Zakup przez asystenta</h3>
+      <p>Arkusz Apple Pay w Doddym, sklep jako sprzedawca. Działa przez protokół zakupów, np. Stripe (wersja testowa; Polska na liście, karty i Apple Pay, bez BLIK-a).</p>
+      <ul><li>umowa z każdym sklepem, Doddy jako „pośrednik” w umowie Apple</li><li>„zamówione” dopiero po potwierdzeniu od sklepu</li><li>BLIK dla asystentów: pilotaż PayU, wrzesień 2026</li></ul>
+    </article>
+    <article class="rung never">
+      <span class="when">Nie robimy</span>
+      <h3>Doddy jako sklep lub portfel</h3>
+      <p>Zbieranie pieniędzy i płacenie za klienta, albo odsprzedaż.</p>
+      <ul><li>licencja KNF albo agent instytucji płatniczej</li><li>zwroty, gwarancje, VAT i reklamacje po stronie Doddy'ego</li><li>dzisiejsze szkice przelewów BLIK zostają osobno</li></ul>
+    </article>
+  </div>
+  <p class="muted small">Stan na 24.10.2026: Google kupuje przez asystenta tylko w USA, Kanadzie i Australii; OpenAI wycofało zakupy w ChatGPT w marcu 2026; Visa i Mastercard prowadzą pierwsze zakupy agentów w Europie (PKO BP, mBank, Pekao). Żaden polski sklep nie przyjmuje jeszcze zakupów od zewnętrznych asystentów. Opinia prawnika przed etapem 3.</p>
+</section>
+
+
+
+
+<!-- Infrastructure -->
+<section class="infra" id="infrastruktura">
+  <div class="prose">
+    <p class="eyebrow">Infrastruktura</p>
+    <h2>Większość już jest. Brakuje źródeł danych i jednego sprawdzianu ceny.</h2>
+    <p class="muted">Sprawy w tle, serwer, powiadomienia, karty zgody i pliki istnieją w repozytorium (nie wszystko jest włączone). Tryb zakupów to nowy typ wyniku, odczyt gazetek, pilnowanie cen i dwa nowe źródła danych.</p>
+  </div>
+  <div class="lanes">
+    <div class="lane">
+      <h3>Na iPhonie</h3>
+      <div class="node"><b>Głos i Wiadomości</b><span>pytanie, jedno pytanie zwrotne, karta zgody</span><i class="have">jest</i></div>
+      <div class="node"><b>Ekrany: Najtaniej, Koszyk, 3 propozycje, Pilnuję</b><span>wynik sprawy w nowym układzie</span><i class="new">nowe</i></div>
+      <div class="node"><b>Liczenie koszyka</b><span>czysta funkcja w DoddyCore, testy na Linuksie</span><i class="new">nowe</i></div>
+      <div class="node"><b>Raport PDF z szablonu</b><span>SwiftUI do PDF na telefonie, 0 zł za plik</span><i class="new">nowe</i></div>
+      <div class="node"><b>„Moje sklepy”, „mam Lidl Plus”</b><span>tylko po karcie „Zapamiętać?”</span><i class="have">jest pamięć</i></div>
+      <div class="node"><b>Sklep w Doddym</b><span>strona sklepu w Safari w aplikacji, płaci sklep</span><i class="new">nowe</i></div>
+    </div>
+    <div class="lane">
+      <h3>Serwer Doddy'ego</h3>
+      <div class="node"><b>Sprawy w tle (errands)</b><span>jedna zgoda na wszystkie wyszukiwania sprawy, wynik w stałym schemacie</span><i class="have">jest, wyłączone</i></div>
+      <div class="node"><b>Wynik „zakupy”</b><span>oferty z ceną, sklepem, dostawą, godziną i poziomem pewności</span><i class="new">nowe</i></div>
+      <div class="node"><b>Sprawdzian ceny</b><span>kod otwiera stronę oferty i czyta cenę z jej danych (schema.org); bez tego cena spada do „z listy” albo znika</span><i class="new">nowe</i></div>
+      <div class="node"><b>Gazetki na żądanie</b><span>po pytaniu: oficjalna gazetka, tekst do wyboru stron, 1–3 wycinki do odczytu; nic nie zostaje. Wspólna baza dopiero z licencją</span><i class="new">nowe</i></div>
+      <div class="node"><b>Pilnowanie cen</b><span>sprawdza kilka razy dziennie, push, koniec po 30 dniach</span><i class="new">nowe</i></div>
+      <div class="node"><b>Powiadomienia, szyfrowanie, limity</b><span>APNs, klucz do tekstu, limity na konto</span><i class="have">jest</i></div>
+    </div>
+    <div class="lane">
+      <h3>Na zewnątrz</h3>
+      <div class="node"><b>Oferty sklepów</b><span>Google Shopping przez dostawcę API (gl=pl), potem feedy partnerskie</span><i class="new">nowe</i></div>
+      <div class="node"><b>Gazetki</b><span>oficjalne strony Lidla, Biedronki, Dino i Rossmanna; reszta jako link; licencja od agregatora w drugim kroku</span><i class="new">do decyzji</i></div>
+      <div class="node"><b>Claude Haiku 5.5</b><span>czytanie stron i gazetek, krótkie zdania do raportu</span><i class="new">nowe</i></div>
+      <div class="node"><b>Claude Sonnet 5.5</b><span>wybór według Twojej kolejności i „dlaczego”</span><i class="new">zamiast Opusa</i></div>
+      <div class="node"><b>Wyszukiwanie i pobieranie stron Anthropic</b><span>uzupełnienie, gdy dostawca ofert nie wystarczy</span><i class="have">jest</i></div>
+      <div class="node"><b>Kasa sklepu</b><span>etap 1: strona sklepu; etap 3: protokół zakupów przez asystenta</span><i class="new">później</i></div>
+    </div>
+  </div>
+  <ol class="flow">
+    <li><b>Pytasz</b><span>„najtaniej masło” albo „cicha zmywarka do 2000 zł”</span></li>
+    <li><b>Gazetki</b><span>oficjalna gazetka, wycinki stron do Haiku, ceny sprawdza kod</span></li>
+    <li><b>Rzecz: sprawa</b><span>oferty od dostawcy, kod sprawdza ceny na stronach sklepów</span></li>
+    <li><b>Wybór</b><span>Sonnet układa według Twojej kolejności, kod pilnuje faktów</span></li>
+    <li><b>Wynik i raport</b><span>na iPhonie, z godziną każdej ceny</span></li>
+    <li><b>Sklep</b><span>płacisz u sprzedawcy</span></li>
+  </ol>
+</section>
+
+<!-- Costs -->
+<section class="costs" id="koszty">
+  <div class="prose">
+    <p class="eyebrow">Koszty</p>
+    <h2>Gazetki kosztują grosze. Wyszukiwanie rzeczy ma cenę.</h2>
+    <p class="muted">Ceny modeli Anthropic z 24.10.2026: Haiku 5.5 to 0,10 $ za milion tokenów wejścia i 0,50 $ wyjścia, Sonnet 5.5 to 2 $ i 10 $, Opus 5.5 to 4 $ i 20 $; wyszukiwanie w sieci 10 $ za 1000. Liczby tokenów są szacunkami do zmierzenia. Kurs przyjęty 1 $ ≈ 4 zł.</p>
+  </div>
+  <div class="tablewrap">
+    <table class="cost">
+      <thead><tr><th>Co</th><th>Czym</th><th class="num">Za jedno</th><th class="num">Miesięcznie</th></tr></thead>
+      <tbody>
+        <tr><td><b>Pytanie o gazetki</b><span>etap 1: na żądanie, 1–3 wycinki stron na sieć</span></td><td>Haiku 5.5 czyta wycinki; kod sprawdza ceny i liczy</td><td class="num">ok. 0,01 $ (4 gr)</td><td class="num">10 $ za 1000 pytań</td></tr>
+        <tr><td><b>Wszystkie gazetki co tydzień</b><span>etap 2, tylko z licencją; ok. 1200 stron</span></td><td>Haiku 5.5, strona do tabeli ofert; tryb wsadowy −50%</td><td class="num">ok. 0,5 gr za stronę</td><td class="num">ok. 3–13 $ + licencja</td></tr>
+        <tr><td><b>Znajdź mi to</b><span>3 zapytania o oferty, 10 stron, wybór</span></td><td>dostawca ofert, sprawdzian w kodzie, Haiku czyta, Sonnet wybiera</td><td class="num">0,10–0,15 $<br><span>do 0,45 $ z ponowieniami</span></td><td class="num">100–450 $ za 1000 spraw</td></tr>
+        <tr><td><b>Raport PDF</b></td><td>szablon na iPhonie</td><td class="num">0 zł</td><td class="num">0 zł</td></tr>
+        <tr><td><b>Pilnowanie ceny</b><span>3 sprawdzenia dziennie przez 30 dni</span></td><td>pobranie strony i odczyt ceny w kodzie; dostawca ofert, gdy sklep blokuje</td><td class="num">ok. 0 $</td><td class="num">do ok. 0,40 $ za rzecz</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="money-notes">
+    <p><b>Gazetki w darmowym planie, z limitem.</b> To najczęstsze pytanie i tanie w obsłudze (np. 30 pytań miesięcznie to ok. 0,30 $), więc dobrze przyciąga. „Znajdź mi to” z limitem w Best Mate, np. 15 spraw miesięcznie (ok. 1,50–2,25 $), więcej w Pro.</p>
+    <p><b>Linki partnerskie mogą pokryć wyszukiwanie.</b> Elektronika płaci ok. 0,5–3% prowizji: zmywarka za 1899 zł to ok. 10–55 zł. Warunek: prowizja nie zmienia kolejności ofert i jest napisana przy przycisku.</p>
+    <p><b>Sprawy dziś idą na Opusie 5.5 bez limitu wyszukiwań.</b> Dla zakupów wystarczy Sonnet 5.5 z limitem kroków; to decyzja właściciela.</p>
+  </div>
+</section>
+
+<!-- Alternatives -->
+<section class="alts" id="inne">
+  <div class="prose">
+    <p class="eyebrow">Inne pomysły</p>
+    <h2>Mniejsze rzeczy, które mogą zrobić więcej</h2>
+    <p class="muted">Każdą da się dołożyć do trybu zakupów albo zrobić zamiast niego, jeśli gazetki okażą się za drogie w licencji.</p>
+  </div>
+  <div class="altgrid">
+    <article class="alt-card"><span class="size">mały</span><h3>Prawdziwa promocja?</h3><p>Wklejasz link albo robisz zdjęcie ceny. Doddy porównuje obniżkę z najniższą ceną z 30 dni, którą sklep musi podać, i mówi wprost: obniżka prawdziwa albo nie.</p></article>
+    <article class="alt-card"><span class="size">średni</span><h3>„Czy to dobra cena?” z aparatu</h3><p>W sklepie celujesz w etykietę. Doddy sprawdza tę rzecz w gazetkach w okolicy: „W Lidlu w tym tygodniu 3 zł taniej, do soboty”.</p></article>
+    <article class="alt-card"><span class="size">mały</span><h3>Lista, która sama się liczy</h3><p>Stała lista tygodniowa. W czwartek rano, kiedy wychodzą nowe gazetki, jedna linijka: „Twoja lista najtaniej w Lidlu, 87 zł”. Tylko jeśli sam to ustawisz.</p></article>
+    <article class="alt-card"><span class="size">średni</span><h3>Skarbiec paragonów</h3><p>Po zakupie zdjęcie paragonu. Doddy zapamiętuje termin zwrotu i gwarancji i przypomina przed końcem. Domyka pętlę „znalazłem, kupiłeś, chronię”.</p></article>
+  </div>
+</section>
+
+<!-- Plan -->
+<section class="plan" id="plan">
+  <div class="plan-head">
+    <div class="prose">
+      <p class="eyebrow">Plan</p>
+      <h2>Trzy etapy, najpierw to, co działa bez nikogo</h2>
+    </div>
+    <img src="img/reaching_high.png" alt="" class="plan-fig">
+  </div>
+  <div class="stages">
+    <article class="stage-card">
+      <span class="when">Etap 1 · ok. 3–4 tygodnie pracy</span>
+      <h3>Gazetki i „Znajdź mi to”</h3>
+      <ul>
+        <li>Serwer: wynik „zakupy” w sprawach, sprawdzian ceny na stronie sklepu, dostawca ofert, Sonnet zamiast Opusa.</li>
+        <li>Gazetki na żądanie: Lidl, Biedronka, Dino, Rossmann; pozostałe sieci jako link. Polski test na ok. 50 stronach gazetek przed startem.</li>
+        <li>iPhone: Najtaniej, Koszyk, 3 propozycje, raport PDF z szablonu, przejście do sklepu.</li>
+        <li>Testy: liczenie koszyka i sprawdzian ceny w kodzie, z celowo zepsutymi przypadkami.</li>
+      </ul>
+    </article>
+    <article class="stage-card">
+      <span class="when">Etap 2 · ok. 2 tygodnie</span>
+      <h3>Pilnuj i zarabiaj uczciwie</h3>
+      <ul>
+        <li>Pilnowanie cen z powiadomieniem, koniec po 30 dniach.</li>
+        <li>„Prawdziwa promocja?” na najniższej cenie z 30 dni.</li>
+        <li>Feedy i linki partnerskie (Webepartners, Tradedoubler, Admitad), oznaczone.</li>
+        <li>Licencja na gazetki od agregatora: wspólna baza, szybszy koszyk, więcej sieci.</li>
+      </ul>
+    </article>
+    <article class="stage-card">
+      <span class="when">Etap 3 · gdy rynek dojrzeje</span>
+      <h3>Płatność w Doddym</h3>
+      <ul>
+        <li>Gdy zakupy przez asystenta wyjdą z wersji testowej i dołączą polskie sklepy.</li>
+        <li>BLIK, gdy powstanie standard dla asystentów.</li>
+        <li>Opinia prawnika i umowy ze sklepami przed startem.</li>
+      </ul>
+    </article>
+  </div>
+  <div class="decisions">
+    <h3>Decyzje właściciela, od najważniejszej</h3>
+    <ol>
+      <li><b>Skąd gazetki:</b> na start odczyt na żądanie z oficjalnych gazetek czterech sieci, bez wspólnej bazy; równolegle prośba o licencję (Blix, Interia, Moja Gazetka, Kimbino, Tjek); opinia prawnika od praw do baz danych.</li>
+      <li><b>Nowe użycie AI w chmurze:</b> Haiku 5.5 czyta wycinki gazetek i strony sklepów. Według zasad repozytorium to osobna zgoda właściciela.</li>
+      <li><b>Dostawca ofert i budżet:</b> SearchApi (ok. 3–4 $ za 1000 zapytań) albo SerpApi (10–25 $); miesięczny limit wydatków.</li>
+      <li><b>Cena bez potwierdzenia na stronie sklepu:</b> pokazywać jako „z listy Google Shopping, 14:02” czy usuwać, jak dziś w sprawach.</li>
+      <li><b>Gazetki bez karty zgody:</b> dopisać je do publicznych wyszukiwań, jak pogodę (wyjątek od ASK-01).</li>
+      <li><b>Linki partnerskie:</b> tak albo nie; jeśli tak, oznaczenie przy przycisku i zasada, że nie zmieniają kolejności.</li>
+      <li><b>Model dla spraw zakupowych:</b> Sonnet 5.5 zamiast Opusa 5.5, z limitem kroków.</li>
+      <li><b>Płatność w aplikacji:</b> odłożona do etapu 3 (rekomendacja).</li>
+      <li><b>Plany:</b> gazetki w darmowym z limitem, „Znajdź mi to” z limitem w Best Mate.</li>
+    </ol>
+    <p class="muted small">Wciąż otwarte z wcześniej: włączenie spraw w tle na serwerze i płatny Render (darmowy usypia, a baza wygasa 10 listopada).</p>
+  </div>
+</section>
+
+
+
+<footer class="pagefoot">
+  <p><b>Co tu jest prawdziwe.</b> Nic z trybu zakupów nie jest zbudowane. Ceny, sklepy w wynikach, zamówienia i powiadomienia na makietach są zmyślone i oznaczone jako przykład. Fakty o źródłach danych, płatnościach i cenach usług sprawdzono 24.10.2026; szczegóły i linki są w repozytorium: <code>docs/strategy/TRYB_ZAKUPOW_2026-10.md</code> i <code>docs/research/2026-10-24/research_shopping_*.md</code>. Makiety: <code>design/shopping-mode-v0.1/</code>.</p>
+  <p class="muted">Doddy to AI. Postać z paczki właściciela, bez przerysowań.</p>
+</footer>
+
+</main>

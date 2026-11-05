@@ -20,6 +20,10 @@ final class NoteReminderStore {
     private(set) var authorization: NotificationAuthorization = .notDetermined
     private(set) var locationReadiness: LocationReadiness = .unavailable
     private(set) var receipts: [UUID: NoteReminderReceipt] = [:]
+    /// Notes whose reminder rings like an alarm right now (ADR-651), read back from AlarmKit.
+    private(set) var ringing: Set<UUID> = []
+    /// A note's current text, for the ringing screen's title (set at launch from MemoryStore).
+    @ObservationIgnored var noteText: (@MainActor (UUID) -> String?)?
     /// Set by a notification tap; RootView opens that memory and clears it.
     var pendingOpenMemoryID: UUID?
 
@@ -42,6 +46,37 @@ final class NoteReminderStore {
         if let stored = try? await coordinator.reminders() { reminders = stored }
         authorization = await coordinator.authorization()
         locationReadiness = await coordinator.locationReadiness()
+        await syncRinging()
+    }
+
+    /// Whether the note's reminder should ring like an alarm (ADR-651). Set before `set(…)`, which
+    /// then sets the alarm; turning it off cancels the alarm at once.
+    func setRinging(memoryID: UUID, _ rings: Bool) async {
+        ReminderRinger.setWish(memoryID, rings: rings)
+        await reload()
+    }
+
+    func wantsToRing(memoryID: UUID) -> Bool { ReminderRinger.wantsToRing(memoryID) }
+
+    /// Makes the alarms match the reminders: every reload, so a snooze, Done or a new time moves
+    /// or ends the alarm too.
+    private func syncRinging() async {
+        guard ReminderRinger.hasWishes else {
+            ringing = []
+            return
+        }
+        let showText = UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
+        let language = NotificationLanguage.current
+        // A ringing reminder's title shows on the Lock Screen too: a Private note (ADR-310) gets the title
+        // used when "Show note text in notifications" is off, never its words (ADR-722).
+        let privateNotes = PrivateNotes(stored: UserDefaults.standard.string(forKey: PrivateNotes.storageKey))
+        var titles: [UUID: String] = [:]
+        for reminder in reminders where ReminderRinger.wantsToRing(reminder.memoryID) {
+            let isPrivate = privateNotes.contains(reminder.memoryID)
+            let text = isPrivate ? "" : (noteText?(reminder.memoryID) ?? "")
+            titles[reminder.memoryID] = ReminderRing.title(noteText: text, showNoteText: showText && !isPrivate, language: language)
+        }
+        ringing = await ReminderRinger.sync(reminders, title: { titles[$0] ?? NoteReminderCopy.title(language) })
     }
 
     /// On launch and every return to the foreground: repair iOS requests, refresh status. If the
@@ -54,7 +89,22 @@ final class NoteReminderStore {
             await coordinator?.refreshContent()
             UserDefaults.standard.set(language, forKey: key)
         }
+        // Once after the update (ADR-722): a banner that was set while "Show note text in notifications" was on
+        // may hold the words of a note that is Private; they are written again without them. After this, making
+        // a note Private rewrites its own banner (`refreshContent(forMemory:)`).
+        let privateTextKey = "noteReminders.privateTextRewritten"
+        if let coordinator, !UserDefaults.standard.bool(forKey: privateTextKey) {
+            await coordinator.refreshContent()
+            UserDefaults.standard.set(true, forKey: privateTextKey)
+        }
         await coordinator?.reconcile()
+        await reload()
+    }
+
+    /// A note was made Private, or no longer is: its waiting banner and its alarm are written again with
+    /// or without its words (ADR-722).
+    func refreshContent(forMemory memoryID: UUID) async {
+        await coordinator?.refreshContent(forMemory: memoryID)
         await reload()
     }
 

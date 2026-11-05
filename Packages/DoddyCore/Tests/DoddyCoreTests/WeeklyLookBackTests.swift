@@ -56,7 +56,7 @@ final class WeeklyLookBackTests: XCTestCase {
     func testSettingsAndTheNotificationSayNothingPersonal() {
         let defaults = UserDefaults(suiteName: "WeeklyLookBackTests")!
         defaults.removePersistentDomain(forName: "WeeklyLookBackTests")
-        XCTAssertEqual(WeeklyLookBackSettings.stored(defaults), WeeklyLookBackSettings(isOn: false, weekday: 1, hour: 18, minute: 0), "off until turned on")
+        XCTAssertEqual(WeeklyLookBackSettings.stored(defaults), WeeklyLookBackSettings(isOn: false, weekday: 1, hour: 19, minute: 0), "off until turned on; Sunday 19:00, after the tidy-up")
         WeeklyLookBackSettings(isOn: true, weekday: 9, hour: 30, minute: -1).store(defaults)
         XCTAssertEqual(WeeklyLookBackSettings.stored(defaults), WeeklyLookBackSettings(isOn: true, weekday: 7, hour: 23, minute: 0))
         XCTAssertEqual(WeeklyLookBack.title(.english), "Your week with Doddy")

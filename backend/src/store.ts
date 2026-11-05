@@ -1,14 +1,12 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import type { ConnectionReason, ConnectionStatus, Receipt } from "./contracts.js";
+import { type Database, type DatabaseOptions, openDatabase, type Queryable } from "./db.js";
 
 /**
- * Small durable store (node:sqlite). Holds only what the backend needs: the internal-user →
+ * Small durable store (Postgres, ADR-525). Holds only what the backend needs: the internal-user →
  * Composio-user mapping, connection attempts, one connection per user, sanitized receipts, usage
  * counters and confirmation approvals. No calendar content, memories, chat or contacts.
- * Ownership changes, nonce consumption and usage reservations run inside transactions.
+ * Ownership changes, nonce consumption and usage reservations run inside SERIALIZABLE transactions.
  */
 
 export interface AttemptRow {
@@ -36,6 +34,13 @@ export interface ConnectionRow {
   last_checked_at: number | null;
 }
 
+/** A remote connection Doddy queued for removal, and whose it is. */
+export interface QueuedCleanup {
+  connectionId: string;
+  userId: string;
+  provider: string;
+}
+
 export interface CleanupRow {
   connection_id: string;
   user_id: string;
@@ -48,186 +53,481 @@ export interface CleanupRow {
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
+/**
+ * Every table that holds one person's rows, by `user_id` (ADR-674). `eraseUser` empties each, in
+ * this order (`users` last: attempts and connections refer to it). A test reads the live schema and
+ * fails when a table with a `user_id` column is in neither this list nor `KEPT_ON_ERASE`.
+ */
+export const ERASED_TABLES = [
+  "attempts",
+  "connections",
+  "receipts",
+  "approvals",
+  "tool_switches",
+  "tool_receipts",
+  "payment_receipts",
+  "payments",
+  "documents",
+  "web_link_codes",
+  "web_sessions",
+  "logbook_state",
+  "logbook_days",
+  "memory_state",
+  "memory_notes",
+  "memory_conversations",
+  "message_threads",
+  "invite_devices",
+  "users",
+] as const;
+
+/**
+ * `user_id` tables erasure keeps on purpose, and why. None holds anything the person said or did:
+ * - `cleanups`: a removal still owed at the provider (a connection id and its kind). It goes when the
+ *   provider confirms; until then it is what lets the hourly sweep keep trying.
+ * - `device_owner`: who this server belongs to. Clearing it would let the next caller claim it
+ *   (ADR-563); the same iPhone signs in again to the same id and is still the owner.
+ * - `token_floor`: one number per person, the second before which their earlier sign-in tokens no
+ *   longer work (ADR-709). It is written by the erasure itself; deleting it would bring back the
+ *   very tokens the person just cut off. It is dropped once every token it covers has expired.
+ * Usage counters (`usage`) have no `user_id` column. A person's own counters stay until their day or
+ * month is pruned: counts only, and erasing must not reset a daily cap. Server-wide ones are never touched.
+ */
+export const KEPT_ON_ERASE = ["cleanups", "device_owner", "token_floor"] as const;
+
+/** A device session token lives 30 days at most; a cut-off older than this covers no live token any more (ADR-709). */
+const TOKEN_FLOOR_KEPT_DAYS = 31;
+
+/**
+ * What `eraseUser` did: rows deleted per table, rows still found after (0 when complete), removals
+ * owed, and the second (since 1970) before which the person's earlier sign-in tokens stopped working.
+ */
+export interface UserErasure {
+  deleted: Record<(typeof ERASED_TABLES)[number], number>;
+  remaining: number;
+  cleanups: QueuedCleanup[];
+  tokensValidAfter: number;
+}
+
+/**
+ * The hourly sweep's retry of queued remote removals: only rows older than five minutes (a request
+ * may still be working on a newer one), at most 20 a sweep, and 24 tries (a day) per row. A row
+ * past that stays visible as `failed` and is still retried before the user's next Connect.
+ */
+export const CLEANUP_RETRY = { afterMs: 5 * 60_000, perSweep: 20, maxTries: 24 } as const;
+
+/**
+ * The schema, idempotent. Timestamps are milliseconds since 1970 (BIGINT). `seq` gives receipts a
+ * stable order for rows written in the same millisecond.
+ */
+export const SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS users (
+    user_id TEXT PRIMARY KEY,
+    composio_user_id TEXT NOT NULL UNIQUE,
+    created_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS attempts (
+    attempt_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(user_id),
+    provider TEXT NOT NULL,
+    auth_config_id TEXT NOT NULL,
+    pending_connection_id TEXT,
+    nonce_hash TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    consumed_at BIGINT,
+    status_checks INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS attempts_open ON attempts(user_id, provider) WHERE consumed_at IS NULL;
+  CREATE TABLE IF NOT EXISTS connections (
+    user_id TEXT NOT NULL REFERENCES users(user_id),
+    provider TEXT NOT NULL,
+    connection_id TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL,
+    reason TEXT,
+    account_label TEXT,
+    scopes_json TEXT,
+    connected_at BIGINT NOT NULL,
+    last_checked_at BIGINT,
+    PRIMARY KEY (user_id, provider)
+  );
+  CREATE TABLE IF NOT EXISTS cleanups (
+    connection_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('pending', 'failed')),
+    attempts INTEGER NOT NULL,
+    last_error TEXT,
+    created_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS receipts (
+    operation_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    body TEXT NOT NULL,
+    seq BIGINT GENERATED ALWAYS AS IDENTITY
+  );
+  CREATE INDEX IF NOT EXISTS receipts_user ON receipts(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS usage (
+    counter TEXT NOT NULL,
+    period TEXT NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (counter, period)
+  );
+  CREATE TABLE IF NOT EXISTS approvals (
+    approval_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    capability TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    args_digest TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    consumed_at BIGINT,
+    outcome TEXT,
+    external_id TEXT,
+    finished_at BIGINT
+  );
+  CREATE INDEX IF NOT EXISTS approvals_writes ON approvals(user_id, capability, args_digest, finished_at);
+  CREATE TABLE IF NOT EXISTS tool_switches (
+    user_id TEXT NOT NULL,
+    tool TEXT NOT NULL,
+    enabled INTEGER NOT NULL,
+    changed_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, tool)
+  );
+  CREATE TABLE IF NOT EXISTS tool_receipts (
+    operation_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    body TEXT NOT NULL,
+    seq BIGINT GENERATED ALWAYS AS IDENTITY
+  );
+  CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS payment_receipts (
+    operation_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    body TEXT NOT NULL,
+    seq BIGINT GENERATED ALWAYS AS IDENTITY
+  );
+  CREATE INDEX IF NOT EXISTS payment_receipts_user ON payment_receipts(user_id, created_at);
+  -- One row per payment attempt, written BEFORE anything is sent, so a crash leaves a visible
+  -- "unconfirmed" row instead of nothing. Host and amount only: never the page path or query.
+  CREATE TABLE IF NOT EXISTS payments (
+    payment_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    host TEXT NOT NULL,
+    amount BIGINT NOT NULL,
+    network TEXT NOT NULL,
+    url_hash TEXT NOT NULL,
+    valid_before BIGINT NOT NULL,
+    status TEXT NOT NULL,
+    transaction_hash TEXT
+  );
+  CREATE INDEX IF NOT EXISTS payments_user ON payments(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS device_owner (
+    slot INTEGER PRIMARY KEY CHECK (slot = 1),
+    user_id TEXT NOT NULL,
+    claimed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS token_floor (
+    user_id TEXT PRIMARY KEY,
+    valid_after BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS invite_devices (
+    code_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    first_used_at BIGINT NOT NULL,
+    PRIMARY KEY (code_id, user_id)
+  );
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    name TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    body BYTEA,
+    created_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS documents_user ON documents(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS web_link_codes (
+    code_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    consumed_at BIGINT
+  );
+  CREATE INDEX IF NOT EXISTS web_link_codes_user ON web_link_codes(user_id);
+  CREATE TABLE IF NOT EXISTS web_sessions (
+    session_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    browser TEXT NOT NULL,
+    os TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    last_seen_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    revoked_at BIGINT
+  );
+  CREATE INDEX IF NOT EXISTS web_sessions_user ON web_sessions(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS logbook_state (
+    user_id TEXT PRIMARY KEY,
+    enabled BOOLEAN NOT NULL,
+    changed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS logbook_days (
+    user_id TEXT NOT NULL,
+    day TEXT NOT NULL CHECK (day ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),
+    summary TEXT NOT NULL,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, day)
+  );
+  CREATE TABLE IF NOT EXISTS memory_state (
+    user_id TEXT PRIMARY KEY,
+    notes BOOLEAN NOT NULL,
+    conversations BOOLEAN NOT NULL,
+    changed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS memory_notes (
+    user_id TEXT NOT NULL,
+    note_id TEXT NOT NULL CHECK (note_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+    key_version SMALLINT NOT NULL,
+    ciphertext BYTEA NOT NULL,
+    captured_at BIGINT,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, note_id)
+  );
+  CREATE TABLE IF NOT EXISTS memory_conversations (
+    user_id TEXT NOT NULL,
+    conversation_id TEXT NOT NULL CHECK (conversation_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+    started_at BIGINT NOT NULL,
+    ended_at BIGINT NOT NULL,
+    turn_count INTEGER NOT NULL,
+    key_version SMALLINT NOT NULL,
+    ciphertext BYTEA NOT NULL,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, conversation_id)
+  );
+  CREATE INDEX IF NOT EXISTS memory_conversations_started ON memory_conversations(user_id, started_at);
+  CREATE INDEX IF NOT EXISTS memory_conversations_age ON memory_conversations(started_at);
+  CREATE INDEX IF NOT EXISTS memory_notes_age ON memory_notes(received_at);
+  CREATE TABLE IF NOT EXISTS message_threads (
+    user_id TEXT PRIMARY KEY,
+    key_version SMALLINT NOT NULL,
+    ciphertext BYTEA NOT NULL,
+    message_count INTEGER NOT NULL CHECK (message_count BETWEEN 1 AND 200),
+    received_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
+`;
+
+/** A browser signed in to Doddy Web (ADR-600). The cookie's token is stored only as a hash. */
+export interface WebSessionRow {
+  session_id: string;
+  user_id: string;
+  browser: string;
+  os: string;
+  created_at: number;
+  last_seen_at: number;
+  expires_at: number;
+}
+
+/** A document without its file, for lists (ADR-600). */
+export interface DocumentSummaryRow {
+  id: string;
+  status: DocumentRow["status"];
+  name: string;
+  mime: string;
+  size: number | null;
+  created_at: number;
+}
+
+/** A note kept on request (ADR-603): its text and provenance are one encrypted blob; the rest is what the server needs to list and sweep. */
+export interface MemoryNoteRow {
+  note_id: string;
+  key_version: number;
+  ciphertext: Buffer;
+  captured_at: number | null;
+  received_at: number;
+}
+
+/** A conversation kept on request (ADR-603). `ciphertext` holds the language, how it ended and every turn. */
+export interface MemoryConversationRow {
+  conversation_id: string;
+  started_at: number;
+  ended_at: number;
+  turn_count: number;
+  key_version: number;
+  ciphertext: Buffer;
+  received_at: number;
+}
+
+/** The Messages copy for Doddy Web: the thread as one encrypted snapshot per user. */
+export interface MessageThreadRow {
+  key_version: number;
+  ciphertext: Buffer;
+  message_count: number;
+  received_at: number;
+}
+
+/** One stored day of Logbook (ADR-602): the day, its summary as JSON text, and when the iPhone sent it. */
+export interface LogbookDayRow {
+  day: string;
+  summary: string;
+  received_at: number;
+}
+
+/** A file Claude makes for the user (ADR-564). Kept a week, then pruned. */
+export interface DocumentRow {
+  id: string;
+  user_id: string;
+  /** `working` while Claude makes it, then `ready` (with a body) or `failed`. */
+  status: "working" | "ready" | "failed";
+  name: string;
+  mime: string;
+  body: Buffer | null;
+  created_at: number;
+}
+
 export class Store {
-  readonly db: DatabaseSync;
+  private constructor(readonly db: Database) {}
 
-  constructor(path: string) {
-    if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
-    this.db = new DatabaseSync(path);
-    this.db.exec(`
-      PRAGMA journal_mode = WAL;
-      PRAGMA foreign_keys = ON;
-      PRAGMA secure_delete = ON;
-      CREATE TABLE IF NOT EXISTS users (
-        user_id TEXT PRIMARY KEY,
-        composio_user_id TEXT NOT NULL UNIQUE,
-        created_at INTEGER NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS attempts (
-        attempt_id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(user_id),
-        provider TEXT NOT NULL,
-        auth_config_id TEXT NOT NULL,
-        pending_connection_id TEXT,
-        nonce_hash TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        expires_at INTEGER NOT NULL,
-        consumed_at INTEGER,
-        status_checks INTEGER NOT NULL DEFAULT 0
-      );
-      CREATE TABLE IF NOT EXISTS connections (
-        user_id TEXT NOT NULL REFERENCES users(user_id),
-        provider TEXT NOT NULL,
-        connection_id TEXT NOT NULL UNIQUE,
-        status TEXT NOT NULL,
-        reason TEXT,
-        account_label TEXT,
-        scopes_json TEXT,
-        connected_at INTEGER NOT NULL,
-        last_checked_at INTEGER,
-        PRIMARY KEY (user_id, provider)
-      );
-      CREATE TABLE IF NOT EXISTS cleanups (
-        connection_id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        provider TEXT NOT NULL,
-        state TEXT NOT NULL,
-        attempts INTEGER NOT NULL,
-        last_error TEXT,
-        created_at INTEGER NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS receipts (
-        operation_id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        body TEXT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS receipts_user ON receipts(user_id, created_at);
-      CREATE TABLE IF NOT EXISTS usage (
-        counter TEXT NOT NULL,
-        period TEXT NOT NULL,
-        count INTEGER NOT NULL,
-        PRIMARY KEY (counter, period)
-      );
-      CREATE TABLE IF NOT EXISTS approvals (
-        approval_id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        capability TEXT NOT NULL,
-        account_id TEXT NOT NULL,
-        args_digest TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        expires_at INTEGER NOT NULL,
-        consumed_at INTEGER
-      );
-      CREATE TABLE IF NOT EXISTS tool_switches (
-        user_id TEXT NOT NULL,
-        tool TEXT NOT NULL,
-        enabled INTEGER NOT NULL,
-        changed_at INTEGER NOT NULL,
-        PRIMARY KEY (user_id, tool)
-      );
-      CREATE TABLE IF NOT EXISTS tool_receipts (
-        operation_id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        body TEXT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
-      CREATE TABLE IF NOT EXISTS payment_receipts (
-        operation_id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        body TEXT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS payment_receipts_user ON payment_receipts(user_id, created_at);
-      -- One row per payment attempt, written BEFORE anything is sent, so a crash leaves a visible
-      -- "unconfirmed" row instead of nothing. Host and amount only: never the page path or query.
-      CREATE TABLE IF NOT EXISTS payments (
-        payment_id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        host TEXT NOT NULL,
-        amount INTEGER NOT NULL,
-        network TEXT NOT NULL,
-        url_hash TEXT NOT NULL,
-        valid_before INTEGER NOT NULL,
-        status TEXT NOT NULL,
-        transaction_hash TEXT
-      );
-      CREATE INDEX IF NOT EXISTS payments_user ON payments(user_id, created_at);
-    `);
-  }
-
-  close(): void {
-    this.db.close();
-  }
-
-  transaction<T>(fn: () => T): T {
-    this.db.exec("BEGIN IMMEDIATE");
+  /** Opens the database and makes sure every table exists. */
+  static async open(options: DatabaseOptions): Promise<Store> {
+    const db = await openDatabase(options);
     try {
-      const result = fn();
-      this.db.exec("COMMIT");
-      return result;
+      await db.transaction(async (tx) => {
+        for (const statement of SCHEMA_SQL.split(";").map((s) => s.trim()).filter(Boolean)) await tx.query(statement);
+      });
     } catch (error) {
-      this.db.exec("ROLLBACK");
+      await db.close().catch(() => {});
       throw error;
     }
+    return new Store(db);
+  }
+
+  /** A fresh in-memory store (tests, mock mode). */
+  static memory(): Promise<Store> {
+    return Store.open({});
+  }
+
+  close(): Promise<void> {
+    return this.db.close();
+  }
+
+  private async one<T>(q: Queryable, sql: string, params: readonly unknown[]): Promise<T | null> {
+    return ((await q.query<T>(sql, params)).rows[0] as T | undefined) ?? null;
   }
 
   // ------------------------------------------------------------ identity
 
   /** Stable, random Composio user ID per internal user. Never an email, never shared. */
-  composioUserId(userId: string, now: number): string {
-    return this.transaction(() => {
-      const row = this.db.prepare("SELECT composio_user_id FROM users WHERE user_id = ?").get(userId) as
-        | { composio_user_id: string }
-        | undefined;
+  composioUserId(userId: string, now: number): Promise<string> {
+    return this.db.transaction(async (tx) => {
+      const row = await this.one<{ composio_user_id: string }>(tx, "SELECT composio_user_id FROM users WHERE user_id = $1", [userId]);
       if (row) return row.composio_user_id;
       const id = `doddy_${randomBytes(16).toString("hex")}`;
-      this.db.prepare("INSERT INTO users (user_id, composio_user_id, created_at) VALUES (?, ?, ?)").run(userId, id, now);
+      await tx.query("INSERT INTO users (user_id, composio_user_id, created_at) VALUES ($1, $2, $3)", [userId, id, now]);
       return id;
     });
   }
 
   // ------------------------------------------------------------ attempts
 
-  createAttempt(input: {
+  async createAttempt(input: {
     userId: string;
     provider: string;
     authConfigId: string;
     now: number;
     ttlSeconds: number;
-  }): { attemptId: string; nonce: string; expiresAt: number } {
+  }): Promise<{ attemptId: string; nonce: string; expiresAt: number; superseded: QueuedCleanup[] }> {
     const attemptId = randomUUID();
     const nonce = randomBytes(32).toString("base64url");
     const expiresAt = input.now + input.ttlSeconds * 1000;
-    this.transaction(() => {
-      // A new attempt supersedes any unfinished one for the same user and provider.
-      this.db
-        .prepare("UPDATE attempts SET consumed_at = ? WHERE user_id = ? AND provider = ? AND consumed_at IS NULL")
-        .run(input.now, input.userId, input.provider);
-      this.db
-        .prepare(
-          `INSERT INTO attempts (attempt_id, user_id, provider, auth_config_id, nonce_hash, created_at, expires_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        )
-        .run(attemptId, input.userId, input.provider, input.authConfigId, sha256(nonce), input.now, expiresAt);
+    const superseded = await this.db.transaction(async (tx) => {
+      // A new attempt supersedes any unfinished one for the same user and provider. Its pending
+      // connection can still be finished at the provider, so it is queued for removal now.
+      const open = (await tx.query<AttemptRow>(
+        "SELECT * FROM attempts WHERE user_id = $1 AND provider = $2 AND consumed_at IS NULL",
+        [input.userId, input.provider],
+      )).rows;
+      const queued = await this.endAttempts(tx, open, input.now);
+      await tx.query(
+        `INSERT INTO attempts (attempt_id, user_id, provider, auth_config_id, nonce_hash, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [attemptId, input.userId, input.provider, input.authConfigId, sha256(nonce), input.now, expiresAt],
+      );
+      return queued;
     });
-    return { attemptId, nonce, expiresAt };
+    return { attemptId, nonce, expiresAt, superseded };
   }
 
-  setPendingConnection(attemptId: string, pendingConnectionId: string | null): void {
-    this.db.prepare("UPDATE attempts SET pending_connection_id = ? WHERE attempt_id = ?").run(pendingConnectionId, attemptId);
+  /**
+   * Records the pending connection the provider made for an attempt. If the attempt ended while
+   * the link was being made (a newer Connect superseded it), the connection is queued for removal
+   * instead and this returns false: no one can complete it through Doddy.
+   */
+  setPendingConnection(attemptId: string, pendingConnectionId: string | null, now: number): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const row = await this.one<AttemptRow>(tx, "SELECT * FROM attempts WHERE attempt_id = $1", [attemptId]);
+      if (!row) return false;
+      if (row.consumed_at !== null) {
+        if (pendingConnectionId) await this.endAttempts(tx, [{ ...row, pending_connection_id: pendingConnectionId }], now);
+        return false;
+      }
+      await tx.query("UPDATE attempts SET pending_connection_id = $1 WHERE attempt_id = $2", [pendingConnectionId, attemptId]);
+      return true;
+    });
+  }
+
+  /**
+   * Ends every unfinished attempt of these providers that has expired (the user never came back,
+   * or came back too late) and queues its pending connection for removal. Called hourly and on a
+   * completion that arrives after expiry; optionally for one user only.
+   */
+  async expireAttempts(now: number, providers: readonly string[], userId?: string): Promise<QueuedCleanup[]> {
+    if (providers.length === 0) return [];
+    return this.db.transaction(async (tx) => {
+      const rows = (userId === undefined
+        ? await tx.query<AttemptRow>(
+            "SELECT * FROM attempts WHERE consumed_at IS NULL AND expires_at <= $1 AND provider = ANY($2::text[])",
+            [now, [...providers]],
+          )
+        : await tx.query<AttemptRow>(
+            "SELECT * FROM attempts WHERE consumed_at IS NULL AND expires_at <= $1 AND user_id = $2 AND provider = ANY($3::text[])",
+            [now, userId, [...providers]],
+          )).rows;
+      return this.endAttempts(tx, rows, now);
+    });
+  }
+
+  /**
+   * Marks the attempts ended and queues each pending connection for removal, unless it is a
+   * connection Doddy recorded. Every pending connection was made by Doddy for this user's own
+   * Composio id, so removing it never touches anyone else's. Runs inside the caller's transaction.
+   */
+  private async endAttempts(tx: Queryable, rows: readonly AttemptRow[], now: number): Promise<QueuedCleanup[]> {
+    const queued: QueuedCleanup[] = [];
+    for (const row of rows) {
+      await tx.query("UPDATE attempts SET consumed_at = $1 WHERE attempt_id = $2 AND consumed_at IS NULL", [now, row.attempt_id]);
+      const connectionId = row.pending_connection_id;
+      if (!connectionId) continue;
+      const recorded = await this.one(tx, "SELECT 1 AS one FROM connections WHERE connection_id = $1", [connectionId]);
+      if (recorded) continue;
+      await this.queueCleanupIn(tx, connectionId, row.user_id, row.provider, now);
+      queued.push({ connectionId, userId: row.user_id, provider: row.provider });
+    }
+    return queued;
   }
 
   /**
    * Consumes the attempt exactly once. Fails for a wrong owner, provider, nonce, an expired or
    * already-consumed attempt. All checks and the consumption happen in one transaction.
    */
-  consumeAttempt(input: { attemptId: string; userId: string; provider: string; nonce: string; now: number }): AttemptRow | null {
-    return this.transaction(() => {
-      const row = this.db.prepare("SELECT * FROM attempts WHERE attempt_id = ?").get(input.attemptId) as AttemptRow | undefined;
+  consumeAttempt(input: { attemptId: string; userId: string; provider: string; nonce: string; now: number }): Promise<AttemptRow | null> {
+    return this.db.transaction(async (tx) => {
+      const row = await this.one<AttemptRow>(tx, "SELECT * FROM attempts WHERE attempt_id = $1", [input.attemptId]);
       if (!row) return null;
       const valid =
         row.user_id === input.userId &&
@@ -236,38 +536,33 @@ export class Store {
         row.expires_at > input.now &&
         row.nonce_hash === sha256(input.nonce);
       if (!valid) return null;
-      const changed = this.db
-        .prepare("UPDATE attempts SET consumed_at = ? WHERE attempt_id = ? AND consumed_at IS NULL")
-        .run(input.now, input.attemptId);
-      return changed.changes === 1 ? row : null;
+      const changed = await tx.query(
+        "UPDATE attempts SET consumed_at = $1 WHERE attempt_id = $2 AND consumed_at IS NULL",
+        [input.now, input.attemptId],
+      );
+      return changed.rowCount === 1 ? row : null;
     });
   }
 
   // ------------------------------------------------------------ connections
 
-  getConnection(userId: string, provider: string): ConnectionRow | null {
-    return (this.db.prepare("SELECT * FROM connections WHERE user_id = ? AND provider = ?").get(userId, provider) as
-      | ConnectionRow
-      | undefined) ?? null;
+  getConnection(userId: string, provider: string): Promise<ConnectionRow | null> {
+    return this.one<ConnectionRow>(this.db, "SELECT * FROM connections WHERE user_id = $1 AND provider = $2", [userId, provider]);
   }
 
-  upsertConnection(row: ConnectionRow): void {
-    this.transaction(() => {
+  async upsertConnection(row: ConnectionRow): Promise<void> {
+    await this.db.transaction(async (tx) => {
       // A connection ID can belong to exactly one Doddy user.
-      const owner = this.db.prepare("SELECT user_id FROM connections WHERE connection_id = ?").get(row.connection_id) as
-        | { user_id: string }
-        | undefined;
+      const owner = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM connections WHERE connection_id = $1", [row.connection_id]);
       if (owner && owner.user_id !== row.user_id) throw new Error("connection owned by another user");
-      this.db
-        .prepare(
-          `INSERT INTO connections (user_id, provider, connection_id, status, reason, account_label, scopes_json, connected_at, last_checked_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON CONFLICT (user_id, provider) DO UPDATE SET
-             connection_id = excluded.connection_id, status = excluded.status, reason = excluded.reason,
-             account_label = excluded.account_label, scopes_json = excluded.scopes_json,
-             connected_at = excluded.connected_at, last_checked_at = excluded.last_checked_at`,
-        )
-        .run(
+      await tx.query(
+        `INSERT INTO connections (user_id, provider, connection_id, status, reason, account_label, scopes_json, connected_at, last_checked_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (user_id, provider) DO UPDATE SET
+           connection_id = EXCLUDED.connection_id, status = EXCLUDED.status, reason = EXCLUDED.reason,
+           account_label = EXCLUDED.account_label, scopes_json = EXCLUDED.scopes_json,
+           connected_at = EXCLUDED.connected_at, last_checked_at = EXCLUDED.last_checked_at`,
+        [
           row.user_id,
           row.provider,
           row.connection_id,
@@ -277,199 +572,242 @@ export class Store {
           row.scopes_json,
           row.connected_at,
           row.last_checked_at,
-        );
+        ],
+      );
     });
   }
 
-  updateConnectionStatus(userId: string, provider: string, status: ConnectionStatus, reason: ConnectionReason | null, now: number): void {
-    this.db
-      .prepare("UPDATE connections SET status = ?, reason = ?, last_checked_at = ? WHERE user_id = ? AND provider = ?")
-      .run(status, reason, now, userId, provider);
+  async updateConnectionStatus(userId: string, provider: string, status: ConnectionStatus, reason: ConnectionReason | null, now: number): Promise<void> {
+    await this.db.query(
+      "UPDATE connections SET status = $1, reason = $2, last_checked_at = $3 WHERE user_id = $4 AND provider = $5",
+      [status, reason, now, userId, provider],
+    );
   }
 
-  setAccountLabel(userId: string, provider: string, label: string | null): void {
-    this.db.prepare("UPDATE connections SET account_label = ? WHERE user_id = ? AND provider = ?").run(label, userId, provider);
+  async setAccountLabel(userId: string, provider: string, label: string | null): Promise<void> {
+    await this.db.query("UPDATE connections SET account_label = $1 WHERE user_id = $2 AND provider = $3", [label, userId, provider]);
   }
 
   /** Removes the local connection (blocking new reads at once) and queues remote cleanup, atomically. */
-  removeConnectionForCleanup(userId: string, provider: string, now: number): ConnectionRow | null {
-    return this.transaction(() => {
-      const row = this.getConnection(userId, provider);
+  removeConnectionForCleanup(userId: string, provider: string, now: number): Promise<ConnectionRow | null> {
+    return this.db.transaction(async (tx) => {
+      const row = await this.one<ConnectionRow>(tx, "SELECT * FROM connections WHERE user_id = $1 AND provider = $2", [userId, provider]);
       if (!row) return null;
-      this.db.prepare("DELETE FROM connections WHERE user_id = ? AND provider = ?").run(userId, provider);
-      this.db
-        .prepare(
-          `INSERT OR REPLACE INTO cleanups (connection_id, user_id, provider, state, attempts, last_error, created_at)
-           VALUES (?, ?, ?, 'pending', 0, NULL, ?)`,
-        )
-        .run(row.connection_id, userId, provider, now);
+      await tx.query("DELETE FROM connections WHERE user_id = $1 AND provider = $2", [userId, provider]);
+      await this.queueCleanupIn(tx, row.connection_id, userId, provider, now);
       return row;
     });
   }
 
   /** Queues remote removal of a connection Doddy never recorded (e.g. a completion that failed). */
-  queueCleanup(connectionId: string, userId: string, provider: string, now: number): void {
-    this.db
-      .prepare(
-        `INSERT OR REPLACE INTO cleanups (connection_id, user_id, provider, state, attempts, last_error, created_at)
-         VALUES (?, ?, ?, 'pending', 0, NULL, ?)`,
-      )
-      .run(connectionId, userId, provider, now);
+  async queueCleanup(connectionId: string, userId: string, provider: string, now: number): Promise<void> {
+    await this.queueCleanupIn(this.db, connectionId, userId, provider, now);
   }
 
-  finishCleanup(connectionId: string): void {
-    this.db.prepare("DELETE FROM cleanups WHERE connection_id = ?").run(connectionId);
+  private async queueCleanupIn(q: Queryable, connectionId: string, userId: string, provider: string, now: number): Promise<void> {
+    await q.query(
+      `INSERT INTO cleanups (connection_id, user_id, provider, state, attempts, last_error, created_at)
+       VALUES ($1, $2, $3, 'pending', 0, NULL, $4)
+       ON CONFLICT (connection_id) DO UPDATE SET
+         user_id = EXCLUDED.user_id, provider = EXCLUDED.provider, state = 'pending', attempts = 0,
+         last_error = NULL, created_at = EXCLUDED.created_at`,
+      [connectionId, userId, provider, now],
+    );
   }
 
-  failCleanup(connectionId: string, errorCode: string): void {
-    this.db
-      .prepare("UPDATE cleanups SET state = 'failed', attempts = attempts + 1, last_error = ? WHERE connection_id = ?")
-      .run(errorCode, connectionId);
+  async finishCleanup(connectionId: string): Promise<void> {
+    await this.db.query("DELETE FROM cleanups WHERE connection_id = $1", [connectionId]);
   }
 
-  cleanupFor(userId: string, provider: string): CleanupRow | null {
-    return (this.db
-      .prepare("SELECT * FROM cleanups WHERE user_id = ? AND provider = ? ORDER BY created_at DESC LIMIT 1")
-      .get(userId, provider) as CleanupRow | undefined) ?? null;
+  async failCleanup(connectionId: string, errorCode: string): Promise<void> {
+    await this.db.query(
+      "UPDATE cleanups SET state = 'failed', attempts = attempts + 1, last_error = $1 WHERE connection_id = $2",
+      [errorCode, connectionId],
+    );
+  }
+
+  /**
+   * Queued removals of these providers to try again: older than `before` (so a request still
+   * working on one isn't raced), tried fewer than `maxAttempts` times, oldest first.
+   */
+  async cleanupsToRetry(providers: readonly string[], before: number, maxAttempts: number, limit: number): Promise<QueuedCleanup[]> {
+    if (providers.length === 0) return [];
+    const rows = (await this.db.query<{ connection_id: string; user_id: string; provider: string }>(
+      `SELECT connection_id, user_id, provider FROM cleanups
+       WHERE provider = ANY($1::text[]) AND created_at < $2 AND attempts < $3
+       ORDER BY created_at ASC LIMIT $4`,
+      [[...providers], before, maxAttempts, limit],
+    )).rows;
+    return rows.map((r) => ({ connectionId: r.connection_id, userId: r.user_id, provider: r.provider }));
+  }
+
+  cleanupFor(userId: string, provider: string): Promise<CleanupRow | null> {
+    return this.one<CleanupRow>(
+      this.db,
+      "SELECT * FROM cleanups WHERE user_id = $1 AND provider = $2 ORDER BY created_at DESC LIMIT 1",
+      [userId, provider],
+    );
   }
 
   // ------------------------------------------------------------ receipts
 
-  saveReceipt(userId: string, receipt: Receipt, now: number): void {
-    this.db
-      .prepare("INSERT INTO receipts (operation_id, user_id, created_at, body) VALUES (?, ?, ?, ?)")
-      .run(receipt.operationId, userId, now, JSON.stringify(receipt));
+  async saveReceipt(userId: string, receipt: Receipt, now: number): Promise<void> {
+    await this.db.query(
+      "INSERT INTO receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+      [receipt.operationId, userId, now, JSON.stringify(receipt)],
+    );
   }
 
-  receipts(userId: string, limit: number): Receipt[] {
-    const rows = this.db
-      .prepare("SELECT body FROM receipts WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?")
-      .all(userId, limit) as { body: string }[];
+  async receipts(userId: string, limit: number): Promise<Receipt[]> {
+    const rows = (await this.db.query<{ body: string }>(
+      "SELECT body FROM receipts WHERE user_id = $1 ORDER BY created_at DESC, seq DESC LIMIT $2",
+      [userId, limit],
+    )).rows;
     return rows.map((r) => JSON.parse(r.body) as Receipt);
   }
 
   // ------------------------------------------------------------ online-account tools
 
-  /** Tools start off. A missing row means off. */
-  toolEnabled(userId: string, tool: string): boolean {
-    const row = this.db.prepare("SELECT enabled FROM tool_switches WHERE user_id = ? AND tool = ?").get(userId, tool) as
-      | { enabled: number }
-      | undefined;
+  /** A missing row means off for an account tool; connecting writes every row on (ADR-563). Web tools read `toolSwitch` and default to on. */
+  async toolEnabled(userId: string, tool: string): Promise<boolean> {
+    const row = await this.one<{ enabled: number }>(this.db, "SELECT enabled FROM tool_switches WHERE user_id = $1 AND tool = $2", [userId, tool]);
     return row?.enabled === 1;
   }
 
-  enabledTools(userId: string): Set<string> {
-    const rows = this.db.prepare("SELECT tool FROM tool_switches WHERE user_id = ? AND enabled = 1").all(userId) as { tool: string }[];
+  /** The switch as stored: true, false, or null when the user never touched it (ADR-563 defaults). */
+  async toolSwitch(userId: string, tool: string): Promise<boolean | null> {
+    const row = await this.one<{ enabled: number }>(this.db, "SELECT enabled FROM tool_switches WHERE user_id = $1 AND tool = $2", [userId, tool]);
+    return row ? row.enabled === 1 : null;
+  }
+
+  async enabledTools(userId: string): Promise<Set<string>> {
+    const rows = (await this.db.query<{ tool: string }>("SELECT tool FROM tool_switches WHERE user_id = $1 AND enabled = 1", [userId])).rows;
     return new Set(rows.map((r) => r.tool));
   }
 
-  setToolEnabled(userId: string, tool: string, enabled: boolean, now: number): void {
-    this.db
-      .prepare(
-        `INSERT INTO tool_switches (user_id, tool, enabled, changed_at) VALUES (?, ?, ?, ?)
-         ON CONFLICT (user_id, tool) DO UPDATE SET enabled = excluded.enabled, changed_at = excluded.changed_at`,
-      )
-      .run(userId, tool, enabled ? 1 : 0, now);
+  async setToolEnabled(userId: string, tool: string, enabled: boolean, now: number): Promise<void> {
+    await this.setToolEnabledIn(this.db, userId, tool, enabled, now);
+  }
+
+  private async setToolEnabledIn(q: Queryable, userId: string, tool: string, enabled: boolean, now: number): Promise<void> {
+    await q.query(
+      `INSERT INTO tool_switches (user_id, tool, enabled, changed_at) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id, tool) DO UPDATE SET enabled = EXCLUDED.enabled, changed_at = EXCLUDED.changed_at`,
+      [userId, tool, enabled ? 1 : 0, now],
+    );
   }
 
   /** Turns off every tool of the given names at once (used when an account is disconnected). */
-  disableTools(userId: string, tools: readonly string[], now: number): void {
-    this.transaction(() => {
-      for (const tool of tools) this.setToolEnabled(userId, tool, false, now);
+  async disableTools(userId: string, tools: readonly string[], now: number): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      for (const tool of tools) await this.setToolEnabledIn(tx, userId, tool, false, now);
     });
   }
 
-  saveToolReceipt(userId: string, receipt: { operationId: string }, now: number): void {
-    this.db
-      .prepare("INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES (?, ?, ?, ?)")
-      .run(receipt.operationId, userId, now, JSON.stringify(receipt));
+  async saveToolReceipt(userId: string, receipt: { operationId: string }, now: number): Promise<void> {
+    await this.db.query(
+      "INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+      [receipt.operationId, userId, now, JSON.stringify(receipt)],
+    );
   }
 
-  toolReceipts(userId: string, limit: number): unknown[] {
-    const rows = this.db
-      .prepare("SELECT body FROM tool_receipts WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?")
-      .all(userId, limit) as { body: string }[];
+  async toolReceipts(userId: string, limit: number): Promise<unknown[]> {
+    const rows = (await this.db.query<{ body: string }>(
+      "SELECT body FROM tool_receipts WHERE user_id = $1 ORDER BY created_at DESC, seq DESC LIMIT $2",
+      [userId, limit],
+    )).rows;
     return rows.map((r) => JSON.parse(r.body) as unknown);
   }
 
   // ------------------------------------------------------------ payments
 
-  savePaymentReceipt(userId: string, receipt: { operationId: string }, now: number): void {
-    this.db
-      .prepare("INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES (?, ?, ?, ?)")
-      .run(receipt.operationId, userId, now, JSON.stringify(receipt));
+  async savePaymentReceipt(userId: string, receipt: { operationId: string }, now: number): Promise<void> {
+    await this.db.query(
+      "INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+      [receipt.operationId, userId, now, JSON.stringify(receipt)],
+    );
   }
 
-  paymentReceipts(userId: string, limit: number): unknown[] {
-    const rows = this.db
-      .prepare("SELECT body FROM payment_receipts WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?")
-      .all(userId, limit) as { body: string }[];
+  async paymentReceipts(userId: string, limit: number): Promise<unknown[]> {
+    const rows = (await this.db.query<{ body: string }>(
+      "SELECT body FROM payment_receipts WHERE user_id = $1 ORDER BY created_at DESC, seq DESC LIMIT $2",
+      [userId, limit],
+    )).rows;
     return rows.map((r) => JSON.parse(r.body) as unknown);
   }
 
   /** Written before the first byte of a payment is signed or sent. */
-  insertPayment(row: { paymentId: string; userId: string; now: number; host: string; amount: number; network: string; urlHash: string; validBefore: number }): void {
-    this.db
-      .prepare(
-        `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'signing')`,
-      )
-      .run(row.paymentId, row.userId, row.now, row.now, row.host, row.amount, row.network, row.urlHash, row.validBefore);
+  async insertPayment(row: { paymentId: string; userId: string; now: number; host: string; amount: number; network: string; urlHash: string; validBefore: number }): Promise<void> {
+    await this.db.query(
+      `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'signing')`,
+      [row.paymentId, row.userId, row.now, row.now, row.host, row.amount, row.network, row.urlHash, row.validBefore],
+    );
   }
 
-  setPaymentStatus(paymentId: string, status: "signing" | "sent" | "settled" | "declined" | "unknown" | "not_sent", now: number, transactionHash: string | null = null): void {
-    this.db.prepare("UPDATE payments SET status = ?, updated_at = ?, transaction_hash = COALESCE(?, transaction_hash) WHERE payment_id = ?").run(status, now, transactionHash, paymentId);
+  async setPaymentStatus(paymentId: string, status: "signing" | "sent" | "settled" | "declined" | "unknown" | "not_sent", now: number, transactionHash: string | null = null): Promise<void> {
+    await this.db.query(
+      "UPDATE payments SET status = $1, updated_at = $2, transaction_hash = COALESCE($3, transaction_hash) WHERE payment_id = $4",
+      [status, now, transactionHash, paymentId],
+    );
   }
 
   /**
    * Payments that were sent but never confirmed: marked unknown, or still "signing"/"sent" long after
    * they should have finished (the server stopped mid-payment).
    */
-  unresolvedPayments(userId: string, now: number, staleMs: number): number {
-    const row = this.db
-      .prepare(
-        `SELECT COUNT(*) AS n FROM payments WHERE user_id = ?
-           AND (status = 'unknown' OR (status IN ('signing', 'sent') AND updated_at < ?))`,
-      )
-      .get(userId, now - staleMs) as { n: number };
-    return Number(row.n);
+  async unresolvedPayments(userId: string, now: number, staleMs: number): Promise<number> {
+    const row = await this.one<{ n: number | string }>(
+      this.db,
+      `SELECT COUNT(*) AS n FROM payments WHERE user_id = $1
+         AND (status = 'unknown' OR (status IN ('signing', 'sent') AND updated_at < $2))`,
+      [userId, now - staleMs],
+    );
+    return Number(row?.n ?? 0);
   }
 
   /** Same page paid (or maybe paid) recently and not confirmed either way: a second payment waits. */
-  hasUnconfirmedPaymentFor(userId: string, urlHash: string, since: number): boolean {
-    const row = this.db
-      .prepare("SELECT 1 AS hit FROM payments WHERE user_id = ? AND url_hash = ? AND created_at >= ? AND status IN ('signing', 'sent', 'unknown') LIMIT 1")
-      .get(userId, urlHash, since) as { hit: number } | undefined;
-    return row !== undefined;
+  async hasUnconfirmedPaymentFor(userId: string, urlHash: string, since: number): Promise<boolean> {
+    const row = await this.one<{ hit: number }>(
+      this.db,
+      "SELECT 1 AS hit FROM payments WHERE user_id = $1 AND url_hash = $2 AND created_at >= $3 AND status IN ('signing', 'sent', 'unknown') LIMIT 1",
+      [userId, urlHash, since],
+    );
+    return row !== null;
   }
 
   // ------------------------------------------------------------ usage
 
   /**
    * Reserves `units` against every (counter, period, limit) atomically: either all counters are
-   * incremented or none are. Counters live in SQLite, so they survive restarts.
+   * incremented or none are. Counters live in the database, so they survive restarts.
    */
-  reserveUsage(checks: readonly { counter: string; period: string; limit: number }[], units: number): boolean {
-    return this.transaction(() => {
-      const get = this.db.prepare("SELECT count FROM usage WHERE counter = ? AND period = ?");
-      for (const c of checks) {
-        const row = get.get(c.counter, c.period) as { count: number } | undefined;
-        if ((row?.count ?? 0) + units > c.limit) return false;
-      }
-      const add = this.db.prepare(
-        `INSERT INTO usage (counter, period, count) VALUES (?, ?, ?)
-         ON CONFLICT (counter, period) DO UPDATE SET count = count + excluded.count`,
+  reserveUsage(checks: readonly { counter: string; period: string; limit: number }[], units: number): Promise<boolean> {
+    return this.db.transaction((tx) => this.reserveUsageIn(tx, checks, units));
+  }
+
+  /** `reserveUsage` inside a transaction the caller already has, so it can be one step of a larger all-or-nothing one. */
+  private async reserveUsageIn(tx: Queryable, checks: readonly { counter: string; period: string; limit: number }[], units: number): Promise<boolean> {
+    for (const c of checks) {
+      const row = await this.one<{ count: number }>(tx, "SELECT count FROM usage WHERE counter = $1 AND period = $2", [c.counter, c.period]);
+      if ((row?.count ?? 0) + units > c.limit) return false;
+    }
+    for (const c of checks) {
+      await tx.query(
+        `INSERT INTO usage (counter, period, count) VALUES ($1, $2, $3)
+         ON CONFLICT (counter, period) DO UPDATE SET count = usage.count + EXCLUDED.count`,
+        [c.counter, c.period, units],
       );
-      for (const c of checks) add.run(c.counter, c.period, units);
-      return true;
-    });
+    }
+    return true;
   }
 
   /** Gives back a reservation that never turned into a provider call (floors at zero). */
-  releaseUsage(checks: readonly { counter: string; period: string }[], units: number): void {
-    this.transaction(() => {
-      const sub = this.db.prepare("UPDATE usage SET count = MAX(0, count - ?) WHERE counter = ? AND period = ?");
-      for (const c of checks) sub.run(units, c.counter, c.period);
+  releaseUsage(checks: readonly { counter: string; period: string }[], units: number): Promise<void> {
+    return this.db.transaction(async (tx) => {
+      for (const c of checks) {
+        await tx.query("UPDATE usage SET count = GREATEST(0, count - $1) WHERE counter = $2 AND period = $3", [units, c.counter, c.period]);
+      }
     });
   }
 
@@ -478,56 +816,546 @@ export class Store {
    * periods no limit reads any more, and receipts older than 90 days or beyond the newest 200 per
    * user (per table). Returns how many rows went, per table.
    */
-  prune(now: number): Record<string, number> {
+  prune(now: number): Promise<Record<string, number>> {
     const DAY = 86_400_000;
     const dayCutoff = `day:${new Date(now - 62 * DAY).toISOString().slice(0, 10)}`;
     const monthCutoff = `month:${new Date(now - 400 * DAY).toISOString().slice(0, 7)}`;
-    return this.transaction(() => {
-      const run = (sql: string, ...params: (string | number)[]) => Number(this.db.prepare(sql).run(...params).changes);
-      const receipts = (table: "receipts" | "tool_receipts" | "payment_receipts") =>
-        run(`DELETE FROM ${table} WHERE created_at < ?`, now - 90 * DAY) +
-        run(`DELETE FROM ${table} WHERE rowid IN (
-               SELECT rowid FROM (SELECT rowid, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, rowid DESC) AS rn FROM ${table})
-               WHERE rn > 200)`);
+    return this.db.transaction(async (tx) => {
+      const run = async (sql: string, ...params: (string | number)[]) => (await tx.query(sql, params)).rowCount;
+      const receipts = async (table: "receipts" | "tool_receipts" | "payment_receipts") =>
+        (await run(`DELETE FROM ${table} WHERE created_at < $1`, now - 90 * DAY)) +
+        (await run(`DELETE FROM ${table} WHERE seq IN (
+               SELECT seq FROM (SELECT seq, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, seq DESC) AS rn FROM ${table}) ranked
+               WHERE rn > 200)`));
       return {
-        attempts: run("DELETE FROM attempts WHERE expires_at < ?", now - DAY),
-        approvals: run("DELETE FROM approvals WHERE expires_at < ?", now - DAY),
+        attempts: await run("DELETE FROM attempts WHERE expires_at < $1", now - DAY),
+        approvals: await run("DELETE FROM approvals WHERE expires_at < $1", now - DAY),
         usage:
-          run("DELETE FROM usage WHERE period LIKE 'day:%' AND period < ?", dayCutoff) +
-          run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < ?", monthCutoff),
-        receipts: receipts("receipts"),
-        toolReceipts: receipts("tool_receipts"),
-        paymentReceipts: receipts("payment_receipts"),
-        payments: run("DELETE FROM payments WHERE created_at < ?", now - 90 * DAY),
+          (await run("DELETE FROM usage WHERE period LIKE 'day:%' AND period < $1", dayCutoff)) +
+          (await run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < $1", monthCutoff)),
+        receipts: await receipts("receipts"),
+        toolReceipts: await receipts("tool_receipts"),
+        paymentReceipts: await receipts("payment_receipts"),
+        payments: await run("DELETE FROM payments WHERE created_at < $1", now - 90 * DAY),
       };
     });
   }
 
-  usage(counter: string, period: string): number {
-    const row = this.db.prepare("SELECT count FROM usage WHERE counter = ? AND period = ?").get(counter, period) as
-      | { count: number }
-      | undefined;
+  // ------------------------------------------------------------ account erasure (ADR-674)
+
+  /**
+   * Deletes every row of this person in one transaction and reads back that none is left. Their
+   * connections, and any connection an open sign-in left at the provider, are queued for removal there
+   * first (in the same transaction), so a grant is never forgotten; the caller removes them and the
+   * hourly sweeps retry what fails. Server-wide counters and the owner binding stay (`KEPT_ON_ERASE`).
+   */
+  eraseUser(userId: string, now: number): Promise<UserErasure> {
+    return this.db.transaction(async (tx) => {
+      const openAttempts = (await tx.query<AttemptRow>("SELECT * FROM attempts WHERE user_id = $1 AND consumed_at IS NULL", [userId])).rows;
+      await this.endAttempts(tx, openAttempts, now);
+      const connections = (await tx.query<ConnectionRow>("SELECT * FROM connections WHERE user_id = $1", [userId])).rows;
+      for (const c of connections) await this.queueCleanupIn(tx, c.connection_id, userId, c.provider, now);
+      const deleted = {} as UserErasure["deleted"];
+      for (const table of ERASED_TABLES) deleted[table] = (await tx.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId])).rowCount;
+      let remaining = 0;
+      for (const table of ERASED_TABLES) {
+        const row = await this.one<{ n: number | string }>(tx, `SELECT count(*) AS n FROM ${table} WHERE user_id = $1`, [userId]);
+        remaining += Number(row?.n ?? 0);
+      }
+      const cleanups = (await tx.query<{ connection_id: string; provider: string }>(
+        "SELECT connection_id, provider FROM cleanups WHERE user_id = $1 ORDER BY created_at ASC",
+        [userId],
+      )).rows.map((r) => ({ connectionId: r.connection_id, userId, provider: r.provider }));
+      // Cut off the person's earlier sign-in tokens in the same step (ADR-709): the second after this
+      // one, so every token dated up to now stops working and one dated later (a new sign-in) does not.
+      const tokensValidAfter = Math.floor(now / 1000) + 1;
+      await tx.query(
+        `INSERT INTO token_floor (user_id, valid_after) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET valid_after = GREATEST(token_floor.valid_after, EXCLUDED.valid_after)`,
+        [userId, tokensValidAfter],
+      );
+      return { deleted, remaining, cleanups, tokensValidAfter };
+    });
+  }
+
+  // ------------------------------------------------------------ sign-in tokens (ADR-709)
+
+  /** The second (since 1970) before which this person's sign-in tokens no longer work; 0 when none was ever cut off. */
+  async tokenFloor(userId: string): Promise<number> {
+    const row = await this.one<{ valid_after: number }>(this.db, "SELECT valid_after FROM token_floor WHERE user_id = $1", [userId]);
+    return row?.valid_after ?? 0;
+  }
+
+  /** Cut-offs older than any live token. Separate from `prune` so its counts stay as they were. */
+  async pruneTokenFloors(now: number): Promise<number> {
+    const before = Math.floor(now / 1000) - TOKEN_FLOOR_KEPT_DAYS * 86_400;
+    return (await this.db.query("DELETE FROM token_floor WHERE valid_after < $1", [before])).rowCount;
+  }
+
+  // ------------------------------------------------------------ device owner (ADR-563)
+
+  /**
+   * "Only me" for the beta: the first device user to sign in claims the server; the answer is the
+   * owner's user ID afterwards. One row, slot 1; a second claim never replaces the first.
+   *
+   * ADR-707: with `allowClaim` false nothing is written. The answer is the owner's user ID, or null on
+   * a server with no owner yet. The claim itself stays one atomic insert (the primary key lets exactly
+   * one concurrent caller in), and a caller learns it won from the insert's own answer.
+   */
+  async claimDeviceOwner(userId: string, now: number, allowClaim = true): Promise<string | null> {
+    if (allowClaim) {
+      const claimed = await this.db.query<{ user_id: string }>(
+        "INSERT INTO device_owner (slot, user_id, claimed_at) VALUES (1, $1, $2) ON CONFLICT (slot) DO NOTHING RETURNING user_id",
+        [userId, now],
+      );
+      if (claimed.rows[0]) return claimed.rows[0].user_id;
+    }
+    const row = await this.one<{ user_id: string }>(this.db, "SELECT user_id FROM device_owner WHERE slot = 1", []);
+    return row?.user_id ?? null;
+  }
+
+  // ------------------------------------------------------------ invite codes (ADR-709)
+
+  /**
+   * One session of an invite code, all or nothing: refused when the code already signs in as many
+   * other iPhones as it may, or has made as many sessions today (UTC) as it may. An iPhone the code
+   * already signed in counts as itself, not as one more. The caps are checked and the iPhone and the
+   * day's count are written in one transaction, so parallel sessions can't get past either cap.
+   * `codeId` is derived from the code with the server's secret; the code itself is never stored.
+   */
+  useInviteCode(input: { codeId: string; userId: string; now: number; maxDevices: number; maxSessionsPerDay: number }): Promise<"ok" | "devices_full" | "day_full"> {
+    return this.db.transaction(async (tx) => {
+      const known = await this.one<{ ok: number }>(tx, "SELECT 1 AS ok FROM invite_devices WHERE code_id = $1 AND user_id = $2", [input.codeId, input.userId]);
+      if (!known) {
+        const count = await this.one<{ n: number | string }>(tx, "SELECT count(*) AS n FROM invite_devices WHERE code_id = $1", [input.codeId]);
+        if (Number(count?.n ?? 0) >= input.maxDevices) return "devices_full";
+      }
+      const day = `day:${new Date(input.now).toISOString().slice(0, 10)}`;
+      if (!(await this.reserveUsageIn(tx, [{ counter: `invite_sessions:${input.codeId}`, period: day, limit: input.maxSessionsPerDay }], 1))) return "day_full";
+      if (!known) {
+        await tx.query("INSERT INTO invite_devices (code_id, user_id, first_used_at) VALUES ($1, $2, $3) ON CONFLICT (code_id, user_id) DO NOTHING", [input.codeId, input.userId, input.now]);
+      }
+      return "ok";
+    });
+  }
+
+  // ------------------------------------------------------------ documents (ADR-564)
+
+  /** A new document while Claude works on it. Returns its unguessable ID (144 random bits). */
+  async startDocument(userId: string, name: string, mime: string, now: number): Promise<string> {
+    const id = randomBytes(18).toString("base64url");
+    await this.db.query(
+      "INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'working', $3, $4, NULL, $5)",
+      [id, userId, name, mime, now],
+    );
+    return id;
+  }
+
+  async finishDocument(id: string, name: string, mime: string, body: Buffer): Promise<void> {
+    await this.db.query("UPDATE documents SET status = 'ready', name = $2, mime = $3, body = $4 WHERE id = $1", [id, name, mime, body]);
+  }
+
+  async failDocument(id: string): Promise<void> {
+    await this.db.query("UPDATE documents SET status = 'failed', body = NULL WHERE id = $1 AND status = 'working'", [id]);
+  }
+
+  async getDocument(id: string): Promise<DocumentRow | null> {
+    const row = await this.one<DocumentRow>(this.db, "SELECT id, user_id, status, name, mime, body, created_at FROM documents WHERE id = $1", [id]);
+    if (!row) return null;
+    return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
+  }
+
+  /** The user's own documents, newest first, without their files (ADR-600). */
+  async listDocuments(userId: string, limit: number): Promise<DocumentSummaryRow[]> {
+    return (
+      await this.db.query<DocumentSummaryRow>(
+        `SELECT id, status, name, mime, octet_length(body) AS size, created_at FROM documents
+         WHERE user_id = $1 ORDER BY created_at DESC, id LIMIT $2`,
+        [userId, limit],
+      )
+    ).rows;
+  }
+
+  /** One document, only when it belongs to `userId`; another user's ID reads as missing (the filter is in the query). */
+  async getOwnDocument(userId: string, id: string): Promise<DocumentRow | null> {
+    const row = await this.one<DocumentRow>(
+      this.db,
+      "SELECT id, user_id, status, name, mime, body, created_at FROM documents WHERE id = $1 AND user_id = $2",
+      [id, userId],
+    );
+    if (!row) return null;
+    return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
+  }
+
+  /** Documents older than a week go. Separate from `prune` so its counts stay as they were. */
+  async pruneDocuments(now: number): Promise<number> {
+    return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - 7 * 86_400_000])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Logbook (ADR-602)
+
+  /** Off until the iPhone turns it on. A user with no row is off. */
+  async logbookEnabled(userId: string): Promise<boolean> {
+    const row = await this.one<{ enabled: boolean }>(this.db, "SELECT enabled FROM logbook_state WHERE user_id = $1", [userId]);
+    return row?.enabled === true;
+  }
+
+  /** Turns Logbook on or off for one user. Off deletes every stored day in the same transaction. */
+  async setLogbookEnabled(userId: string, enabled: boolean, now: number): Promise<{ deletedDays: number }> {
+    return this.db.transaction(async (tx) => {
+      await tx.query(
+        `INSERT INTO logbook_state (user_id, enabled, changed_at) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id) DO UPDATE SET enabled = EXCLUDED.enabled, changed_at = EXCLUDED.changed_at`,
+        [userId, enabled, now],
+      );
+      const deleted = enabled ? 0 : (await tx.query("DELETE FROM logbook_days WHERE user_id = $1", [userId])).rowCount;
+      return { deletedDays: deleted };
+    });
+  }
+
+  /**
+   * Keeps one day, replacing the one already there for that day (a day is never added twice).
+   * Returns false, and stores nothing, when the user's Logbook is off.
+   */
+  async putLogbookDay(userId: string, day: string, summary: string, now: number): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ enabled: boolean }>(tx, "SELECT enabled FROM logbook_state WHERE user_id = $1", [userId]);
+      if (state?.enabled !== true) return false;
+      await tx.query(
+        `INSERT INTO logbook_days (user_id, day, summary, received_at) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, day) DO UPDATE SET summary = EXCLUDED.summary, received_at = EXCLUDED.received_at`,
+        [userId, day, summary, now],
+      );
+      return true;
+    });
+  }
+
+  /** The user's own days from `since` on (a "YYYY-MM-DD"), oldest first. The user filter is in the query. */
+  async logbookDays(userId: string, since: string): Promise<LogbookDayRow[]> {
+    return (
+      await this.db.query<LogbookDayRow>(
+        "SELECT day, summary, received_at FROM logbook_days WHERE user_id = $1 AND day >= $2 ORDER BY day",
+        [userId, since],
+      )
+    ).rows;
+  }
+
+  /** Deletes every stored day of one user, and returns how many went. The on/off state stays. */
+  async deleteLogbookDays(userId: string): Promise<number> {
+    return (await this.db.query("DELETE FROM logbook_days WHERE user_id = $1", [userId])).rowCount;
+  }
+
+  /** Days older than `oldest` (a "YYYY-MM-DD") go, for every user. Separate from `prune` so its counts stay as they were. */
+  async pruneLogbook(oldest: string): Promise<number> {
+    return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Kept memory (ADR-603)
+
+  /** Both switches are off until the iPhone turns them on. A user with no row has both off. */
+  async memoryState(userId: string): Promise<{ notes: boolean; conversations: boolean }> {
+    const row = await this.one<{ notes: boolean; conversations: boolean }>(this.db, "SELECT notes, conversations FROM memory_state WHERE user_id = $1", [userId]);
+    return { notes: row?.notes === true, conversations: row?.conversations === true };
+  }
+
+  /** Sets both switches. A switch that is off deletes that kind of data in the same transaction. */
+  async setMemoryState(userId: string, next: { notes: boolean; conversations: boolean }, now: number): Promise<{ deletedNotes: number; deletedConversations: number }> {
+    return this.db.transaction(async (tx) => {
+      await tx.query(
+        `INSERT INTO memory_state (user_id, notes, conversations, changed_at) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id) DO UPDATE SET notes = EXCLUDED.notes, conversations = EXCLUDED.conversations, changed_at = EXCLUDED.changed_at`,
+        [userId, next.notes, next.conversations, now],
+      );
+      const deletedNotes = next.notes ? 0 : (await tx.query("DELETE FROM memory_notes WHERE user_id = $1", [userId])).rowCount;
+      const deletedConversations = next.conversations ? 0 : (await tx.query("DELETE FROM memory_conversations WHERE user_id = $1", [userId])).rowCount;
+      return { deletedNotes, deletedConversations };
+    });
+  }
+
+  /**
+   * Replaces every kept note with this list (a note gone from the phone is gone here too).
+   * Returns false, and changes nothing, when the user's notes switch is off.
+   */
+  async replaceMemoryNotes(userId: string, rows: MemoryNoteRow[], now: number): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ notes: boolean }>(tx, "SELECT notes FROM memory_state WHERE user_id = $1", [userId]);
+      if (state?.notes !== true) return false;
+      await tx.query("DELETE FROM memory_notes WHERE user_id = $1", [userId]);
+      for (let i = 0; i < rows.length; i += 200) {
+        const chunk = rows.slice(i, i + 200);
+        const values: unknown[] = [];
+        const marks = chunk.map((row, j) => {
+          values.push(userId, row.note_id, row.key_version, row.ciphertext, row.captured_at, now);
+          const k = j * 6;
+          return `($${k + 1}, $${k + 2}, $${k + 3}, $${k + 4}, $${k + 5}, $${k + 6})`;
+        });
+        await tx.query(`INSERT INTO memory_notes (user_id, note_id, key_version, ciphertext, captured_at, received_at) VALUES ${marks.join(", ")}`, values);
+      }
+      return true;
+    });
+  }
+
+  /** Every kept note of one user, newest first. The user filter is in the query. */
+  async memoryNoteRows(userId: string): Promise<MemoryNoteRow[]> {
+    const rows = (
+      await this.db.query<MemoryNoteRow>(
+        "SELECT note_id, key_version, ciphertext, captured_at, received_at FROM memory_notes WHERE user_id = $1 ORDER BY captured_at DESC NULLS LAST, note_id",
+        [userId],
+      )
+    ).rows;
+    return rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) }));
+  }
+
+  /**
+   * Keeps one conversation, replacing the one with that id. "off" (nothing stored) when the
+   * conversations switch is off; "full" (nothing stored) when keeping it would pass `limits`.
+   */
+  async putMemoryConversation(
+    userId: string,
+    row: MemoryConversationRow,
+    limits: { conversations: number; bytes: number } = { conversations: Number.MAX_SAFE_INTEGER, bytes: Number.MAX_SAFE_INTEGER },
+  ): Promise<"ok" | "off" | "full"> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ conversations: boolean }>(tx, "SELECT conversations FROM memory_state WHERE user_id = $1", [userId]);
+      if (state?.conversations !== true) return "off";
+      const others = await this.one<{ n: string; bytes: string }>(
+        tx,
+        "SELECT count(*) AS n, coalesce(sum(length(ciphertext)), 0) AS bytes FROM memory_conversations WHERE user_id = $1 AND conversation_id <> $2",
+        [userId, row.conversation_id],
+      );
+      if (Number(others?.n ?? 0) + 1 > limits.conversations || Number(others?.bytes ?? 0) + row.ciphertext.length > limits.bytes) return "full";
+      await tx.query(
+        `INSERT INTO memory_conversations (user_id, conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (user_id, conversation_id) DO UPDATE SET started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at,
+           turn_count = EXCLUDED.turn_count, key_version = EXCLUDED.key_version, ciphertext = EXCLUDED.ciphertext, received_at = EXCLUDED.received_at`,
+        [userId, row.conversation_id, row.started_at, row.ended_at, row.turn_count, row.key_version, row.ciphertext, row.received_at],
+      );
+      return "ok";
+    });
+  }
+
+  /** One user's conversations that started at or after `since`, newest first. Pass `limit` and `offset` to page. */
+  async memoryConversationRows(userId: string, since: number, limit: number, offset = 0): Promise<MemoryConversationRow[]> {
+    const rows = (
+      await this.db.query<MemoryConversationRow>(
+        `SELECT conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at FROM memory_conversations
+         WHERE user_id = $1 AND started_at >= $2 ORDER BY started_at DESC, conversation_id LIMIT $3 OFFSET $4`,
+        [userId, since, limit, offset],
+      )
+    ).rows;
+    return rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) }));
+  }
+
+  async memoryConversationRow(userId: string, id: string): Promise<MemoryConversationRow | null> {
+    const row = await this.one<MemoryConversationRow>(
+      this.db,
+      "SELECT conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at FROM memory_conversations WHERE user_id = $1 AND conversation_id = $2",
+      [userId, id],
+    );
+    return row ? { ...row, ciphertext: Buffer.from(row.ciphertext as unknown as Uint8Array) } : null;
+  }
+
+  async deleteMemoryConversation(userId: string, id: string): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_conversations WHERE user_id = $1 AND conversation_id = $2", [userId, id])).rowCount;
+  }
+
+  /** What is kept for one user: how many notes and conversations (inside the window), and when the iPhone last sent either. */
+  async memoryCounts(userId: string, since: number): Promise<{ notes: number; conversations: number; lastReceivedAt: number | null }> {
+    const notes = await this.one<{ n: string; last: string | null }>(this.db, "SELECT count(*) AS n, max(received_at) AS last FROM memory_notes WHERE user_id = $1", [userId]);
+    const conversations = await this.one<{ n: string; last: string | null }>(
+      this.db,
+      "SELECT count(*) AS n, max(received_at) AS last FROM memory_conversations WHERE user_id = $1 AND started_at >= $2",
+      [userId, since],
+    );
+    const last = Math.max(Number(notes?.last ?? 0), Number(conversations?.last ?? 0));
+    return { notes: Number(notes?.n ?? 0), conversations: Number(conversations?.n ?? 0), lastReceivedAt: last > 0 ? last : null };
+  }
+
+  /**
+   * Counts over one user's kept conversations (ADR-604), from the plain columns only (start, end,
+   * number of turns): nothing is decrypted, so it works without the memory key and reads no words.
+   */
+  async memoryConversationStats(
+    userId: string,
+    since: number,
+    now: number,
+  ): Promise<{ count: number; turns: number; seconds: number; first: number | null; last: number | null; last7Days: number; last30Days: number }> {
+    const row = await this.one<{ n: string; turns: string | null; ms: string | null; first: string | null; last: string | null; w: string; m: string }>(
+      this.db,
+      `SELECT count(*) AS n, sum(turn_count) AS turns, sum(ended_at - started_at) AS ms, min(started_at) AS first, max(started_at) AS last,
+              count(*) FILTER (WHERE started_at >= $3) AS w, count(*) FILTER (WHERE started_at >= $4) AS m
+       FROM memory_conversations WHERE user_id = $1 AND started_at >= $2`,
+      [userId, since, now - 7 * 86_400_000, now - 30 * 86_400_000],
+    );
+    const count = Number(row?.n ?? 0);
+    return {
+      count,
+      turns: Number(row?.turns ?? 0),
+      seconds: Math.round(Number(row?.ms ?? 0) / 1000),
+      first: count > 0 && row?.first != null ? Number(row.first) : null,
+      last: count > 0 && row?.last != null ? Number(row.last) : null,
+      last7Days: Number(row?.w ?? 0),
+      last30Days: Number(row?.m ?? 0),
+    };
+  }
+
+  /** Deletes everything kept for one user and switches both off, so the iPhone's next send is refused and it stops. */
+  async deleteAllMemory(userId: string, now: number): Promise<{ deletedNotes: number; deletedConversations: number }> {
+    return this.setMemoryState(userId, { notes: false, conversations: false }, now);
+  }
+
+  /** Conversations that started before `oldest` (epoch ms) go, for every user. */
+  async pruneMemoryConversations(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_conversations WHERE started_at < $1", [oldest])).rowCount;
+  }
+
+  /**
+   * Notes the iPhone last sent before `oldest` (epoch ms) go, for every user. Every note list the
+   * iPhone sends rewrites that time for all of its notes, so only an iPhone that stopped sending
+   * (an abandoned account) loses notes here.
+   */
+  async pruneMemoryNotes(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_notes WHERE received_at < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Messages on the web (28 Oct 2026)
+
+  async putMessageThread(userId: string, row: MessageThreadRow): Promise<void> {
+    await this.db.query(
+      `INSERT INTO message_threads (user_id, key_version, ciphertext, message_count, received_at) VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id) DO UPDATE SET key_version = EXCLUDED.key_version, ciphertext = EXCLUDED.ciphertext,
+         message_count = EXCLUDED.message_count, received_at = EXCLUDED.received_at`,
+      [userId, row.key_version, row.ciphertext, row.message_count, row.received_at],
+    );
+  }
+
+  async messageThread(userId: string): Promise<MessageThreadRow | null> {
+    const row = await this.one<MessageThreadRow>(this.db, "SELECT key_version, ciphertext, message_count, received_at FROM message_threads WHERE user_id = $1", [userId]);
+    return row ? { ...row, ciphertext: Buffer.from(row.ciphertext as unknown as Uint8Array) } : null;
+  }
+
+  async deleteMessageThread(userId: string): Promise<number> {
+    return (await this.db.query("DELETE FROM message_threads WHERE user_id = $1", [userId])).rowCount;
+  }
+
+  /** Copies an iPhone has not sent since `oldest` (epoch ms) go: an abandoned account's thread doesn't stay. */
+  async pruneMessageThreads(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM message_threads WHERE received_at < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Doddy Web (ADR-600)
+
+  /** A new sign-in code for `userId`. Any earlier code of theirs stops working. */
+  async createWebLinkCode(userId: string, codeHash: string, now: number, ttlMs: number): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.query("DELETE FROM web_link_codes WHERE user_id = $1", [userId]);
+      await tx.query("INSERT INTO web_link_codes (code_hash, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)", [codeHash, userId, now, now + ttlMs]);
+    });
+  }
+
+  /**
+   * Uses a sign-in code once and opens a browser session for its user, in one transaction: a code
+   * that is unknown, used or expired opens nothing. Beyond `maxSessions`, the user's oldest live
+   * sessions are signed out. Returns the user ID, or null.
+   */
+  async redeemWebLinkCode(input: {
+    codeHash: string;
+    session: { sessionId: string; tokenHash: string; browser: string; os: string; expiresAt: number };
+    now: number;
+    idleMs: number;
+    maxSessions: number;
+  }): Promise<string | null> {
+    return this.db.transaction(async (tx) => {
+      const used = await this.one<{ user_id: string }>(
+        tx,
+        "UPDATE web_link_codes SET consumed_at = $2 WHERE code_hash = $1 AND consumed_at IS NULL AND expires_at > $2 RETURNING user_id",
+        [input.codeHash, input.now],
+      );
+      if (!used) return null;
+      const s = input.session;
+      await tx.query(
+        `INSERT INTO web_sessions (session_id, user_id, token_hash, browser, os, created_at, last_seen_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $6, $7)`,
+        [s.sessionId, used.user_id, s.tokenHash, s.browser, s.os, input.now, s.expiresAt],
+      );
+      await tx.query(
+        `UPDATE web_sessions SET revoked_at = $2 WHERE session_id IN (
+           SELECT session_id FROM web_sessions
+           WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3
+           ORDER BY created_at DESC, session_id OFFSET $4)`,
+        [used.user_id, input.now, input.now - input.idleMs, input.maxSessions],
+      );
+      return used.user_id;
+    });
+  }
+
+  /** The live session behind a cookie's token hash: not revoked, not expired, not idle too long. */
+  async webSessionByToken(tokenHash: string, now: number, idleMs: number): Promise<WebSessionRow | null> {
+    return this.one<WebSessionRow>(
+      this.db,
+      `SELECT session_id, user_id, browser, os, created_at, last_seen_at, expires_at FROM web_sessions
+       WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3`,
+      [tokenHash, now, now - idleMs],
+    );
+  }
+
+  async touchWebSession(sessionId: string, now: number): Promise<void> {
+    await this.db.query("UPDATE web_sessions SET last_seen_at = $2 WHERE session_id = $1 AND revoked_at IS NULL", [sessionId, now]);
+  }
+
+  /** The user's live browser sessions, newest first. */
+  async webSessions(userId: string, now: number, idleMs: number, limit: number): Promise<WebSessionRow[]> {
+    return (
+      await this.db.query<WebSessionRow>(
+        `SELECT session_id, user_id, browser, os, created_at, last_seen_at, expires_at FROM web_sessions
+         WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3
+         ORDER BY created_at DESC, session_id LIMIT $4`,
+        [userId, now, now - idleMs, limit],
+      )
+    ).rows;
+  }
+
+  /** Signs one browser out. False when it isn't one of `userId`'s live sessions. */
+  async revokeWebSession(userId: string, sessionId: string, now: number): Promise<boolean> {
+    const changed = await this.db.query("UPDATE web_sessions SET revoked_at = $3 WHERE session_id = $1 AND user_id = $2 AND revoked_at IS NULL", [sessionId, userId, now]);
+    return changed.rowCount === 1;
+  }
+
+  /** Codes a day past their expiry, and sessions a day past being revoked, expiring or going idle. */
+  async pruneWeb(now: number, idleMs: number): Promise<number> {
+    const DAY = 86_400_000;
+    return this.db.transaction(async (tx) => {
+      const codes = (await tx.query("DELETE FROM web_link_codes WHERE expires_at < $1", [now - DAY])).rowCount;
+      const sessions = (
+        await tx.query("DELETE FROM web_sessions WHERE revoked_at < $1 OR expires_at < $1 OR last_seen_at < $2", [now - DAY, now - idleMs - DAY])
+      ).rowCount;
+      return codes + sessions;
+    });
+  }
+
+  async usage(counter: string, period: string): Promise<number> {
+    const row = await this.one<{ count: number }>(this.db, "SELECT count FROM usage WHERE counter = $1 AND period = $2", [counter, period]);
     return row?.count ?? 0;
   }
 
   // ------------------------------------------------------------ approvals
 
-  createApproval(input: {
+  async createApproval(input: {
     userId: string;
     capability: string;
     accountId: string;
     argsDigest: string;
     now: number;
     ttlSeconds: number;
-  }): { approvalId: string; expiresAt: number } {
+  }): Promise<{ approvalId: string; expiresAt: number }> {
     const approvalId = randomUUID();
     const expiresAt = input.now + input.ttlSeconds * 1000;
-    this.db
-      .prepare(
-        `INSERT INTO approvals (approval_id, user_id, capability, account_id, args_digest, created_at, expires_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.now, expiresAt);
+    await this.db.query(
+      `INSERT INTO approvals (approval_id, user_id, capability, account_id, args_digest, created_at, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.now, expiresAt],
+    );
     return { approvalId, expiresAt };
   }
 
@@ -538,11 +1366,13 @@ export class Store {
     accountId: string;
     argsDigest: string;
     now: number;
-  }, opts: { checkOnly?: boolean } = {}): boolean {
-    return this.transaction(() => {
-      const row = this.db.prepare("SELECT * FROM approvals WHERE approval_id = ?").get(input.approvalId) as
-        | { user_id: string; capability: string; account_id: string; args_digest: string; expires_at: number; consumed_at: number | null }
-        | undefined;
+  }, opts: { checkOnly?: boolean } = {}): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const row = await this.one<{ user_id: string; capability: string; account_id: string; args_digest: string; expires_at: number; consumed_at: number | null }>(
+        tx,
+        "SELECT * FROM approvals WHERE approval_id = $1",
+        [input.approvalId],
+      );
       if (
         !row ||
         row.user_id !== input.userId ||
@@ -556,8 +1386,69 @@ export class Store {
       }
       // checkOnly: would it be accepted? Lets the caller pass its limits first without burning it.
       if (opts.checkOnly) return true;
-      return this.db.prepare("UPDATE approvals SET consumed_at = ? WHERE approval_id = ? AND consumed_at IS NULL").run(input.now, input.approvalId)
-        .changes === 1;
+      const changed = await tx.query(
+        "UPDATE approvals SET consumed_at = $1 WHERE approval_id = $2 AND consumed_at IS NULL",
+        [input.now, input.approvalId],
+      );
+      return changed.rowCount === 1;
     });
   }
+
+  /**
+   * True when `prepare` issued this approval to this user for this tool and account, and it is unused
+   * and unexpired, whatever it is bound to. It says nothing about the arguments, only that a card was
+   * made: a write whose approval is bound to a looked-up target checks that before it looks anything up (ADR-708).
+   */
+  async approvalIssuedFor(input: { approvalId: string; userId: string; capability: string; accountId: string; now: number }): Promise<boolean> {
+    const row = await this.one<{ ok: number }>(
+      this.db,
+      `SELECT 1 AS ok FROM approvals
+       WHERE approval_id = $1 AND user_id = $2 AND capability = $3 AND account_id = $4 AND consumed_at IS NULL AND expires_at > $5`,
+      [input.approvalId, input.userId, input.capability, input.accountId, input.now],
+    );
+    return row !== null;
+  }
+
+  /** Records what happened after a used approval ran (ADR-322). Only the first record counts. */
+  async finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number): Promise<void> {
+    await this.db.query(
+      "UPDATE approvals SET outcome = $1, external_id = $2, finished_at = $3 WHERE approval_id = $4 AND consumed_at IS NOT NULL AND outcome IS NULL",
+      [outcome, externalId, now, approvalId],
+    );
+  }
+
+  /**
+   * What happened when this approval was used, for the same user, tool, account and (unless
+   * `argsDigest` is null, for a tool whose approval is bound to a looked-up target) arguments.
+   * Null when it was never used. `outcome` null: used, but its run hasn't finished (or the server
+   * stopped mid-run), so it may or may not have gone through.
+   */
+  async approvalOutcome(input: { approvalId: string; userId: string; capability: string; accountId: string; argsDigest: string | null }): Promise<{
+    outcome: WriteOutcome | null;
+    externalId: string | null;
+  } | null> {
+    const row = await this.one<{ outcome: WriteOutcome | null; external_id: string | null }>(
+      this.db,
+      `SELECT outcome, external_id FROM approvals
+       WHERE approval_id = $1 AND user_id = $2 AND capability = $3 AND account_id = $4
+         AND ($5::text IS NULL OR args_digest = $5) AND consumed_at IS NOT NULL`,
+      [input.approvalId, input.userId, input.capability, input.accountId, input.argsDigest],
+    );
+    return row ? { outcome: row.outcome, externalId: row.external_id } : null;
+  }
+
+  /** The newest run of the same write (user, tool, arguments) since `since` that did or may have gone through. */
+  async latestWrite(input: { userId: string; capability: string; argsDigest: string; since: number }): Promise<{ outcome: WriteOutcome; finishedAt: number } | null> {
+    const row = await this.one<{ outcome: WriteOutcome; finished_at: number }>(
+      this.db,
+      `SELECT outcome, finished_at FROM approvals
+       WHERE user_id = $1 AND capability = $2 AND args_digest = $3 AND finished_at >= $4 AND outcome IN ('succeeded', 'outcome_unknown')
+       ORDER BY finished_at DESC LIMIT 1`,
+      [input.userId, input.capability, input.argsDigest, input.since],
+    );
+    return row ? { outcome: row.outcome, finishedAt: row.finished_at } : null;
+  }
 }
+
+/** How a used approval's run ended (ADR-322). */
+export type WriteOutcome = "succeeded" | "outcome_unknown" | "failed";

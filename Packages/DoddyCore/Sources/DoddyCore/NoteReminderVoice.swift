@@ -23,12 +23,16 @@ public struct NoteReminderVoiceDraft: Equatable, Sendable {
     public let target: NoteReminderVoiceTarget
     /// A time reminder that repeats (ADR-211): the weekday, day and clock time come from the time.
     public let repeats: ReminderRepeat?
+    /// The user asked for it to ring like an alarm (ADR-651). Only a proposal: the card shows it as
+    /// a switch, and nothing rings unless it is on when the user taps Set reminder.
+    public let rings: Bool
 
-    public init(noteText: String, target: NoteReminderVoiceTarget, repeats: ReminderRepeat? = nil, isList: Bool = false) {
+    public init(noteText: String, target: NoteReminderVoiceTarget, repeats: ReminderRepeat? = nil, isList: Bool = false, rings: Bool = false) {
         self.noteText = noteText
         self.isList = isList
         self.target = target
         self.repeats = repeats
+        self.rings = rings
     }
 }
 
@@ -73,7 +77,7 @@ extension VoiceToolRequest {
                         question: "which day of the month, from 1 to 28"))
                 }
                 return .remindAboutNote(NoteReminderVoiceDraft(
-                    noteText: note, target: .time(date, timeZoneID: zone), repeats: repeats, isList: isList))
+                    noteText: note, target: .time(date, timeZoneID: zone), repeats: repeats, isList: isList, rings: args.flag("ring")))
             }
         case (nil, let placeText?):
             let query = placeText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -148,6 +152,14 @@ extension VoiceToolReply {
     private static func replaced(_ previous: MemoryReminder?) -> String {
         guard let previous else { return "" }
         return " It replaced the note's earlier reminder (\(phrase(previous, earlier: true))), which is gone now. Tell the user."
+    }
+
+    /// Added to a set reminder's reply when the card's "Ring like an alarm" was on (ADR-651): said as
+    /// ringing only when AlarmKit lists the alarm.
+    public static func noteReminderRingLine(confirmed: Bool) -> String {
+        confirmed
+            ? " It also rings like an alarm at that time, even in Silent mode or a Focus."
+            : " It was meant to ring like an alarm too, but the iPhone didn't confirm the alarm (alarms may be off for Doddy in iPhone Settings), so it comes as a notification only. Tell the user."
     }
 
     public static func noteReminderFailed(_ reason: String) -> String {

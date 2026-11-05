@@ -1,0 +1,94 @@
+<!--
+title: Mockup 23, does the new page contradict the homepage?
+active: none
+-->
+{{> head}}
+<body class="board">
+  <style>
+    .audit table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .audit th, .audit td { text-align: left; vertical-align: top; padding: 9px 10px; border-top: 1px solid var(--separator); }
+    .audit th { font-family: var(--display); font-weight: 700; font-size: 0.8125rem; color: var(--secondary-text); border-top: 0; }
+    .audit td:first-child { font-weight: 650; }
+    .v { display: inline-block; padding: 2px 9px 3px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    .v.same { background: color-mix(in srgb, var(--confirmed) 14%, transparent); color: var(--confirmed); }
+    .v.drift { background: color-mix(in srgb, var(--orange-cue) 18%, transparent); color: var(--accent-text); }
+    .v.contra { background: color-mix(in srgb, var(--error) 12%, transparent); color: var(--error); }
+    .v.ext { background: var(--quiet-surface); color: var(--secondary-text); }
+    .flag { padding: 18px 22px; background: color-mix(in srgb, var(--error) 6%, var(--paper)); border: 1px solid color-mix(in srgb, var(--error) 40%, transparent); border-radius: 18px; font-size: 0.9375rem; }
+    .flag b { color: var(--error); }
+    .ba { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+    .ba figure { margin: 0; min-width: 0; }
+    .ba img { width: 100%; height: auto; display: block; border: 1px solid var(--separator); border-radius: 12px; background: var(--canvas); }
+    .ba figcaption { font-size: 0.8125rem; color: var(--secondary-text); margin: 6px 2px 0; }
+    .ba figcaption b { color: var(--reading-ink); }
+  </style>
+  <div class="board-wrap audit">
+    <div class="board-head">
+      <h1>23 · Does the new page contradict the homepage?</h1>
+      <p>One row per element: homepage · new page · verdict · fix. Every drift is fixed in the mockups; every contradiction has a fix on the page that should change.</p>
+    </div>
+
+    <div class="flag" style="margin-bottom: 24px">
+      <b>Flagged first: two Doddys.</b> The homepage draws Doddy from the v1.3 SVG set (orange backpack, basketball); the new page and the app draw him from the owner's pack (no backpack, 2:3 PNGs). It is the one contradiction a visitor sees without looking. Options and the recommendation (swap the homepage to the pack) are in mockup 24; the swapped hero is in 25a.
+    </div>
+
+    <div class="frame">
+      <div class="frame-label">The audit</div>
+      <div class="frame-body">
+        <table>
+          <thead><tr><th>Element</th><th>Homepage</th><th>New page</th><th>Verdict</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td>Nav and active state</td><td>Five links, sticky, blurred paper; the blog marks its tab with <code>aria-current="page"</code>: ink text, orange underline</td><td>Same header, six links; the new tab uses the blog's rule</td><td><span class="v same">same</span></td><td>none; the blog's nav gets the same six links (25 · 9)</td></tr>
+            <tr><td>Phone nav</td><td>Below 820 px: wordmark and button only, no menu</td><td>Proposes a menu button and a paper sheet</td><td><span class="v contra">contradicts</span></td><td>the homepage changes: the same menu on every page (25a at 390). Alternative: drop the menu from the new page and rely on the footer; not recommended, Blog and the new page would be unreachable on phones</td></tr>
+            <tr><td>Wordmark</td><td>Caveat 700, 2.2 rem, ink</td><td>The live markup, via the shared partial</td><td><span class="v same">same</span></td><td>none</td></tr>
+            <tr><td>Type scale and display weights</td><td><code>.display</code> 760, opsz 96, clamp(3rem … 6.25rem); <code>.display-m</code> 750, clamp(2.1 … 3.5rem)</td><td>Phase 1 overrode the display size (max 5.6 rem) and set the handwritten beat larger than the display face (1.04 em)</td><td><span class="v drift">drifted</span></td><td>fixed: the homepage's <code>.display</code> unchanged; the beat at 0.92 em so handwriting never outranks the brand face</td></tr>
+            <tr><td>Paper, rules, glow</td><td>Ruled paper fading out behind the hero; a radial orange glow behind the phone</td><td>The same ruled hero; the glow moves down the day behind each scene (mockup 20)</td><td><span class="v ext">extension</span></td><td>none; one token, one gradient, already on the site</td></tr>
+            <tr><td>Card radii and shadows</td><td>Film card 30 px radius, 12 px padding, <code>--lift-strong</code>; panels 36 px; scraps 4 / 14 px corners</td><td>Scene card was 28 px / 10 px; object tiles 4 / 20 px; the honesty panel 28 px with 24 px padding</td><td><span class="v drift">drifted</span></td><td>fixed: scene card = film card; tiles = scraps; honesty panel = privacy panel (36 px, 36 to 72 px padding, the warm corner)</td></tr>
+            <tr><td>Tape</td><td>Two strips, rotated ±5°, on the film card</td><td>The same <code>.tape</code> on every scene card</td><td><span class="v same">same</span></td><td>none</td></tr>
+            <tr><td>Pills and capability labels</td><td><code>.pill</code> (quiet surface, ink dot) and <code>.pill.warn</code> for "In testing" (accent border, accent text)</td><td>The same pill in the hero; <code>.cap</code> labels: "in testing" styled as <code>.pill.warn</code>, plus Built (confirmed green) and Later, maybe (dashed), which the homepage never needs</td><td><span class="v ext">extension</span></td><td>none; the three states use the site's confirmed, accent and secondary tokens</td></tr>
+            <tr><td>Buttons and text links</td><td>Ink button with the orange inset, 18 px radius; underlined text links</td><td>The same classes</td><td><span class="v same">same</span></td><td>none</td></tr>
+            <tr><td>Doddy's handwriting</td><td>Caveat 700 only for Doddy's words and the wordmark: <code>.says</code> 1.9 to 2.6 rem, <code>.says-small</code> 1.6 rem accent, sketches 1.65 rem, memory bubble 1.55 rem, scraps 1.5 rem</td><td>Same faces and range: time stamps 2.4 rem, lines 1.45 rem, object labels 1.35 rem, share lines 1.3 rem; the headline's beat; never for reading text</td><td><span class="v same">same</span></td><td>none; every Caveat string on the new page is Doddy speaking or the time he writes</td></tr>
+            <tr><td>Captions and fine print</td><td><code>.caption</code> 0.75 rem under screens; <code>.fineprint</code> 0.875 rem secondary</td><td>Same classes under every scene and in the hero</td><td><span class="v same">same</span></td><td>none</td></tr>
+            <tr><td>Join panel and waitlist form</td><td>One panel, one form, posts to <code>api/waitlist.js</code> with the page name</td><td>The same panel and form at the end of the day</td><td><span class="v same">same</span></td><td>none: the API already stores which page the signup came from, so two forms are one list. The new page's panel adds links back to the film and the blog</td></tr>
+            <tr><td>"Later, maybe" paragraph</td><td>Under the join panel, the list of what's in testing and not built</td><td>Phase 1 repeated it word for word from a second copy</td><td><span class="v contra">contradicted</span></td><td>fixed: removed from the new page; the honesty panel's last line links to the homepage's list. At build: one shared partial if both pages must show it</td></tr>
+            <tr><td>Privacy and "Doddy is an AI" lines</td><td>Hero fine print, privacy panel, footer</td><td>Hero fine print and the footer partial carry the same sentences</td><td><span class="v same">same</span></td><td>none</td></tr>
+            <tr><td>Footer</td><td>Wordmark, eight links, three sentences, the analytics-choices button, ©</td><td>Phase 1 dropped the Google Analytics sentence and its button</td><td><span class="v drift">drifted</span></td><td>fixed: the sentence and button are back; one extra sentence says the scenes are scripted (an addition, not a change)</td></tr>
+            <tr><td>Film chapter buttons as the day strip</td><td><code>.chapters</code>: paper, scrap corners, rotated, Caveat, <code>aria-current</code> underline; sideways with snap points on phones</td><td>The same component, ten moments; current moment on scroll</td><td><span class="v same">same</span></td><td>none</td></tr>
+            <tr><td>Screens: "Design preview" vs scripted scenes</td><td>App screens are labelled "Design preview of the app"</td><td>Scenes are labelled "Scripted demonstration" (they are not app screens); the iPhone mockups said "Scripted demonstrations" only</td><td><span class="v drift">drifted</span></td><td>fixed: the iPhone board now says "Design preview of the app, scripted conversations"; scenes keep their own label</td></tr>
+            <tr><td>Section rhythm</td><td>Sections padded clamp(56px, 8vw, 104px), one rule between</td><td>Moments were padded clamp(40px, 6vw, 84px)</td><td><span class="v drift">drifted</span></td><td>fixed: the homepage's rhythm</td></tr>
+            <tr><td>The voice of the two headlines</td><td>"A little less to carry." Brand voice in Bricolage; Doddy's "Hey. I'm Doddy." in Caveat beside the phone</td><td>"What can Doddy do?" in Bricolage; "Quite a lot, actually." in Caveat; "Pick one." beside him</td><td><span class="v same">same</span></td><td>none; brand asks, Doddy answers, on both pages</td></tr>
+            <tr><td>Claims, line by line</td><td>Truth table: saved notes built; voice, calendar, reminders, timers, lists, maps, drafts, weather, plans, personality in testing; translation and Android not built</td><td>Ten moments checked against the agent's tools. One line overreached: "Moves the next thing back twenty minutes, after you tap Add" (the agent adds events; it does not move them)</td><td><span class="v drift">drifted</span></td><td>proposed copy edit, applied in the mockups: "Nothing in your calendar changes unless you tap Add." Everything else matches</td></tr>
+            <tr><td>Character art</td><td>v1.3 SVG poses (and the canvas court's own drawing)</td><td>The owner's pack</td><td><span class="v contra">contradicts</span></td><td>the homepage changes (mockup 24, 25a); owner decides</td></tr>
+            <tr><td>Objects in the hero</td><td>No equivalent; nearest is the scraps</td><td>Seven paper tiles with the scraps' corners; five objects drawn as line art in the props sheet's colours</td><td><span class="v ext">extension</span></td><td>none; the drawn objects remain an owner decision (Phase 1 open decision 5)</td></tr>
+            <tr><td>Page head: title, description, share image</td><td>Set, but canonical and <code>og:url</code> point at the Vercel host</td><td>Not set yet</td><td><span class="v contra">contradicts</span></td><td>both change: doddy.lol everywhere, the new page's own title, description and image (25 · 2 and 11)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="frame-note">Verdicts: 12 same · 2 extensions · 6 drifted (all fixed in the mockups) · 4 contradictions (phone nav, "Later, maybe", character art, page head), each with its fix on the page that should change.</p>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label">Before and after, every drifted or contradicting row that is visible</div>
+      <div class="frame-body">
+        <div class="ba">
+          <figure><img src="../png/crops/before-headline.png" alt=""><figcaption><b>Before · type.</b> Display capped at 5.6 rem; the handwriting larger than the brand face.</figcaption></figure>
+          <figure><img src="../png/crops/after-headline.png" alt=""><figcaption><b>After.</b> The homepage's display size; the beat sits under it at 0.92 em.</figcaption></figure>
+          <figure><img src="../png/crops/before-scene-card.png" alt=""><figcaption><b>Before · card.</b> 28 px radius, 10 px padding.</figcaption></figure>
+          <figure><img src="../png/crops/after-scene-card.png" alt=""><figcaption><b>After.</b> The film card's 30 px and 12 px; the stamp and the three beats are Phase 2's additions.</figcaption></figure>
+          <figure><img src="../png/crops/before-objects.png" alt=""><figcaption><b>Before · tiles.</b> 4 / 20 px corners, a shape the site doesn't have.</figcaption></figure>
+          <figure><img src="../png/crops/after-objects.png" alt=""><figcaption><b>After.</b> The scraps' 4 / 14 px corners.</figcaption></figure>
+          <figure><img src="../png/crops/before-truth-panel.png" alt=""><figcaption><b>Before · honesty panel.</b> 28 px radius, tight padding, flat.</figcaption></figure>
+          <figure><img src="../png/crops/after-truth-panel.png" alt=""><figcaption><b>After.</b> The privacy panel's 36 px, its padding and its warm corner; the last line links to the homepage's list instead of repeating it.</figcaption></figure>
+          <figure><img src="../png/crops/before-later-maybe.png" alt=""><figcaption><b>Before · "Later, maybe".</b> The homepage's paragraph, copied.</figcaption></figure>
+          <figure><img src="../png/crops/after-truth-list.png" alt=""><figcaption><b>After.</b> Gone; one source, one link.</figcaption></figure>
+          <figure><img src="../png/crops/before-footer.png" alt=""><figcaption><b>Before · footer.</b> No Google Analytics sentence, no Analytics choices.</figcaption></figure>
+          <figure><img src="../png/crops/after-footer.png" alt=""><figcaption><b>After.</b> The homepage's footer, plus the scripted-scenes sentence.</figcaption></figure>
+          <figure><img src="../png/crops/before-phone-caption.png" alt=""><figcaption><b>Before · app screens.</b> "Scripted demonstrations" only.</figcaption></figure>
+          <figure><img src="../png/crops/after-phone-caption.png" alt=""><figcaption><b>After.</b> "Design preview of the app", the homepage's words, first.</figcaption></figure>
+        </div>
+      </div>
+      <p class="frame-note">The phone nav, the character art and the page head are mocked on the homepage side: mockups 24 and 25a. The section rhythm and the calendar line are visible in mockup 16.</p>
+    </div>
+  </div>
+</body>
+</html>

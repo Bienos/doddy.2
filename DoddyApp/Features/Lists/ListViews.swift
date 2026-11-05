@@ -13,8 +13,15 @@ struct ListsOverview: View {
         VStack(alignment: .leading, spacing: 12) {
             if store.lists.isEmpty {
                 HStack(alignment: .top, spacing: 14) {
-                    // No lists yet: he waits, cross-legged (ADR-313).
-                    WholeDoddyView(pose: .crosslegged, height: 80)
+                    // No lists yet: he waits, cross-legged (ADR-313). With the motion world on
+                    // (MV3) the one Doddy sits here himself, at 1.0× (94 pt cross-legged), on a
+                    // line at the foot of a box his size, so nothing above him is covered.
+                    if DoddyDirector.shared.isActive {
+                        Color.clear.frame(width: 50, height: 94)
+                            .overlay(alignment: .bottom) { LedgeLine(name: "emptyLists", width: 50) }
+                    } else {
+                        WholeDoddyView(pose: .crosslegged, height: 80)
+                    }
                     VStack(alignment: .leading, spacing: 8) {
                         Text("No lists yet").font(.title3.weight(.medium)).accessibilityAddTraits(.isHeader)
                         Text("Make one here, or tell Doddy: “add milk to my shopping list”. Lists stay on this iPhone.")
@@ -44,6 +51,7 @@ struct ListsOverview: View {
             }
         }
         .sheet(isPresented: $creating) { NewListSheet() }
+        .coversDoddy(creating)
     }
 }
 
@@ -116,6 +124,15 @@ struct ListDetailView: View {
     /// The last open item was just ticked (ADR-313): Doddy jumps, once.
     @State private var finishedNow = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    /// Shopping list+ (ADR-631): which list is the At home list, on this iPhone; "" for none.
+    @AppStorage(HomeStock.preferenceKey) private var homeListID = ""
+    /// Shopping list+ (ADR-631): a product's barcode, read on this iPhone, asked of Open Food Facts.
+    @State private var showingScanner = false
+    @State private var scannedPhoto: Data?
+    @State private var isLookingUp = false
+    @State private var scan: BarcodeScan?
+
+    private var homeList: DoddyList? { HomeStock.list(storedID: homeListID, in: store.lists) }
 
     var body: some View {
         Group {
@@ -131,10 +148,14 @@ struct ListDetailView: View {
         .background(Theme.canvas)
         .foregroundStyle(Theme.ink)
         // Only a change seen here counts: opening a list that was already finished doesn't jump.
-        .onChange(of: store.list(id: listID)?.open.count ?? 0) { old, new in
-            finishedNow = old > 0 && new == 0 && !(store.list(id: listID)?.items.isEmpty ?? true)
+        .onChange(of: openCount) { old, new in
+            finishedNow = old > 0 && new == 0 && hasItems
         }
     }
+
+    // Kept out of `body` so the compiler type-checks it in reasonable time.
+    private var openCount: Int { store.list(id: listID)?.open.count ?? 0 }
+    private var hasItems: Bool { !(store.list(id: listID)?.items.isEmpty ?? true) }
 
     private func content(_ list: DoddyList) -> some View {
         List {
@@ -143,6 +164,12 @@ struct ListDetailView: View {
                     Text(list.name).font(.largeTitle.weight(.medium)).accessibilityAddTraits(.isHeader)
                         .accessibilityIdentifier("list.name")
                     Text(list.summary).font(.subheadline).foregroundStyle(Theme.secondaryText)
+                    if homeList?.id == list.id {
+                        Label("Your At home list", systemImage: "house")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                            .accessibilityIdentifier("list.atHome")
+                    }
                 }
                 .listRowBackground(Theme.canvas)
                 if let link = sharing.isShared(list.id) {
@@ -176,6 +203,23 @@ struct ListDetailView: View {
                     .tint(Theme.ink)
                     .accessibilityLabel("Add")
                     .disabled(ListText.cleaned(newItem) == nil)
+                    if CameraCapture.isAvailable {
+                        Button { openScanner() } label: {
+                            Group {
+                                if isLookingUp {
+                                    ProgressView()
+                                } else {
+                                    Image(systemName: "barcode.viewfinder")
+                                }
+                            }
+                            .frame(width: 44, height: 44)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Theme.ink)
+                        .disabled(isLookingUp)
+                        .accessibilityLabel("Scan a barcode")
+                        .accessibilityIdentifier("list.scanBarcode")
+                    }
                 }
                 .listRowBackground(Theme.canvas)
                 if let addNote {
@@ -232,55 +276,40 @@ struct ListDetailView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .safeAreaInset(edge: .bottom) {
-            if let undo = store.listUndo, undo.listID == listID {
+            if let undo = store.listUndo, undo.listID == listID || undo.shownOn == listID {
                 // A new identity per change, so a failed undo isn't carried to the next one (review F7).
                 ListUndoBar(undo: undo).id(undo.id)
             }
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) { menu(list) }
+            ToolbarItem(placement: .primaryAction) { menuWithDialogs(list) }
         }
         .alert("Rename list", isPresented: $renaming) {
             TextField("Name", text: $newName)
             Button("Rename") { run { try await store.renameList(list.id, to: newName) } }
             Button("Cancel", role: .cancel) {}
         }
-        .confirmationDialog("Delete “\(list.name)”?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Delete list", role: .destructive) {
-                Task {
-                    do {
-                        // A shared list stops being shared first (ADR-263, review I3), so nothing
-                        // is left in iCloud.
-                        try await sharing.stopSharingBeforeDeleting(list.id)
-                        try await store.delete(id: list.id)
-                        dismiss()
-                    } catch {
-                        errorMessage = SharingError.message(for: error)
-                    }
-                }
-            }
-        } message: {
-            Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
-                + Text(verbatim: sharing.deleteWarning(list.id).map { " " + $0 } ?? "")
-        }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
-        .confirmationDialog("Share “\(list.name)” through iCloud?", isPresented: $confirmSharing, titleVisibility: .visible) {
-            Button("Share") { Task { await startSharing(list) } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.")
+        // Shopping list+ (ADR-631): iOS's own camera screen; the photo is read here, then dropped.
+        .fullScreenCover(isPresented: $showingScanner, onDismiss: {
+            guard let data = scannedPhoto else { return }
+            scannedPhoto = nil
+            Task { await lookUp(data) }
+        }) {
+            CameraCapture(
+                onPhoto: { data in
+                    scannedPhoto = data
+                    showingScanner = false
+                },
+                onCancel: { showingScanner = false })
+                .ignoresSafeArea()
         }
-        .confirmationDialog(sharing.isShared(list.id)?.role == .participant ? "Leave this shared list?" : "Stop sharing this list?",
-                            isPresented: $confirmStopSharing, titleVisibility: .visible) {
-            Button(sharing.isShared(list.id)?.role == .participant ? "Leave" : "Stop sharing", role: .destructive) {
-                run { try await sharing.stop(list.id) }
+        .sheet(item: $scan) { scan in
+            BarcodeProductSheet(product: scan.product, listName: list.name) {
+                Task { await add(list, scanned: scan.product.itemText) }
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(sharing.isShared(list.id)?.role == .participant
-                 ? "The list stays on this iPhone as your own. You won't see others' changes any more."
-                 : "The copy in your iCloud is deleted and the people you invited lose the list. It stays on this iPhone.")
         }
+        .coversDoddy(showReminder || cloudShare != nil || showingScanner || scan != nil)
         .sheet(item: $cloudShare) { sheet in
             CloudSharingView(sheet: sheet, listName: list.name, onStopped: {
                 // Apple's "Stop Sharing" removes only the share, so the copy in iCloud and the
@@ -289,12 +318,6 @@ struct ListDetailView: View {
             }, onFailed: { error in
                 errorMessage = SharingError.message(for: error)
             })
-        }
-        .confirmationDialog("Show this list on your Lock Screen?", isPresented: $confirmShopping, titleVisibility: .visible) {
-            Button("Start shopping mode") { shopping.start(list) }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Its items show on the Lock Screen and in the Dynamic Island until every item is ticked or you end it, so anyone who sees your iPhone can read them. Ticking there ticks here.")
         }
     }
 
@@ -313,9 +336,22 @@ struct ListDetailView: View {
             .accessibilityValue(item.isDone ? "Ticked" : "Not ticked")
             .accessibilityAddTraits(.isToggle)
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.text)
-                    .strikethrough(item.isDone)
-                    .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                // Shopping list+ (ADR-631): a quantity read from the words shows as a label
+                // ("mleka · 2 l"); VoiceOver and every other place keep the full words.
+                let words = ListItemWords.read(item.text)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(verbatim: words.quantity == nil ? item.text : words.product)
+                        .strikethrough(item.isDone)
+                        .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                    if let quantity = words.quantity {
+                        Text(verbatim: quantity.display(polish: Self.polishLabels))
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .overlay(Capsule().stroke(Theme.secondaryText.opacity(0.5), lineWidth: 1))
+                    }
+                }
                 // Shared lists (ADR-285): who else added or ticked it, on this iPhone only.
                 let who = sharing.label(for: item)
                 if !who.isEmpty {
@@ -351,6 +387,53 @@ struct ListDetailView: View {
         }
     }
 
+    /// The menu with the dialogs its items open, attached to the menu itself so that on iPad,
+    /// where a confirmation dialog is a popover, it points at the button that opened it (ADR-437).
+    private func menuWithDialogs(_ list: DoddyList) -> some View {
+        menu(list)
+            .confirmationDialog("Delete “\(list.name)”?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button("Delete list", role: .destructive) {
+                    Task {
+                        do {
+                            // A shared list stops being shared first (ADR-263, review I3), so nothing
+                            // is left in iCloud.
+                            try await sharing.stopSharingBeforeDeleting(list.id)
+                            try await store.delete(id: list.id)
+                            dismiss()
+                        } catch {
+                            errorMessage = SharingError.message(for: error)
+                        }
+                    }
+                }
+            } message: {
+                Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
+                    + Text(verbatim: sharing.deleteWarning(list.id).map { " " + $0 } ?? "")
+            }
+            .confirmationDialog("Share “\(list.name)” through iCloud?", isPresented: $confirmSharing, titleVisibility: .visible) {
+                Button("Share") { Task { await startSharing(list) } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.")
+            }
+            .confirmationDialog(sharing.isShared(list.id)?.role == .participant ? "Leave this shared list?" : "Stop sharing this list?",
+                                isPresented: $confirmStopSharing, titleVisibility: .visible) {
+                Button(sharing.isShared(list.id)?.role == .participant ? "Leave" : "Stop sharing", role: .destructive) {
+                    run { try await sharing.stop(list.id) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(sharing.isShared(list.id)?.role == .participant
+                     ? "The list stays on this iPhone as your own. You won't see others' changes any more."
+                     : "The copy in your iCloud is deleted and the people you invited lose the list. It stays on this iPhone.")
+            }
+            .confirmationDialog("Show this list on your Lock Screen?", isPresented: $confirmShopping, titleVisibility: .visible) {
+                Button("Start shopping mode") { shopping.start(list) }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Its items show on the Lock Screen and in the Dynamic Island until every item is ticked or you end it, so anyone who sees your iPhone can read them. Ticking there ticks here.")
+            }
+    }
+
     private func menu(_ list: DoddyList) -> some View {
         Menu {
             Button { run { try await store.untickAll(listID: list.id) } } label: {
@@ -359,9 +442,10 @@ struct ListDetailView: View {
             .disabled(list.done.isEmpty)
             Button { showReminder = true } label: { Label("Remind me", systemImage: "bell") }
             // Shopping mode (ADR-257): this list on the Lock Screen and in the Dynamic Island.
+            // Where Live Activities exist: iPhone, and iPad from iPadOS 26 (ADR-432, ADR-453).
             if shopping.isOn(for: list.id) {
                 Button { shopping.end() } label: { Label("End shopping mode", systemImage: "cart.badge.minus") }
-            } else {
+            } else if DeviceSupport.hasLiveActivities {
                 Button { confirmShopping = true } label: { Label("Shopping mode", systemImage: "cart") }
                     .disabled(list.open.isEmpty)
             }
@@ -390,6 +474,7 @@ struct ListDetailView: View {
                     Button { confirmSharing = true } label: { Label("Share with people…", systemImage: "person.2") }
                 }
             }
+            atHomeMenu(list)
             // List templates (ADR-334): the items as written, ticks not kept.
             Button { saveTemplate(list) } label: { Label("Save as template", systemImage: "square.on.square") }
                 .disabled(list.items.isEmpty)
@@ -435,6 +520,9 @@ struct ListDetailView: View {
         }
     }
 
+    /// Quantity labels in the screens' language: "1,5 kg", "10 szt." in Polish; "1.5 kg", "10 pcs" otherwise.
+    static var polishLabels: Bool { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish }
+
     /// "Added by Marta · Ticked by Tom" (ADR-285).
     static func whoText(_ label: SharedItemLabel) -> String {
         func shown(_ name: String) -> String { name == "someone else" ? NSLocalizedString("someone else", comment: "") : name }
@@ -444,17 +532,120 @@ struct ListDetailView: View {
             .compactMap { $0 }.joined(separator: " · ")
     }
 
-    private func add(_ list: DoddyList) async {
-        guard let text = ListText.cleaned(newItem) else { return }
+    /// Shopping list+ (ADR-631): choose the At home list, and add ticked items between it and
+    /// another list. Each move is one ordinary add to one list, with its Undo.
+    @ViewBuilder
+    private func atHomeMenu(_ list: DoddyList) -> some View {
+        if homeList?.id == list.id {
+            Button { homeListID = "" } label: { Label("Not my At home list", systemImage: "house.slash") }
+            let others = store.lists.filter { $0.id != list.id }
+            if !list.done.isEmpty, !others.isEmpty {
+                Menu {
+                    ForEach(others) { other in
+                        Button(other.name) { addTicked(from: list, to: other) }
+                    }
+                } label: { Label("Add ticked to a list", systemImage: "cart.badge.plus") }
+            }
+        } else {
+            Button { homeListID = list.id.uuidString } label: { Label("This is my At home list", systemImage: "house") }
+            if let home = homeList, !list.done.isEmpty {
+                Button { addTicked(from: list, to: home) } label: {
+                    Label(String(format: NSLocalizedString("Add ticked to “%@”", comment: ""), home.name), systemImage: "house")
+                }
+            }
+        }
+    }
+
+    /// iOS asks for the camera the first time; once refused, only iPhone Settings can allow it again.
+    private func openScanner() {
+        errorMessage = nil
+        addNote = nil
+        guard CameraAccess.access() != .denied else {
+            errorMessage = NSLocalizedString("The camera is off for Doddy. You can allow it in iPhone Settings, Doddy, Camera.", comment: "")
+            return
+        }
+        showingScanner = true
+    }
+
+    /// The barcode is read on this iPhone; only its digits go to Open Food Facts. Nothing is added
+    /// here: the answer opens a card, and only its Add puts the product on the list.
+    private func lookUp(_ data: Data) async {
+        isLookingUp = true
+        defer { isLookingUp = false }
+        let code: ProductBarcode?
+        do {
+            code = try await PhotoBarcodeReader.read(data)
+        } catch {
+            errorMessage = NSLocalizedString("That photo couldn't be read. Try again, close to the barcode.", comment: "")
+            return
+        }
+        guard let code else {
+            errorMessage = NSLocalizedString("No product barcode was found in the photo. Try again with the barcode filling more of the picture, or type the item.", comment: "")
+            return
+        }
+        guard !UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) else {
+            errorMessage = NSLocalizedString("Connections are paused, so Doddy didn't look the barcode up. You can type the item instead.", comment: "")
+            return
+        }
+        switch await OpenFoodFactsClient.shared.product(for: code) {
+        case .found(let product):
+            scan = BarcodeScan(product: product)
+        case .notFound:
+            errorMessage = String(format: NSLocalizedString("Open Food Facts doesn't know the product %@. You can type it instead.", comment: ""), code.digits)
+        case .tooMany:
+            errorMessage = NSLocalizedString("That's a lot of barcodes in a minute. Wait a moment and try again.", comment: "")
+        case .failed:
+            errorMessage = NSLocalizedString("Open Food Facts couldn't be reached, so nothing was added. You can type the item instead.", comment: "")
+        }
+    }
+
+    private func addTicked(from list: DoddyList, to target: DoddyList) {
+        let words = HomeStock.tickedWords(of: list)
+        guard !words.isEmpty else { return }
+        errorMessage = nil
+        Task {
+            do {
+                let result = try await store.addToList(words, listID: target.id, source: .typed, shownOn: list.id)
+                addNote = Self.addedTickedNote(result, to: target.name)
+            } catch {
+                errorMessage = UserFacingError.listMessage(for: error)
+            }
+        }
+    }
+
+    /// "Added 3 to “W domu”. Already there: rice."
+    static func addedTickedNote(_ result: ListAddResult, to name: String) -> String {
+        var parts: [String] = []
+        if !result.added.isEmpty {
+            parts.append(String(format: NSLocalizedString("Added %lld to “%@”.", comment: ""), result.added.count, name))
+        }
+        if !result.alreadyThere.isEmpty {
+            parts.append(String(format: NSLocalizedString("Already there: %@.", comment: ""), result.alreadyThere.joined(separator: ", ")))
+        }
+        if !result.noRoom.isEmpty {
+            parts.append(String(format: NSLocalizedString("No room for %lld: “%@” is full.", comment: ""), result.noRoom.count, name))
+        }
+        return parts.isEmpty ? NSLocalizedString("Nothing was added.", comment: "") : parts.joined(separator: " ")
+    }
+
+    /// `scanned`: a product's words from its barcode (ADR-631); the add field is left as it is.
+    private func add(_ list: DoddyList, scanned: String? = nil) async {
+        guard let text = ListText.cleaned(scanned ?? newItem) else { return }
         errorMessage = nil
         do {
             let result = try await store.addToList([text], listID: list.id, source: .typed)
-            if !result.added.isEmpty { newItem = "" }
+            if !result.added.isEmpty, scanned == nil { newItem = "" }
             addNote = result.alreadyThere.isEmpty ? (result.tooLong.isEmpty ? (result.noRoom.isEmpty ? nil
                 : "The list is full (\(ListLimits.itemsPerList) items).")
                 : "An item can be up to \(ListLimits.itemLength) characters.")
                 : "“\(text)” is already on the list."
-            addFocused = true
+            // Shopping list+ (ADR-631): added anyway; the At home list has it open.
+            let atHome = HomeStock.onHomeList(result.added.map(\.text), home: homeList, addingTo: list.id)
+            if addNote == nil, !atHome.isEmpty, let home = homeList {
+                addNote = String(format: NSLocalizedString("Also on “%@”: %@.", comment: ""), home.name, atHome.joined(separator: ", "))
+            }
+            // After a scan the keyboard stays down; typing goes on with it up.
+            if scanned == nil { addFocused = true }
         } catch {
             errorMessage = UserFacingError.listMessage(for: error)
         }

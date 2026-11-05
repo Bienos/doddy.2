@@ -1,0 +1,56 @@
+{
+  "exportedAt": "2026-10-22T10:00:00.000Z",
+  "keptDays": 365,
+  "lastSyncedAt": "2026-10-22T10:00:00.000Z",
+  "switches": {
+    "notes": true,
+    "conversations": true
+  },
+  "unreadable": 0,
+  "notes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "text": "Anna's birthday is 14 March",
+      "source": "explicit_voice",
+      "kind": "fact",
+      "capturedAt": "2026-10-21T10:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "text": "Dentist on Friday at 9",
+      "source": "explicit_voice",
+      "kind": "commitment",
+      "capturedAt": "2026-10-20T10:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000003",
+      "text": "Zaproszenie od Łukasza na sobotę",
+      "source": "explicit_voice",
+      "kind": null,
+      "capturedAt": "2026-10-19T10:00:00.000Z"
+    }
+  ],
+  "conversations": [
+    {
+      "id": "00000000-0000-4000-8000-0000000000c1",
+      "startedAt": "2026-10-20T08:00:00.000Z",
+      "endedAt": "2026-10-20T08:03:00.000Z",
+      "language": "pl",
+      "endedBy": "you",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Kiedy są urodziny Anny?"
+        },
+        {
+          "role": "doddy",
+          "text": "Urodziny Anny są 14 marca."
+        },
+        {
+          "role": "user",
+          "text": "Dzięki, dodaj prezent do listy."
+        }
+      ]
+    }
+  ]
+}

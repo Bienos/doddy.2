@@ -1,11 +1,11 @@
 {
  "NSMicrophoneUsageDescription": {
-  "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's test voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
-  "pl": "Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Jeśli włączysz Hej Doddy, mikrofon słucha też na tym iPhonie słowa wywołującego; ten dźwięk nie jest zapisywany ani wysyłany. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić, albo do OpenAI, jeśli przełączysz testowy głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
+  "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
+  "pl": "Żeby Cię słyszeć, Doddy potrzebuje mikrofonu. Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić, albo do OpenAI, jeśli przełączysz głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie. Nagranie, które zaczniesz przyciskiem Nagrywaj, też zostaje na tym iPhonie, a Doddy pokazuje to przez cały czas nagrywania."
  },
  "NSSpeechRecognitionUsageDescription": {
-  "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-  "pl": "Doddy zapisuje notatkę głosową jako tekst na tym iPhonie, gdy ją nagrywasz, żeby można było sprawdzić słowa przed zapisaniem. Nagranie i jego słowa nie są nigdzie wysyłane."
+  "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message.",
+  "pl": "Doddy zapisuje notatki głosowe i nagrania jako tekst na tym iPhonie, żeby można było sprawdzać i przeszukiwać ich słowa. Zapisuje też to, co mówisz po dotknięciu mikrofonu w Wiadomościach. Dźwięk i jego słowa nie są nigdzie wysyłane; słowa podyktowane w Wiadomościach opuszczają tego iPhone’a tylko wtedy, gdy wyślesz je potem jako wiadomość."
  },
  "NSCalendarsFullAccessUsageDescription": {
   "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",
@@ -24,11 +24,31 @@
   "pl": "Doddy wyszukuje kontakt po imieniu albo sprawdza, czyje urodziny się zbliżają, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. W rozmowie głosowej znalezione imiona oraz dzień i miesiąc urodzin trafiają do ElevenLabs, które obsługuje głos Doddy'ego; numery, adresy e-mail i lata urodzenia zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
  },
  "NSAlarmKitUsageDescription": {
-  "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
-  "pl": "Doddy ustawia budzik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik. Jego budziki dzwonią nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz je w Ustawieniach Doddy'ego, w sekcji Budziki."
+  "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.",
+  "pl": "Doddy ustawia budzik albo minutnik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik albo Zacznij. Dzwonią nawet w trybie cichym i przy włączonym skupieniu. Budziki wyłączysz w Ustawieniach Doddy'ego, w sekcji Budziki."
  },
  "NSFaceIDUsageDescription": {
   "en": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched.",
   "pl": "Doddy używa Face ID, żeby otworzyć aplikację albo prywatną notatkę, gdy włączysz blokadę. iOS sprawdza Twoją twarz; Doddy dowiaduje się tylko, czy się zgadza."
+ },
+ "NSMotionUsageDescription": {
+  "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+  "pl": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają do ElevenLabs, które obsługuje głos Doddy'ego, albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym. Doddy niczego z tego nie zachowuje. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+ },
+ "NSHealthShareUsageDescription": {
+  "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+  "pl": "Doddy odczytuje z aplikacji Zdrowie Twoje treningi, tętno, tętno spoczynkowe, zmienność rytmu serca (HRV), sen i VO2 max, żeby pokazać je na swoim ekranie Apple Health. Z tego iPhone’a wychodzi tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz, albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz. Doddy niczego nie zachowuje i nic nie zapisuje w Zdrowiu. Wyłączysz to w Ustawieniach, w sekcji Połączenia, Apple Health, albo w aplikacji Zdrowie."
+ },
+ "NSHealthUpdateUsageDescription": {
+  "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+  "pl": "Doddy nigdy niczego nie zapisuje w aplikacji Zdrowie ani tam niczego nie zmienia. Prosi tylko o zgodę na odczyt Twoich treningów, tętna, tętna spoczynkowego, zmienności rytmu serca (HRV), snu i VO2 max. iOS wymaga od aplikacji tego tekstu, bo jego ekran uprawnień Zdrowia obejmuje zarówno odczyt, jak i zapis."
+ },
+ "NSCameraUsageDescription": {
+  "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
+  "pl": "Doddy otwiera aparat tylko wtedy, gdy stukniesz Zrób zdjęcie albo Otwórz aparat. Zdjęcie, które zachowasz, trafia do notatki na tym iPhonie, a jego tekst jest odczytywany tutaj; nigdy nie jest nigdzie wysyłane ani zapisywane w Twojej bibliotece zdjęć."
+ },
+ "NSPhotoLibraryUsageDescription": {
+  "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
+  "pl": "Doddy liczy zdjęcia i filmy zrobione w dniach, o które pytasz, i pokazuje je na Twoim ekranie. Do głosu Doddy'ego w tej rozmowie trafia tylko ich liczba i czas zrobienia (do ElevenLabs albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym); same zdjęcia nigdy nie opuszczają tego iPhone'a. Doddy nigdy nie zmienia Twojej biblioteki. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
  }
 }

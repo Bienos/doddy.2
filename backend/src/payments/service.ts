@@ -4,6 +4,7 @@ import type { ErrorCode as ErrorCodeLike } from "../contracts.js";
 import { AppError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
 import type { Store } from "../store.js";
+import { AskGate, type AskBinding } from "../tools/askFirst.js";
 import {
   PAY_TOOL,
   PaymentPaySchema,
@@ -65,7 +66,6 @@ export const PAYMENT_SCENARIOS: ReadonlySet<string> = new Set<PaymentScenario>([
   "declined", "server_error", "no_proof", "bad_proof", "timeout_after_payment", "unreachable", "wallet_unavailable",
 ]);
 
-const APPROVAL_TTL_SECONDS = 120;
 const SELLER_TIMEOUT_MS = 15_000;
 /** A payment still "signing"/"sent" after this long means the server stopped mid-payment. */
 const STALE_MS = 5 * 60_000;
@@ -98,6 +98,8 @@ export class PaymentsService {
   private readonly policy: PaymentsPolicy;
   private readonly limits: Limits;
   private readonly limiter: UsageLimiter;
+  /** ASK-01 (ADR-483): the one gate that issues and uses up approvals. */
+  private readonly ask: AskGate;
   private readonly now: () => number;
   private readonly nonce: () => string;
 
@@ -112,6 +114,7 @@ export class PaymentsService {
     this.limits = deps.limits;
     this.limiter = new UsageLimiter(deps.store, deps.limits);
     this.now = deps.now ?? Date.now;
+    this.ask = new AskGate(deps.store, () => this.now());
     this.nonce = deps.nonce ?? (() => `0x${randomBytes(32).toString("hex")}`);
   }
 
@@ -129,7 +132,7 @@ export class PaymentsService {
 
   // ---------------------------------------------------------------- queries
 
-  status(userId: string): PaymentStatus {
+  async status(userId: string): Promise<PaymentStatus> {
     const now = this.now();
     const network = NETWORKS[this.policy.network];
     return {
@@ -141,31 +144,31 @@ export class PaymentsService {
         network: this.policy.network,
         testNetwork: network.testnet,
       },
-      enabled: this.wallet !== null && this.store.toolEnabled(userId, PAY_TOOL),
+      enabled: this.wallet !== null && (await this.store.toolEnabled(userId, PAY_TOOL)),
       limits: {
         perPayment: formatUsdc(this.policy.maxPerPayment),
         perDay: formatUsdc(this.policy.userDaily),
-        usedToday: formatUsdc(this.store.usage(this.userCounter(userId), this.period(now))),
+        usedToday: formatUsdc(await this.store.usage(this.userCounter(userId), this.period(now))),
         asset: "USDC",
       },
-      unresolved: this.store.unresolvedPayments(userId, now, STALE_MS),
+      unresolved: await this.store.unresolvedPayments(userId, now, STALE_MS),
     };
   }
 
-  receipts(userId: string): PaymentReceipt[] {
-    return this.store.paymentReceipts(userId, 30) as PaymentReceipt[];
+  async receipts(userId: string): Promise<PaymentReceipt[]> {
+    return (await this.store.paymentReceipts(userId, 30)) as PaymentReceipt[];
   }
 
   // ---------------------------------------------------------------- switch
 
-  setSwitch(userId: string, body: unknown): { status: PaymentStatus; receipt: PaymentReceipt } {
+  async setSwitch(userId: string, body: unknown): Promise<{ status: PaymentStatus; receipt: PaymentReceipt }> {
     const request = parse(PaymentSwitchSchema, body);
     if (request.enabled && this.wallet === null) {
-      throw this.refuse(userId, "switch", "live_not_configured", "No payment wallet is set up on this server.", "wallet_not_set_up");
+      throw await this.refuse(userId, "switch", "live_not_configured", "No payment wallet is set up on this server.", "wallet_not_set_up");
     }
-    this.store.setToolEnabled(userId, PAY_TOOL, request.enabled, this.now());
-    const receipt = this.receipt(userId, { operation: "switch", status: "succeeded", summary: `Payments switched ${request.enabled ? "on" : "off"}.` });
-    return { status: this.status(userId), receipt };
+    await this.store.setToolEnabled(userId, PAY_TOOL, request.enabled, this.now());
+    const receipt = await this.receipt(userId, { operation: "switch", status: "succeeded", summary: `Payments switched ${request.enabled ? "on" : "off"}.` });
+    return { status: await this.status(userId), receipt };
   }
 
   // ---------------------------------------------------------------- prepare
@@ -174,11 +177,11 @@ export class PaymentsService {
   async prepare(userId: string, body: unknown): Promise<PaymentPrepared> {
     const request = parse(PaymentPrepareSchema, body);
     const now = this.now();
-    this.limiter.reserveRequest(userId, now);
-    const wallet = this.requireUsable(userId, "prepare");
-    const { url, host } = this.requireUrl(userId, "prepare", request.url);
-    if (this.store.hasUnconfirmedPaymentFor(userId, urlHash(url), now - DUPLICATE_WINDOW_MS)) {
-      throw this.refuse(
+    await this.limiter.reserveRequest(userId, now);
+    const wallet = await this.requireUsable(userId, "prepare");
+    const { url, host } = await this.requireUrl(userId, "prepare", request.url);
+    if (await this.store.hasUnconfirmedPaymentFor(userId, urlHash(url), now - DUPLICATE_WINDOW_MS)) {
+      throw await this.refuse(
         userId, "prepare", "capability_disabled",
         "A payment to this page was sent a moment ago and was never confirmed. Check your wallet's history before paying again.",
         "payment_unconfirmed", host,
@@ -186,18 +189,11 @@ export class PaymentsService {
     }
     const offer = await this.limiter.withSlot(userId, () => this.readOffer(userId, "prepare", url, host));
     const amountText = formatUsdc(offer.accepted.amount);
-    const room = this.roomToday(userId, now);
+    const room = await this.roomToday(userId, now);
     if (offer.accepted.amount > room.user || offer.accepted.amount > room.service) {
-      throw this.refuse(userId, "prepare", "quota_exceeded", `Paying ${amountText} USDC would pass today's payment limit. Nothing was paid.`, "daily_payment_limit", host, amountText);
+      throw await this.refuse(userId, "prepare", "quota_exceeded", `Paying ${amountText} USDC would pass today's payment limit. Nothing was paid.`, "daily_payment_limit", host, amountText);
     }
-    const { approvalId, expiresAt } = this.store.createApproval({
-      userId,
-      capability: PAY_TOOL,
-      accountId: wallet.address,
-      argsDigest: this.offerDigest(url, offer.accepted, wallet.address),
-      now,
-      ttlSeconds: APPROVAL_TTL_SECONDS,
-    });
+    const { approvalId, expiresAt } = await this.ask.issue(this.binding(userId, url, offer.accepted, wallet.address));
     const network = NETWORKS[this.policy.network];
     const lines = [
       `Amount: ${amountText} USDC`,
@@ -221,23 +217,20 @@ export class PaymentsService {
   async pay(userId: string, body: unknown): Promise<PaymentResult> {
     const request = parse(PaymentPaySchema, body);
     const now = this.now();
-    this.limiter.reserveRequest(userId, now);
-    const wallet = this.requireUsable(userId, "pay");
-    const { url, host } = this.requireUrl(userId, "pay", request.url);
+    await this.limiter.reserveRequest(userId, now);
+    const wallet = await this.requireUsable(userId, "pay");
+    const { url, host } = await this.requireUrl(userId, "pay", request.url);
     return this.limiter.withSlot(userId, async () => {
       const offer = await this.readOffer(userId, "pay", url, host);
       const { accepted } = offer;
       const amountText = formatUsdc(accepted.amount);
       const unconfirmed = () =>
         this.refuse(userId, "pay", "capability_disabled", "This payment needs a fresh confirmation. Nothing was paid.", "confirmation_required", host, amountText);
-      const approval = (checkOnly: boolean) =>
-        this.store.consumeApproval(
-          { approvalId: request.approvalId, userId, capability: PAY_TOOL, accountId: wallet.address, argsDigest: this.offerDigest(url, accepted, wallet.address), now: this.now() },
-          { checkOnly },
-        );
+      const approval = (mode: "check" | "use"): Promise<boolean> =>
+        this.ask.allows(this.binding(userId, url, accepted, wallet.address), request.approvalId, mode);
 
       // The approval is bound to what the page asks NOW: a changed price, recipient or token fails here, before anything is signed.
-      if (!approval(true)) throw unconfirmed();
+      if (!(await approval("check"))) throw await unconfirmed();
       // From the threshold up, the person must also type the price. Checked against the offer just read, before
       // anything is reserved or used up, so a wrong or missing entry costs the person nothing and keeps the approval.
       if (accepted.amount >= this.policy.confirmAmount) {
@@ -247,24 +240,24 @@ export class PaymentsService {
             request.confirmAmount === undefined || request.confirmAmount === ""
               ? `Type the amount (${amountText} USDC) to confirm this payment. Nothing was paid.`
               : `The amount you typed doesn't match ${amountText} USDC. Nothing was paid.`;
-          throw this.refuse(userId, "pay", "capability_disabled", message, "amount_confirmation_required", host, amountText);
+          throw await this.refuse(userId, "pay", "capability_disabled", message, "amount_confirmation_required", host, amountText);
         }
       }
       // Daily room is reserved before the approval is used up, so a limit refusal doesn't cost the person their confirmation.
       const spend = this.spendChecks(userId, this.now());
-      if (!this.store.reserveUsage(spend, accepted.amount)) {
-        throw this.refuse(userId, "pay", "quota_exceeded", `Paying ${amountText} USDC would pass today's payment limit. Nothing was paid.`, "daily_payment_limit", host, amountText);
+      if (!(await this.store.reserveUsage(spend, accepted.amount))) {
+        throw await this.refuse(userId, "pay", "quota_exceeded", `Paying ${amountText} USDC would pass today's payment limit. Nothing was paid.`, "daily_payment_limit", host, amountText);
       }
       const release = () => this.store.releaseUsage(spend, accepted.amount);
-      if (!approval(false)) {
-        release();
-        throw unconfirmed();
+      if (!(await approval("use"))) {
+        await release();
+        throw await unconfirmed();
       }
 
       // Past this point the approval is used up. The ledger row exists before anything is signed or sent.
       const paymentId = request.approvalId;
       const authorization = buildAuthorization({ from: wallet.address, accepted, nowMs: this.now(), nonce: this.nonce() });
-      this.store.insertPayment({
+      await this.store.insertPayment({
         paymentId, userId, now: this.now(), host, amount: accepted.amount, network: this.policy.network,
         urlHash: urlHash(url), validBefore: Number(authorization.validBefore),
       });
@@ -279,16 +272,16 @@ export class PaymentsService {
         if (!isSignature(signature)) throw new WalletFailure("unavailable");
         paymentHeader = paymentSignatureHeader({ required: offer.required, accepted, authorization, signature });
       } catch (error) {
-        release();
-        this.store.setPaymentStatus(paymentId, "not_sent", this.now());
+        await release();
+        await this.store.setPaymentStatus(paymentId, "not_sent", this.now());
         const timeout = error instanceof WalletFailure && error.kind === "timeout";
-        throw this.fail(userId, "pay", timeout ? "provider_timeout" : "provider_unavailable", "The wallet couldn't sign, so nothing was paid.", "wallet_unavailable", host, amountText);
+        throw await this.fail(userId, "pay", timeout ? "provider_timeout" : "provider_unavailable", "The wallet couldn't sign, so nothing was paid.", "wallet_unavailable", host, amountText);
       }
 
       // 2. Send, once. From here on the money may move: the reservation stays whatever happens.
-      this.store.setPaymentStatus(paymentId, "sent", this.now());
-      const unknown = (code: "provider_unavailable" | "provider_timeout") => {
-        this.store.setPaymentStatus(paymentId, "unknown", this.now());
+      await this.store.setPaymentStatus(paymentId, "sent", this.now());
+      const unknown = async (code: "provider_unavailable" | "provider_timeout") => {
+        await this.store.setPaymentStatus(paymentId, "unknown", this.now());
         const until = new Date(Number(authorization.validBefore) * 1000).toISOString().slice(11, 16);
         return this.fail(
           userId, "pay", code,
@@ -301,22 +294,22 @@ export class PaymentsService {
       try {
         response = await this.http.get(url, { headers: { "payment-signature": paymentHeader }, signal: AbortSignal.timeout(SELLER_TIMEOUT_MS) });
       } catch (error) {
-        throw unknown(isTimeout(error) ? "provider_timeout" : "provider_unavailable");
+        throw await unknown(isTimeout(error) ? "provider_timeout" : "provider_unavailable");
       }
 
       // 3. Decide from the seller's own answer, nothing else.
       if (response.status === 402) {
-        this.store.setPaymentStatus(paymentId, "declined", this.now());
-        throw this.fail(
+        await this.store.setPaymentStatus(paymentId, "declined", this.now());
+        throw await this.fail(
           userId, "pay", "provider_unavailable",
           `${host} didn't accept the payment (it asked for payment again), and there is no record that it went through.`,
           "payment_declined", host, amountText,
         );
       }
       const settlement = response.status >= 200 && response.status < 300 ? confirmSettlement(response.headers, { network: this.policy.network, from: wallet.address }) : null;
-      if (settlement === null) throw unknown("provider_unavailable");
-      this.store.setPaymentStatus(paymentId, "settled", this.now(), settlement.transaction);
-      const receipt = this.receipt(userId, {
+      if (settlement === null) throw await unknown("provider_unavailable");
+      await this.store.setPaymentStatus(paymentId, "settled", this.now(), settlement.transaction);
+      const receipt = await this.receipt(userId, {
         operation: "pay", status: "succeeded", summary: `Paid ${amountText} USDC to ${host}.`, host, amount: amountText, transaction: settlement.transaction,
       });
       return { mode: this.mode, text: describePaid(host, amountText, settlement.transaction, response), receipt };
@@ -331,11 +324,11 @@ export class PaymentsService {
     try {
       response = await this.http.get(url, { signal: AbortSignal.timeout(SELLER_TIMEOUT_MS) });
     } catch (error) {
-      throw this.fail(userId, op, isTimeout(error) ? "provider_timeout" : "provider_unavailable", `${host} couldn't be reached. Nothing was paid.`, "seller_unreachable", host);
+      throw await this.fail(userId, op, isTimeout(error) ? "provider_timeout" : "provider_unavailable", `${host} couldn't be reached. Nothing was paid.`, "seller_unreachable", host);
     }
     if (response.status !== 402) {
       const free = response.status >= 200 && response.status < 300;
-      throw this.refuse(
+      throw await this.refuse(
         userId, op, "invalid_request",
         free ? "This page didn't ask for a payment." : "That page didn't offer a payment Doddy can make.",
         free ? "payment_not_required" : "no_payment_offer", host,
@@ -344,19 +337,24 @@ export class PaymentsService {
     const parsed = parsePaymentRequired(response);
     if (!parsed.ok) {
       throw parsed.reason === "unsupported_version"
-        ? this.refuse(userId, op, "invalid_request", "This site uses an older payment version Doddy doesn't support yet. Nothing was paid.", "unsupported_version", host)
-        : this.fail(userId, op, "malformed_provider_result", "That site's payment request couldn't be read. Nothing was paid.", "malformed_offer", host);
+        ? await this.refuse(userId, op, "invalid_request", "This site uses an older payment version Doddy doesn't support yet. Nothing was paid.", "unsupported_version", host)
+        : await this.fail(userId, op, "malformed_provider_result", "That site's payment request couldn't be read. Nothing was paid.", "malformed_offer", host);
     }
     const chosen = chooseRequirement(parsed.value.accepts, { network: this.policy.network, maxAmount: this.policy.maxPerPayment });
     if (!chosen.ok) {
       const over = chosen.reason === "too_expensive";
-      throw this.refuse(
+      throw await this.refuse(
         userId, op, over ? "quota_exceeded" : "invalid_request",
         refusalText(chosen.reason, this.policy, chosen.amount),
         over ? "over_payment_limit" : chosen.reason, host, over && chosen.amount !== undefined ? formatUsdc(chosen.amount) : null,
       );
     }
     return { required: parsed.value, accepted: chosen.accepted };
+  }
+
+  /** The single-use approval's binding: this person, this tool, this wallet, and the page with its exact terms. */
+  private binding(userId: string, url: string, accepted: Accepted, from: string): AskBinding {
+    return { userId, tool: PAY_TOOL, accountId: from, argsDigest: this.offerDigest(url, accepted, from) };
   }
 
   /** What an approval is bound to: the page and the exact terms. */
@@ -394,50 +392,50 @@ export class PaymentsService {
     ];
   }
 
-  private roomToday(userId: string, now: number): { user: number; service: number; usedByUser: number } {
+  private async roomToday(userId: string, now: number): Promise<{ user: number; service: number; usedByUser: number }> {
     const period = this.period(now);
-    const usedByUser = this.store.usage(this.userCounter(userId), period);
-    return { user: this.policy.userDaily - usedByUser, service: this.policy.serviceDaily - this.store.usage("service:paid", period), usedByUser };
+    const usedByUser = await this.store.usage(this.userCounter(userId), period);
+    return { user: this.policy.userDaily - usedByUser, service: this.policy.serviceDaily - (await this.store.usage("service:paid", period)), usedByUser };
   }
 
   // ---------------------------------------------------------------- gates and receipts
 
   /** Wallet set up and the person's own switch on. A blocked receipt is written when not. */
-  private requireUsable(userId: string, op: Operation): PaymentWallet {
-    if (this.wallet === null) throw this.refuse(userId, op, "live_not_configured", "No payment wallet is set up on this server.", "wallet_not_set_up");
-    if (!this.store.toolEnabled(userId, PAY_TOOL)) throw this.refuse(userId, op, "capability_disabled", "Payments are turned off in Settings.", "capability_disabled");
+  private async requireUsable(userId: string, op: Operation): Promise<PaymentWallet> {
+    if (this.wallet === null) throw await this.refuse(userId, op, "live_not_configured", "No payment wallet is set up on this server.", "wallet_not_set_up");
+    if (!(await this.store.toolEnabled(userId, PAY_TOOL))) throw await this.refuse(userId, op, "capability_disabled", "Payments are turned off in Settings.", "capability_disabled");
     return this.wallet;
   }
 
-  private requireUrl(userId: string, op: Operation, raw: string): { url: string; host: string } {
+  private async requireUrl(userId: string, op: Operation, raw: string): Promise<{ url: string; host: string }> {
     try {
       const url = checkSellerUrl(raw, this.policy.allowedHosts);
       return { url, host: new URL(url).hostname };
     } catch (error) {
       const reason: UrlRefusal = error instanceof UrlRefused ? error.reason : "not_a_url";
-      throw this.refuse(userId, op, "invalid_request", URL_TEXT[reason], `url_${reason}`);
+      throw await this.refuse(userId, op, "invalid_request", URL_TEXT[reason], `url_${reason}`);
     }
   }
 
   /** Nothing was attempted: a "blocked" receipt, and the error that carries it. */
-  private refuse(userId: string, op: Operation, code: ErrorCodeLike, message: string, errorCode: string, host: string | null = null, amount: string | null = null): AppError {
-    const receipt = this.receipt(userId, { operation: op, status: "blocked", summary: `Not done: ${message}`, errorCode, host, amount });
+  private async refuse(userId: string, op: Operation, code: ErrorCodeLike, message: string, errorCode: string, host: string | null = null, amount: string | null = null): Promise<AppError> {
+    const receipt = await this.receipt(userId, { operation: op, status: "blocked", summary: `Not done: ${message}`, errorCode, host, amount });
     return new AppError(code, { message, receipt });
   }
 
   /** Something was attempted and failed (or, with status outcome_unknown, may have happened). */
-  private fail(
+  private async fail(
     userId: string, op: Operation, code: ErrorCodeLike, message: string, errorCode: string, host: string | null,
     amount: string | null = null, status: PaymentReceipt["status"] = "failed", summary: string = message,
-  ): AppError {
-    const receipt = this.receipt(userId, { operation: op, status, summary, errorCode, host, amount });
+  ): Promise<AppError> {
+    const receipt = await this.receipt(userId, { operation: op, status, summary, errorCode, host, amount });
     return new AppError(code, { message, receipt });
   }
 
-  private receipt(
+  private async receipt(
     userId: string,
     r: { operation: Operation; status: PaymentReceipt["status"]; summary: string; errorCode?: string | null; host?: string | null; amount?: string | null; transaction?: string | null },
-  ): PaymentReceipt {
+  ): Promise<PaymentReceipt> {
     const receipt: PaymentReceipt = {
       operationId: randomUUID(),
       operation: r.operation,
@@ -450,7 +448,7 @@ export class PaymentsService {
       amount: r.amount ?? null,
       transaction: r.transaction ?? null,
     };
-    this.store.savePaymentReceipt(userId, receipt, this.now());
+    await this.store.savePaymentReceipt(userId, receipt, this.now());
     return receipt;
   }
 }

@@ -7,13 +7,10 @@ import Foundation
 public struct FocusFilterSettings: Codable, Equatable, Sendable {
     public static let storageKey = "focusFilter.settings"
 
-    /// "Hey Doddy" doesn't listen while this Focus is on.
-    public var pausesHeyDoddy: Bool
     /// This list comes first in Memories, Lists while the Focus is on.
     public var listFirstID: UUID?
 
-    public init(pausesHeyDoddy: Bool = false, listFirstID: UUID? = nil) {
-        self.pausesHeyDoddy = pausesHeyDoddy
+    public init(listFirstID: UUID? = nil) {
         self.listFirstID = listFirstID
     }
 

@@ -14,13 +14,13 @@ struct PaymentsScreen: View {
     }
 }
 
-/// Settings → Payments (ADR-451). Everything starts off; the switch moves only after Doddy's server
+/// Settings → Payments (ADR-731). Everything starts off; the switch moves only after Doddy's server
 /// accepts it; every payment goes through the approval card (exact price, then Face ID).
 struct PaymentsView: View {
     @State private var settings: PaymentsSettingsModel
     @State private var approval: PaymentApprovalModel
     @State private var address = ""
-    /// How many unconfirmed payments the person said they checked (kept on this iPhone, ADR-452).
+    /// How many unconfirmed payments the person said they checked (kept on this iPhone, ADR-732).
     @State private var acknowledged = UserDefaultsPaymentsBannerStorage().acknowledged()
 
     init(settings: PaymentsSettingsModel, approval: PaymentApprovalModel) {
@@ -41,7 +41,7 @@ struct PaymentsView: View {
             switch settings.load {
             case .notConfigured:
                 Section {
-                    Text("Payments need a Doddy server. Set its address and a session token in Settings › Connected Apps server.")
+                    Text("Payments need a Doddy server session. This iPhone signs in to its server the first time you use something online, such as Online accounts.")
                         .accessibilityIdentifier("payments.notConfigured")
                 }
             case .loading:

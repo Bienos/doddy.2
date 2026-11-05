@@ -8,10 +8,12 @@ import { createRestStore } from './store.js';
  * Picks the limit adapters once per function instance (ADR-124, ADR-125).
  * - Shared store configured: shared counters and shared daily budget. If the store is down, requests
  *   are refused (the adapters throw; handlers answer 503). No silent fallback to memory.
- * - Half-configured, or REQUIRE_SHARED_LIMITS=1 without a store: `loadConfig` reports the variable
- *   names and every request is answered `503 notConfigured`. The memory adapters returned here are
- *   never reached in that case.
- * - Nothing configured: per-instance memory (local development), with a startup warning in the logs.
+ * - Half-configured, or no store on a host where memory limits aren't allowed (the default everywhere
+ *   but tests and local development, ADR-713): `loadConfig` reports the variable names and every
+ *   request is answered `503 notConfigured`. The memory adapters returned here are never reached
+ *   in that case.
+ * - Nothing configured, where memory limits are allowed (NODE_ENV test or development, or
+ *   GATEWAY_ALLOW_MEMORY_LIMITS=1): per-instance memory, with a startup warning in the logs.
  * @param {Record<string, string | undefined>} env
  * @param {{fetch: typeof fetch, logSink?: (line: string) => void}} io
  * @returns {{limiter: import('./ratelimit.js').RateLimiter, spend: import('./budget.js').SpendCap, shared: boolean}}

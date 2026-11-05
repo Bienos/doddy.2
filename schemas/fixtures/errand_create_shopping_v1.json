@@ -1,0 +1,15 @@
+{
+  "_comment": "POST /v1/errands for a shopping errand (docs/implementation/SHOPPING.md). digest is SHA-256 (hex) of canonicalJson",
+  "_comment2": "of {brief, kind, language, priorities, title, words}; canonical is the exact string hashed. Example data.",
+  "request": {
+    "words": "Szukam cichej zmywarki do zabudowy, 45 cm, do 2000 zł",
+    "brief": "Zmywarka do zabudowy 45 cm, najciszej jak się da w budżecie do 2000 zł; sklepy w Polsce, z dostawą",
+    "title": "Cicha zmywarka 45 cm",
+    "language": "pl",
+    "kind": "shopping",
+    "priorities": ["Cisza", "Cena", "Gwarancja"]
+  },
+  "canonical": "{\"brief\":\"Zmywarka do zabudowy 45 cm, najciszej jak się da w budżecie do 2000 zł; sklepy w Polsce, z dostawą\",\"kind\":\"shopping\",\"language\":\"pl\",\"priorities\":[\"Cisza\",\"Cena\",\"Gwarancja\"],\"title\":\"Cicha zmywarka 45 cm\",\"words\":\"Szukam cichej zmywarki do zabudowy, 45 cm, do 2000 zł\"}",
+  "digest": "485d32fa6f4ed5585d0c73b175021ec2b23e2c54389c71800babaf8612c78c62",
+  "researchDigestOfSameWords": "deecdddaa2b3a8ecb8f983783937716fe63c5980f7b512417d5aface34a8faff"
+}

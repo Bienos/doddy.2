@@ -300,7 +300,7 @@ test('budget maths: micro-dollars, rounded up; the estimate is an upper bound on
 
 // ---------- Configuration ----------
 
-test('config: nothing configured -> per-instance memory adapters with startup warnings (local dev keeps working)', async () => {
+test('config: no store but memory limits allowed on purpose -> per-instance memory adapters with startup warnings (tests and local dev)', async () => {
   const logs = [];
   const limits = createLimits(ENV, { fetch: async () => { throw new Error('no network in tests'); }, logSink: (l) => logs.push(l) });
   assert.equal(limits.shared, false);
@@ -329,8 +329,81 @@ test('config: a Vercel production deployment without a store refuses to serve (n
   const loaded = loadConfig({ ...ENV, VERCEL_ENV: 'production' });
   assert.equal(loaded.ok, false);
   assert.deepEqual(!loaded.ok && loaded.missing, ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN']);
-  assert.equal(loadConfig({ ...ENV, VERCEL_ENV: 'preview' }).ok, true, 'preview and local dev keep memory limits');
+  assert.equal(loadConfig({ ...ENV, VERCEL_ENV: 'preview' }).ok, true, 'a preview deployment can still allow memory limits on purpose (ADR-713)');
   assert.equal(loadConfig({ ...SHARED_ENV, VERCEL_ENV: 'production' }).ok, true);
+});
+
+// ADR-713: the shared store is required on every host, not only on Vercel production.
+const NO_ALLOWANCE = { ...ENV, GATEWAY_ALLOW_MEMORY_LIMITS: undefined };
+const STORE_NAMES = ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'];
+
+test('config: without a shared store the gateway refuses to serve on every host unless memory limits are allowed on purpose', () => {
+  const refused = [
+    {},                                                  // a host that sets nothing
+    { NODE_ENV: 'production' },                          // a Render service
+    { NODE_ENV: 'production', RENDER: 'true' },
+    { NODE_ENV: 'production', VERCEL_ENV: 'preview' },   // a Vercel preview
+    { VERCEL_ENV: 'production' },
+    { NODE_ENV: 'staging' },
+    { GATEWAY_ALLOW_MEMORY_LIMITS: 'true' },             // only "1" says it on purpose
+    { GATEWAY_ALLOW_MEMORY_LIMITS: 'yes' },
+    { GATEWAY_ALLOW_MEMORY_LIMITS: '0' },
+    { GATEWAY_ALLOW_MEMORY_LIMITS: '' },
+  ];
+  for (const extra of refused) {
+    const loaded = loadConfig({ ...NO_ALLOWANCE, ...extra });
+    assert.equal(loaded.ok, false, JSON.stringify(extra));
+    assert.deepEqual(!loaded.ok && loaded.missing, STORE_NAMES, JSON.stringify(extra));
+  }
+  const allowed = [
+    { NODE_ENV: 'test' },
+    { NODE_ENV: 'development' },
+    { NODE_ENV: ' Development ' },
+    { GATEWAY_ALLOW_MEMORY_LIMITS: '1' },
+    { GATEWAY_ALLOW_MEMORY_LIMITS: ' 1 ', NODE_ENV: 'production' },
+    { GATEWAY_ALLOW_MEMORY_LIMITS: '1', VERCEL_ENV: 'preview' },
+  ];
+  for (const extra of allowed) {
+    const loaded = loadConfig({ ...NO_ALLOWANCE, ...extra });
+    assert.equal(loaded.ok, true, JSON.stringify(extra));
+    assert.equal(loaded.ok && loaded.config.sharedStore, null);
+  }
+  // With the store, every host works as before.
+  for (const extra of [{}, { NODE_ENV: 'production' }, { VERCEL_ENV: 'production' }, { NODE_ENV: 'production', RENDER: 'true' }]) {
+    assert.equal(loadConfig({ ...SHARED_ENV, GATEWAY_ALLOW_MEMORY_LIMITS: undefined, ...extra }).ok, true, JSON.stringify(extra));
+  }
+});
+
+test('config: REQUIRE_SHARED_LIMITS=1 and a Vercel production deployment win over the opt-in and over development mode', () => {
+  const wins = [
+    { REQUIRE_SHARED_LIMITS: '1', GATEWAY_ALLOW_MEMORY_LIMITS: '1' },
+    { REQUIRE_SHARED_LIMITS: '1', NODE_ENV: 'development' },
+    { REQUIRE_SHARED_LIMITS: '1', NODE_ENV: 'test' },
+    { VERCEL_ENV: 'production', GATEWAY_ALLOW_MEMORY_LIMITS: '1' },
+    { VERCEL_ENV: 'production', NODE_ENV: 'development', GATEWAY_ALLOW_MEMORY_LIMITS: '1' },
+  ];
+  for (const extra of wins) {
+    const loaded = loadConfig({ ...ENV, ...extra });
+    assert.equal(loaded.ok, false, JSON.stringify(extra));
+    assert.deepEqual(!loaded.ok && loaded.missing, STORE_NAMES);
+  }
+});
+
+test('a gateway on a host with no store answers 503 notConfigured on both routes, calls nobody, and logs the names it needs', async () => {
+  // As on the Render copy: production mode, nothing about a store, no opt-in.
+  const env = { ...NO_ALLOWANCE, NODE_ENV: 'production', RENDER: 'true' };
+  const logs = [];
+  const limits = createLimits(env, { fetch: async () => { throw new Error('unused'); }, logSink: (l) => logs.push(l) });
+  assert.equal(limits.shared, false);
+  assert.ok(!logs.some((line) => line.includes('limitsPerInstance')), 'it does not pretend to run with per-instance limits');
+  assert.ok(logs.some((line) => line.includes('"code":"notConfigured"')));
+  const deps = { env, fetch: fakeProvider(providerOk({ answer: 'x' })), now: () => NOW_MS, limiter: limits.limiter, spend: limits.spend, logSink: (l) => logs.push(l) };
+  const { res, json } = await call(deps);
+  assert.deepEqual([res.status, json.error.code], [503, 'notConfigured']);
+  assert.equal(deps.fetch.calls.length, 0, 'the provider is never called');
+  assert.match(logs.at(-1), /"configMissing":\["UPSTASH_REDIS_REST_URL","UPSTASH_REDIS_REST_TOKEN"\]/);
+  assert.doesNotMatch(JSON.stringify(json), /UPSTASH/, 'the caller is not told which settings');
+  assert.equal((await handleRegister(registerRequest(), deps)).status, 503);
 });
 
 test('config: half a store configuration, a non-https URL or a bad budget is refused, never a silent fallback', () => {

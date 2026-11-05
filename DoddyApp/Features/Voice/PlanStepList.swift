@@ -51,7 +51,7 @@ struct PlanStepList: View {
                             }
                         }
                         if let block {
-                            Text(block.screenText)
+                            Text(verbatim: block.screenText(.current))
                                 .font(.footnote)
                                 .foregroundStyle(Theme.error)
                         }
@@ -63,7 +63,7 @@ struct PlanStepList: View {
             }
             .buttonStyle(.plain)
             .disabled(block != nil)
-            .accessibilityValue(block?.screenText ?? (isTicked ? "Ticked" : "Not ticked"))
+            .accessibilityValue(block?.screenText(.current) ?? (isTicked ? "Ticked" : "Not ticked"))
             .accessibilityIdentifier("\(idPrefix).step\(step.number)")
             if block == nil, step.canChange {
                 Button("Change") {

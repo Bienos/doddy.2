@@ -13,6 +13,9 @@ export const ENV = {
   OPENAI_MODEL: 'test-model',
   GATEWAY_TOKEN_SECRET: SECRET,
   GATEWAY_INVITE_CODES: `${INVITE},OTHER-INVITE-0002`,
+  // The tests hand the handlers in-memory limiters, so they say so on purpose (ADR-713). Without
+  // this, a gateway with no shared store refuses to serve.
+  GATEWAY_ALLOW_MEMORY_LIMITS: '1',
 };
 
 export function fixture(name) {

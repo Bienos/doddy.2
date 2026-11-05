@@ -1,6 +1,8 @@
 # App screens in Polish status (ADR-223)
 Date: 2026-10-10. Owner: "do all of them" (item 6).
 
+Since ADR-458 the same generator writes every language in `l10n/`; `l10n/README.md` is the current page for adding one. What follows is the Polish round as built.
+
 ## What ships
 - **Polish when the iPhone is in Polish.** iOS chooses by the iPhone's language. `Config/Doddy-Info.plist` declares `CFBundleLocalizations` en and pl. English stays the source and the fallback.
 - **One String Catalog,** `DoddyApp/Resources/Localizable.xcstrings`. It is generated from `l10n/pl.json`, which maps English source text, written as in the Swift code, to Polish. SwiftUI looks the keys up for literal `Text`, `Button`, `Label`, `Toggle`, `Section`, `navigationTitle`, `TextField`, `SecureField`, `Picker`, `DisclosureGroup`, `confirmationDialog`, `Link`, `ShareLink`, `DatePicker` and accessibility labels. `JourneyHeading` (the big screen titles) now looks up its eyebrow, title and subtitle as well.

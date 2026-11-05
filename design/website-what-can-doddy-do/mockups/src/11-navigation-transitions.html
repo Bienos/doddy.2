@@ -1,0 +1,134 @@
+<!--
+title: Mockup 11, navigation and transitions between the website and the new page
+active: wcd
+-->
+{{> head}}
+<body class="board">
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>11 · Navigation and transitions</h1>
+      <p>Where the tab sits, how it looks on each page, and what happens between the homepage and the new page.</p>
+    </div>
+
+    <div class="frames">
+      <div class="frame">
+        <div class="frame-label"><b>1</b> Homepage nav, pointer over the new tab</div>
+        <div class="frame-body tight">
+          <header class="nav" style="position: static">
+            <div class="wrap nav-inner">
+              <a class="wordmark" href="#">Doddy</a>
+              <nav><ul class="nav-links">
+                <li><a href="#">How it works</a></li>
+                <li><a href="#" style="color: var(--reading-ink)">What can Doddy do?</a></li>
+                <li><a href="#">Meet Doddy</a></li>
+                <li><a href="#">Take a shot</a></li>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Privacy</a></li>
+              </ul></nav>
+              <a class="button small" href="#">Join early access</a>
+            </div>
+          </header>
+        </div>
+        <p class="frame-note"><b>Second position</b>, after "How it works": the homepage answers how, the new page answers what. Sentence case like the other items. Route <b>/what-can-doddy-do/</b>, a folder with an index page like /blog/. Hover: ink colour, as today.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>2</b> New page nav, active state (the blog's rule)</div>
+        <div class="frame-body tight">
+          <header class="nav" style="position: static">
+            <div class="wrap nav-inner">
+              <a class="wordmark" href="#">Doddy</a>
+              <nav><ul class="nav-links">
+                <li><a href="#">How it works</a></li>
+                <li><a href="#" aria-current="page">What can Doddy do?</a></li>
+                <li><a href="#">Meet Doddy</a></li>
+                <li><a href="#">Take a shot</a></li>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Privacy</a></li>
+              </ul></nav>
+              <a class="button small" href="#">Join early access</a>
+            </div>
+          </header>
+        </div>
+        <p class="frame-note">Same <b>aria-current="page"</b> style the blog already uses: ink text with an orange underline. Section links keep their "/#how" form so they still work from the new page.</p>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label"><b>3</b> Homepage → new page: Doddy carries you across</div>
+      <div class="frame-body">
+        <div class="story">
+          <div>
+            <div class="shot">
+              <div class="mini-nav"><span class="wm">Doddy</span><ul><li>How it works</li><li class="hover">What can Doddy do?</li><li>Meet Doddy</li></ul><span class="mini-btn">Join</span></div>
+              <div class="body"><div class="ghost w1"></div><div class="ghost w2"></div><div class="ghost w3"></div></div>
+              <img class="walker" src="../assets/poses/jump_3.png" alt="" style="left: 44%; height: 40%; bottom: 40%">
+            </div>
+            <p class="cue"><b>0 ms · click.</b> Doddy pops out of the tab (pack pop-in frames, 200 ms), lands on the page.</p>
+          </div>
+          <div>
+            <div class="shot">
+              <div class="mini-nav"><span class="wm">Doddy</span><ul><li>How it works</li><li class="hover">What can Doddy do?</li><li>Meet Doddy</li></ul><span class="mini-btn">Join</span></div>
+              <div class="body"><div class="ghost w1"></div><div class="ghost w2"></div><div class="ghost w3"></div></div>
+              <img class="walker" src="../assets/poses/run_2.png" alt="" style="left: 62%; height: 46%">
+              <img src="../assets/fx/dash-lines.png" alt="" style="position:absolute; left: 48%; bottom: 14%; width: 12%">
+            </div>
+            <p class="cue"><b>200 to 600 ms.</b> He runs right while the homepage fades to paper (opacity, 400 ms). Old page stays put, no layout jumps.</p>
+          </div>
+          <div>
+            <div class="shot">
+              <div class="ink"></div>
+              <div class="wipe"></div>
+              <img class="walker" src="../assets/poses/run_2.png" alt="" style="left: 34%; height: 46%; filter: drop-shadow(0 0 2px var(--canvas))">
+            </div>
+            <p class="cue"><b>600 to 900 ms.</b> Ink wipe left to right (the film's "ink" transition storyboard from the pack), then the new page's ruled paper.</p>
+          </div>
+          <div>
+            <div class="shot">
+              <div class="mini-nav"><span class="wm">Doddy</span><ul><li>How it works</li><li class="on">What can Doddy do?</li><li>Meet Doddy</li></ul><span class="mini-btn">Join</span></div>
+              <div class="body"><div class="ghost w1"></div><div class="ghost w2"></div></div>
+              <img class="walker" src="../assets/poses/wave.png" alt="" style="left: 58%; height: 50%">
+              <img class="pop" src="../assets/fx/sparkle.png" alt="" style="left: 78%; top: 40%; width: 10%">
+            </div>
+            <p class="cue"><b>900 to 1400 ms.</b> Doddy arrives in the hero ring, waves; the seven objects drop in one by one (60 ms apart). Reduced motion or a direct visit: plain page load, no run.</p>
+          </div>
+        </div>
+      </div>
+      <p class="frame-note">This is a <b>progressive enhancement</b>: a normal link to /what-can-doddy-do/ underneath. With JavaScript the click is intercepted, the run plays, then the page navigates (the new page checks a flag and starts with Doddy already in the ring). Without JavaScript, or with reduced motion, it's just a link. Total under 1.5 s.</p>
+    </div>
+
+    <div class="frames two" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>4</b> Phone: the menu the site doesn't have yet</div>
+        <div class="frame-body" style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items:start">
+          <img src="../png/01-homepage-nav-390.png" alt="Homepage on a phone, menu closed" style="width:100%; border:1px solid var(--separator); border-radius: 14px">
+          <img src="../png/01-homepage-nav-390-menu.png" alt="Homepage on a phone, menu open" style="width:100%; border:1px solid var(--separator); border-radius: 14px">
+        </div>
+        <p class="frame-note">Today the phone nav is only the wordmark and the button. The proposal adds a <b>menu button</b> that opens a paper sheet with all six links; the new one carries Doddy's face so it's found. Closes on tap outside, Escape, or a link.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>5</b> Footer, with the new link</div>
+        <div class="frame-body tight">
+          <footer class="foot" style="padding: 28px 0 32px">
+            <div class="wrap foot-inner">
+              <div class="foot-top">
+                <p class="wordmark">Doddy</p>
+                <ul class="foot-links">
+                  <li><a href="#">How it works</a></li>
+                  <li><a href="#" style="color: var(--reading-ink)">What can Doddy do?</a></li>
+                  <li><a href="#">Meet Doddy</a></li>
+                  <li><a href="#">Privacy</a></li>
+                  <li><a href="#">Blog</a></li>
+                  <li><a href="#">Join early access</a></li>
+                </ul>
+              </div>
+              <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone.</p>
+              <p>© 2026 Doddy</p>
+            </div>
+          </footer>
+        </div>
+        <p class="frame-note">The footer list gets the same link in the same position. Nothing else moves.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

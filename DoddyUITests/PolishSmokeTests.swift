@@ -9,12 +9,13 @@ final class PolishSmokeTests: XCTestCase {
     @MainActor
     func testHomeCaptureMemoriesAndSettingsWorkInPolish() {
         let app = XCUIApplication()
-        app.launchArguments = UITestLaunch.arguments(store: .inMemory) + ["-AppleLanguages", "(pl)", "-AppleLocale", "pl_PL"]
+        app.launchArguments = UITestLaunch.arguments(store: .inMemory, language: .polish)
         app.launch()
 
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 8))
-        XCTAssertEqual(app.staticTexts["home.greeting"].label, "Trochę mniej do noszenia w głowie.")
-        XCTAssertTrue(app.buttons["home.save"].isHittable)
+        XCTAssertEqual(app.staticTexts["home.greeting"].label, "Jestem tu.")
+        // Save is the + in Home's bottom bar (ADR-545).
+        XCTAssertTrue(app.reveal(app.buttons["home.save"]))
 
         app.buttons["home.save"].tap()
         let save = app.buttons["capture.save"]
@@ -25,17 +26,15 @@ final class PolishSmokeTests: XCTestCase {
         // "Cancel" in Polish; nothing was typed, so nothing is saved.
         app.buttons["Anuluj"].tap()
 
-        XCTAssertTrue(app.buttons["tab.memories"].waitForExistence(timeout: 5))
-        app.buttons["tab.memories"].tap()
-        XCTAssertTrue(app.staticTexts["Brak wspomnień"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.waitForTab("memories", timeout: 5))
+        app.goToTab("memories")
+        XCTAssertTrue(app.text("Brak wspomnień").waitForExistence(timeout: 5))
 
-        app.buttons["tab.settings"].tap()
-        let link = app.buttons["settings.dataFlow"]
-        for _ in 0..<8 {
-            if link.exists && link.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(link.isHittable)
+        app.goToTab("settings")
+        // "What leaves this iPhone" is on Settings › Privacy (ADR-580).
+        app.openSettingsPage("settings.privacyScreen")
+        let link = app.button(labelled: "Co opuszcza tego iPhone’a")
+        XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["Co opuszcza tego iPhone’a"].waitForExistence(timeout: 5))
         attachScreenshot(app, "Polish What leaves this iPhone")

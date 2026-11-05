@@ -1,15 +1,15 @@
 import Foundation
 
-// OpenAI Realtime as a second voice provider, for side-by-side testing only (ADR-265).
-// ElevenLabs stays the default. Everything here is pure: what the app sends over the WebSocket
+// OpenAI Realtime as a choice for Doddy's live voice (ADR-265; the default from ADR-442 until
+// ADR-546 made ElevenLabs the default again). Everything here is pure: what the app sends over the WebSocket
 // and how it reads what comes back. The socket and audio live in DoddyApp/Features/Voice.
 // Wire shapes follow the GA Realtime API (session.type "realtime", audio/pcm at 24 kHz).
 
 // MARK: Provider choice
 
-/// Which company runs Doddy's live voice. ElevenLabs is the default; OpenAI Realtime is a test
-/// switch on Home so the owner can talk to both and compare. Notes, lists and every tool are
-/// the same on both: they live on this iPhone, not with either provider.
+/// Which company runs Doddy's live voice. ElevenLabs is the default (ADR-546); OpenAI Realtime
+/// is a choice in the voice picker. Notes, lists and every tool are the same on both: they live
+/// on this iPhone, not with either provider.
 public enum VoiceProvider: String, CaseIterable, Sendable, Identifiable {
     case elevenLabs = "elevenlabs"
     case openAIRealtime = "openai"
@@ -25,9 +25,44 @@ public enum VoiceProvider: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// Anything unknown or missing is ElevenLabs.
+    /// Anything unknown or missing is ElevenLabs. For a *stored value that is known to be set*
+    /// (a conversation log); for "which voice runs the next conversation" use `effective`.
     public init(stored: String?) {
         self = stored.flatMap(VoiceProvider.init(rawValue:)) ?? .elevenLabs
+    }
+
+    /// The voice that runs the next conversation. A choice the user made wins. With none (or an
+    /// unknown stored value), ElevenLabs is the default (ADR-546, which replaces ADR-442's default),
+    /// whether or not the token server is set. `tokenServerSet` stays in the signature so callers
+    /// don't change; it no longer picks the default.
+    public static func effective(stored: String?, tokenServerSet: Bool) -> VoiceProvider {
+        stored.flatMap(VoiceProvider.init(rawValue:)) ?? .elevenLabs
+    }
+}
+
+/// Which OpenAI Realtime model runs the conversation. The token server only mints secrets for
+/// these two ids (it refuses anything else), so the app can't be pointed at a pricier model.
+public enum OpenAIRealtimeModel: String, CaseIterable, Sendable, Identifiable {
+    case full = "gpt-realtime-2.1"
+    case mini = "gpt-realtime-2.1-mini"
+
+    public static let preferenceKey = "voice.openaiModel"
+    /// Mini is about a third of the price (docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md);
+    /// how it does in Polish and with tools is for the owner to judge on a device.
+    public static let `default`: OpenAIRealtimeModel = .mini
+
+    public var id: String { rawValue }
+
+    public var shortName: String {
+        switch self {
+        case .full: "2.1"
+        case .mini: "2.1 mini"
+        }
+    }
+
+    /// Anything unknown or missing is the default.
+    public init(stored: String?) {
+        self = stored.flatMap(OpenAIRealtimeModel.init(rawValue:)) ?? .default
     }
 }
 
@@ -44,19 +79,20 @@ public struct OpenAIRealtimeGrant: Equatable, Sendable {
 
 extension VoiceTokenServer {
     /// Request body for the token server. ElevenLabs sends none, exactly as before ADR-265.
-    public static func requestBody(for provider: VoiceProvider) -> Data? {
+    /// OpenAI names the model; a server from before ADR-442 ignores it and uses its own.
+    public static func requestBody(for provider: VoiceProvider, model: OpenAIRealtimeModel = .default) -> Data? {
         switch provider {
         case .elevenLabs: nil
-        case .openAIRealtime: Data(#"{"provider":"openai"}"#.utf8)
+        case .openAIRealtime: Data(#"{"provider":"openai","model":"\#(model.rawValue)"}"#.utf8)
         }
     }
 
     /// Reply `{"token": "ek_…", "provider": "openai", "model": "…"}`. A server from before
     /// ADR-265 ignores the body and returns an ElevenLabs token without `provider`; that is
     /// refused here rather than sent to OpenAI.
-    public static func openAIGrant(status: Int, body: Data) -> Result<OpenAIRealtimeGrant, VoiceTokenError> {
+    public static func openAIGrant(status: Int, body: Data, retryAfter: String? = nil) -> Result<OpenAIRealtimeGrant, VoiceTokenError> {
         guard status == 200 else {
-            if case .failure(let error) = token(status: status, body: body) { return .failure(error) }
+            if case .failure(let error) = token(status: status, body: body, retryAfter: retryAfter) { return .failure(error) }
             return .failure(.serverProblem(status: status))
         }
         guard let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
@@ -100,6 +136,10 @@ public enum OpenAIRealtimeWire {
     /// Model for the user's side of the transcript (shown on screen, kept in the conversation log).
     public static let transcriptionModel = "gpt-4o-mini-transcribe"
 
+    /// Added to the instructions when the conversation is in Polish: OpenAI's voices drift into
+    /// English or a foreign accent without it. Doddy is a he, so the masculine forms stay.
+    static let polishLine = "\n\nThe user speaks Polish. Answer in natural, fluent Polish with a Polish accent, at a calm pace, unless they speak another language. Speak about yourself in the masculine (\"sprawdzę\", \"sprawdziłem\"). Wait until the user has clearly finished; never cut in on a pause."
+
     public enum SpecError: Error, Equatable {
         case unreadableTools
     }
@@ -126,16 +166,25 @@ public enum OpenAIRealtimeWire {
 
     /// The first thing sent after connecting: Doddy's rendered prompt, tools and turn-taking.
     /// The voice and model were fixed by the token server and are not changed here.
-    public static func sessionUpdate(instructions: String, toolsJSON: Data, eagerness: RealtimeTurnEagerness) throws -> String {
+    /// `languageCode` (ISO 639-1, from the user's choice or the phone) tells the speech-to-text
+    /// which language to expect; for Polish it also adds a line telling the model to speak Polish.
+    /// Without it OpenAI guesses the language on every turn.
+    public static func sessionUpdate(instructions: String, toolsJSON: Data, eagerness: RealtimeTurnEagerness, languageCode: String? = nil) throws -> String {
+        var transcription: [String: Any] = ["model": transcriptionModel]
+        var spokenInstructions = instructions
+        if let code = languageCode, !code.isEmpty {
+            transcription["language"] = code
+            if code == "pl" { spokenInstructions += polishLine }
+        }
         let session: [String: Any] = [
             "type": "realtime",
-            "instructions": instructions,
+            "instructions": spokenInstructions,
             "tools": try realtimeTools(fromToolsJSON: toolsJSON),
             "tool_choice": "auto",
             "audio": [
                 "input": [
                     "format": ["type": "audio/pcm", "rate": sampleRate],
-                    "transcription": ["model": transcriptionModel],
+                    "transcription": transcription,
                     "turn_detection": [
                         "type": "semantic_vad",
                         "eagerness": eagerness.rawValue,
@@ -161,9 +210,10 @@ public enum OpenAIRealtimeWire {
 
     /// Fallback greeting when the app has no opening line of its own (it normally sends
     /// `WakeGreeting`'s, ADR-254): `voice-agent/session.json` `first_message` for the language, then
-    /// English. A `{{placeholder}}` there is never spoken; the plain English line is used instead.
+    /// English. A `{{placeholder}}` there is never spoken; the plain English line (the familiar
+    /// return of ADR-556) is used instead.
     public static func greetingLine(sessionJSON: Data, languageCode: String?) -> String {
-        let fallback = "Hey, it's Doddy. What's up?"
+        let fallback = "I'm here. What's up?"
         guard let session = try? JSONSerialization.jsonObject(with: sessionJSON) as? [String: Any],
               let lines = session["first_message"] as? [String: String]
         else { return fallback }

@@ -2,8 +2,9 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
+import { abuseLimits } from "../config.js";
 import { inTransaction } from "../db.js";
-import { enqueue, IdempotencyConflict, usableChannels, type Channel } from "../outbox.js";
+import { EncryptionNotConfigured, enqueue, IdempotencyConflict, SmsDailyLimit, usableChannels, type Channel } from "../outbox.js";
 
 const MAX_DAYS_AHEAD = 30;
 
@@ -19,6 +20,7 @@ const idParam = z.object({ id: z.uuid() });
 export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
+  const limits = abuseLimits(deps.limits);
 
   app.post("/v1/updates", { preHandler: auth, config: { rateLimit: { max: 60, timeWindow: "1 hour" } } }, async (req, reply) => {
     const body = parse(updateBody, req.body, reply);
@@ -42,10 +44,14 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       const messages = await inTransaction(db, (c) =>
         enqueue(c, accountId, channels, body.text, sendAt, body.idempotencyKey, {
           fingerprint: JSON.stringify([body.text, body.sendAt ?? null]), cipher: deps.cipher,
+          smsCaps: { perAccount: limits.smsPerAccountDay, perServer: limits.smsPerServerDay },
         }));
       return reply.code(202).send({ messages });
     } catch (err) {
       if (err instanceof IdempotencyConflict) return reply.code(409).send({ error: "idempotency_mismatch" });
+      // Texts per day are capped per account and for the server (ADR-704); in production a text is never stored unencrypted (ADR-706).
+      if (err instanceof SmsDailyLimit) return reply.code(429).send({ error: "daily_limit" });
+      if (err instanceof EncryptionNotConfigured) return reply.code(503).send({ error: "not_configured" });
       throw err;
     }
   });
@@ -66,7 +72,10 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const p = parse(idParam, req.params, reply);
     if (!p) return;
     const r = await db.query(
-      `UPDATE outbound_messages SET state = 'cancelled', error_code = 'cancelled_by_user', body = NULL, updated_at = now()
+      // Both body forms go: with an encryption key the text sits in body_ciphertext, and the
+      // table refuses a final row that still holds either (migration 007).
+      `UPDATE outbound_messages SET state = 'cancelled', error_code = 'cancelled_by_user',
+         body = NULL, body_ciphertext = NULL, body_key_version = NULL, updated_at = now()
        WHERE id = $1 AND account_id = $2 AND state = 'queued'`,
       [p.id, principal(req).accountId]);
     if (r.rowCount) return reply.code(204).send();

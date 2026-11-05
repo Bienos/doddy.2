@@ -1,0 +1,21 @@
+{
+  "_comment": "A cart as the app would show it for approval (docs/implementation/SHOPPING_CHECKOUT.md). canonical is keys sorted, no spaces, strings as JSON.stringify writes them; digest is SHA-256 hex over its UTF-8 bytes. Computed with Python's hashlib, independent of the Swift code that must match it. The shop reference and the quote are examples: no shop or provider is connected.",
+  "draft": {
+    "shop": "Media Expert",
+    "shopHost": "mediaexpert.pl",
+    "shopReference": "cs_test_5f3a9c",
+    "currency": "PLN",
+    "lines": [
+      {
+        "title": "Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów",
+        "quantity": 1,
+        "unitMinor": 189900
+      }
+    ],
+    "shippingMinor": 0,
+    "totalMinor": 189900,
+    "quoteExpiresAt": "2026-10-24T12:30:00.000Z"
+  },
+  "canonical": "{\"currency\":\"PLN\",\"lines\":[{\"quantity\":1,\"title\":\"Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów\",\"unitMinor\":189900}],\"quoteExpiresAt\":\"2026-10-24T12:30:00.000Z\",\"shippingMinor\":0,\"shop\":\"Media Expert\",\"shopHost\":\"mediaexpert.pl\",\"shopReference\":\"cs_test_5f3a9c\",\"totalMinor\":189900}",
+  "digest": "73c0b3ba9bdaf38526a0bdd59b82de8ed83c3bda9e3cd1a35b343339508c08ad"
+}

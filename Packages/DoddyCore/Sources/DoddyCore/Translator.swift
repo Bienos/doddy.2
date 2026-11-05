@@ -5,7 +5,8 @@ import Foundation
 // While it is on, the app refuses every tool call, the conversation is private, and nothing of it
 // is kept on the iPhone; the owner may copy the text or save the facts as a note on a tap within
 // five minutes of the end (T3). Who is talking is told by language, with hold-to-talk as a fallback
-// (T4). "Doddy, …" in the owner's language is a quiet word, answered on the owner's half (T5).
+// (T4). The quiet word ("Doddy, …" answered on the owner's half, T5) is off since 21 Oct 2026
+// (ADR-574): every line is translated, including ones that name Doddy.
 // Native voices per language (T6) wait for a listening pass; this build uses Doddy's voice.
 
 public enum TranslatorKind: String, Equatable, Sendable, CaseIterable {
@@ -242,6 +243,21 @@ public enum TranslatorLanguages {
     public static func ownerDefault(settingCode: String?, deviceCode: String?) -> TranslatorLanguage {
         settingCode.flatMap(named) ?? deviceCode.flatMap(named) ?? english
     }
+
+    /// What Home › Translate shows before the owner picks (ADR-574): the two languages used last
+    /// time, so a second go is one tap. The first time: the owner's default, and for them English,
+    /// or Polish when the owner speaks English. "Detect" made the first sentence wait for a guess,
+    /// so it is only the default when it was the last choice. `lastOther` is a code or "detect".
+    public static func startingPair(lastOwner: String?, lastOther: String?, ownerDefault: TranslatorLanguage)
+        -> (owner: TranslatorLanguage, other: TranslatorLanguage?) {
+        let owner = lastOwner.flatMap(named) ?? ownerDefault
+        if lastOther?.lowercased() == detectCode { return (owner, nil) }
+        if let last = lastOther.flatMap(named), last != owner { return (owner, last) }
+        return (owner, owner == english ? byCode["pl"] : english)
+    }
+
+    /// Stored for "Detect when they talk".
+    public static let detectCode = "detect"
 }
 
 /// The two languages and the way of translating, as the owner confirmed them.
@@ -300,7 +316,7 @@ public enum TranslatorPrompt {
     }
 }
 
-/// What `start_translator` asked for. Shown as a card; nothing switches until the user taps Start.
+/// The mode requested by `start_translator`, started directly after the user's request.
 public struct TranslatorProposal: Equatable, Sendable {
     public let kind: TranslatorKind
     /// Nil: the owner's default (Settings, then the iPhone's language).
@@ -321,7 +337,7 @@ public struct TranslatorProposal: Equatable, Sendable {
 }
 
 extension VoiceToolName {
-    /// Proposes translator mode (ADR-215). Shown as a card; the conversation switches on Start.
+    /// Starts translator mode (ADR-215) after the user asks for translation.
     public static let startTranslator = "start_translator"
     /// Ends translator mode. Harmless, so it runs without a card.
     public static let stopTranslator = "stop_translator"
@@ -376,12 +392,21 @@ extension VoiceToolReply {
         switch (setup.kind, setup.other) {
         case (.faceToFace, let other?):
             lines.append("First say exactly this to them, in \(other.englishName): \"\(other.hello)\" Then translate every turn.")
+            // ADR-619: it started without asking, so the user may not have said what yet.
+            lines.append(Self.askWhatToTranslate(setup.owner))
         case (.faceToFace, nil):
             lines.append("Their language isn't known yet. Tell the user in one short sentence, in \(setup.owner.englishName), to let them say something first. When they first speak, say the AI translator disclosure to them in their language before anything else, then translate.")
         case (.listen, _):
             lines.append("Say nothing to anyone else. Translate each thing you hear into \(setup.owner.englishName) for the user, one short line at a time.")
         }
         return lines.joined(separator: " ")
+    }
+
+    /// ADR-619 (owner, 24 Oct 2026): translator mode starts without asking; if the user hasn't
+    /// said what to translate, Doddy asks, once, in their own language.
+    static func askWhatToTranslate(_ owner: TranslatorLanguage) -> String {
+        "If the user hasn't said yet what to translate, ask them once, in \(owner.englishName), in one short line, what to translate"
+            + (owner.code == "pl" ? " (for example \"Co mam przetłumaczyć?\")" : "") + "; then only translate."
     }
 
     public static let translatorDeclined = "declined: the user chose not to start translating. Nothing changed; talk normally."
@@ -509,11 +534,13 @@ public struct TranslatorRouter: Sendable {
         self.setup = setup
     }
 
-    /// "Doddy, …" (or "hey Doddy …") at the start of what the owner said.
+    /// Was this a quiet word for Doddy only? Never, since 21 Oct 2026 (owner: "it answers what I'm
+    /// saying instead of translating it", ADR-574). It used to be "Doddy, …" or "hey Doddy …" at the
+    /// start, but people say his name while talking through him ("Yo, Doddy, I want to tell you
+    /// something"), and then nothing was translated. Every line is translated now; the screen's
+    /// quiet-word card stays unused until it gets a trigger nobody says by accident.
     public static func isAside(_ said: String?) -> Bool {
-        guard let said else { return false }
-        let words = said.lowercased().split { !$0.isLetter }.prefix(2)
-        return words.contains("doddy")
+        false
     }
 
     /// `isAside`, unless it was the other person: their hold-to-talk button was held, or what was

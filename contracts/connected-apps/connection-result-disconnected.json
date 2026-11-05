@@ -17,7 +17,7 @@
     }
   },
   "receipt": {
-    "operationId": "304cfca3-bccb-441e-b2e7-b3db8a07eb6c",
+    "operationId": "501a4264-a4c8-47de-92cb-0d38e0cd54fe",
     "operation": "disconnect",
     "capability": "connection.disconnect",
     "provider": "google_calendar",

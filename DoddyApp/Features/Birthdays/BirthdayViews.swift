@@ -16,7 +16,7 @@ enum BirthdayScheduler {
         let center = UNUserNotificationCenter.current()
         let pending = await center.pendingNotificationRequests().map(\.identifier)
         center.removePendingNotificationRequests(withIdentifiers: pending.filter(Birthdays.isBirthday(notificationID:)))
-        let chosen = Birthdays.toSchedule(contacts, picked: picked, now: .now, calendar: .current)
+        let chosen = Birthdays.toSchedule(contacts, picked: picked, now: .now, calendar: .current, pending: pending)
         guard !chosen.isEmpty else { return .off }
         var status = await center.notificationSettings().authorizationStatus
         if status == .notDetermined {
@@ -33,6 +33,7 @@ enum BirthdayScheduler {
             // Doddy waving: "maybe say hello" (ADR-323). Each notification gets its own copy.
             if let art = NotificationArt.attachment(.wave) { content.attachments = [art] }
             content.sound = .default
+            content.interruptionLevel = DoddyNotificationKind.birthday.interruptionLevel
             let day = Birthdays.scheduledDay(contact)
             let when = DateComponents(month: day.month, day: day.day, hour: Birthdays.hour)
             let request = UNNotificationRequest(

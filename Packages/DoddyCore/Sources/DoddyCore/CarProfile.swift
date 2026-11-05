@@ -19,12 +19,20 @@ public enum CarDecision: Equatable, Sendable {
 public enum CarProfile {
     public static func decision(for request: VoiceToolRequest) -> CarDecision {
         switch request {
-        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .calculate, .convertUnits,
-             .convertCurrency, .readList, .listAlarms, .needsClarification, .unsupported, .invalid:
+        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .readHealthWeek, .findPhotos, .calculate, .convertUnits,
+             .convertCurrency, .readList, .listAlarms, .checkStopwatch, .needsClarification, .unsupported, .invalid:
             return .run
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
             return .run
+        case .checkErrands, .findDeals:
+            // Reading what a task found, and this week's leaflets (SHOPPING.md), change nothing: the
+            // ask is answered by voice like any other look-up.
+            return .run
+        case .handOverErrand:
+            // Web research on Doddy's server changes nothing (ADR-570), but starting it takes a tap on
+            // its card, not a spoken yes (ADR-716), so it waits until the user isn't driving.
+            return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         case .parkingSpot(let action):
             // Finding the car is a look-up; saving or clearing the spot waits until parked.
             if case .find = action { return .run }
@@ -37,12 +45,15 @@ public enum CarProfile {
             return CloudToolName.isWrite(call.name)
                 ? .refuse(reason: "Drafts and tasks in online accounts need a tap on the iPhone, so not while driving.")
                 : .run
+        case .draftBlikTransfer:
+            // Money (ADR-510): a card to check and a bank app to send from, so never while driving.
+            return .refuse(reason: "A BLIK transfer is shown on the iPhone for the user to check and send in their bank app, so it waits until they aren't driving.")
         case .saveMemory(let text):
             return .askAloud(readBack: CarConfirmation.readBack(saving: text))
         case .addToList(let request):
             return .askAloud(readBack: CarConfirmation.readBack(adding: request.items, to: request.list))
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
-             .setTimer, .setAlarm, .cancelAlarm, .openMap, .runShortcut, .draftMessage, .startTranslator,
+             .setTimer, .setAlarm, .cancelAlarm, .startStopwatch, .stopStopwatch, .openTrainingPlan, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .startTranslator,
              .stopTranslator, .checkOff, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")

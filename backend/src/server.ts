@@ -3,11 +3,12 @@ import { ConfigError, loadConfig } from "./config.js";
 
 try {
   const config = loadConfig();
-  const { server, store } = buildApp(config);
+  const { server, store } = await buildApp(config);
   server.listen(config.port, config.host, () => {
-    // Names and modes only; no secrets or IDs.
+    // Names and modes only; no secrets or IDs. `ownerClaim` (ADR-707) says whether the first iPhone to
+    // sign in may claim a server that has no owner yet: `closed` is the live default.
     process.stdout.write(
-      `${JSON.stringify({ level: "info", event: "listening", host: config.host, port: config.port, mode: config.mode, auth: config.authMode, env: config.env })}\n`,
+      `${JSON.stringify({ level: "info", event: "listening", host: config.host, port: config.port, mode: config.mode, auth: config.authMode, env: config.env, store: store.db.kind, web: config.web ? "on" : "off", ownerClaim: config.ownerClaim })}\n`,
     );
     if (config.mode === "mock") {
       process.stdout.write(
@@ -18,7 +19,7 @@ try {
   process.on("unhandledRejection", (reason) => {
     process.stderr.write(`${JSON.stringify({ level: "error", event: "unhandledRejection", kind: reason instanceof Error ? reason.name : typeof reason })}\n`);
   });
-  const stop = () => server.close(() => store.close());
+  const stop = () => server.close(() => void store.close().catch(() => {}));
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
 } catch (error) {

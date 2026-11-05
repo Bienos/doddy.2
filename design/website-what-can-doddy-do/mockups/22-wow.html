@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mockup 22, two additions worth sending to a friend</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+
+<body class="board">
+  <!-- Everyday objects the pack has no prop for, drawn as inline line art in the same ink, cream and orange
+       as the pack's props sheet (010_doddy_props_v01): alarm clock, suitcase, calendar, shopping bag, speech bubble. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="o-alarm" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M32 100 L24 112 M88 100 L96 112"/>
+        <path d="M36 24 L24 12 M84 24 L96 12"/>
+        <circle cx="22" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="98" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="60" cy="64" r="40" fill="#FCF4E4"/>
+        <path d="M60 42 V64 L76 74"/>
+      </g>
+      <path d="M12 36 L5 30 M9 50 L1 48 M12 64 L5 70" stroke="#FC6800" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="o-suitcase" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M44 34 V22 a6 6 0 0 1 6-6 h20 a6 6 0 0 1 6 6 v12" fill="none"/>
+        <rect x="14" y="34" width="92" height="68" rx="12" fill="#FCF4E4"/>
+        <rect x="14" y="56" width="92" height="16" fill="#FC6800" stroke="none"/>
+        <path d="M14 56 H106 M14 72 H106" fill="none"/>
+        <rect x="34" y="50" width="12" height="28" rx="3" fill="#FCF4E4"/>
+        <rect x="74" y="50" width="12" height="28" rx="3" fill="#FCF4E4"/>
+        <path d="M30 102 V110 M90 102 V110" fill="none"/>
+      </g>
+    </symbol>
+    <symbol id="o-calendar" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="14" y="24" width="92" height="84" rx="12" fill="#FCF4E4"/>
+        <path d="M14 36 a12 12 0 0 1 12-12 h68 a12 12 0 0 1 12 12 v12 H14z" fill="#FC6800"/>
+        <path d="M36 14 V34 M84 14 V34" fill="none"/>
+      </g>
+      <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
+      <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
+    </symbol>
+    <symbol id="o-bag" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M40 42 V30 a20 20 0 0 1 40 0 v12" fill="none"/>
+        <path d="M22 42 H98 L104 102 a8 8 0 0 1-8 8 H24 a8 8 0 0 1-8-8 Z" fill="#FCF4E4"/>
+      </g>
+      <path d="M60 94 c-11-8-18-15-18-22 a9 9 0 0 1 18-4 a9 9 0 0 1 18 4 c0 7-7 14-18 22z" fill="#FC6800" stroke="#080808" stroke-width="5" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="o-bubble" viewBox="0 0 120 120">
+      <path d="M22 20 h76 a12 12 0 0 1 12 12 v44 a12 12 0 0 1-12 12 H58 L34 108 L40 88 H22 a12 12 0 0 1-12-12 V32 a12 12 0 0 1 12-12z" fill="#FCF4E4" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+      <g fill="#FC6800"><circle cx="40" cy="54" r="7"/><circle cx="60" cy="54" r="7"/><circle cx="80" cy="54" r="7"/></g>
+    </symbol>
+    <symbol id="o-pin" viewBox="0 0 120 120">
+      <path d="M60 110 C40 84 24 66 24 46 a36 36 0 0 1 72 0 c0 20-16 38-36 64z" fill="#FC6800" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+      <circle cx="60" cy="46" r="13" fill="#FCF4E4" stroke="#080808" stroke-width="7"/>
+    </symbol>
+  </svg>
+
+  <style>
+    .clock-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .clock-grid .h { position: relative; padding: 18px 16px 12px; background: var(--canvas); border: 1px solid var(--separator); border-radius: 18px; background-image: repeating-linear-gradient(to bottom, transparent 0 35px, var(--rule) 35px 36px); min-height: 300px; }
+    .clock-grid .h .pill { margin-bottom: 10px; font-size: 0.75rem; }
+    .clock-grid .h h3 { font-family: var(--display); font-weight: 760; font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1; margin: 0 0 6px; }
+    .clock-grid .h .hw { font-family: var(--hand); font-weight: 700; font-size: 1.5rem; line-height: 1; color: var(--accent-text); margin: 0 0 10px; }
+    .clock-grid .h .btn { display: inline-block; padding: 8px 12px; border-radius: 12px; background: var(--reading-ink); color: var(--canvas); font: 650 0.75rem/1 var(--text); box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--orange-cue) 85%, transparent); }
+    .clock-grid .h img { position: absolute; right: 8px; bottom: 8px; width: 90px; height: auto; }
+    .clock-grid .h .says-small { position: absolute; right: 86px; bottom: 120px; margin: 0; font-size: 1.15rem; white-space: nowrap; }
+    .send-demo { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 18px; align-items: start; }
+    .mini-moment { padding: 18px 20px; background: var(--canvas); border: 1px solid var(--separator); border-radius: 18px; }
+    .mini-moment .time { font-size: 1.6rem; }
+    .mini-moment h3 { margin: 0 0 6px; font-size: 1.3rem; }
+    .mini-moment .problem { font-size: 0.9375rem; margin: 0 0 8px; }
+    .sheet { padding: 14px 16px; background: var(--paper); border: 1px solid var(--separator); border-radius: 18px 18px 4px 18px; box-shadow: var(--lift); font-size: 0.875rem; }
+    .sheet .row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--separator); }
+    .sheet .row:first-of-type { border-top: 0; }
+    .sheet .link { font-family: var(--text); font-size: 0.8125rem; color: var(--secondary-text); word-break: break-all; }
+    .signoff { position: relative; padding: 18px 22px 16px; width: 100%; max-width: 420px; margin: 0; background: var(--quiet-surface); border-radius: 6px 6px 0 0; transform: rotate(-1.2deg); filter: drop-shadow(0 18px 24px color-mix(in srgb, #000 18%, transparent)); background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px); }
+    .signoff p { margin: 0; font-family: var(--hand); font-weight: 700; font-size: 1.6rem; line-height: 1.05; }
+    .signoff .fineprint { font-family: var(--text); font-size: 0.8125rem; margin-top: 10px; }
+    .reject { margin: 0; padding-left: 18px; font-size: 0.9375rem; columns: 2; column-gap: 32px; }
+    .reject li { margin: 0 0 6px; break-inside: avoid; }
+  </style>
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>22 · Two additions someone would send to a friend</h1>
+      <p>Both in the notebook language, both an afternoon's work, both honest. Then the ideas that lost, one line each.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><b>1</b> Doddy knows what time it is · the hero follows the visitor's clock</div>
+      <div class="frame-body">
+        <div class="clock-grid">
+          <div class="h">
+            <p class="pill"><span class="dot"></span>It's 07:50 where you are</p>
+            <h3>What can Doddy do?</h3>
+            <p class="hw">Quite a lot, actually.</p>
+            <span class="btn">Start at 08:45</span>
+            <p class="says-small">Morning. Ish.</p>
+            <img src="../assets/poses/yawn_stretch.png" alt="">
+          </div>
+          <div class="h">
+            <p class="pill"><span class="dot"></span>It's 13:05 where you are</p>
+            <h3>What can Doddy do?</h3>
+            <p class="hw">Quite a lot, actually.</p>
+            <span class="btn">Start at 13:00</span>
+            <p class="says-small">Lunch. Finally.</p>
+            <img src="../assets/poses/fistpump.png" alt="">
+          </div>
+          <div class="h">
+            <p class="pill"><span class="dot"></span>It's 23:40 where you are</p>
+            <h3>What can Doddy do?</h3>
+            <p class="hw">Quite a lot, actually.</p>
+            <span class="btn">Start at 23:30</span>
+            <p class="says-small">Nearly done for the day.</p>
+            <img src="../assets/poses/crosslegged.png" alt="">
+          </div>
+          <div class="h">
+            <p class="pill"><span class="dot"></span>It's 03:10 where you are</p>
+            <h3>What can Doddy do?</h3>
+            <p class="hw">Quite a lot, actually.</p>
+            <span class="btn">Start at 08:45</span>
+            <p class="says-small">Why are we both awake?</p>
+            <img src="../assets/poses/shush.png" alt="">
+          </div>
+        </div>
+      </div>
+      <p class="frame-note"><b>What it does.</b> The pill reads the visitor's clock (the browser's, nothing leaves the phone), Doddy's hero pose and line match the hour, and "Start the day" becomes "Start at the nearest moment". Six variants cover the clock: morning (yawn), late morning (wave), lunch (fist pump), afternoon (leaning), evening (cross-legged), small hours (shush). People screenshot the 3 a.m. one. <b>Cost:</b> an afternoon; six poses already here; six short lines in the proposed-copy list. <b>Honesty:</b> the pill says "where you are", never "I know where you are"; no location, no storage. <b>Without JavaScript:</b> the plain hero.</p>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label"><b>2</b> "Send this one to…" · every moment has a handwritten share line, and the day signs off with a note</div>
+      <div class="frame-body">
+        <div class="send-demo">
+          <div class="mini-moment">
+            <p class="time">10:20</p>
+            <h3>The awkward text.</h3>
+            <p class="problem">Three drafts. Two deleted. One "hey" sent by accident.</p>
+            <p class="cap testing">Message drafts · in testing</p>
+            <a class="send" href="#text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 15V3m-4 4 4-4 4 4"/></svg>Send this one to someone who sends "hey" by accident</a>
+            <div class="sheet" style="margin-top: 14px">
+              <div class="row"><b>The system share sheet opens with</b></div>
+              <div class="row"><span>Text</span><span>The 10:20 one is you. Doddy drafts the reply; you send it.</span></div>
+              <div class="row"><span>Link</span><span class="link">doddy.lol/what-can-doddy-do/#text</span></div>
+              <div class="row"><span>No share sheet (desktop)</span><span>the link is copied and a "Copied" chip appears, the homepage's Saved chip</span></div>
+            </div>
+          </div>
+          <div>
+            <figure class="signoff">
+              <p>That's the day. Mostly.</p>
+              <p style="font-size: 1.3rem; margin-top: 6px">Know someone who's always late? Send them 08:45.</p>
+              <p class="fineprint">A note from Doddy at the end of the page, after the plan card. The suggested moment is the one the visitor spent longest on; if none, 08:45.</p>
+            </figure>
+            <p class="cue" style="margin-top: 22px"><b>Where it sits.</b> One handwritten line under each moment's label, in Doddy's voice, ten lines in all. The sign-off note is the homepage's receipt paper, taped under the 23:30 scene, before the honesty panel.</p>
+          </div>
+        </div>
+      </div>
+      <p class="frame-note"><b>Why this one.</b> Shareability that points at one moment, not the whole page: the link opens on that scene (the ring and the strip already make moments addressable), and the text is a line a friend would actually send. <b>Cost:</b> half a day: ten anchors, the Web Share call with a copy fallback, one note. <b>Honesty:</b> the share text repeats the moment's label; "in testing" rides along in the page it opens. <b>Copy:</b> ten "send" lines, one note and one text per moment are new words, approved by delegation on 13 October. <b>Decided:</b> both additions are in.</p>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label">What lost, and why</div>
+      <div class="frame-body">
+        <ul class="reject">
+          <li><b>Replay the whole day in ten seconds.</b> Fun once, but it is the page played fast; the per-moment replay already exists and a friend gets sent a moment, not a page.</li>
+          <li><b>The homepage-to-page crossing (mockup 11).</b> Kept as proposed; it is a transition, not a reason to share.</li>
+          <li><b>The loose ends come back as the plan card.</b> Already the 23:30 moment; adding a callback animation would be a second thing happening at once.</li>
+          <li><b>The pigeon from the film.</b> The pack has no pigeon, and drawing one is forbidden.</li>
+          <li><b>A "say it in Polish" toggle.</b> Honest and on-brand, but ten lines of new Polish copy need approval first; proposed for Phase 3.</li>
+          <li><b>Doddy keeps up with your scroll speed.</b> A game that fights the reading; and the budget says one thing at a time.</li>
+          <li><b>Pull down to wake him on phones.</b> Phones only, once, and it collides with the browser's own pull-to-refresh.</li>
+          <li><b>Pick your three moments and get a card.</b> The best runner-up: a canvas-composed image is a day's work; parked for Phase 3.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

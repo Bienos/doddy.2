@@ -1,10 +1,11 @@
 import Contacts
+import CoreMotion
 import DoddyCore
 import EventKit
 import Foundation
 import UserNotifications
 
-/// The only code that touches the calendar, reminders, contacts and notifications. Nothing here
+/// The only code that touches the calendar, reminders, contacts, Motion & Fitness and notifications. Nothing here
 /// runs unless the user turned the matching switch on in Settings, Connections; the caller checks
 /// that first. Each call also checks iOS permission. The guard script keeps the EventKit and
 /// Contacts imports in this folder.
@@ -30,7 +31,7 @@ final class DeviceConnections {
         case unconfirmed
     }
 
-    struct ContactMatch: Identifiable, Equatable {
+    struct ContactMatch: Identifiable, Equatable, Sendable {
         let id: String
         let name: String
         let phoneNumbers: [String]
@@ -40,30 +41,43 @@ final class DeviceConnections {
     enum Failure: LocalizedError {
         case noDefaultCalendar
         case noDefaultReminderList
+        case stepsNotAllowed
+        case stepsTimedOut
+        case contactsSwitchedOff
 
         var errorDescription: String? {
             switch self {
             case .noDefaultCalendar: "There is no calendar to add the event to."
             case .noDefaultReminderList: "There is no list to add the reminder to."
+            case .stepsNotAllowed: "Motion & Fitness isn't allowed for Doddy."
+            case .stepsTimedOut: "Motion & Fitness didn't answer in time."
+            case .contactsSwitchedOff: "Contacts is switched off for Doddy."
             }
         }
     }
 
     private let eventStore = EKEventStore()
     private let contactStore = CNContactStore()
+    private let pedometer = CMPedometer()
 
     // MARK: Permission
 
     /// Synchronous for calendar, reminders and contacts. Timers use notification permission, which
-    /// iOS only reports asynchronously; use `notificationAccess()` for those. Maps, Shortcuts and
-    /// Messages need no permission of their own.
+    /// iOS only reports asynchronously; use `notificationAccess()` for those. Maps, Shortcuts,
+    /// Messages and Presentations need no permission of their own.
     func access(for connection: VoiceConnection) -> Access {
         switch connection {
         case .calendar: Self.eventAccess(EKEventStore.authorizationStatus(for: .event))
         case .reminders: Self.eventAccess(EKEventStore.authorizationStatus(for: .reminder))
         case .contacts: Self.contactAccess(CNContactStore.authorizationStatus(for: .contacts))
+        case .steps: Self.motionAccess()
+        // ADR-569: the library (PhotoLibrarySearch) and the camera (CameraAccess), each its own file.
+        case .photos: PhotoLibrarySearch.access()
+        case .camera: CameraAccess.access()
         case .timers: .notDetermined
-        case .maps, .shortcuts, .messages: .granted
+        // BLIK transfers (ADR-510) need no iOS permission: the card only shows what to send.
+        // Presentations (ADR-567) are a file Doddy makes; the user picks where it goes.
+        case .maps, .shortcuts, .messages, .blik, .presentations: .granted
         }
     }
 
@@ -75,8 +89,14 @@ final class DeviceConnections {
             guard current == .notDetermined else { return current }
             let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
             return granted ? .granted : .denied
-        case .maps, .shortcuts, .messages:
+        case .maps, .shortcuts, .messages, .blik, .presentations:
             return .granted
+        case .steps:
+            return await requestMotion()
+        case .photos:
+            return await PhotoLibrarySearch.request()
+        case .camera:
+            return await CameraAccess.request()
         case .calendar, .reminders, .contacts:
             guard access(for: connection) == .notDetermined else { return access(for: connection) }
             let granted: Bool
@@ -91,6 +111,12 @@ final class DeviceConnections {
             }
             return granted ? .granted : .denied
         }
+    }
+
+    /// What a timer needs (ADR-650): nothing more on iOS 26 with alarms not refused, since it rings
+    /// through AlarmKit (asked at the Start tap); otherwise notifications, as before.
+    func timerAccess() async -> Access {
+        TimerRinger.canRing ? .granted : await notificationAccess()
     }
 
     func notificationAccess() async -> Access {
@@ -110,6 +136,69 @@ final class DeviceConnections {
         }
     }
 
+    /// An iPad has no step counter; it counts as refused, and the voice controller says so first.
+    private static func motionAccess() -> Access {
+        guard CMPedometer.isStepCountingAvailable() else { return .denied }
+        switch CMPedometer.authorizationStatus() {
+        case .authorized: return .granted
+        case .notDetermined: return .notDetermined
+        default: return .denied
+        }
+    }
+
+    /// CoreMotion has no "ask" call: the first query shows iOS's prompt. Its answer arrives
+    /// separately from the query's, so the status is read until it is no longer undecided (at most
+    /// 30 seconds, then it counts as not allowed).
+    private func requestMotion() async -> Access {
+        let current = Self.motionAccess()
+        guard current == .notDetermined else { return current }
+        let now = Date()
+        pedometer.queryPedometerData(from: now.addingTimeInterval(-60), to: now) { @Sendable _, _ in }
+        for _ in 0..<60 {
+            try? await Task.sleep(for: .milliseconds(500))
+            let answer = Self.motionAccess()
+            if answer != .notDetermined { return answer }
+        }
+        return .notDetermined
+    }
+
+    var stepCountingAvailable: Bool { CMPedometer.isStepCountingAvailable() }
+
+    // MARK: Photos and camera (ADR-569)
+
+    var cameraAvailable: Bool { CameraAccess.isAvailable }
+
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound {
+        PhotoLibrarySearch.find(request, now: now)
+    }
+
+    // MARK: Steps (ADR-568)
+
+    /// One day's totals from Motion & Fitness (the iPhone keeps seven days). Read only, nothing kept.
+    func steps(on day: StepDay, now: Date) async throws -> StepTotals {
+        guard Self.motionAccess() == .granted else { throw Failure.stepsNotAllowed }
+        let range = day.range(now: now, calendar: .current)
+        let once = OnceContinuation<StepTotals>()
+        let timeout = Self.reminderReadTimeout
+        return try await withCheckedThrowingContinuation { continuation in
+            once.set(continuation)
+            // CoreMotion calls back on its own queue: @Sendable so the closure isn't main-actor code.
+            pedometer.queryPedometerData(from: range.start, to: range.end) { @Sendable data, error in
+                if let error {
+                    once.resume(.failure(error))
+                } else {
+                    once.resume(.success(StepTotals(
+                        steps: data?.numberOfSteps.intValue ?? 0, distanceMeters: data?.distance?.doubleValue,
+                        floorsUp: data?.floorsAscended?.intValue)))
+                }
+            }
+            Task {
+                try? await Task.sleep(for: timeout)
+                once.resume(.failure(Failure.stepsTimedOut))
+            }
+        }
+    }
+
     private static func contactAccess(_ status: CNAuthorizationStatus) -> Access {
         switch status {
         case .authorized: .granted
@@ -122,19 +211,41 @@ final class DeviceConnections {
 
     /// Title and times only; notes and locations are not read.
     func events(in range: VoiceTimeRange) -> [CalendarEventSummary] {
-        let predicate = eventStore.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
-        return eventStore.events(matching: predicate)
+        Self.sortedSummaries(in: eventStore, range: range)
+    }
+
+    /// The same read, off the main actor (ADR-604): `events(matching:)` is a synchronous call to the
+    /// calendar daemon and takes longer on a big calendar. Called from a tool call, it froze Doddy
+    /// and the island while he was "thinking". Returns plain values only.
+    func readEvents(in range: VoiceTimeRange) async -> [CalendarEventSummary] {
+        let stores = Stores(events: eventStore, contacts: contactStore)
+        return await Task.detached(priority: .userInitiated) {
+            Self.sortedSummaries(in: stores.events, range: range)
+        }.value
+    }
+
+    /// EventKit and Contacts stores may be used for reads off the main thread; this lets one cross.
+    private struct Stores: @unchecked Sendable {
+        let events: EKEventStore
+        let contacts: CNContactStore
+    }
+
+    private nonisolated static func sortedSummaries(in store: EKEventStore, range: VoiceTimeRange) -> [CalendarEventSummary] {
+        let predicate = store.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
+        return store.events(matching: predicate)
             .sorted { $0.startDate < $1.startDate }
             .map { Self.summary($0) }
     }
 
     /// Repeating events share one identifier, so the start time is added: one id per occurrence.
-    private static func occurrenceID(_ event: EKEvent) -> String {
+    private nonisolated static func occurrenceID(_ event: EKEvent) -> String {
         CalendarEventSummary.occurrenceID(itemID: event.calendarItemIdentifier, start: event.startDate)
     }
 
-    /// The event's identifier comes back with a verified add, so Undo can find exactly this event (ADR-268).
-    func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: AddOutcome, eventID: String?) {
+    /// Saves one event in the default calendar and returns it as read back with its identifier
+    /// (which Undo uses, ADR-268), or nil when the read-back doesn't show it (or its repeat).
+    /// `EventAddAction` looks first and compares (CalendarEventWriter, ADR-319).
+    func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)? {
         guard let calendar = eventStore.defaultCalendarForNewEvents else { throw Failure.noDefaultCalendar }
         let event = EKEvent(eventStore: eventStore)
         event.calendar = calendar
@@ -149,10 +260,9 @@ final class DeviceConnections {
         try eventStore.save(event, span: draft.repeats == nil ? .thisEvent : .futureEvents)
         guard let identifier = event.eventIdentifier, let back = eventStore.event(withIdentifier: identifier),
               CalendarRepeat.same(Self.readRepeat(back.recurrenceRules, calendar: .current), draft.repeats) else {
-            return (.unconfirmed, nil)
+            return nil
         }
-        // Undo removes a single event only, so a repeating one isn't offered for undo.
-        return (.verified, draft.repeats == nil ? identifier : nil)
+        return (Self.summary(back), identifier)
     }
 
     /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-282). The end is the
@@ -238,6 +348,11 @@ final class DeviceConnections {
     /// throws, a fresh look decides: still as Doddy left it means nothing was written.
     func undo(_ undo: ActivityUndo) async -> UndoResult {
         switch undo {
+        case .listAdded, .listTicked, .listRemoved, .savedNote:
+            // Lists and notes are Doddy's own (ADR-276, ADR-277): callers send them to the store,
+            // never here. Nothing is written.
+            return .notDone("That isn't a Calendar or Reminders change.")
+
         case .addedEvent(let eventID, let added):
             guard access(for: .calendar) == .granted else { return .notDone("Calendar isn't connected.") }
             guard let event = eventStore.event(withIdentifier: eventID), !event.hasRecurrenceRules,
@@ -330,7 +445,7 @@ final class DeviceConnections {
         return eventStore.events(matching: predicate)
     }
 
-    private static func summary(_ event: EKEvent) -> CalendarEventSummary {
+    private nonisolated static func summary(_ event: EKEvent) -> CalendarEventSummary {
         CalendarEventSummary(
             id: occurrenceID(event), title: event.title ?? "Untitled", start: event.startDate,
             end: event.endDate, allDay: event.isAllDay)
@@ -375,6 +490,8 @@ final class DeviceConnections {
         if let due = write.due {
             reminder.dueDateComponents = Self.components(due)
         }
+        // The alert itself (ADR-650): without an alarm Reminders lists it but never rings.
+        if let alertAt = write.alertDate(local: .current) { reminder.addAlarm(EKAlarm(absoluteDate: alertAt)) }
         if let repeats = write.repeats { reminder.recurrenceRules = [Self.rule(repeats, calendar: .current)] }
         try eventStore.save(reminder, commit: true)
         return reminder.calendarItemIdentifier
@@ -442,12 +559,17 @@ final class DeviceConnections {
     }
 
     /// A new due; an alarm set for the old due moves with it, or goes when the due is cleared.
+    /// A reminder with no alarm at all (one an older Doddy wrote, ADR-650) gets one at a new timed due.
     private func moveDue(of reminder: EKReminder, from oldDue: ReminderDue?, to newDue: ReminderDue?) {
         let oldDate = oldDue.flatMap { EventChange.moment($0, local: .current) }
+        let hadAlarms = !(reminder.alarms ?? []).isEmpty
         reminder.dueDateComponents = newDue.map(Self.components)
         let newDate = newDue.flatMap { EventChange.moment($0, local: .current) }
         for alarm in reminder.alarms ?? [] where oldDate != nil && alarm.absoluteDate == oldDate {
             if let newDate { alarm.absoluteDate = newDate } else { reminder.removeAlarm(alarm) }
+        }
+        if let alertAt = ReminderAlert.addOnMove(hasAlarms: hadAlarms, newDue: newDue, local: .current) {
+            reminder.addAlarm(EKAlarm(absoluteDate: alertAt))
         }
     }
 
@@ -553,6 +675,7 @@ final class DeviceConnections {
         content.title = "Doddy"
         content.body = plan.body(time: time)
         content.sound = .default
+        content.interruptionLevel = DoddyNotificationKind.eventNudge.interruptionLevel
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: plan.fireAt)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         try await center.add(UNNotificationRequest(identifier: plan.identifier, content: content, trigger: trigger))
@@ -574,30 +697,77 @@ final class DeviceConnections {
 
     // MARK: Timers
 
-    /// Schedules a local notification for the timer and reads it back from iOS to confirm.
-    func startTimer(_ draft: TimerDraft) async throws -> AddOutcome {
+    /// Doddy's timers still waiting to ring (TimerWriter, ADR-320): those AlarmKit runs (ADR-650)
+    /// and those left as notifications. A notification's ring time is the one written into it
+    /// when it was set, not recomputed from its trigger.
+    func pendingTimers() async -> [PendingTimer] {
+        let ringing = TimerRinger.pending()
+        let notified: [PendingTimer] = await UNUserNotificationCenter.current().pendingNotificationRequests().compactMap { request in
+            guard request.identifier.hasPrefix("doddy.timer.") else { return nil }
+            if let seconds = request.content.userInfo["firesAt"] as? Double {
+                return PendingTimer(identifier: request.identifier, firesAt: Date(timeIntervalSince1970: seconds), ring: .notification)
+            }
+            guard let date = (request.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate() else { return nil }
+            return PendingTimer(identifier: request.identifier, firesAt: date, ring: .notification)
+        }
+        return ringing + notified
+    }
+
+    /// Starts one timer under `identifier` (TimerStartAction reads it back). AlarmKit first, so it
+    /// rings like the Clock app's timer (ADR-650); a notification when AlarmKit can't be used, or
+    /// failed and doesn't list it (so a timer is never set twice).
+    func scheduleTimer(_ draft: TimerDraft, identifier: String) async throws {
+        if TimerRinger.canRing {
+            do {
+                if try await TimerRinger.start(draft, identifier: identifier) == .ringing { return }
+            } catch {
+                if TimerRinger.isListed(identifier) { return }
+            }
+        }
         let center = UNUserNotificationCenter.current()
         center.delegate = TimerBanners.shared
+        let language = NotificationLanguage.current
         let content = UNMutableNotificationContent()
-        content.title = "Timer done"
-        content.body = draft.label ?? "Your timer is done."
+        content.title = TimerCopy.notificationTitle(language)
+        content.body = TimerCopy.notificationBody(label: draft.label, seconds: draft.seconds, language)
         content.sound = .default
-        let identifier = "doddy.timer.\(UUID().uuidString)"
+        // Through a Focus where the user allows Time Sensitive, and never held for the summary.
+        content.interruptionLevel = DoddyNotificationKind.timer.interruptionLevel
+        content.relevanceScore = 1
+        content.userInfo = ["firesAt": Date().addingTimeInterval(TimeInterval(draft.seconds)).timeIntervalSince1970]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)
         try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
-        let pending = await center.pendingNotificationRequests()
-        return pending.contains { $0.identifier == identifier } ? .verified : .unconfirmed
     }
 
     // MARK: Contacts
 
+    /// Doddy's own Contacts switch (Settings, Connections), which iOS's permission knows nothing of.
+    /// Checked here as well as by the callers, so no search of Contacts can run with it off (ADR-717).
+    private var contactsSwitchIsOn: Bool {
+        UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey)
+    }
+
     func findContacts(named name: String) throws -> [ContactMatch] {
+        guard contactsSwitchIsOn else { throw Failure.contactsSwitchedOff }
+        return try Self.matches(named: name, in: contactStore)
+    }
+
+    /// The same read, off the main actor (ADR-604); see `readEvents`.
+    func readContacts(named name: String) async throws -> [ContactMatch] {
+        guard contactsSwitchIsOn else { throw Failure.contactsSwitchedOff }
+        let stores = Stores(events: eventStore, contacts: contactStore)
+        return try await Task.detached(priority: .userInitiated) {
+            try Self.matches(named: name, in: stores.contacts)
+        }.value
+    }
+
+    private nonisolated static func matches(named name: String, in store: CNContactStore) throws -> [ContactMatch] {
         let keys: [CNKeyDescriptor] = [
             CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
             CNContactPhoneNumbersKey as CNKeyDescriptor,
             CNContactEmailAddressesKey as CNKeyDescriptor,
         ]
-        let found = try contactStore.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: name), keysToFetch: keys)
+        let found = try store.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: name), keysToFetch: keys)
         return found.map { contact in
             ContactMatch(
                 id: contact.identifier,
@@ -611,12 +781,24 @@ final class DeviceConnections {
     /// (ADR-269). Nothing else is read.
     /// Only the day and month reach the agent (`VoiceToolReply.birthdays`); the year stays here.
     func contactBirthdays() throws -> [ContactBirthday] {
+        try Self.birthdays(in: contactStore)
+    }
+
+    /// The same read, off the main actor (ADR-604); walking every contact is the slow one.
+    func readContactBirthdays() async throws -> [ContactBirthday] {
+        let stores = Stores(events: eventStore, contacts: contactStore)
+        return try await Task.detached(priority: .userInitiated) {
+            try Self.birthdays(in: stores.contacts)
+        }.value
+    }
+
+    private nonisolated static func birthdays(in store: CNContactStore) throws -> [ContactBirthday] {
         let keys: [CNKeyDescriptor] = [
             CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
             CNContactBirthdayKey as CNKeyDescriptor,
         ]
         var found: [ContactBirthday] = []
-        try contactStore.enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
+        try store.enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
             // Gregorian birthdays only; a card with only a non-Gregorian date is skipped.
             guard let birthday = contact.birthday, let month = birthday.month, let day = birthday.day,
                   birthday.calendar == nil || birthday.calendar?.identifier == .gregorian else { return }
@@ -650,30 +832,60 @@ final class DeviceConnections {
 
 /// The M4 Reminders port (DoddyCore `ReminderAction` drives it; the logic is tested there).
 extension DeviceConnections: ReminderStore {}
+extension DeviceConnections: CalendarEventWriter {}
+extension DeviceConnections: TimerWriter {}
 
 /// What `VoiceSessionController` uses of `DeviceConnections`, so its tests can put in a fake
 /// Calendar and Reminders (AppTests review 2026-10-11, finding 2). The real class is the default;
 /// the signatures are the class's own. Sendable because a `@MainActor` class is; the controller
 /// hands it to DoddyCore's nonisolated `ReminderAction.add`.
 @MainActor
-protocol DeviceConnecting: ReminderStore, Sendable {
+/// What `VoiceSessionController` uses of the device, so a fake can stand in for it in tests.
+/// Events and timers are added through `CalendarEventWriter` and `TimerWriter`, which look first
+/// and read back (ADR-319, ADR-320).
+protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Sendable {
     func access(for connection: VoiceConnection) -> DeviceConnections.Access
+    /// Asks iOS when it never has (the permission sheet's Allow, ADR-566).
+    func request(_ connection: VoiceConnection) async -> DeviceConnections.Access
     func notificationAccess() async -> DeviceConnections.Access
-    func events(in range: VoiceTimeRange) -> [CalendarEventSummary]
-    func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: DeviceConnections.AddOutcome, eventID: String?)
+    /// What a timer needs: AlarmKit on iOS 26, notifications otherwise (ADR-650).
+    func timerAccess() async -> DeviceConnections.Access
+    var stepCountingAvailable: Bool { get }
+    func steps(on day: StepDay, now: Date) async throws -> StepTotals
+    var cameraAvailable: Bool { get }
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
     func eventLocation(_ event: CalendarEventSummary) -> String?
+    func eventNotes(_ event: CalendarEventSummary) -> String?
     func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome
     func deleteEvent(_ event: CalendarEventSummary) throws -> DeviceConnections.ChangeOutcome
     func deleteReminder(_ before: ReminderSnapshot) throws -> DeviceConnections.ChangeOutcome
     func reminderSnapshot(id: String) -> ReminderSnapshot?
-    func startTimer(_ draft: TimerDraft) async throws -> DeviceConnections.AddOutcome
+    func reminderLists() -> [ReminderListRef]
     func findContacts(named name: String) throws -> [DeviceConnections.ContactMatch]
     func contactBirthdays() throws -> [ContactBirthday]
+    /// The same reads off the main actor, for tool calls (ADR-604).
+    func readEvents(in range: VoiceTimeRange) async -> [CalendarEventSummary]
+    func readContacts(named name: String) async throws -> [DeviceConnections.ContactMatch]
+    func readContactBirthdays() async throws -> [ContactBirthday]
 }
 
 extension DeviceConnections: DeviceConnecting {}
+
+/// Fakes that don't model them answer like a device without the permission (tests).
+extension DeviceConnecting {
+    func request(_ connection: VoiceConnection) async -> DeviceConnections.Access { access(for: connection) }
+    /// A fake's timers need notifications, as every timer did before ADR-650.
+    func timerAccess() async -> DeviceConnections.Access { await notificationAccess() }
+    var stepCountingAvailable: Bool { false }
+    func steps(on day: StepDay, now: Date) async throws -> StepTotals { throw DeviceConnections.Failure.stepsNotAllowed }
+    var cameraAvailable: Bool { false }
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound { .empty }
+    func readEvents(in range: VoiceTimeRange) async -> [CalendarEventSummary] { events(in: range) }
+    func readContacts(named name: String) async throws -> [DeviceConnections.ContactMatch] { try findContacts(named: name) }
+    func readContactBirthdays() async throws -> [ContactBirthday] { try contactBirthdays() }
+}
 
 /// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.
 private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
@@ -694,11 +906,22 @@ private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
 }
 
 /// iOS hides notification banners for the app that is in front. This shows timer and nudge
-/// banners anyway, so they still ring while Doddy is open.
+/// banners anyway, so they still ring while Doddy is open, and keeps them in Notification Center
+/// and on the Lock Screen afterwards (`.list`, ADR-650), as when Doddy was closed.
 final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     static let shared = TimerBanners()
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        [.banner, .list, .sound]
+    }
+}
+
+/// How each Doddy notification comes through (DoddyCore `DoddyNotificationKind`, ADR-650).
+extension DoddyNotificationKind {
+    var interruptionLevel: UNNotificationInterruptionLevel {
+        switch urgency {
+        case .timeSensitive: .timeSensitive
+        case .active: .active
+        }
     }
 }

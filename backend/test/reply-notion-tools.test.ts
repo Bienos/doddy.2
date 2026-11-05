@@ -14,8 +14,9 @@ import {
   toolHasGrant,
 } from "../src/tools/catalog.js";
 import type { ExecuteCall } from "../src/tools/provider.js";
+import { LOOKUP_FAILED } from "../src/tools/service.js";
 import { USER_A, USER_B } from "./helpers.js";
-import { connect, type Rig, ready, run, start } from "./toolsRig.js";
+import { connect, off, type Rig, ready, run, start } from "./toolsRig.js";
 
 /**
  * draft_email_reply (a write that looks the email up first; recipient and thread come from Gmail)
@@ -28,7 +29,7 @@ afterEach(async () => rig?.close());
 const prepare = (r: Rig, tool: string, args: Record<string, unknown>, token = USER_A) =>
   r.call("POST", "/v1/tools/prepare", { token, body: { tool, arguments: args } });
 const slugs = (r: Rig) => r.provider.executed.map((e) => e.slug);
-const approvals = (r: Rig) => ((r.store as any).db.prepare("SELECT COUNT(*) AS n FROM approvals").get() as { n: number }).n;
+const approvals = async (r: Rig) => (await r.store.db.query<{ n: number }>("SELECT COUNT(*)::int AS n FROM approvals")).rows[0]!.n;
 const composioUser = (r: Rig, token = USER_A) => r.store.composioUserId(DEV_IDENTITIES[token]!, r.clock.now());
 const kept = async (r: Rig) => (await r.call("GET", "/v1/tools/receipts")).text + r.logs.join("\n");
 
@@ -39,7 +40,7 @@ const REPLY = { query: "from:anna", body: "Yes, 1pm works." };
 
 // ------------------------------------------------------------------ switches start off
 
-test("both new switches start off; each refuses until switched on, and nothing reaches the provider", async () => {
+test("both new switches come on with the connection (ADR-563); each switched off refuses, and nothing reaches the provider", async () => {
   rig = await start();
   await connect(rig, "gmail");
   await connect(rig, "notion");
@@ -47,13 +48,14 @@ test("both new switches start off; each refuses until switched on, and nothing r
   for (const [name, risk] of [["draft_email_reply", "write"], ["read_notion_page", "read"]] as const) {
     const tool = tools.find((t: any) => t.name === name);
     assert.ok(tool, name);
-    assert.equal(tool.enabled, false, name);
+    assert.equal(tool.enabled, true, name);
+    assert.equal((await off(rig, name)).status, 200, name);
     assert.equal(tool.risk, risk);
     assert.equal(tool.blurb, TOOL_COPY[name]!.blurb);
   }
   assert.deepEqual(TOOL_COPY.read_notion_page, {
     title: "Read a Notion page",
-    blurb: "Reads one page aloud when you ask, the best match among pages shared with Doddy. Off until you switch it on.",
+    blurb: "Reads one page aloud when you ask, the best match among pages shared with Doddy. On when you connect the account; switch it off any time.",
   });
   assert.match(TOOLKITS.notion.access, /read one page aloud when you ask/);
   assert.doesNotMatch(TOOLKITS.notion.access, /doesn't read page content/);
@@ -123,9 +125,16 @@ test("the reply draft is created in the email's thread, to Gmail's sender, once,
   const stored = await kept(rig);
   for (const secret of ["Lunch", "1pm works", "anna", "from:anna"]) assert.ok(!stored.includes(secret), secret);
 
+  // A repeat of the same approval gets an answer from the first run, with none of this request's words (ADR-322).
+  assert.ok(typeof done.body.externalId === "string" && done.body.externalId !== "", "Gmail's draft id comes back");
   const again = await run(rig, "draft_email_reply", REPLY, { approvalId: prepared.body.approvalId });
-  assert.equal(again.status, 403, "single use");
+  assert.equal(again.status, 200, again.text);
+  assert.equal(again.body.replayed, true);
+  assert.equal(again.body.externalId, done.body.externalId);
+  assert.ok(!/anna|Lunch|1pm/.test(again.body.text), again.body.text);
+  assert.match(again.body.text, /^drafted: .*NOT sent/);
   assert.equal(slugs(rig).filter((s) => s === "GMAIL_CREATE_EMAIL_DRAFT").length, 1);
+  assert.equal(slugs(rig).filter((s) => s === "GMAIL_FETCH_EMAILS").length, 2, "no new lookup for the repeat");
 });
 
 test("no matching email, or a sender without an address, is refused at prepare with a receipt and no approval", async () => {
@@ -134,17 +143,21 @@ test("no matching email, or a sender without an address, is refused at prepare w
   const none = await prepare(rig, "draft_email_reply", { query: "nomatch", body: "Hi" });
   assert.equal(none.status, 404);
   assert.equal(none.body.error.code, "not_found");
-  assert.match(none.body.error.message, /No email matched that search/);
+  // ADR-708: nothing found and "found, but no address to reply to" answer alike (code, words, receipt),
+  // so the answer doesn't tell the caller which of the two it was.
+  assert.equal(none.body.error.message, LOOKUP_FAILED);
   assert.equal(none.body.error.receipt.status, "blocked");
   assert.equal(none.body.error.receipt.errorCode, "not_found");
 
   const nameOnly = await prepare(rig, "draft_email_reply", { query: "newsletter", body: "Hi" });
   assert.equal(nameOnly.status, 404);
   assert.equal(nameOnly.body.error.code, "not_found");
-  assert.match(nameOnly.body.error.message, /can't tell who to reply to/);
+  assert.equal(nameOnly.body.error.message, LOOKUP_FAILED);
   assert.equal(nameOnly.body.error.receipt.status, "blocked");
+  assert.equal(nameOnly.body.error.receipt.errorCode, none.body.error.receipt.errorCode);
+  assert.equal(nameOnly.body.error.receipt.summary, none.body.error.receipt.summary);
 
-  assert.equal(approvals(rig), 0, "no approval was created");
+  assert.equal((await approvals(rig)), 0, "no approval was created");
   assert.deepEqual(slugs(rig), ["GMAIL_FETCH_EMAILS", "GMAIL_FETCH_EMAILS"], "only lookups ran");
   assert.ok(!(await kept(rig)).includes("Newsletter"));
 });
@@ -169,7 +182,7 @@ test("the approval is bound to the arguments, the user and the email the card sh
     const result = await execute(call);
     if (call.slug !== "GMAIL_FETCH_EMAILS") return result;
     const raw = structuredClone(result.raw) as { data: { messages: Record<string, unknown>[] } };
-    for (const m of raw.data.messages) if (m.messageId === "m2") m.sender = "Mallory <mallory@evil.example>";
+    for (const m of raw.data.messages) if (m.messageId === "18f0a2") m.sender = "Mallory <mallory@evil.example>";
     return { ...result, raw };
   };
   const swapped = await run(rig, "draft_email_reply", REPLY, { approvalId });
@@ -182,7 +195,7 @@ test("a draft answer without a draft id is 'outcome_unknown', never done, and is
   rig = await start();
   await ready(rig, "gmail", "draft_email_reply");
   const prepared = await prepare(rig, "draft_email_reply", REPLY);
-  rig.provider.setScenario(composioUser(rig), "malformed_write");
+  rig.provider.setScenario((await composioUser(rig)), "malformed_write");
   const res = await run(rig, "draft_email_reply", REPLY, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 502);
   assert.equal(res.body.error.code, "malformed_provider_result");
@@ -191,7 +204,7 @@ test("a draft answer without a draft id is 'outcome_unknown', never done, and is
   assert.equal(slugs(rig).filter((s) => s === "GMAIL_CREATE_EMAIL_DRAFT").length, 1);
 });
 
-const emailTarget = { kind: "email" as const, messageId: "m2", threadId: "t2", to: "anna@demo.example", toName: "Anna Demo", subject: "Lunch on Friday?" };
+const emailTarget = { kind: "email" as const, messageId: "m2", threadId: "t2", to: "anna@demo.example", toName: "Anna Demo", subject: "Lunch on Friday?", from: "Anna Demo <anna@demo.example>" };
 const ctx = { timeZone: "Europe/Warsaw" };
 const malformed = (e: unknown) => e instanceof ProviderError && e.code === "malformed_provider_result";
 
@@ -213,7 +226,7 @@ test("the reply lookup takes the newest email and parses its sender strictly", (
   const emails = (messages: unknown[]) => ({ successful: true, error: null, data: { messages, nextPageToken: "", resultSizeEstimate: messages.length } });
   const msg = (extra: Record<string, unknown>) => ({ messageId: "m1", threadId: "t1", sender: "a@x.example", subject: "S", messageTimestamp: "2026-10-09T09:30:00Z", ...extra });
   assert.deepEqual(read(emails([msg({}), msg({ messageId: "m2", threadId: "t2", sender: '"Doe, Jo" <jo@x.example>', messageTimestamp: "2026-10-10T09:30:00Z" })]), REPLY), {
-    kind: "email", messageId: "m2", threadId: "t2", to: "jo@x.example", toName: "Doe, Jo", subject: "S",
+    kind: "email", messageId: "m2", threadId: "t2", to: "jo@x.example", toName: "Doe, Jo", subject: "S", from: '"Doe, Jo" <jo@x.example>',
   });
   assert.equal(read(emails([]), REPLY), null);
   assert.deepEqual(read(emails([msg({ sender: "Just A Name" })]), REPLY), {
@@ -285,7 +298,7 @@ test("read_notion_page: input is strict (no page id from the agent), and the sea
 test("read_notion_page: a failed search or page read is an error with a receipt, never invented text", async () => {
   rig = await start();
   await ready(rig, "notion", "read_notion_page");
-  rig.provider.setScenario(composioUser(rig), "malformed");
+  rig.provider.setScenario((await composioUser(rig)), "malformed");
   const bad = await run(rig, "read_notion_page", { query: "trip" });
   assert.equal(bad.status, 502);
   assert.equal(bad.body.error.receipt.status, "failed");

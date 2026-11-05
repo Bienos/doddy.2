@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>What can Doddy do? Direction C, Got a problem? Ask Doddy.</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <!-- Everyday objects the pack has no prop for, drawn as inline line art in the same ink, cream and orange
+       as the pack's props sheet (010_doddy_props_v01): alarm clock, suitcase, calendar, shopping bag, speech bubble. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="o-alarm" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M32 100 L24 112 M88 100 L96 112"/>
+        <path d="M36 24 L24 12 M84 24 L96 12"/>
+        <circle cx="22" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="98" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="60" cy="64" r="40" fill="#FCF4E4"/>
+        <path d="M60 42 V64 L76 74"/>
+      </g>
+      <path d="M12 36 L5 30 M9 50 L1 48 M12 64 L5 70" stroke="#FC6800" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="o-suitcase" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M44 34 V22 a6 6 0 0 1 6-6 h20 a6 6 0 0 1 6 6 v12" fill="none"/>
+        <rect x="14" y="34" width="92" height="68" rx="12" fill="#FCF4E4"/>
+        <rect x="14" y="56" width="92" height="16" fill="#FC6800" stroke="none"/>
+        <path d="M14 56 H106 M14 72 H106" fill="none"/>
+        <rect x="34" y="50" width="12" height="28" rx="3" fill="#FCF4E4"/>
+        <rect x="74" y="50" width="12" height="28" rx="3" fill="#FCF4E4"/>
+        <path d="M30 102 V110 M90 102 V110" fill="none"/>
+      </g>
+    </symbol>
+    <symbol id="o-calendar" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="14" y="24" width="92" height="84" rx="12" fill="#FCF4E4"/>
+        <path d="M14 36 a12 12 0 0 1 12-12 h68 a12 12 0 0 1 12 12 v12 H14z" fill="#FC6800"/>
+        <path d="M36 14 V34 M84 14 V34" fill="none"/>
+      </g>
+      <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
+      <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
+    </symbol>
+    <symbol id="o-bag" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M40 42 V30 a20 20 0 0 1 40 0 v12" fill="none"/>
+        <path d="M22 42 H98 L104 102 a8 8 0 0 1-8 8 H24 a8 8 0 0 1-8-8 Z" fill="#FCF4E4"/>
+      </g>
+      <path d="M60 94 c-11-8-18-15-18-22 a9 9 0 0 1 18-4 a9 9 0 0 1 18 4 c0 7-7 14-18 22z" fill="#FC6800" stroke="#080808" stroke-width="5" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="o-bubble" viewBox="0 0 120 120">
+      <path d="M22 20 h76 a12 12 0 0 1 12 12 v44 a12 12 0 0 1-12 12 H58 L34 108 L40 88 H22 a12 12 0 0 1-12-12 V32 a12 12 0 0 1 12-12z" fill="#FCF4E4" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+      <g fill="#FC6800"><circle cx="40" cy="54" r="7"/><circle cx="60" cy="54" r="7"/><circle cx="80" cy="54" r="7"/></g>
+    </symbol>
+    <symbol id="o-pin" viewBox="0 0 120 120">
+      <path d="M60 110 C40 84 24 66 24 46 a36 36 0 0 1 72 0 c0 20-16 38-36 64z" fill="#FC6800" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+      <circle cx="60" cy="46" r="13" fill="#FCF4E4" stroke="#080808" stroke-width="7"/>
+    </symbol>
+  </svg>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="/" aria-label="Doddy home">Doddy</a>
+      <nav aria-label="Sections">
+        <ul class="nav-links">
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/what-can-doddy-do/" aria-current="page">What can Doddy do?</a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/#play">Take a shot</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+        </ul>
+      </nav>
+      <button class="menu-button" type="button" aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <a class="button small" href="/#join">Join early access</a>
+      <div class="menu-sheet" aria-label="Menu">
+        <ul>
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/what-can-doddy-do/" class="menu-new" aria-current="page">What can Doddy do? <img src="../assets/faces/smile.png" width="36" height="36" alt=""></a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/#play">Take a shot</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+        </ul>
+        <a class="button" href="/#join">Join early access</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="wcd-hero loaded" aria-labelledby="wcd-title">
+      <div class="wrap ask-grid">
+        <div class="ask-copy">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Got a problem? Ask Doddy.</p>
+          <h1 id="wcd-title" class="display">What can Doddy do? <span class="hand-word">Quite a lot, actually.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></span></h1>
+          <p class="lede">Ten random moments from an ordinary day, and what a mate in your pocket does with them. Pick one.</p>
+          <div class="picker" role="list" aria-label="Everyday problems">
+            <label class="chip on"><input type="radio" name="p" checked><span>I'm late. Again.</span></label>
+            <label class="chip"><input type="radio" name="p"><span>The awkward text</span></label>
+            <label class="chip"><input type="radio" name="p"><span>That place I mentioned</span></label>
+            <label class="chip hover"><input type="radio" name="p"><span>Somewhere good and cheap</span></label>
+            <label class="chip"><input type="radio" name="p"><span>Explain quantum computing</span></label>
+            <label class="chip"><input type="radio" name="p"><span>Remind me to call Mum</span></label>
+            <label class="chip"><input type="radio" name="p"><span>Oat milk, on the list</span></label>
+            <label class="chip"><input type="radio" name="p"><span>Sort tomorrow out</span></label>
+          </div>
+          <p class="fineprint">Scripted demonstrations. Each one says whether it's built, in testing, or later, maybe.</p>
+        </div>
+        <div class="ask-doddy">
+          <p class="says" aria-hidden="true">Go on.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          <img src="../assets/poses/listening.png" width="640" height="960" alt="Doddy, listening">
+        </div>
+        <div class="ask-phone">
+          <div class="device chat">
+            <div class="phone-screen">
+              <div class="ph-status"><span>09:41</span><span class="notch" aria-hidden="true"></span><span>▮▮▮</span></div>
+              <div class="ph-head"><img src="../assets/faces/smile.png" alt=""><div><div class="ph-name">Doddy</div><span class="ph-state">Listening</span></div></div>
+              <p class="msg me">Doddy, what's happening today?</p>
+              <p class="msg doddy">Well, your meeting started 15 minutes ago. Excellent start.</p>
+              <div class="ph-card">
+                <p class="q">Today</p>
+                <ul class="ph-list">
+                  <li><span>Team meeting</span><span class="t late">09:00 · started</span></li>
+                  <li><span>Dentist</span><span class="t">12:30</span></li>
+                  <li><span>Call Mum</span><span class="t">19:00</span></li>
+                </ul>
+              </div>
+              <p class="msg doddy">Want me to draft a "running late" to Ola? You send it.</p>
+              <div class="ph-chips"><span class="on">Yes, draft it</span><span>Not now</span></div>
+              <div class="ph-bottom"><span class="ph-talk"><span class="dot"></span>Talk to Doddy</span><span class="ph-type">Aa</span></div>
+            </div>
+          </div>
+          <p class="caption">Scripted demonstration · Calendar and messages: in testing</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/what-can-doddy-do/">What can Doddy do?</a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/#join">Join early access</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0">Telegram group</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate">TikTok</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/">Instagram</a></li>
+        </ul>
+      </div>
+      <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
+      <p>The scenes on this page are scripted demonstrations. Each one says whether it is built, in testing, or later, maybe.</p>
+      <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>
+      <p>If you allow it, Google Analytics also measures visits and sets cookies. <button type="button" class="foot-choice">Analytics choices</button></p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>
+

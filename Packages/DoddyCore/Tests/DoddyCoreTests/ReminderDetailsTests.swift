@@ -53,7 +53,7 @@ final class ReminderDetailsTests: XCTestCase {
         XCTAssertEqual(ReminderDetails.matchList("zakupy", in: lists), .one(lists[1]))
         XCTAssertEqual(ReminderDetails.matchList("Home", in: lists), .several([lists[2], lists[3]]))
         XCTAssertEqual(ReminderDetails.matchList("Wor", in: lists), .none)
-        XCTAssertTrue(VoiceToolReply.reminderListNotFound("Office", lists: lists).hasPrefix("not found:"))
+        XCTAssertTrue(VoiceToolReply.reminderListNotPrepared("Office").hasPrefix("not changed:"))
     }
 
     func testReadBackMustShowEveryChange() {

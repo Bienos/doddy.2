@@ -3,6 +3,14 @@ import Foundation
 import XCTest
 
 final class ProfileDraftTests: XCTestCase {
+    /// The first-meet conversation asks only these two questions; other profile fields stay
+    /// available in Settings and are not added to this first-run flow.
+    func testTheIntroductionAsksOnlyNameAndStyle() {
+        XCTAssertEqual(ProfileKey.introductionQuestions, [.name, .style])
+        XCTAssertEqual(Set(ProfileKey.allCases), [.name, .help, .style, .language, .humor, .context])
+        XCTAssertTrue(Set(ProfileKey.introductionQuestions).isSubset(of: Set(ProfileKey.allCases)))
+    }
+
     func testBlankAnswersMeanSkippedAndValuesAreTrimmed() throws {
         var draft = ProfileDraft()
         draft[.name] = "  Ola \n"
@@ -44,7 +52,7 @@ final class ProfileDraftTests: XCTestCase {
 final class OnboardingProgressTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_760_000_000)
 
-    func testFreshInstallStartsWithSetupThenIntroductionThenHome() {
+    func testFreshInstallSetupCanBeDeferredAndIntroductionIsOptional() {
         var progress = OnboardingProgress.initial(at: t0)
         XCTAssertEqual(progress.route, .setup(.welcome))
 

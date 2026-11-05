@@ -41,7 +41,7 @@ You're with someone who doesn't speak your language: a taxi driver, a pharmacist
   - The app refuses every tool call while the mode is on.
   - Doddy never tells the other person anything from your notes or profile.
   - The conversation is treated as private: not added to "recent conversations" and not kept on the iPhone.
-- **Not for emergencies:** say "call 112".
+- **Not for emergencies:** say "call your local emergency number" (owner, 2026-10-13; was "call 112").
 
 ## How it would be built (for the implementing milestone)
 - **Agent:** a **mode of the main agent (T2)**, not a separate agent.

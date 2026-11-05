@@ -68,6 +68,8 @@ kind mismatch, verifier single use and cross-user session, redirect parameter al
 | Session signing key | Backend environment | In the app or repo |
 | Doddy session token | iOS Keychain, `AfterFirstUnlockThisDeviceOnly` (not migrated to other devices) | UserDefaults, bundle, logs |
 | Server URL | UserDefaults (not a secret) | — |
+| Every project secret (record) | 1Password vaults `doddy-prod` / `doddy-dev` (ADR-493, `docs/security/SECRETS_1PASSWORD.md`); hosts keep their own env vars | In the app, repo, CI, Claude sessions; never printed by the sync tool |
+| Host API tokens (Vercel, Render) | 1Password `doddy-deploy`, owner only, used by `tools/secrets/sync.mjs` through `op run` | On any host or in any agent's environment |
 
 `.gitignore` covers `.env*` (except `.env.example`), keys, SQLite files, logs, `node_modules`, `dist`. The guard script
 scans app, package, scripts, backend sources/tests, fixtures and `.env.example` for key-shaped strings.
@@ -116,7 +118,7 @@ scopes or change policy: there is no code path from provider output to the regis
 Disconnect deletes the local connection row and queues remote cleanup in one transaction, so reads are blocked
 immediately. Then `revoke` (best effort; may be unsupported) and `delete`. If remote cleanup fails, the receipt is
 `outcome_unknown`, the view shows `remoteCleanup: failed`, and disconnecting again retries. The user can also remove
-access in their Google Account. Deleting a Doddy account / backend data export is **not built** (no accounts exist yet).
+access in their Google Account. Deleting a Doddy account on the backend is `DELETE /v1/account` (ADR-674): every row of the person goes in one transaction, read back as gone, and each online account is removed at its provider; a removal that fails or isn't confirmed is reported as pending and retried by the hourly sweep. Backend data export is **not built**.
 
 ## Rate and cost enforcement
 
@@ -129,7 +131,7 @@ returned to the client instead of waiting. No cache. Tests cover ceilings, retri
 
 ## Outstanding privacy and production gates
 
-1. Real app sign-in replacing owner-minted tokens; account deletion and data export for backend records.
+1. Real app sign-in replacing owner-minted tokens; data export for backend records (account deletion: ADR-674).
 2. Backend retention policy for receipts/attempts; log retention at the host.
 3. Own Google OAuth client (custom auth config), Google verification as required, privacy policy URL.
 4. Review of Composio's data processing terms, sub-processors, regions and retention; DPA if required.

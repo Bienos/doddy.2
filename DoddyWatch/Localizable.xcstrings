@@ -4,10 +4,58 @@
     "Add an item": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eintrag hinzufügen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir un elemento"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter un élément"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj stavku"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi una voce"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目を追加"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Dodaj pozycję"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar item"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加项目"
           }
         }
       }
@@ -15,10 +63,58 @@
     "Check the words, then Save.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe den Text, dann Speichern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisa el texto y luego toca Guardar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifie les mots, puis Enregistrer."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provjeri riječi, zatim Spremi."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controlla il testo, poi tocca Salva."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内容を確認して、「保存」をタップしてください。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź słowa, potem stuknij Zapisz."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifique as palavras e toque em Salvar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查内容，然后保存。"
           }
         }
       }
@@ -26,7 +122,55 @@
     "Doddy": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        },
         "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        },
+        "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy"
@@ -37,10 +181,58 @@
     "Done": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hecho"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotovo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完了"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concluído"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
           }
         }
       }
@@ -48,10 +240,58 @@
     "Lists": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listes"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popisi"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リスト"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Listy"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清单"
           }
         }
       }
@@ -59,10 +299,58 @@
     "More on your iPhone.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mehr auf deinem iPhone."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más en tu iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus sur ton iPhone."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Više na tvom iPhoneu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altro sul tuo iPhone."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "続きはiPhoneで。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Więcej na iPhonie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais no seu iPhone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多内容在你的 iPhone 上。"
           }
         }
       }
@@ -70,10 +358,58 @@
     "New note": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Notiz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva nota"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle note"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova bilješka"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova nota"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新規メモ"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Nowa notatka"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova nota"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建笔记"
           }
         }
       }
@@ -81,10 +417,58 @@
     "Next": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suivant"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dalje"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次へ"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Dalej"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avançar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
           }
         }
       }
@@ -92,10 +476,58 @@
     "Notes and lists are hidden. Turn on “Show notes and lists on Apple Watch” in Doddy's Settings on your iPhone.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notizen und Listen sind ausgeblendet. Schalte „Notizen und Listen auf der Apple Watch zeigen“ in den Doddy-Einstellungen auf deinem iPhone ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notas y las listas están ocultas. Activa “Mostrar notas y listas en el Apple Watch” en los Ajustes de Doddy en tu iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les notes et les listes sont masquées. Active « Afficher les notes et les listes sur l’Apple Watch » dans les Réglages de Doddy sur ton iPhone."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilješke i popisi su skriveni. Uključi „Prikaži bilješke i popise na Apple Watchu“ u Doddyjevim Postavkama na iPhoneu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note e liste sono nascoste. Attiva “Mostra note e liste su Apple Watch” nelle Impostazioni di Doddy sul tuo iPhone."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メモとリストは非表示です。iPhoneのDoddyの設定で「Apple Watchにメモとリストを表示」をオンにしてください。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Notatki i listy są ukryte. Włącz „Pokazuj notatki i listy na Apple Watch” w Ustawieniach Doddy’ego na iPhonie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notas e listas estão ocultas. Ative “Mostrar notas e listas no Apple Watch” nos Ajustes do Doddy no seu iPhone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "笔记和清单已隐藏。请在 iPhone 上 Doddy 的设置中开启“在 Apple Watch 上显示笔记和清单”。"
           }
         }
       }
@@ -103,10 +535,58 @@
     "Open Doddy on your iPhone once to see your notes and lists here.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Doddy einmal auf deinem iPhone, um deine Notizen und Listen hier zu sehen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Doddy en tu iPhone una vez para ver aquí tus notas y listas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvre Doddy une fois sur ton iPhone pour voir tes notes et tes listes ici."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jednom otvori Doddyja na iPhoneu da ovdje vidiš svoje bilješke i popise."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Doddy sul tuo iPhone una volta per vedere qui le tue note e liste."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhoneでDoddyを一度開くと、ここにメモとリストが表示されます。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz raz Doddy’ego na iPhonie, żeby zobaczyć tu swoje notatki i listy."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o Doddy no seu iPhone uma vez para ver suas notas e listas aqui."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 iPhone 上打开一次 Doddy，即可在这里看到你的笔记和清单。"
           }
         }
       }
@@ -114,10 +594,58 @@
     "Pinned": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angeheftet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fijadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Épinglées"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prikvačeno"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fissate"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ピン留め"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Przypięte"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fixados"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已置顶"
           }
         }
       }
@@ -125,10 +653,58 @@
     "Saved in Doddy on your iPhone.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Doddy auf deinem iPhone gespeichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardado en Doddy en tu iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistré dans Doddy sur ton iPhone."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spremljeno u Doddyju na tvom iPhoneu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvato in Doddy sul tuo iPhone."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhoneのDoddyに保存しました。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Zapisano w Doddym na iPhonie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvo no Doddy no seu iPhone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存到你 iPhone 上的 Doddy。"
           }
         }
       }
@@ -136,10 +712,58 @@
     "This list is no longer on your iPhone.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Liste ist nicht mehr auf deinem iPhone."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta lista ya no está en tu iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette liste n’est plus sur ton iPhone."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ovaj popis više nije na tvojem iPhoneu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa lista non è più sul tuo iPhone."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このリストはもうiPhoneにありません。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Tej listy nie ma już na iPhonie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta lista não está mais no seu iPhone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个清单已不在你的 iPhone 上。"
           }
         }
       }
@@ -147,10 +771,58 @@
     "Your note": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Notiz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu nota"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta note"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tvoja bilješka"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La tua nota"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなたのメモ"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Twoja notatka"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua nota"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的笔记"
           }
         }
       }

@@ -1,20 +1,25 @@
 import DoddyCore
 import SwiftUI
 
-/// Builds the model from the development server settings. Without a server address and a session
-/// token the screen says online accounts aren't set up; it never shows invented connections.
+/// Builds the model for Doddy's server: the address `DeviceSession.serverURL()` gives (the one built in; a
+/// Debug build may use the development address, ADR-720). The phone signs itself in first (ADR-563).
+/// Without a server or a session the screen says online accounts aren't ready; it never shows invented connections.
 struct OnlineAccountsScreen: View {
-    @AppStorage(PreferenceKey.connectedAppsServerURL) private var serverURL = ""
+    @State private var signedIn = false
 
     var body: some View {
+        let server = DeviceSession.serverURL()
         OnlineAccountsView(
             model: OnlineAccountsModel(client: OnlineAccountsClientFactory.make(), authenticator: SystemWebAuthenticator()))
-            .id(serverURL)
+            .id("\(server?.absoluteString ?? "")|\(signedIn)")
+            .task(id: server) {
+                if let server { signedIn = await DeviceSession.ensure(server: server) }
+            }
     }
 }
 
-/// Settings → Online accounts. One section per account, one switch per tool. Everything starts
-/// off; a switch moves only after Doddy's server accepts it.
+/// Settings → Online accounts. One section per account, one switch per tool. Web search starts on and
+/// an account's tools come on with it (ADR-563); a switch moves only after Doddy's server accepts it.
 struct OnlineAccountsView: View {
     @State private var model: OnlineAccountsModel
     @State private var confirmConnect: ToolkitView?
@@ -37,7 +42,7 @@ struct OnlineAccountsView: View {
             switch model.load {
             case .notConfigured:
                 Section {
-                    Text("Online accounts need a Doddy server. Set its address and a session token in Settings › Connected Apps server.")
+                    notConfiguredText
                         .accessibilityIdentifier("onlineAccounts.notConfigured")
                 }
             case .loading:
@@ -61,7 +66,7 @@ struct OnlineAccountsView: View {
 
             if let catalog = model.catalog {
                 Section {
-                    Text("Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.")
+                    Text("Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -109,6 +114,17 @@ struct OnlineAccountsView: View {
             Text("Doddy switches off every \(toolkit.title) tool right away and asks \(toolkit.title) to remove its access. Nothing you saved in Doddy is deleted.")
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    /// Why there is nothing to show yet. A shipped build has no server field in Settings (ADR-720), so it never
+    /// tells the person to type an address; the Debug build keeps the sentence that names the field.
+    @ViewBuilder
+    private var notConfiguredText: some View {
+        #if DEBUG
+        Text("Online accounts need a Doddy server. Set its address and a session token in Settings › Connected Apps server.")
+        #else
+        Text("Signing in to Doddy's server isn't ready yet. Try again in a moment.")
+        #endif
     }
 
     private func connectExplanation(_ toolkit: ToolkitView) -> String {

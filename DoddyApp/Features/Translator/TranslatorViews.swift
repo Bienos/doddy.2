@@ -291,7 +291,7 @@ struct TranslatorEndCard: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Translation ended").font(.title3.bold())
             Text(summary.headline).font(.subheadline).foregroundStyle(Theme.secondaryText)
-            Text("Nothing from this conversation is kept on this iPhone, and Doddy won't bring it up later. No notes were saved and nothing was added anywhere. ElevenLabs ran the translation and keeps its own recording, as in Settings › Privacy.")
+            Text("Nothing from this conversation is kept on this iPhone, and Doddy won't bring it up later. No notes were saved and nothing was added anywhere. The voice provider (OpenAI or ElevenLabs) ran the translation and may keep its own recording, as in Settings › Privacy.")
                 .font(.footnote)
             Text("Want something from it? Only on your tap, until \(summary.expiresAt.formatted(date: .omitted, time: .shortened)). After that the text is gone.")
                 .font(.footnote)
@@ -383,8 +383,22 @@ struct TranslatorStartView: View {
     /// Set when the user taps Start; Home opens the conversation after this sheet has closed.
     @Binding var chosen: TranslatorSetup?
     @State private var kind = TranslatorKind.faceToFace
-    @State private var owner = VoiceSessionController.ownerLanguage
+    @State private var owner: TranslatorLanguage
     @State private var other: TranslatorLanguage?
+
+    /// The two languages picked last time (ADR-574), so a second go is one tap.
+    private static let lastOwnerKey = "translator.lastOwner"
+    private static let lastOtherKey = "translator.lastOther"
+
+    init(chosen: Binding<TranslatorSetup?>) {
+        _chosen = chosen
+        let pair = TranslatorLanguages.startingPair(
+            lastOwner: UserDefaults.standard.string(forKey: Self.lastOwnerKey),
+            lastOther: UserDefaults.standard.string(forKey: Self.lastOtherKey),
+            ownerDefault: VoiceSessionController.ownerLanguage)
+        _owner = State(initialValue: pair.owner)
+        _other = State(initialValue: pair.other)
+    }
 
     var body: some View {
         NavigationStack {
@@ -398,13 +412,15 @@ struct TranslatorStartView: View {
                     } else {
                         Text("For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.")
                     }
-                    Text("Both voices go to ElevenLabs to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call 112.")
+                    Text("Both voices go to ElevenLabs, or OpenAI if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number.")
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .font(.footnote)
                 Section {
                     Button("Start translating") {
                         chosen = TranslatorSetup(kind: kind, owner: owner, other: other)
+                        UserDefaults.standard.set(owner.code, forKey: Self.lastOwnerKey)
+                        UserDefaults.standard.set(other?.code ?? TranslatorLanguages.detectCode, forKey: Self.lastOtherKey)
                         dismiss()
                     }
                     .disabled(owner == other)
@@ -415,42 +431,6 @@ struct TranslatorStartView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-            }
-        }
-    }
-}
-
-/// "Change languages" on the "Start translating?" card.
-struct TranslatorChangeSheet: View {
-    let controller: VoiceSessionController
-    @Environment(\.dismiss) private var dismiss
-    @State private var kind: TranslatorKind
-    @State private var owner: TranslatorLanguage
-    @State private var other: TranslatorLanguage?
-
-    init(controller: VoiceSessionController, setup: TranslatorSetup) {
-        self.controller = controller
-        _kind = State(initialValue: setup.kind)
-        _owner = State(initialValue: setup.owner)
-        _other = State(initialValue: setup.other)
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                TranslatorChoices(kind: $kind, owner: $owner, other: $other)
-            }
-            .navigationTitle("Change languages")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Use these") {
-                        controller.changeTranslatorProposal(owner: owner, other: other, kind: kind)
-                        dismiss()
-                    }
-                    .disabled(owner == other)
-                }
             }
         }
     }

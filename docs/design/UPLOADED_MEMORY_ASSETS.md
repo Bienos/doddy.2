@@ -6,8 +6,9 @@ mockups for implementation. No new generated characters, downloaded fonts or out
 art were added. Existing candidate image sets and archived packs remain unchanged.
 This records provenance, not an independent commercial-rights determination.
 
-All five native `UploadedDoddy_*.imageset/art.png` files are byte-identical to these
-ZIP entries. Prefix for every entry below:
+Until 20 October 2026 all five native `UploadedDoddy_*.imageset/art.png` files were byte-identical to
+these ZIP entries. **Since 20 October (ADR-547) they are smaller copies of the same drawings** (see
+"Shipped size" below); the SHA-256 column is the owner's ZIP entry, not the shipped file. Prefix for every entry below:
 
 `DODDY-Numbered-Video-Assets-v01/doddy-extra-poses-expressions-v02/doddy-extra-poses-expressions-v02/01-transparent-poses/`
 
@@ -24,6 +25,28 @@ compared with `shasum -a 256` of the corresponding native PNG; all five pairs ma
 Dark appearance adds a light paper backing around the unchanged image. Artwork is
 decorative, can be hidden in Settings, and has no invented animation/state behaviour.
 The existing development app icon is not replaced or represented as final branding.
+
+## Shipped size (20 October 2026, ADR-547)
+
+The ZIP entries are 1024 × 1536 px, about 1 MB each. The app draws them at most 210 pt tall (Home), and the
+opening scene's Doddy at most about 310 pt tall on an iPhone (about 480 pt on an iPad), so the app ships
+downscaled copies: `UploadedDoddy_Listening` at 800 × 1200 (the opening scene needs up to about 960 px),
+the other four at 512 × 768 (drawn at most 180 pt tall, which is 540 px at 3x). Same 2:3 proportions, so the
+opening scene's fractions (soles at 88.9% of the height and the rest, `OpeningScene.swift`) still hold.
+Method: Pillow `Image.resize(..., LANCZOS)` on the RGBA image (it premultiplies alpha internally), then
+`optimize=True`. Nothing else changed: no redrawing, recolouring or cropping. Compared with the original at
+the size it is drawn, the mean absolute difference is about 0.2 out of 255 per channel.
+
+| Native image set | Shipped size | Shipped bytes (was) | SHA-256 of the shipped file |
+| --- | --- | --- | --- |
+| UploadedDoddy_Listening | 800 × 1200 | 276,512 (1,034,947) | eb8ca5c7227005bba5c28a37455a987b795d5c44758006b8e2d9ff89f8637a7e |
+| UploadedDoddy_Sitting | 512 × 768 | 142,742 (992,288) | f19b8219ed1c2567b32c46bddd06f69ecdb72b267d69d8451158428cbfdeb762 |
+| UploadedDoddy_Inspect | 512 × 768 | 135,154 (972,958) | b73e61505069c03d21578018d70353c16baefc4fd68c9316edea9063ed66819a |
+| UploadedDoddy_Kept | 512 × 768 | 148,206 (1,059,525) | 031acbbbf4bc510439ddf247bdeb44258c6974d897929b61e5d10e4fc057b6d4 |
+| UploadedDoddy_Privacy | 512 × 768 | 161,292 (1,003,372) | b9622bc4572d88c92defdaa01d9b258a889da4b304255c76c9d913ef99d5b7d7 |
+
+The full-size originals stay in the owner's ZIP. Not seen on a device: check Home, the opening scene and
+Settings › Privacy at default and large Dynamic Type.
 
 ## Widget copies (Live Activity, 10 October 2026)
 
@@ -162,3 +185,61 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
+
+## The app icon: his face on orange (ADR-565, 21 October 2026)
+
+Owner: "I would like just his face", then option B (face on orange) of four shown. Source: `007_doddy_blink_v02.png` from the Drive folder, downloaded in the session and verified against the SHA-256 recorded below for the eyes (`1de78fb2…`). `tools/whole_doddy/make_app_icon.py` cuts tile 1 (x 0–543, the open head) to its ink (alpha above 8): 369 × 363 px, the head with both open eyes, the one brow and the smile. It is Lanczos-resized to 780 px wide and centred on brand orange `#FF6A00` (Brand Guidelines V2.2 p.20, ADR-556) at 1024 px, RGB, no alpha. Nothing is redrawn or recoloured.
+
+| File | Made how | SHA-256 of the file written |
+| --- | --- | --- |
+| `DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | as above | c4917bad157d8855486f5f9322abe855b2bf21797e98c771b719a9f5d8414f13 |
+| `DoddyWatch/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | byte-identical copy | the same |
+| `site/assets/doddy-favicon.png` (64 × 64) | the app icon, Lanczos-resized (the website's tab icon) | aa54376238f133cdab299539b9d7daeb5f5bfbc6fbbe0f5dbcde44819e1ad788 |
+| `site/assets/doddy-touch-icon.png` (180 × 180) | the app icon, Lanczos-resized (the website's iPhone home-screen icon) | f3f443eb7a16fc70b73ea128830a3a36fe6c45a21d25f8c0d088b89d74f276af |
+
+No dark appearance: the orange and the cream face read on a dark Home Screen as they are, and iOS derives the tinted icon. The head is a 2.1× upscale; the Home Screen draws the icon at 180 px at most. A larger or vector head from the artist replaces it by rerunning the script.
+
+## The app icon before 21 October: the wave frame (ADR-557, 20 October 2026, replaced by ADR-565)
+
+Owner: "use the wave frame from the pack for the icon", then candidate A (on paper) of the three shown.
+Source: `016_doddy_wave_v01.png` from the Drive folder, downloaded in the session and verified against the
+SHA-256 above (`817a2b87…`); frame 4 cut by `tools/whole_doddy/cut_wave.py` (488 × 733, SHA-256
+`20b648fd…`, as above). `tools/whole_doddy/make_app_icon.py` places the 410 px square x 35–445, y 95–505 of
+that cut-out (the head, the waving hand and the orange marks, cut at the torso: the website favicon's framing)
+on brand paper `#FFF7E9` (Brand Guidelines V2.2 p.20, ADR-556) and Lanczos-resizes it to 1024 px, RGB, no
+alpha. Nothing is redrawn or recoloured.
+
+| File | Made how | SHA-256 of the file written |
+| --- | --- | --- |
+| `DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | as above | ba28b129703cb656b39c414f82d47ab23bcd057f820ea408d5b467d9ebe3e393 |
+| `DoddyWatch/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | byte-identical copy | the same |
+
+The dark appearance (`AppIcon-dark.png`, v1.3 art from ADR-050) is removed: the pack's ink (`#181814`) would
+vanish on night, and recolouring it is not allowed. iOS shows this icon on a dark Home Screen too and derives
+the tinted one. The strip's frames are about 450 px tall, so the 1024 px file is a 2.5× upscale; the Home
+Screen draws the icon at 180 px at most. A larger or vector wave from the artist replaces it by rerunning the
+script. This was the last v1.3 drawing in the shipped app's icon; the opening scene still reads the v1.3
+basketball SVGs (ADR-225).
+
+## Mac menu bar and desktop widget (ADR-438, ADR-439, 11 October 2026)
+| Image set | Pack source | SHA-256 of the source | Made how |
+|---|---|---|---|
+| `MenuBarDoddy` (Mac app) and `MacDoddy_face` (Mac desktop widget) | 01-transparent-poses/doddy_listening_v02.png | 96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41 | byte-identical copies of `WidgetDoddy_face` `art@2x.png` (120×120, SHA-256 `cdb24f36e3069738…`); nothing redrawn or generated |
+
+## Eyes cut from the blink and eye sheets (ADR-560, 20 October 2026)
+
+Owner, 20 Oct: "Make blink and gaze". Same pack (`DODDY-Numbered-Video-Assets-v01`, Drive folder
+`1inLT9oV7wx7UM4P6nxP8yU1-29JV0_ee`). `tools/whole_doddy/build_face_pieces.py` cuts each eye out of two
+sheets as ink on a transparent background (the alpha is how dark the sheet's pixel is against that
+head's own fill; nothing redrawn, recoloured or generated) and measures where the eyes are on the
+pictures the engine draws with a front-facing head. It writes `DoddyEye_*` image sets (20, 2 × 10:
+`g00` to `g22` without `g11`, `half`, `closed`, left and right) and `MotionFacePieces.swift`.
+
+| Image sets | Pack file | SHA-256 of the original | What was done |
+| --- | --- | --- | --- |
+| `DoddyEye_g00_L` … `DoddyEye_g22_R` (16) | 008_doddy_eyes_v01.png (1254 × 1254, a 3 × 3 grid of heads: row 0 up, column 0 left; the middle head looks at you) | aa4b775be3b79d71dc6e1bba30ad24408d9f23e0d45ded8058dc7a50a5767117 | Each eye cut from its head (4 px margin), scaled so the head's radius is 64 px (Lanczos), @2x and @3x. The middle head only gives the reference: the picture's own eyes are the looking-at-you eyes |
+| `DoddyEye_half_L/_R`, `DoddyEye_closed_L/_R` | 007_doddy_blink_v02.png (2172 × 724: open, half closed, closed, half closed) | 1de78fb26e69b50cb7984630a5f994f26274307749a961ca2b56f90bcb267a2a | Tiles 2 and 3 of 4 cut the same way; tile 1 (open) is the reference |
+
+Not used: sheets 004 to 006, 009 to 011 (expressions, mouths, hands, props, effects), and the fourth
+head of 007 (the second half closed, the same as the second). The pictures the pieces go on:
+`DoddyMotion_idle_1` to `_4`, `DoddyMotion_wave_1` to `_5` and `WholeDoddy_crosslegged`.

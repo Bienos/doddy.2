@@ -31,7 +31,7 @@ provenance, hashes and the exact cuts in `docs/design/UPLOADED_MEMORY_ASSETS.md`
 7. **Watch complications** (`WatchDoddyFace`, new `DoddyWatchWidgets/Assets.xcassets`): a round crop of the
    listening pose's face in the circular complication when nothing is coming up, and beside "Doddy" in the
    rectangular one. Full-colour faces, and tinted faces on watchOS 11+ (`widgetAccentedRenderingMode`).
-8. **Storybook** (`StorybookView` on the welcome of `IntroductionView`): the four panels of 038 cross-fade
+8. **Storybook** (`StorybookView`, **removed 20 Oct 2026**: no screen used it after 754e5d6; `PanelStoryView` stays for the Back Tap guide and the Face ID lock; the `page`, `ink` and `keys` image sets are now used only by the preview gallery): the four panels of 038 cross-fade
    once (1.1 s each) and stay on Doddy waving; not replayed when going back to the welcome. Reduce Motion:
    the last panel only. The ADR-225 opening is untouched.
 
@@ -44,7 +44,7 @@ Every picture is decorative (hidden from VoiceOver) and, in the app, hidden by "
 - Code: `Shared/IslandArt/IslandPose.swift`, `IslandScene.swift`, `IslandViews.swift` (`IslandFigureView`),
   `Shared/ToolActivity/DoddyToolAttributes.swift`, `DoddyApp/Features/Tools/ToolLiveActivity.swift`,
   `DoddyApp/DesignSystem/Components.swift`, `MemoryJourneyComponents.swift`, `Features/Voice/VoiceDoddyView.swift`,
-  `VoiceView.swift`, `Features/Onboarding/StorybookView.swift`, `IntroductionView.swift`, Home, Memories,
+  `VoiceView.swift`, `Features/Onboarding/PanelStoryView.swift` (was `StorybookView.swift`), `IntroductionView.swift`, Home, Memories,
   Find, Capture, morning check-in, `DoddyWidgets/DoddyVoiceLiveActivity.swift`, `HomeWidgets.swift`,
   `DoddyWatchWidgets/DoddyWatchComplications.swift`.
 - Checks: `IslandSceneChecks.voiceScreen()` and the read-aloud cases in `tools()`; `check_island_art.sh` now

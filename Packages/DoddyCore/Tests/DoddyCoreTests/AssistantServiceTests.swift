@@ -133,6 +133,10 @@ final class AssistantServiceTests: XCTestCase {
         XCTAssertTrue(AssistantError.rateLimited(retryAfterSeconds: 12).canRetryNow)
         XCTAssertTrue(AssistantError.timeout.canRetryNow)
         XCTAssertTrue(AssistantError.offline.canRetryNow)
+        for setup: AssistantError in [.notConfigured, .notAuthorized] {
+            XCTAssertFalse(setup.canRetryNow, "trying again can't fix \(setup)")
+            XCTAssertFalse(setup.userMessage.contains("invite code") || setup.userMessage.contains("gateway"), "there is no invite code or gateway address any more")
+        }
     }
 
     func testOfflineRateLimitRefusalAndAuthFailuresAreNotRetried() async {

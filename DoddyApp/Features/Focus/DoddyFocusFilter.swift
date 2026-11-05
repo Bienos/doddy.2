@@ -9,24 +9,20 @@ import Observation
 struct DoddyFocusFilter: SetFocusFilterIntent {
     static let title: LocalizedStringResource = "Doddy during this Focus"
     static var description: IntentDescription? {
-        IntentDescription("Pause Hey Doddy and put one list first in your lists while this Focus is on.")
+        IntentDescription("Put one list first in your lists while this Focus is on.")
     }
-
-    @Parameter(title: "Pause Hey Doddy", default: false)
-    var pauseHeyDoddy: Bool
 
     @Parameter(title: "List to show first")
     var list: DoddyListEntity?
 
     var displayRepresentation: DisplayRepresentation {
         var parts: [String] = []
-        if pauseHeyDoddy { parts.append(NSLocalizedString("Hey Doddy paused", comment: "")) }
         if let list { parts.append(list.name) }
         return DisplayRepresentation(title: "Doddy", subtitle: parts.isEmpty ? nil : "\(parts.joined(separator: " · "))")
     }
 
     func perform() async throws -> some IntentResult {
-        let settings = FocusFilterSettings(pausesHeyDoddy: pauseHeyDoddy, listFirstID: list?.id)
+        let settings = FocusFilterSettings(listFirstID: list?.id)
         await FocusFilterState.shared.apply(settings)
         return .result()
     }
@@ -46,13 +42,11 @@ final class FocusFilterState {
     }
 
     func apply(_ new: FocusFilterSettings) {
-        let pauseChanged = new.pausesHeyDoddy != settings.pausesHeyDoddy
         settings = new
         if new.changesNothing {
             UserDefaults.standard.removeObject(forKey: FocusFilterSettings.storageKey)
         } else {
             UserDefaults.standard.set(new.stored, forKey: FocusFilterSettings.storageKey)
         }
-        if pauseChanged { WakeWordListener.shared.setupChanged() }
     }
 }

@@ -1,0 +1,108 @@
+<!--
+title: Mockup 08, Doddy's interaction states
+active: wcd
+-->
+{{> head}}
+<body class="board">
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>08 · Doddy's interaction states</h1>
+      <p>Every state is a pose from the owner's pack, swapped as a still image. No redrawing, no rig. Lines are in Doddy's handwriting.</p>
+    </div>
+    <div class="states">
+      <div class="state">
+        <img class="pose" src="../assets/poses/crosslegged.png" alt="">
+        <h3>Idle</h3><p>Sits in the hero when nothing happens. Blink every 4 to 6 s (pack blink sheet).</p>
+        <p class="says-small">Take your time.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/wave.png" alt="">
+        <h3>Hello</h3><p>Page load and the end of the day. The same wave the app uses.</p>
+        <p class="says-small">Pick one.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/listening.png" alt="">
+        <h3>Listening</h3><p>When a scene opens and the visitor "asks". Matches the app's Listening status.</p>
+        <p class="says-small">Go on.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/kneeling_inspect.png" alt="">
+        <h3>Thinking</h3><p>Between the question and the answer, 600 ms. Three dots in the bubble.</p>
+        <p class="says-small">Hang on.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/facepalm.png" alt="">
+        <h3>Oh no</h3><p>Hover on the alarm clock; the "late again" moment. Comedy, never shame.</p>
+        <p class="says-small">Oh. That one.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/fistpump.png" alt="">
+        <h3>Done</h3><p>A note found, a reminder confirmed. Only after a real receipt.</p>
+        <p class="says-small">Got it.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/shrug.png" alt="">
+        <h3>Not found</h3><p>The honest miss. The line is the app's real no-match wording.</p>
+        <p class="says-small">I couldn't find that in your saved memories.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/shush.png" alt="">
+        <h3>Private</h3><p>The "What's real today" strip and the privacy notes.</p>
+        <p class="says-small">Stays on your iPhone.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/yawn_stretch.png" alt="">
+        <h3>08:45</h3><p>Morning in the bedroom scene. Also the hover state for the alarm on the second visit.</p>
+        <p class="says-small">Morning. Ish.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/reaching_high.png" alt="">
+        <h3>Reaching</h3><p>The shopping bag moment; also the hover for the bag.</p>
+        <p class="says-small">Top shelf. Of course.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/sneaky_crouch.png" alt="">
+        <h3>Surprise</h3><p>Once per visit, if the visitor scrolls past the footer: Doddy peeks in from the edge.</p>
+        <p class="says-small">Still here.</p>
+      </div>
+      <div class="state">
+        <img class="pose" src="../assets/poses/run_2.png" alt="">
+        <h3>Travelling</h3><p>Walk and run frames from the pack move him between moments (frame swaps at 8 fps).</p>
+        <p class="says-small">Right. Next.</p>
+      </div>
+    </div>
+
+    <div class="frames two" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>Faces</b> for the phone header and the mobile menu</div>
+        <div class="frame-body">
+          <div class="faces">
+            <figure><img src="../assets/faces/smile.png" alt=""><figcaption>default</figcaption></figure>
+            <figure><img src="../assets/faces/laugh.png" alt=""><figcaption>playful</figcaption></figure>
+            <figure><img src="../assets/faces/surprised.png" alt=""><figcaption>oh</figcaption></figure>
+            <figure><img src="../assets/faces/unsure.png" alt=""><figcaption>unsure</figcaption></figure>
+            <figure><img src="../assets/faces/wry.png" alt=""><figcaption>wry</figcaption></figure>
+            <figure><img src="../assets/faces/pleased.png" alt=""><figcaption>pleased</figcaption></figure>
+            <figure><img src="../assets/faces/sleepy.png" alt=""><figcaption>sleepy</figcaption></figure>
+            <figure><img src="../assets/faces/neutral.png" alt=""><figcaption>focused</figcaption></figure>
+            <figure><img src="../assets/faces/worried.png" alt=""><figcaption>worried</figcaption></figure>
+          </div>
+        </div>
+        <p class="frame-note">Cut from the pack's front expression sheet (004). "Focused" is the quick pick with humour off; "playful" the one with humour on.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>Motion rules</b></div>
+        <div class="frame-body">
+          <ul class="helps" style="margin: 0; max-width: none">
+            <li>Still images only: pose swaps, CSS transforms and opacity. No canvas, no video, no Lottie rig, because the pack has none.</li>
+            <li>Travel between moments: walk/run frames at 8 fps, 600 ms, ease-out, at most once per scroll step.</li>
+            <li>Reduced motion: no travel, no drift, no bubble pop; poses still swap, so nothing is lost.</li>
+            <li>Doddy never covers text. Where a bubble and a pose compete on a phone, the pose shrinks (the site's film rule).</li>
+            <li>Lines are Caveat 700, like the homepage. One dry beat per line, never a joke in the "What's real" strip.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

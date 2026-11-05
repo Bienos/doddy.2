@@ -2,11 +2,23 @@
 # `Doddy.xcodeproj` is GENERATED from this file and is intentionally not committed:
 # no Xcode was available to open or build a generated project when M0 was authored.
 # Generate on a Mac with:  make project      (needs `brew install xcodegen`)
+# One project per platform (docs/platforms/README.md):
+#   project.yml         iPhone + iPad app and its extensions (what ships; scheme Doddy)
+#                                                                          -> Doddy.xcodeproj
+#   project-iphone.yml  the same with no entitlements, for a free Apple team -> DoddyiPhone.xcodeproj
+# PAUSED (ADR-572): Apple Watch and Mac development. Their code is all still in the repo; only the
+# build specs are parked, so nothing here builds, tests or signs them:
+#   project-watch.yml   this file plus the Apple Watch app embedded in the iPhone app (dormant)
+#   project-mac.yml     the Mac menu bar app and its widget, nothing else            (dormant)
 name: Doddy
 options:
+  # Marks the generated project as already checked against this Xcode, so Xcode stops offering
+  # "Update to recommended settings". Accepting that offer would change the generated project only
+  # (the next `make project` undoes it) and can turn on settings the specs keep off, such as the
+  # generated string symbols project-iphone.yml turns off. Raise it after moving to a newer Xcode.
+  xcodeVersion: "26.6"
   deploymentTarget:
     iOS: "17.0"
-    watchOS: "10.0"
   createIntermediateGroups: true
   generateEmptyDirectories: false
 packages:
@@ -19,13 +31,6 @@ packages:
   LiveKit:
     url: https://github.com/livekit/client-sdk-swift
     from: 2.10.0
-  # "Hey Doddy" wake word (ADR-254): on-device keyword spotting. Pinned to the v4.0 release commit
-  # (its tags have two parts, which Swift Package Manager can't read as versions). The Swift code
-  # is Apache-2.0; the bundled PvPorcupine library runs under Picovoice's terms and needs the
-  # user's own AccessKey (docs/DEPENDENCIES_AND_LICENSES.md).
-  Porcupine:
-    url: https://github.com/Picovoice/porcupine
-    revision: c794ad57b189f4b06e8128abd0324ad09e1a424d
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -50,9 +55,6 @@ settings:
     DODDY_APP_ENTITLEMENTS: Config/Doddy-AppGroup.entitlements
     DODDY_WIDGET_ENTITLEMENTS: Config/DoddyWidgets.entitlements
     DODDY_SHARE_ENTITLEMENTS: Config/DoddyShare.entitlements
-    # Watch complications (ADR-262) read the snapshot from the watch's App Group (used by the
-    # watch app and its widget extension).
-    DODDY_WATCH_ENTITLEMENTS: Config/DoddyWatch.entitlements
     # Shared lists through iCloud (ADR-263), off by default (needs a paid team with iCloud). To
     # turn on: DODDY_CLOUD_CONTAINER = iCloud.$(DODDY_APP_BUNDLE_IDENTIFIER), and
     # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-iCloud.entitlements (or
@@ -65,8 +67,10 @@ targets:
     platform: iOS
     sources:
       - path: DoddyApp
+        # Agent notes for this folder, not app content.
+        excludes: ["CLAUDE.md"]
       - path: Shared
-      # Doddy's voice spec, read by the OpenAI test voice (ADR-265). The same files the live
+      # Doddy's voice spec, read by the OpenAI voice (ADR-265, ADR-442). The same files the live
       # ElevenLabs agent is synced from, so both providers get the same prompt and tools.
       - path: voice-agent/instructions.md
         buildPhase: resources
@@ -78,8 +82,6 @@ targets:
       - target: DoddyWidgets
       # "Save to Doddy" in the Share Sheet (ADR-311).
       - target: DoddyShare
-      # The Apple Watch app (ADR-232), embedded in the iPhone app.
-      - target: DoddyWatch
       - package: DoddyCore
         product: DoddyCore
       - package: DoddyCore
@@ -88,8 +90,6 @@ targets:
         product: DoddyPersistence
       - package: ElevenLabs
       - package: LiveKit
-      - package: Porcupine
-        product: Porcupine
     settings:
       base:
         # Development identifier only; the production identifier is an owner decision.
@@ -103,21 +103,30 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_CFBundleDisplayName: Doddy
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        # One Doddy window at a time (ADR-436): the scene manifest is written out in
+        # Config/Doddy-Info.plist with multiple scenes off, so it is not generated here.
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: NO
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # iPad (ADR-337): every orientation, so Doddy works in Split View and Slide Over.
         TARGETED_DEVICE_FAMILY: "1,2"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Only these permissions. Each is asked for only when the user turns the matching toggle on in Settings, Connections.
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's test voice to OpenAI. A voice memo you record on a note stays on this iPhone."
-        # Voice memos only (ADR-230): on-device recognition is required, so the audio isn't sent.
-        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere."
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records."
+        # Voice memos (ADR-230) and DODDY Capture recordings (ADR-588): on-device recognition is required, so the audio isn't sent.
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message."
         INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections."
         INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
         # Place reminders only (ADR-196): "While Using", never "Always"; iOS watches the place itself.
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go."
         INFOPLIST_KEY_NSFaceIDUsageDescription: "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched."
         INFOPLIST_KEY_NSContactsUsageDescription: "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections."
+        # Steps only (ADR-568): Motion & Fitness, read for one day when asked. Not from Health.
+        INFOPLIST_KEY_NSMotionUsageDescription: "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections."
+        # Sport mode (ADR-621 to 623): Apple Health, read only; only a week summary leaves the iPhone, in Messages or to the voice, each after its own consent.
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app."
+        # Photos and camera (ADR-569): library counts for days asked about; the camera on a tap. No library writes.
+        INFOPLIST_KEY_NSCameraUsageDescription: "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections."
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
         INFOPLIST_FILE: Config/Doddy-Info.plist
   DoddyWidgets:
@@ -170,62 +179,6 @@ targets:
         INFOPLIST_FILE: Config/DoddyShare-Info.plist
         INFOPLIST_KEY_CFBundleDisplayName: Save to Doddy
         SKIP_INSTALL: YES
-  DoddyWatch:
-    # Apple Watch app (ADR-232): shows the snapshot the iPhone sends (pinned notes, next note
-    # reminders, lists) and asks the iPhone to tick an item or save a note. No database, no
-    # networking; WatchConnectivity only. Needs the iPhone app; not usable on its own.
-    type: application
-    platform: watchOS
-    sources:
-      - path: DoddyWatch
-      - path: Shared/Widgets/WidgetSnapshotFile.swift
-    dependencies:
-      # Watch face complications and the Smart Stack (ADR-262), embedded in the watch app.
-      - target: DoddyWatchWidgets
-      - package: DoddyCore
-        product: DoddyCore
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp
-        CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
-        # The watch app's icon is the iPhone's candidate icon, byte-identical (ADR-050, ADR-336):
-        # DoddyWatch/Assets.xcassets/AppIcon. It changes with the iPhone's when the owner decides.
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_FILE: Config/DoddyWatch-Info.plist
-        PRODUCT_NAME: DoddyWatch
-        MARKETING_VERSION: "0.0.1"
-        CURRENT_PROJECT_VERSION: "1"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Doddy
-        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: $(DODDY_APP_BUNDLE_IDENTIFIER)
-        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: NO
-        # A single-target watchOS app (watchOS 7+), not a WatchKit extension.
-        INFOPLIST_KEY_WKApplication: YES
-        TARGETED_DEVICE_FAMILY: "4"
-        SKIP_INSTALL: YES
-  DoddyWatchWidgets:
-    # Watch face complications and the Smart Stack (ADR-262). Reads only the snapshot the watch
-    # app saves in the watch's App Group; shows times, counts and list names, never note words.
-    type: app-extension
-    platform: watchOS
-    sources:
-      - path: DoddyWatchWidgets
-      - path: Shared/Widgets/WidgetSnapshotFile.swift
-    dependencies:
-      - package: DoddyCore
-        product: DoddyCore
-    settings:
-      base:
-        CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
-        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp.widgets
-        PRODUCT_NAME: DoddyWatchWidgets
-        MARKETING_VERSION: "0.0.1"
-        CURRENT_PROJECT_VERSION: "1"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_FILE: Config/DoddyWatchWidgets-Info.plist
-        INFOPLIST_KEY_CFBundleDisplayName: Doddy
-        TARGETED_DEVICE_FAMILY: "4"
-        SKIP_INSTALL: YES
   DoddyTests:
     type: bundle.unit-test
     platform: iOS
@@ -238,7 +191,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).tests
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
   DoddyUITests:
     type: bundle.ui-testing
@@ -250,7 +203,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).uitests
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
 schemes:
   Doddy:
@@ -258,6 +211,9 @@ schemes:
       targets:
         Doddy: all
     test:
+      # The tests read the English screens; the app's default is Polish (ADR-573).
+      language: en
+      region: US
       targets:
         - DoddyTests
         - DoddyUITests

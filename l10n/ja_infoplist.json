@@ -1,0 +1,54 @@
+{
+  "NSAlarmKitUsageDescription": {
+    "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.",
+    "ja": "Doddyがアラームやタイマーを設定するのは、あなたが頼んで「アラームを設定」または「開始」をタップしたときだけです。消音モードや集中モード中でも鳴ります。アラームをオフにするには、Doddyの設定の「アラーム」を使ってください。"
+  },
+  "NSCalendarsFullAccessUsageDescription": {
+    "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが尋ねた日のイベントを読み、イベントの追加・変更・削除は「追加」「変更」「削除」をタップした後にだけ行います。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSContactsUsageDescription": {
+    "en": "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが頼んだときに名前で連絡先を探したり、誕生日が近い人を調べたりし、リマインドする相手として選んだ人の誕生日を読み取ります。音声会話では、見つかった名前と誕生日の日と月が、Doddyの声を動かすElevenLabsに送られます。電話番号、メールアドレス、生まれた年はこのiPhoneにとどまります。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSFaceIDUsageDescription": {
+    "en": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched.",
+    "ja": "ロックをオンにすると、DoddyはアプリやプライベートなメモをFace IDで開きます。顔の照合はiOSが行い、Doddyが知るのは一致したかどうかだけです。"
+  },
+  "NSLocationWhenInUseUsageDescription": {
+    "en": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go.",
+    "ja": "Doddyが位置情報を使うのは、あなたが頼んだときだけです。場所で設定したリマインダーのため（「今いる場所を使う」をタップしたときに現在地を調べ、到着時や出発時にiOSがリマインドできるようにするため）、駐車した場所を保存するため、そしてAppleのマップでどこかへの出発時刻を計算するためです。Doddyは位置情報を保存せず、あなたの行き先を追跡することもありません。"
+  },
+  "NSMicrophoneUsageDescription": {
+    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
+    "ja": "あなたの声を聞くために、Doddyはマイクが必要です。Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。会話中のあなたの声は、会話を処理するためにElevenLabsに送られます。ホームの声をOpenAIに切り替えている場合はOpenAIに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。「録音」で始めた録音も、このiPhoneにとどまります。Doddyは録音中、そのことをずっと表示します。"
+  },
+  "NSRemindersFullAccessUsageDescription": {
+    "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
+    "ja": "Doddyがリマインダーの追加・変更・完了・削除を行うのは、「追加」「変更」「完了にする」「削除」をタップした後だけです。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSSpeechRecognitionUsageDescription": {
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message.",
+    "ja": "Doddyは、ボイスメモや録音をこのiPhone上で文字に書き起こし、言葉を確認したり検索したりできるようにします。メッセージでマイクをタップしたときに話した内容も文字にします。音声とその文字はどこにも送られません。メッセージに音声入力した言葉は、メッセージとして送信したときだけこのiPhoneの外に出ます。"
+  },
+  "NSMotionUsageDescription": {
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存しません。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSHealthShareUsageDescription": {
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "ja": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取り、Doddyの「Apple Health」画面に表示します。このiPhoneの外に出るのは週の短いまとめだけで、それもあなたが許可したときだけです。メッセージであなた自身が送るとき、またはあなたが尋ねて「はい」と答えたときにDoddyの音声に渡されます。Doddyは何も保存せず、ヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
+  },
+  "NSHealthUpdateUsageDescription": {
+    "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+    "ja": "Doddyがヘルスケアに書き込んだり、内容を変更したりすることはありません。読み取りの許可を求めるのは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値だけです。ヘルスケアの許可画面は読み取りと書き込みの両方を扱うため、iOSはアプリにこの文章を求めます。"
+  },
+  "NSCameraUsageDescription": {
+    "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
+    "ja": "Doddyがカメラを開くのは、「写真を撮る」または「カメラを開く」をタップしたときだけです。残した写真はこのiPhone上のメモに入り、その文字はここで読み取られます。どこにも送信されず、写真ライブラリにも保存されません。"
+  },
+  "NSPhotoLibraryUsageDescription": {
+    "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが尋ねた日に撮った写真とビデオの数を数え、画面に表示します。その会話でDoddyの声（ElevenLabs、またはホームの音声をOpenAIに切り替えた場合はOpenAI）に送られるのは、枚数と撮影日時だけです。写真そのものがこのiPhoneから出ることはありません。Doddyがライブラリを変更することはありません。オフにするには、設定の「連携」を使ってください。"
+  }
+}

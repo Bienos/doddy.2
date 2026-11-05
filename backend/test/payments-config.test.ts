@@ -90,8 +90,9 @@ test("limits must be sensible amounts and ordered", () => {
   assert.match(problems({ DODDY_PAYMENTS_USER_DAILY_USDC: "9", DODDY_PAYMENTS_SERVICE_DAILY_USDC: "5" })!.message, /USER_DAILY_USDC must not exceed DODDY_PAYMENTS_SERVICE_DAILY_USDC/);
 });
 
-test("real money needs an explicit network choice, and only known networks are accepted", () => {
-  assert.equal(loadConfig({ DODDY_PAYMENTS_NETWORK: "base" }).payments.network, "base");
+test("only the test network is accepted (real money is not approved, ADR-733), and only known networks at all", () => {
+  assert.equal(loadConfig({ DODDY_PAYMENTS_NETWORK: "base-sepolia" }).payments.network, "base-sepolia");
+  assert.match(problems({ DODDY_PAYMENTS_NETWORK: "base" })!.message, /must be base-sepolia: paying on a network with real money is not approved/);
   assert.throws(() => loadConfig({ DODDY_PAYMENTS_NETWORK: "ethereum" }), ConfigError);
   assert.throws(() => loadConfig({ DODDY_PAYMENTS_WALLET: "metamask" }), ConfigError);
 });
@@ -102,33 +103,33 @@ test("the allow-list is parsed and validated", () => {
   assert.match(problems({ DODDY_PAYMENTS_ALLOWED_HOSTS: "localhost" })!.message, /ALLOWED_HOSTS/);
 });
 
-test("the composition root: mock mode wires the demo wallet, live without a wallet wires none", () => {
-  const mock = buildApp({ ...loadConfig({ DODDY_DB_PATH: ":memory:" }) });
+test("the composition root: mock mode wires the demo wallet, live without a wallet wires none", async () => {
+  const mock = await buildApp({ ...loadConfig({ DODDY_DB_PATH: ":memory:" }) });
   try {
-    assert.equal(mock.payments.status("u").wallet.kind, "mock");
-    assert.equal(mock.payments.status("u").enabled, false, "even the demo wallet starts off");
+    assert.equal((await mock.payments.status("u")).wallet.kind, "mock");
+    assert.equal((await mock.payments.status("u")).enabled, false, "even the demo wallet starts off");
   } finally {
-    mock.store.close();
+    await mock.store.close();
   }
-  const liveNone = buildApp(loadConfig({ ...live, DODDY_DB_PATH: ":memory:" }));
+  const liveNone = await buildApp(loadConfig({ ...live, DODDY_DB_PATH: ":memory:" }));
   try {
-    const status = liveNone.payments.status("u");
+    const status = await liveNone.payments.status("u");
     assert.deepEqual([status.wallet.kind, status.wallet.configured, status.enabled], ["none", false, false]);
   } finally {
-    liveNone.store.close();
+    await liveNone.store.close();
   }
-  const withCoinbase = buildApp({ ...loadConfig({ ...live, ...cdpEnv(), DODDY_DB_PATH: ":memory:" }) });
+  const withCoinbase = await buildApp({ ...loadConfig({ ...live, ...cdpEnv(), DODDY_DB_PATH: ":memory:" }) });
   try {
-    const status = withCoinbase.payments.status("u");
+    const status = await withCoinbase.payments.status("u");
     assert.deepEqual([status.wallet.kind, status.wallet.configured, status.wallet.account, status.enabled], ["coinbase_cdp", true, "0x1111…1111", false]);
   } finally {
-    withCoinbase.store.close();
+    await withCoinbase.store.close();
   }
-  const override = buildApp(loadConfig({ DODDY_DB_PATH: ":memory:" }), { paymentWallet: null });
+  const override = await buildApp(loadConfig({ DODDY_DB_PATH: ":memory:" }), { paymentWallet: null });
   try {
-    assert.equal(override.payments.status("u").wallet.kind, "none");
+    assert.equal((await override.payments.status("u")).wallet.kind, "none");
   } finally {
-    override.store.close();
+    await override.store.close();
   }
   assert.ok(new MockPaymentWallet().address.startsWith("0xd0dd1e"));
 });

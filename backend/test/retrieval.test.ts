@@ -99,7 +99,7 @@ test("timeouts retry with capped backoff, then fail; every try reserved allowanc
   assert.equal(listCalls(h), 3, "1 try + 2 retries");
   assert.deepEqual(h.sleeps, [250, 500]);
   const day = "day:2026-10-09";
-  assert.equal(h.store.usage("service:calls", day), 3);
+  assert.equal((await h.store.usage("service:calls", day)), 3);
 });
 
 test("rate limits: a long Retry-After is passed to the client instead of a retry storm", async () => {
@@ -138,7 +138,7 @@ test("service-wide monthly ceiling is enforced across users", async () => {
 test("expired or revoked access is reported and the connection state updated", async () => {
   h = await harness();
   await connectMock(h);
-  (h.provider as MockCalendarProvider).setScenario(h.store.composioUserId("00000000-0000-4000-8000-00000000000a", 0), "expired");
+  (h.provider as MockCalendarProvider).setScenario((await h.store.composioUserId("00000000-0000-4000-8000-00000000000a", 0)), "expired");
   const res = await read(h);
   assert.equal(res.body.error.code, "connection_expired");
   assert.equal((await h.call("GET", CAL)).body.status, "expired");

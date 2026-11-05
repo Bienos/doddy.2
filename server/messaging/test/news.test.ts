@@ -277,8 +277,10 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     await db?.end();
   });
 
+  // Each user from its own address, so the signup limit (10 an hour per address) never decides a test.
+  let users = 0;
   async function user(withPush = true) {
-    const r = await app.inject({ method: "POST", url: "/v1/accounts" });
+    const r = await app.inject({ method: "POST", url: "/v1/accounts", remoteAddress: `10.66.0.${++users}` });
     const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
     const h = { authorization: `Bearer ${deviceToken}` };
     if (withPush) await app.inject({ method: "PUT", url: "/v1/device/push-token", headers: h, payload: { token: Math.random().toString(16).slice(2).padEnd(64, "a").slice(0, 64), environment: "sandbox" } });
@@ -327,6 +329,27 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await buildDigest(db, news, accountId, "scheduled", NOW)).status, "skipped");
     const { rows: s } = await db.query<{ next: Date }>("SELECT next_run_at AS next FROM news_settings WHERE account_id = $1", [accountId]);
     assert.ok(s[0]!.next > NOW);
+  });
+
+  test("a digest more than two hours late is skipped, not sent at night; the next one comes on time", async () => {
+    const { accountId, h } = await user();
+    await put(h, settings({ sendTime: "07:00" }));
+    const slot = new Date("2026-10-10T05:00:00Z"); // 07:00 in Warsaw
+    await db.query("UPDATE news_settings SET next_run_at = $2 WHERE account_id = $1", [accountId, slot]);
+    const state = async () => {
+      const { rows: s } = await db.query<{ next: Date }>("SELECT next_run_at AS next FROM news_settings WHERE account_id = $1", [accountId]);
+      const { rows: d } = await db.query<{ local_date: string }>("SELECT to_char(local_date, 'YYYY-MM-DD') AS local_date FROM news_digests WHERE account_id = $1", [accountId]);
+      const { rows: m } = await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1", [accountId]);
+      return { next: s[0]!.next.toISOString(), digests: d.map((r) => r.local_date), messages: m.length };
+    };
+
+    // The server slept through 07:00 and wakes at 02:00 the next night: nothing goes out.
+    await runDueDigests(db, news, 50, new Date("2026-10-11T00:00:00Z"));
+    assert.deepEqual(await state(), { next: "2026-10-11T05:00:00.000Z", digests: [], messages: 0 });
+
+    // 50 minutes late is still sent, and today's digest is the one that goes.
+    await runDueDigests(db, news, 50, new Date("2026-10-11T05:50:00Z"));
+    assert.deepEqual(await state(), { next: "2026-10-12T05:00:00.000Z", digests: ["2026-10-11"], messages: 1 });
   });
 
   test("next day: stories already sent are not repeated; writer failure falls back to headlines", async () => {
@@ -391,8 +414,19 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await check("http://localhost/feed")).statusCode, 400);
     assert.equal((await app.inject({ method: "POST", url: "/v1/news/send-now", headers: h })).json().error, "no_topics");
     await put(h, settings({ topics: [], feeds: ["https://my.blog/feed"] }));
-    const sent = (await app.inject({ method: "POST", url: "/v1/news/send-now", headers: h })).json();
-    assert.equal(sent.status, "queued");
+    // send-now builds with the real clock (36 h window), so the post must be recent in real time,
+    // not 3 hours before NOW (that went stale on 2026-10-11). The feed cache is cleared both ways
+    // so neither this post nor the earlier tests' copy leaks across.
+    const fixed = feeds.feeds.get("https://my.blog/feed")!;
+    feeds.feeds.set("https://my.blog/feed", [{ ...fixed[0]!, publishedAt: new Date(Date.now() - 3 * 3_600_000).toISOString() }]);
+    await db.query("DELETE FROM news_cache");
+    try {
+      const sent = (await app.inject({ method: "POST", url: "/v1/news/send-now", headers: h })).json();
+      assert.equal(sent.status, "queued");
+    } finally {
+      feeds.feeds.set("https://my.blog/feed", fixed);
+      await db.query("DELETE FROM news_cache");
+    }
   });
 
   test("if queueing fails, the stories are not marked as sent", async () => {

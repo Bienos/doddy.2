@@ -253,14 +253,17 @@ public enum ReminderIdempotency {
     }
 
     public static func key(title: String, due: ReminderDue?) -> String {
-        let source = normalizedTitle(title) + "\u{1F}" + (due?.localText ?? "-")
-        // FNV-1a, 64 bit: stable across runs and platforms (Swift's Hasher is not).
+        "v1-" + fnv(normalizedTitle(title) + "\u{1F}" + (due?.localText ?? "-"))
+    }
+
+    /// FNV-1a, 64 bit, as 16 hex digits: stable across runs and platforms (Swift's Hasher is not).
+    static func fnv(_ source: String) -> String {
         var hash: UInt64 = 0xcbf2_9ce4_8422_2325
         for byte in source.utf8 {
             hash ^= UInt64(byte)
             hash = hash &* 0x0000_0100_0000_01b3
         }
-        return "v1-" + String(format: "%016llx", hash)
+        return String(format: "%016llx", hash)
     }
 
     public static func markerURL(key: String) -> String { markerPrefix + key }
@@ -293,6 +296,28 @@ public struct ReminderWrite: Equatable, Sendable {
     }
 
     public var markerURL: String { ReminderIdempotency.markerURL(key: key) }
+
+    /// When Reminders should alert (ADR-650): at a timed due, as the Reminders app itself sets it.
+    /// Without an alarm iOS lists the reminder but never alerts, so before ADR-650 Doddy's
+    /// reminders came with no sound and no banner. A whole-day due gets none: Reminders' own
+    /// "Today" notification covers those.
+    public func alertDate(local: Calendar) -> Date? {
+        ReminderAlert.date(for: due, local: local)
+    }
+}
+
+/// The one alert a timed reminder gets (ADR-650).
+public enum ReminderAlert {
+    public static func date(for due: ReminderDue?, local: Calendar) -> Date? {
+        guard let due, due.hasTime else { return nil }
+        return EventChange.moment(due, local: local)
+    }
+
+    /// When a due moves and the reminder has no alarm of its own, it gets one at the new time if
+    /// that has one: a timed reminder without an alarm can only be one an older Doddy wrote.
+    public static func addOnMove(hasAlarms: Bool, newDue: ReminderDue?, local: Calendar) -> Date? {
+        hasAlarms ? nil : date(for: newDue, local: local)
+    }
 }
 
 /// A reminder as read back from the iPhone. Stays on the phone; only the title and due of the
@@ -387,16 +412,19 @@ public struct ReminderReceipt: Equatable, Sendable {
     public let listTitle: String
     public let due: ReminderDue?
     public let repeats: CalendarRepeat?
+    /// Reminders' own identifier for it (ADR-319). Stays on this iPhone; never sent to the agent.
+    public let id: String?
 
-    public init(title: String, listTitle: String, due: ReminderDue?, repeats: CalendarRepeat? = nil) {
+    public init(title: String, listTitle: String, due: ReminderDue?, repeats: CalendarRepeat? = nil, id: String? = nil) {
         self.title = title
         self.listTitle = listTitle
         self.due = due
         self.repeats = repeats
+        self.id = id
     }
 
     public init(_ snapshot: ReminderSnapshot) {
-        self.init(title: snapshot.title, listTitle: snapshot.listTitle, due: snapshot.due, repeats: snapshot.repeats)
+        self.init(title: snapshot.title, listTitle: snapshot.listTitle, due: snapshot.due, repeats: snapshot.repeats, id: snapshot.id)
     }
 }
 
@@ -519,7 +547,8 @@ extension ReminderOutcome {
         case .notAdded(.notAllowed):
             return ReminderScreenText(
                 headline: "Not added",
-                lines: asked + ["Doddy isn't allowed to use Reminders. Turn it on in Settings, Connections."], isProblem: true)
+                // ADR-578: the access card below asks for it; Doddy tries again after the tap.
+                lines: asked + ["Doddy isn't allowed to use Reminders yet. Allow it on the card below and Doddy will try again."], isProblem: true)
         case .notAdded(.couldNotCheck):
             return ReminderScreenText(
                 headline: "Not added",
@@ -563,7 +592,8 @@ extension VoiceToolReply {
         case .notAdded(.saveFailed(let reason)):
             return notAdded(reason)
         case .unknown:
-            return addUnconfirmed
+            // Asking again is safe: ReminderAction looks before it writes (ADR-319).
+            return unconfirmedLooksFirst(app: .reminders, tool: VoiceToolName.createReminder)
         case .needsClarification(let clarification):
             return reminderClarification(clarification)
         }

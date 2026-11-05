@@ -236,7 +236,7 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
     }
 }
 
-/// Microphone in and Doddy's voice out for the OpenAI test voice. Called on audio threads, so all
+/// Microphone in and Doddy's voice out for the OpenAI voice. Called on audio threads, so all
 /// state is behind `lock`. Voice processing (Apple's echo cancellation) is on, so Doddy doesn't
 /// hear himself through the speaker and interrupt his own sentence. iOS stops the engine on a route
 /// change (AirPods) or an interruption (a call, Siri); it is restarted when iOS allows, and audio
@@ -387,7 +387,12 @@ final class RealtimeAudioIO: @unchecked Sendable {
         flushLocked()
         lock.unlock()
         player.stop()
-        if !engine.isRunning { try? engine.start() }
+        if !engine.isRunning {
+            // iOS deactivates the session for an interruption, and the engine can't start until it
+            // is active again (ADR-696). A long interruption ends the conversation in the controller.
+            try? AVAudioSession.sharedInstance().setActive(true)
+            try? engine.start()
+        }
         if engine.isRunning { player.play() }
         if hadQueue { onDrained() }
     }

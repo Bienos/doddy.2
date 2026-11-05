@@ -1,0 +1,77 @@
+{
+  "_comment": "Price watch (docs/implementation/SHOPPING_WATCH.md, ADR-614). request is the POST /v1/watches body; canonical is the text the digest is taken over (keys sorted, no spaces, strings as JSON.stringify writes them) with days and checksPerDay added; digest is SHA-256 hex over its UTF-8 bytes, computed with Python's hashlib. preview is the 201 body, summaries are what GET returns. All values are examples.",
+  "request": {
+    "title": "Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów",
+    "shop": "Media Expert",
+    "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45",
+    "thresholdMinor": 180000,
+    "currency": "PLN",
+    "language": "pl"
+  },
+  "canonical": "{\"checksPerDay\":4,\"currency\":\"PLN\",\"days\":30,\"language\":\"pl\",\"shop\":\"Media Expert\",\"thresholdMinor\":180000,\"title\":\"Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów\",\"url\":\"https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45\"}",
+  "digest": "6d607aeef16592db526bf374c7432bd836333d8be9655a69f042ae5178f6f873",
+  "preview": {
+    "id": "7d6c1f0e-2b8a-4c55-9a0e-3f4d5b6a7c81",
+    "digest": "6d607aeef16592db526bf374c7432bd836333d8be9655a69f042ae5178f6f873",
+    "title": "Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów",
+    "shop": "Media Expert",
+    "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45",
+    "thresholdMinor": 180000,
+    "currency": "PLN",
+    "language": "pl",
+    "currentMinor": 189900,
+    "checkedAt": "2026-10-24T12:02:00.000Z",
+    "expiresAt": "2026-10-24T12:12:00.000Z",
+    "days": 30,
+    "checksPerDay": 4
+  },
+  "summaries": {
+    "active": {
+      "id": "7d6c1f0e-2b8a-4c55-9a0e-3f4d5b6a7c81",
+      "state": "active",
+      "title": "Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów",
+      "shop": "Media Expert",
+      "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45",
+      "thresholdMinor": 180000,
+      "currency": "PLN",
+      "language": "pl",
+      "createdAt": "2026-10-24T12:02:30.000Z",
+      "endsAt": "2026-11-23T12:02:30.000Z",
+      "lastCheckedAt": "2026-10-24T18:03:10.000Z",
+      "lastPriceMinor": 189900,
+      "checksDone": 2
+    },
+    "triggered": {
+      "id": "7d6c1f0e-2b8a-4c55-9a0e-3f4d5b6a7c81",
+      "state": "triggered",
+      "title": "Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów",
+      "shop": "Media Expert",
+      "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45",
+      "thresholdMinor": 180000,
+      "currency": "PLN",
+      "language": "pl",
+      "createdAt": "2026-10-24T12:02:30.000Z",
+      "endsAt": "2026-11-23T12:02:30.000Z",
+      "lastCheckedAt": "2026-10-26T06:02:41.000Z",
+      "lastPriceMinor": 179900,
+      "checksDone": 9,
+      "triggeredAt": "2026-10-26T06:02:41.000Z",
+      "triggeredPriceMinor": 179900
+    },
+    "failed": {
+      "id": "0b9e8d7c-6a5f-4e3d-8c2b-1a0f9e8d7c6b",
+      "state": "failed",
+      "title": "Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów",
+      "shop": "Media Expert",
+      "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45",
+      "thresholdMinor": 180000,
+      "currency": "PLN",
+      "language": "pl",
+      "createdAt": "2026-10-24T12:02:30.000Z",
+      "endsAt": "2026-11-23T12:02:30.000Z",
+      "lastCheckedAt": "2026-10-26T12:02:00.000Z",
+      "checksDone": 8,
+      "failure": "unreadable"
+    }
+  }
+}

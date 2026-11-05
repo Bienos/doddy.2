@@ -11,6 +11,18 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case web
     /// The ECB's public rates file (ADR-300).
     case exchangeRates
+    /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
+    case blik
+    /// A presentation file made on the iPhone (ADR-567).
+    case presentations
+    /// Motion & Fitness step counts (ADR-568).
+    case steps
+    /// The photo library and Doddy's camera (ADR-569).
+    case photos, camera
+    /// Apple Health, read only (ADR-621, ADR-623).
+    case health
+    /// The training plan screen (ADR-626).
+    case training
 
     public var title: String {
         switch self {
@@ -29,6 +41,13 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .outlook: "Outlook"
         case .web: "Web search"
         case .exchangeRates: "Exchange rates"
+        case .blik: "BLIK transfers"
+        case .presentations: "Presentations"
+        case .steps: "Steps"
+        case .photos: "Photos"
+        case .camera: "Camera"
+        case .health: "Apple Health"
+        case .training: "Training plan"
         }
     }
 }
@@ -48,6 +67,9 @@ public enum ActivityOutcome: String, Codable, Sendable {
     case declined
     /// Written before a change runs. If Doddy closes before the result, it becomes `notSure`.
     case inProgress
+    /// Shown on a card for the user to do themselves, as a BLIK transfer in their bank app
+    /// (ADR-510). Doddy did nothing and can't see whether the user did.
+    case shown
 
     public var text: String {
         switch self {
@@ -59,7 +81,20 @@ public enum ActivityOutcome: String, Codable, Sendable {
         case .notDone: "Didn't happen"
         case .declined: "You said no"
         case .inProgress: "In progress"
+        case .shown: "Shown for you to send"
         }
+    }
+}
+
+/// What a save writes beyond its title and time, as a plan card's step line says it (ADR-718): the
+/// place of an event and the notes of an event or reminder, each in full and in the user's words.
+/// Empty when there is neither, so a step without them reads as it always did.
+enum WrittenFields {
+    static func line(place: String? = nil, notes: String? = nil) -> String {
+        var text = ""
+        if let place, !place.isEmpty { text += " · place “\(place)”" }
+        if let notes, !notes.isEmpty { text += " · notes “\(notes)”" }
+        return text
     }
 }
 
@@ -77,26 +112,41 @@ public struct ActivityRequest: Equatable, Sendable {
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
+    /// The same change asked again has the same key (ADR-319, ADR-320): new reminders, events,
+    /// timers and alarms, whose adds look first and so can be retried safely. Nil for everything else.
+    public let operationKey: String?
+    /// For notes and lists: what Doddy looks for in its own database to settle an unsure entry (ADR-321).
+    public let check: ActivityCheck?
     /// The voice tool that asked (ADR-440): an identifier for outcome events, never user text.
     public let tool: String?
 
-    public init(app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil, tool: String? = nil) {
-        self.init(app: app, title: title, detail: detail, logDetail: detail, isLookup: isLookup, reminderKey: reminderKey, tool: tool)
+    public init(
+        app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil,
+        operationKey: String? = nil, check: ActivityCheck? = nil, tool: String? = nil
+    ) {
+        self.init(app: app, title: title, detail: detail, logDetail: detail, isLookup: isLookup, reminderKey: reminderKey,
+                  operationKey: operationKey, check: check, tool: tool)
     }
 
-    public init(app: ActivityApp, title: String, detail: String?, logDetail: String?, isLookup: Bool, reminderKey: String? = nil, tool: String? = nil) {
+    public init(
+        app: ActivityApp, title: String, detail: String?, logDetail: String?, isLookup: Bool, reminderKey: String? = nil,
+        operationKey: String? = nil, check: ActivityCheck? = nil, tool: String? = nil
+    ) {
         self.app = app
         self.title = title
         self.detail = detail
         self.logDetail = logDetail
         self.isLookup = isLookup
         self.reminderKey = reminderKey
+        self.operationKey = operationKey ?? reminderKey
+        self.check = check
         self.tool = tool
     }
 
     /// The same request, naming the tool that made it.
     public func naming(_ tool: String) -> ActivityRequest {
-        ActivityRequest(app: app, title: title, detail: detail, logDetail: logDetail, isLookup: isLookup, reminderKey: reminderKey, tool: tool)
+        ActivityRequest(app: app, title: title, detail: detail, logDetail: logDetail, isLookup: isLookup, reminderKey: reminderKey,
+                        operationKey: operationKey, check: check, tool: tool)
     }
 
     /// Nil for requests that never reach an app (unsupported or invalid tool calls).
@@ -107,11 +157,14 @@ public struct ActivityRequest: Equatable, Sendable {
         case .searchMemories(let query):
             return ActivityRequest(app: .memories, title: "Searched your notes", detail: "“\(query)”", logDetail: nil, isLookup: true)
         case .saveMemory(let text):
-            return ActivityRequest(app: .memories, title: "Save a note", detail: "“\(text)”", logDetail: nil, isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Save a note", detail: "“\(text)”", logDetail: nil, isLookup: false,
+                operationKey: NoteIdempotency.key(text), check: .note(key: NoteIdempotency.key(text)))
         case .leaveBy(let request):
             return ActivityRequest(
                 app: .maps, title: "Remind when to leave",
-                detail: "“\(request.place)” · arrive by \(when(request.arriveBy, hasTime: true))", isLookup: false)
+                detail: "“\(request.place)” · arrive by \(when(request.arriveBy, hasTime: true))", isLookup: false,
+                operationKey: LeaveByIdempotency.key(request))
         case .findFreeTime(let request):
             let range = request.range(calendar: .current)
             return ActivityRequest(
@@ -124,13 +177,19 @@ public struct ActivityRequest: Equatable, Sendable {
         case .createCalendarEvent(let draft):
             let time = draft.allDay ? "\(when(draft.start, hasTime: false)), all day" : when(draft.start, hasTime: true)
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
-            return ActivityRequest(app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)\(repeats)", isLookup: false)
+            let kept = "“\(draft.title)” · \(time)\(repeats)"
+            // ADR-718: the save also writes the place and the notes, so the plan card's step names them in
+            // full; the 30-day log keeps what it always kept.
+            return ActivityRequest(
+                app: .calendar, title: "Add event", detail: kept + WrittenFields.line(place: draft.location, notes: draft.notes),
+                logDetail: kept, isLookup: false, operationKey: EventIdempotency.key(draft))
         case .createReminder(let draft):
             let due = draft.due.map { " · due \(ReminderText.due($0))" } ?? ""
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            let kept = "“\(draft.title)”\(due)\(repeats)"
             return ActivityRequest(
-                app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)\(repeats)", isLookup: false,
-                reminderKey: ReminderWrite(draft).key)
+                app: .reminders, title: "Add reminder", detail: kept + WrittenFields.line(notes: draft.notes),
+                logDetail: kept, isLookup: false, reminderKey: ReminderWrite(draft).key)
         case .remindAboutNote(let draft):
             let target: String
             switch draft.target {
@@ -154,9 +213,13 @@ public struct ActivityRequest: Equatable, Sendable {
         case .setTimer(let draft):
             let minutes = draft.seconds / 60, seconds = draft.seconds % 60
             let length = minutes > 0 ? "\(minutes) min\(seconds > 0 ? " \(seconds) s" : "")" : "\(seconds) s"
-            return ActivityRequest(app: .timers, title: "Start timer", detail: [draft.label.map { "“\($0)”" }, length].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+            return ActivityRequest(
+                app: .timers, title: "Start timer", detail: [draft.label.map { "“\($0)”" }, length].compactMap { $0 }.joined(separator: " · "),
+                isLookup: false, operationKey: TimerIdempotency.key(draft))
         case .setAlarm(let draft):
-            return ActivityRequest(app: .timers, title: "Set alarm", detail: [draft.label.map { "“\($0)”" }, draft.summary].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+            return ActivityRequest(
+                app: .timers, title: "Set alarm", detail: [draft.label.map { "“\($0)”" }, draft.summary].compactMap { $0 }.joined(separator: " · "),
+                isLookup: false, operationKey: AlarmIdempotency.key(draft))
         case .openMap(let place):
             return ActivityRequest(app: .maps, title: "Open in Maps", detail: "“\(place)”", isLookup: false)
         case .runShortcut(let name):
@@ -165,18 +228,50 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
+        case .draftBlikTransfer(let draft):
+            // The amount and title are on the card; the 30-day log keeps only who it was for.
+            return ActivityRequest(
+                app: .blik, title: "Prepare a BLIK transfer", detail: "\(draft.amount.agentText) to \(draft.recipientName)",
+                logDetail: "to \(draft.recipientName)", isLookup: false)
+        case .makePresentation(let draft):
+            return ActivityRequest(
+                app: .presentations, title: "Make a presentation", detail: "“\(draft.title)” · \(draft.slideCount) slides",
+                logDetail: "\(draft.slideCount) slides", isLookup: false)
+        case .readSteps(let day):
+            return ActivityRequest(app: .steps, title: "Read steps", detail: day.text, isLookup: true)
+        case .readHealthWeek:
+            return ActivityRequest(app: .health, title: "Read the week from Apple Health", detail: "Last 7 days", isLookup: true)
+        case .openTrainingPlan(let ask):
+            return ActivityRequest(app: .training, title: "Open the training plan", detail: PlanAsk.goalTitle(ask.goal), isLookup: false)
+        case .findPhotos(let request):
+            return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
+        case .openCamera:
+            return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
         case .cloudTool(let call):
-            return describe(cloud: call.name)
+            // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
+            guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
+            return ActivityRequest(app: request.app, title: request.title, detail: request.detail, isLookup: request.isLookup, operationKey: key)
         case .addToList(let request):
-            return ActivityRequest(app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false,
+                operationKey: ListOpIdempotency.key("add", list: request.list, items: request.items),
+                check: .listAdd(list: request.list, items: request.items))
         case .readList(let name):
             return ActivityRequest(app: .memories, title: "Read a list", detail: "“\(name)”", logDetail: nil, isLookup: true)
         case .checkOff(let request):
-            return ActivityRequest(app: .memories, title: "Tick on a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Tick on a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false,
+                operationKey: ListOpIdempotency.key("tick", list: request.list, items: request.items),
+                check: .listTick(list: request.list, items: request.items))
         case .removeFromList(let request):
-            return ActivityRequest(app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false,
+                operationKey: ListOpIdempotency.key("remove", list: request.list, items: request.items),
+                check: .listRemove(list: request.list, items: request.items))
         case .createList(let request):
-            return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", logDetail: nil, isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Start a list", detail: "“\(request.list)”", logDetail: nil, isLookup: false,
+                operationKey: ListOpIdempotency.key("create", list: request.list, items: []), check: .listCreate(name: request.list))
         case .changeCalendarEvent(let draft):
             var parts: [String] = []
             if let start = draft.newStart { parts.append("to \(when(start, hasTime: !draft.newStartIsDayOnly))") }
@@ -206,6 +301,12 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .timers, title: "Read alarms", detail: "Doddy's alarms", isLookup: true)
         case .cancelAlarm(let clock, let label):
             return ActivityRequest(app: .timers, title: "Turn off alarm", detail: [clock, label.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+        case .startStopwatch(let label):
+            return ActivityRequest(app: .timers, title: "Start stopwatch", detail: label.map { "“\($0)”" } ?? "Counts up", isLookup: false)
+        case .stopStopwatch:
+            return ActivityRequest(app: .timers, title: "Stop stopwatch", detail: "Doddy's stopwatch", isLookup: false)
+        case .checkStopwatch:
+            return ActivityRequest(app: .timers, title: "Read stopwatch", detail: "Doddy's stopwatch", isLookup: true)
         case .deleteCalendarEvents(let range):
             return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
         case .moveReminders(let dueBy, let to):
@@ -232,6 +333,18 @@ public struct ActivityRequest: Equatable, Sendable {
         case .noteCapabilityGap:
             // A category Doddy notes for itself (ADR-440); no app is used and nothing changes.
             return nil
+        case .handOverErrand(let draft):
+            // ADR-570: the 30-day log keeps that a task was handed over, not its title or words.
+            return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
+        case .checkErrands:
+            return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
+        case .findDeals(let request):
+            // SHOPPING.md: the card shows the items; the 30-day log keeps only how many and where.
+            let count = request.items.count
+            let chains = request.chainsAsked.map(\.name).joined(separator: ", ")
+            return ActivityRequest(
+                app: .web, title: "Checked the leaflets", detail: request.items.joined(separator: ", ") + " · " + chains,
+                logDetail: "\(count) item\(count == 1 ? "" : "s") · \(chains)", isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and
@@ -242,11 +355,29 @@ public struct ActivityRequest: Equatable, Sendable {
 
     /// Online-account calls: names only. Email subjects, file names and task text are not kept.
     static func describe(cloud name: String) -> ActivityRequest? {
-        switch name {
+        // ADR-486/487: Google Calendar is listed under Calendar, Outlook's under Outlook.
+        if let more = CloudToolName.more[name] {
+            let app: ActivityApp = switch more.account {
+            case "Outlook": .outlook
+            case "Todoist": .todoist
+            case "Notion": .notion
+            case "Google Drive": .drive
+            // ADR-564: Claude is listed with the web lookups (no account, Doddy's server).
+            case "Web search", "Claude": .web
+            default: .calendar
+            }
+            return ActivityRequest(app: app, title: more.title, detail: nil, isLookup: !more.write)
+        }
+        return switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
         case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)
         case CloudToolName.draftEmailReply: ActivityRequest(app: .gmail, title: "Create a reply draft", detail: nil, isLookup: false)
+        case CloudToolName.sendEmail: ActivityRequest(app: .gmail, title: "Send an email", detail: nil, isLookup: false)
+        case CloudToolName.replyToEmail: ActivityRequest(app: .gmail, title: "Send a reply", detail: nil, isLookup: false)
+        case CloudToolName.forwardEmail: ActivityRequest(app: .gmail, title: "Forward an email", detail: nil, isLookup: false)
+        case CloudToolName.changeEmail: ActivityRequest(app: .gmail, title: "Archive or mark an email", detail: nil, isLookup: false)
+        case CloudToolName.trashEmail: ActivityRequest(app: .gmail, title: "Move an email to Trash", detail: nil, isLookup: false)
         case CloudToolName.readNotionPage: ActivityRequest(app: .notion, title: "Read a Notion page", detail: nil, isLookup: true)
         case CloudToolName.completeTodoistTask: ActivityRequest(app: .todoist, title: "Complete a task", detail: nil, isLookup: false)
         case CloudToolName.moveTodoistTask: ActivityRequest(app: .todoist, title: "Move a task", detail: nil, isLookup: false)
@@ -304,13 +435,25 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public let undo: ActivityUndo?
     /// Set after the user tapped Undo.
     public var undoState: UndoState?
+    // ADR-319. All optional, so entries saved before them still load.
+    /// The same change asked again has the same key (`ActivityRequest.operationKey`).
+    public let operationKey: String?
+    /// What the app read back. Only ever kept on a confirmed entry.
+    public private(set) var receipt: ActivityReceipt?
+    /// True when the app was asked to write; false when Doddy stopped before writing. Nil when not known.
+    public let attempted: Bool?
+    /// For notes and lists: what Doddy looks for to settle it if unsure (ADR-321).
+    public let check: ActivityCheck?
+    private var statusHistory: [ActivityStatusChange]?
     /// The voice tool that asked (ADR-440). Entries from before it have none.
     public let tool: String?
 
     public init(
         id: UUID = UUID(), at: Date, app: ActivityApp, title: String, detail: String?,
         outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil,
-        plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil, undoState: UndoState? = nil, tool: String? = nil
+        plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil, undoState: UndoState? = nil,
+        operationKey: String? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil, check: ActivityCheck? = nil,
+        tool: String? = nil
     ) {
         self.tool = tool
         self.id = id
@@ -325,23 +468,75 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.plan = plan
         self.undo = outcome == .done ? undo : nil
         self.undoState = undoState
+        self.operationKey = operationKey ?? reminderKey
+        self.receipt = outcome.status == .confirmed ? receipt : nil
+        self.attempted = attempted
+        self.check = check
     }
 
     /// Builds the entry from what was asked and the reply the agent was given. The reply is the
     /// app's own verified result (VoiceToolReply), so the log can never claim more than the agent heard.
-    /// `undo` is kept only when that reply says the change was made and checked.
-    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil) {
+    /// `undo` is kept only when that reply says the change was made and checked; a receipt only
+    /// when it is a confirmed result.
+    public init(
+        id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil,
+        undo: ActivityUndo? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil
+    ) {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
             id: id, at: at, app: request.app, title: request.title, detail: request.logDetail, outcome: outcome,
-            note: note, reminderKey: request.reminderKey, plan: plan, undo: undo, tool: request.tool)
+            note: note, reminderKey: request.reminderKey, plan: plan, undo: undo, operationKey: request.operationKey,
+            receipt: receipt, attempted: attempted, check: request.check, tool: request.tool)
     }
 
     /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
     public static func started(_ request: ActivityRequest, at: Date, plan: ActivityPlanRef? = nil) -> ActivityEntry {
-        ActivityEntry(
+        var entry = ActivityEntry(
             at: at, app: request.app, title: request.title, detail: request.logDetail, outcome: .inProgress,
-            reminderKey: request.reminderKey, plan: plan, tool: request.tool)
+            reminderKey: request.reminderKey, plan: plan, operationKey: request.operationKey, check: request.check, tool: request.tool)
+        entry.statusHistory = [ActivityStatusChange(status: .proposed, at: at), ActivityStatusChange(status: .pending, at: at)]
+        return entry
+    }
+
+    /// The result of a started entry: same id and time, its history kept and the result added.
+    public static func finished(
+        _ started: ActivityEntry, request: ActivityRequest, reply: String, at: Date,
+        undo: ActivityUndo? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil
+    ) -> ActivityEntry {
+        var entry = ActivityEntry(
+            id: started.id, request: request, reply: reply, at: started.at, plan: started.plan,
+            undo: undo, receipt: receipt, attempted: attempted)
+        entry.statusHistory = started.history
+        entry.record(entry.status, at: at, note: nil)
+        return entry
+    }
+
+    /// Typed status (ADR-319). Nil for look-ups.
+    public var status: ActionStatus? { outcome.status }
+
+    /// How the status moved, oldest first. Entries saved before ADR-319 show their one known status.
+    public var history: [ActivityStatusChange] {
+        if let statusHistory { return statusHistory }
+        return status.map { [ActivityStatusChange(status: $0, at: at)] } ?? []
+    }
+
+    /// Moves to `outcome` only if the status model allows it; otherwise nothing changes.
+    /// Returns whether it moved.
+    @discardableResult
+    mutating func move(to outcome: ActivityOutcome, at date: Date, note: String?) -> Bool {
+        guard let from = status, let to = outcome.status, from.canMove(to: to) else { return false }
+        self.outcome = outcome
+        self.note = note
+        if to != .confirmed { receipt = nil }
+        record(to, at: date, note: note)
+        return true
+    }
+
+    private mutating func record(_ status: ActionStatus?, at date: Date, note: String?) {
+        guard let status else { return }
+        var steps = history
+        if steps.last?.status != status { steps.append(ActivityStatusChange(status: status, at: date, note: note)) }
+        statusHistory = steps
     }
 
     /// "Check" is offered when Doddy wasn't sure a reminder went in.
@@ -378,11 +573,32 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
             return (.alreadyThere, nil)
         }
         if starts(VoiceToolReply.nothingChangedPrefixes) { return (.notDone, nil) }
-        if text.hasPrefix("added:"), text.hasSuffix(VoiceToolReply.alreadyInRemindersTail) { return (.alreadyThere, nil) }
+        // Found already there when Doddy looked first (ADR-319 to ADR-322, ADR-363): Doddy's own
+        // endings, read from the end so a quoted title can't fake one (review C1).
+        if starts(["added:", "saved:"]), alreadyThereTails.contains(where: withoutCheckedFirst(text).hasSuffix) { return (.alreadyThere, nil) }
         if starts(VoiceToolReply.donePrefixes) || starts(VoiceToolReply.listDonePrefixes) { return (.done, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
+        // A BLIK transfer card (ADR-510): the user sends it in their bank app; Doddy can't see it.
+        if text.hasPrefix("shown:") { return (.shown, "Doddy didn't send any money. You send it in your bank app.") }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
+    }
+
+    /// How replies end when nothing new was written because it was already there.
+    static let alreadyThereTails = [
+        VoiceToolReply.alreadyInRemindersTail,
+        " was already in Calendar, so Doddy did not add it a second time.",
+        " was already set, so Doddy did not set a second one.",
+        ", so Doddy did not start a second one.",
+        ", so Doddy did not do it a second time. Tell the user it is already there.",
+        ", so Doddy did not save it a second time.",
+    ]
+
+    /// The reply without `VoiceToolReply.checkedFirst`'s closing sentence.
+    private static func withoutCheckedFirst(_ text: String) -> String {
+        guard text.hasSuffix(" first because an earlier try wasn't confirmed."),
+              let range = text.range(of: " Doddy checked ", options: .backwards) else { return text }
+        return String(text[..<range.lowerBound])
     }
 
     /// "failed: Reminders isn't connected. Nothing was added." → "Reminders isn't connected."
@@ -406,11 +622,37 @@ public enum ActivityLog {
         pruned([entry] + entries, now: now)
     }
 
-    /// Also drops note text that older versions kept (review C2). The app prunes at launch and on
-    /// every new entry, and saves when anything changed, so it leaves the file too.
+    /// Also drops note text that older versions kept (review C2), and what Undo needed once Undo
+    /// is no longer offered (a day, `ActivityUndo.window`): that can quote a note or list items,
+    /// and the row stays for 30 days. The app prunes at launch and on every new entry, and saves
+    /// when anything changed, so it leaves the file too.
     public static func pruned(_ entries: [ActivityEntry], now: Date) -> [ActivityEntry] {
         let cutoff = now.addingTimeInterval(-Double(keepDays) * 86_400)
-        return Array(entries.filter { $0.at >= cutoff }.sorted { $0.at > $1.at }.prefix(maxEntries).map(withoutNoteText))
+        return Array(entries.filter { $0.at >= cutoff }.sorted { $0.at > $1.at }.prefix(maxEntries).map { entry in
+            let kept = withoutNoteText(entry)
+            return now.timeIntervalSince(kept.at) >= ActivityUndo.window ? withoutUndo(kept) : kept
+        })
+    }
+
+    /// A note or list was deleted: rows keep what happened, but no longer what Undo needed for it
+    /// (its text or items). Undo of it couldn't run anyway.
+    public static func forgetting(memoryID: UUID, in entries: [ActivityEntry]) -> [ActivityEntry] {
+        entries.map { $0.undo?.memoryID == memoryID ? withoutUndo($0) : $0 }
+    }
+
+    /// "Delete all memories": the Notes and lists rows go with them. Rows for Calendar, Reminders
+    /// and the other apps stay, since those changes are still there.
+    public static func forgettingNotes(_ entries: [ActivityEntry]) -> [ActivityEntry] {
+        entries.filter { $0.app != .memories && $0.undo?.memoryID == nil }
+    }
+
+    /// The same row without what Undo needed; its outcome, note and any Undo result stay.
+    static func withoutUndo(_ entry: ActivityEntry) -> ActivityEntry {
+        guard entry.undo != nil else { return entry }
+        return ActivityEntry(
+            id: entry.id, at: entry.at, app: entry.app, title: entry.title, detail: entry.detail, outcome: entry.outcome,
+            note: entry.note, reminderKey: entry.reminderKey, checkedAt: entry.checkedAt, plan: entry.plan,
+            undo: nil, undoState: entry.undoState, tool: entry.tool)
     }
 
     /// Notes and lists rows used to start their detail with the quoted note, search or list name
@@ -429,26 +671,25 @@ public enum ActivityLog {
 
     /// At launch: anything still in progress was cut off (crash, force-quit, iOS ended the app).
     /// It is never shown as done; it becomes "Not sure", and an unsure reminder offers Check.
-    public static func recoverInterrupted(_ entries: [ActivityEntry]) -> [ActivityEntry] {
+    public static func recoverInterrupted(_ entries: [ActivityEntry], at date: Date = Date()) -> [ActivityEntry] {
         entries.map { entry in
             guard entry.outcome == .inProgress else { return entry }
             var recovered = entry
-            recovered.outcome = .notSure
-            recovered.note = interruptedNote
+            recovered.move(to: .notSure, at: date, note: interruptedNote)
             return recovered
         }
     }
 
-    /// Result of looking in Reminders for an entry Doddy wasn't sure about.
+    /// Result of looking in Reminders for an entry Doddy wasn't sure about. Only an unsure entry
+    /// changes: a check never turns a confirmed or failed result into something else.
     public static func checked(_ entry: ActivityEntry, found: Bool, at date: Date) -> ActivityEntry {
+        guard entry.status == .unknown else { return entry }
         var updated = entry
         updated.checkedAt = date
         if found {
-            updated.outcome = .done
-            updated.note = "Found in Reminders when you checked."
+            updated.move(to: .done, at: date, note: "Found in Reminders when you checked.")
         } else {
-            updated.outcome = .notDone
-            updated.note = "Not in Reminders when you checked. You can ask Doddy again."
+            updated.move(to: .notDone, at: date, note: "Not in Reminders when you checked. You can ask Doddy again.")
         }
         return updated
     }

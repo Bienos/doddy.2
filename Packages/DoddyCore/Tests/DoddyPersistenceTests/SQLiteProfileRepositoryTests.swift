@@ -39,6 +39,25 @@ final class SQLiteProfileRepositoryTests: XCTestCase {
         XCTAssertEqual(afterReopen, saved)
     }
 
+    func testFirstMeetPreferencesCanBeReviewedEditedAndClearedLocally() async throws {
+        let repo = SQLiteProfileRepository(database: try DoddyDatabase.inMemory(), now: { Self.t0 })
+        var reviewed = ProfileDraft()
+        reviewed[.name] = "Mika"
+        reviewed[.style] = "Calm"
+        let saved = try await repo.commit(reviewed, basedOn: .empty)
+        XCTAssertEqual(Set(saved.fields.keys), Set(ProfileKey.introductionQuestions))
+
+        var edited = saved.draft
+        edited[.name] = "M"
+        let updated = try await repo.commit(edited, basedOn: saved)
+        XCTAssertEqual(updated.value(.name), "M")
+        XCTAssertEqual(updated.value(.style), "Calm")
+
+        try await repo.forgetProfile()
+        let cleared = try await repo.profile()
+        XCTAssertTrue(cleared.isEmpty)
+    }
+
     func testEditKeepsUnchangedFieldsBumpsChangedOnesAndRemovesMissingOnes() async throws {
         let clock = TestClock(t0)
         let repo = SQLiteProfileRepository(database: try DoddyDatabase.inMemory(), now: { clock.now })

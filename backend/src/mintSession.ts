@@ -5,7 +5,9 @@ import { SignedSessionVerifier } from "./auth.js";
  * Owner-only helper: mints a signed session token for a development device.
  *   DODDY_SESSION_SIGNING_KEY=… npm run session:mint -- [user-uuid] [ttl-days]
  * The token is printed once; paste it into the app (it is stored in the iOS Keychain).
- * Tokens cannot be revoked one by one: rotating DODDY_SESSION_SIGNING_KEY revokes all of them.
+ * A token cannot be revoked on its own. Deleting the account on the server (`DELETE /v1/account`) cuts
+ * off every token issued to that user before the deletion (ADR-709), and rotating
+ * DODDY_SESSION_SIGNING_KEY revokes all tokens of every user (it also changes every device's user ID).
  * Keep lifetimes short (default 7 days, max 30) until a real sign-in replaces this.
  */
 const raw = process.env.DODDY_SESSION_SIGNING_KEY;

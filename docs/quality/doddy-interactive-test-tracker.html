@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>DODDY · Test tracker</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --paper: #f7f3e9;
+      --surface: #fffdf8;
+      --ink: #191a1d;
+      --muted: #66666a;
+      --line: #ded9ce;
+      --orange: #a44200;
+      --orange-soft: #f3dfca;
+      --green: #176b45;
+      --red: #a22625;
+      --blue: #315a8a;
+      --shadow: 0 10px 30px rgb(33 27 19 / 8%);
+      font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #17181a; --surface: #222326; --ink: #f3f0e9; --muted: #b6b4af;
+        --line: #414145; --orange: #ff9d55; --orange-soft: #453024;
+        --green: #70d6a1; --red: #ff8a83; --blue: #9bc4ff; --shadow: 0 10px 30px #0005;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 28px 22px 64px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 22px; }
+    .wordmark { font-weight: 750; letter-spacing: -.055em; font-size: 1.55rem; }
+    .wordmark span { color: var(--orange); }
+    h1 { font-size: clamp(1.8rem, 4vw, 2.55rem); letter-spacing: -.045em; line-height: 1.1; margin: 14px 0 8px; }
+    h2 { font-size: 1.2rem; letter-spacing: -.02em; margin: 0 0 8px; }
+    h3 { font-size: 1.05rem; margin: 0; }
+    p { margin: 0 0 12px; }
+    .intro { color: var(--muted); max-width: 700px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .button { border: 1px solid var(--line); border-radius: 999px; background: var(--surface); padding: 9px 14px; cursor: pointer; font-weight: 650; }
+    .button:hover { border-color: var(--orange); }
+    .button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, .test-row:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+    .notice { border: 1px solid var(--line); border-left: 4px solid var(--orange); background: var(--surface); border-radius: 12px; padding: 13px 16px; color: var(--muted); margin: 18px 0; }
+    .notice strong { color: var(--ink); }
+    .progress-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: var(--shadow); }
+    .progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+    progress { display: block; width: 100%; height: 10px; appearance: none; border: 0; border-radius: 9px; overflow: hidden; }
+    progress::-webkit-progress-bar { background: var(--line); }
+    progress::-webkit-progress-value { background: var(--orange); border-radius: 9px; }
+    progress::-moz-progress-bar { background: var(--orange); border-radius: 9px; }
+    .counts { color: var(--muted); font-size: .92rem; }
+    .layout { display: grid; grid-template-columns: minmax(255px, 330px) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
+    aside, main { min-width: 0; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+    .list-panel { overflow: hidden; }
+    .list-head { padding: 14px; border-bottom: 1px solid var(--line); }
+    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    select, input[type="search"], input[type="text"], textarea { width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 9px; padding: 9px 11px; }
+    .test-list { max-height: 68vh; overflow: auto; padding: 6px; }
+    .group-label { padding: 12px 9px 5px; color: var(--muted); font-size: .76rem; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+    .test-row { border: 1px solid transparent; border-radius: 10px; width: 100%; background: transparent; padding: 9px; display: grid; grid-template-columns: 26px 1fr auto; text-align: left; align-items: center; gap: 8px; cursor: pointer; }
+    .test-row:hover { background: var(--paper); }
+    .test-row.selected { border-color: var(--orange); background: var(--orange-soft); }
+    .row-id { color: var(--muted); font-size: .72rem; font-weight: 750; }
+    .row-title { font-size: .88rem; font-weight: 650; line-height: 1.3; }
+    .state-dot { font-size: .76rem; color: var(--muted); }
+    .state-dot.pass { color: var(--green); }.state-dot.fail { color: var(--red); }.state-dot.blocked { color: var(--blue); }
+    .detail { padding: clamp(16px, 3vw, 28px); }
+    .eyebrow { color: var(--orange); font-size: .76rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; margin-bottom: 5px; }
+    .detail-title { font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.2; letter-spacing: -.035em; margin-bottom: 10px; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin: 18px 0; }
+    .meta { border: 1px solid var(--line); border-radius: 11px; padding: 10px 11px; }
+    .meta dt { color: var(--muted); font-size: .74rem; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; }
+    .meta dd { margin: 3px 0 0; font-size: .9rem; }
+    .steps { padding-left: 1.3rem; }
+    .steps li { margin: 7px 0; padding-left: 3px; }
+    .expected { background: var(--paper); border-radius: 10px; padding: 12px 14px; margin: 16px 0; }
+    .expected strong { display: block; margin-bottom: 3px; }
+    .result-head { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 18px; }
+    .status-options { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+    .status-choice { position: relative; }
+    .status-choice input { position: absolute; opacity: 0; inset: 0; }
+    .status-choice span { display: block; border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; cursor: pointer; font-weight: 700; font-size: .9rem; }
+    .status-choice input:checked + span { border-color: currentColor; box-shadow: inset 0 0 0 1px currentColor; }
+    .status-choice input:focus-visible + span { outline: 3px solid var(--orange); outline-offset: 2px; }
+    .status-choice.pass { color: var(--green); }.status-choice.fail { color: var(--red); }.status-choice.blocked { color: var(--blue); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+    label.field { display: block; color: var(--muted); font-size: .82rem; font-weight: 700; }
+    label.field input, label.field textarea { margin-top: 5px; font-weight: 400; color: var(--ink); }
+    textarea { min-height: 80px; resize: vertical; }
+    .actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 14px; }
+    .saved { min-height: 1.5em; color: var(--muted); font-size: .85rem; margin-top: 8px; }
+    .empty { color: var(--muted); padding: 20px 12px; }
+    .footer-note { color: var(--muted); font-size: .84rem; margin-top: 18px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 760px) {
+      .shell { padding: 18px 12px 42px; }
+      header { display: block; }
+      .toolbar { justify-content: flex-start; margin-top: 14px; }
+      .layout { grid-template-columns: 1fr; }
+      .test-list { max-height: 32vh; }
+      .meta-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <div class="wordmark" aria-label="Doddy">doddy<span>.</span></div>
+        <h1>Build check, one flow at a time.</h1>
+        <p class="intro">A private checklist for exercising the current DODDY build. Pick a flow, follow its steps, and record what you observed before moving on.</p>
+      </div>
+      <div class="toolbar" aria-label="Checklist actions">
+        <button class="button" id="exportButton">Export results</button>
+        <button class="button" id="resetButton">Reset checklist</button>
+      </div>
+    </header>
+
+    <div class="notice" role="note"><strong>Local only:</strong> results stay in this browser’s local storage and are not uploaded. Don’t enter note text, passwords, contact details, or other private data. Export a copy before clearing browser data.</div>
+
+    <section class="progress-card" aria-label="Test progress">
+      <div class="progress-top"><strong id="progressLabel">0 of 0 tests recorded</strong><span class="counts" id="statusCounts"></span></div>
+      <progress id="progress" max="1" value="0" aria-label="Test completion"></progress>
+    </section>
+
+    <div class="layout">
+      <aside class="panel list-panel" aria-label="Test checklist">
+        <div class="list-head">
+          <h2>Checklist</h2>
+          <div class="filters">
+            <label class="sr-only" for="platformFilter">Platform</label>
+            <select id="platformFilter" aria-label="Filter by platform">
+              <option value="all">All platforms</option>
+              <option value="iPhone">iPhone</option>
+              <option value="iPad">iPad</option>
+              <option value="Apple Watch">Apple Watch</option>
+              <option value="Mac">Mac</option>
+            </select>
+            <label class="sr-only" for="stateFilter">Test status</label>
+            <select id="stateFilter" aria-label="Filter by test status">
+              <option value="all">All statuses</option>
+              <option value="untested">Not run</option>
+              <option value="pass">Pass</option>
+              <option value="fail">Fail</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
+          <label class="sr-only" for="search">Search tests</label>
+          <input id="search" type="search" placeholder="Search tests" style="margin-top:8px">
+        </div>
+        <div class="test-list" id="testList"></div>
+      </aside>
+
+      <main class="panel detail" id="detail" aria-live="polite"></main>
+    </div>
+    <p class="footer-note">Source and project notes identify capabilities; only your observed result can mark a test passed. Simulator and physical-device limitations are listed per flow.</p>
+  </div>
+
+  <script>
+    const tests = [
+      {id:"IP-01", platform:"iPhone", group:"Start and navigation", title:"Launch and return", os:"iOS 17+", setup:"This build installed on iPhone; no special permission.", where:"Simulator or physical iPhone.", steps:["Open DODDY and note whether it shows onboarding or Home.","Background the app, return to it, and check for a blank screen, crash, or lost session."], expected:"The app opens to a valid first-use or Home screen and resumes without a crash."},
+      {id:"IP-02", platform:"iPhone", group:"Start and navigation", title:"First-use onboarding", os:"iOS 17+", setup:"Clean test install. Do not erase a personal install containing notes.", where:"Simulator or iPhone.", steps:["Follow the introduction and storybook.","Continue or skip where offered; check the resulting Home state."], expected:"The flow completes, and screens do not imply an unconfigured feature is already working."},
+      {id:"IP-03", platform:"iPhone / iPad", group:"Start and navigation", title:"Home and navigation", os:"iOS 17+", setup:"No special setup.", where:"Simulator or device; repeat on iPad for sidebar.", steps:["Visit Home, Memories, and Settings.","Open and close a note or list route; check back navigation."], expected:"Navigation selection and back behavior remain clear and return to the intended section."},
+      {id:"IP-04", platform:"iPhone", group:"Notes and lists", title:"Text capture", os:"iOS 17+", setup:"Use disposable test text.", where:"Simulator or iPhone.", steps:["Start a note, cancel one draft, then save a short test note.","Try saving an empty note.","Check that the saved test note appears in Memories."], expected:"Cancel does not save; valid text is saved; invalid empty input is not reported as saved."},
+      {id:"IP-05", platform:"iPhone", group:"Notes and lists", title:"Note detail and changes", os:"iOS 17+", setup:"Use the disposable note from IP-04.", where:"Simulator or iPhone.", steps:["Open the note and edit it.","Verify the displayed change.","If testing delete, delete only this test note and check the app’s recovery/undo path."], expected:"The detail shows the current text; deletion and recovery report the actual result."},
+      {id:"IP-06", platform:"iPhone", group:"Notes and lists", title:"Find notes", os:"iOS 17+", setup:"Saved test note; meaning search may require a supported device/model.", where:"Simulator or iPhone.", steps:["Search for a unique phrase in the test note.","Try meaning search if offered; open the result and compare it with the source note."], expected:"Results point to a real saved note; no match is presented as a match."},
+      {id:"IP-07", platform:"iPhone", group:"Notes and lists", title:"Lists and shopping mode", os:"iOS 17+", setup:"Disposable list and items.", where:"Simulator or iPhone.", steps:["Create a test list and add an item.","Mark it done and reopen the list.","Try a template or shopping mode if available."], expected:"List changes persist and status is truthful after reopening."},
+      {id:"IP-08", platform:"iPhone", group:"Reminders and alarms", title:"Note reminders", os:"iOS 17+", setup:"Notifications permission; location permission for place reminders. Use a near-future time.", where:"Simulator for UI; physical iPhone recommended for delivery/location.", steps:["Set a time reminder; test repeat or place reminders if offered.","Check notification actions.","Toggle note text in notifications and inspect the privacy explanation."], expected:"Permission denial is explained; reminders and actions match their recorded outcome."},
+      {id:"IP-09", platform:"iPhone", group:"Voice and connected services", title:"Voice conversation", os:"iOS 17+", setup:"Configured voice provider/server, network, microphone permission.", where:"Physical iPhone for real audio; simulator for some UI states.", steps:["Start a conversation and check the listening state and audio.","Speak a harmless test request; stop the conversation.","Open transcript/result if offered; repeat for each provider selectable in this build."], expected:"Listening reflects the real session; permission or provider failure is visible and recoverable."},
+      {id:"IP-10", platform:"iPhone", group:"Voice and connected services", title:"Voice actions and learning", os:"iOS 17+", setup:"Voice provider; relevant consent and learning settings.", where:"Simulator for UI; physical iPhone for voice. Use only reversible test actions.", steps:["Request a harmless action using test data.","Check that confirmation appears where required.","Verify the app’s receipt before treating the action as complete; inspect save suggestions/learning only if enabled."], expected:"No success is claimed before a confirmed result. No real account changes or messages."},
+      {id:"IP-11", platform:"iPhone", group:"Reminders and alarms", title:"AlarmKit alarm UI", os:"iOS 26+ per source availability guard", setup:"Alarm authorization; set a short test alarm.", where:"Simulator may cover some UI; physical iPhone needed to verify real ringing/system behavior.", steps:["Request a short test alarm.","Confirm the alarm appears in the system alarm experience.","Snooze, stop, then verify cancellation/list status."], expected:"System alarm, snooze, stop, and app status reflect the actual AlarmKit result."},
+      {id:"IP-12", platform:"iPhone", group:"Dynamic Island and Live Activities", title:"Voice Live Activity", os:"iOS 17+ Live Activities; Dynamic Island requires a compatible iPhone", setup:"Live Activities enabled; working voice provider.", where:"Simulator only if profile supports it; physical compatible iPhone recommended.", steps:["Start a voice session.","Inspect Lock Screen Live Activity and Dynamic Island if present.","Stop the session and confirm the activity ends."], expected:"The voice activity reflects the current session and does not remain stale after stop."},
+      {id:"IP-13", platform:"iPhone", group:"Dynamic Island and Live Activities", title:"Alarm snooze countdown", os:"iOS 26+ and compatible device", setup:"Run IP-11 and snooze the alarm.", where:"Physical compatible iPhone recommended.", steps:["Snooze the test alarm.","Inspect the system alarm presentation and any countdown Live Activity separately from voice."], expected:"Snooze countdown corresponds to the alarm; it is not confused with the voice activity."},
+      {id:"IP-14", platform:"iPhone", group:"Dynamic Island and Live Activities", title:"Focus, breathing, and read-aloud activities", os:"iOS 17+ Live Activities; device support varies", setup:"Start each tool that is available in this build.", where:"Simulator or iPhone; device verification recommended.", steps:["Start Focus, breathing, or read-aloud one at a time.","Inspect Lock Screen activity and available controls.","End each activity and check it is removed."], expected:"Each activity and its controls match the running tool and end correctly."},
+      {id:"IP-15", platform:"iPhone", group:"Notifications and widgets", title:"Scheduled check-ins and birthdays", os:"iOS 17+", setup:"Notifications permission; Contacts access and selected test contact for birthdays.", where:"Simulator or iPhone; use test contacts and near-future schedules.", steps:["Schedule an enabled morning/evening/weekly/tidy-up or birthday notification.","Tap the delivered notification.","Confirm it opens the expected screen without applying a change unexpectedly."], expected:"Notification destination and content are correct; permission denial is explained."},
+      {id:"IP-16", platform:"iPhone", group:"Notifications and widgets", title:"Home/Lock Screen widgets and controls", os:"iOS 17+; some controls require iOS 18+", setup:"Add available widgets/controls from iOS galleries; App Group signing may be needed.", where:"Simulator or iPhone.", steps:["Add each available DODDY widget/control.","Check displayed data and try one action.","Turn off widget content in DODDY settings and verify the resulting surface."], expected:"Surfaces show allowed current data and actions have truthful outcomes."},
+      {id:"IP-17", platform:"iPhone", group:"System integrations", title:"Shortcuts, Siri, and App Intents", os:"iOS 17+; availability varies by intent", setup:"Siri/Shortcuts setup as needed.", where:"Physical iPhone recommended for Siri; simulator may test Shortcuts UI.", steps:["Inspect DODDY’s available Shortcuts.","Invoke a safe find or note action using test data.","Check spoken/displayed output and whether save requires explicit action."], expected:"Only available intents are advertised; the result matches the stored data."},
+      {id:"IP-18", platform:"iPhone", group:"System integrations", title:"Back Tap setup and trigger", os:"Supported iPhone with Back Tap in iOS Accessibility settings", setup:"Manually assign the suggested Shortcut; DODDY cannot configure or read Back Tap state.", where:"Physical iPhone required.", steps:["Follow DODDY’s setup guide and manually assign the Shortcut in Accessibility settings.","Trigger with Double or Triple Back Tap.","Confirm which app action opened; distinguish gesture launch from manually running the Shortcut."], expected:"Back Tap reaches the selected action. A manual Shortcut run alone is not proof."},
+      {id:"IP-19", platform:"iPhone", group:"System integrations", title:"Share Sheet and Spotlight", os:"iOS 17+", setup:"App Group/extension configuration for Share Sheet; test text only.", where:"Simulator or iPhone.", steps:["Share harmless text to DODDY.","Confirm it opens capture and does not save until Save is tapped.","Search for a test note in Spotlight if indexing is enabled."], expected:"Shared text remains a draft until explicit save; Spotlight result opens the correct note."},
+      {id:"IP-20", platform:"iPhone", group:"Capture and utilities", title:"Photo and voice memo capture", os:"iOS 17+", setup:"Photo/camera or microphone permission depending on feature.", where:"Physical iPhone recommended; some UI can run in simulator.", steps:["Try a test image’s text-reading flow.","Record a short voice memo and inspect its note/transcription.","Remove only test captures afterward."], expected:"Permission denial is handled; captured content and transcription match the input."},
+      {id:"IP-21", platform:"iPhone", group:"Capture and utilities", title:"Translation and language selection", os:"iOS 17+", setup:"Service requirements vary; translations in the repo are noted as machine-translated drafts.", where:"Simulator or iPhone; native-speaker review is separate.", steps:["Translate a short harmless phrase.","Change app language and inspect Home, settings, and the same flow.","Restart if needed and check whether language choice persists."], expected:"Language choice is applied consistently; missing translations and clipping are recorded."},
+      {id:"IP-22", platform:"iPhone", group:"Capture and utilities", title:"Import and encrypted backup", os:"iOS 17+", setup:"Files access; use a disposable test dataset and backup.", where:"Simulator or iPhone.", steps:["Import a small test file.","Export an encrypted backup and inspect that a file is produced.","Test restore only against a disposable dataset, never a personal store."], expected:"Import/export reports actual completion; restore does not overwrite personal data."},
+      {id:"IP-23", platform:"iPhone", group:"Privacy and settings", title:"Privacy, consent, and app lock", os:"iOS 17+", setup:"Face ID/lock settings for lock test; toggle one consent option.", where:"Simulator covers some UI; physical iPhone for biometric behavior.", steps:["Open “What leaves this iPhone”.", "Change one data-sharing consent and confirm the explanation updates.","Lock/unlock if enabled; check private content is covered."], expected:"Disclosure matches active settings and sensitive content is protected at the lock screen."},
+      {id:"IP-24", platform:"iPhone", group:"Privacy and settings", title:"Appearance, profile, and permissions", os:"iOS 17+", setup:"Some rows depend on services, paired devices, or OS permissions.", where:"Simulator or iPhone.", steps:["Review appearance, voice/personality, notification, learning, privacy, and content visibility settings.","Change a reversible setting and relaunch.","Deny one relevant permission and check the recovery explanation."], expected:"Settings persist and unavailable capabilities are described accurately."},
+      {id:"IP-25", platform:"iPhone", group:"Resilience and accessibility", title:"Accessibility and appearance pass", os:"iOS 17+", setup:"VoiceOver, largest practical Dynamic Type, Reduce Motion, light/dark.", where:"Simulator can cover settings; physical iPhone recommended for VoiceOver and display behavior.", steps:["Repeat capture and list flows with VoiceOver.","Repeat at accessibility text sizes and check labels, focus order, clipping, and reachability.","Repeat with Reduce Motion and both appearances."], expected:"Core tasks remain understandable and operable; motion and text remain usable."},
+      {id:"IP-26", platform:"iPhone", group:"Resilience and accessibility", title:"Offline and recovery", os:"iOS 17+", setup:"Disposable test data; disable network temporarily.", where:"Simulator or iPhone; configured service required for online-flow checks.", steps:["Disable network and try a local note/list flow.","Try one configured online flow and record its error behavior.","Restore network and retry once."], expected:"Local data remains available where intended; failed online work is not reported as successful."},
+      {id:"IPAD-01", platform:"iPad", group:"iPad", title:"iPad sidebar and wide layout", os:"iPadOS 17+", setup:"iPad app build; sidebar is documented as recent work with limited device evidence.", where:"iPad Simulator or physical iPad.", steps:["Open the app in portrait and landscape.","Select Home, Memories, Settings, and a list from the sidebar.","Collapse/reopen the sidebar and inspect content width."], expected:"Selection and detail navigation remain understandable at iPad sizes."},
+      {id:"WA-01", platform:"Apple Watch", group:"Apple Watch", title:"Snapshot and privacy toggle", os:"watchOS 10+", setup:"Paired iPhone and Watch; app installed on both.", where:"Paired simulators or physical pair; wrist-down behavior needs device.", steps:["Open DODDY on Watch and inspect snapshot timestamp.","Turn off Watch content on iPhone.","Confirm note/list content disappears on Watch."], expected:"Watch shows the phone’s snapshot and respects the content toggle."},
+      {id:"WA-02", platform:"Apple Watch", group:"Apple Watch", title:"Watch note and list actions", os:"watchOS 10+", setup:"Paired devices and disposable text/list.", where:"Paired simulators or physical pair; physical connectivity test recommended.", steps:["Add a test note or list item and tick a test item.","Check the phone reply before accepting success.","Repeat with iPhone unreachable and inspect the error."], expected:"Watch reports success only after phone confirmation and explains unreachable/unanswered states."},
+      {id:"WA-03", platform:"Apple Watch", group:"Apple Watch", title:"Complications and New Note", os:"watchOS 10+; complication support varies by watch face", setup:"Add DODDY complication or Smart Stack surface.", where:"Watch simulator and physical Watch.", steps:["Inspect available complication content.","Open New Note and verify text is not saved until you submit it.","Check privacy while wrist is down on device."], expected:"Complications avoid note text; New Note opens the expected entry flow."},
+      {id:"MAC-01", platform:"Mac", group:"Mac", title:"Build and menu-bar capture", os:"macOS 14+", setup:"Mac with Xcode and Mac target signing/App Group configuration.", where:"Mac required; repository notes say target has not been compiled.", steps:["Build and launch Mac target.","Open menu-bar capture, save a disposable note, cancel a draft, and reopen.","Check note remains local to this Mac."], expected:"Save status follows database read-back; app clearly discloses no iPhone sync."},
+      {id:"MAC-02", platform:"Mac", group:"Mac", title:"Notes window, palette, widget", os:"macOS 14+", setup:"Mac with Xcode; App Group signing for widget count.", where:"Mac required.", steps:["Open the larger notes window and palette.","Check keyboard shortcuts and recent notes.","Inspect widget count if signing/configuration enables it."], expected:"Window and palette remain usable; widget shows count only; local-only storage is clear."}
+    ];
+
+    const STORAGE_KEY = "doddy-test-tracker-v1";
+    const state = loadState();
+    let currentId = state.currentId && tests.some(t => t.id === state.currentId) ? state.currentId : "IP-01";
+    let dirty = false;
+    const byId = id => tests.find(t => t.id === id);
+    const resultFor = id => state.results[id] || {status:"untested", observed:"", device:"", evidence:""};
+    const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    function loadState() {
+      try { return {...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"), results: JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}").results || {}}; }
+      catch { return {results:{}, currentId:"IP-01"}; }
+    }
+    function persist() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({results:state.results, currentId}));
+        document.getElementById("savedMessage").textContent = "Saved in this browser.";
+      } catch { const el=document.getElementById("savedMessage"); if(el) el.textContent="Could not save in browser storage. Export your results."; }
+      updateProgress(); renderList();
+    }
+    function updateProgress() {
+      const counts = {pass:0, fail:0, blocked:0, untested:0};
+      tests.forEach(t => counts[resultFor(t.id).status] = (counts[resultFor(t.id).status] || 0) + 1);
+      const recorded = tests.length-counts.untested;
+      document.getElementById("progress").max = tests.length;
+      document.getElementById("progress").value = recorded;
+      document.getElementById("progressLabel").textContent = `${recorded} of ${tests.length} tests recorded`;
+      document.getElementById("statusCounts").textContent = `${counts.pass} pass · ${counts.fail} fail · ${counts.blocked} blocked`;
+    }
+    function renderList() {
+      const platform = document.getElementById("platformFilter").value;
+      const filter = document.getElementById("stateFilter").value;
+      const query = document.getElementById("search").value.trim().toLowerCase();
+      const visible = tests.filter(t => {
+        const res=resultFor(t.id);
+        return (platform==="all" || t.platform.split(" / ").includes(platform)) &&
+          (filter==="all" || (filter==="untested" ? res.status==="untested" : res.status===filter)) &&
+          (!query || `${t.id} ${t.title} ${t.group} ${t.platform}`.toLowerCase().includes(query));
+      });
+      const root=document.getElementById("testList");
+      if(!visible.length){root.innerHTML='<div class="empty">No tests match these filters.</div>';return;}
+      let lastGroup=""; let html="";
+      visible.forEach(t=>{
+        if(t.group!==lastGroup){html+=`<div class="group-label">${escapeHTML(t.group)}</div>`;lastGroup=t.group;}
+        const status=resultFor(t.id).status;
+        const marker={pass:"✓",fail:"!",blocked:"B",untested:"·"}[status];
+        html+=`<button class="test-row ${t.id===currentId?"selected":""}" data-id="${t.id}" aria-current="${t.id===currentId?"true":"false"}"><span class="row-id">${t.id}</span><span class="row-title">${escapeHTML(t.title)}</span><span class="state-dot ${status}" aria-label="${status}">${marker}</span></button>`;
+      });
+      root.innerHTML=html;
+      root.querySelectorAll(".test-row").forEach(button=>button.addEventListener("click",()=>selectTest(button.dataset.id)));
+    }
+    function renderDetail() {
+      const t=byId(currentId); if(!t)return;
+      const r=resultFor(t.id);
+      document.getElementById("detail").innerHTML=`
+        <div class="eyebrow">${escapeHTML(t.platform)} · ${escapeHTML(t.id)}</div>
+        <h2 class="detail-title">${escapeHTML(t.title)}</h2>
+        <p class="intro">${escapeHTML(t.group)}. This test is not passed until you record what you observed.</p>
+        <dl class="meta-grid"><div class="meta"><dt>OS support</dt><dd>${escapeHTML(t.os)}</dd></div><div class="meta"><dt>Setup</dt><dd>${escapeHTML(t.setup)}</dd></div><div class="meta"><dt>Where to test</dt><dd>${escapeHTML(t.where)}</dd></div></dl>
+        <h3>Steps</h3><ol class="steps">${t.steps.map(s=>`<li>${escapeHTML(s)}</li>`).join("")}</ol>
+        <div class="expected"><strong>Expected</strong>${escapeHTML(t.expected)}</div>
+        <div class="result-head"><h3>Record your observation</h3><p class="intro">Use test data only. Don’t paste note contents, passwords, or private contact details.</p></div>
+        <div class="status-options" role="radiogroup" aria-label="Test result">
+          ${[["pass","PASS"],["fail","FAIL"],["blocked","BLOCKED"],["untested","NOT RUN"]].map(([value,label])=>`<label class="status-choice ${value}"><input type="radio" name="testStatus" value="${value}" ${r.status===value?"checked":""}><span>${label}</span></label>`).join("")}
+        </div>
+        <div class="form-grid"><label class="field">Device and OS<input id="deviceField" type="text" placeholder="e.g. iPhone 16 · iOS 26.0" value="${escapeHTML(r.device)}"></label><label class="field">Evidence reference (optional)<input id="evidenceField" type="text" placeholder="Screenshot filename or safe file path" value="${escapeHTML(r.evidence)}"></label></div>
+        <label class="field">What happened<textarea id="observedField" placeholder="Record what you saw, including any difference from expected.">${escapeHTML(r.observed)}</textarea></label>
+        <div class="actions"><button class="button primary" id="saveResult">Save result</button><button class="button" id="nextTest">Next test →</button></div>
+        <div class="saved" id="savedMessage" role="status"></div>`;
+      document.querySelectorAll('input[name="testStatus"]').forEach(el=>el.addEventListener("change",()=>dirty=true));
+      ["deviceField","evidenceField","observedField"].forEach(id=>document.getElementById(id).addEventListener("input",()=>dirty=true));
+      document.getElementById("saveResult").addEventListener("click",saveCurrent);
+      document.getElementById("nextTest").addEventListener("click",nextTest);
+      renderList();
+    }
+    function saveCurrent() {
+      const status=document.querySelector('input[name="testStatus"]:checked')?.value || "untested";
+      state.results[currentId]={status, device:document.getElementById("deviceField").value.trim(), evidence:document.getElementById("evidenceField").value.trim(), observed:document.getElementById("observedField").value.trim(), updatedAt:new Date().toISOString()};
+      dirty=false; persist(); document.getElementById("savedMessage").textContent="Result saved in this browser.";
+    }
+    function selectTest(id) {
+      if(dirty && !confirm("You have unsaved test notes. Discard them and open another test?")) return;
+      currentId=id; state.currentId=id; dirty=false; persist(); renderDetail();
+      document.getElementById("detail").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth",block:"start"});
+    }
+    function nextTest() {
+      if(dirty && !confirm("You have unsaved test notes. Discard them and move to the next test?")) return;
+      const index=tests.findIndex(t=>t.id===currentId);
+      const next=tests.slice(index+1).find(t=>resultFor(t.id).status==="untested") || tests.slice(0,index).find(t=>resultFor(t.id).status==="untested");
+      if(!next){alert("No untested flows remain. You can review or repeat any test from the checklist.");return;}
+      selectTest(next.id);
+    }
+    function exportResults() {
+      const lines=["# DODDY build test results","",`Exported: ${new Date().toLocaleString()}`,"","Private test data is not included by design.",""];
+      let current="";
+      tests.forEach(t=>{
+        if(t.group!==current){current=t.group;lines.push(`## ${current}`,"");}
+        const r=resultFor(t.id); const marker={pass:"[x] PASS",fail:"[ ] FAIL",blocked:"[!] BLOCKED",untested:"[ ] NOT RUN"}[r.status];
+        lines.push(`- ${marker} **${t.id} · ${t.title}** (${t.platform}, ${t.os})`);
+        if(r.device) lines.push(`  - Device: ${r.device}`);
+        if(r.observed) lines.push(`  - Observed: ${r.observed.replace(/\n/g," ")}`);
+        if(r.evidence) lines.push(`  - Evidence: ${r.evidence}`);
+      });
+      const blob=new Blob([lines.join("\n")],{type:"text/markdown;charset=utf-8"});
+      const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="doddy-build-test-results.md";a.click();URL.revokeObjectURL(url);
+    }
+    document.getElementById("platformFilter").addEventListener("change",renderList);
+    document.getElementById("stateFilter").addEventListener("change",renderList);
+    document.getElementById("search").addEventListener("input",renderList);
+    document.getElementById("exportButton").addEventListener("click",exportResults);
+    document.getElementById("resetButton").addEventListener("click",()=>{
+      if(!confirm("Clear all saved results and notes from this browser? This cannot be undone."))return;
+      localStorage.removeItem(STORAGE_KEY);state.results={};currentId="IP-01";state.currentId=currentId;dirty=false;renderDetail();updateProgress();
+    });
+    renderList();renderDetail();updateProgress();
+  </script>
+</body>
+</html>

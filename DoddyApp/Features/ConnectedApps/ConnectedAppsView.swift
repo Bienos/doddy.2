@@ -1,24 +1,21 @@
 import DoddyCore
 import SwiftUI
 
-/// Builds the model from the development server settings. Without a server URL and a session
-/// token the screen says Connected Apps isn't set up; it never shows invented connections.
+/// Builds the model for Doddy's server. The address is whatever `DeviceSession.serverURL()` says, like
+/// every other client (ADR-720): this screen never reads the address typed in Settings itself. Without a
+/// server and a session token the screen says Connected Apps isn't set up; it never shows invented connections.
 struct ConnectedAppsScreen: View {
-    @AppStorage(PreferenceKey.connectedAppsServerURL) private var serverURL = ""
-
     var body: some View {
-        ConnectedAppsView(model: Self.makeModel(serverURL: serverURL))
-            .id(serverURL)
+        ConnectedAppsView(model: Self.makeModel())
     }
 
     @MainActor
-    static func makeModel(serverURL: String) -> ConnectedAppsModel {
-        let url = URL(string: serverURL.trimmingCharacters(in: .whitespaces))
-        let client = url.flatMap {
+    static func makeModel(server: URL? = DeviceSession.serverURL()) -> ConnectedAppsModel {
+        let client = server.flatMap {
             BackendConnectedAppsClient(baseURL: $0, boundToken: { KeychainSessionStore.read() }, transport: URLSessionTransport.shared)
         }
         // The token is used only with the server that issued it (`BoundSessionToken`).
-        let configured = client != nil && url.flatMap { KeychainSessionStore.read()?.token(for: $0) } != nil
+        let configured = client != nil && server.flatMap { KeychainSessionStore.read()?.token(for: $0) } != nil
         return ConnectedAppsModel(client: configured ? client : nil, authenticator: SystemWebAuthenticator())
     }
 }

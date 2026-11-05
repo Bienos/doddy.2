@@ -10,13 +10,29 @@
 -->
 <plist version="1.0">
 <dict>
-	<!-- Screens in English and Polish (ADR-223); iOS picks by the iPhone's language. -->
+	<!-- Export compliance (ADR-697, go-live checklist B9; owner, 2 Nov 2026: "Exempt: set it to NO").
+	     Doddy uses only standard encryption: HTTPS, and Apple's CryptoKit (AES-256-GCM) for the local
+	     backup file. With this key App Store Connect doesn't ask on every upload, so Xcode Cloud's
+	     TestFlight builds don't wait as "Missing Compliance". Change it if Doddy ever adds its own or
+	     non-standard encryption. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<!-- Screens in English and the languages with a table in l10n/ (ADR-223, ADR-458); iOS picks by
+	     the iPhone's language. tools/build_strings_catalog.py writes the array; don't edit it. -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
+		<string>de</string>
+		<string>es</string>
+		<string>fr</string>
+		<string>hr</string>
+		<string>it</string>
+		<string>ja</string>
 		<string>pl</string>
+		<string>pt-BR</string>
+		<string>zh-Hans</string>
 	</array>
 	<!-- Widgets' shared folder (ADR-219); only works when the build is signed with the App Group. -->
 	<key>DoddyAppGroup</key>
@@ -28,6 +44,14 @@
 	<string>$(DODDY_CLOUD_CONTAINER)</string>
 	<key>CKSharingSupported</key>
 	<true/>
+	<!-- One Doddy window at a time (ADR-436). iPad would otherwise allow several windows, each
+	     bound to the same conversation router, so two voice screens could open at once. SwiftUI
+	     supplies the scene itself; the app delegate still picks the share-accept scene delegate. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
@@ -36,10 +60,28 @@
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<!-- Motion v2 (owner answer to Q9): lets Doddy's display link run at 120 Hz on ProMotion
+	     iPhones while he moves, so he keeps up with scrolling and the keyboard. The link runs
+	     only while he moves, never while he is still. -->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<!-- Alarms (ADR-260): AlarmKit, iOS 26 and later only. Kept here rather than as an
 	     INFOPLIST_KEY_ build setting, which older Xcode versions don't know. -->
 	<key>NSAlarmKitUsageDescription</key>
-	<string>Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.</string>
+	<string>Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.</string>
+	<!-- Apple Health (ADR-693). Doddy only READS Health (NSHealthShareUsageDescription, in project.yml), but
+	     HealthReader asks through requestAuthorization(toShare:read:), and App Store Connect rejects a build
+	     that references that call without this text. The text says what is true: nothing is written. Kept in
+	     this file, not as an INFOPLIST_KEY_ build setting, so the merged Info.plist is certain to carry it.
+	     scripts/check_forbidden_capabilities.sh still fails on any write, save or delete. -->
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.</string>
+	<!-- ADR-563: Doddy's own server (web search, Claude, Gmail and the other online accounts).
+	     Built in, so the app works without typing an address in Settings. Only a Debug build lets
+	     Settings' development field override it (ADR-720); a shipped build always uses this address,
+	     because the device ID the phone signs in with goes there. -->
+	<key>DoddyServerURL</key>
+	<string>https://doddy-yaci.onrender.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

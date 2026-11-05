@@ -55,3 +55,13 @@ Merged from `docs/trust/templates/AGENTS.md`; the rules above still apply. Mappi
 State repository reality (implemented / mock / missing / unsupported); name the policy IDs (DOD-xx, UX-xx) a slice covers; propose types, state transitions and tests before editing; never weaken policy or change Doddy's identity to make tests pass.
 
 **Priority:** correctness > informed user control > respectful tone > optional comedy. Fictional on-screen clumsiness is fine; real task incompetence is not.
+
+---
+
+# Where to start (2026-10-11, ADR-457)
+**Start here:** `STATUS.md`, then `docs/platforms/<platform>.md`. The platforms build from separate specs (`project.yml`, `project-iphone.yml`; `project-watch.yml` and `project-mac.yml` are paused, ADR-572: do not build or change Watch or Mac code unless the owner re-enables them).
+
+---
+
+# Design (owner, 2026-10-20, ADR-548)
+Use only the new design: what the app shows now (Home as the calm "I'm here" screen, ADR-545, and the memory-journey screens), `design/dynamic-island-v4` for the island, and `design/website-what-can-doddy-do` plus the chosen `design/website-homepage-vision/g-sort-thursday.html` for the site. The old design folders were deleted: `design/interface-v1.2` (Pocket Notebook), `VISUAL_REVIEW/`, `design/ios-ready-asset-catalog/`, `design/landing-film-mockup/` and the seven rejected homepage options. Where the text above names them it is history; a deleted file can be read with `git show f7eedf0:<path>`. Colour and type tokens live in `DoddyDesignTokens` and `Theme`. This replaces the "Primary current visual reference is Pocket Notebook" line near the top.

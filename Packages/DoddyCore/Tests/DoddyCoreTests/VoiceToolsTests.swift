@@ -261,6 +261,20 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(clarification.kind, .unreadable)
     }
 
+    /// Lists of strings (priorities, leaflet items, chains) are taken whole or refused: nothing in
+    /// them is dropped without the agent hearing it.
+    func testAStringListIsTakenWholeOrRefused() {
+        func list(_ json: String) -> Arguments.StringList { Arguments(Data(json.utf8)).stringList("k") }
+        XCTAssertEqual(list(#"{"k":["a"," b ",""]}"#), .list(["a", " b ", ""]), "as sent; the tool decides about blanks")
+        XCTAssertEqual(list(#"{"k":"a"}"#), .list(["a"]), "one string is a list of one")
+        XCTAssertEqual(list(#"{"k":[]}"#), .list([]))
+        XCTAssertEqual(list(#"{}"#), .absent)
+        XCTAssertEqual(list(#"{"k":null}"#), .absent)
+        XCTAssertEqual(list(#"{"k":["a",1]}"#), .notStrings)
+        XCTAssertEqual(list(#"{"k":{"a":"b"}}"#), .notStrings)
+        XCTAssertEqual(list(#"{"k":7}"#), .notStrings)
+    }
+
     func testLookupContactNeedsName() {
         XCTAssertEqual(parse("lookup_contact", #"{"name":"Marta"}"#), .lookupContact(name: "Marta"))
         XCTAssertEqual(parse("lookup_contact", #"{}"#), .invalid(name: "lookup_contact", reason: "missing name"))
@@ -363,16 +377,25 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.serving("open_map"), .maps)
         XCTAssertEqual(VoiceConnection.serving("run_shortcut"), .shortcuts)
         XCTAssertEqual(VoiceConnection.serving("draft_message"), .messages)
+        XCTAssertEqual(VoiceConnection.serving("draft_blik_transfer"), .blik)
+        XCTAssertEqual(VoiceConnection.serving("make_presentation"), .presentations)
+        XCTAssertEqual(VoiceConnection.serving("read_steps"), .steps)
+        XCTAssertEqual(VoiceConnection.serving("find_photos"), .photos)
+        XCTAssertEqual(VoiceConnection.serving("open_camera"), .camera)
         XCTAssertNil(VoiceConnection.serving("save_memory"))
         XCTAssertEqual(VoiceConnection.calendar.preferenceKey, "voiceConnection.calendar")
-        XCTAssertEqual(VoiceConnection.allCases.count, 7)
+        XCTAssertEqual(VoiceConnection.blik.preferenceKey, "voiceConnection.blik")
+        // ADR-567 and ADR-568 added Presentations and Steps; ADR-569 Photos and Camera.
+        XCTAssertEqual(VoiceConnection.allCases.count, 12)
     }
 
     // MARK: Replies
 
     func testReplyPrefixesMatchTheAgentPrompt() {
-        XCTAssertTrue(VoiceToolReply.notConnected(.calendar).hasPrefix("Calendar isn't connected."))
-        XCTAssertTrue(VoiceToolReply.notConnected(.calendar).contains("Settings, Connections"))
+        // ADR-578: the card on screen asks; the agent says one line and doesn't send the user to Settings.
+        XCTAssertTrue(VoiceToolReply.notConnected(.calendar).hasPrefix("Calendar isn't connected yet."))
+        XCTAssertTrue(VoiceToolReply.notConnected(.calendar).contains("Allow it on screen and I'll carry on."))
+        XCTAssertFalse(VoiceToolReply.notConnected(.calendar).contains("Settings, Connections"))
 
         let event = CalendarEventDraft(title: "Dentist", start: date(2026, 10, 12, 15, 0), end: date(2026, 10, 12, 16, 0), allDay: false, location: nil, notes: nil)
         let added = VoiceToolReply.eventAdded(event, calendar: calendar)

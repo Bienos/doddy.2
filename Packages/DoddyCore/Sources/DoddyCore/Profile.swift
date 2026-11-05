@@ -1,13 +1,17 @@
 import Foundation
 
-// Reviewed personal profile (design/interface-v1.2/docs/ONBOARDING-AND-PERSONAL-HOME.md).
+// Reviewed personal profile (design/interface-v1.2/docs/ONBOARDING-AND-PERSONAL-HOME.md (deleted 20 Oct 2026, ADR-548; see git history)).
 // Answers are a transient draft until the user reviews them and taps Save; only then are
 // the approved fields stored. Nothing here is inferred, and the profile is separate from
 // saved memories.
 
-/// The six optional fields the first introduction may ask about. Nothing else is stored.
+/// The six optional fields of "About you". Nothing else is stored.
 public enum ProfileKey: String, CaseIterable, Codable, Sendable {
     case name, help, style, language, humor, context
+
+    /// The optional first conversation asks only what to call the user and how Doddy should
+    /// respond. Other profile details remain editable in Settings → About you.
+    public static let introductionQuestions: [ProfileKey] = [.name, .style]
 
     /// Maximum length in Unicode scalars (same counting rule as memories and SQLite `length`).
     public var maxLength: Int {
@@ -118,7 +122,7 @@ public enum ProfileChoices {
         switch key {
         case .name, .context: []
         case .help: ["Keep useful details", "Help me follow through", "Explain things clearly", "A bit of everything"]
-        case .style: ["Short and clear", "More detail", "Talk it through"]
+        case .style: ["Upbeat", "Calm", "Straight to it", "Let's see"]
         case .language: ["Follow my language", "English", "Polski"]
         case .humor: ["A little, when it fits", "Just the useful bit"]
         }

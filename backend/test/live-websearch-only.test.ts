@@ -54,14 +54,14 @@ before(async () => {
       { status: 200 },
     );
   }) as typeof fetch;
-  const { server, store } = buildApp(config, { webSearch: new MonidWebSearchProvider(config.monid!, fakeMonid) });
+  const { server, store } = await buildApp(config, { webSearch: new MonidWebSearchProvider(config.monid!, fakeMonid) });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   token = new SignedSessionVerifier(Buffer.from(KEY, "base64")).mint("00000000-0000-4000-8000-0000000000aa", new Date(), 3600);
-  close = () => {
+  close = async () => {
     server.close();
-    store.close();
+    void (await store.close());
   };
 });
 after(() => close());
@@ -90,7 +90,13 @@ test("accounts are not set up; web search is ready and runs against Monid", asyn
   assert.equal((await call("POST", "/v1/tools/gmail/connect", {})).status, 503);
 
   assert.equal((await call("PUT", "/v1/tools/switch", { tool: "web_search", enabled: true })).status, 200);
-  const search = await call("POST", "/v1/tools/run", { tool: "web_search", arguments: { query: "cafe hours" }, timeZone: "Europe/Warsaw" });
+  // ASK-01: without the user's yes nothing reaches Monid; with it, exactly one search.
+  const unasked = await call("POST", "/v1/tools/run", { tool: "web_search", arguments: { query: "cafe hours" }, timeZone: "Europe/Warsaw" });
+  assert.equal(unasked.status, 403);
+  assert.deepEqual(monidCalls, []);
+  const asked = await call("POST", "/v1/tools/prepare", { tool: "web_search", arguments: { query: "cafe hours" } });
+  assert.equal(asked.status, 200);
+  const search = await call("POST", "/v1/tools/run", { tool: "web_search", arguments: { query: "cafe hours" }, timeZone: "Europe/Warsaw", approvalId: asked.body.approvalId });
   assert.equal(search.status, 200);
   assert.equal(search.body.mode, "live", "live results are never labelled as demo");
   assert.match(search.body.text, /Real-looking result/);

@@ -1,0 +1,91 @@
+# XcodeGen spec for Doddy on the Mac (ADR-435): the menu bar app and its desktop widget, on their
+# own. Nothing from the iPhone app is in this project: only the DoddyCore package (the same note
+# store and rules). Generate on a Mac with:  make project-mac   -> DoddyMac.xcodeproj
+# The iPhone + Watch project is project.yml; see docs/platforms/README.md.
+name: DoddyMac
+options:
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+packages:
+  DoddyCore:
+    path: Packages/DoddyCore
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    CODE_SIGN_STYLE: Automatic
+    # No signing team is committed. Select your own team in Xcode.
+    DEVELOPMENT_TEAM: ""
+    # Same base identifier as project.yml (scripts/check_platform_specs.py checks it).
+    DODDY_APP_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
+    # The Mac menu bar app and its desktop widget (ADR-435, ADR-439) share an App Group for the
+    # note count only; on by default, like the iPhone's (choose the team in Xcode). To build
+    # with "Sign to Run Locally" and no team, set these two to Config/DoddyMac.entitlements and
+    # Config/DoddyMacWidgets.entitlements: the widget then shows no count.
+    DODDY_MAC_ENTITLEMENTS: Config/DoddyMac-AppGroup.entitlements
+    DODDY_MAC_WIDGET_ENTITLEMENTS: Config/DoddyMacWidgets-AppGroup.entitlements
+targets:
+  DoddyMac:
+    # Doddy in the Mac menu bar (ADR-435), the first Mac prototype from the owner's Watch, iPad
+    # and Mac review. Type a note, Save or Cancel; saved in its own SQLite database on that Mac
+    # (sandbox container), read back before "Saved". No network, no microphone, no sync with the
+    # iPhone. Not embedded in or needed by the iPhone app; build it with the DoddyMac scheme.
+    type: application
+    platform: macOS
+    sources:
+      - path: DoddyMac
+        # Agent notes for this folder, not app content.
+        excludes: ["CLAUDE.md"]
+      - path: DoddyMacWidgets/MacGroupFolder.swift
+    dependencies:
+      # The desktop widget with the note count (ADR-439), embedded in the app.
+      - target: DoddyMacWidgets
+      - package: DoddyCore
+        product: DoddyCore
+      - package: DoddyCore
+        product: DoddyPersistence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac
+        PRODUCT_NAME: Doddy
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_MAC_ENTITLEMENTS)
+        INFOPLIST_FILE: Config/DoddyMac-Info.plist
+        ENABLE_HARDENED_RUNTIME: YES
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        # Menu bar only: no Dock icon, no main window.
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+  DoddyMacWidgets:
+    # The Mac desktop widget (ADR-439): how many notes are saved on that Mac, from the count file
+    # the menu bar app writes in their App Group. A number and a time, never a note's words. No
+    # database, no network.
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: DoddyMacWidgets
+        # Agent notes for this folder, not app content.
+        excludes: ["CLAUDE.md"]
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac.widgets
+        PRODUCT_NAME: DoddyMacWidgets
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_MAC_WIDGET_ENTITLEMENTS)
+        ENABLE_HARDENED_RUNTIME: YES
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyMacWidgets-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        SKIP_INSTALL: YES
+schemes:
+  DoddyMac:
+    build:
+      targets:
+        DoddyMac: all

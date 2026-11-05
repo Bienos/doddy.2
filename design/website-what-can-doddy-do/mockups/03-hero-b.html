@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>What can Doddy do? Direction B, Doddy's little world</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <!-- Everyday objects the pack has no prop for, drawn as inline line art in the same ink, cream and orange
+       as the pack's props sheet (010_doddy_props_v01): alarm clock, suitcase, calendar, shopping bag, speech bubble. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="o-alarm" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M32 100 L24 112 M88 100 L96 112"/>
+        <path d="M36 24 L24 12 M84 24 L96 12"/>
+        <circle cx="22" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="98" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="60" cy="64" r="40" fill="#FCF4E4"/>
+        <path d="M60 42 V64 L76 74"/>
+      </g>
+      <path d="M12 36 L5 30 M9 50 L1 48 M12 64 L5 70" stroke="#FC6800" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="o-suitcase" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M44 34 V22 a6 6 0 0 1 6-6 h20 a6 6 0 0 1 6 6 v12" fill="none"/>
+        <rect x="14" y="34" width="92" height="68" rx="12" fill="#FCF4E4"/>
+        <rect x="14" y="56" width="92" height="16" fill="#FC6800" stroke="none"/>
+        <path d="M14 56 H106 M14 72 H106" fill="none"/>
+        <rect x="34" y="50" width="12" height="28" rx="3" fill="#FCF4E4"/>
+        <rect x="74" y="50" width="12" height="28" rx="3" fill="#FCF4E4"/>
+        <path d="M30 102 V110 M90 102 V110" fill="none"/>
+      </g>
+    </symbol>
+    <symbol id="o-calendar" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="14" y="24" width="92" height="84" rx="12" fill="#FCF4E4"/>
+        <path d="M14 36 a12 12 0 0 1 12-12 h68 a12 12 0 0 1 12 12 v12 H14z" fill="#FC6800"/>
+        <path d="M36 14 V34 M84 14 V34" fill="none"/>
+      </g>
+      <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
+      <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
+    </symbol>
+    <symbol id="o-bag" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M40 42 V30 a20 20 0 0 1 40 0 v12" fill="none"/>
+        <path d="M22 42 H98 L104 102 a8 8 0 0 1-8 8 H24 a8 8 0 0 1-8-8 Z" fill="#FCF4E4"/>
+      </g>
+      <path d="M60 94 c-11-8-18-15-18-22 a9 9 0 0 1 18-4 a9 9 0 0 1 18 4 c0 7-7 14-18 22z" fill="#FC6800" stroke="#080808" stroke-width="5" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="o-bubble" viewBox="0 0 120 120">
+      <path d="M22 20 h76 a12 12 0 0 1 12 12 v44 a12 12 0 0 1-12 12 H58 L34 108 L40 88 H22 a12 12 0 0 1-12-12 V32 a12 12 0 0 1 12-12z" fill="#FCF4E4" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+      <g fill="#FC6800"><circle cx="40" cy="54" r="7"/><circle cx="60" cy="54" r="7"/><circle cx="80" cy="54" r="7"/></g>
+    </symbol>
+    <symbol id="o-pin" viewBox="0 0 120 120">
+      <path d="M60 110 C40 84 24 66 24 46 a36 36 0 0 1 72 0 c0 20-16 38-36 64z" fill="#FC6800" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+      <circle cx="60" cy="46" r="13" fill="#FCF4E4" stroke="#080808" stroke-width="7"/>
+    </symbol>
+  </svg>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="/" aria-label="Doddy home">Doddy</a>
+      <nav aria-label="Sections">
+        <ul class="nav-links">
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/what-can-doddy-do/" aria-current="page">What can Doddy do?</a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/#play">Take a shot</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+        </ul>
+      </nav>
+      <button class="menu-button" type="button" aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <a class="button small" href="/#join">Join early access</a>
+      <div class="menu-sheet" aria-label="Menu">
+        <ul>
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/what-can-doddy-do/" class="menu-new" aria-current="page">What can Doddy do? <img src="../assets/faces/smile.png" width="36" height="36" alt=""></a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/#play">Take a shot</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+        </ul>
+        <a class="button" href="/#join">Join early access</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="wcd-hero loaded" aria-labelledby="wcd-title">
+      <div class="wrap">
+        <div class="world-intro">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Doddy's little world</p>
+          <h1 id="wcd-title" class="display" style="max-width: 14ch">What can Doddy do? <span class="hand-word">Quite a lot, actually.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></span></h1>
+          <p class="lede" style="max-width: 36rem">Ten random moments from an ordinary day, and what a mate in your pocket does with them. Pick a place. Doddy walks there.</p>
+          <div class="actions">
+            <a class="button" href="#world">Explore the world</a>
+            <a class="text-link" href="/#join">Join early access</a>
+          </div>
+        </div>
+
+        <div class="world" id="world" aria-label="An illustrated neighbourhood. Each place opens one everyday situation.">
+          <span class="sun" aria-hidden="true"></span>
+          <svg class="roads" viewBox="0 0 1600 1060" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M190 300 C 260 420, 330 520, 470 560 S 700 560, 800 520 S 1000 420, 1120 330"/>
+            <path d="M470 560 C 420 680, 360 760, 330 860"/>
+            <path d="M800 520 C 840 640, 900 760, 1000 820 S 1200 820, 1260 760"/>
+            <path d="M1120 330 C 1220 330, 1320 330, 1420 300"/>
+            <path d="M600 210 C 640 320, 700 420, 800 520"/>
+            <path d="M1000 820 C 980 880, 960 930, 940 980"/>
+          </svg>
+
+          <a class="place" href="#late" style="left: 3%; top: 4%; rotate: -2deg">
+            <img class="pic" src="../assets/scenery/bedroom.jpg" alt="">
+            <span class="name">Home, 08:45</span><span class="what">You're late. Again.</span>
+            <span class="badge"><svg><use href="#o-alarm"/></svg></span>
+          </a>
+          <a class="place" href="#jacket" style="left: 28%; top: 3%; rotate: 2deg">
+            <img class="pic" src="../assets/scenery/kitchen.jpg" alt="">
+            <span class="name">The kitchen</span><span class="what">Jacket or no jacket?</span>
+            <span class="badge"><img src="../assets/props/coffee.png" alt=""></span>
+          </a>
+          <a class="place" href="#text" style="left: 54%; top: 5%; rotate: -1deg">
+            <img class="pic" src="../assets/scenery/train_platform.jpg" alt="">
+            <span class="name">The station</span><span class="what">The awkward text</span>
+            <span class="badge"><img src="../assets/props/phone.png" alt=""></span>
+          </a>
+          <a class="place" href="#abroad" style="left: 79%; top: 4%; rotate: 2deg">
+            <img class="pic" src="../assets/scenery/paris.jpg" alt="">
+            <span class="name">Somewhere abroad</span><span class="what">Lost in translation</span>
+            <span class="badge"><svg><use href="#o-suitcase"/></svg></span>
+          </a>
+          <a class="place" href="#brain" style="left: 3%; top: 36%; rotate: 2deg">
+            <img class="pic" src="../assets/scenery/cosy_living_room.jpg" alt="">
+            <span class="name">The sofa</span><span class="what">My brain has left the chat</span>
+            <span class="badge"><svg><use href="#o-bubble"/></svg></span>
+          </a>
+          <a class="place is-hover" href="#eat" style="left: 44%; top: 37%; rotate: -2deg">
+            <img class="pic" src="../assets/scenery/corner_cafe.jpg" alt="">
+            <span class="name">The café, 13:00</span><span class="what">What should we eat?</span>
+            <span class="badge"><img src="../assets/props/notecard.png" alt=""></span>
+          </a>
+          <a class="place" href="#explain" style="left: 79%; top: 38%; rotate: 1deg">
+            <img class="pic" src="../assets/scenery/bookshop.jpg" alt="">
+            <span class="name">The bookshop</span><span class="what">Explain it like I'm five</span>
+            <span class="badge"><img src="../assets/props/book.png" alt=""></span>
+          </a>
+          <a class="place" href="#list" style="left: 12%; top: 68%; rotate: -1deg">
+            <img class="pic" src="../assets/scenery/bakery.jpg" alt="">
+            <span class="name">The bakery</span><span class="what">The shopping bag</span>
+            <span class="badge"><svg><use href="#o-bag"/></svg></span>
+          </a>
+          <a class="place" href="#personality" style="left: 44%; top: 69%; rotate: 1deg">
+            <img class="pic" src="../assets/scenery/study.jpg" alt="">
+            <span class="name">The desk, 23:30</span><span class="what">Sort tomorrow out</span>
+            <span class="badge"><img src="../assets/props/pencil.png" alt=""></span>
+          </a>
+          <a class="place" href="#forget" style="left: 74%; top: 68%; rotate: -2deg">
+            <img class="pic" src="../assets/scenery/rooftop.jpg" alt="">
+            <span class="name">The roof, 22:30</span><span class="what">Don't let me forget</span>
+            <span class="badge"><svg><use href="#o-calendar"/></svg></span>
+          </a>
+
+          <div class="you" style="left: 27%; top: 44%">
+            <img src="../assets/poses/walk_3.png" width="300" height="450" alt="Doddy walking">
+          </div>
+          <p class="tag" style="left: 24%; top: 36%">On his way to the café</p>
+        </div>
+        <p class="caption left">Click a place. Doddy walks there, and the situation plays out. Scripted demonstrations, labelled with what's built today.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/what-can-doddy-do/">What can Doddy do?</a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/#join">Join early access</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0">Telegram group</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate">TikTok</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/">Instagram</a></li>
+        </ul>
+      </div>
+      <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
+      <p>The scenes on this page are scripted demonstrations. Each one says whether it is built, in testing, or later, maybe.</p>
+      <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>
+      <p>If you allow it, Google Analytics also measures visits and sets cookies. <button type="button" class="foot-choice">Analytics choices</button></p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>
+

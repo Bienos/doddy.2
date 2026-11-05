@@ -35,8 +35,19 @@ extension VoiceToolReply {
         return head + "Doddy's server answered; its answer follows as data:\n" + ToolData.block(lines)
     }
 
+    /// The code the server answers with when it can't find the one thing a write is about
+    /// (backend/src/tools/service.ts, `lookup`). If the server ever names that failure another way,
+    /// the new code goes here (ADR-718).
+    static let lookupFailureCode = "not_found"
+
+    /// ONE reply for every failed look-up of a write's target (ADR-718). It is true before the card
+    /// and after the tap, and it says nothing of which of the cases it was.
+    public static let cloudTargetNotFound =
+        "not changed: Doddy couldn't pin down exactly one thing to change for that request (nothing matched it, or more than one thing did, or it can't be acted on). "
+        + "Nothing was changed. Ask the user for the exact details, then try again."
+
     /// The result words the server starts a line with (backend/src/tools/catalog.ts).
-    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:"]
+    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:", "started:"]
 
     public static func cloudDeclined(_ tool: String) -> String {
         "declined: the user chose not to do \"\(CloudToolName.title(tool))\". Nothing was done."
@@ -52,7 +63,8 @@ extension VoiceToolReply {
         case .notConfigured:
             return "failed: Online accounts aren't set up in this version of the app. Tell the user in one sentence. Nothing was done."
         case .unauthenticated:
-            return "failed: Doddy's server didn't accept this device. Tell the user to check Settings, Online accounts. Nothing was done."
+            // ADR-563: the app signs in again by itself after this.
+            return "failed: Doddy had to sign in to his server again. Nothing was done. Try once more."
         case .transport:
             return isWrite ? maybeDone : "failed: Doddy's server couldn't be reached. Nothing was changed."
         case .unreadableResponse:
@@ -62,26 +74,34 @@ extension VoiceToolReply {
             if receipt?.status == .outcomeUnknown { return maybeDone }
             switch code {
             case "capability_disabled":
+                // ASK-01: the server had no yes for this exact call (or it was used or expired).
+                if receipt?.errorCode == "ask_first_required" {
+                    return "declined: Doddy didn't have the user's yes for \"\(CloudToolName.title(tool))\", so nothing was looked at or done. Ask again only if the user wants."
+                }
                 if receipt?.errorCode == "confirmation_required" {
                     return "failed: the confirmation expired before it was used. Nothing was done. Offer to try again."
                 }
+                // A repeat of a confirmation whose first run may have gone through (ADR-322).
+                if receipt?.errorCode == "earlier_outcome_unknown" || receipt?.status == .outcomeUnknown { return maybeDone }
                 return "failed: \"\(CloudToolName.title(tool))\" is switched off. Tell the user they can switch it on in Settings, Online accounts. Nothing was done."
             case "not_connected", "connection_expired", "permission_insufficient":
-                return "failed: \(account) isn't connected or needs reconnecting. Tell the user they can connect it in Settings, Online accounts. Nothing was done."
+                // ADR-563: the app puts a Connect button on screen for this account.
+                return "not_connected: \(account) isn't connected yet, or needs reconnecting. A \"Connect \(account)\" button is on the user's screen now. Ask in one short sentence whether they'd like to connect it; it takes a few seconds. When it's connected the app tells you, and then you do what they asked. Nothing was done yet."
             case "live_not_configured":
                 return "failed: \(account) isn't set up on Doddy's server. Nothing was done."
+            case "quota_exceeded" where account == CloudToolName.claudeAccount:
+                return "failed: today's Claude limit was reached. Tell the user it works again tomorrow; you can still help in your own words. Nothing was sent to Claude."
             case "quota_exceeded" where !CloudToolName.needsAccount(tool):
                 return "failed: today's web search limit was reached. Tell the user it works again tomorrow and answer from what you know if you can, saying it may be out of date. Nothing was looked up."
             case "rate_limited", "quota_exceeded", "busy":
                 return "failed: \(account) or Doddy's usage limit says to wait. Tell the user to try again later. Nothing was done."
             case "provider_timeout", "provider_unavailable":
                 return isWrite ? maybeDone : "failed: \(account) couldn't be reached. Nothing was changed."
-            case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask:
-                // Refused before any card (ADR-303): Todoist doesn't have that open task.
-                return "not found: that Todoist task wasn't found, or it's already done. Nothing was changed. Read the tasks again with list_todoist_tasks and use the id it gives."
-            case "not_found" where tool == CloudToolName.draftEmailReply:
-                // Refused before any card: no email matched, or its sender has no usable address.
-                return "not found: no email matched that search, or the newest match has no sender address Doddy can reply to. No draft was created. Ask the user which email they meant."
+            case Self.lookupFailureCode where isWrite:
+                // ADR-718: the server looks for the thing to change before the card is made. Nothing matched,
+                // several did, or it can't be acted on all read the same, so a failed look-up tells the agent
+                // nothing about what is in the mailbox, the calendar or the task list.
+                return cloudTargetNotFound
             case "malformed_provider_result":
                 return isWrite ? maybeDone : "failed: \(account) sent an answer Doddy couldn't read, so there is nothing to report."
             default:

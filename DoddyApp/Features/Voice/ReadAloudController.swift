@@ -37,6 +37,7 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
         synthesizer.delegate = self
         ToolActivityActions.shared.togglePause[.readAloud] = { [weak self] in self?.togglePause() }
         ToolActivityActions.shared.stop[.readAloud] = { [weak self] in self?.stop() }
+        AudioSessionOwner.shared.register(self, as: .readAloud, isUsing: { $0.status != .idle }, stop: { $0.stop() })
     }
 
     func isActive(for id: UUID) -> Bool {
@@ -48,20 +49,29 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
 
     func read(_ record: MemoryRecord) {
         problem = nil
-        guard !VoiceSessionController.conversationInProgress else {
+        // One owner of the audio session (ADR-695): never over something that listens; another
+        // player stops for this.
+        switch AudioSessionOwner.shared.claim(.readAloud, by: self) {
+        case .refused(.captureRecording), .refused(.memoRecording):
+            problem = "Doddy is recording. Read it aloud after the recording ends."
+            return
+        case .refused(.dictation):
+            problem = "Stop dictating to hear it read aloud."
+            return
+        case .refused:
             problem = "Doddy is in a conversation. Read it aloud after it ends."
             return
+        case .go:
+            break
         }
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
-        // "Hey Doddy" listening (ADR-254) steps aside while a note is read.
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: true)
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
             try session.setActive(true)
         } catch {
             problem = "iOS didn't let Doddy play sound just now."
-            WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
+            AudioSessionOwner.shared.release(.readAloud, by: self)
             return
         }
         let utterance = AVSpeechUtterance(string: record.currentText)
@@ -108,8 +118,9 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
         } else {
             island.end(final: nil)
         }
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
+        // Kept on when a conversation started meanwhile: its start stops the reading, and the end
+        // arrives after it has set the session up (ADR-243, ADR-695).
+        AudioSessionOwner.shared.release(.readAloud, by: self)
     }
 
     /// The installed voice for the note's language (on-device language guess), else the

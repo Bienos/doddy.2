@@ -181,7 +181,7 @@ public enum OpeningLayout {
     /// The ready artwork (2:3), centred under the same spot, placed so its feet (not the image's
     /// transparent bottom margin) stand on the floor.
     public static let ready = StageRect(x: 0.1665, y: 0.7977, width: 0.467, height: 0.70)
-    /// In `UploadedDoddy_Listening` (1024 × 1536), the soles end at 88.9% of the height
+    /// In `UploadedDoddy_Listening` (1024 × 1536 in the owner's file, shipped at 800 × 1200: same 2:3 shape), the soles end at 88.9% of the height
     /// (measured on the image's alpha).
     public static let readyFeetFraction = 0.889
     public static let ringCenter = StagePoint(x: 0.80, y: 0.62)
@@ -224,6 +224,13 @@ public enum OpeningLayout {
 
 public enum OpeningScene {
     public static let stageHeight = 2.0
+
+    /// The stage's width in points, centred on the screen. A phone in portrait gets the full
+    /// width; a wider screen (iPad, landscape) gets the width at which the whole stage fits the
+    /// height, so the floor and Doddy never fall off the bottom (ADR-431).
+    public static func stageWidth(screenWidth width: Double, screenHeight height: Double) -> Double {
+        min(width, height / stageHeight)
+    }
 
     /// The timeline, in seconds from the start. Quick on purpose: 2.3 s, and a tap ends it.
     public enum Beat {
@@ -275,6 +282,18 @@ public enum OpeningScene {
 
     public static func duration(reducedMotion: Bool) -> TimeInterval {
         reducedMotion ? Beat.stillEnd : Beat.end
+    }
+
+    /// The slowest clock a launch may ask for (`-openingTimeScale`, UI tests only).
+    public static let maxTimeScale = 10.0
+
+    /// Scene time for `elapsed` wall-clock seconds. A UI test plays the opening slower so it is still
+    /// on screen when the test first looks at the app (launch and the first idle wait can take
+    /// longer than the whole 2.4 s timeline on CI). Anything missing, below 1 or not a number plays
+    /// at the real speed; anything above `maxTimeScale` is held to it.
+    public static func sceneTime(elapsed: TimeInterval, timeScale: Double) -> TimeInterval {
+        let scale = timeScale.isFinite ? min(max(timeScale, 1), maxTimeScale) : 1
+        return elapsed / scale
     }
 
     public static func isFinished(at t: TimeInterval, reducedMotion: Bool) -> Bool {
@@ -572,15 +591,17 @@ public struct PlacedDoddy: Equatable, Sendable {
 /// fills on Home (measured there); at the end of the opening the picture is in exactly that box,
 /// at scale 1, so Home's own picture takes over with no jump.
 public enum OpeningHandover {
-    /// `UploadedDoddy_Listening` is 1024 × 1536.
+    /// `UploadedDoddy_Listening` is 1024 × 1536 in the owner's file and 800 × 1200 as shipped (ADR-547); only the 2:3 shape matters here.
     public static let artAspect = 2.0 / 3.0
 
     /// The ready pose on the court, on a screen `width` × `height` points, with the camera at 1:1
     /// (it is from `Beat.cameraSettled` on). Same placement as `OpeningLayout.ready` on the stage.
     public static func courtBox(screenWidth width: Double, screenHeight height: Double) -> ScreenBox {
         let ready = OpeningLayout.ready
-        let top = (height - OpeningScene.stageHeight * width) / 2
-        return ScreenBox(centerX: ready.center.x * width, centerY: top + ready.center.y * width, height: ready.height * width)
+        let w = OpeningScene.stageWidth(screenWidth: width, screenHeight: height)
+        let left = (width - w) / 2
+        let top = (height - OpeningScene.stageHeight * w) / 2
+        return ScreenBox(centerX: left + ready.center.x * w, centerY: top + ready.center.y * w, height: ready.height * w)
     }
 
     /// From `Beat.handoverStart` Doddy leaves `court` along an arc and arrives in `home` at

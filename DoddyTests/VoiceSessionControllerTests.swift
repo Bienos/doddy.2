@@ -7,24 +7,35 @@ import XCTest
 /// The voice controller's confirmation cards with a fake Calendar (AppTests review 2026-10-11,
 /// finding 2). App-target tests: NOT RUN in the authoring environment (no Xcode).
 ///
-/// Not covered here, for lack of a seam: tool calls arriving from the provider (`handle` and
-/// `handleOpenAICall` are private and need `isLive`), the alarm list (static `AlarmScheduler`),
-/// and a second `start` ending the first (needs the microphone and a provider).
+/// Tool calls arriving from the provider, and End then Start while one is still running, are in
+/// `StaleToolCallTests` below (through `beginForTesting` and `receiveToolCallForTesting`). Not
+/// covered, for lack of a seam: the alarm list (static `AlarmScheduler`), and a real `start`
+/// (needs the microphone and a provider).
 final class VoiceSessionControllerTests: XCTestCase {
     /// A controller with a fake Calendar and a fake provider link. `restore()` puts the Calendar
     /// switch back as it was; each test calls it in a `defer`.
     @MainActor
-    private struct Harness {
+    fileprivate struct Harness {
+        /// The switches the tests use, turned on for one test and put back by `restore()`.
+        private static let switches: [VoiceConnection] = [.calendar, .reminders, .timers]
+
         let devices = FakeDevices()
         let link = FakeLink()
         let controller: VoiceSessionController
-        private let savedCalendarSwitch: Any?
+        private let savedSwitches: [VoiceConnection: Any?]
+        /// "Listening" marks the first conversation as had (ADR-326); `beginForTesting` reaches it,
+        /// so the flag is put back too, or the app's later UI tests would skip Home's first visit.
+        private let savedFirstConversation: Any?
 
         init() {
             // The card re-checks Settings → Connections at the tap; turned on for this test only.
-            let key = VoiceConnection.calendar.preferenceKey
-            savedCalendarSwitch = UserDefaults.standard.object(forKey: key)
-            UserDefaults.standard.set(true, forKey: key)
+            var saved: [VoiceConnection: Any?] = [:]
+            for connection in Self.switches {
+                saved[connection] = UserDefaults.standard.object(forKey: connection.preferenceKey)
+                UserDefaults.standard.set(true, forKey: connection.preferenceKey)
+            }
+            savedSwitches = saved
+            savedFirstConversation = UserDefaults.standard.object(forKey: PreferenceKey.hadFirstConversation)
             controller = VoiceSessionController(
                 store: MemoryStore(environment: .live(arguments: ["-inMemoryStore"])),
                 activity: ActivityLogStore(fileURL: nil),
@@ -36,7 +47,10 @@ final class VoiceSessionControllerTests: XCTestCase {
         }
 
         func restore() {
-            UserDefaults.standard.set(savedCalendarSwitch, forKey: VoiceConnection.calendar.preferenceKey)
+            for (connection, value) in savedSwitches {
+                UserDefaults.standard.set(value, forKey: connection.preferenceKey)
+            }
+            UserDefaults.standard.set(savedFirstConversation, forKey: PreferenceKey.hadFirstConversation)
         }
     }
 
@@ -73,6 +87,25 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.devices.writeCount, 1)
         XCTAssertEqual(t.link.results.map(\.id), ["call-2"])
         XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.eventDeleted(event, calendar: .current))
+    }
+
+    /// ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się"): translator mode
+    /// starts the moment the agent asks for it, with no card or question, and the result tells
+    /// Doddy to ask what to translate. ADR-542 had it ask first.
+    @MainActor
+    func testTranslatorStartsAtOnceWithoutAQuestion() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.startTranslator, id: "translator-1", parameters: #"{"their_language":"es"}"#).value
+
+        XCTAssertNil(t.controller.pendingAction, "no card, no question")
+        XCTAssertEqual(t.controller.translator?.setup.other?.code, "es")
+        XCTAssertEqual(t.link.results.map(\.id), ["translator-1"])
+        XCTAssertTrue(t.link.results.first?.text.hasPrefix("started:") == true)
+        XCTAssertTrue(t.link.results.first?.text.contains("what to translate") == true)
     }
 
     // MARK: Declined card runs nothing
@@ -157,7 +190,567 @@ final class VoiceSessionControllerTests: XCTestCase {
     }
 }
 
+/// A tool call reaches only the conversation it came from (audit 2026-10-12 §5 #1 and #10,
+/// ADR-458). Each test starts a conversation, lets a tool call get as far as a Reminders or
+/// notification lookup, holds it there, taps End and starts a new conversation, and only then
+/// lets the lookup finish. The last tests run the same calls without End, so a guard that
+/// dropped everything would fail them. NOT RUN in the authoring environment (no Xcode).
+final class StaleToolCallTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testACardFromAnEndedConversationNeverShowsInTheNextOne() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.holdsReads = true
+        t.devices.openReminders = [Self.reminder("Buy milk")]
+        let first = FakeLink()
+        t.controller.beginForTesting(link: first)
+        let call = t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "old-delete", parameters: #"{"title":"Buy milk"}"#)
+        await Self.waitUntilHeld(t.devices)
+
+        await t.controller.stop()
+        let second = FakeLink()
+        t.controller.beginForTesting(link: second)
+        t.devices.release()
+        await call.value
+
+        XCTAssertNil(t.controller.pendingAction, "the old call's card is not shown in the new conversation")
+        await t.controller.confirmPendingAction()  // a tap in the new conversation has nothing to run
+        XCTAssertEqual(t.devices.writeCount, 0)
+        XCTAssertEqual(first.results, [], "nothing is sent to the ended conversation")
+        XCTAssertEqual(second.results, [], "nor to the new one")
+    }
+
+    @MainActor
+    func testAnAnswerForAnEndedConversationIsNotSentToTheNextOne() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.holdsReads = true
+        t.devices.openReminders = []  // the lookup ends in a reply ("not found"), not a card
+        let first = FakeLink()
+        t.controller.beginForTesting(link: first)
+        let call = t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "old-lookup", parameters: #"{"title":"Buy milk"}"#)
+        await Self.waitUntilHeld(t.devices)
+
+        await t.controller.stop()
+        let second = FakeLink()
+        t.controller.beginForTesting(link: second)
+        t.devices.release()
+        await call.value
+
+        XCTAssertEqual(first.results, [])
+        XCTAssertEqual(second.results, [], "the new conversation never hears an answer to a question it didn't ask")
+        XCTAssertNil(t.controller.pendingAction)
+    }
+
+    @MainActor
+    func testATimerCardFromAnEndedConversationIsDropped() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.holdsReads = true  // the notification permission check
+        let first = FakeLink()
+        t.controller.beginForTesting(link: first)
+        let call = t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.setTimer, id: "old-timer", parameters: #"{"minutes":5}"#)
+        await Self.waitUntilHeld(t.devices)
+
+        await t.controller.stop()
+        let second = FakeLink()
+        t.controller.beginForTesting(link: second)
+        t.devices.release()
+        await call.value
+
+        XCTAssertNil(t.controller.pendingAction)
+        await t.controller.confirmPendingAction()
+        XCTAssertEqual(t.devices.writeCount, 0, "no timer is started")
+        XCTAssertEqual(first.results, [])
+        XCTAssertEqual(second.results, [])
+    }
+
+    @MainActor
+    func testACallStillQueuedWhenEndIsTappedLooksNothingUp() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.openReminders = [Self.reminder("Buy milk")]
+        let first = FakeLink()
+        t.controller.beginForTesting(link: first)
+        // The call arrives in the first conversation but hasn't run yet when End is tapped.
+        let call = t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "queued", parameters: #"{"title":"Buy milk"}"#)
+        await t.controller.stop()
+        let second = FakeLink()
+        t.controller.beginForTesting(link: second)
+        await call.value
+
+        XCTAssertEqual(t.devices.readCount, 0, "Reminders is not even read")
+        XCTAssertNil(t.controller.pendingAction)
+        XCTAssertEqual(first.results, [])
+        XCTAssertEqual(second.results, [])
+    }
+
+    @MainActor
+    func testACardOnScreenWhenEndIsTappedRunsNothingAfterTheNextStart() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.openReminders = [Self.reminder("Buy milk")]
+        let first = FakeLink()
+        t.controller.beginForTesting(link: first)
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "shown", parameters: #"{"title":"Buy milk"}"#).value
+        XCTAssertNotNil(t.controller.pendingAction, "the card is up in the first conversation")
+
+        await t.controller.stop()
+        XCTAssertNil(t.controller.pendingAction, "End takes the card away")
+        let second = FakeLink()
+        t.controller.beginForTesting(link: second)
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.devices.writeCount, 0)
+        XCTAssertEqual(second.results, [])
+    }
+
+    // MARK: The same calls without End still work
+
+    @MainActor
+    func testWithoutEndTheHeldCallShowsItsCardAndTheApprovedDeleteRunsOnce() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.holdsReads = true
+        let reminder = Self.reminder("Buy milk")
+        t.devices.openReminders = [reminder]
+        let link = FakeLink()
+        t.controller.beginForTesting(link: link)
+        let call = t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "now-delete", parameters: #"{"title":"Buy milk"}"#)
+        await Self.waitUntilHeld(t.devices)
+        t.devices.release()
+        await call.value
+
+        guard case .deleteReminder(let id, let shown)? = t.controller.pendingAction else {
+            return XCTFail("expected the delete card, got \(String(describing: t.controller.pendingAction))")
+        }
+        XCTAssertEqual(id, "now-delete")
+        XCTAssertEqual(shown, reminder)
+        await t.controller.confirmPendingAction()
+        await t.controller.confirmPendingAction()  // a second tap: the card is gone
+        XCTAssertEqual(t.devices.writeCount, 1)
+        XCTAssertEqual(link.results.map(\.id), ["now-delete"])
+        XCTAssertEqual(link.results.first?.text, VoiceToolReply.reminderDeleted("Buy milk"))
+    }
+
+    @MainActor
+    func testWithoutEndTheHeldLookupAnswersTheConversationThatAsked() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.holdsReads = true
+        let link = FakeLink()
+        t.controller.beginForTesting(link: link)
+        let call = t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "now-lookup", parameters: #"{"title":"Buy milk"}"#)
+        await Self.waitUntilHeld(t.devices)
+        t.devices.release()
+        await call.value
+
+        XCTAssertEqual(link.results.map(\.id), ["now-lookup"])
+        XCTAssertEqual(link.results.first?.text, VoiceToolReply.reminderNotPrepared)
+    }
+
+    // MARK: Helpers
+
+    /// Lets the tool call run until its lookup is held. Fails rather than hangs if it never gets there.
+    @MainActor
+    private static func waitUntilHeld(_ devices: FakeDevices, file: StaticString = #filePath, line: UInt = #line) async {
+        for _ in 0..<10_000 {
+            if devices.heldReads > 0 { return }
+            await Task.yield()
+        }
+        XCTFail("the tool call never reached its lookup", file: file, line: line)
+    }
+
+    private static func reminder(_ title: String) -> ReminderSnapshot {
+        ReminderSnapshot(id: "rem-\(title)", title: title, listTitle: "Reminders", due: nil, markerURL: nil)
+    }
+}
+
+/// The access card (ADR-578), after #121's permission sheet (ADR-566): a call for a switch that is
+/// off first waits on the sheet; Not now there answers the call and leaves this card in the
+/// conversation, where one tap still allows it and tells the agent to carry on (yes) or quietly not
+/// to ask again (no). Nothing is asked or turned on before a tap. Contacts is used because the
+/// harness leaves its switch alone; each test puts it back. App-target tests: hosted Mac job only.
+final class ConnectionApprovalCardTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    /// A contacts look-up while Contacts is off: the sheet comes up and the user says Not now.
+    @MainActor
+    private func sheetThenNotNow(_ t: Harness, id: String) async {
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: id, parameters: #"{"name":"Ana"}"#).value
+        XCTAssertEqual(t.controller.permissionRequest?.connection, .contacts, "the sheet asks first")
+        XCTAssertNil(t.controller.accessRequest, "no card while the sheet is up")
+        await t.controller.declinePermission()
+        XCTAssertEqual(t.link.results.map(\.id), [id], "Not now answers the call once")
+    }
+
+    @MainActor
+    func testAfterNotNowTheCardStaysAndOneTapAllowsItAndTellsDoddyToCarryOn() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .notDetermined
+        t.devices.promptAnswer = .granted
+        await sheetThenNotNow(t, id: "who-1")
+
+        XCTAssertEqual(t.link.results.first?.text, PermissionAsk.declined(.contacts))
+        XCTAssertEqual(t.controller.accessRequest?.connection, .contacts)
+        XCTAssertEqual(t.controller.accessRequest?.card, .allow)
+        XCTAssertEqual(t.devices.requested, [], "iOS isn't asked before a tap")
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey), "nothing turns on by itself")
+        XCTAssertNil(t.controller.contactCard, "nothing was looked up")
+
+        await t.controller.allowConnection()
+
+        XCTAssertEqual(t.devices.requested, [.contacts], "iOS's own prompt, once")
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+        XCTAssertNil(t.controller.accessRequest)
+        XCTAssertEqual(t.link.messages, ["(app) " + ConnectionApproval.allowedMessage(.contacts)])
+    }
+
+    @MainActor
+    func testANoInIOSsPromptChangesNothingAndDoddyIsToldQuietly() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .notDetermined
+        t.devices.promptAnswer = .denied
+        await sheetThenNotNow(t, id: "who-2")
+
+        await t.controller.allowConnection()
+
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+        XCTAssertNil(t.controller.accessRequest, "the user's no: the card goes")
+        XCTAssertEqual(t.link.messages, [], "Doddy doesn't carry on")
+        XCTAssertEqual(t.link.contexts, ["(app) " + ConnectionApproval.declinedContext(.contacts)])
+    }
+
+    @MainActor
+    func testARefusalFromBeforeOffersIPhoneSettingsAndAllowAsksNothing() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .denied
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-3", parameters: #"{"name":"Ana"}"#).value
+        XCTAssertEqual(t.controller.permissionRequest?.kind, .openSettings)
+        await t.controller.declinePermission()
+
+        XCTAssertEqual(t.link.results.first?.text, PermissionAsk.blocked(.contacts))
+        XCTAssertEqual(t.controller.accessRequest?.card, .openSystemSettings)
+        await t.controller.allowConnection()  // not offered on this card
+        XCTAssertEqual(t.devices.requested, [])
+        await t.controller.recheckConnectionAccess()  // Doddy in front again, but the card never sent the user away
+        XCTAssertEqual(t.controller.accessRequest?.card, .openSystemSettings)
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+        XCTAssertEqual(t.link.messages, [])
+    }
+
+    @MainActor
+    func testNotNowOnTheCardChangesNothing() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .granted
+        await sheetThenNotNow(t, id: "who-4")
+
+        await t.controller.declineConnection()
+
+        XCTAssertNil(t.controller.accessRequest)
+        XCTAssertEqual(t.devices.requested, [])
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+        XCTAssertEqual(t.link.messages, [])
+        XCTAssertEqual(t.link.contexts, ["(app) " + ConnectionApproval.declinedContext(.contacts)])
+    }
+
+    @MainActor
+    func testEndTakesTheCardAwaySoALateTapAllowsNothing() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .notDetermined
+        t.devices.promptAnswer = .granted
+        await sheetThenNotNow(t, id: "who-5")
+
+        await t.controller.stop()
+        await t.controller.allowConnection()
+
+        XCTAssertNil(t.controller.accessRequest)
+        XCTAssertEqual(t.devices.requested, [])
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+    }
+
+    // MARK: Helpers
+
+    /// Switches Contacts off for one test and returns what was there.
+    private static func contactsOff() -> Any? {
+        let saved = UserDefaults.standard.object(forKey: VoiceConnection.contacts.preferenceKey)
+        UserDefaults.standard.set(false, forKey: VoiceConnection.contacts.preferenceKey)
+        return saved
+    }
+
+    private static func restoreContacts(_ saved: Any?) {
+        UserDefaults.standard.set(saved, forKey: VoiceConnection.contacts.preferenceKey)
+    }
+}
+
 private struct FakeWriteError: Error {}
+
+/// "Let Doddy use Calendar?" (ADR-566): a call for a connection that is off waits for the sheet,
+/// Not now answers it once and isn't asked again, Allow runs the same call with no second card,
+/// and iOS's refusal offers iPhone Settings. App-target tests: run in the hosted Mac job only.
+final class PermissionSheetTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+    private static let today = #"{"range":"today"}"#
+
+    @MainActor
+    func testASwitchedOffConnectionAsksOnScreenAndWaits() async {
+        let t = Harness()
+        defer { t.restore() }
+        UserDefaults.standard.set(false, forKey: VoiceConnection.calendar.preferenceKey)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-1", parameters: Self.today).value
+
+        XCTAssertEqual(t.controller.permissionRequest?.connection, .calendar)
+        XCTAssertEqual(t.controller.permissionRequest?.kind, .turnOn)
+        XCTAssertNotNil(t.controller.permissionRequest?.askCard, "a read: the sheet shows exactly what will be read")
+        XCTAssertTrue(t.link.results.isEmpty, "the call waits for the answer")
+
+        await t.controller.declinePermission()
+
+        XCTAssertNil(t.controller.permissionRequest)
+        XCTAssertEqual(t.link.results.map(\.id), ["read-1"])
+        XCTAssertEqual(t.link.results.first?.text, PermissionAsk.declined(.calendar))
+        XCTAssertEqual(t.controller.connectionNeeded, .calendar, "the card to turn it on stays")
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.calendar.preferenceKey))
+
+        // Not asked again in this conversation.
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-2", parameters: Self.today).value
+        XCTAssertNil(t.controller.permissionRequest)
+        XCTAssertEqual(t.link.results.map(\.id), ["read-1", "read-2"])
+        XCTAssertEqual(t.link.results.last?.text, PermissionAsk.declinedEarlier(.calendar))
+    }
+
+    @MainActor
+    func testAllowTurnsItOnAndRunsTheSameCallWithoutASecondCard() async {
+        let t = Harness()
+        defer { t.restore() }
+        UserDefaults.standard.set(false, forKey: VoiceConnection.calendar.preferenceKey)
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-3", parameters: Self.today).value
+        XCTAssertNotNil(t.controller.permissionRequest)
+
+        await t.controller.allowPermission()
+
+        XCTAssertNil(t.controller.permissionRequest)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: VoiceConnection.calendar.preferenceKey))
+        XCTAssertNil(t.controller.pendingAction, "Allow was the yes for this one read")
+        XCTAssertEqual(t.link.results.map(\.id), ["read-3"])
+        XCTAssertTrue(t.link.results.first?.text.hasPrefix("No calendar events") == true, t.link.results.first?.text ?? "")
+    }
+
+    @MainActor
+    func testRefusedByIOSOffersIPhoneSettings() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.accessResult = .denied
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-4", parameters: Self.today).value
+        // The switch is on, so ASK-01's question comes first; the yes finds iOS's no.
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.controller.permissionRequest?.kind, .openSettings)
+        await t.controller.declinePermission()
+        XCTAssertEqual(t.link.results.map(\.id), ["read-4"])
+        XCTAssertEqual(t.link.results.first?.text, PermissionAsk.blocked(.calendar))
+    }
+
+    @MainActor
+    func testEndDropsAHeldCall() async {
+        let t = Harness()
+        defer { t.restore() }
+        UserDefaults.standard.set(false, forKey: VoiceConnection.calendar.preferenceKey)
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-5", parameters: Self.today).value
+        XCTAssertNotNil(t.controller.permissionRequest)
+
+        await t.controller.stop()
+
+        XCTAssertNil(t.controller.permissionRequest, "the sheet goes with its conversation")
+        await t.controller.allowPermission()
+        XCTAssertTrue(t.link.results.isEmpty, "nothing runs or answers after End")
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.calendar.preferenceKey))
+    }
+}
+
+/// Voice fixes from the read-only review of 29 Oct (ADR-672, tests ADR-681): the voice meter is
+/// detached from the conversation it was attached to, and a capability gap is "written down" only
+/// after a verified write. App-target tests: hosted Mac job only (no Xcode where they were written).
+final class VoiceReviewFixesTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testEndDetachesTheVoiceMeterFromTheConversationItWasAttachedTo() async {
+        let t = Harness()
+        defer { t.restore() }
+        let link = MeterLink()
+        t.controller.beginForTesting(link: link)
+        t.controller.speakForTesting()
+        XCTAssertEqual(link.attached, 1, "attached when Doddy starts speaking")
+
+        await t.controller.stop()
+
+        XCTAssertEqual(link.detached, 1, "stop() clears the conversation first; the meter is still let go of that one")
+        XCTAssertFalse(AgentVoiceMeter.shared.hasSource)
+    }
+
+    @MainActor
+    func testADisconnectDetachesTheVoiceMeterToo() async {
+        let t = Harness()
+        defer { t.restore() }
+        let link = MeterLink()
+        t.controller.beginForTesting(link: link)
+        t.controller.speakForTesting()
+
+        t.controller.disconnectForTesting(.user)
+
+        XCTAssertEqual(link.detached, 1)
+        XCTAssertFalse(AgentVoiceMeter.shared.hasSource)
+    }
+
+    @MainActor
+    func testAGapIsNotCalledWrittenDownWhenNothingWasWritten() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        // The harness's store has no learning store, so nothing can be written.
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.noteCapabilityGap, id: "gap-1", parameters: #"{"category":"music"}"#).value
+        guard case .ask? = t.controller.pendingAction else {
+            return XCTFail("ASK-01: the gap is noted after a tap, got \(String(describing: t.controller.pendingAction))")
+        }
+
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.link.results.map(\.id), ["gap-1"])
+        XCTAssertEqual(t.link.results.first?.text, LearningPrompt.gapNotNoted)
+        XCTAssertFalse(t.link.results.first?.text.contains("It's written down") ?? true)
+    }
+}
+
+/// A phone call during a conversation (ADR-696): iOS taking the audio and not giving it back in a
+/// way that can resume ends the conversation as interrupted, never "listening" with a deaf microphone.
+/// The short-interruption resume activates the real audio session, so it is left to a device test.
+/// App-target tests: hosted Mac job only.
+final class CallInterruptionTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testAnInterruptionMarksTheConversationPaused() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: true, shouldResume: false)
+        XCTAssertTrue(t.controller.audioPausedByOtherApp)
+        XCTAssertTrue(t.controller.isLive, "a short interruption may still be resumed")
+        await t.controller.stop()
+        XCTAssertFalse(t.controller.audioPausedByOtherApp, "End stops the wait for iOS")
+    }
+
+    @MainActor
+    func testAnInterruptionThatEndsWithoutResumeEndsTheConversationAsInterrupted() {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: true, shouldResume: false)
+        t.controller.audioInterruptionForTesting(began: false, shouldResume: false)
+
+        XCTAssertEqual(t.controller.sessionEnd, .dropped(.audioInterrupted))
+        let expected = SessionRecovery.status(.dropped(.audioInterrupted), connected: true, language: .current).detail ?? ""
+        XCTAssertEqual(t.controller.phase, .failed(expected))
+        XCTAssertFalse(t.controller.isLive, "the microphone, the island and the gate are freed")
+        XCTAssertFalse(t.controller.audioPausedByOtherApp)
+    }
+
+    @MainActor
+    func testAMediaServicesResetEndsTheConversationAsInterrupted() {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.mediaServicesResetForTesting()
+        XCTAssertEqual(t.controller.sessionEnd, .dropped(.audioInterrupted))
+        XCTAssertFalse(t.controller.isLive)
+    }
+
+    @MainActor
+    func testAnEndWithoutABeginningChangesNothing() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: false, shouldResume: false)
+        XCTAssertTrue(t.controller.isLive)
+        XCTAssertNil(t.controller.sessionEnd)
+        await t.controller.stop()
+    }
+}
+
+/// find_photos and open_camera (ADR-569) with the fake device: a read asks first and the agent
+/// hears counts only; a device without a camera says so instead of asking for a permission.
+final class PhotosAndCameraControllerTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testFindPhotosAsksThenShowsCountsOnly() async {
+        let t = Harness()
+        defer { t.restore() }
+        let key = VoiceConnection.photos.preferenceKey
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.set(true, forKey: key)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.findPhotos, id: "photos-1", parameters: #"{"day":"today"}"#).value
+        guard case .ask? = t.controller.pendingAction else {
+            return XCTFail("ASK-01: a read asks first, got \(String(describing: t.controller.pendingAction))")
+        }
+        XCTAssertTrue(t.link.results.isEmpty)
+
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.link.results.map(\.id), ["photos-1"])
+        XCTAssertTrue(t.link.results.first?.text.hasPrefix("No photos or videos") == true, t.link.results.first?.text ?? "")
+        XCTAssertEqual(t.controller.photoResults?.summary.photos, 0)
+    }
+
+    @MainActor
+    func testADeviceWithoutACameraSaysSoInsteadOfAsking() async {
+        let t = Harness()
+        defer { t.restore() }
+        let key = VoiceConnection.camera.preferenceKey
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.set(false, forKey: key)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.openCamera, id: "camera-1", parameters: "{}").value
+
+        XCTAssertNil(t.controller.permissionRequest, "no sheet for a camera that isn't there")
+        XCTAssertNil(t.controller.cameraRequest)
+        XCTAssertEqual(t.link.results.map(\.id), ["camera-1"])
+        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.cameraUnavailable)
+    }
+}
 
 /// Calendar and Reminders that record every write and return what the test set.
 @MainActor
@@ -170,13 +763,52 @@ private final class FakeDevices: DeviceConnecting {
     /// Every call that writes to Calendar, Reminders or notifications.
     private(set) var writeCount = 0
 
+    /// What `incompleteReminders` returns.
+    var openReminders: [ReminderSnapshot] = []
+    /// When set, `incompleteReminders` and `notificationAccess` wait until `release()`, so a test
+    /// can tap End and Start while a tool call is still looking something up.
+    var holdsReads = false
+    private var held: [CheckedContinuation<Void, Never>] = []
+    /// Reads waiting in `held` right now.
+    var heldReads: Int { held.count }
+    /// Every `incompleteReminders` and `notificationAccess` call, held or not.
+    private(set) var readCount = 0
+
+    func release() {
+        let waiting = held
+        held = []
+        waiting.forEach { $0.resume() }
+    }
+
+    private func read() async {
+        readCount += 1
+        guard holdsReads else { return }
+        await withCheckedContinuation { held.append($0) }
+    }
+
     func access(for connection: VoiceConnection) -> DeviceConnections.Access { accessResult }
-    func notificationAccess() async -> DeviceConnections.Access { accessResult }
+    func notificationAccess() async -> DeviceConnections.Access {
+        await read()
+        return accessResult
+    }
+
+    /// What iOS's own prompt answers on the access card's Allow (ADR-578). As on a real iPhone,
+    /// the prompt shows only while `accessResult` is `.notDetermined`; otherwise it is returned.
+    var promptAnswer: DeviceConnections.Access = .denied
+    /// Every `request` call: the access card asks iOS only after the user's tap.
+    private(set) var requested: [VoiceConnection] = []
+    func request(_ connection: VoiceConnection) async -> DeviceConnections.Access {
+        requested.append(connection)
+        guard accessResult == .notDetermined else { return accessResult }
+        accessResult = promptAnswer
+        return promptAnswer
+    }
     func events(in range: VoiceTimeRange) -> [CalendarEventSummary] { [] }
 
-    func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: DeviceConnections.AddOutcome, eventID: String?) {
+    // CalendarEventWriter: an event saved is read back as written.
+    func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)? {
         writeCount += 1
-        return (.verified, nil)
+        return (CalendarEventSummary(id: "fake-event", title: draft.title, start: draft.start, end: draft.end, allDay: draft.allDay), "fake-event")
     }
 
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome {
@@ -191,6 +823,8 @@ private final class FakeDevices: DeviceConnecting {
     }
 
     func eventLocation(_ event: CalendarEventSummary) -> String? { nil }
+    func eventNotes(_ event: CalendarEventSummary) -> String? { nil }
+    func reminderLists() -> [ReminderListRef] { [] }
 
     func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome {
         writeCount += 1
@@ -210,16 +844,22 @@ private final class FakeDevices: DeviceConnecting {
 
     func reminderSnapshot(id: String) -> ReminderSnapshot? { nil }
 
-    func startTimer(_ draft: TimerDraft) async throws -> DeviceConnections.AddOutcome {
+    // TimerWriter: a timer scheduled is listed as waiting.
+    private var timers: [PendingTimer] = []
+    func pendingTimers() async -> [PendingTimer] { timers }
+    func scheduleTimer(_ draft: TimerDraft, identifier: String) async throws {
         writeCount += 1
-        return .verified
+        timers.append(PendingTimer(identifier: identifier, firesAt: Date().addingTimeInterval(TimeInterval(draft.seconds))))
     }
 
     func findContacts(named name: String) throws -> [DeviceConnections.ContactMatch] { [] }
     func contactBirthdays() throws -> [ContactBirthday] { [] }
 
     // ReminderStore
-    func incompleteReminders() async throws -> [ReminderSnapshot] { [] }
+    func incompleteReminders() async throws -> [ReminderSnapshot] {
+        await read()
+        return openReminders
+    }
 
     func save(_ write: ReminderWrite) throws -> String {
         writeCount += 1
@@ -237,17 +877,42 @@ private final class FakeLink: LiveVoiceLink, @unchecked Sendable {
 
     private let lock = NSLock()
     private var sent: [Sent] = []
+    private var sentMessages: [String] = []
+    private var sentContext: [String] = []
 
     var results: [Sent] { lock.withLock { sent } }
+    /// Messages Doddy answers now (the app's "(app)" messages included).
+    var messages: [String] { lock.withLock { sentMessages } }
+    /// Background context Doddy doesn't answer.
+    var contexts: [String] { lock.withLock { sentContext } }
 
     func sendToolResult(for toolCallId: String, result: String, isError: Bool) async throws {
         lock.withLock { sent.append(Sent(id: toolCallId, text: result, isError: isError)) }
     }
 
     func setMuted(_ muted: Bool) async throws {}
+    func sendMessage(_ text: String) async throws { lock.withLock { sentMessages.append(text) } }
+    func updateContext(_ context: String) async throws { lock.withLock { sentContext.append(context) } }
+    func endConversation() async {}
+    func setAgentVolume(_ volume: Double) -> Double? { nil }
+}
+
+/// A provider link with a voice to listen to, counting the meter's attach and detach (ADR-655).
+@MainActor
+private final class MeterLink: LiveVoiceLink {
+    private(set) var attached = 0
+    private(set) var detached = 0
+
+    func sendToolResult(for toolCallId: String, result: String, isError: Bool) async throws {}
+    func setMuted(_ muted: Bool) async throws {}
     func sendMessage(_ text: String) async throws {}
     func updateContext(_ context: String) async throws {}
     func endConversation() async {}
     func setAgentVolume(_ volume: Double) -> Double? { nil }
+    func attachAgentLevelMeter(_ meter: AgentVoiceMeter) -> Bool {
+        attached += 1
+        return true
+    }
+    func detachAgentLevelMeter(_ meter: AgentVoiceMeter) { detached += 1 }
 }
 #endif

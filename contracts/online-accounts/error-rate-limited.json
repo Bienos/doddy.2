@@ -1,11 +1,11 @@
 {
   "error": {
     "code": "rate_limited",
-    "message": "Google Calendar is busy right now. Try again shortly.",
-    "correlationId": "2bc5f8d9-5eae-4db1-a744-608611609443",
+    "message": "Todoist is busy right now. Try again shortly.",
+    "correlationId": "9a1c2920-19a2-4b55-9741-23de463ffbd1",
     "retryAfterSeconds": 1,
     "receipt": {
-      "operationId": "5c315dcd-0684-4a7e-9a7f-d135df7a9747",
+      "operationId": "0a4093d1-ec75-4e8a-8587-050aaef2fdc9",
       "operation": "read",
       "toolkit": "todoist",
       "tool": "list_todoist_tasks",

@@ -1,0 +1,106 @@
+<!--
+title: Mockup 06, interactive scenario selection
+active: wcd
+-->
+{{> head}}
+<body class="board">
+{{> symbols}}
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>06 · Interactive scenario selection</h1>
+      <p>Hero object ring: idle, hover, selected. Then the day strip. Doddy reacts before anything opens.</p>
+    </div>
+    <div class="frames three">
+      <div class="frame">
+        <div class="frame-label"><b>1</b> Idle</div>
+        <div class="frame-body">
+          <div class="stage">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm"><svg><use href="#o-alarm"/></svg></span>
+            <span class="obj o-phone"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar"><svg><use href="#o-calendar"/></svg></span>
+            <span class="obj o-bag"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main"><img src="../assets/poses/wave.png" alt=""></figure>
+            <p class="says" aria-hidden="true">Pick one.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          </div>
+        </div>
+        <p class="frame-note"><b>Idle.</b> Objects drift 2 px up and down on a slow loop (6 s, staggered). Doddy blinks every 4 to 6 s. Reduced motion: everything still.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>2</b> Hover or focus</div>
+        <div class="frame-body">
+          <div class="stage">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm is-hover"><svg><use href="#o-alarm"/></svg><span class="obj-label">08:45 · Late. Again.</span></span>
+            <span class="obj o-phone"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar"><svg><use href="#o-calendar"/></svg></span>
+            <span class="obj o-bag"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main"><img src="../assets/poses/facepalm.png" alt=""></figure>
+            <p class="says" aria-hidden="true">Oh. That one.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          </div>
+        </div>
+        <p class="frame-note"><b>Doddy reacts.</b> The object lifts and gets its orange edge; the handwritten label appears; Doddy swaps pose and line (alarm: facepalm, "Oh. That one." Coffee: fist pump, "Yes." Bag: reaching high. Calendar: shush, "Say nothing."). Pose swaps are instant image swaps, no tween.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>3</b> Selected, scene opening</div>
+        <div class="frame-body">
+          <div class="stage">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm is-active"><svg><use href="#o-alarm"/></svg><span class="obj-label">08:45 · Late. Again.</span></span>
+            <span class="obj o-phone"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar"><svg><use href="#o-calendar"/></svg></span>
+            <span class="obj o-bag"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main" style="left: 62%; bottom: 0; width: 40%"><img src="../assets/poses/run_2.png" alt=""></figure>
+            <img src="../assets/fx/dash-lines.png" alt="" style="position:absolute; left: 36%; bottom: 10%; width: 14%">
+          </div>
+        </div>
+        <p class="frame-note"><b>Click or tap.</b> The object keeps its orange underline, Doddy runs off the stage and the page scrolls to the moment, where he arrives on the scene card (600 ms, ease-out). Keyboard: objects are links; Enter does the same. Reduced motion: no run, instant scroll, poses only.</p>
+      </div>
+    </div>
+
+    <div class="frames two" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>4</b> The day strip, current moment and keyboard focus</div>
+        <div class="frame-body">
+          <p class="section-label" style="margin:0 0 12px; font-size:.8125rem; font-weight:650; color: var(--secondary-text)">Jump to a moment</p>
+          <ol class="chapters" style="margin:0; padding:0">
+            <li><button type="button"><span class="t">08:45</span>Late. Again.</button></li>
+            <li><button type="button" aria-current="true"><span class="t">09:10</span>Jacket or no jacket?</button></li>
+            <li><button type="button" style="outline: 3px solid var(--accent-text); outline-offset: 3px"><span class="t">10:20</span>The awkward text</button></li>
+            <li><button type="button"><span class="t">13:00</span>What should we eat?</button></li>
+            <li><button type="button"><span class="t">15:30</span>Explain it like I'm five</button></li>
+            <li><button type="button"><span class="t">18:45</span>My brain has left the chat</button></li>
+          </ol>
+        </div>
+        <p class="frame-note"><b>Same component as the film chapters</b> on the homepage: the current moment gets the orange underline as you scroll; focus uses the site's focus ring. On phones the strip scrolls sideways with snap points, as the film chapters already do.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>5</b> On a phone: labels always visible, objects tappable</div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="stage" style="width: 300px; aspect-ratio: 1 / 1.05">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble" style="width:70px; padding:7px"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm" style="width:70px; padding:7px"><svg><use href="#o-alarm"/></svg></span>
+            <span class="obj o-phone" style="width:70px; padding:7px"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee" style="width:70px; padding:7px"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase" style="width:70px; padding:7px"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar is-active" style="width:70px; padding:7px"><svg><use href="#o-calendar"/></svg><span class="obj-label" style="font-size:1rem">22:30 · Don't let me forget</span></span>
+            <span class="obj o-bag" style="width:70px; padding:7px"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main" style="width: 50%"><img src="../assets/poses/shush.png" alt=""></figure>
+          </div>
+        </div>
+        <p class="frame-note"><b>Touch.</b> No hover on phones, so a tap first shows Doddy's reaction and the label (one tap), a second tap opens the moment. Objects are 70 px, well over the 44 px minimum.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

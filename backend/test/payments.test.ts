@@ -21,9 +21,9 @@ afterEach(async () => rig?.close());
 const ID_A = "00000000-0000-4000-8000-00000000000a";
 
 const wallet = () => rig.wallet as MockPaymentWallet;
-// node:sqlite rows have a null prototype; copy them so deepStrictEqual compares plain objects.
-const rows = (sql: string, ...params: (string | number)[]) => (rig.store.db.prepare(sql).all(...params) as Record<string, unknown>[]).map((r) => ({ ...r }));
-const approvals = () => rows("SELECT * FROM approvals").length;
+// Copy the rows so deepStrictEqual compares plain objects.
+const rows = async (sql: string, ...params: (string | number)[]) => (await rig.store.db.query<Record<string, unknown>>(sql, params)).rows.map((r) => ({ ...r }));
+const approvals = async () => (await rows("SELECT * FROM approvals")).length;
 const used = async (token = USER_A) => (await status(rig, token)).body.limits.usedToday;
 
 /** switch on -> prepare -> pay, returning every step. */
@@ -57,7 +57,7 @@ test("payments start off: the wallet is visible, the person's switch is off, and
     assert.equal(res.body.error.receipt.errorCode, "capability_disabled");
   }
   assert.deepEqual(rig.seller.requests, [], "no request reached any seller");
-  assert.equal(approvals(), 0);
+  assert.equal((await approvals()), 0);
 });
 
 test("with no wallet set up, every payment route says so and the switch cannot be turned on", async () => {
@@ -125,7 +125,7 @@ test("prepare shows the exact terms, pays nothing, and signs nothing", async () 
   assert.equal(rig.seller.requests![0]!.headers["payment-signature"], undefined);
   assert.equal(wallet().signed.length, 0);
   assert.equal(await used(), "0.00");
-  assert.equal(rows("SELECT * FROM payments").length, 0, "no ledger row before the person approves");
+  assert.equal((await rows("SELECT * FROM payments")).length, 0, "no ledger row before the person approves");
 });
 
 test("a approved payment signs once for exactly the approved terms and reports the seller's confirmation", async () => {
@@ -159,7 +159,7 @@ test("a approved payment signs once for exactly the approved terms and reports t
   assert.equal(rig.seller.requests!.length, 3, "prepare read, pay re-read, one payment");
 
   assert.equal(await used(), "0.05");
-  const ledger = rows("SELECT status, transaction_hash, host, amount FROM payments");
+  const ledger = (await rows("SELECT status, transaction_hash, host, amount FROM payments"));
   assert.deepEqual(ledger, [{ status: "settled", transaction_hash: `0x${"ab".repeat(32)}`, host: "demo-shop.example", amount: 50_000 }]);
   assert.equal(prepared.body.preview.confirmLabel, "Pay 0.05 USDC");
 });
@@ -170,7 +170,7 @@ test("receipts list what was prepared and paid, newest first, without page paths
   const list = (await rig.call("GET", "/v1/payments/receipts")).body.receipts;
   assert.deepEqual(list.map((r: any) => r.operation), ["pay", "switch"]);
   for (const r of list) PaymentReceiptSchema.parse(r);
-  const everything = JSON.stringify([list, rows("SELECT * FROM payments"), rows("SELECT * FROM payment_receipts"), rows("SELECT * FROM approvals"), rig.logs]);
+  const everything = JSON.stringify([list, (await rows("SELECT * FROM payments")), (await rows("SELECT * FROM payment_receipts")), (await rows("SELECT * FROM approvals")), rig.logs]);
   assert.doesNotMatch(everything, /secret-research-topic|private-topic/, "the page path and query are never stored or logged");
   assert.match(everything, /demo-shop\.example/);
 });
@@ -230,7 +230,7 @@ test("even with room for two at once, one approval signs once and the loser's re
   assert.equal(wallet().signed.length, 1);
   assert.equal(paidRequests(rig).length, 1);
   assert.equal(await used(), "0.05", "only the winner's 0.05 is counted");
-  assert.equal(rows("SELECT * FROM payments").length, 1);
+  assert.equal((await rows("SELECT * FROM payments")).length, 1);
 });
 
 test("an approval expires after two minutes", async () => {
@@ -257,7 +257,7 @@ test("a price or recipient that changes after approval needs a new approval; not
   assert.equal(wallet().signed.length, 0);
   assert.equal(paidRequests(rig).length, 0);
   assert.equal(await used(), "0.00");
-  assert.equal(rows("SELECT * FROM payments").length, 0);
+  assert.equal((await rows("SELECT * FROM payments")).length, 0);
 });
 
 test("an approval is for one page: another URL cannot use it", async () => {
@@ -308,7 +308,7 @@ test("offers outside policy are refused at prepare, with no approval and no sign
     assert.equal(res.status, httpStatus, `${scenario}: ${res.text}`);
     assert.equal(res.body.error.receipt.errorCode, errorCode, scenario);
     assert.equal(res.body.error.receipt.status, "blocked", scenario);
-    assert.equal(approvals(), 0, scenario);
+    assert.equal((await approvals()), 0, scenario);
     assert.equal(wallet().signed.length, 0, scenario);
     await rig.close();
   }
@@ -390,7 +390,7 @@ test("when the wallet cannot sign, nothing is sent, nothing is spent, and the le
   assert.equal(res.body.error.receipt.errorCode, "wallet_unavailable");
   assert.equal(paidRequests(rig).length, 0, "no payment request left Doddy");
   assert.equal(await used(), "0.00", "the reservation was given back");
-  assert.deepEqual(rows("SELECT status FROM payments"), [{ status: "not_sent" }]);
+  assert.deepEqual((await rows("SELECT status FROM payments")), [{ status: "not_sent" }]);
   assert.equal((await status(rig)).body.unresolved, 0);
 });
 
@@ -402,7 +402,7 @@ test("a seller that answers 402 again declined the payment: reported as failed, 
   assert.equal(paid.body.error.receipt.errorCode, "payment_declined");
   assert.match(paid.body.error.message, /there is no record that it went through/);
   assert.equal(await used(), "0.05", "conservative: it stays counted");
-  assert.deepEqual(rows("SELECT status FROM payments"), [{ status: "declined" }]);
+  assert.deepEqual((await rows("SELECT status FROM payments")), [{ status: "declined" }]);
   assert.equal(paidRequests(rig).length, 1, "never retried");
 });
 
@@ -420,14 +420,14 @@ for (const [scenario, httpStatus] of [["server_error", 502], ["no_proof", 502], 
     assert.equal(paidRequests(rig).length, 1, "exactly one payment request, no retry");
     assert.equal(wallet().signed.length, 1);
     assert.equal(await used(), "0.05", "the money may have moved, so it stays counted");
-    assert.deepEqual(rows("SELECT status FROM payments"), [{ status: "unknown" }]);
+    assert.deepEqual((await rows("SELECT status FROM payments")), [{ status: "unknown" }]);
     assert.equal((await status(rig)).body.unresolved, 1);
 
     // The same page cannot be paid again straight away, then can after 15 minutes.
     const again = await prepare(rig, SHOP, { scenario: "normal" });
     assert.equal(again.status, 403);
     assert.equal(again.body.error.receipt.errorCode, "payment_unconfirmed");
-    assert.equal(approvals(), 1, "no new approval was made");
+    assert.equal((await approvals()), 1, "no new approval was made");
     rig.clock.advance(16 * 60_000);
     assert.equal((await prepare(rig)).status, 200);
     assert.equal((await status(rig)).body.unresolved, 1, "it stays listed until the person has checked");
@@ -436,8 +436,8 @@ for (const [scenario, httpStatus] of [["server_error", 502], ["no_proof", 502], 
 
 test("a payment left half-done by a crash is reported as unconfirmed, not forgotten", async () => {
   rig = await startPay();
-  rig.store.insertPayment({ paymentId: "p1", userId: ID_A, now: rig.clock.ms, host: "demo-shop.example", amount: 50_000, network: "base-sepolia", urlHash: "h", validBefore: 1 });
-  rig.store.setPaymentStatus("p1", "sent", rig.clock.ms);
+  await rig.store.insertPayment({ paymentId: "p1", userId: ID_A, now: rig.clock.ms, host: "demo-shop.example", amount: 50_000, network: "base-sepolia", urlHash: "h", validBefore: 1 });
+  await rig.store.setPaymentStatus("p1", "sent", rig.clock.ms);
   assert.equal((await status(rig)).body.unresolved, 0, "still in flight for the first minutes");
   rig.clock.advance(6 * 60_000);
   assert.equal((await status(rig)).body.unresolved, 1);
@@ -479,7 +479,7 @@ test("only public https pages are ever contacted", async () => {
     assert.match(res.body.error.receipt.errorCode, /^url_/, url);
   }
   assert.deepEqual(rig.seller.requests, [], "not one request left the server");
-  assert.equal(approvals(), 0);
+  assert.equal((await approvals()), 0);
 });
 
 test("an allow-list of sites limits where Doddy may pay", async () => {
@@ -513,7 +513,7 @@ test("paid content is handed over as clipped, labelled data with control charact
   assert.doesNotMatch(paid.body.text, /[\u0000-\u0008]/);
   assert.match(paid.body.text, /\(cut short\)$/);
   assert.ok(paid.body.text.length < 4_400);
-  assert.doesNotMatch(JSON.stringify(rows("SELECT * FROM payment_receipts")), /Ignore previous/, "content is not stored in receipts");
+  assert.doesNotMatch(JSON.stringify((await rows("SELECT * FROM payment_receipts"))), /Ignore previous/, "content is not stored in receipts");
 });
 
 test("content Doddy cannot read out is paid for but not forwarded", async () => {
@@ -529,26 +529,26 @@ test("content Doddy cannot read out is paid for but not forwarded", async () => 
 
 // ------------------------------------------------------------------ construction guards
 
-test("live mode refuses the demo seller, and a wallet must match the mode", () => {
-  const store = new Store(":memory:");
+test("live mode refuses the demo seller, and a wallet must match the mode", async () => {
+  const store = await Store.memory();
   try {
     const base = { store, policy: defaultPolicy(), limits: testLimits() };
     assert.throws(() => new PaymentsService({ ...base, mode: "live", wallet: null, http: new MockPaymentSeller() }), /demo seller/);
     assert.throws(() => new PaymentsService({ ...base, mode: "live", wallet: new MockPaymentWallet(), http: { get: async () => { throw new Error("x"); } } }), /both be mock or both live/);
   } finally {
-    store.close();
+    await store.close();
   }
 });
 
 test("demo scenarios are rejected when they are not valid names, and in a live seller", async () => {
   rig = await startPay();
   assert.equal((await rig.call("GET", "/v1/payments", { scenario: "make_it_free" })).status, 400);
-  const store = new Store(":memory:");
+  const store = await Store.memory();
   try {
     const live = new PaymentsService({ store, mode: "live", wallet: null, http: { get: async () => { throw new Error("x"); } }, policy: defaultPolicy(), limits: testLimits() });
     assert.throws(() => live.applyMockScenario("normal"), /only in mock mode/);
   } finally {
-    store.close();
+    await store.close();
   }
 });
 
@@ -588,7 +588,7 @@ test("a larger payment is refused without the typed amount, and the approval is 
   assert.equal(wallet().signed.length, 0, "nothing was signed");
   assert.equal(paidRequests(rig).length, 0);
   assert.equal(await used(), "0.00", "nothing was reserved");
-  assert.equal(rows("SELECT * FROM payments").length, 0);
+  assert.equal((await rows("SELECT * FROM payments")).length, 0);
 
   // The same approval still works once the right amount is typed.
   const ok = await pay(rig, body.approvalId, SHOP, {}, "0.05");

@@ -58,9 +58,14 @@ public enum Birthdays {
         contact.month == 2 && contact.day == 29 ? (2, 28) : (contact.month, contact.day)
     }
 
-    /// Picked contacts that still exist with a birthday, at most `maxReminders`, next first.
-    public static func toSchedule(_ contacts: [BirthdayContact], picked: Set<String>, now: Date, calendar: Calendar) -> [BirthdayContact] {
-        Array(upcoming(contacts.filter { picked.contains($0.id) }, now: now, calendar: calendar).prefix(maxReminders))
+    /// Picked contacts that still exist with a birthday, next first: at most `maxReminders`, and
+    /// never more than the shared notification pool leaves (ADR-523). `pending` is every
+    /// identifier iOS lists as pending for the app; the screen shows how many were set.
+    public static func toSchedule(
+        _ contacts: [BirthdayContact], picked: Set<String>, now: Date, calendar: Calendar, pending: [String] = []
+    ) -> [BirthdayContact] {
+        let room = min(maxReminders, NotificationBudget.room(for: .birthdays, pending: pending))
+        return Array(upcoming(contacts.filter { picked.contains($0.id) }, now: now, calendar: calendar).prefix(room))
     }
 
     public static func title(_ name: String?, _ language: NotificationLanguage) -> String {

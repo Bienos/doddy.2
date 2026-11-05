@@ -44,7 +44,7 @@ export const defaultPolicy = (over: Partial<PaymentsPolicy> = {}): PaymentsPolic
 export async function startPay(
   o: { policy?: Partial<PaymentsPolicy>; limits?: Parameters<typeof testLimits>[0]; wallet?: PaymentWallet | null; seller?: SellerHttp } = {},
 ): Promise<PayRig> {
-  const store = new Store(":memory:");
+  const store = await Store.memory();
   const clock = new Clock(Date.parse("2026-10-12T10:00:00Z"));
   const limits = testLimits(o.limits);
   const logs: string[] = [];
@@ -80,7 +80,7 @@ export async function startPay(
       if (closed) return;
       closed = true;
       server.close();
-      store.close();
+      await store.close();
     },
     async call(method, path, c = {}) {
       const headers: Record<string, string> = {};

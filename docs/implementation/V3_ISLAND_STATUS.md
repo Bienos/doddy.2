@@ -1,4 +1,6 @@
 # V3 status — Doddy in the Dynamic Island
+
+> **27 Oct 2026 (ADR-653): the style picker and the seven old looks (Lean In, Orbit, Ink Ripple, Negative Space, Editorial, Abstract Horizon, Here With You) are gone; Whole Doddy is the only voice island.** Everything below that talks about choosing a style, or about Lean In's hand and bars, is history. The islands for notes, plans, reminders, focus and translating are unchanged.
 Date: 2026-10-09. Owner request: "it opens app [with] double back tap, now live island". ADRs 053–054 in `DECISIONS.md`.
 
 ## What it does
@@ -40,9 +42,10 @@ Linux only: capability guard passes (now also scans `DoddyWidgets/`, `Shared/`, 
 11. **Light and dark (ADR-106).** Lock the phone mid-conversation in Light mode: paper card, dark text, orange waveform. Switch to Dark mode (Control Centre): Night card, light text, Doddy on a small paper backing. The island looks the same in both: Doddy on a paper backing on black.
 12. **Muted.** Mute from the Lock Screen: orange disappears, "Muted · Doddy can't hear you", Unmute is the filled button.
 13. **Ended card.** Save one note, then tap End on the Lock Screen: the card changes to fist-pump Doddy (sitting Doddy if nothing was saved), "Conversation ended", "Doddy isn't listening · 1 note saved · m:ss total", Open Doddy. It disappears after about 2 minutes; the island is gone at once. A failed connection instead removes the card at once.
-14. **Art.** The island no longer uses the full-body pose (too small at 26 pt): it draws the Lean In face from the owner's pack (ADR-238). The Lock Screen keeps the pose art at 52 pt, from 160/240 px-tall downscales of the pack images; if it looks soft, ask design for a native small export of the same poses.
+14. **Art.** The island no longer uses the full-body pose (too small at 26 pt): it draws the Lean In face from the owner's pack (ADR-238). **Whole Doddy (the default style) since ADR-615:** the compact island shows only his head (26 pt), the expanded island all of him with a 1.5 pt cream edge and a faint light, with bolder waves; while he talks they stay in the band under his status, start beside him and spread to the right. Check: the head is centred beside the camera, his feet aren't cut at the bottom of the expanded island, the faint light isn't cut hard, the talking waves don't hide "Speaking", the pills read in full ("Mute", "Open", "Stop", or without symbols), and the waves look like smooth lines at arm's length. Pictures of the views: the `island-screenshots` artifact of the hosted Mac job. The Lock Screen keeps the pose art at 52 pt, from 160/240 px-tall downscales of the pack images; if it looks soft, ask design for a native small export of the same poses.
 15. **Lean In island (ADR-238).** Compare the island against `design/dynamic-island-v4/01-boards/01-voice.svg`: listening (smile, hand, orange arc, bars, "VOICE ● LIVE"), speaking (open mouth), thinking (brow up, dots), muted (calm face, no hand, no orange, mic-slash, Unmute is the cream pill), Confirm in Doddy (brow up, hand symbol), lost (calm face, yellow line, Dismiss only). Check the face is centred and nothing touches the camera; the pills are tappable (the board's 34 pt pill sits in a proposed 44 pt target, not proven); the time does not push the label off; minimal shows face + bars beside another app's activity. Text sizes are fixed points from the board, so check the largest text setting too.
 16. **Styles (ADR-239).** Settings → Voice → Dynamic Island style: the previews show all seven; pick each in turn, start a conversation, go Home and compare the island with its board in `design/dynamic-island-v4/01-boards/` (Orbit 05, Ink Ripple 06, Negative Space 07, Editorial 09, Abstract Horizon 10, Here With You 04). Check that orange turns grey when muted, and Here With You's compact shows the time.
+17a. **Cards and results (ADR-616).** From another app ask Doddy to text someone: the island says "A text to check", the expanded island has Show (cream) instead of Open, the Lock Screen has Show in Doddy; tap Show: Doddy opens with the card (half height); nothing was sent; tap Open in Messages, press Send yourself. Repeat with a BLIK transfer ("A transfer to check"), an email, Maps, a calendar change. Ask for a document (make_document): "Your document is ready" (or "Making your document") for about 8 s, Show opens the conversation with its button. End the conversation, then tap an old island link from the Lock Screen if one is left: Doddy opens on Home and starts nothing. Nothing a card says (a name, a number, a message, an amount) ever shows on the island or the Lock Screen.
 17. **Moments (ADR-240).** From another app: ask Doddy to remember something → Thought Pocket "Save this note?"; tap the island, Save → "Note saved" for about 8 s, then back to the voice style. Ask for two changes at once → Step Stones "Plan ready"; confirm → "Doing the plan · Step i of N". Ask for a reminder → Reminder Knot; Add → "Adding reminder" then "Reminder set" for about 8 s. Lock the phone during each: nothing the note or reminder says appears on the island.
 18. **Focus (ADR-241).** Home → Focus, 15 min, type a line, Start. Go Home: Tiny Promise with the countdown ticking and your line. Pause from the island (time stops, "Paused"), Resume, then lock the phone: Lock Screen card with Pause/Stop. Let it run out with the app in the background: the island says "Time's up" and a "Focus done" notification arrives. Force-quit Doddy mid-focus, then tap Pause on the island: it still works (iOS starts Doddy for it). Turn notifications off for Doddy and start one: the screen says there may be no alert.
 19. **Breathing (ADR-242).** Home → Breathe, 1 min: the tide drawing and "Breathe in"/"Breathe out" switch every 4/6 s; Reduce Motion on: no scaling, words still switch. Go Home: the island shows "Breathing" and the time left, no In/Out. After the minute: "Breathing done".
@@ -119,3 +122,155 @@ is unknown until step 3.
 | DOD-07 scoped_action_approval | Mute and End are the only island actions; both run the conversation's own handlers; nothing is saved or sent from the island; "Confirm in Doddy" sends the user to the on-screen card | — | — |
 | DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
 | Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
+
+## Since 30 Oct: the island pulses with his voice outside the app (ADR-683)
+Owner: "Can it also pulse around Dynamic Island outside app like it is [now] on home inside app when
+talking to Doddy". Merged in #158 on 1 Nov (branch `claude/island-pulse-outside-app`).
+
+**Why it can't be Home's strip.** A Live Activity has no animation of its own: iOS draws it again only
+when the app sends an update, and nothing of an app's is drawn outside the island's black shape. Home's
+strip (ADR-665) moves 30 times a second and glows around the island; the island outside the app can't.
+
+**What it does.** While Doddy talks and Doddy is not on screen, the app sends a beat every 0.6 s: how
+loud his voice was since the last one, as a step from 0 (a pause) to 4 (his loudest). iOS moves the
+island from one beat to the next with its own short animation.
+
+**The look is option C, "Aurora, like Home"** (owner, 1 Nov: "go with C !", from a board of four
+options after "make it look more professional"). The first build's halo behind his head, glowing
+waves and brightening outline are gone.
+
+| Where | What it shows |
+|---|---|
+| Small island, right | Home's fine lines (21, orange to amber to rose): calm while he hears you, a new shape and height with each beat while he talks |
+| Small island, left | His head, as before (no halo) |
+| Big island | His talking waves ease between 0.75 and 1 of their height (they stay under "Speaking"), no glow |
+| Around the island | The orange keyline, as before ADR-683 (it doesn't move) |
+
+Nothing changes while he listens or works, while muted, while a card or result is on the island,
+under Reduce Motion, on the minimal island or on the Lock Screen. The number comes from the loudness
+of the audio he plays (ADR-655), never the microphone, and the island is updated on the iPhone.
+
+| Piece | Where |
+|---|---|
+| The steps, the alternation, the made-up rhythm's peak | `Packages/DoddyCore/Sources/DoddyCore/IslandVoiceBeat.swift`, tests in `IslandVoiceBeatTests` |
+| The beat in the content, and when it is wanted | `Shared/VoiceActivity/DoddyVoiceAttributes.swift` (`voiceBeat`, `wantsVoiceBeat`) |
+| How each beat looks | `Shared/IslandArt/IslandScene.swift` (`aurora`, `auroraLevel`, `beatWaveScale`), `IslandViews.swift` (`IslandAuroraView`) |
+| Sending it | `DoddyApp/Features/Voice/VoiceLiveActivity.swift` (`updateBeating`, `beatTick`), `AgentVoiceMeter.takePeak` |
+| Pictures | `DoddyTests/IslandScreenshotTests`: `3a-speaking-pause`, `3b-speaking-loud` in the `island-screenshots` artifact; `testTheSmallIslandDrawsHisVoiceAsHomesLines` |
+
+**Device checks, not run** (iPhone 14 Pro or later):
+1. Start a conversation, ask something with a long answer, go to the Home Screen. Pass: while he
+   answers, the fine lines on the small island change height about twice a second; between his
+   sentences they settle; when he stops and listens they stand still, calm.
+2. Does iOS animate between beats, or jump? If it jumps, try a longer `IslandVoiceBeat.interval`
+   (0.8 to 1 s) so each animation has time to finish.
+3. Keep it up through a two-minute answer: the island keeps pulsing and doesn't stall or lag
+   behind his voice. If it stalls, iOS is limiting the updates: lengthen the interval.
+4. Mute from the island: the pulse stops at once, the island turns grey.
+5. Reduce Motion on (Settings › Accessibility › Motion): no pulse, the island draws still.
+6. Open Doddy while he talks: Home's strip takes over; no pulse is sent (Console shows no updates).
+7. The lines read at arm's length beside the camera, in light and dark wallpapers, and don't crowd it.
+8. Battery: a 10-minute conversation from another app, compared with the build before.
+
+**Checked here (Linux, Swift 6.1.2):** DoddyCore 2,215 tests, 0 failures (12 new); island checks
+PASS (new `voiceBeat` checks); `swiftc -parse` on every edited Swift file. **Hosted Mac job** (PR #158,
+run 41317196636): the app and widget build, the UI tests pass, and every island unit test passed but the
+new halo test, whose own threshold was wrong (the island's black `#080808` reads as 8); corrected after it.
+
+## Since 22 Oct: one "Talk to Doddy" control that follows Settings (ADR-579)
+The section below is ADR-577's. Since ADR-579 the "Talk to Doddy" control itself starts in the Dynamic
+Island by default (Settings › Action Button: Dynamic Island, Open App or Automatic), a second press ends
+the conversation, "Small island" is Settings › "Expand when Doddy speaks", and a failed start leaves a
+"Conversation stopped" card on the Lock Screen. Root cause, flow and the 16-row device matrix:
+`ACTION_BUTTON_ISLAND.md`. Device check A below now applies to "Talk to Doddy".
+
+## Talk in the Island, and an island that opens up (ADR-577, 2026-10-20)
+
+> **Changed 22 Oct (ADR-593):** the Action Button opens Doddy again. Owner: "make it so when I press
+> the Action Button the Doddy app opens, not the Dynamic Island alone with Doddy." The control below
+> (`TalkInIslandControl`, kind `com.bienos.doddy2.talk-island`) now runs `TalkToDoddyIntent` and is
+> named "Talk to Doddy", so an Action Button already set to it opens Doddy after the update with
+> nothing to change. `TalkInIslandIntent` and everything it starts are unchanged and stay in the
+> Shortcuts app as "Talk in the Island"; no control runs it. The island still opens up when Doddy
+> speaks once you leave the app. The steps and checks below describe ADR-577 as it was.
+Owner: "The live island stuff is just so bad. It's not expanding, it's not doing anything really",
+and "The Action Button should open the Doddy Dynamic Island, the big expanded one, when he starts
+talking, not open the app. I don't want to hold it."
+
+**Why it did nothing.**
+- Every way in opened the app: `TalkToDoddyIntent` has `openAppWhenRun = true`, and the voice
+  screen is a full-screen cover. iOS shows an app's Live Activity in the Dynamic Island only while
+  that app isn't the one on screen, so for the whole time you talked in Doddy there was no island.
+- The only request to open the island up (`VoiceLiveActivity.openForGreeting`, an alert update) was
+  sent from `VoiceView` right after the conversation connected, with the voice screen in front, so
+  iOS never showed it; and only for shortcut starts. No other update carried an alert, so after you
+  left the app the island stayed the small strip unless you touched and held it.
+- While Doddy said "Hey Pat, what's up?" the island said "Speaking": the greeting was shown only
+  while connecting and listening.
+- There was no way to start without the app: every conversation started on the voice screen.
+
+**What changed.**
+- **"Talk in the Island"** (`Shared/Shortcuts/TalkInIslandIntent.swift`, iOS 18+): an
+  `AudioRecordingIntent` and `LiveActivityIntent` with `openAppWhenRun = false`, run in the app's
+  process. The new control `DoddyWidgets/TalkInIslandControl.swift` runs it, so the Action Button can
+  (Settings › Action Button › Controls). `TalkInIsland.start()` (`DoddyApp/Features/Voice/`) starts
+  the conversation with the greeting and `withoutOpeningApp`, after the checks that need no screen:
+  voice available, the Face ID lock off, Live Activities on, the microphone already allowed, voice
+  signed in (or the Debug connection) with the voice data notice accepted. A refusal is one sentence
+  saying what to open; nothing starts. It requires the iPhone unlocked (the conversation has your
+  notes). It is not an App Shortcut: the App Shortcuts list can't hold an iOS 18 intent in an app
+  that still runs on iOS 17 (reported crash on iOS 17 with `if #available` in the builder).
+- **Before connecting,** a start without opening checks that the island is really up (iOS stops a
+  recording started this way without one) and takes the audio session with the conversation's own
+  settings. If iOS refuses, the conversation fails with "iOS didn't let Doddy start the microphone
+  without opening him…" instead of connecting deaf. Console, `com.bienos.doddy2.dev` / `voice-audio`:
+  "audio session taken without opening" or "…refused…, code N".
+- **The island opens up when Doddy starts speaking** (`IslandExpansion`, DoddyCore): his first
+  words, then the start of each answer to something you said, never twice in one answer, not within
+  20 s of the last (each plays the alert sound), never while Doddy is on screen, not while
+  translating, and never with Settings › Back Tap and Siri › "Small island". This applies to every
+  conversation, so one started in the app opens up too once you leave it.
+- **The greeting stays while he says it:** "Hey Pat, what's up?" and the wave, instead of
+  "Speaking" and the shrug, until you first speak.
+- **Tapping the island** (or the Open pill) brings Doddy forward with the conversation's screen,
+  which takes the running conversation (`ShortcutRouter.showConversationStartedElsewhere`); with the
+  Face ID lock, after the unlock.
+
+**On the iPhone (owner).**
+1. Open Doddy once and start a conversation from Home, so voice is set up and the microphone allowed.
+2. iPhone Settings › Doddy › Live Activities: on.
+3. Settings › Action Button › swipe to **Controls** › tap the control under it › search "Doddy" ›
+   **Talk in the Island**. (iOS fires the Action Button on its own short press-and-hold; that is
+   iOS's, not Doddy's. Let go and talk: there is nothing to hold while you speak.)
+4. Press it from the Home Screen or another app: Doddy should say "Hey Pat, what's up?" with the
+   big island open, then you ask and he answers, with the island opening again as he answers.
+
+**Device checks, not run.** On an iPhone 15 Pro or later, iOS 18 or later:
+- A. Doddy not running (swiped away): press the Action Button. Pass: island appears, opens up with
+  "Hey Pat, what's up?" and the wave, Doddy speaks it, hears a question and answers. If the
+  microphone is refused, the Console line above says "refused" with its code: that is iOS's rule,
+  and "Talk to Doddy" (which opens the app) is the fallback.
+- B. Doddy in the background after an earlier conversation: the same.
+- C. Two minutes in another app: the island stays; it opens up at each answer, at most every 20 s.
+- D. Tap the island: Doddy opens on the conversation; Close ends it.
+- E. "Small island" in Settings: the island never opens up by itself.
+- F. Live Activities off, or Face ID lock on: the press says why and nothing starts (no microphone dot).
+- G. Locked iPhone: iOS asks to unlock before Doddy starts.
+- H. The alert sound while Doddy listens: check it doesn't cut into his answer (the provider hears
+  it as speech). If it does, keep only the greeting's opening (one line in `IslandExpansion`).
+- I. The free (Personal) team build, `make project-iphone`: Live Activities need no entitlement, so
+  the island and the control should work there too; check it.
+
+**Verified on Linux (20 Oct).** Swift 6.1.2: DoddyCore `swift test` 1273 tests, 0 failures (6 new
+`IslandExpansionTests`); `scripts/check_island_art.sh` PASS (new checks: greeting while speaking,
+wave while saying it); `scripts/typecheck_app_logic.sh` PASS (25 files, incl. `ShortcutRouter` and
+`VoiceConfig`); capability guard, platform specs and string catalogs PASS; `swiftc -parse` on every
+edited Swift file. **App, widget extension, intent and control not compiled (no Xcode); nothing run
+on a simulator or device.** The new `IslandBaselineTests` case needs a simulator.
+
+| Rule | What enforces it here | Tests run | Gaps / claims to limit |
+|---|---|---|---|
+| DOD-08 verified_status_and_receipts | A start without opening proceeds only if `Activity.request` returned an activity and iOS gave the audio session; otherwise it fails with what to do | Linux checks above | Whether iOS allows the background microphone is unknown until check A |
+| DOD-11 observable_privacy | `.requiresAuthentication`; refused while the Face ID lock is on; island and alert carry the status and greeting only; logs name the check and an error code only | Guard PASS | The greeting's name shows on the Lock Screen, as before |
+| DOD-07 scoped_action_approval | The control starts a conversation only; cards still wait for a tap in the app | — | — |
+| Honest capability claims | This section says "not run" for every device behaviour | — | Don't call the Action Button path working until check A passes |

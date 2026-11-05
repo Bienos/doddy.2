@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "not_connected",
+    "message": "Gmail isn't connected.",
+    "correlationId": "4dbaad31-10a8-486b-aa63-582e2efa5a62",
+    "receipt": {
+      "operationId": "1ea7e374-5714-4f11-b0a8-3579748a8c2f",
+      "operation": "read",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: Gmail isn't connected.",
+      "errorCode": "not_connected",
+      "providerReference": null
+    }
+  }
+}

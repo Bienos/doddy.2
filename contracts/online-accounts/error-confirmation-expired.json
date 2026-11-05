@@ -2,9 +2,9 @@
   "error": {
     "code": "capability_disabled",
     "message": "This action needs a fresh confirmation.",
-    "correlationId": "7ca40b6f-9714-4307-9cdc-4295d3213394",
+    "correlationId": "000b01c4-8abe-4c31-8907-4cc14b5ef074",
     "receipt": {
-      "operationId": "d0002b07-ea41-4eb4-b845-3e4ceda94e72",
+      "operationId": "a15f1643-3770-4df5-9706-0ffd6d10bad6",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",

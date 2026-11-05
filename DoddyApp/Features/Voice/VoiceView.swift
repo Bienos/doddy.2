@@ -2,32 +2,41 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// Voice conversation. It starts in the foreground and keeps running if the user leaves the app
-/// (shown in the Dynamic Island / on the Lock Screen with Mute and End); it ends when the user
-/// taps End or Close, from the island, or when the connection drops.
+/// Voice conversation, shown as the transcript: a sheet over Home since the conversation moved
+/// onto Home (ADR-595). It keeps running if the user closes the sheet or leaves the app (Home, the
+/// Dynamic Island and the Lock Screen show it with Mute and End); it ends when the user taps End,
+/// from the island, or when the connection drops.
 struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
-    @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
+    /// Back from iPhone Settings, the access card looks at iOS's answer again (ADR-578).
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
+    @State private var authSession = VoiceAuthSession.shared
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
     /// The time picker on a note-reminder card is open (closed again for each new card).
     @State private var editingNoteReminderTime = false
-    /// "Change languages" on the "Start translating?" card.
-    @State private var changingTranslator = false
     /// The plan step whose "Change" sheet is open (ADR-205).
     @State private var editingPlanStep: PlanStep?
+    /// What was last copied from a BLIK card (ADR-510), to show "Copied" next to it.
+    @State private var copiedForBlik: String?
+    /// The presentation whose share sheet is open (ADR-567).
+    @State private var sharingPresentation: VoiceSessionController.PresentationReady?
+    /// A photo just taken with Doddy's camera (ADR-569), waiting for the camera screen to go.
+    @State private var takenPhoto: Data?
+    /// The new note opened with that photo.
+    @State private var photoNote: TakenPhoto?
 
-    /// Read when a conversation starts, so a changed setting or access code applies next time.
-    private var mode: VoiceConnectionMode {
-        VoiceConnectionMode.resolve(
-            serverAddress: tokenServer, accessCode: VoiceAccessCodeStore.read(), publicAgentID: agentID)
-    }
+    private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
+
+    /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
+    /// Debug builds may go straight to the agent without a DODDY voice account (ADR-551).
+    private var mode: VoiceConnectionMode { VoiceConfig.connectionMode }
 
     var body: some View {
         NavigationStack {
@@ -35,21 +44,21 @@ struct VoiceView: View {
                 if let controller {
                     session(controller)
                 } else {
-                    ProgressView()
+                    VoiceAccessGate(provider: provider) {
+                        Task { await beginConversation() }
+                    }
                 }
             }
+            // A full-screen cover on iPad: one readable column, the paper still edge to edge (ADR-437).
+            .readableColumn()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.canvas)
             .navigationTitle("Talk to Doddy")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        Task {
-                            await controller?.stop()
-                            dismiss()
-                        }
-                    }
+                    // Closes the transcript only; the conversation goes on on Home (ADR-595).
+                    Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     if let controller {
@@ -70,29 +79,27 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
-            // "Hey Doddy" already started this conversation (ADR-254): show it, don't start another.
-            if self.controller == nil, let started = WakeWordListener.shared.takeConversation() {
-                self.controller = started
-                return
-            }
-            let controller = self.controller ?? VoiceSessionController(store: store)
-            self.controller = controller
-            await controller.start(
-                mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
-                checkIn: ShortcutRouter.shared.takeCheckInBriefing())
-        }
-        .onDisappear {
-            Task { await controller?.stop() }
+            // Started in a task of its own (ADR-672): closing this sheet cancels the view's task, and a
+            // cancelled start ended the conversation as "You're offline". Home holds the conversation
+            // and keeps it going after the sheet closes (ADR-595), as the gate's button already does.
+            await Task { @MainActor in
+                await authSession.restore()
+                if (authSession.isSignedIn || VoiceConfig.talksWithoutAccount(for: provider)) && VoiceProviderConsent.isGranted(for: provider) {
+                    await beginConversation()
+                }
+            }.value
         }
         .sheet(item: $openConnection, onDismiss: {
-            Task { await connections.refresh() }
-            controller?.refreshConnectionNeeded()
+            Task {
+                await connections.refresh()
+                await controller?.refreshConnectionNeeded()
+            }
         }) { connection in
             ConnectionSheet(connection: connection, controller: connections)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
-        // The payment card the voice agent asked for (ADR-452). Closing it before paying cancels; it can't be
+        // The payment card the voice agent asked for (ADR-732). Closing it before paying cancels; it can't be
         // closed while the payment is being sent (PaymentApprovalModel.canDismiss).
         .sheet(isPresented: Binding(
             get: { controller?.paymentApproval.map { $0.phase != .idle } ?? false },
@@ -102,6 +109,49 @@ struct VoiceView: View {
                 PaymentApprovalCard(model: model)
             }
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await controller?.recheckConnectionAccess() } }
+        }
+    }
+
+    @MainActor
+    private func beginConversation() async {
+        guard controller == nil else { return }
+        // One conversation at a time (ADR-496): one already starting or live is shown instead of
+        // starting a second. What was asked for a
+        // new conversation (a shortcut's greeting, a translator, a check-in, a note) is dropped,
+        // so it can't start with a later conversation by surprise.
+        if let running = VoiceSessionController.runningConversation {
+            _ = ShortcutRouter.shared.takeTalkToDoddyOpening()
+            _ = ShortcutRouter.shared.takeTranslatorPreset()
+            _ = ShortcutRouter.shared.takeCheckInBriefing()
+            _ = ShortcutRouter.shared.takeNoteToAsk()
+            self.controller = running
+            HomeConversation.shared.hold(running)
+            return
+        }
+        // A conversation Home holds that waits for the user (a card, a failure): show it here,
+        // never start a second one over it (ADR-595).
+        if let held = HomeConversation.shared.forTranscript {
+            self.controller = held
+            return
+        }
+        let controller = VoiceSessionController(store: store)
+        self.controller = controller
+        // Home shows it and keeps it going after the sheet closes (ADR-595).
+        HomeConversation.shared.hold(controller)
+        // Back Tap or another Talk to Doddy shortcut greets with "Hey <name>, what's up?", after the same
+        // account and provider-consent gate used by a tap in the app.
+        // The router sets the opening only when it opened a conversation (Back Tap's "Only open
+        // Doddy" opens none; the Action Button's control always talks, ADR-579).
+        let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
+        let greeting = openedByShortcut ? TalkInIsland.greeting(for: profiles.profile) : nil
+        // The island opens up when Doddy starts speaking, not here (ADR-577): this screen is on top,
+        // and iOS doesn't show Doddy's own island over Doddy, so a request now was always lost.
+        await controller.start(
+            mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
+            checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
+            wakeGreeting: greeting, aboutNote: ShortcutRouter.shared.takeNoteToAsk())
     }
 
     @ViewBuilder
@@ -121,7 +171,7 @@ struct VoiceView: View {
                         HStack(alignment: .center, spacing: 16) {
                             VoiceDoddyView(art: screenArt(controller))
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(statusTitle(controller.phase))
+                                Text(statusTitle(controller))
                                     .font(.title2.bold())
                                     .accessibilityIdentifier("voice.status")
                                 if controller.isMuted && controller.isLive {
@@ -133,9 +183,13 @@ struct VoiceView: View {
                         }
                         .accessibilityElement(children: .combine)
 
-                        // Testing only (ADR-265): the copy below names ElevenLabs; say plainly when it isn't.
+                        // ADR-265/442: the copy below names ElevenLabs; say plainly when it isn't.
                         if controller.provider == .openAIRealtime {
-                            Label("Test voice: OpenAI runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.", systemImage: "testtube.2")
+                            Label {
+                                Text(verbatim: "OpenAI Realtime \(controller.openAIModel.shortName) runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.")
+                            } icon: {
+                                Image(systemName: "waveform.badge.mic")
+                            }
                                 .font(.footnote)
                                 .foregroundStyle(Theme.secondaryText)
                                 .accessibilityIdentifier("voice.openAITest")
@@ -146,6 +200,10 @@ struct VoiceView: View {
                                 .foregroundStyle(Theme.secondaryText)
                                 .accessibilityIdentifier("voice.audioPaused")
                         }
+                        #if DEBUG
+                        // Engineering text (audio session names, in English): the owner's Debug builds
+                        // only, so a failure can be read without Xcode; Release and TestFlight hide it
+                        // (ADR-672). The log line in the controller stays in every build.
                         if let note = controller.audioNote {
                             Text(note)
                                 .font(.caption2)
@@ -153,10 +211,11 @@ struct VoiceView: View {
                                 .textSelection(.enabled)
                                 .accessibilityIdentifier("voice.audioNote")
                         }
+                        #endif
 
                         if controller.isPrivate {
                             Label {
-                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and keeps its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI (or ElevenLabs, if you switched Home to it) still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
                                     .font(.footnote)
                             } icon: {
                                 Image(systemName: "eye.slash.fill")
@@ -199,6 +258,21 @@ struct VoiceView: View {
                                 .id("changeReceipt")
                         }
 
+                        if let card = controller.blikCard {
+                            blikReceiptCard(card, controller: controller)
+                                .id("blikCard")
+                        }
+
+                        if let ready = controller.presentationReady {
+                            PresentationReadyCard(ready: ready, onShare: { sharingPresentation = ready }, onClose: { controller.dismissPresentationReady() })
+                                .id("presentationReady")
+                        }
+
+                        if let results = controller.photoResults {
+                            PhotoResultsCard(results: results, onClose: { controller.dismissPhotoResults() })
+                                .id("photoResults")
+                        }
+
                         if let status = controller.noteReminderStatus {
                             noteReminderStatusCard(status, controller: controller)
                                 .id("noteReminderStatus")
@@ -224,9 +298,19 @@ struct VoiceView: View {
                                 .id("connectionsPaused")
                         }
 
-                        if let needed = controller.connectionNeeded {
-                            connectionCard(needed)
+                        if let request = controller.accessRequest {
+                            accessCard(request, controller: controller)
                                 .id("connectionNeeded")
+                        }
+
+                        if let needed = controller.accountNeeded {
+                            accountCard(needed, controller: controller)
+                                .id("accountNeeded")
+                        }
+
+                        ForEach(controller.documents, id: \.url) { document in
+                            documentCard(document)
+                                .id("document-\(document.url.absoluteString)")
                         }
 
                         if let card = controller.contactCard {
@@ -239,7 +323,7 @@ struct VoiceView: View {
                                 .id("parkingCard")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
+                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs, or OpenAI if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -251,10 +335,14 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
+                    copiedForBlik = nil
                     if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
                 }
                 .onChange(of: controller.listReceipt) { _, receipt in
                     if receipt != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("listReceipt", anchor: .bottom) } }
+                }
+                .onChange(of: controller.blikCard) { _, card in
+                    if card != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("blikCard", anchor: .bottom) } }
                 }
                 .onChange(of: controller.noteReminderStatus) { _, status in
                     if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
@@ -274,9 +362,80 @@ struct VoiceView: View {
                 .onChange(of: controller.saveSuggestions == nil) { _, isNil in
                     if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("saveSuggestions", anchor: .bottom) } }
                 }
+                // The access card is what Doddy just asked the user to tap (ADR-578).
+                .onChange(of: controller.accessRequest?.connection) { _, connection in
+                    if connection != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("connectionNeeded", anchor: .bottom) } }
+                }
+            }
+            // ADR-569: Doddy's camera after the user tapped Open camera; a kept photo opens a new note.
+            .fullScreenCover(isPresented: cameraBinding(controller), onDismiss: {
+                guard let data = takenPhoto else { return }
+                takenPhoto = nil
+                photoNote = TakenPhoto(data: data)
+            }) {
+                CameraCapture(
+                    onPhoto: { data in
+                        takenPhoto = data
+                        controller.cameraClosed()
+                    },
+                    onCancel: { controller.cameraClosed() })
+                    .ignoresSafeArea()
+            }
+            .sheet(item: $photoNote) { taken in
+                CaptureView(takenPhoto: taken.data)
+            }
+            // ADR-626: the training plan screen after the user tapped Open on its card. It asks its own safety questions.
+            .sheet(item: planBinding(controller)) { request in
+                NavigationStack {
+                    TrainingPlanView(prefill: request.ask)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Close") { controller.planClosed() }
+                                    .accessibilityIdentifier("plan.close")
+                            }
+                        }
+                }
             }
             controls(controller)
+                // ADR-567: the share sheet opens by itself once the file is made, and again from its card.
+                .sheet(item: $sharingPresentation) { ready in
+                    FileShareSheet(url: ready.url)
+                        .presentationDetents([.medium, .large])
+                }
         }
+        // ADR-566: slides up when Doddy needs an Apple app that is off; a swipe down is Not now.
+        .sheet(item: permissionBinding(controller)) { request in
+            PermissionAskSheet(
+                request: request,
+                onAllow: { Task { await controller.allowPermission() } },
+                onDecline: { Task { await controller.declinePermission() } })
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .onChange(of: controller.presentationReady) { _, ready in
+            if let ready { sharingPresentation = ready }
+        }
+    }
+
+    private func planBinding(_ controller: VoiceSessionController) -> Binding<PlanAskRequest?> {
+        Binding(
+            get: { controller.planRequest },
+            set: { value in if value == nil { controller.planClosed() } })
+    }
+
+    private func cameraBinding(_ controller: VoiceSessionController) -> Binding<Bool> {
+        Binding(
+            get: { controller.cameraRequest != nil },
+            set: { open in if !open { controller.cameraClosed() } })
+    }
+
+    /// The permission sheet's item. iOS sets it to nil only when the user swipes the sheet away.
+    private func permissionBinding(_ controller: VoiceSessionController) -> Binding<VoiceSessionController.PermissionRequest?> {
+        Binding(
+            get: { controller.permissionRequest },
+            set: { value in
+                if value == nil, controller.permissionRequest != nil { Task { await controller.declinePermission() } }
+            })
     }
 
     @ViewBuilder
@@ -292,9 +451,17 @@ struct VoiceView: View {
             }
         case .failed(let message):
             if controller.isOffline {
-                OfflineNoteCard(controller: controller)
+                OfflineNoteCard(controller: controller, startText: controller.recovery?.text ?? "")
             } else {
                 ProblemView(message: message)
+                if controller.recovery != nil || controller.recoverySaved != nil {
+                    RecoveryDraftCard(controller: controller)
+                }
+            }
+        case .ended:
+            // After Stop listening (ADR-361): the note Doddy was asking about, as a draft.
+            if controller.recovery != nil || controller.recoverySaved != nil {
+                RecoveryDraftCard(controller: controller)
             }
         default:
             EmptyView()
@@ -447,6 +614,12 @@ struct VoiceView: View {
                 Text(label)
                     .foregroundStyle(Theme.secondaryText)
             }
+            // Said only when it is true: AlarmKit rings it (ADR-650); a notification may be silent.
+            if TimerRinger.canRing {
+                Text("It rings even in Silent mode or a Focus, with the time left on the Lock Screen.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .map(_, let place):
             Text("Open this in Maps?")
                 .font(.headline)
@@ -474,6 +647,18 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .blik(_, let draft, let contactName, let numbers):
+            Text("A BLIK transfer for you to send")
+                .font(.headline)
+            blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
+        case .presentation(_, let draft):
+            PresentationCardContent(draft: draft)
+        case .camera:
+            Text("Open the camera?")
+                .font(.headline)
+            Text("A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .changeEvent(_, let plan):
             Text("Change this event?")
                 .font(.headline)
@@ -493,11 +678,12 @@ struct VoiceView: View {
             if let text = plan.replaceNotes {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
+                    // ADR-718: the notes are shown in full, both the old (which this replaces) and the new (which is written).
                     if let old = plan.notesBefore, !old.isEmpty {
-                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(4)
+                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText)
                     }
                     if !text.isEmpty {
-                        Text("New: “\(text)”").font(.footnote).lineLimit(6)
+                        Text("New: “\(text)”").font(.footnote)
                     }
                 }
             }
@@ -524,11 +710,12 @@ struct VoiceView: View {
             if let text = draft.replaceNotes {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
+                    // ADR-718: in full, as for an event.
                     if let old = reminder.notes, !old.isEmpty {
-                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(4)
+                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText)
                     }
                     if !text.isEmpty {
-                        Text("New: “\(text)”").font(.footnote).lineLimit(6)
+                        Text("New: “\(text)”").font(.footnote)
                     }
                 }
             }
@@ -626,6 +813,8 @@ struct VoiceView: View {
                             Text(item)
                             if alreadyOpen.contains(index) {
                                 Text("Already on the list").font(.caption).foregroundStyle(Theme.secondaryText)
+                            } else if controller.ingredientsAtHome.contains(index) {
+                                Text("On your At home list").font(.caption).foregroundStyle(Theme.secondaryText)
                             }
                         }
                         Spacer()
@@ -665,8 +854,6 @@ struct VoiceView: View {
             Text("Apple Maps worked out the travel time just now, from where your iPhone is; traffic can change. Your position isn't kept.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
-        case .translator(_, let setup):
-            translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
             Text("Start a new list?")
                 .font(.headline)
@@ -690,12 +877,42 @@ struct VoiceView: View {
             }
             Text(preview.title)
                 .font(.headline)
+            // An email reads as an email (ADR-597); anything else as its lines.
+            if let email = EmailPreviewLayout.parse(preview.lines) {
+                EmailPreviewCard(email: email)
+            } else {
+                ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                        .font(.body)
+                }
+            }
+        case .plan(_, let steps, let blocked):
+            planContent(steps: steps, blocked: blocked, controller: controller)
+        case .ask(_, let card, let needsTap, _, _):
+            // ASK-01 (ADR-483): exactly what Doddy will do; nothing runs before the answer.
+            Text(card.title)
+                .font(.headline)
+            ForEach(Array(card.lines.enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.body)
+            }
+            Text(needsTap ? "Nothing changes until you tap." : "Say yes, or tap. Nothing is looked at before that.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .cloudRead(_, _, let preview, _, let mode):
+            if mode == .mock {
+                Label("Demo — not your real account", systemImage: "theatermasks")
+                    .font(.footnote)
+            }
+            Text(preview.title)
+                .font(.headline)
             ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
                 Text(line)
                     .font(.body)
             }
-        case .plan(_, let steps, let blocked):
-            planContent(steps: steps, blocked: blocked, controller: controller)
+            Text("Say yes, or tap. Nothing is looked at before that.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         }
     }
 
@@ -864,9 +1081,13 @@ struct VoiceView: View {
         case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
+        case .blik: (NSLocalizedString("I'll send it myself", comment: "BLIK card: the user sends it in their bank app"), NSLocalizedString("Not now", comment: ""))
+        case .presentation: (NSLocalizedString("Make presentation", comment: ""), NSLocalizedString("Not now", comment: ""))
+        case .camera: (NSLocalizedString("Open camera", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
+        case .ask(_, let card, _, _, _): (card.confirmLabel, NSLocalizedString("No", comment: ""))
+        case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
         case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
-        case .translator: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .deleteEvent, .deleteReminder: (NSLocalizedString("Delete", comment: ""), NSLocalizedString("Don't delete", comment: ""))
@@ -956,6 +1177,17 @@ struct VoiceView: View {
                 Button("Change time") { editingNoteReminderTime = true }
                     .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("voice.noteReminder.changeTime")
+            }
+            // ADR-651: only where it can ring; a monthly repeat says why it can't.
+            if ReminderRinger.isAvailable {
+                let reason = ReminderRing.unsupportedReason(
+                    ReminderRing.support(repeats: repeats, isPlace: false), NotificationLanguage.current)
+                Toggle("Ring like an alarm", isOn: Binding(get: { controller.noteReminderRings }, set: { controller.setNoteReminderRings($0) }))
+                    .disabled(reason != nil)
+                    .accessibilityIdentifier("voice.noteReminder.rings")
+                Text(reason ?? NSLocalizedString("Rings even in Silent mode or a Focus, with Stop and In 10 min.", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
             }
         case .place(let results, let onArrival):
             Picker("When", selection: Binding(get: { onArrival }, set: { controller.setNoteReminderOnArrival($0) })) {
@@ -1070,8 +1302,6 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.reminderReceipt")
     }
 
-    /// Shown when the agent asked for something that is switched off. One tap opens the same
-    /// Connections sheet as Settings, so the terms are visible before anything turns on.
     /// Settings → Pause all is on. One tap brings back the connections that were on before.
     private var pausedCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -1092,19 +1322,119 @@ struct VoiceView: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func connectionCard(_ connection: VoiceConnection) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("\(connection.title) is off", systemImage: ConnectionInfo.of(connection).symbol)
+    /// The access card (ADR-578): the agent asked for a function that is off, or that iOS hasn't
+    /// allowed. Allow turns it on in one tap (iOS's own prompt first if it has never asked) and
+    /// Doddy carries on by itself; nothing turns on without the tap, and the action still asks for
+    /// its own yes. What leaves the phone is on the card; Details opens the full terms. Only when
+    /// iOS has said no before does the button open iPhone Settings, the one place iOS lets that change.
+    private func accessCard(_ request: ConnectionApprovalCard, controller: VoiceSessionController) -> some View {
+        let connection = request.connection
+        let info = ConnectionInfo.of(connection)
+        return VStack(alignment: .leading, spacing: 12) {
+            Label("Allow Doddy to use \(connection.title)?", systemImage: info.symbol)
                 .font(.headline)
-            Text("Turn it on to let Doddy use \(connection.title.lowercased()). Then ask again.")
+            switch request.card {
+            case .allow:
+                Text(info.leavesPhone)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                Button {
+                    Task { await controller.allowConnection() }
+                } label: {
+                    Label("Allow", systemImage: "checkmark")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(request.isWorking)
+                .accessibilityIdentifier("voice.allowConnection")
+            case .openSystemSettings:
+                if request.sentToSettings {
+                    Text("Allow \(connection.title) for Doddy there, then come back. Doddy carries on by itself.")
+                        .foregroundStyle(Theme.secondaryText)
+                } else {
+                    Text("iPhone has \(connection.title) turned off for Doddy, so only iPhone Settings can allow it. Doddy carries on when you're back.")
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                Button {
+                    Task { await controller.openSettingsForConnection() }
+                } label: {
+                    Label("Open iPhone Settings", systemImage: "gear")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .accessibilityIdentifier("voice.openConnectionSettings")
+            }
+            HStack(spacing: 12) {
+                Button("Not now") {
+                    Task { await controller.declineConnection() }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(!request.canDecline)
+                .accessibilityIdentifier("voice.declineConnection")
+                Button("Details") {
+                    openConnection = connection
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(request.isWorking)
+                .accessibilityIdentifier("voice.connectionDetails")
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.accessCard")
+    }
+
+    /// ADR-563: an online account Doddy needs for what was asked. Connect opens the provider's own
+    /// sign-in sheet right here (passwords and passkeys fill in as usual, 1Password included).
+    private func accountCard(_ needed: VoiceSessionController.AccountNeeded, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Connect \(needed.title)?", systemImage: "link")
+                .font(.headline)
+            Text("Doddy needs \(needed.title) for this. You sign in with \(needed.title) itself; Doddy never sees your password, and still asks before every look and every send.")
+                .foregroundStyle(Theme.secondaryText)
+            if let message = controller.accountMessage {
+                Text(message)
+                    .font(.callout)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            HStack(spacing: 12) {
+                Button {
+                    Task { await controller.connectAccount() }
+                } label: {
+                    if controller.isConnectingAccount {
+                        ProgressView()
+                    } else {
+                        Label("Connect \(needed.title)", systemImage: "checkmark")
+                    }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(controller.isConnectingAccount)
+                .accessibilityIdentifier("voice.connectAccount")
+                Button("Not now") { controller.dismissAccountNeeded() }
+                    .accessibilityIdentifier("voice.connectAccountLater")
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// ADR-564: a file Claude is making. The link opens in Safari: Quick Look shows the deck,
+    /// document or PDF, with Share to save or send it; until it's ready the page says so.
+    private func documentCard(_ document: RunDocument) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("\(document.label) from Claude", systemImage: "doc.richtext")
+                .font(.headline)
+            Text(document.name)
+                .foregroundStyle(Theme.secondaryText)
+            Text("It takes a minute or two. Open it now; it shows the file as soon as it's ready.")
+                .font(.callout)
                 .foregroundStyle(Theme.secondaryText)
             Button {
-                openConnection = connection
+                UIApplication.shared.open(document.url)
             } label: {
-                Label("Turn on \(connection.title)", systemImage: "checkmark")
+                Label("Open", systemImage: "arrow.up.forward.app")
             }
             .buttonStyle(PrimaryButtonStyle())
-            .accessibilityIdentifier("voice.turnOnConnection")
+            .accessibilityIdentifier("voice.openDocument")
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
@@ -1259,44 +1589,82 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.listReceipt")
     }
 
-    /// "Start translating?" (canvas 2): the pair, what changes, and Change languages.
-    @ViewBuilder
-    private func translatorProposal(_ setup: TranslatorSetup, controller: VoiceSessionController) -> some View {
-        Text("Start translating?")
-            .font(.headline)
-        HStack(spacing: 8) {
-            languageChip("You", setup.owner.nativeName)
-            Image(systemName: setup.kind == .faceToFace ? "arrow.left.arrow.right" : "arrow.left")
-                .accessibilityLabel(setup.kind == .faceToFace ? "translated both ways" : "translated into your language")
-            languageChip(setup.kind == .faceToFace ? "Them" : "Around you", setup.other?.nativeName ?? "Detect")
-        }
-        Text(setup.kind == .faceToFace
-             ? "While translating, Doddy only translates: no notes, reminders or other tools, and this conversation isn't kept on this iPhone. Their voice goes to ElevenLabs too. Doddy first tells them, in their language, that he's an AI translator."
-             : "Listen only: Doddy translates what's said around you into your language and doesn't speak to anyone else. No tools while it's on, and this conversation isn't kept on this iPhone.")
-            .font(.footnote)
-            .foregroundStyle(Theme.secondaryText)
-        if controller.translatorStartsNewConversation {
-            // Review H3: the notes, profile and lists this conversation started with stay behind.
-            Label("Start ends this conversation and starts a new one for translating, without your notes, profile or lists. This conversation isn't kept either.", systemImage: "arrow.clockwise")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
-        }
-        Button("Change languages") { changingTranslator = true }
-            .buttonStyle(SecondaryButtonStyle())
-            .sheet(isPresented: $changingTranslator) {
-                TranslatorChangeSheet(controller: controller, setup: setup)
+    /// After "I'll send it myself" (ADR-510): the same details, kept on screen while the user
+    /// opens their bank app. Doddy never sends money and can't see whether it was sent.
+    private func blikReceiptCard(_ card: VoiceSessionController.BlikCard, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Send it in your bank app").font(.headline)
+                Spacer()
+                Button { controller.dismissBlikCard() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
             }
+            blikDetails(card.draft, contactName: card.contactName, numbers: card.numbers, controller: controller)
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.blikCard")
     }
 
-    private func languageChip(_ who: String, _ name: String) -> some View {
-        VStack(spacing: 2) {
-            Text(who).font(.caption).foregroundStyle(Theme.secondaryText)
-            Text(name).font(.headline)
+    /// Who, their numbers with Copy, how much and the title (ADR-510). The amount is shown in the
+    /// iPhone's language ("50,00 zł" in Polish) but never copied: it is typed in the bank app.
+    @ViewBuilder
+    private func blikDetails(
+        _ draft: BlikTransferDraft, contactName: String?, numbers: [BlikPhoneNumber], controller: VoiceSessionController
+    ) -> some View {
+        Text(draft.amount.decimal, format: .currency(code: "PLN"))
+            .font(.title2.monospacedDigit())
+            .accessibilityIdentifier("voice.blik.amount")
+        Text("To \(contactName ?? draft.recipientName)")
+            .font(.body)
+        ForEach(numbers, id: \.self) { number in
+            HStack {
+                Label(number.shown, systemImage: "phone")
+                Spacer()
+                blikCopyButton(number.copy, controller: controller)
+                    .accessibilityLabel("Copy phone number")
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(10)
-        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
+        if numbers.isEmpty {
+            Group {
+                if contactName == nil {
+                    Text("Pick them in your bank app's BLIK phone transfer.")
+                } else {
+                    Text("No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.")
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(Theme.secondaryText)
+        }
+        if let title = draft.title {
+            HStack {
+                Label("“\(title)”", systemImage: "text.alignleft")
+                Spacer()
+                blikCopyButton(title, controller: controller)
+                    .accessibilityLabel("Copy title")
+            }
+        }
+        Text("Doddy doesn't send money and can't see your bank. Check the person and the amount in your bank app before you confirm there. They need BLIK phone transfers turned on in their own bank app.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+    }
+
+    private func blikCopyButton(_ text: String, controller: VoiceSessionController) -> some View {
+        Button {
+            controller.copyForBlik(text)
+            copiedForBlik = text
+        } label: {
+            if copiedForBlik == text {
+                Label("Copied", systemImage: "checkmark")
+            } else {
+                Text("Copy")
+            }
+        }
+        .buttonStyle(.bordered)
+        .frame(minHeight: 44)
     }
 
     /// One side of a change card: "Now" or "After", then the title and when.
@@ -1356,7 +1724,20 @@ struct VoiceView: View {
     }
 
     private func controls(_ controller: VoiceSessionController) -> some View {
-        HStack(spacing: 12) {
+        VStack(spacing: 12) {
+            // "Listen until I finish" (ADR-364); not in translator mode, which has its own hold-to-talk.
+            if controller.isLive && controller.translator == nil || controller.longTurn != .off {
+                LongTurnPanel(controller: controller)
+            }
+            HStack(spacing: 12) { mainControls(controller) }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .background(Theme.canvas)
+    }
+
+    @ViewBuilder
+    private func mainControls(_ controller: VoiceSessionController) -> some View {
             if controller.isLive {
                 Button {
                     Task { await controller.toggleMute() }
@@ -1364,6 +1745,7 @@ struct VoiceView: View {
                     Label(controller.isMuted ? "Unmute" : "Mute", systemImage: controller.isMuted ? "mic.slash" : "mic")
                 }
                 .buttonStyle(SecondaryButtonStyle())
+                .disabled(controller.longTurn != .off)
                 Button {
                     Task { await controller.stop() }
                 } label: {
@@ -1379,10 +1761,6 @@ struct VoiceView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
             }
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 12)
-        .background(Theme.canvas)
     }
 
     /// Doddy's pose on this screen (ADR-299), the island's for the same moment.
@@ -1401,15 +1779,16 @@ struct VoiceView: View {
                       awaitingConfirmation: controller.pendingAction != nil, planRunning: planRunning)
     }
 
-        private func statusTitle(_ phase: VoiceSessionController.Phase) -> String {
-        switch phase {
+        private func statusTitle(_ controller: VoiceSessionController) -> String {
+        switch controller.phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")
-        case .thinking: NSLocalizedString("Thinking…", comment: "")
+        case .thinking: NSLocalizedString("Working on it…", comment: "")
         case .speaking: NSLocalizedString("Speaking", comment: "")
         case .ended: NSLocalizedString("Conversation ended", comment: "")
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")
-        case .failed: NSLocalizedString("Couldn't connect", comment: "")
+        // A drop after Doddy was listening says so; it is never "Couldn't connect" (ADR-360).
+        case .failed: controller.endTitle ?? NSLocalizedString("Couldn't connect", comment: "")
         }
     }
 }
@@ -1418,7 +1797,10 @@ struct VoiceView: View {
 /// saved on this iPhone after Save and read back; nothing is queued to send later.
 struct OfflineNoteCard: View {
     let controller: VoiceSessionController
+    /// After a drop, what Doddy last heard (ADR-360); the user edits or clears it.
+    var startText = ""
     @State private var text = ""
+    @State private var started = false
     @State private var isSaving = false
     @State private var problem: String?
 
@@ -1449,12 +1831,155 @@ struct OfflineNoteCard: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .onAppear {
+            guard !started else { return }
+            started = true
+            text = startText
+        }
     }
 
     private func save() async {
         isSaving = true
         defer { isSaving = false }
         problem = await controller.saveOfflineNote(text)
-        if problem == nil { text = "" }
+        if problem == nil {
+            text = ""
+            controller.discardRecovery()
+        }
     }
+}
+
+/// After a conversation dropped (OP-023, ADR-360): what Doddy last heard and hadn't answered, or
+/// the note it was asking about, as a draft. It is not a note until Save; Discard drops it.
+struct RecoveryDraftCard: View {
+    let controller: VoiceSessionController
+    @State private var isSaving = false
+    @State private var problem: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let saved = controller.recoverySaved {
+                Label(String(format: NSLocalizedString("Saved as a note: “%@”", comment: ""), saved), systemImage: "checkmark.circle")
+                    .accessibilityIdentifier("voice.recovery.saved")
+            } else if let draft = controller.recovery {
+                Group {
+                    if draft.pendingNote != nil {
+                        Label("Doddy was asking to save this", systemImage: "text.bubble")
+                    } else {
+                        Label("Doddy last heard you say", systemImage: "text.bubble")
+                    }
+                }
+                .font(.headline)
+                Text("A draft, not a note: it's saved only if you tap Save as note.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+                TextField("Draft", text: Binding(get: { controller.recovery?.text ?? "" }, set: { controller.editRecovery($0) }), axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("voice.recovery.text")
+                HStack(spacing: 12) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        HStack { Text("Save as note"); Spacer(); Image(systemName: "square.and.arrow.down") }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(isSaving || draft.text.allSatisfy(\.isWhitespace))
+                    Button("Discard") { controller.discardRecovery() }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+                if let problem { ProblemView(message: problem) }
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.recovery")
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        problem = await controller.saveRecovery()
+    }
+}
+
+/// "Listen until I finish" (OP-019, ADR-364): the button, the listening card with Done, writing
+/// out, and a turn that couldn't be sent, kept as a draft to retry, type or drop.
+struct LongTurnPanel: View {
+    let controller: VoiceSessionController
+    private var language: NotificationLanguage { .current }
+
+    var body: some View {
+        switch controller.longTurn {
+        case .off:
+            Button {
+                Task { await controller.startLongTurn() }
+            } label: {
+                Label { Text(verbatim: LongTurn.startLabel(language)) } icon: { Image(systemName: "hand.raised") }
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .accessibilityIdentifier("voice.longTurn.start")
+        case .listening(let since):
+            VStack(alignment: .leading, spacing: 10) {
+                Label { Text(verbatim: LongTurn.listeningTitle(language)).font(.headline) } icon: { Image(systemName: "waveform") }
+                Text(verbatim: LongTurn.listeningDetail(language))
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+                TimelineView(.periodic(from: since, by: 1)) { context in
+                    Text(verbatim: "\(LongTurn.clock(context.date.timeIntervalSince(since))) / \(LongTurn.clock(LongTurn.maxSeconds))")
+                        .font(.footnote.monospacedDigit()).foregroundStyle(Theme.secondaryText)
+                }
+                HStack(spacing: 12) {
+                    Button {
+                        Task { await controller.finishLongTurn() }
+                    } label: {
+                        HStack { Text("Done"); Spacer(); Image(systemName: "checkmark") }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .accessibilityIdentifier("voice.longTurn.done")
+                    Button("Cancel") { Task { await controller.cancelLongTurn() } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .padding(14)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
+            .accessibilityIdentifier("voice.longTurn.listening")
+        case .writingOut:
+            HStack(spacing: 10) {
+                ProgressView()
+                Text(verbatim: LongTurn.writingOut(language)).font(.footnote)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        case .draft(let draft):
+            VStack(alignment: .leading, spacing: 10) {
+                ProblemView(message: LongTurn.problem(draft.problem, language))
+                TextField("What you said", text: Binding(get: { draft.text }, set: { controller.editLongTurn($0) }), axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("voice.longTurn.text")
+                HStack(spacing: 12) {
+                    if !draft.text.allSatisfy(\.isWhitespace) {
+                        Button {
+                            Task { await controller.retryLongTurn() }
+                        } label: {
+                            HStack { Text("Send"); Spacer(); Image(systemName: "arrow.up") }
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                    } else if draft.canWriteOutAgain {
+                        Button("Try again") { Task { await controller.retryLongTurn() } }
+                            .buttonStyle(PrimaryButtonStyle())
+                    }
+                    Button("Discard") { Task { await controller.discardLongTurn() } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .padding(14)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
+            .accessibilityIdentifier("voice.longTurn.draft")
+        }
+    }
+}
+
+/// A photo from Doddy's camera, for the new-note sheet (ADR-569).
+struct TakenPhoto: Identifiable {
+    let id = UUID()
+    let data: Data
 }
