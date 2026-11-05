@@ -57,12 +57,15 @@ struct JourneyHeading: View {
 struct UploadedCharacterView: View {
     let assetName: String
     var height: CGFloat = 180
+    /// False: no paper card in dark appearance, a thin cream edge instead (see `CharacterArtImage`).
+    var paperBacking = true
     @Environment(\.dynamicTypeSize) private var textSize
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
 
     var body: some View {
         if !hideCharacterArt {
-            CharacterArtImage(assetName: assetName, height: textSize.isAccessibilitySize ? min(height, 100) : height)
+            CharacterArtImage(assetName: assetName, height: textSize.isAccessibilitySize ? min(height, 100) : height,
+                              paperBacking: paperBacking)
         }
     }
 }

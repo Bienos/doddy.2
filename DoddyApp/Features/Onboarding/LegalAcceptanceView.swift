@@ -20,7 +20,7 @@ struct LegalAcceptanceView: View {
     var body: some View {
         OnboardingPage {
             if !hideArt {
-                UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 120)
+                UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 120, paperBacking: false)
                     .frame(maxWidth: .infinity)
                     .accessibilityHidden(true)
             }
