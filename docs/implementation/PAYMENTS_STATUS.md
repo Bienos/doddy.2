@@ -1,15 +1,89 @@
 # Payments (x402 + optional Coinbase wallet): status
 
+> **Read the section "Rebase onto the default branch (2026-11-05, ADR-733)" first.** The sections after it are the old branch's own records of 12 Oct 2026, kept as written; where they say something was synced to the live agent, that was undone on 19 Oct (ADR-544) and is not repeated here.
+
 Date: 2026-10-12. Owner instruction: "Use Coinbase wallet connection but not as default and build it so Doddy can pay
-for stuff." Decision record: ADR-450 (`DECISIONS.md`). Design, API and owner runbook: `docs/integrations/PAYMENTS_X402.md`.
+for stuff." Decision record: ADR-730 (`DECISIONS.md`). Design, API and owner runbook: `docs/integrations/PAYMENTS_X402.md`.
 CLAUDE.md rule 6 asks for milestone approval for cloud actions with money; this instruction is taken as that approval for
 **this milestone only**. Branch `claude/fervent-hamilton-ot5z1f`. Environment: Linux, Node 22, **no Xcode**.
 
 **Bottom line:** the backend can read an x402 offer, show exact terms, take a single-use approval bound to them, sign
 through an optional Coinbase server wallet, send once, and report only what the seller confirms. It has been tested against
-a demo wallet and a demo seller only. **Update (ADR-451): the iPhone approval card with Face ID is now written, but it has
+a demo wallet and a demo seller only. **Update (ADR-731): the iPhone approval card with Face ID is now written, but it has
 never been compiled or run** (no Swift toolchain here), so treat it as untested. The voice agent cannot start a payment;
 the only entry is Settings › Payments › "Pay for a page". Nothing has run against Coinbase or a real seller.
+
+## Rebase onto the default branch (2026-11-05, ADR-733)
+
+**What this is.** The owner approved bringing this branch up to date with the default branch `claude/loving-dirac-uuxoux` and opening a pull request **for review only** (ADR-729, option "1"). **It is not approved to be turned on.** The branch was 10 commits ahead and 854 behind; the default branch was merged in (a merge, nothing force-pushed) on `claude/rebase-usdc-pay-for-pages`, 20 files conflicted, and its ADRs 450 to 452 are now 730 to 732 (450 to 452 were already taken). The old branch's live-agent syncs of 12 Oct were undone by the owner on 19 Oct (ADR-544); **nothing here reads, syncs or calls the live ElevenLabs agent or any other live service.**
+
+**Off by default, still.** No wallet unless `DODDY_PAYMENTS_WALLET=coinbase_cdp` with four `CDP_*` values (none are in the repository, and `secrets/manifest.json` lists them as 1Password-only, not pushed to any host); each person's switch (`pay_x402`) off; and the server now **refuses to start on any network that moves real money** (only `base-sepolia`, ADR-733). Ceilings in code: 0.25 USDC per payment, 1.00 per person per day, 5.00 for the server (`DODDY_PAYMENTS_*`, validated at startup), the typed amount from 0.10 USDC, an optional host allow-list. The voice tool is `not_synced` and is not in the live agent's prompt.
+
+**What was ported, beyond resolving text conflicts**
+- The store: the old branch's SQLite calls became Postgres ones (async): tables `payments` and `payment_receipts` in `SCHEMA_SQL`, added to `ERASED_TABLES` (deleting an account erases them; the default branch's schema test fails without that), `prune` (90 days) and `releaseUsage`. `PaymentsService` is async throughout.
+- ASK-01: approvals for a payment are issued and used through `AskGate` (`backend/src/tools/askFirst.ts`), the one place the guard allows; the old direct `consumeApproval` calls were removed.
+- `pay_for_page` was added to `ToolCatalog` (DoddyCore) and to the Logbook's tool list, because the default branch has tests that pin both to `voice-agent/tools.json`.
+- App: the Payments row is under Settings › Connections (the default branch's Settings was rebuilt in ADR-633), the Home notice is in Home's `notices`, the payments client uses `DeviceSession.serverURL()` (ADR-720).
+
+**Files with real conflicts and how each was resolved**
+| File | Resolution |
+|---|---|
+| `DECISIONS.md` | Default branch's table kept; the three ADRs appended as 730 to 732 with an ADR-733 for this work |
+| `DEPENDENCIES_AND_LICENSES.md` | Default branch's Postgres text kept; the "payments added no dependency" paragraph kept |
+| `backend/src/app.ts` | Both sets of imports and overrides kept; payments built before `createHandler` and passed to it; `payments` kept in the returned object |
+| `backend/src/config.ts` | Both settings kept; new refusal of a real-money network |
+| `backend/src/store.ts` | Default branch's Postgres store kept; the payment tables and methods rewritten for it (see above) |
+| `backend/test/fixtures.generate.ts`, `retention.test.ts` | Both kept; the payment tests converted to the async store (`Store.memory()`); `account.test.ts` and `revocation.test.ts` extended for the two new tables |
+| `scripts/check_forbidden_capabilities.sh` | Default branch's guard kept (ASK-01, Health, camera, no wake word); the payment rules and the Coinbase secret pattern added back |
+| `secrets/manifest.json` (not a conflict, but its check failed) | The CDP variables listed as 1Password-only, not pushed; the other payment variables as not secrets |
+| `voice-agent/tools.json`, `instructions.md`, `README.md` | Default branch's kept; only `pay_for_page` added (ASK-01 fields, `not_synced`); no prompt line; a note in the README; `add_to_diary` and `upcoming_renewals` not restored |
+| `DoddyApp/Resources/Localizable.xcstrings`, `l10n/pl.json` | Default branch's `pl.json` kept plus the old branch's 44 payment lines; the catalog regenerated with `tools/build_strings_catalog.py`, not merged by hand |
+| `DoddyApp/App/RootView.swift` | Three preference keys kept next to the default branch's |
+| `DoddyApp/Features/Home/HomeView.swift` | Default branch's Home kept; the banner added to its `notices` |
+| `DoddyApp/Features/Settings/SettingsView.swift` | Default branch's version kept (the old paragraph is gone); the row moved to `SettingsHubs.swift` |
+| `DoddyApp/Features/Voice/VoiceSessionController.swift`, `VoiceView.swift` | Default branch's kept; `paymentApproval`, `handlePayForPage` and the sheet added |
+| `Packages/DoddyCore/.../DataFlow.swift` | Default branch's row text kept; the payment sentence added |
+| `docs/implementation/MAC_VERIFICATION_CHECKLIST_2026-10-10.md` | Default branch's kept; the payments section added as 4za |
+
+**Checks run on Linux (this rebase)**
+| Command (from the repository root unless noted) | Result |
+|---|---|
+| `npm ci` then `npm test` in `backend/` (PGlite, the in-process Postgres the default branch's tests use; no `DATABASE_URL`) | First run 585 tests, 582 pass, **3 fail**: the account-erasure seed lacked the two new tables, the Logbook's tool list lacked `pay_for_page`, and a test pinned `prune`'s keys. Fixed. Second run: **585 tests, 585 pass, 0 fail, 0 skipped** (831 s). Includes the ported payment tests (`payments`, `payments-config`, `x402`, `coinbase`, `paymentsNet`) and the fixtures schema test |
+| `npm run typecheck` in `backend/` | clean |
+| `scripts/check_forbidden_capabilities.sh` | PASS (ASK-01, approvals only in `askFirst.ts`, Coinbase only in `payments/coinbase.ts`, seller HTTPS only in `payments/net.ts`, signing only from the payments service, no payment or key code in the app, secret pattern incl. `CDP_*`) |
+| `python3 -I scripts/voice_agent_spec.py check` (app, `--agent phone`, `--agent task-call`) | PASS: 101 tools including `pay_for_page`; phone 3; task-call matches |
+| `python3 -I tools/build_strings_catalog.py --check` | PASS (catalogs regenerated by the tool, 44 payment lines in Polish) |
+| `tools/build_blog.py --check`, `build_site_i18n.py --check`, `build_day.py --check`, `gen_web_assets.py --check`, `scripts/verify_imported_pack.py` | PASS |
+| `node tools/secrets/sync.mjs check` and `node --test "tools/secrets/test/*.test.mjs"` | OK (24 secrets, 14 synced, 10 1Password-only); 43/43 pass |
+| `scripts/test_ci_needs_mac.sh`, `test_copy_binary_dsyms.sh`, `test_xcode_cloud_post_clone.sh`, `test_ci_groups.sh`, `scripts/check_platform_specs.py` | PASS |
+| gitleaks | **not installed here, not run**; a grep of the diff for private keys, `sk-` keys and 64-hex values found only demo transaction hashes in fixtures |
+| `swift test`, `scripts/typecheck_app_logic.sh`, xcodebuild | **Swift NOT COMPILED, NOT RUN** (no Swift toolchain) |
+
+`scripts/ci.sh --core-only` was not run as a whole; the steps above that touch this change were run one by one. The other servers (`server/*`, `gateway/`, `web/`, `site/`) were not touched and not re-run.
+
+**NOT COMPILED, NOT RUN.** No Swift toolchain here: **Swift NOT COMPILED, NOT RUN** for `DoddyApp` and `DoddyCore` (the payment files, the merged `VoiceSessionController`, `VoiceView`, `HomeView`, `SettingsHubs`, `DataFlow`, `ToolCatalog`, `PaymentsClientFactory`), so `swift test` (`PaymentsTests`, `PaymentsVoiceTests`, `ToolCatalogTests`, `AskFirstTests`) and the hosted Mac job are the first run. Also not run: the real Coinbase service, a real x402 seller, the real HTTPS client against a live host, the live voice agent, any device, the Face ID card, VoiceOver and Dynamic Type. The Swift merges were syntax-read, not compiled.
+
+**Gaps found while porting (not closed here)**
+- The voice controller's `AskLedger` is not consulted for `pay_for_page`: the payment card (tap, typed amount, Face ID) and the server's single-use approval are its gate. A test for that path would need the Swift toolchain.
+- If the person closes the voice transcript while the payment card is up, the card goes with it, the approval expires after two minutes and nothing is paid; the agent's call waits for its timeout.
+- Payments rows in Settings need a Doddy server session; the screen does not sign the phone in by itself (it says "not set up" until another online feature has).
+- `PaymentsClient` error text still says "Check the session token in Settings", from before the device sign-in; the Polish line for the not-set-up text was rewritten by hand (machine-quality).
+- `ASK_FIRST.md` has a row for the tool; the default branch's Swift ASK-01 tests were not run on it.
+- gitleaks is not installed here; a grep of the diff for key material found only the demo transaction hash in fixtures.
+
+**Constitution evidence log (this rebase)**
+| Rule | Requirement | Enforcing code | Tests run | Gap / claim to limit |
+|---|---|---|---|---|
+| DOD-07 / ASK-01 | No money moves without explicit approval of the exact action | `PaymentsService.prepare/pay` through `AskGate` (single-use, 2 minutes, bound to page, recipient, amount, token and wallet), re-checked against a fresh read of the offer; typed amount from 0.10 USDC; the app's card plus Face ID | `backend/test/payments.test.ts` (reuse, expiry, other user, other page, price change, switch off, races), the default branch's ASK-01 backend tests | The card, Face ID and the voice path are Swift: **NOT RUN**. "A person approves every payment" is true only once the card has run on a device. |
+| DOD-08 | "Done" only on a trusted confirmation; `unknown` is never success and never blindly retried | `confirmSettlement`, the `unknown()` path, one send per approval, 15-minute block, `mightHaveBeenPaid` in the app | `x402.test.ts`, `payments.test.ts` (four unknown scenarios, declined, wallet failure) | Settlement header format follows the spec text, not a live seller (a mismatch is `unknown`, never success). |
+| Ceilings | An amount ceiling and a daily cap | `loadPayments` (validated), `spendChecks`, `reserveUsage` (per person and per server) | `payments-config.test.ts`, `payments.test.ts` daily-limit and race tests | The numbers are defaults the owner has not re-confirmed since the rebase. |
+| Off by default | The feature is behind a switch, testnet only, no key in the repository | `DODDY_PAYMENTS_WALLET=none`, per-person switch, `loadPayments` refuses real-money networks, secrets manifest, guard's secret pattern | `payments-config.test.ts`, `payments.test.ts` switch tests, the guard | Mainnet is undecided; nothing was run against Coinbase. |
+| DOD-11 / DC-027 | Privacy; web content is data, not instructions | Receipts keep host and amount only; page content labelled and clipped; erased with the account | `payments.test.ts` privacy test, `account.test.ts` (both tables erased) | The page address goes to the seller and the server's IP is visible to it. |
+| Repo rule 1 | Model proposes, typed code validates, scoped tools execute | One argument (`url`) accepted; limits and policy in code; the guard keeps Coinbase and signing in their files | strict-input test, guard | The voice prompt has no payment line (nothing depends on a prompt). |
+
+**Claims to limit:** do not write that payments are "implemented", "enabled", "secure" or "tested with Coinbase" for users. Accurate: "the backend payment path, ported to the default branch's database and approval gate, passes its Linux tests against a demo wallet and demo seller; the app side is written and has never been compiled; nothing has run against Coinbase, a seller or a device; it is off by default and test-network only."
+
+**Decisions needed from the owner:** (1) mainnet (and the Circle-confirmed address, a funded balance and caps) stays open; (2) are 0.25 per payment, 1.00 a day, 5.00 for the server and the 0.10 typed-amount threshold still right; (3) does `pay_for_page` ever return to the live agent (ADR-544 removed it), with what exact text; (4) a wallet that belongs to the person, instead of the owner's server wallet.
 
 ## Files changed
 | Area | Files |
@@ -17,7 +91,7 @@ the only entry is Settings › Payments › "Pay for a page". Nothing has run ag
 | New: `backend/src/payments/` | `x402.ts` (protocol, policy, typed data, settlement check), `net.ts` (URL and address safety, the only seller HTTPS client), `wallet.ts` (interface, demo wallet), `coinbase.ts` (Coinbase REST + JWTs, no SDK), `service.ts` (prepare / pay / limits / receipts / ledger), `contracts.ts` (HTTP schemas), `mockSeller.ts` (demo seller, 13 scenarios) |
 | Changed | `app.ts` (wiring), `config.ts` (payment settings), `http.ts` (`/v1/payments` routes), `store.ts` (two tables, spend release, retention), `errors.ts` (receipt type) |
 | Tests | New: `x402`, `paymentsNet`, `coinbase`, `payments`, `payments-config` tests and `paymentsRig.ts`. Changed: `retention.test.ts` (expected shape, plus a payments retention test) |
-| Guard / config / docs | `scripts/check_forbidden_capabilities.sh` (payment rules), `backend/.env.example`, `DECISIONS.md` (ADR-450), `DEPENDENCIES_AND_LICENSES.md` (no new dependency), `docs/integrations/PAYMENTS_X402.md`, this file |
+| Guard / config / docs | `scripts/check_forbidden_capabilities.sh` (payment rules), `backend/.env.example`, `DECISIONS.md` (ADR-730), `DEPENDENCIES_AND_LICENSES.md` (no new dependency), `docs/integrations/PAYMENTS_X402.md`, this file |
 | **Not touched** | The widgets, watch app, `voice-agent/`, the existing fixtures in `contracts/connected-apps` and `contracts/online-accounts`, and the existing `/v1/tools` and `/v1/connected-apps` behaviour. (The iPhone files added later are listed under "Native approval card" below.) |
 
 ## Shipped behaviour (backend, mock mode and tests)
@@ -96,7 +170,7 @@ Approving a decision is not verification: checklist 4o (P1 to P24) is still unwa
 payment path built and tested against a demo wallet and demo seller; Coinbase adapter written to Coinbase's published auth scheme and not
 yet run; no app screen or voice tool yet."
 
-## Native approval card (ADR-451, 2026-10-12, owner: "build the native approval card with Face ID")
+## Native approval card (ADR-731, 2026-10-12, owner: "build the native approval card with Face ID")
 **Written without a Swift toolchain: never compiled, never run. NOT RUN.** Everything below needs a Mac (checklist 4o).
 
 | Area | Files |
@@ -107,7 +181,7 @@ yet run; no app screen or voice tool yet."
 | App (changed) | `Features/Privacy/AppLock.swift` (`FaceIDPaymentAuthenticator`), `Features/Settings/SettingsView.swift` (Payments row; privacy paragraph) |
 | Text | `DataFlow.swift` (Doddy server row), `l10n/pl.json` and the regenerated `Localizable.xcstrings` (38 new Polish lines) |
 | Shared fixtures | `contracts/payments/*.json` (12 files from the real server, one per response shape) and the generator in `backend/test/fixtures.generate.ts` |
-| Docs | `MAC_VERIFICATION_CHECKLIST_2026-10-10.md` section 4o, `PAYMENTS_X402.md`, `DECISIONS.md` (ADR-451), this file |
+| Docs | `MAC_VERIFICATION_CHECKLIST_2026-10-10.md` section 4o, `PAYMENTS_X402.md`, `DECISIONS.md` (ADR-731), this file |
 
 **What was actually run for this part:** `npm test` in `backend/` (258 pass; includes a test that every
 `contracts/payments` fixture matches the server's strict schemas); `bash scripts/check_forbidden_capabilities.sh` (PASS, so no
@@ -133,7 +207,7 @@ have never been seen.
 **Decisions for the owner, answered 2026-10-12:** (1) "Pay for a page" stays in Settings as an entry point: **ok**. (2) Larger
 payments also need the amount typed: **yes** (built below). (3) An unconfirmed payment gets a banner on Home: **yes** (built below).
 
-## Voice agent, typed amount and Home banner (ADR-452, 2026-10-12)
+## Voice agent, typed amount and Home banner (ADR-732, 2026-10-12)
 Owner: "wire the voice agent to prepare payments", then answers "ok / yes / yes" to the three open decisions above.
 **Backend part run and tested on Linux. Swift and the voice tool: written, never compiled or run, NOT RUN.**
 
@@ -162,7 +236,7 @@ check of all 20 changed Swift files, a name-clash search. **Not run:** the Swift
 
 **Known limits**
 - If the person takes longer than the tool's 120 s timeout (the approval itself lasts 2 minutes), ElevenLabs gives up waiting. The card still works and the receipt is recorded, but the agent never hears the outcome.
-- ~~`pay_for_page` is `not_synced`~~ **Synced 2026-10-12** at the owner's request (tool `tool_1401m4rmxkm5eg3v87sphf87c45p`, agent version `agtvrsn_8101m4rmy839eks9hgq6hd4pps70`, 60 tool ids, read back). Done before the app was built or checklist 4o was walked, against my earlier advice; the exposure is small because an app without ADR-452 answers the tool as unsupported. The `pay_for_page` prompt line was merged into the live prompt afterwards (version `agtvrsn_9601m4rnnbnxesh9sm34aad15p04`; one added line, verified by diff), so both the prompt and the tool's description carry the rules.
+- ~~`pay_for_page` is `not_synced`~~ **(History: it was synced 2026-10-12 and detached again by the owner on 19 Oct, ADR-544; on this branch it is `not_synced` again.)** Synced 2026-10-12 at the owner's request (tool `tool_1401m4rmxkm5eg3v87sphf87c45p`, agent version `agtvrsn_8101m4rmy839eks9hgq6hd4pps70`, 60 tool ids, read back). Done before the app was built or checklist 4o was walked, against my earlier advice; the exposure is small because an app without ADR-732 answers the tool as unsupported. The `pay_for_page` prompt line was merged into the live prompt afterwards (version `agtvrsn_9601m4rnnbnxesh9sm34aad15p04`; one added line, verified by diff), so both the prompt and the tool's description carry the rules.
 - A page address spoken aloud is hard to get right; the agent is told to ask for the full address and never to guess. Web search results carry only site names, so they cannot supply one.
 - The banner depends on the server's count, which only clears when a record is pruned (90 days); "I've checked" hides it locally. No server-side "resolved" call exists.
 
