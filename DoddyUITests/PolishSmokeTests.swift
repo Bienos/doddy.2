@@ -17,7 +17,7 @@ final class PolishSmokeTests: XCTestCase {
         // Save is the + in Home's bottom bar (ADR-545).
         XCTAssertTrue(app.reveal(app.buttons["home.save"]))
 
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         let save = app.buttons["capture.save"]
         XCTAssertTrue(save.waitForExistence(timeout: 5))
         for _ in 0..<4 where !save.isHittable { app.swipeUp() }

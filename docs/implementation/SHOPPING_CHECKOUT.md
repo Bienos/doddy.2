@@ -1,6 +1,6 @@
 # Shopping stage 3: buying through Doddy (design, and the rules as typed code)
 
-**Update, 5 Nov 2026 (ADR-727): the "nothing can be bought" stance and "no BLIK" are withdrawn as rules; this page's gates and the safety rules below still hold, and no payment feature exists until its own milestone is approved.**
+**Update, 5 Nov 2026 (ADR-760): the "nothing can be bought" stance and "no BLIK" are withdrawn as rules; this page's gates and the safety rules below still hold, and no payment feature exists until its own milestone is approved.**
 
 **Status, 24 Oct 2026: designed, with the safety rules built and tested; nothing can be bought.** Owner, 24 Oct 2026: "Zacząć płatności w aplikacji" (start in-app payment). What exists: `Packages/DoddyCore/Sources/DoddyCore/Checkout.swift` (the exact-cart digest, the order's statuses and the rule that an order is sent once), its 10 tests, the fixture `schemas/fixtures/checkout_draft_v1.json`, and this page. What does **not** exist: a payment provider, a shop that accepts orders from Doddy, a server route, an app screen, a voice tool, or any way to send an order. No money moves. Until the gates in section 2 are open this must not be called "payments".
 

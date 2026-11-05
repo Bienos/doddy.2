@@ -330,10 +330,10 @@ Owner: "i want these" for all 20 features below, read as **yes, keep**. No branc
 | Sound wave and Big Brain card | zealous-albattani-7ay32v | 28 | large |
 | Home control (HomeKit) | magical-cray-4299gg (also draft PR #149) | 33 | `control_home` is on the live agent |
 
-## More owner decisions, 5 Nov 2026 (ADR-728)
+## More owner decisions, 5 Nov 2026 (ADR-761)
 
 - Live tools not yet in the app: **merge them into the app**, one at a time. The live agent is not changed.
 - Action Button: **talk in the island** (ADR-632); reverses ADR-593.
 - `youthful-pasteur-25tuhv` (one-off pose): **declined**, so the branch is a delete candidate once you confirm.
 - Approved to **design only**: DODDY Studio, Doddy's own phone number, USDC pay-for-pages.
-- BLIK: the owner chose to remove the draft flow now; not started (about 30 Swift files, no Xcode here); see ADR-727 and the hosted-build note.
+- BLIK: the owner chose to remove the draft flow now; not started (about 30 Swift files, no Xcode here); see ADR-760 and the hosted-build note.

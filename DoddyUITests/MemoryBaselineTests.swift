@@ -9,7 +9,7 @@ final class MemoryBaselineTests: XCTestCase {
         app.launchArguments = UITestLaunch.arguments(store: .persistent(UUID()))
         app.launch()
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 8))
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         let text = "Synthetic amber notebook is in the green drawer."
