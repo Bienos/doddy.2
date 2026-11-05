@@ -234,7 +234,7 @@ final class PaymentsClientTests: XCTestCase {
         let capture = Capture()
         capture.reply = (200, try paymentFixtureData("paid"))
         let approval = UUID()
-        _ = try await client(capture).pay(url: page, approvalId: approval)
+        _ = try await client(capture).pay(url: page, approvalId: approval, confirmAmount: nil)
 
         let request = try XCTUnwrap(capture.requests.first)
         XCTAssertEqual(capture.requests.count, 1)
