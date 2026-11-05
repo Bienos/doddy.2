@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 
 /// Home (ADR-545): a calm screen after the owner's "I'm here" mockup. Doddy sits cross-legged in
-/// the middle and is the Talk button; under him an orange dot, "I'm here." and "Tap Doddy to talk";
+/// the middle and is the Talk button; under him "I'm here." and "Tap Doddy to talk" (no orange dot since ADR-728);
 /// at the bottom Messages (the typed conversation, ADR-585), Files (a sheet, ADR-633) and + (Save a detail). Everything else Home
 /// used to list lives in the ••• menu. Cards appear only while something needs the user (a due
 /// reminder, a storage problem, an unfinished note, a one-time offer they can dismiss).
@@ -414,8 +414,6 @@ struct HomeView: View {
         let you = live.lines.last(where: { $0.fromUser })
         let him = live.lines.last(where: { !$0.fromUser })
         return VStack(spacing: 12) {
-            ReadyDot()
-                .padding(.top, 14)
             liveTitle(live)
                 .font(.largeTitle.weight(.bold)).tracking(-1)
                 .multilineTextAlignment(.center)
@@ -454,8 +452,6 @@ struct HomeView: View {
 
     private var restStatus: some View {
         VStack(spacing: 12) {
-            ReadyDot()
-                .padding(.top, 14)
             Text(greeting)
                 .font(.largeTitle.weight(.bold)).tracking(-1)
                 .multilineTextAlignment(.center)
@@ -908,21 +904,6 @@ private struct Hop {
     var lift: CGFloat = 0
     var stretchX: CGFloat = 1
     var stretchY: CGFloat = 1
-}
-
-/// The orange dot under Doddy: a slow pulse that says he's there. Still under Reduce Motion.
-private struct ReadyDot: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        Circle()
-            .fill(Theme.orangeCue)
-            .frame(width: 12, height: 12)
-            .phaseAnimator(reduceMotion ? [false] : [false, true]) { dot, up in
-                dot.scaleEffect(up ? 1.3 : 1).opacity(up ? 0.65 : 1)
-            } animation: { _ in .easeInOut(duration: 1.2) }
-            .accessibilityHidden(true)
-    }
 }
 
 /// Buttons on the new Home shrink a touch while pressed.

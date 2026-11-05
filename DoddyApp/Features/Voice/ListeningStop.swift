@@ -109,7 +109,12 @@ final class ListeningIndicatorModel {
     private init() {}
 
     func refresh() {
-        indicator = ListeningIndicator.current(ListeningStop.snapshot())
+        // ADR-728 (owner, 5 Nov 2026): no "Doddy słucha" / "Przestań słuchać" pill for the
+        // conversation; Home's strip and the island show it. A voice memo or a Capture recording
+        // still gets the pill, and Stop listening (Siri, Shortcuts) still stops the conversation.
+        var snapshot = ListeningStop.snapshot()
+        snapshot.conversation = .none
+        indicator = ListeningIndicator.current(snapshot)
         isHidden = ShortcutRouter.shared.isVoicePresented
         ListeningIndicatorWindow.shared.update()
     }

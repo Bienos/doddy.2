@@ -7,7 +7,7 @@ import UIKit
 /// draws a black strip over the Dynamic Island, the island's own height, that grows out to both
 /// sides, with his voice drawn in it as a dense aurora of orange lines (mock-up "G1 Gęsta") on
 /// each side of the camera. While he hears you it is 260 pt wide with a clear, calm line and a
-/// faint glow; while he talks it springs out to 330 pt, pulses in his rhythm and glows; while he
+/// faint glow; while he talks it springs out to 330 pt, pulses in his rhythm and glows (60 frames a second; while he hears you it stands still, ADR-728); while he
 /// is muted it is 260 pt, grey and still. It hangs nothing below the island (ADR-665: the 56 pt
 /// block of ADR-654 was not what the owner meant). Drawn only on iPhones with a Dynamic Island
 /// (a top inset of 55 pt or more): a notch can't grow to the sides.
@@ -53,7 +53,7 @@ struct IslandExtension: View {
     var body: some View {
         let top = Self.topInset
         if top >= 55 {
-            TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 60, paused: reduceMotion)) { timeline in
                 let frame = Frame(look: look, motion: motion, date: timeline.date, reduceMotion: reduceMotion)
                 Canvas { context, size in
                     Self.draw(&context, size: size, stripTop: top - Self.islandTopAboveInset, frame: frame)
@@ -94,20 +94,23 @@ struct IslandExtension: View {
             let sinceChange = date.timeIntervalSince(motion.since)
             let raw = reduceMotion ? motion.to : IslandSpring.value(from: motion.from, to: motion.to, elapsed: sinceChange)
             widening = min(1.25, max(-0.1, raw))
-            time = reduceMotion ? 0 : date.timeIntervalSinceReferenceDate
+            // Only his voice moves the lines (ADR-728): while he hears you they stand still.
+            time = reduceMotion || look != .speaking ? 0 : date.timeIntervalSinceReferenceDate
             switch look {
             case .speaking:
                 if reduceMotion {
                     level = 0.4
                 } else if AgentVoiceMeter.shared.hasSource {
-                    // His real voice (ADR-655): the loudness of the audio he is playing.
-                    level = min(1, max(0.08, AgentVoiceMeter.shared.current() * 1.1))
+                    // His real voice (ADR-655): the loudness of the audio he is playing, drawn
+                    // with more range (ADR-728) so each word shows and a pause goes quiet.
+                    level = min(1, max(0.04, AgentVoiceMeter.shared.current() * 1.45))
                 } else {
                     // No audio track to listen to (another voice provider, or before it exists).
                     level = SpeechPulse.level(at: sinceChange)
                 }
-            // Clear enough to see at a glance that he is listening (owner, 29 Oct, ADR-665).
-            case .listening: level = reduceMotion ? 0.5 : 0.5 + 0.06 * sin(date.timeIntervalSinceReferenceDate * 2)
+            // Calm and still (owner, 5 Nov, ADR-728): it must not react to what you say, only to
+            // what he says. It used to breathe at 0.5 ± 0.06 while he heard you.
+            case .listening: level = 0.3
             case .quiet: level = 0.06
             }
         }
