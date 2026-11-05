@@ -77,6 +77,53 @@ privacy_policy:
   raw_secrets_in_model_prompt_or_logs: forbidden
   privacy_preserving_telemetry: true
   legal_review_required_before_launch: true
+contact_policy:
+  # Doddy's own phone number (ADR-750). Phone numbers are never stored in this file: the allowlist is
+  # the number the user verified in the app, kept in the messaging server's database.
+  # Enforced in server/messaging; test/unit.test.ts fails if the numbers below differ from the code,
+  # and DoddyCore's ApprovedTextTests checks text_max_length the same way.
+  allowlist: numbers_verified_in_app
+  allowlist_max_numbers: 1
+  text_recipients: allowlist_only
+  call_recipients: allowlist_only
+  approval: exact_payload_hash
+  unknown_inbound_calls: fixed_message_no_ai
+  unknown_text_outcome: never_resent_lookup_at_provider
+  recording: off
+  text_max_length: 640
+  # Texts the user sends to Doddy (U3, ADR-753): notes only, no reply, no model. Answers by text are "Text with Doddy"
+  # (ADR-656), which has its own consent and sends nothing from memory. One handler per text, never both.
+  unknown_inbound_texts: dropped_without_reply_not_stored
+  inbound_text_is_instructions: false
+  texts_to_doddy: off_by_default
+  provider_records: deleted_after_final
+  caps_default:
+    calls_per_hour: 3
+    calls_per_day: 10
+    inbound_texts_per_hour: 30
+  # This feature adds no caps or country list of its own: it uses the default branch's abuse limits (ADR-704,
+  # server/messaging/src/config.ts DEFAULT_ABUSE_LIMITS, PHONE_ALLOWED_COUNTRY_CODES). The values below only mirror them;
+  # test/unit.test.ts fails if they drift. Every text and call goes through those counters and checks.
+  abuse_limits_mirror:
+    texts_per_account_day: 30
+    texts_per_server_day: 300
+    calls_per_server_day: 20
+    allowed_calling_codes: "30,31,32,33,34,351,352,353,354,356,357,358,359,36,370,371,372,385,386,39,40,41,420,421,423,43,44,45,46,47,48,49"
+  # Calls the user asks for later (U4, ADR-754). Enforced in server/messaging (scheduledCalls.ts,
+  # quietHours.ts); test/unit.test.ts and DoddyCore's ScheduledCallTests check these values.
+  scheduled_calls: approved_card_time_reason_and_quiet_hours_choice
+  scheduled_call_unknown_outcome: never_placed_again
+  scheduled_call_max_days_ahead: 7
+  scheduled_call_late_minutes: 15
+  scheduled_calls_pending_max: 10
+  call_reason_max_length: 200
+  quiet_hours_default:
+    start: "21:00"
+    end: "08:00"
+    timezone: last_reported_by_device
+    timezone_fallback: Europe/Warsaw
+    applies_to: [scheduled_calls]
+    override: per_call_on_card
 release_gates:
   blocking: [unapproved_external_write, false_action_success, cross_user_data_leak, unauthorized_memory_access, prompt_injection_permission_bypass, unsafe_emotional_manipulation]
   require_code_tests_for_enforceable_rules: true

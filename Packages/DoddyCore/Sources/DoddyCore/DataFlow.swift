@@ -25,6 +25,8 @@ public struct DataFlowState: Equatable, Sendable {
     public var pushOn: Bool
     /// The user turned on the server copy of their notes for phone calls.
     public var memoryCopyOn: Bool
+    /// Texts the user sends Doddy's number are kept as notes (ADR-753), as the server last said. No model reads them.
+    public var textsToDoddyOn: Bool
     /// The user chose to keep notes, and conversations, as text on Doddy's server so the web can show them
     /// and answer questions about them (ADR-603). Both off by default.
     public var webNotesKept: Bool
@@ -56,8 +58,10 @@ public struct DataFlowState: Equatable, Sendable {
         learnedSharedWithVoice: Bool = false,
         newsWriterProvider: String? = nil,
         webNotesKept: Bool = false, webConversationsKept: Bool = false,
-        inFaktKeySaved: Bool = false
+        inFaktKeySaved: Bool = false,
+        textsToDoddyOn: Bool = false
     ) {
+        self.textsToDoddyOn = textsToDoddyOn
         self.inFaktKeySaved = inFaktKeySaved
         self.webNotesKept = webNotesKept
         self.webConversationsKept = webConversationsKept
@@ -110,6 +114,7 @@ public enum DataFlow {
         messaging.append("your phone number, only if you confirm it with a code for texts or calls")
         messaging.append("the news topics and feeds you pick, if you turn on daily news")
         if state.memoryCopyOn { messaging.append("a copy of your saved notes, for phone calls with Doddy") }
+        if state.textsToDoddyOn { messaging.append("the texts you send Doddy's number, kept as notes until you save or discard them") }
 
         // The server can use either provider (ADR-197); name one only when the server said which.
         let writer = switch state.newsWriterProvider {

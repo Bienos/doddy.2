@@ -1,7 +1,8 @@
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
-import { providersFrom } from "./providers/index.js";
+import { providersFrom, scheduledCallsFrom } from "./providers/index.js";
+import { callsAvailable } from "./routes/twilioVoice.js";
 import { taskCallContext } from "./taskCalls/context.js";
 import { errandContext } from "./errands/context.js";
 import { watchContext } from "./watches/context.js";
@@ -11,15 +12,18 @@ const config = loadConfig();
 const db = createPool(config.databaseUrl);
 await migrateOrExit(db, log);
 const providers = providersFrom(config);
-const app = await buildApp({
+const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
-  trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap,
-});
+  trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
+};
+const app = await buildApp(deps);
+const calls = callsAvailable(deps);
 app.log.info({
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
-  calls: !!(config.toolSecret && providers.cipher), outboundCalls: !!providers.outbound,
+  calls: calls.inbound, outboundCalls: calls.outbound,
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
+  twilioDeleteAfterMinutes: providers.deleteAfterMinutes,
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
   assistant: !!providers.assistant.responder, assistantModel: config.assistantSettings.model,
@@ -38,7 +42,9 @@ if (config.runWorkerInWeb) {
   const taskCtx = taskCallContext(db, providers.taskCalls, providers.cipher, config.publicBaseUrl, providers.push, log);
   const errandCtx = errandContext(db, providers.errands, providers.cipher, providers.push, log);
   const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
-  workerDone = runWorkerLoop(db, { ...providers, taskCalls: taskCtx, errands: errandCtx, watches: watchCtx }, () => stopping);
+  workerDone = runWorkerLoop(db, {
+    ...providers, taskCalls: taskCtx, errands: errandCtx, watches: watchCtx, scheduledCalls: scheduledCallsFrom(config, providers),
+  }, () => stopping);
 }
 
 const shutdown = async () => {

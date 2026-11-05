@@ -40,6 +40,10 @@ final class ActivityTextTests: XCTestCase {
             .addIngredients(IngredientsProposal(list: "Shopping", dish: "Pancakes", items: ["Eggs"])),
             .findFreeTime(FreeTimeRequest(firstDay: now, days: 1)),
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
+            // ADR-750 U2.
+            .textMe(body: "Parcel code 4417"),
+            // ADR-754.
+            .callMeLater(CallLaterDraft(at: now.addingTimeInterval(3_600), reason: "Cake", timeZoneID: "Europe/Warsaw")),
             // ADR-510.
             .draftBlikTransfer(BlikTransferDraft(recipientName: "Ania", amount: BlikAmount(grosze: 5_000)!, title: "Pizza")),
             // ADR-567, ADR-568.
@@ -72,7 +76,7 @@ final class ActivityTextTests: XCTestCase {
              .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .findDeals,
-             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan:
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .textMe, .callMeLater:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap:
@@ -85,7 +89,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 45, "open_training_plan since ADR-626")
+        XCTAssertEqual(kinds.count, 47, "open_training_plan since ADR-626; text_me and call_me_later since ADR-752 and ADR-754")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
@@ -126,6 +130,7 @@ final class ActivityTextTests: XCTestCase {
         let fixed = [
             "Connections were paused.", "Doddy couldn't confirm it went through.", "Demo data from a test server, not your account.",
             ActivityLog.interruptedNote, "The conversation ended before you answered.", "Reminders isn't connected.",
+            "Twilio accepted the text; delivery isn't confirmed.", "Doddy's server has the text; it wasn't confirmed as sent yet.",
         ]
         for note in fixed { XCTAssertNotEqual(ActivityText.note(note, .polish), note, note) }
 

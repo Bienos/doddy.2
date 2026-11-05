@@ -19,6 +19,8 @@ public enum VoiceToolName {
     public static let proposePlan = "propose_plan"
     /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
     public static let noteCapabilityGap = "note_capability_gap"
+    /// A text from Doddy's own number to the user's verified number, after a card (ADR-750 U2).
+    public static let textMe = "text_me"
     /// Hand a task over: Doddy's server researches it in the background (ADR-570, Errand.swift).
     public static let handOverErrand = "hand_over_errand"
     /// What Doddy found for the tasks handed over, as saved on this iPhone.
@@ -223,6 +225,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
+    /// A text from Doddy's number to the user's own verified number (ADR-750 U2). Shown on a card
+    /// with the exact text; sent only on the user's tap, bound to that text by `ApprovalHash`.
+    case textMe(body: String)
+    /// A call from Doddy's number to the user's verified number at a later time (ADR-754). Shown
+    /// on a card with the time and the exact reason; booked only on the user's tap.
+    case callMeLater(CallLaterDraft)
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
     /// never sends money.
     case draftBlikTransfer(BlikTransferDraft)
@@ -357,6 +365,21 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.textMe:
+            // Exactly as the agent wrote it: the card shows it and the approval covers it, so
+            // nothing is trimmed. Too long is refused, never cut (review C11).
+            guard let body = args.text("body") else { return .invalid(name: name, reason: "missing body") }
+            guard body.utf16.count <= ApprovedTextLimits.maxLength else {
+                return .invalid(name: name, reason: "body is longer than \(ApprovedTextLimits.maxLength) characters")
+            }
+            // The user approves what they see; a hidden character would be sent unseen.
+            if let hidden = ApprovedTextLimits.hiddenCharacter(in: body) {
+                let code = String(hidden.value, radix: 16, uppercase: true)
+                return .invalid(name: name, reason: "body has a hidden character (U+\(code)); write the text without it")
+            }
+            return .textMe(body: body)
+        case VoiceToolName.callMeLater:
+            return parseCallMeLater(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.draftBlikTransfer:
             return parseBlikTransfer(args, name: name)
         case VoiceToolName.makePresentation:
@@ -712,6 +735,10 @@ public enum VoiceToolReply {
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
         "moved:", "turned off:", "cleared:",
+        // ADR-750 U2: a text the carrier reported as delivered. "sent:" and "queued:" are not done.
+        "delivered:",
+        // ADR-754: Doddy's server booked the call for later (it said so). The call itself is later.
+        "booked:",
         // ADR-570: Doddy's server said it has the task handed over (`errandStarted`).
         "started:",
     ]

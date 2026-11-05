@@ -232,6 +232,30 @@ struct VoiceView: View {
                                 .id("pendingAction")
                         }
 
+                        if controller.textSending {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                Text("Sending your text…")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                            .id("textSending")
+                        }
+
+                        if controller.callBooking {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                Text("Booking your call…")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                            .id("callBooking")
+                        }
+
                         if let status = controller.reminderStatus {
                             reminderStatusCard(status, controller: controller)
                                 .id("reminderStatus")
@@ -687,6 +711,41 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .text(_, let draft):
+            // ADR-750 U2: exactly the text the approval covers, and who it goes to.
+            Text("Send this text to you?")
+                .font(.headline)
+            Text(String(format: NSLocalizedString("From Doddy's number to your number ending %@", comment: ""), draft.recipientEnding))
+                .foregroundStyle(Theme.secondaryText)
+            Text(draft.body)
+                .font(.body)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+                .accessibilityIdentifier("voice.text.body")
+            if draft.segments > 1 {
+                Label(String(format: NSLocalizedString("Sent as %lld SMS parts", comment: ""), draft.segments), systemImage: "square.stack")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if let sent = VoiceSessionController.queuedTexts[draft.approvalHash], sent.timeIntervalSinceNow > -24 * 3600 {
+                Label(String(format: NSLocalizedString("You already sent this exact text at %@. Sending again sends it a second time.", comment: ""),
+                             sent.formatted(date: .omitted, time: .shortened)),
+                      systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+            }
+            if VoiceSessionController.unconfirmedTexts.contains(draft.approvalHash) {
+                Label("Doddy couldn't confirm an earlier try of this exact text. Sending again while Doddy is open won't send it twice.",
+                      systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+            }
+            Text("Twilio carries the text. Doddy's server keeps it encrypted only until it's sent, and sends exactly this.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .callLater(_, let draft, let to, let quietHours):
+            callLaterContent(draft, to: to, quietHours: quietHours, controller: controller)
         case .blik(_, let draft, let contactName, let numbers):
             Text("A BLIK transfer for you to send")
                 .font(.headline)
@@ -1108,6 +1167,8 @@ struct VoiceView: View {
         if case .bulk(_, let items, _, _) = pending { return items.allSatisfy { controller.bulkUnticked.contains($0.id) } }
         // Ingredients (ADR-305): nothing ticked, nothing to add.
         if case .ingredients(_, _, _, _, let items, _) = pending { return controller.ingredientsUnticked.count >= items.count }
+        // A call inside quiet hours (ADR-754) can be booked only with the switch on.
+        if case .callLater(_, let draft, _, let quietHours) = pending { return draft.inQuietHours(quietHours) && !controller.callLaterAllowQuiet }
         return false
     }
 
@@ -1125,6 +1186,8 @@ struct VoiceView: View {
         case .presentation: (NSLocalizedString("Make presentation", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .camera: (NSLocalizedString("Open camera", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
+        case .text: (NSLocalizedString("Send text", comment: ""), NSLocalizedString("Don't send", comment: ""))
+        case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
         case .ask(_, let card, _, _, _): (card.confirmLabel, NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
         case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
@@ -1143,6 +1206,52 @@ struct VoiceView: View {
         case .ingredients(_, _, _, _, let items, _):
             (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
         }
+    }
+
+    /// "Call you later?" (ADR-754): the time in the user's zone, the number's last digits, the exact
+    /// sentence Doddy says when the call is answered, and the quiet-hours switch the approval covers.
+    @ViewBuilder
+    private func callLaterContent(
+        _ draft: CallLaterDraft, to: String, quietHours: CallQuietHours, controller: VoiceSessionController
+    ) -> some View {
+        Text("Call you later?")
+            .font(.headline)
+        Text(draft.at.formatted(Date.FormatStyle(date: .complete, time: .shortened, timeZone: draft.timeZone)))
+            .font(.body)
+        Text(String(format: NSLocalizedString("From Doddy's number to your number ending %@", comment: ""), String(to.suffix(3))))
+            .foregroundStyle(Theme.secondaryText)
+        Text("When you answer, Doddy says:")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        Text(draft.opening(.current))
+            .font(.body)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+            .accessibilityIdentifier("voice.callLater.opening")
+        Label("Anyone who answers your phone hears this, and so does your voicemail.", systemImage: "speaker.wave.2")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        Toggle(isOn: Binding(get: { controller.callLaterAllowQuiet }, set: { controller.callLaterAllowQuiet = $0 })) {
+            Text(String(format: NSLocalizedString("Call even in quiet hours (%@–%@)", comment: ""), quietHours.start, quietHours.end))
+        }
+        .frame(minHeight: 44)
+        .accessibilityIdentifier("voice.callLater.quietHours")
+        if draft.inQuietHours(quietHours) && !controller.callLaterAllowQuiet {
+            Label("This time is in quiet hours. Turn on the switch to book it anyway, or ask Doddy for another time.",
+                  systemImage: "moon")
+                .font(.footnote)
+        }
+        if VoiceSessionController.unconfirmedCalls.contains(draft.identity(to: to)) {
+            Label("Doddy couldn't confirm an earlier try of this exact call. It may already be booked: Doddy's server never books the same time and reason twice.",
+                  systemImage: "exclamationmark.triangle")
+                .font(.footnote)
+        }
+        Text("Doddy's server keeps the reason encrypted until the call is over, and checks quiet hours in your iPhone's time zone when it's time. Twilio places the call. You can cancel it in Settings, Phone calls.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
     }
 
     /// Note reminder card (ADR-198): the note exactly as saved and when, then the time with its

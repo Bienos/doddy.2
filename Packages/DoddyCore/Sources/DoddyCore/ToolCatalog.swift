@@ -19,6 +19,12 @@ public struct ToolDescriptor: Equatable, Sendable {
         /// Opens another app with something filled in; the user finishes there. Also a task
         /// handed to Doddy's server, which works on it and keeps the result in the app (ADR-716).
         case handoff
+        /// A text from Doddy's own number to the user's verified number (ADR-750 U2), through
+        /// Doddy's messaging server. Never to anyone else.
+        case sendText
+        /// A call from Doddy's own number to the user's verified number at a time they approved
+        /// (ADR-754), placed by Doddy's messaging server. Never to anyone else.
+        case placeCall
         /// Changes the conversation itself (translator mode, the plan card).
         case session
     }
@@ -137,6 +143,12 @@ public enum ToolCatalog {
         .init(VoiceToolName.openMap, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
+        // Sent by Doddy, so the card shows the exact text and the tap approves exactly that
+        // text; the server checks the same approval hash (ADR-750 U2).
+        .init(VoiceToolName.textMe, .sendText, .card),
+        // The card shows the time and the exact reason Doddy will say; the server checks the same
+        // approval hash when it books the call and again when it places it (ADR-754).
+        .init(VoiceToolName.callMeLater, .placeCall, .card),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).

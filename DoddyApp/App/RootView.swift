@@ -79,6 +79,8 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
+    /// Texts to Doddy (ADR-753), as the server last reported; for What leaves this iPhone.
+    static let textsToDoddyOn = "textsToDoddyOn"
     // Notes and conversations kept on Doddy's server (ADR-603) are `WebMemoryModel.notesKey` and
     // `WebMemoryModel.conversationsKey` in DoddyCore, off by default.
     /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
@@ -265,6 +267,8 @@ struct RootView: View {
                 // Notes kept on Doddy's server (ADR-603): the same, for a send that failed.
                 WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
                                                notesLoaded: store.hasLoaded && store.loadError == nil)
+                // Quiet hours for a booked call are checked in this iPhone's zone (ADR-754).
+                CallZoneSender.sendIfNeeded()
                 pickUpSharedItem()
                 Task { await OpenWaysReminderScheduler.refresh(router.setup) }
                 // Doddy's free server sleeps when idle (ADR-686): one health ping now starts its

@@ -10,6 +10,7 @@ import type { FastifyInstance } from "fastify";
 import { reserve as reserveAssistant } from "../src/assistant/usage.js";
 import { DEFAULT_ERRAND_SETTINGS, type AbuseLimits } from "../src/config.js";
 import { counterKey } from "../src/dailyCounters.js";
+import { openSession } from "../src/calls.js";
 import { sha256 } from "../src/crypto.js";
 import type { Db } from "../src/db.js";
 import { reserve as reserveDeals } from "../src/deals/usage.js";
@@ -19,7 +20,12 @@ import type { NewsItem } from "../src/news/feeds.js";
 import type { FeedSource } from "../src/news/sources.js";
 import { dispatchDue, enqueue, EncryptionNotConfigured } from "../src/outbox.js";
 import type { PhoneVerifier, SendOutcome, VerifyCheck } from "../src/providers/types.js";
-import { dbSkip, FakeOutbound, FakePush, FakeSms, FakeVerifier, freshDb, testApp, testCipher, TOOL_SECRET } from "./helpers.js";
+import {
+  dbSkip, FakeOutbound, FakePush, FakeSms, FakeVerifier, freshDb, testApp, testCipher, TOOL_SECRET,
+} from "./helpers.js";
+
+/** A counter for fakes whose call ids must be unique across the tests of this file, which share one database. */
+let outboundFakes = 0;
 
 /** Provider message ids are unique in the table, so each text this fake sends gets its own. */
 class UniqueSms extends FakeSms {
@@ -378,7 +384,7 @@ describe("abuse limits against real Postgres", { skip: dbSkip }, () => {
     });
 
     test("a call me is not placed to a number outside the list", async () => {
-      const outbound = new FakeOutbound();
+      const outbound = new FakeOutbound(`CAabuse${++outboundFakes}x`);
       const { app } = await testApp(db, { outbound });
       try {
         const old = await storedAccount(app, nextForeignPhone());
@@ -527,7 +533,7 @@ describe("abuse limits against real Postgres", { skip: dbSkip }, () => {
     });
 
     test("a call me is refused once the server's calls for the day are used, and a call the provider refused is not counted", async () => {
-      const outbound = new FakeOutbound();
+      const outbound = new FakeOutbound(`CAabuse${++outboundFakes}x`);
       const { app } = await testApp(db, { outbound, limits: { outboundCallsPerServerDay: 2 } });
       try {
         const callable = async () => {
@@ -554,7 +560,7 @@ describe("abuse limits against real Postgres", { skip: dbSkip }, () => {
     });
 
     test("parallel calls can't pass the server's cap", async () => {
-      const outbound = new FakeOutbound();
+      const outbound = new FakeOutbound(`CAabuse${++outboundFakes}x`);
       const { app } = await testApp(db, { outbound, limits: { outboundCallsPerServerDay: 3 } });
       try {
         const users = [];
@@ -793,8 +799,11 @@ describe("abuse limits against real Postgres", { skip: dbSkip }, () => {
         assert.equal((await inj("/v1/calls/pin", { pin: "258025" }, a.h, "PUT")).statusCode, 204);
         assert.equal((await inj("/v1/calls/settings", { inboundEnabled: true }, a.h, "PUT")).statusCode, 204);
         assert.equal((await inj("/v1/device/push-token", { token: "04".repeat(32), environment: "sandbox" }, a.h, "PUT")).statusCode, 204);
-        const start = await inj("/webhooks/elevenlabs/call-start", { caller_id: phone }, { "x-doddy-tool-secret": TOOL_SECRET });
-        const session = start.json().dynamic_variables.secret__doddy_session as string;
+        // A call session opened while the key was still set. Without the key no new call gets through any more
+        // (routes/twilioVoice.ts), so the session is made directly, as the call route makes it.
+        const callId = randomUUID();
+        await db.query("INSERT INTO calls (id, account_id, direction, status) VALUES ($1, $2, 'inbound', 'started')", [callId, a.accountId]);
+        const session = (await openSession(db, a.accountId, callId, "inbound")).secret__doddy_session;
         let last;
         await inProduction(async () => {
           for (let i = 0; i < 5; i++) {

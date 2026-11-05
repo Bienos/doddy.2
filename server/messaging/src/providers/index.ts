@@ -1,10 +1,12 @@
 import type { Config } from "../config.js";
 import { ApnsPushSender } from "./apns.js";
 import { TextCipher } from "../crypto.js";
-import { ElevenLabsOutboundCaller } from "./elevenlabs.js";
-import { TwilioClient } from "./twilio.js";
+import { ElevenLabsCallRegistrar } from "./elevenlabs.js";
+import { deleteAfterMinutes } from "../providerRecords.js";
+import { TwilioClient, TwilioVoiceCaller } from "./twilio.js";
 import { ElevenLabsTaskClient, TwilioCallClient } from "./taskCalls.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
+import { callsAvailable } from "../routes/twilioVoice.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
 import type { TaskCallDeps } from "../taskCalls/context.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
@@ -112,13 +114,18 @@ export function providersFrom(config: Config) {
     push,
     sms: twilio,
     verifier: twilio,
-    outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
+    // Calls (ADR-750): Twilio places Doddy's calls; ElevenLabs connects answered calls to the agent.
+    outbound: config.twilio ? new TwilioVoiceCaller(config.twilio) : undefined,
+    registrar: config.phoneAgent ? new ElevenLabsCallRegistrar(config.phoneAgent) : undefined,
     cipher,
     taskCalls,
     errands,
     assistant,
     deals,
     watches,
+    // Doddy's message and call records at Twilio are deleted this long after they are final (ADR-753).
+    deleter: twilio,
+    deleteAfterMinutes: deleteAfterMinutes(config.twilioRecordDeleteAfterHours),
     // Account, verification, text and call caps and the allowed countries (ADR-702, ADR-704): the web service and the
     // worker read the same settings.
     limits: config.limits,
@@ -133,4 +140,22 @@ export function providersFrom(config: Config) {
         : undefined,
     },
   };
+}
+
+/**
+ * What the worker needs to place scheduled calls (ADR-754), only when calls are fully set up (the
+ * same test as the API's). Without it a due call fails, and the user is told, instead of ringing
+ * into a call nobody can answer.
+ */
+export function scheduledCallsFrom(config: Config, providers: ReturnType<typeof providersFrom>) {
+  const ready = callsAvailable({
+    ...providers, toolSecret: config.toolSecret, twilioAuthToken: config.twilio?.authToken,
+    publicBaseUrl: config.publicBaseUrl, doddyPhoneNumber: config.doddyPhoneNumber,
+  }).outbound;
+  return ready
+    ? {
+      outbound: providers.outbound, doddyPhoneNumber: config.doddyPhoneNumber, publicBaseUrl: config.publicBaseUrl,
+      quietHours: config.quietHours, limits: config.limits,
+    }
+    : undefined;
 }
