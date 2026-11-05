@@ -92,6 +92,13 @@ fi
 
 # 6. The Swift packages, so Package.resolved exists before Xcode Cloud builds.
 if [ -z "${DODDY_SKIP_RESOLVE:-}" ]; then
+  # Xcode Cloud turns automatic package resolution off and refuses an out-of-date Package.resolved
+  # (its first build failed with "an out-of-date resolved file was detected"). The project is
+  # generated here, so there is no committed resolved file to trust: allow the resolver to run.
+  if command -v defaults >/dev/null 2>&1; then
+    defaults write com.apple.dt.Xcode IDEDisableAutomaticPackageResolution -bool NO
+    defaults write com.apple.dt.Xcode IDEPackageOnlyUseVersionsFromResolvedFile -bool NO
+  fi
   xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
 fi
 echo "ci_post_clone: ready"
