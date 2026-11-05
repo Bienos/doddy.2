@@ -56,7 +56,7 @@ final class MotionRideTests: XCTestCase {
         // Home has no tab bar (ADR-545): from Home there is nothing to tap.
         if app.buttons["tab.home"].exists { app.buttons["tab.home"].tap() }
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.tapAndType(text)

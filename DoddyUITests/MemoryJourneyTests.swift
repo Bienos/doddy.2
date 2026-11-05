@@ -16,7 +16,7 @@ final class MemoryJourneyTests: XCTestCase {
     @MainActor
     func testApprovedJourneyCorrectionRetainsOriginalAfterRestart() {
         let app = launch()
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         let original = "Synthetic violet umbrella is in the hallway."
@@ -95,7 +95,7 @@ final class MemoryJourneyTests: XCTestCase {
     @MainActor
     func testEmptySaveShowsErrorAndKeepsEditor() {
         let app = launch()
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         XCTAssertTrue(app.buttons["capture.save"].waitForExistence(timeout: 5))
         scrollTo(app.buttons["capture.save"], app: app); app.buttons["capture.save"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["capture.error"].waitForExistence(timeout: 5))
@@ -109,7 +109,7 @@ final class MemoryJourneyTests: XCTestCase {
         scrollTo(app.buttons["home.save"], app: app)
         XCTAssertTrue(app.buttons["home.save"].isHittable)
         screenshot(app, "Native dark accessibility text")
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         XCTAssertTrue(app.buttons["capture.save"].waitForExistence(timeout: 5), app.debugDescription)
         scrollTo(app.buttons["capture.save"], app: app)
         XCTAssertTrue(app.buttons["capture.save"].isHittable)

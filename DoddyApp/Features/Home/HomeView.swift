@@ -8,7 +8,7 @@ import SwiftUI
 /// reminder, a storage problem, an unfinished note, a one-time offer they can dismiss).
 ///
 /// Talking happens here (ADR-595): a tap on Doddy starts the conversation on Home. While it runs,
-/// the words under him say what he is doing and show the last two lines, the bottom bar becomes
+/// the words under him stay the same (a greeting and "Tap Doddy to finish"), the bottom bar becomes
 /// Mute and End, and Transcript opens the whole conversation as a sheet.
 /// Remembers when the eyes last followed the finger (ADR-604). A class on purpose: `@State` of a
 /// plain value would invalidate Home on every write.
@@ -40,6 +40,10 @@ struct HomeView: View {
     /// Settings › Doddy's memory.
     @State private var showFiles = false
     @State private var showAsk = false
+    /// The + menu (5 Nov 2026): a photo for Doddy to look at opens Messages with it above the box.
+    @State private var showPhotoCamera = false
+    @State private var showPhotoLibrary = false
+    @State private var photoForMessages: AssistantImage?
     @State private var tool: HomeTool?
     /// Translate (ADR-215): the start sheet, and what the user chose on it.
     @State private var showTranslator = false
@@ -130,8 +134,13 @@ struct HomeView: View {
                 case .stopwatch: StopwatchView()
                 }
             }
-            .fullScreenCover(isPresented: $showAsk) {
-                MessagesView(repository: store.environment.messageThreadRepository, openSettings: { selectedTab = .settings })
+            .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil }) {
+                MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
+                             openSettings: { selectedTab = .settings })
+            }
+            .askAboutPhotoSources(showCamera: $showPhotoCamera, showLibrary: $showPhotoLibrary) { photo in
+                photoForMessages = photo
+                showAsk = true
             }
             // The conversation opens once the start sheet has gone away.
             .sheet(isPresented: $showTranslator, onDismiss: {
@@ -147,7 +156,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -410,48 +419,24 @@ struct HomeView: View {
         .modifier(FacepalmWhileShown())
     }
 
-    /// While he talks (ADR-595): what he is doing, then the last thing the user said and the last
-    /// thing he said. Only lines the provider sent; nothing here is made up on the phone.
+    /// While he talks: the same two lines all the way through (owner, 5 Nov 2026), so nothing on Home
+    /// changes with listening, thinking or speaking. His state is on the island, the Mute button says
+    /// Mute or Unmute, and the words of the conversation are one tap away on Transcript.
     private func liveStatus(_ live: VoiceSessionController) -> some View {
-        let you = live.lines.last(where: { $0.fromUser })
-        let him = live.lines.last(where: { !$0.fromUser })
-        return VStack(spacing: 12) {
+        VStack(spacing: 12) {
             ReadyDot()
                 .padding(.top, 14)
-            liveTitle(live)
+            Text(greeting)
                 .font(.largeTitle.weight(.bold)).tracking(-1)
                 .multilineTextAlignment(.center)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("home.liveStatus")
-            if let him {
-                if let you {
-                    Text(you.text)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.secondaryText)
-                        .lineLimit(2)
-                }
-                Text(him.text)
-                    .font(.title3.weight(.semibold))
-                    .lineLimit(4)
-                    .accessibilityIdentifier("home.lastLine")
-            } else {
-                Text("Tap Doddy to finish")
-                    .font(.title3)
-                    .foregroundStyle(Theme.secondaryText)
-            }
+            Text("Tap Doddy to finish")
+                .font(.title3)
+                .foregroundStyle(Theme.secondaryText)
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: live.lines.count)
-    }
-
-    private func liveTitle(_ live: VoiceSessionController) -> Text {
-        switch live.phase {
-        case .connecting: Text("Connecting…")
-        case .thinking: Text("Working on it…")
-        case .speaking: Text("Doddy is speaking")
-        default: live.isMuted ? Text("Muted") : Text("Listening…")
-        }
     }
 
     private var restStatus: some View {
@@ -544,23 +529,40 @@ struct HomeView: View {
                 bottomPill(messagesShowsTitle: true)
                 bottomPill(messagesShowsTitle: false)
             }
-            Button { modal = .capture } label: {
-                Image(systemName: "plus")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.canvas)
-                    .frame(width: 56, height: 56)
-                    .background(Theme.ink, in: Circle())
-            }
-            .buttonStyle(DoddyPressStyle())
-            .disabled(!store.isStorageAvailable)
-            .accessibilityLabel("Save a detail")
-            .accessibilityIdentifier("home.save")
+            plusMenu
         }
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .foregroundStyle(Theme.ink)
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity)
+    }
+
+    /// + (5 Nov 2026): show Doddy something, or write it down. A photo goes to Messages with a question
+    /// (Doddy says what it is); a note opens the capture screen as + always did. Attaching a file is not
+    /// here because it is not built: a document would be a new data flow and needs the owner's yes.
+    private var plusMenu: some View {
+        Menu {
+            if CameraCapture.isAvailable, store.environment.capabilities.isAvailable(.textAssistant) {
+                Button { showPhotoCamera = true } label: { Label("Take a photo", systemImage: "camera") }
+                    .accessibilityIdentifier("home.save.camera")
+            }
+            if store.environment.capabilities.isAvailable(.textAssistant) {
+                Button { showPhotoLibrary = true } label: { Label("Choose a photo", systemImage: "photo") }
+                    .accessibilityIdentifier("home.save.photo")
+            }
+            Button { modal = .capture } label: { Label("New note", systemImage: "square.and.pencil") }
+                .disabled(!store.isStorageAvailable)
+                .accessibilityIdentifier("home.save.note")
+        } label: {
+            Image(systemName: "plus")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Theme.canvas)
+                .frame(width: 56, height: 56)
+                .background(Theme.ink, in: Circle())
+        }
+        .accessibilityLabel("Add")
+        .accessibilityIdentifier("home.save")
     }
 
     private func bottomPill(messagesShowsTitle: Bool) -> some View {

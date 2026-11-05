@@ -53,7 +53,7 @@ final class DoddyArtTests: XCTestCase {
     @MainActor
     func testAFailedSaveNeverPops() {
         let app = launch()
-        app.buttons["home.save"].tap()
+        app.openNewNote()
         XCTAssertTrue(app.buttons["capture.save"].waitForExistence(timeout: 5))
         scrollTo(app.buttons["capture.save"], app: app)
         app.buttons["capture.save"].tap()
