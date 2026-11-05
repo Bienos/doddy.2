@@ -31,6 +31,8 @@ struct VoiceView: View {
     @State private var takenPhoto: Data?
     /// The new note opened with that photo.
     @State private var photoNote: TakenPhoto?
+    /// "What leaves this iPhone", opened from the note under the transcript.
+    @State private var showDataFlow = false
 
     private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
 
@@ -102,6 +104,16 @@ struct VoiceView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await controller?.recheckConnectionAccess() } }
         }
+        .sheet(isPresented: $showDataFlow) {
+            NavigationStack {
+                DataFlowView()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showDataFlow = false }
+                        }
+                    }
+            }
+        }
     }
 
     @MainActor
@@ -158,20 +170,7 @@ struct VoiceView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        HStack(alignment: .center, spacing: 16) {
-                            VoiceDoddyView(art: screenArt(controller))
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(statusTitle(controller))
-                                    .font(.title2.bold())
-                                    .accessibilityIdentifier("voice.status")
-                                if controller.isMuted && controller.isLive {
-                                    Text("Your microphone is muted.")
-                                        .font(.footnote)
-                                        .foregroundStyle(Theme.secondaryText)
-                                }
-                            }
-                        }
-                        .accessibilityElement(children: .combine)
+                        statusHeader(controller)
 
                         // ADR-265/442: the copy below names ElevenLabs; say plainly when it isn't.
                         if controller.provider == .openAIRealtime {
@@ -337,12 +336,10 @@ struct VoiceView: View {
                                 .id("parkingCard")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs, or OpenAI if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.secondaryText)
-                            .padding(.top, 8)
+                        dataFootnote
                     }
                     .padding(24)
+                    .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.15), value: controller.lines.count)
                 }
                 .onChange(of: controller.lines.count) { _, _ in
                     if let last = controller.lines.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
@@ -482,16 +479,69 @@ struct VoiceView: View {
         }
     }
 
+    /// A chat bubble: yours on the right in ink, Doddy's on the left on the quiet surface, each with
+    /// one tight corner on its speaker's side, like Messages.
     private func transcriptLine(_ line: VoiceSessionController.Line) -> some View {
-        HStack {
-            if line.fromUser { Spacer(minLength: 40) }
+        let shape = UnevenRoundedRectangle(
+            topLeadingRadius: 20, bottomLeadingRadius: line.fromUser ? 20 : 6,
+            bottomTrailingRadius: line.fromUser ? 6 : 20, topTrailingRadius: 20, style: .continuous)
+        return HStack {
+            if line.fromUser { Spacer(minLength: 56) }
             Text(line.text)
-                .padding(12)
-                .background(line.fromUser ? Theme.quietSurface : Theme.canvas, in: RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: line.fromUser ? 0 : 1))
+                .font(.body)
+                .foregroundStyle(line.fromUser ? Theme.canvas : Theme.ink)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .background(line.fromUser ? Theme.ink : Theme.quietSurface, in: shape)
+                .textSelection(.enabled)
                 .accessibilityLabel(line.fromUser ? "You: \(line.text)" : "Doddy: \(line.text)")
-            if !line.fromUser { Spacer(minLength: 40) }
+            if !line.fromUser { Spacer(minLength: 56) }
         }
+        .transition(reduceMotion ? .identity : .scale(scale: 0.96, anchor: line.fromUser ? .bottomTrailing : .bottomLeading).combined(with: .opacity))
+    }
+
+    /// Doddy and one quiet line about what he is doing: a small picture and a status pill, not a title.
+    private func statusHeader(_ controller: VoiceSessionController) -> some View {
+        HStack(spacing: 12) {
+            VoiceDoddyView(art: screenArt(controller), height: 64)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(controller.isLive ? Theme.orangeCue : Theme.secondaryText)
+                        .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
+                    Text(statusTitle(controller))
+                        .font(.subheadline.weight(.semibold))
+                        .accessibilityIdentifier("voice.status")
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Theme.quietSurface, in: Capsule())
+                if controller.isMuted && controller.isLive {
+                    Text("Your microphone is muted.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Two short lines instead of the old paragraph. What is sent, to whom and when, now that the
+    /// settings can change it, is on "What leaves this iPhone": it reads the current switches.
+    private var dataFootnote: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Doddy is an AI, not a person.")
+            Text("He keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.")
+            Button("What leaves this iPhone") { showDataFlow = true }
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.accentText)
+                .accessibilityIdentifier("voice.dataFlow")
+        }
+        .font(.footnote)
+        .foregroundStyle(Theme.secondaryText)
+        .padding(.top, 8)
     }
 
     /// Card for anything that changes data or opens another app. Nothing happens until the user taps.
