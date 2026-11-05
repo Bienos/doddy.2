@@ -29,7 +29,7 @@ struct ActiveCallBadge: View {
                         .frame(minHeight: 44)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(DoddyPressStyle())
+                .buttonStyle(.plain)
                 .foregroundStyle(Theme.ink)
                 .accessibilityLabel("Doddy is making a call for you")
                 .accessibilityIdentifier("home.activeCall")
