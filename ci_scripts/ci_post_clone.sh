@@ -99,6 +99,12 @@ if [ -z "${DODDY_SKIP_RESOLVE:-}" ]; then
     defaults write com.apple.dt.Xcode IDEDisableAutomaticPackageResolution -bool NO
     defaults write com.apple.dt.Xcode IDEPackageOnlyUseVersionsFromResolvedFile -bool NO
   fi
+  # DoddyCore's own Package.resolved pins only its dependencies, not the app's (ElevenLabs, LiveKit),
+  # so Xcode Cloud calls it out of date. It is only a copy of this fresh checkout: drop it here
+  # (the repository keeps it for the package's own tests) and let the resolver write a complete one.
+  rm -f Packages/DoddyCore/Package.resolved
   xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
+  echo "ci_post_clone: resolved files:"
+  find . -name Package.resolved -not -path "./.build/*" 2>/dev/null | head
 fi
 echo "ci_post_clone: ready"
