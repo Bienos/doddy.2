@@ -751,20 +751,12 @@ struct AdvancedSettingsView: View {
                 }
                 .accessibilityIdentifier("settings.welcomeAgain")
             }
-            // Studio and the plans (ADR-740, ADR-741): kept here, not on Home's menu (it has no room for a
-            // twelfth row, ADR-652) or Settings' first page (ADR-633). Studio is off on the server until the
-            // owner turns it on, and says so when it is.
+            // Studio (ADR-740): kept here, not on Home's menu (it has no room for a twelfth row, ADR-652) or
+            // Settings' first page (ADR-633). Studio is off on the server until the owner turns it on, and says so
+            // when it is.
             Section {
                 Button("Studio") { showStudio = true }
                     .accessibilityIdentifier("settings.studio")
-                NavigationLink {
-                    PlansView()
-                } label: {
-                    Text("Plans")
-                }
-                .accessibilityIdentifier("settings.plans")
-            } footer: {
-                Text("What each version of Doddy includes. Plans are bought on Doddy's website.")
             }
             Section("What's built") {
                 ForEach(Capability.allCases, id: \.self) { capability in
