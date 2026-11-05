@@ -33,11 +33,13 @@ struct MessagesView: View {
 
     /// - Parameter draft: text already in the box, for the person to read, change and send
     ///   themselves (the Apple Health week summary, ADR-622). Nothing is sent without their tap.
-    init(repository: any MessageThreadRepository, draft: String = "", openSettings: @escaping () -> Void = {}) {
+    /// - Parameter photo: a photo chosen on Home's + menu, shown above the box until Send or until removed.
+    init(repository: any MessageThreadRepository, draft: String = "", photo: AssistantImage? = nil, openSettings: @escaping () -> Void = {}) {
         self.openSettings = openSettings
         // Messages on the web (owner, 28 Oct 2026: always on): the thread is copied to Doddy's server after every change.
         let model = MessagesModel(repository: repository, sync: ServerThreadSync())
         model.draft = draft
+        model.photo = photo
         _model = State(initialValue: model)
     }
 

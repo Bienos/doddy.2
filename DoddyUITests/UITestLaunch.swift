@@ -157,6 +157,17 @@ extension XCUIApplication {
         item.tap()
     }
 
+    /// Home's + is a menu since 5 Nov 2026 (Take a photo, Choose a photo, New note): opens the new-note screen.
+    @MainActor
+    func openNewNote() {
+        let plus = buttons["home.save"]
+        _ = plus.waitForExistence(timeout: 5)
+        plus.tap()
+        let note = buttons["home.save.note"]
+        _ = note.waitForExistence(timeout: 5)
+        note.tap()
+    }
+
     /// Settings (ADR-580): scrolls to a group's row and opens its page.
     @MainActor
     func openSettingsPage(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {

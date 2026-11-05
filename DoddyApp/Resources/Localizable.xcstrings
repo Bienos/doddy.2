@@ -11603,6 +11603,17 @@
         }
       }
     },
+    "Choose a photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz zdjęcie"
+          }
+        }
+      }
+    },
     "Choose another place": {
       "extractionState": "manual",
       "localizations": {
@@ -20442,17 +20453,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 是 AI，不是真人。"
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a person. Links open outside Doddy; nothing from the app is shared.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy to AI, nie człowiek. Linki otwierają się poza Doddym; nic z aplikacji nie jest udostępniane."
           }
         }
       }
@@ -29937,6 +29937,17 @@
         }
       }
     },
+    "He keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Słucha dalej, jeśli wyjdziesz z aplikacji, dopóki nie stukniesz Zakończ. Nic nie jest zapisywane, wysyłane ani otwierane, dopóki tego nie stukniesz."
+          }
+        }
+      }
+    },
     "Health can't be read while this iPhone is locked. Unlock it and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -36875,65 +36886,6 @@
         }
       }
     },
-    "Less magic. More control.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weniger Magie. Mehr Kontrolle."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Menos magia. Más control."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moins de magie. Plus de contrôle."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manje magije. Više kontrole."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meno magia. Più controllo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "魔法は少なめ。コントロールは多めに。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mniej magii. Więcej kontroli."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Menos mágica. Mais controle."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "少一点魔法，多一点掌控。"
-          }
-        }
-      }
-    },
     "Let Doddy use my memories on calls": {
       "extractionState": "manual",
       "localizations": {
@@ -37162,6 +37114,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tylko link do gazetki"
+          }
+        }
+      }
+    },
+    "Links open outside Doddy; nothing from the app is shared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linki otwierają się poza Doddym; nic z aplikacji nie jest udostępniane."
           }
         }
       }
@@ -37734,17 +37697,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "Listening…": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Słucham…"
           }
         }
       }
@@ -94002,17 +93954,6 @@
         }
       }
     },
-    "While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs, or OpenAI if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Podczas rozmowy Twój głos, ta rozmowa, zapisane notatki, nazwy list (a pozycje listy, gdy Doddy ją czyta lub zmienia), kilka ostatnich rozmów oraz wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice, których Doddy używa, są wysyłane do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym, żeby działał Doddy. Sprawdzanie pogody i Wikipedii działa tylko z ElevenLabs i odbywa się z jego serwerów. Nic nie jest zapisywane, dodawane, uruchamiane, wysyłane ani otwierane, dopóki tego nie stukniesz. Jeśli wyjdziesz z aplikacji, Doddy dalej słucha (zobaczysz go w Dynamic Island), dopóki nie stukniesz Zakończ. Jeśli iOS zatrzyma Doddy’ego w tle, wyspa to pokaże, zamiast udawać, że nadal Cię słyszy."
-          }
-        }
-      }
-    },
     "Who": {
       "extractionState": "manual",
       "localizations": {
@@ -99083,65 +99024,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的话。需要时随时可用。"
-          }
-        }
-      }
-    },
-    "Yours to keep.\nYours to change.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deins zum Behalten.\nDeins zum Ändern."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tuyo para guardar.\nTuyo para cambiar."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "À toi de garder.\nÀ toi de changer."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tvoje za čuvanje.\nTvoje za mijenjanje."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tue da tenere.\nTue da cambiare."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "残すのもあなた。\n変えるのもあなた。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Twoje do zachowania.\nTwoje do zmiany."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suas para guardar.\nSuas para mudar."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "由你保留。\n由你更改。"
           }
         }
       }

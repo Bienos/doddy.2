@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings (ADR-580, shortened by ADR-633): four short groups and fourteen rows. Each row opens a page;
+/// Settings (ADR-580, shortened by ADR-633 and again on 5 Nov 2026): four short groups and nine rows. Each row opens a page;
 /// the controls that were rows here (the island, Siri, the connections, the notifications, the memory
 /// pages) are on those pages with the same preference keys and accessibility identifiers, so nothing a
 /// user set changes. Explanations live on the screen a row opens, in Help, in "What leaves this
@@ -46,7 +46,6 @@ struct SettingsView: View {
 
     private var header: some View {
         Section {
-            JourneyHeading(eyebrow: "Less magic. More control.", title: "Yours to keep.\nYours to change.")
             HStack(spacing: 18) {
                 if DoddyDirector.shared.isActive {
                     // Motion v2 (Q4): Doddy's spot on Settings is where this picture
@@ -137,40 +136,18 @@ struct SettingsView: View {
         }
     }
 
+    /// Help, the legal pages, Doddy's social accounts, the version and Advanced: one row (owner, 5 Nov 2026),
+    /// because none of them is something a person changes about Doddy.
     private var aboutSection: some View {
         Section {
-            Link(destination: Self.helpURL) {
-                Label("Help", systemImage: "questionmark.circle")
-            }
-            .accessibilityIdentifier("settings.help")
-            Link(destination: LegalDocuments.url(.terms, languageCode: Self.languageCode)) {
-                Label("Terms & Conditions", systemImage: "doc.text")
-            }
-            .accessibilityIdentifier("settings.terms")
-            Link(destination: LegalDocuments.url(.privacy, languageCode: Self.languageCode)) {
-                Label("Privacy Policy", systemImage: "hand.raised")
-            }
-            .accessibilityIdentifier("settings.privacyPolicy")
-            // Doddy's own social accounts (ADR-130); they stay on this page (owner, 24 Oct 2026).
-            Link(destination: Self.tiktokURL) {
-                Label("TikTok · doddy_mate", systemImage: "play.rectangle")
-            }
-            .accessibilityIdentifier("settings.tiktok")
-            Link(destination: Self.instagramURL) {
-                Label("Instagram · doddy_mate", systemImage: "camera")
-            }
-            .accessibilityIdentifier("settings.instagram")
-            StatusRow(title: NSLocalizedString("Version", comment: ""), value: Self.versionText)
             NavigationLink {
-                AdvancedSettingsView()
+                AboutSettingsView()
             } label: {
-                Text("Advanced")
+                StatusRow(title: NSLocalizedString("About", comment: "Settings row: help, terms, version"), value: Self.versionText)
             }
-            .accessibilityIdentifier("settings.advanced")
-        } header: {
-            Text("About")
+            .accessibilityIdentifier("settings.about")
         } footer: {
-            Text("Doddy is an AI, not a person. Links open outside Doddy; nothing from the app is shared.")
+            Text("Doddy is an AI, not a person.")
         }
     }
 
@@ -185,20 +162,70 @@ struct SettingsView: View {
     /// The language the screens are showing, for the Polish or English legal pages.
     static var languageCode: String? { Bundle.main.preferredLocalizations.first }
 
-    private static var helpURL: URL {
+    static var helpURL: URL {
         URL(string: (languageCode ?? "").hasPrefix("pl")
             ? "https://www.doddy.lol/pl/what-can-doddy-do/"
             : "https://www.doddy.lol/what-can-doddy-do/")!
     }
 
     // Doddy's own social accounts (ADR-130). Opening one hands off to the system; the app sends nothing.
-    private static let tiktokURL = URL(string: "https://www.tiktok.com/@doddy_mate")!
-    private static let instagramURL = URL(string: "https://www.instagram.com/doddy_mate/")!
+    static let tiktokURL = URL(string: "https://www.tiktok.com/@doddy_mate")!
+    static let instagramURL = URL(string: "https://www.instagram.com/doddy_mate/")!
 
     static var versionText: String {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "?"
         let build = info?["CFBundleVersion"] as? String ?? "?"
         return "\(version) (\(build))"
+    }
+}
+
+/// Settings › About (owner, 5 Nov 2026): what used to be the bottom group of Settings. Nothing here
+/// changes how Doddy behaves, so it is out of the first page. Same rows, same identifiers.
+struct AboutSettingsView: View {
+    var body: some View {
+        Form {
+            Section {
+                Link(destination: SettingsView.helpURL) {
+                    Label("Help", systemImage: "questionmark.circle")
+                }
+                .accessibilityIdentifier("settings.help")
+                Link(destination: LegalDocuments.url(.terms, languageCode: SettingsView.languageCode)) {
+                    Label("Terms & Conditions", systemImage: "doc.text")
+                }
+                .accessibilityIdentifier("settings.terms")
+                Link(destination: LegalDocuments.url(.privacy, languageCode: SettingsView.languageCode)) {
+                    Label("Privacy Policy", systemImage: "hand.raised")
+                }
+                .accessibilityIdentifier("settings.privacyPolicy")
+            }
+            Section {
+                // Doddy's own social accounts (ADR-130). Opening one hands off to the system; the app sends nothing.
+                Link(destination: SettingsView.tiktokURL) {
+                    Label("TikTok · doddy_mate", systemImage: "play.rectangle")
+                }
+                .accessibilityIdentifier("settings.tiktok")
+                Link(destination: SettingsView.instagramURL) {
+                    Label("Instagram · doddy_mate", systemImage: "camera")
+                }
+                .accessibilityIdentifier("settings.instagram")
+            }
+            Section {
+                StatusRow(title: NSLocalizedString("Version", comment: ""), value: SettingsView.versionText)
+                NavigationLink {
+                    AdvancedSettingsView()
+                } label: {
+                    Text("Advanced")
+                }
+                .accessibilityIdentifier("settings.advanced")
+            } footer: {
+                Text("Links open outside Doddy; nothing from the app is shared.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvas)
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
+        .foregroundStyle(Theme.ink)
     }
 }
