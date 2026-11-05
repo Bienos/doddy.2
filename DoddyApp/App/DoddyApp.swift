@@ -35,6 +35,10 @@ struct DoddyApp: App {
         if ProcessInfo.processInfo.arguments.contains("-resetLegalAcceptanceForUITests") {
             UserDefaults.standard.removeObject(forKey: LegalAcceptance.preferenceKey)
         }
+        // UI tests of "Allow access" (ADR-728) start with it not yet answered.
+        if ProcessInfo.processInfo.arguments.contains("-resetFirstRunAccessForUITests") {
+            UserDefaults.standard.removeObject(forKey: PreferenceKey.firstRunAccessSeen)
+        }
         #endif
         VoiceSessionKeychain.removeLegacySetup()
         // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
