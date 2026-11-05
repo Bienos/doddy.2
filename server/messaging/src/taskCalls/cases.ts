@@ -8,6 +8,7 @@ import type { TaskCallContext } from "./context.js";
 import { previewOf } from "./payload.js";
 import { isRetryableOutcome } from "./result.js";
 import { decryptPayload, phaseOf, resultAad } from "./service.js";
+import { withoutTranscript } from "./transcriptAccess.js";
 
 type Client = Pick<pg.PoolClient, "query">;
 
@@ -75,7 +76,7 @@ export async function getCase(ctx: TaskCallContext, accountId: string, caseId: s
     results: results.map((r) => ({
       attemptId: r.attempt_id, state: r.state, outcome: r.outcome, confidence: r.confidence, expiresAt: r.expires_at,
       resultDigest: r.result_digest?.toString("hex") ?? null,
-      result: r.ciphertext ? safeDecrypt(ctx, r.ciphertext, resultAad(accountId, r.attempt_id)) : null,
+      result: r.ciphertext ? withoutTranscript(ctx, accountId, safeDecrypt(ctx, r.ciphertext, resultAad(accountId, r.attempt_id))) : null,
     })),
     cost: costSummary(items),
     deletions: await receipts(ctx.db, caseId),

@@ -248,9 +248,40 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await w.app.close();
   });
 
+  test("an account that is not the owner gets the answer without the words (ADR-730)", async () => {
+    const w = await world();
+    const u = await user(w);
+    assert.deepEqual(w.settings.transcriptAccountIds ?? [], [], "nobody reads transcripts by default");
+    const d = await dialled(w, u.h);
+    await status(w, d, "ringing", 1);
+    await answer(w, d);
+    await say(w, d, "outbound_track", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny.");
+    await say(w, d, "inbound_track", "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.");
+    const live = (await api(w, "GET", `/v1/call-cases/${d.caseId}/live`, u.h)).json();
+    assert.equal(live.attempt.phase, "talking", "the phase still shows");
+    assert.deepEqual(live.lines, [], "the live words do not");
+
+    await status(w, d, "completed", 3, "41");
+    const reply = "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.";
+    w.voice.conversations.set("conv_2", conversation(d.attemptId, "conv_2", [
+      ["agent", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
+      ["user", reply], ["agent", "Dziękuję bardzo, do widzenia."]]) as never);
+    assert.equal((await postCall(w, w.voice.conversations.get("conv_2")!)).statusCode, 200);
+    assert.equal(await processResults(w.ctx), 1);
+
+    const res = (await api(w, "GET", `/v1/call-cases/${d.caseId}`, u.h)).json().results[0];
+    assert.equal(res.outcome, "answered");
+    assert.equal(res.result.quote.text, reply, "the answer is there");
+    assert.equal(res.result.confidence, "high");
+    assert.deepEqual(res.result.transcript, [], "the transcript is not");
+    assert.equal(JSON.stringify(res).includes("odebrać jutro od dziesiątej") && res.result.transcript.length > 0, false);
+  });
+
   test("full call: live lines, answer card quoting the reply, costs, ack with receipts, ElevenLabs deletion", async () => {
     const w = await world();
     const u = await user(w);
+    // The owner's account: the live words and the saved transcript are its logs (ADR-730).
+    w.settings.transcriptAccountIds = [u.accountId];
     const d = await dialled(w, u.h);
     await status(w, d, "ringing", 1);
     await answer(w, d);
@@ -276,6 +307,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     assert.equal(res.result.quote.text, reply);
     assert.equal(res.result.confidence, "high");
     assert.equal(res.result.source, "elevenlabs");
+    assert.deepEqual(res.result.transcript.map((l: { speaker: string }) => l.speaker), ["doddy", "callee", "doddy"], "the owner's card keeps the transcript");
     // Live lines are gone once the card is built.
     assert.equal((await db.query("SELECT 1 FROM call_live_lines WHERE attempt_id = $1", [d.attemptId])).rowCount, 0);
     // Voice cost from the webhook: 1200 credits × 0.0001 USD.

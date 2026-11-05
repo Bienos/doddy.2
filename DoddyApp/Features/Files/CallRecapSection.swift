@@ -73,7 +73,8 @@ struct CallRecapSection: View {
 
     private func open(_ record: StoredCallCase) {
         guard let card = record.result,
-              let text = CallRecap.text(for: record, labels: Self.labels, outcomeText: CallCaseText.outcome(card.outcome)) else { return }
+              let text = CallRecap.text(for: record, labels: Self.labels, outcomeText: CallCaseText.outcome(card.outcome),
+                                        whenText: record.createdAt.formatted(date: .abbreviated, time: .shortened)) else { return }
         do {
             let directory = Self.folder.appendingPathComponent(record.id.uuidString, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -93,13 +94,10 @@ struct CallRecapSection: View {
             goal: NSLocalizedString("Goal", comment: ""),
             question: NSLocalizedString("Question", comment: ""),
             outcome: NSLocalizedString("Outcome", comment: ""),
-            summary: NSLocalizedString("Summary", comment: ""),
-            quote: NSLocalizedString("Quote", comment: ""),
-            nextStep: NSLocalizedString("Next step", comment: ""),
-            warnings: NSLocalizedString("Warnings", comment: ""),
-            transcript: NSLocalizedString("Transcript", comment: ""),
+            when: NSLocalizedString("When", comment: ""),
             duration: NSLocalizedString("Duration", comment: ""),
-            doddy: NSLocalizedString("Doddy", comment: ""),
-            callee: NSLocalizedString("Other side", comment: "The person Doddy called, in a recap's transcript"))
+            answer: NSLocalizedString("Answer", comment: "Heading of the answer in a call recap"),
+            nextStep: NSLocalizedString("Next step", comment: ""),
+            checkThis: NSLocalizedString("Worth a look", comment: "How many things in a call recap the person should check"))
     }
 }

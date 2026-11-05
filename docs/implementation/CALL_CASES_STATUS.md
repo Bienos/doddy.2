@@ -4,6 +4,8 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 
 **State: built and tested with fakes. No real call has been placed. The iPhone screens compile (hosted CI, Xcode 26.6) but have never been run on a device or seen on screen.** Nothing below may be called working until the live tests at the end pass.
 
+> **5 Nov 2026 (ADR-730):** the transcript is the owner's log. Only accounts in `CALL_TRANSCRIPT_ACCOUNT_IDS` get the live words and the saved transcript; every other account gets the answer card without it. Where this page says the transcript is kept on the iPhone, that holds for those accounts only. The recap in Files › Calls has no transcript for anyone.
+
 ## What it does
 1. The user writes a brief in the app: who (name, number, where the number came from), the goal in one sentence, the one question, facts Doddy may say (only ticked ones leave the iPhone), and the longest the call may last (4 min by default).
 2. The server compiles the brief into the exact payload it will send and returns a card made from it: who, goal, the opening line word for word, what Doddy may say, what it must not do, the callback line, the length and the recording notice.

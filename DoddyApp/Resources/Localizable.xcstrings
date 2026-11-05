@@ -20860,6 +20860,17 @@
         }
       }
     },
+    "Doddy is on the call. You get the answer when it ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy rozmawia. Odpowiedź dostaniesz, gdy rozmowa się skończy."
+          }
+        }
+      }
+    },
     "Doddy is recording. Stop the recording to record a voice memo.": {
       "extractionState": "manual",
       "localizations": {
@@ -43411,7 +43422,7 @@
         }
       }
     },
-    "No audio is recorded. A text transcript is made; after the call it is kept on this iPhone and the server's copies are deleted.": {
+    "No audio is recorded. A text transcript is made to write the answer; the server deletes its copies after the call, and the answer is kept on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -43420,13 +43431,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "No audio is recorded. A text transcript is made; after the call it is kept on this iPad and the server's copies are deleted."
+                  "value": "No audio is recorded. A text transcript is made to write the answer; the server deletes its copies after the call, and the answer is kept on this iPad."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "No audio is recorded. A text transcript is made; after the call it is kept on this iPhone and the server's copies are deleted."
+                  "value": "No audio is recorded. A text transcript is made to write the answer; the server deletes its copies after the call, and the answer is kept on this iPhone."
                 }
               }
             }
@@ -43438,13 +43449,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Dźwięk nie jest nagrywany. Powstaje zapis tekstowy; po rozmowie jest przechowywany na tym iPadzie, a kopie na serwerach są usuwane."
+                  "value": "Dźwięk nie jest nagrywany. Powstaje tekstowy zapis rozmowy, z którego powstaje odpowiedź; serwer kasuje swoje kopie po rozmowie, a na tym iPadzie zostaje odpowiedź."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Dźwięk nie jest nagrywany. Powstaje zapis tekstowy; po rozmowie jest przechowywany na tym iPhonie, a kopie na serwerach są usuwane."
+                  "value": "Dźwięk nie jest nagrywany. Powstaje tekstowy zapis rozmowy, z którego powstaje odpowiedź; serwer kasuje swoje kopie po rozmowie, a na tym iPhonie zostaje odpowiedź."
                 }
               }
             }
@@ -54001,17 +54012,6 @@
         }
       }
     },
-    "Other side": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Druga strona"
-          }
-        }
-      }
-    },
     "Outcome": {
       "extractionState": "manual",
       "localizations": {
@@ -57761,17 +57761,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "退出 Doddy"
-          }
-        }
-      }
-    },
-    "Quote": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cytat"
           }
         }
       }
@@ -81106,17 +81095,6 @@
         }
       }
     },
-    "The transcript appears here as they talk.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapis pojawia się tutaj w trakcie rozmowy."
-          }
-        }
-      }
-    },
     "The two passphrases don't match.": {
       "extractionState": "manual",
       "localizations": {
@@ -91498,17 +91476,6 @@
         }
       }
     },
-    "Warnings": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ostrzeżenia"
-          }
-        }
-      }
-    },
     "Watch out for": {
       "extractionState": "manual",
       "localizations": {
@@ -94955,6 +94922,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Działa jeszcze"
+          }
+        }
+      }
+    },
+    "Worth a look": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warto sprawdzić"
           }
         }
       }

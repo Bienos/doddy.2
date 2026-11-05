@@ -695,7 +695,6 @@
   "No answer card yet": "Jeszcze bez karty odpowiedzi",
   "No answer found in the transcript": "W zapisie nie znaleziono odpowiedzi",
   "No answer to the question was found.": "Nie znaleziono odpowiedzi na pytanie.",
-  "No audio is recorded. A text transcript is made; after the call it is kept on this iPhone and the server's copies are deleted.": "Dźwięk nie jest nagrywany. Powstaje zapis tekstowy; po rozmowie jest przechowywany na tym iPhonie, a kopie na serwerach są usuwane.",
   "No calls yet.": "Jeszcze nie ma połączeń.",
   "No contact matched.": "Żaden kontakt nie pasuje.",
   "No conversations kept. Private conversations and empty ones are never kept.": "Brak zachowanych rozmów. Rozmowy prywatne i puste nigdy nie są zachowywane.",
@@ -1281,7 +1280,6 @@
   "The text already added stays in the note until you change it.": "Dodany już tekst zostaje w notatce, dopóki go nie zmienisz.",
   "The text service didn't answer. Try again in a moment.": "Usługa SMS nie odpowiedziała. Spróbuj za chwilę.",
   "The tidy-up couldn't be set. Try again.": "Nie udało się ustawić porządków. Spróbuj ponownie.",
-  "The transcript appears here as they talk.": "Zapis pojawia się tutaj w trakcie rozmowy.",
   "The two passphrases don't match.": "Hasła nie są takie same.",
   "The voice Doddy was given": "Głos, który dostał Doddy",
   "The watch shows nothing from your notes or lists.": "Zegarek nie pokazuje niczego z Twoich notatek ani list.",
@@ -2582,10 +2580,10 @@
   "Call recap": "Podsumowanie rozmowy",
   "Question": "Pytanie",
   "Outcome": "Wynik",
-  "Quote": "Cytat",
-  "Warnings": "Ostrzeżenia",
   "Duration": "Czas trwania",
-  "Other side": "Druga strona",
   "What Doddy found out on the calls he made for you. The whole log is in Settings › Phone calls.": "Co Doddy ustalił w rozmowach, które odbył dla ciebie. Cały log jest w Ustawieniach › Rozmowy telefoniczne.",
-  "The calls kept on this iPhone couldn't be read.": "Nie udało się odczytać rozmów zapisanych na tym iPhonie."
+  "The calls kept on this iPhone couldn't be read.": "Nie udało się odczytać rozmów zapisanych na tym iPhonie.",
+  "Worth a look": "Warto sprawdzić",
+  "No audio is recorded. A text transcript is made to write the answer; the server deletes its copies after the call, and the answer is kept on this iPhone.": "Dźwięk nie jest nagrywany. Powstaje tekstowy zapis rozmowy, z którego powstaje odpowiedź; serwer kasuje swoje kopie po rozmowie, a na tym iPhonie zostaje odpowiedź.",
+  "Doddy is on the call. You get the answer when it ends.": "Doddy rozmawia. Odpowiedź dostaniesz, gdy rozmowa się skończy."
 }

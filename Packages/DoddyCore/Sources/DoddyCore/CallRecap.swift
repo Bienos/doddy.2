@@ -1,12 +1,14 @@
 import Foundation
 
-/// The recap of a call Doddy made for the person, as a plain text file they can open in Files,
-/// share, or send in Messages. Built only from what is already kept on this iPhone for the case
-/// (the brief the person approved and the answer card the server made); it adds nothing and
-/// guesses nothing. A call with no answer card has no recap.
+/// The recap of a call Doddy made for the person, as a plain text file they can open in Files, share,
+/// or send in Messages. Built only from the brief the person approved and the answer card kept on this
+/// iPhone; it adds nothing and guesses nothing. A call with no answer card has no recap.
 ///
-/// The words around the facts are passed in (`Labels`) because the app localizes them; the
-/// facts themselves, such as the summary and the transcript, are Polish as the call was.
+/// It never holds what the other side said word for word, except the one short quote that backs the
+/// answer: the transcript is the owner's log (ADR-730) and is not part of a recap.
+///
+/// The words around the facts are passed in (`Labels`) because the app localizes them; the facts
+/// themselves, such as the summary, are Polish as the call was.
 public enum CallRecap {
     public struct Labels: Equatable, Sendable {
         public var title: String
@@ -14,58 +16,56 @@ public enum CallRecap {
         public var goal: String
         public var question: String
         public var outcome: String
-        public var summary: String
-        public var quote: String
-        public var nextStep: String
-        public var warnings: String
-        public var transcript: String
+        public var when: String
         public var duration: String
-        public var doddy: String
-        public var callee: String
+        public var answer: String
+        public var nextStep: String
+        public var checkThis: String
 
-        public init(title: String, to: String, goal: String, question: String, outcome: String, summary: String,
-                    quote: String, nextStep: String, warnings: String, transcript: String, duration: String,
-                    doddy: String, callee: String) {
+        public init(title: String, to: String, goal: String, question: String, outcome: String, when: String,
+                    duration: String, answer: String, nextStep: String, checkThis: String) {
             self.title = title
             self.to = to
             self.goal = goal
             self.question = question
             self.outcome = outcome
-            self.summary = summary
-            self.quote = quote
-            self.nextStep = nextStep
-            self.warnings = warnings
-            self.transcript = transcript
+            self.when = when
             self.duration = duration
-            self.doddy = doddy
-            self.callee = callee
+            self.answer = answer
+            self.nextStep = nextStep
+            self.checkThis = checkThis
         }
     }
 
-    /// The recap, or nil when the case has no answer card yet.
-    public static func text(for record: StoredCallCase, labels: Labels, outcomeText: String) -> String? {
+    /// The recap, or nil when the case has no answer card yet. `outcomeText` and `whenText` are made by the
+    /// app (the outcome in the person's language, the date and time in their locale).
+    public static func text(for record: StoredCallCase, labels: Labels, outcomeText: String, whenText: String) -> String? {
         guard let card = record.result else { return nil }
-        var out: [String] = [labels.title, ""]
-        out.append("\(labels.to): \(record.brief.calleeName)")
-        out.append("\(labels.goal): \(record.brief.goal)")
-        out.append("\(labels.question): \(record.brief.question)")
-        out.append("\(labels.outcome): \(outcomeText)")
-        if let secs = card.durationSecs { out.append("\(labels.duration): \(Int(secs.rounded())) s") }
+        let rule = String(repeating: "─", count: 28)
+        var out: [String] = [labels.title, rule, ""]
+        out.append(field(labels.to, record.brief.calleeName))
+        out.append(field(labels.when, whenText))
+        out.append(field(labels.goal, record.brief.goal))
+        out.append(field(labels.question, record.brief.question))
+        out.append(field(labels.outcome, outcomeText))
+        if let secs = card.durationSecs, secs > 0 { out.append(field(labels.duration, "\(Int(secs.rounded())) s")) }
         out.append("")
-        out.append("\(labels.summary): \(card.summary)")
-        if let quote = card.quote { out.append("\(labels.quote): „\(quote.text)”") }
-        if !card.nextStep.text.isEmpty { out.append("\(labels.nextStep): \(card.nextStep.text)") }
-        if !card.warnings.isEmpty { out.append("\(labels.warnings): \(card.warnings.count)") }
-        if !card.transcript.isEmpty {
+        out.append(labels.answer.uppercased())
+        out.append(card.summary)
+        if let quote = card.quote { out.append("„\(quote.text)”") }
+        if !card.nextStep.text.isEmpty {
             out.append("")
-            out.append(labels.transcript)
-            for line in card.transcript {
-                let who = line.speaker == "doddy" ? labels.doddy : labels.callee
-                out.append("\(who): \(line.text)")
-            }
+            out.append(labels.nextStep.uppercased())
+            out.append(card.nextStep.text)
+        }
+        if !card.warnings.isEmpty {
+            out.append("")
+            out.append("\(labels.checkThis): \(card.warnings.count)")
         }
         return out.joined(separator: "\n") + "\n"
     }
+
+    private static func field(_ label: String, _ value: String) -> String { "\(label): \(value)" }
 
     /// A file name that is safe on every platform: the callee's name and the date, nothing else.
     public static func fileName(for record: StoredCallCase, calendar: Calendar = Calendar(identifier: .gregorian)) -> String {

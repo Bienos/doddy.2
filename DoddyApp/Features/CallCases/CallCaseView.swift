@@ -276,7 +276,7 @@ struct CallApprovalSections: View {
         let notice = preview.notice == "off"
             ? NSLocalizedString("Doddy doesn't announce a recording (the legal basis isn't confirmed yet).", comment: "")
             : NSLocalizedString("Doddy announces that the call is recorded or transcribed.", comment: "")
-        return notice + " " + NSLocalizedString("No audio is recorded. A text transcript is made; after the call it is kept on this iPhone and the server's copies are deleted.", comment: "")
+        return notice + " " + NSLocalizedString("No audio is recorded. A text transcript is made to write the answer; the server deletes its copies after the call, and the answer is kept on this iPhone.", comment: "")
     }
 }
 
@@ -306,7 +306,7 @@ struct CallLiveSection: View {
                                 if model.phase == .ringing {
                                     Text("Ringing…")
                                 } else {
-                                    Text("The transcript appears here as they talk.")
+                                    Text("Doddy is on the call. You get the answer when it ends.")
                                 }
                             }
                             .foregroundStyle(Theme.secondaryText)
