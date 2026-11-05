@@ -83758,6 +83758,17 @@
         }
       }
     },
+    "This month's spending limit for Studio is reached. Try again next month.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miesięczny limit wydatków Studia został osiągnięty. Spróbuj w przyszłym miesiącu."
+          }
+        }
+      }
+    },
     "This note can't be read any more, so it can't be saved.": {
       "extractionState": "manual",
       "localizations": {

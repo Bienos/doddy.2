@@ -14,7 +14,7 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
   before(async () => { db = await freshDb(); });
   after(async () => { await db?.end(); });
   beforeEach(async () => {
-    await db.query("DELETE FROM studio_items; DELETE FROM studio_orphan_files; DELETE FROM studio_usage; DELETE FROM studio_server_spend;");
+    await db.query("DELETE FROM studio_items; DELETE FROM studio_orphan_files; DELETE FROM studio_usage; DELETE FROM studio_server_spend; DELETE FROM studio_server_spend_month;");
     await db.query("DELETE FROM server_daily_usage WHERE feature IN ('studio', 'studio_new')");
   });
 
@@ -181,6 +181,9 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
     server: Number((await db.query("SELECT coalesce(sum(requests), 0)::text AS n FROM server_daily_usage WHERE feature = 'studio'")).rows[0].n),
     account: Number((await db.query("SELECT coalesce(sum(approvals), 0)::text AS n FROM studio_usage")).rows[0].n),
   });
+  const monthRows = async () => (await db.query<{ month: string; usd: string }>(
+    "SELECT to_char(month, 'YYYY-MM-DD') AS month, committed_usd::text AS usd FROM studio_server_spend_month ORDER BY month")).rows
+    .map((r) => [r.month, Number(r.usd)]);
 
   test("ADR-742: per-account, per-server and dollar caps are counted where deleting an item can't give them back", async () => {
     // Two approvals a day per account. Deleting an item doesn't give one back.
@@ -214,6 +217,50 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual([second.status, second.body], [429, { error: "studio_daily_limit", scope: "server" }]);
   });
 
+  test("ADR-742: the month's ceiling is the whole server's, refuses with studio_monthly_limit, takes nothing, and deleting can't reset it", async () => {
+    // $2 a job against a $5 month: two approvals fit, the third would make 6.
+    const w = await world({ settings: { monthlyServerCapUsd: 5, dailyServerCapUsd: 1000, dailyPerServer: 100, dailyPerAccount: 50, dailyCapUsd: 1000, maxOpen: 10 } });
+    const first = await approveJob(w);
+    await approveJob(w);
+    const month = `${w.clock.now.toISOString().slice(0, 7)}-01`;
+    assert.deepEqual(await monthRows(), [[month, 4]]);
+    const refused = await approveRefusal(w);
+    assert.deepEqual([refused.status, refused.body], [429, { error: "studio_monthly_limit" }]);
+    assert.deepEqual(await monthRows(), [[month, 4]], "a refusal commits nothing to the month");
+    assert.deepEqual(await dayRows(), { spend: 4, server: 2, account: 2 }, "and rolls back the day's counts and dollars");
+    assert.equal((await row(refused.draft.id)).state, "draft");
+    // Another account is held by the same ceiling, and deleting an item and then the account gives nothing back.
+    await w.call("DELETE", `/v1/studio/${first.id}`);
+    await db.query("DELETE FROM accounts WHERE id = $1", [w.accountId]);
+    assert.deepEqual(await monthRows(), [[month, 4]]);
+    const other = await world({ settings: { monthlyServerCapUsd: 5, dailyServerCapUsd: 1000, dailyPerServer: 100, dailyPerAccount: 50, dailyCapUsd: 1000, maxOpen: 10 } });
+    const again = await approveRefusal(other);
+    assert.deepEqual([again.status, again.body], [429, { error: "studio_monthly_limit" }]);
+  });
+
+  test("ADR-742: the month rolls over (a new month has its own ceiling), and a job's unspent part goes back to the month it was counted in", async () => {
+    const settings = { monthlyServerCapUsd: 4, dailyServerCapUsd: 1000, dailyPerServer: 100, dailyPerAccount: 50, dailyCapUsd: 1000, maxOpen: 10 };
+    const w = await world({ settings });
+    w.clock.now = new Date(Date.UTC(2026, 10, 30, 12, 0, 0)); // 30 Nov 2026
+    const a = await approveJob(w);
+    const b = await approveJob(w);
+    assert.deepEqual(await monthRows(), [["2026-11-01", 4]]);
+    assert.equal((await approveRefusal(w)).body.error, "studio_monthly_limit");
+    // The next UTC day is in December: the month is new and has room again; November's figure is untouched.
+    w.clock.now = new Date(Date.UTC(2026, 11, 1, 0, 0, 1));
+    const c = await approveJob(w);
+    assert.deepEqual(await monthRows(), [["2026-11-01", 4], ["2026-12-01", 2]]);
+    // A job approved on 30 Nov that ends on 1 Dec gives its unspent part back to November, not December.
+    await db.query("UPDATE studio_items SET state = 'running', stage = 'plan', started_at = approved_at WHERE id = $1", [a.id]);
+    const { releaseUnspent } = await import("../src/studio/service.js");
+    await releaseUnspent(db, a.id, 0.5);
+    assert.deepEqual(await monthRows(), [["2026-11-01", 2.5], ["2026-12-01", 2]], "1.5 of the 2 reserved came back to November");
+    // A queued job cancelled in December gives its whole hold back to the month it was approved in.
+    assert.equal((await w.call("POST", `/v1/studio/${b.id}/cancel`)).statusCode, 204);
+    assert.deepEqual(await monthRows(), [["2026-11-01", 0.5], ["2026-12-01", 2]]);
+    assert.equal((await row(c.id)).state, "queued");
+  });
+
   test("ADR-742: an account still new can't start a Studio job unless the owner opens a pool for new accounts", async () => {
     const closed = await world({ settings: { dailyForNewAccounts: 0, dailyCapUsd: 100 } });
     const r = await approveRefusal(closed);
@@ -238,6 +285,7 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
     const cost = Number((await row(done.id)).cost_usd);
     assert.ok(cost > 0 && cost < 2, `the fake run cost ${cost}`);
     assert.ok(Math.abs((await dayRows()).spend - (4 - (2 - cost))) < 0.001, "the unspent part of the first job came back");
+    assert.ok(Math.abs((await monthRows()).reduce((n, r) => n + (r[1] as number), 0) - (await dayRows()).spend) < 0.001, "the month got the same part back");
     // A queued job that is cancelled never ran: its whole reservation goes back, its counts don't.
     assert.equal((await w.call("POST", `/v1/studio/${queued.id}/cancel`)).statusCode, 204);
     assert.ok(Math.abs((await dayRows()).spend - cost) < 0.001);

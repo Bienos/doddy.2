@@ -2584,5 +2584,6 @@
   "The file that arrived isn't the one Doddy's server described, so it isn't opened.": "Plik, który dotarł, nie jest tym, który opisał serwer Doddy’ego, więc nie zostanie otwarty.",
   "That couldn't be done: the item has already finished or changed. Pull down to check again.": "Nie udało się: element już się zakończył albo zmienił. Przeciągnij w dół, aby sprawdzić ponownie.",
   "Doddy's server couldn't be reached. Check your internet connection.": "Nie udało się połączyć z serwerem Doddy’ego. Sprawdź połączenie z internetem.",
-  "What Doddy made in Studio stays on Doddy's server until you delete it in Studio.": "To, co Doddy przygotował w Studiu, zostaje na serwerze Doddy’ego, dopóki tego nie usuniesz w Studiu."
+  "What Doddy made in Studio stays on Doddy's server until you delete it in Studio.": "To, co Doddy przygotował w Studiu, zostaje na serwerze Doddy’ego, dopóki tego nie usuniesz w Studiu.",
+  "This month's spending limit for Studio is reached. Try again next month.": "Miesięczny limit wydatków Studia został osiągnięty. Spróbuj w przyszłym miesiącu."
 }

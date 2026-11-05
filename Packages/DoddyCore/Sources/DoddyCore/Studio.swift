@@ -664,6 +664,9 @@ extension VoiceToolReply {
         case StudioError.dailyCapReached(let cap, let spent):
             ("today's spending limit for Studio is reached" + money(cap, spent) + ".",
              "Say it can be made tomorrow; the limit is set on Doddy's server.")
+        case StudioError.monthlyLimitReached:
+            ("this month's spending limit for Studio is reached.",
+             "Say it can be made next month; the limit is set on Doddy's server.")
         case StudioError.tooManyOpenItems:
             ("the user already has as many Studio jobs running as Doddy's server allows.", "Offer to wait until one is ready.")
         case StudioError.digestMismatch, StudioError.notApprovable:

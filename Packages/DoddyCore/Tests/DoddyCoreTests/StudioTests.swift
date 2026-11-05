@@ -183,6 +183,7 @@ final class StudioTests: XCTestCase {
             (reply(404, #"{"error":"not_found"}"#), .notFound),
             (reply(429), .server(.rateLimited)),
             (reply(429, #"{"error":"studio_daily_limit","scope":"server"}"#), .dailyCapReached(capUsd: nil, spentUsd: nil)),
+            (reply(429, #"{"error":"studio_monthly_limit"}"#), .monthlyLimitReached),
             (reply(500), .server(.unexpected(status: 500))),
         ]
         for (response, expected) in cases {
@@ -199,6 +200,8 @@ final class StudioTests: XCTestCase {
         XCTAssertTrue(cap.hasPrefix("failed: today's spending limit for Studio is reached ($4.20 of $5.00). Nothing was done."), cap)
         XCTAssertTrue(VoiceToolReply.studioNotStarted(StudioError.dailyCapReached(capUsd: nil, spentUsd: nil))
             .hasPrefix("failed: today's spending limit for Studio is reached. Nothing was done."))
+        XCTAssertTrue(VoiceToolReply.studioNotStarted(StudioError.monthlyLimitReached)
+            .hasPrefix("failed: this month's spending limit for Studio is reached. Nothing was done."))
         XCTAssertTrue(VoiceToolReply.studioNotStarted(StudioError.tooManyOpenItems).hasPrefix("failed: "))
         XCTAssertTrue(VoiceToolReply.studioNotStarted(StudioError.digestMismatch).contains("expired or changed"))
         XCTAssertTrue(VoiceToolReply.studioNotStarted(StudioError.server(.offline)).hasPrefix("failed: Doddy's server couldn't be reached."))

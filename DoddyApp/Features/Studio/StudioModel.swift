@@ -228,6 +228,8 @@ final class StudioModel {
             return NSLocalizedString("Studio is switched off or not set up on Doddy's server.", comment: "")
         case StudioError.dailyCapReached:
             return NSLocalizedString("Today's spending limit for Studio is reached. Try again tomorrow.", comment: "")
+        case StudioError.monthlyLimitReached:
+            return NSLocalizedString("This month's spending limit for Studio is reached. Try again next month.", comment: "")
         case StudioError.tooManyOpenItems:
             return NSLocalizedString("Doddy is already making as many things as the server allows. Try again when one is ready.", comment: "")
         case StudioError.fileRefused:

@@ -69,7 +69,7 @@ test("studio: off by default; the mid tier (Sonnet) for every step, $2 a job and
   assert.deepEqual(c.studioSettings, {
     enabled: false, models: { plan: "claude-sonnet-5-5", research: "claude-sonnet-5-5", pack: "claude-sonnet-5-5", write: "claude-sonnet-5-5", make: "claude-sonnet-5-5" },
     skills: "", maxSearches: 15, maxFetches: 15, blockedDomains: [], taskBudgetTokens: 150_000, jobLimitUsd: 2, dailyCapUsd: 3, timeLimitMinutes: 20, maxOpen: 3,
-    dailyPerAccount: 3, dailyPerServer: 10, dailyForNewAccounts: 0, newAccountHours: 24, dailyServerCapUsd: 10,
+    dailyPerAccount: 3, dailyPerServer: 10, dailyForNewAccounts: 0, newAccountHours: 24, dailyServerCapUsd: 10, monthlyServerCapUsd: 100,
   });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", STUDIO_ENABLED: "1" }).studioSettings.enabled, true);
 });
@@ -89,7 +89,8 @@ test("studio: the model API exists only with STUDIO_ENABLED=1, an Anthropic key 
   assert.ok(on.api);
   assert.equal(on.settings.dailyForNewAccounts, 0);
   assert.equal(on.settings.dailyServerCapUsd, 10);
-  for (const bad of [{ STUDIO_DAILY_SERVER_CAP_USD: "0" }, { STUDIO_DAILY_PER_ACCOUNT: "0" }, { STUDIO_DAILY_PER_SERVER: "0" }, { STUDIO_DAILY_SERVER_CAP_USD: "6000" }]) {
+  assert.equal(on.settings.monthlyServerCapUsd, 100, "the owner's $100 ceiling, per UTC month for the whole server (ADR-742)");
+  for (const bad of [{ STUDIO_DAILY_SERVER_CAP_USD: "0" }, { STUDIO_DAILY_PER_ACCOUNT: "0" }, { STUDIO_DAILY_PER_SERVER: "0" }, { STUDIO_DAILY_SERVER_CAP_USD: "6000" }, { STUDIO_MONTHLY_SERVER_CAP_USD: "0" }, { STUDIO_MONTHLY_SERVER_CAP_USD: "-5" }]) {
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
   }
 });

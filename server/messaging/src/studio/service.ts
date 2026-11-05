@@ -8,7 +8,8 @@
 //     pipeline after every model request), per account and day, and for the whole server and day. The server's
 //     counts (approvals, the new-account pool, committed dollars) live in tables with no account in them, so
 //     deleting an item or an account can't give a day back; each approval commits STUDIO_JOB_LIMIT_USD of
-//     STUDIO_DAILY_SERVER_CAP_USD, and a job that ends gives back what it didn't spend;
+//     STUDIO_DAILY_SERVER_CAP_USD and of STUDIO_MONTHLY_SERVER_CAP_USD (the whole server, a UTC calendar month,
+//     the hard ceiling), and a job that ends gives back what it didn't spend;
 //   - delete says "deleted" only after the item and its files read back as gone.
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
@@ -28,6 +29,7 @@ export type Refusal =
   | { status: 409; error: "digest_mismatch" | "too_many_open_items" }
   | { status: 409; error: "daily_cap_reached"; capUsd: number; spentUsd: number }
   | { status: 429; error: "studio_daily_limit"; scope: "account" | "server" }
+  | { status: 429; error: "studio_monthly_limit" }
   | { status: 503; error: "studio_disabled" };
 
 const refuse = (r: Refusal) => ({ refusal: r });
@@ -124,6 +126,13 @@ export async function approveItem(ctx: StudioContext, accountId: string, id: str
          ON CONFLICT (day) DO UPDATE SET committed_usd = studio_server_spend.committed_usd + $2::numeric
            WHERE studio_server_spend.committed_usd + $2::numeric <= $3::numeric`, [day, reserve, ctx.settings.dailyServerCapUsd]);
       if (dollars !== 1) throw new Refused({ status: 429, error: "studio_daily_limit", scope: "server" });
+      // The month's ceiling: the most the whole server can commit to Studio in a UTC calendar month.
+      const month = `${day.slice(0, 7)}-01`;
+      const { rowCount: monthly } = await c.query(
+        `INSERT INTO studio_server_spend_month (month, committed_usd) SELECT $1::date, $2::numeric WHERE $2::numeric <= $3::numeric
+         ON CONFLICT (month) DO UPDATE SET committed_usd = studio_server_spend_month.committed_usd + $2::numeric
+           WHERE studio_server_spend_month.committed_usd + $2::numeric <= $3::numeric`, [month, reserve, ctx.settings.monthlyServerCapUsd]);
+      if (monthly !== 1) throw new Refused({ status: 429, error: "studio_monthly_limit" });
       // An account still new draws from the new-account pool inside the server's count (ADR-702), 0 by default.
       const slots = await takeServerSlots(c, "studio", accountId, {
         perServer: ctx.settings.dailyPerServer, newAccountPool: ctx.settings.dailyForNewAccounts, newAccountHours: ctx.settings.newAccountHours,
@@ -152,6 +161,12 @@ export async function releaseUnspent(c: Pick<pg.PoolClient, "query">, itemId: st
   await c.query(
     `UPDATE studio_server_spend SET committed_usd = greatest(0, committed_usd - greatest(0, i.reserved_usd - $2::numeric))
      FROM studio_items i WHERE i.id = $1 AND i.approved_at IS NOT NULL AND studio_server_spend.day = (i.approved_at AT TIME ZONE 'utc')::date`,
+    [itemId, spentUsd]);
+  // The same part goes back to the month the approval was counted in.
+  await c.query(
+    `UPDATE studio_server_spend_month SET committed_usd = greatest(0, committed_usd - greatest(0, i.reserved_usd - $2::numeric))
+     FROM studio_items i WHERE i.id = $1 AND i.approved_at IS NOT NULL
+       AND studio_server_spend_month.month = date_trunc('month', i.approved_at AT TIME ZONE 'utc')::date`,
     [itemId, spentUsd]);
 }
 

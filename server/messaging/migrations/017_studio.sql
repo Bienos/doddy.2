@@ -116,3 +116,11 @@ CREATE TABLE studio_server_spend (
   committed_usd numeric(12, 4) NOT NULL DEFAULT 0 CHECK (committed_usd >= 0)
 );
 
+-- 4. The same, per UTC calendar month (STUDIO_MONTHLY_SERVER_CAP_USD, default $100): the most the whole server can
+--    commit to Studio in a month, whoever asks and whatever is deleted. `month` is the first day of the month. The owner
+--    said "100usd cap" without a period; this is the safest reading (ADR-742) and is easy to change.
+CREATE TABLE studio_server_spend_month (
+  month         date PRIMARY KEY CHECK (extract(day FROM month) = 1),
+  committed_usd numeric(12, 4) NOT NULL DEFAULT 0 CHECK (committed_usd >= 0)
+);
+

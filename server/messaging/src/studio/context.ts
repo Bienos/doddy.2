@@ -28,6 +28,8 @@ export interface StudioSettings {
   newAccountHours: number;
   /** Dollars the server commits per UTC day: each approval holds `jobLimitUsd` of it until the job's real cost is known. */
   dailyServerCapUsd: number;
+  /** Dollars the server commits per UTC calendar month, the hard ceiling (ADR-742); same holding rule as the day's. */
+  monthlyServerCapUsd: number;
 }
 
 /** For tests and a server without the variables: the code's defaults, switch on (the env's default is off). */
@@ -35,7 +37,7 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
   enabled: true, models: { ...DEFAULT_STEP_MODELS }, skills: "", maxSearches: 15, maxFetches: 15, blockedDomains: [],
   taskBudgetTokens: 150_000, jobLimitUsd: 2, dailyCapUsd: 3, timeLimitMinutes: 20, maxOpen: 3,
   dailyPerAccount: 3, dailyPerServer: 10, dailyForNewAccounts: DEFAULT_NEW_ACCOUNT_POOL.studio, newAccountHours: DEFAULT_NEW_ACCOUNT_HOURS,
-  dailyServerCapUsd: 10,
+  dailyServerCapUsd: 10, monthlyServerCapUsd: 100,
 };
 
 /** Set aside per open job when checking the daily cap, before its real cost is known. */

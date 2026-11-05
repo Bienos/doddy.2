@@ -228,6 +228,9 @@ const schema = z.object({
   STUDIO_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(1000).default(10),
   STUDIO_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(1000).default(DEFAULT_NEW_ACCOUNT_POOL.studio),
   STUDIO_DAILY_SERVER_CAP_USD: z.coerce.number().positive().max(5000).default(10),
+  // The hard ceiling for a whole UTC calendar month, the most the server can ever commit to Studio (ADR-742). The owner
+  // said "100usd cap" with no period; the safest reading is the month and all accounts together.
+  STUDIO_MONTHLY_SERVER_CAP_USD: z.coerce.number().positive().max(100000).default(100),
 });
 
 export interface ApnsConfig { teamId: string; keyId: string; privateKey: string; bundleId: string }
@@ -469,6 +472,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       dailyForNewAccounts: e.STUDIO_DAILY_NEW_ACCOUNTS,
       newAccountHours: e.NEW_ACCOUNT_HOURS,
       dailyServerCapUsd: e.STUDIO_DAILY_SERVER_CAP_USD,
+      monthlyServerCapUsd: e.STUDIO_MONTHLY_SERVER_CAP_USD,
     },
   };
 }

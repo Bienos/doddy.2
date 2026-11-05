@@ -16,6 +16,8 @@ public enum StudioError: Error, Equatable, Sendable {
     case tooManyOpenItems
     /// Today's spending cap for this account is reached (409 `daily_cap_reached`), in dollars.
     case dailyCapReached(capUsd: Double?, spentUsd: Double?)
+    /// The server's ceiling for the whole month is reached (429 `studio_monthly_limit`, ADR-742).
+    case monthlyLimitReached
     /// Studio is switched off or not set up on the server (503 `studio_disabled`).
     case studioDisabled
     /// The server's schema refused a field (400).
@@ -130,6 +132,7 @@ extension DoddyServerClient {
         // The server's own limits for the day (ADR-742): this account's approvals, the whole server's approvals or dollars,
         // or the pool for new accounts. All are "today's limit is reached" for the user.
         case (429, "studio_daily_limit"): return .dailyCapReached(capUsd: nil, spentUsd: nil)
+        case (429, "studio_monthly_limit"): return .monthlyLimitReached
         case (503, "studio_disabled"): return .studioDisabled
         case (400, _): return .invalid(fields: body?.fields ?? [])
         case (404, _): return .notFound
