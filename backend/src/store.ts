@@ -65,6 +65,8 @@ export const ERASED_TABLES = [
   "approvals",
   "tool_switches",
   "tool_receipts",
+  "payment_receipts",
+  "payments",
   "documents",
   "web_link_codes",
   "web_sessions",
@@ -200,6 +202,30 @@ export const SCHEMA_SQL = `
     seq BIGINT GENERATED ALWAYS AS IDENTITY
   );
   CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS payment_receipts (
+    operation_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    body TEXT NOT NULL,
+    seq BIGINT GENERATED ALWAYS AS IDENTITY
+  );
+  CREATE INDEX IF NOT EXISTS payment_receipts_user ON payment_receipts(user_id, created_at);
+  -- One row per payment attempt, written BEFORE anything is sent, so a crash leaves a visible
+  -- "unconfirmed" row instead of nothing. Host and amount only: never the page path or query.
+  CREATE TABLE IF NOT EXISTS payments (
+    payment_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    host TEXT NOT NULL,
+    amount BIGINT NOT NULL,
+    network TEXT NOT NULL,
+    url_hash TEXT NOT NULL,
+    valid_before BIGINT NOT NULL,
+    status TEXT NOT NULL,
+    transaction_hash TEXT
+  );
+  CREATE INDEX IF NOT EXISTS payments_user ON payments(user_id, created_at);
   CREATE TABLE IF NOT EXISTS device_owner (
     slot INTEGER PRIMARY KEY CHECK (slot = 1),
     user_id TEXT NOT NULL,
@@ -693,6 +719,63 @@ export class Store {
     return rows.map((r) => JSON.parse(r.body) as unknown);
   }
 
+  // ------------------------------------------------------------ payments
+
+  async savePaymentReceipt(userId: string, receipt: { operationId: string }, now: number): Promise<void> {
+    await this.db.query(
+      "INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+      [receipt.operationId, userId, now, JSON.stringify(receipt)],
+    );
+  }
+
+  async paymentReceipts(userId: string, limit: number): Promise<unknown[]> {
+    const rows = (await this.db.query<{ body: string }>(
+      "SELECT body FROM payment_receipts WHERE user_id = $1 ORDER BY created_at DESC, seq DESC LIMIT $2",
+      [userId, limit],
+    )).rows;
+    return rows.map((r) => JSON.parse(r.body) as unknown);
+  }
+
+  /** Written before the first byte of a payment is signed or sent. */
+  async insertPayment(row: { paymentId: string; userId: string; now: number; host: string; amount: number; network: string; urlHash: string; validBefore: number }): Promise<void> {
+    await this.db.query(
+      `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'signing')`,
+      [row.paymentId, row.userId, row.now, row.now, row.host, row.amount, row.network, row.urlHash, row.validBefore],
+    );
+  }
+
+  async setPaymentStatus(paymentId: string, status: "signing" | "sent" | "settled" | "declined" | "unknown" | "not_sent", now: number, transactionHash: string | null = null): Promise<void> {
+    await this.db.query(
+      "UPDATE payments SET status = $1, updated_at = $2, transaction_hash = COALESCE($3, transaction_hash) WHERE payment_id = $4",
+      [status, now, transactionHash, paymentId],
+    );
+  }
+
+  /**
+   * Payments that were sent but never confirmed: marked unknown, or still "signing"/"sent" long after
+   * they should have finished (the server stopped mid-payment).
+   */
+  async unresolvedPayments(userId: string, now: number, staleMs: number): Promise<number> {
+    const row = await this.one<{ n: number | string }>(
+      this.db,
+      `SELECT COUNT(*) AS n FROM payments WHERE user_id = $1
+         AND (status = 'unknown' OR (status IN ('signing', 'sent') AND updated_at < $2))`,
+      [userId, now - staleMs],
+    );
+    return Number(row?.n ?? 0);
+  }
+
+  /** Same page paid (or maybe paid) recently and not confirmed either way: a second payment waits. */
+  async hasUnconfirmedPaymentFor(userId: string, urlHash: string, since: number): Promise<boolean> {
+    const row = await this.one<{ hit: number }>(
+      this.db,
+      "SELECT 1 AS hit FROM payments WHERE user_id = $1 AND url_hash = $2 AND created_at >= $3 AND status IN ('signing', 'sent', 'unknown') LIMIT 1",
+      [userId, urlHash, since],
+    );
+    return row !== null;
+  }
+
   // ------------------------------------------------------------ usage
 
   /**
@@ -719,6 +802,15 @@ export class Store {
     return true;
   }
 
+  /** Gives back a reservation that never turned into a provider call (floors at zero). */
+  releaseUsage(checks: readonly { counter: string; period: string }[], units: number): Promise<void> {
+    return this.db.transaction(async (tx) => {
+      for (const c of checks) {
+        await tx.query("UPDATE usage SET count = GREATEST(0, count - $1) WHERE counter = $2 AND period = $3", [units, c.counter, c.period]);
+      }
+    });
+  }
+
   /**
    * Retention (review 2026-10-11): drops attempts and approvals a day after they expire, usage
    * periods no limit reads any more, and receipts older than 90 days or beyond the newest 200 per
@@ -730,7 +822,7 @@ export class Store {
     const monthCutoff = `month:${new Date(now - 400 * DAY).toISOString().slice(0, 7)}`;
     return this.db.transaction(async (tx) => {
       const run = async (sql: string, ...params: (string | number)[]) => (await tx.query(sql, params)).rowCount;
-      const receipts = async (table: "receipts" | "tool_receipts") =>
+      const receipts = async (table: "receipts" | "tool_receipts" | "payment_receipts") =>
         (await run(`DELETE FROM ${table} WHERE created_at < $1`, now - 90 * DAY)) +
         (await run(`DELETE FROM ${table} WHERE seq IN (
                SELECT seq FROM (SELECT seq, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, seq DESC) AS rn FROM ${table}) ranked
@@ -743,6 +835,8 @@ export class Store {
           (await run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < $1", monthCutoff)),
         receipts: await receipts("receipts"),
         toolReceipts: await receipts("tool_receipts"),
+        paymentReceipts: await receipts("payment_receipts"),
+        payments: await run("DELETE FROM payments WHERE created_at < $1", now - 90 * DAY),
       };
     });
   }

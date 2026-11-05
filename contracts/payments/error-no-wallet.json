@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "live_not_configured",
+    "message": "No payment wallet is set up on this server.",
+    "correlationId": "48c5f2ea-be1c-40eb-ad76-5a3dd751ec2e",
+    "receipt": {
+      "operationId": "cf4cb74c-b29e-4386-9e3c-d460aea45a44",
+      "operation": "switch",
+      "timestamp": "2026-10-12T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: No payment wallet is set up on this server.",
+      "errorCode": "wallet_not_set_up",
+      "host": null,
+      "amount": null,
+      "transaction": null
+    }
+  }
+}

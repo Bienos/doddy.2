@@ -25,7 +25,7 @@ test("prune keeps live rows and drops expired attempts and approvals, old usage 
     for (let i = 1; i <= 205; i++) (await store.saveReceipt(USER, receipt(i), NOW - (205 - i) * 1000));
 
     const gone = (await store.prune(NOW));
-    assert.deepEqual(gone, { attempts: 1, approvals: 1, usage: 2, receipts: 6, toolReceipts: 0 });
+    assert.deepEqual(gone, { attempts: 1, approvals: 1, usage: 2, receipts: 6, toolReceipts: 0, paymentReceipts: 0, payments: 0 });
 
     assert.ok((await store.consumeAttempt({ attemptId: live.attemptId, userId: USER, provider: "gmail", nonce: live.nonce, now: NOW })), "a live attempt still works");
     assert.ok((await store.consumeApproval({ approvalId: approval.approvalId, userId: USER, capability: "draft_email", accountId: "ca", argsDigest: "d", now: NOW })));
@@ -37,5 +37,24 @@ test("prune keeps live rows and drops expired attempts and approvals, old usage 
     assert.equal((kept[0] as unknown as { summary: string }).summary, "r205", "newest kept");
   } finally {
     (await store.close());
+  }
+});
+
+test("prune applies the same retention to payment receipts and the payments ledger", async () => {
+  const store = await Store.memory();
+  try {
+    const row = (id: string, now: number) => ({ paymentId: id, userId: USER, now, host: "shop.example", amount: 50_000, network: "base-sepolia", urlHash: "h", validBefore: 1 });
+    await store.insertPayment(row("old", NOW - 100 * DAY));
+    await store.insertPayment(row("new", NOW - DAY));
+    await store.savePaymentReceipt(USER, receipt(0), NOW - 100 * DAY);
+    for (let i = 1; i <= 205; i++) await store.savePaymentReceipt(USER, receipt(i), NOW - (205 - i) * 1000);
+
+    const gone = await store.prune(NOW);
+    assert.equal(gone.payments, 1);
+    assert.equal(gone.paymentReceipts, 6);
+    assert.equal((await store.paymentReceipts(USER, 500)).length, 200);
+    assert.equal(await store.unresolvedPayments(USER, NOW, 5 * 60_000), 1, "the recent unfinished row is still reported; the old one is gone");
+  } finally {
+    await store.close();
   }
 });

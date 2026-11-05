@@ -50,6 +50,13 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
   );
   await q("INSERT INTO tool_switches (user_id, tool, enabled, changed_at) VALUES ($1, 'check_email', 1, 1)", [userId]);
   await q("INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, 1, '{}')", [`tr-${tag}`, userId]);
+  // Payments (ADR-730): receipts and the per-attempt ledger go with the account.
+  await q("INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, 1, '{}')", [`pr-${tag}`, userId]);
+  await q(
+    `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
+     VALUES ($1, $2, 1, 1, 'shop.example', 50000, 'base-sepolia', 'h', 1, 'settled')`,
+    [`pay-${tag}`, userId],
+  );
   await q("INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'ready', 'a.md', 'text/markdown', $3, 1)", [
     `doc-${tag}`,
     userId,

@@ -1964,6 +1964,17 @@
         }
       }
     },
+    "A payment wasn't confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatność nie została potwierdzona"
+          }
+        }
+      }
+    },
     "A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -11356,6 +11367,17 @@
         }
       }
     },
+    "Checking the price…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam cenę…"
+          }
+        }
+      }
+    },
     "Checking tomorrow…": {
       "extractionState": "manual",
       "localizations": {
@@ -12215,6 +12237,17 @@
         }
       }
     },
+    "Coinbase wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel Coinbase"
+          }
+        }
+      }
+    },
     "Coming up this week": {
       "extractionState": "manual",
       "localizations": {
@@ -12399,6 +12432,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Potwierdź w Doddym"
+          }
+        }
+      }
+    },
+    "Confirm with Face ID…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potwierdź przez Face ID…"
           }
         }
       }
@@ -17168,6 +17212,28 @@
         }
       }
     },
+    "Demo data: no real money moves": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane demo: żadne prawdziwe pieniądze nie są przesyłane"
+          }
+        }
+      }
+    },
+    "Demo wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel demo"
+          }
+        }
+      }
+    },
     "Demo — nothing real will be created": {
       "extractionState": "manual",
       "localizations": {
@@ -17223,6 +17289,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "演示 · 不会创建任何真实内容"
+          }
+        }
+      }
+    },
+    "Demo: no real money moved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo: żadne prawdziwe pieniądze nie zostały przesłane."
+          }
+        }
+      }
+    },
+    "Demo: no real money moves": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo: żadne prawdziwe pieniądze nie są przesyłane"
           }
         }
       }
@@ -18093,6 +18181,17 @@
         }
       }
     },
+    "Doddy asks for Face ID or your passcode every time before paying.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy za każdym razem prosi o Face ID lub kod, zanim zapłaci."
+          }
+        }
+      }
+    },
     "Doddy asks for “While Using” only, never “Always”.": {
       "extractionState": "manual",
       "localizations": {
@@ -18148,6 +18247,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 只会请求“使用 App 期间”，绝不会请求“始终”。"
+          }
+        }
+      }
+    },
+    "Doddy asks the page for its price and shows it to you. Nothing is paid until you confirm with Face ID.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pyta stronę o cenę i pokazuje ją Tobie. Nic nie jest płacone, dopóki nie potwierdzisz przez Face ID."
           }
         }
       }
@@ -18653,6 +18763,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie widzi Ustawień, nie ustawi za Ciebie stuknięcia w tył i nie sprawdzi, co pokazuje Twój iPhone."
+          }
+        }
+      }
+    },
+    "Doddy can't tell whether it went through. Check your wallet's history before paying that page again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie wie, czy płatność doszła do skutku. Zanim zapłacisz za tę stronę ponownie, sprawdź historię portfela."
           }
         }
       }
@@ -25310,6 +25431,28 @@
         }
       }
     },
+    "Each day, at most": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziennie, najwyżej"
+          }
+        }
+      }
+    },
+    "Each payment, at most": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna płatność, najwyżej"
+          }
+        }
+      }
+    },
     "Easy": {
       "extractionState": "manual",
       "localizations": {
@@ -31053,6 +31196,28 @@
         }
       }
     },
+    "I've checked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzone"
+          }
+        }
+      }
+    },
+    "I've checked my wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel sprawdzony"
+          }
+        }
+      }
+    },
     "I've done it, let me try": {
       "extractionState": "manual",
       "localizations": {
@@ -36120,6 +36285,17 @@
         }
       }
     },
+    "Larger payments need the amount typed, not just a tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Większe płatności wymagają wpisania kwoty, a nie tylko stuknięcia."
+          }
+        }
+      }
+    },
     "Last 7 days": {
       "extractionState": "manual",
       "localizations": {
@@ -36886,6 +37062,17 @@
         }
       }
     },
+    "Let Doddy pay for pages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwól Doddy płacić za strony"
+          }
+        }
+      }
+    },
     "Let Doddy use my memories on calls": {
       "extractionState": "manual",
       "localizations": {
@@ -37092,6 +37279,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przejdźmy się."
+          }
+        }
+      }
+    },
+    "Limits": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limity"
           }
         }
       }
@@ -43806,6 +44004,17 @@
         }
       }
     },
+    "No payment wallet is set up on your Doddy server, so this can't be turned on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na Twoim serwerze Doddy nie ustawiono portfela do płatności, więc nie można tego włączyć."
+          }
+        }
+      }
+    },
     "No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.": {
       "extractionState": "manual",
       "localizations": {
@@ -44466,6 +44675,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天没有设置。"
+          }
+        }
+      }
+    },
+    "None set up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ustawiono"
           }
         }
       }
@@ -47902,6 +48122,17 @@
         }
       }
     },
+    "Nothing was paid": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie zapłacono"
+          }
+        }
+      }
+    },
     "Nothing yet": {
       "extractionState": "manual",
       "localizations": {
@@ -49562,6 +49793,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłączona, dopóki jej nie włączysz. Doddy sprawdza przesyłkę w InPost tylko wtedy, gdy ją dodasz albo stukniesz Odśwież. Numer z wiadomości czy maila nigdy nie jest sprawdzany sam z siebie. Do InPost trafia tylko numer; nie potrzeba konta ani klucza."
+          }
+        }
+      }
+    },
+    "Off until you turn it on. Even then, every payment shows you the exact price and asks for Face ID first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączone, dopóki tego nie włączysz. Nawet wtedy każda płatność pokazuje dokładną cenę i najpierw prosi o Face ID."
           }
         }
       }
@@ -52185,6 +52427,17 @@
         }
       }
     },
+    "Open Payments": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Płatności"
+          }
+        }
+      }
+    },
     "Open Photos": {
       "extractionState": "manual",
       "localizations": {
@@ -53931,6 +54184,39 @@
         }
       }
     },
+    "Paid": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłacono"
+          }
+        }
+      }
+    },
+    "Paid from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płacone z"
+          }
+        }
+      }
+    },
+    "Paid today": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłacono dziś"
+          }
+        }
+      }
+    },
     "Pain": {
       "extractionState": "manual",
       "localizations": {
@@ -54520,6 +54806,17 @@
         }
       }
     },
+    "Pay for a page": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłać za stronę"
+          }
+        }
+      }
+    },
     "Pay or give card or account numbers": {
       "extractionState": "manual",
       "localizations": {
@@ -54527,6 +54824,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Płacić ani podawać numerów kart czy kont"
+          }
+        }
+      }
+    },
+    "Paying… keep Doddy open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płacę… zostaw Doddy otwartego."
+          }
+        }
+      }
+    },
+    "Payment": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatność"
           }
         }
       }
@@ -54586,6 +54905,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "支付"
+          }
+        }
+      }
+    },
+    "Payments need a Doddy server session. This iPhone signs in to its server the first time you use something online, such as Online accounts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatności wymagają sesji na serwerze Doddy. Ten iPhone loguje się na swoim serwerze przy pierwszym użyciu czegoś online, na przykład Kont online."
           }
         }
       }
@@ -58174,6 +58504,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czekam, aż zaczniesz"
+          }
+        }
+      }
+    },
+    "Real money": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prawdziwe pieniądze"
           }
         }
       }
@@ -65895,6 +66236,17 @@
         }
       }
     },
+    "See the price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz cenę"
+          }
+        }
+      }
+    },
     "See today's events and reminders here: turn on Calendar or Reminders in Settings, Connections. They're read on this iPhone only.": {
       "extractionState": "manual",
       "localizations": {
@@ -67119,6 +67471,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已为 %lld 人设置。已核对。"
+          }
+        }
+      }
+    },
+    "Set on your Doddy server. A page that asks for more is refused before anything is shown to confirm.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawiane na Twoim serwerze Doddy. Strona, która żąda więcej, jest odrzucana, zanim cokolwiek zobaczysz do potwierdzenia."
           }
         }
       }
@@ -70124,6 +70487,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "其中一些笔记之后已被删除。"
+          }
+        }
+      }
+    },
+    "Some payments weren't confirmed. Check your wallet's history before paying that page again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niektóre płatności nie zostały potwierdzone. Zanim zapłacisz za tę stronę ponownie, sprawdź historię portfela."
           }
         }
       }
@@ -74136,6 +74510,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Test: wyciszone"
+          }
+        }
+      }
+    },
+    "Test network, no real money": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieć testowa, bez prawdziwych pieniędzy"
           }
         }
       }
@@ -82373,6 +82758,28 @@
         }
       }
     },
+    "This confirmation has run out.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To potwierdzenie wygasło."
+          }
+        }
+      }
+    },
+    "This confirmation runs out in %lld s.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To potwierdzenie wygaśnie za %lld s."
+          }
+        }
+      }
+    },
     "This doesn't turn anything on. Doddy asks separately before using the microphone or sending anything.": {
       "extractionState": "manual",
       "localizations": {
@@ -86775,6 +87182,17 @@
         }
       }
     },
+    "Transaction %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transakcja %@"
+          }
+        }
+      }
+    },
     "Transcript": {
       "extractionState": "manual",
       "localizations": {
@@ -88062,6 +88480,17 @@
         }
       }
     },
+    "Turn on “Let Doddy pay for pages” first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw włącz „Pozwól Doddy płacić za strony”."
+          }
+        }
+      }
+    },
     "Turn the parcel list off?": {
       "extractionState": "manual",
       "localizations": {
@@ -88360,6 +88789,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisz go pod adresem"
+          }
+        }
+      }
+    },
+    "Type the amount to confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz kwotę, aby potwierdzić"
           }
         }
       }
@@ -90997,6 +91437,17 @@
         }
       }
     },
+    "Wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel"
+          }
+        }
+      }
+    },
     "Want to wait? Ask Doddy to look again later: prices change.": {
       "extractionState": "manual",
       "localizations": {
@@ -91258,6 +91709,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zaktualizowaliśmy regulamin"
+          }
+        }
+      }
+    },
+    "Web address of the page (https://…)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres strony (https://…)"
           }
         }
       }

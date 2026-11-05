@@ -9,6 +9,7 @@ import type { DeviceSessionIssuer } from "./deviceSession.js";
 import { type DocumentLinks, serveDocument } from "./documents.js";
 import type { Store } from "./store.js";
 import { AppError } from "./errors.js";
+import { PAYMENT_SCENARIOS, type PaymentScenario, type PaymentsService } from "./payments/service.js";
 import type { ConnectedAppsService } from "./service.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
@@ -26,6 +27,8 @@ export interface HttpDeps {
   service: ConnectedAppsService;
   /** Online-account tools (Gmail, Drive, Notion, Todoist). Routes exist only when provided. */
   tools?: CloudToolsService;
+  /** Paying for things (x402). Routes exist only when provided; each says "not set up" until a wallet is. */
+  payments?: PaymentsService;
   verifier: SessionVerifier;
   /** Beta device sign-in (ADR-563). Absent: `POST /v1/session/device` is not found. */
   deviceSessions?: DeviceSessionIssuer | null;
@@ -84,6 +87,17 @@ export function createHandler(deps: HttpDeps) {
         "PUT /v1/tools/switch": (userId, body) => tools.setSwitch(userId, body),
         "POST /v1/tools/prepare": (userId, body) => tools.prepare(userId, body),
         "POST /v1/tools/run": (userId, body) => tools.run(userId, body),
+      }
+    : {};
+
+  const payments = deps.payments;
+  const paymentsRoutes: Record<string, (userId: string, body: unknown) => unknown | Promise<unknown>> = payments
+    ? {
+        "GET /v1/payments": (userId) => payments.status(userId),
+        "GET /v1/payments/receipts": async (userId) => ({ receipts: await payments.receipts(userId) }),
+        "PUT /v1/payments/switch": (userId, body) => payments.setSwitch(userId, body),
+        "POST /v1/payments/prepare": (userId, body) => payments.prepare(userId, body),
+        "POST /v1/payments/pay": (userId, body) => payments.pay(userId, body),
       }
     : {};
 
@@ -177,7 +191,8 @@ export function createHandler(deps: HttpDeps) {
       const toolkitRoute = tools ? TOOLKIT_ROUTE.exec(key) : null;
       const toolsHandler = toolsRoutes[key];
       const handler = routes[key];
-      if (!handler && !toolsHandler && !toolkitRoute) throw new AppError("not_found");
+      const paymentsHandler = paymentsRoutes[key];
+      if (!handler && !toolsHandler && !toolkitRoute && !paymentsHandler) throw new AppError("not_found");
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
@@ -198,6 +213,16 @@ export function createHandler(deps: HttpDeps) {
       if (scenario && !scenario.success) throw new AppError("invalid_request");
 
       const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
+      if (payments && paymentsHandler) {
+        const rawPayments = header(req, "x-doddy-payments-scenario");
+        if (rawPayments !== undefined) {
+          if (!PAYMENT_SCENARIOS.has(rawPayments)) throw new AppError("invalid_request");
+          payments.applyMockScenario(rawPayments as PaymentScenario);
+        }
+        const paymentsResult = await paymentsHandler(user.userId, body);
+        status = 200;
+        return send(res, 200, paymentsResult);
+      }
       if (tools && (toolsHandler || toolkitRoute)) {
         const rawTools = header(req, "x-doddy-tools-scenario");
         if (rawTools !== undefined) {
