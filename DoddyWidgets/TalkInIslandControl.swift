@@ -2,23 +2,22 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// The control that was "Talk in the Island" (ADR-577). Since ADR-593 it opens Doddy and starts
-/// the conversation, like `TalkToDoddyControl` (owner, 22 Oct: the Action Button should open the
-/// app, not the Dynamic Island on its own). It keeps its kind, because iOS remembers a control
-/// by its kind: an Action Button, Control Center or Lock Screen already set to it now opens
-/// Doddy after the update, with nothing to change in Settings. The island-only start is still
-/// `TalkInIslandIntent`, listed in the Shortcuts app; no control runs it now.
+/// The control that was "Talk in the Island" (ADR-577). It opened Doddy between ADR-593 and
+/// ADR-727; it starts the conversation in the Dynamic Island again, like `TalkToDoddyControl`
+/// (owner, 5 Nov 2026: press the Action Button, Doddy appears in the island and asks what's up).
+/// It keeps its kind, because iOS remembers a control by its kind: an Action Button, Control
+/// Center or Lock Screen already set to it needs nothing changed in Settings.
 @available(iOS 18.0, *)
 struct TalkInIslandControl: ControlWidget {
     static let kind = "com.bienos.doddy2.talk-island"
 
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
-            ControlWidgetButton(action: TalkToDoddyIntent()) {
+            ControlWidgetButton(action: TalkInIslandIntent()) {
                 Label("Talk to Doddy", systemImage: "waveform")
             }
         }
         .displayName("Talk to Doddy")
-        .description("Opens Doddy and starts a voice conversation.")
+        .description(LocalizedStringResource("Starts a voice conversation in the Dynamic Island without opening Doddy."))
     }
 }

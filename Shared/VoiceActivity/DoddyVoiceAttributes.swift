@@ -188,6 +188,12 @@ extension DoddyVoiceAttributes.ContentState {
         conversationStartedAt ?? activityStartedAt
     }
 
+    /// True while `title` is the plain word "Listening" (not muted, no greeting to show). The
+    /// expanded island and the Lock Screen leave it out (ADR-727); VoiceOver still reads `title`.
+    var showsListeningWord: Bool {
+        status == .listening && !showsMuted && !(showsGreeting && greeting != nil)
+    }
+
     /// Short label for the island and Lock Screen.
     var title: String {
         #if DEBUG

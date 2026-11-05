@@ -106,6 +106,9 @@ struct IslandScene: Equatable, Sendable {
     /// Something waits for the user in the conversation, or is ready there: the expanded island's
     /// main button is Show (`doddy://conversation`), which opens it (ADR-616). Opening approves nothing.
     var showsInDoddy = false
+    /// The plain "Listening" status is not written out in the expanded island (ADR-727, owner,
+    /// 5 Nov 2026): his waves and the LIVE mark already say it. VoiceOver still gets `title`.
+    var hidesStatusTitle = false
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
         IslandBoardArt.art(board, scenario: scenario, presentation)
@@ -322,6 +325,7 @@ extension DoddyVoiceAttributes.ContentState {
             minimalSign: minimal)
         // A card waits in Doddy (ADR-616): Show opens it. Not when stale: there is no card to show.
         scene.showsInDoddy = !stale && status == .needsConfirmation
+        scene.hidesStatusTitle = !stale && showsListeningWord
         return scene
     }
 

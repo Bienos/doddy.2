@@ -345,6 +345,11 @@ private struct LockScreenView: View {
             }
             .font(.subheadline)
             .foregroundStyle(Palette.secondary)
+        } else if shown.state.showsListeningWord {
+            // ADR-727: no "Listening" word; the time and the waveform say it.
+            ElapsedTime(startedAt: startedAt)
+                .font(.subheadline)
+                .foregroundStyle(Palette.accentText)
         } else {
             HStack(spacing: 4) {
                 IslandText(shown.title)

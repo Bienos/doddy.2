@@ -61,8 +61,8 @@ struct DoddyWidgetsBundle: WidgetBundle {
 struct DoddyControls: WidgetBundle {
     var body: some Widget {
         TalkToDoddyControl()
-        // Was "Talk in the Island" (ADR-577); opens Doddy since ADR-593. Kept so an Action Button
-        // or control already set to it keeps working.
+        // Was "Talk in the Island" (ADR-577); it opened Doddy from ADR-593 to ADR-727 and talks in
+        // the island again. Kept so an Action Button or control already set to it keeps working.
         TalkInIslandControl()
         NewNoteControl()
         // Opens Doddy and starts a recording (ADR-588).

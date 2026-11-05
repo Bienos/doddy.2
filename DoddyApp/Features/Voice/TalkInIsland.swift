@@ -5,11 +5,10 @@ import Foundation
 import UIKit
 import os
 
-/// **Since ADR-593 no control runs `TalkButtonIntent`** (owner, 22 Oct: the Action Button should open
-/// Doddy, not the Dynamic Island on its own): the Action Button and the controls run
-/// `TalkToDoddyIntent`, which opens the app. `TalkButton` and the picker's logic below are kept,
-/// tested and unwired (ADR-579, superseded); `TalkInIslandIntent` still starts a conversation without
-/// opening Doddy from the Shortcuts app.
+/// **No control runs `TalkButtonIntent`** (ADR-593; owner, 22 Oct). Since ADR-727 (owner, 5 Nov) the
+/// Action Button and the controls run `TalkInIslandIntent` again, which starts the conversation in
+/// the Dynamic Island without opening Doddy. `TalkButton` and the picker's logic below are kept,
+/// tested and unwired (ADR-579, superseded).
 ///
 /// "Talk to Doddy" from the Action Button or a control (ADR-579), and the older "Talk in the
 /// Island" control (ADR-577). One press decides with `TalkLaunchPlanner`, following Settings ›

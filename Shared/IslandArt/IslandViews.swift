@@ -368,7 +368,7 @@ struct IslandBottomView<Controls: View>: View {
             .frame(width: 82)
             VStack(alignment: .leading, spacing: 3) {
                 VStack(alignment: .leading, spacing: 2) {
-                    title
+                    if !scene.hidesStatusTitle { title }
                     subtitle
                 }
                 .accessibilityElement(children: .combine)

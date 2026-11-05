@@ -98,53 +98,18 @@ final class VoiceLiveActivity {
         sendSoon()
     }
 
-    /// How long the "Conversation ended" card stays on the Lock Screen. The Dynamic Island
-    /// drops an ended activity at once whatever this says.
-    static let endedCardFor: TimeInterval = 120
-
-    /// The conversation ended normally (End, Close, connection lost): the Lock Screen shows a
-    /// short "Conversation ended" card with the number of notes saved, then it goes away.
-    /// It carries no stale date: it claims nothing that can go out of date.
+    /// The conversation ended normally (End, Close, connection lost): the island and the Lock
+    /// Screen card go away at once (ADR-727, owner, 5 Nov 2026), so nothing claims Doddy is still
+    /// there. What a conversation saved is in Settings' "What Doddy did" log, which records each
+    /// verified result; `savedCount` is no longer shown anywhere, so it is not used here.
     func finish(savedCount: Int) {
-        let beat = heartbeat
-        beat?.cancel()
-        heartbeat = nil
-        guard let activity else { return }
-        self.activity = nil
-        let pending = stopUpdating()
-        var final = DoddyVoiceAttributes.ContentState(status: .ended, isMuted: false, savedCount: savedCount, endedAt: Date())
-        // ADR-617: the ended card in the language of Doddy's screens, as the island was.
-        final.language = Bundle.main.preferredLocalizations.first
-        let removeAt = Date().addingTimeInterval(Self.endedCardFor)
-        ending = Task {
-            // An update already in flight finishes first (the sleep ends at cancel).
-            await beat?.value
-            await pending?.value
-            await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .after(removeAt))
-        }
+        end()
     }
 
-    /// How long the "Conversation stopped" card stays on the Lock Screen after a failure.
-    static let failedCardFor: TimeInterval = 60
-
-    /// The conversation couldn't start or its connection dropped (ADR-579): the Lock Screen shows
-    /// "Conversation stopped" with Open Doddy for a minute, never a live status. The Dynamic
-    /// Island drops it at once; the reason is said by the app or the intent that started it.
+    /// The conversation couldn't start or its connection dropped (ADR-579): the island goes away
+    /// at once too (ADR-727); the reason is said by the app or the intent that started it.
     func finishFailed(savedCount: Int) {
-        let beat = heartbeat
-        beat?.cancel()
-        heartbeat = nil
-        guard let activity else { return }
-        self.activity = nil
-        let pending = stopUpdating()
-        var final = DoddyVoiceAttributes.ContentState(status: .failed, isMuted: false, savedCount: savedCount, endedAt: Date())
-        final.language = Bundle.main.preferredLocalizations.first
-        let removeAt = Date().addingTimeInterval(Self.failedCardFor)
-        ending = Task {
-            await beat?.value
-            await pending?.value
-            await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .after(removeAt))
-        }
+        end()
     }
 
     /// Waits until the last update and `finish`/`end` have reached iOS (so the island's End
