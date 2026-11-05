@@ -224,6 +224,8 @@ public final class PaymentApprovalModel {
         sentAt = now()
         do {
             let typed = prepared.confirmAmountRequired ? typedAmount.trimmingCharacters(in: .whitespaces) : nil
+            // What is sent is what stays in the field, so the card shows the same text afterwards.
+            if let typed { typedAmount = typed }
             let result = try await client.pay(url: url, approvalId: prepared.approvalId, confirmAmount: typed)
             // Only a succeeded receipt is "paid". Anything else on a 200 is not trusted.
             if result.receipt.status == .succeeded {
