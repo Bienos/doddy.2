@@ -101,7 +101,7 @@ struct WelcomeView: View {
                     .position(x: m.width / 2, y: m.groundY + 6)
                 ZStack {
                     ForEach(WelcomeChapter.allCases) { chapter in
-                        CharacterArtImage(assetName: chapter.pose.assetName, height: m.doddyHeight)
+                        CharacterArtImage(assetName: chapter.pose.assetName, height: m.doddyHeight, paperBacking: false)
                             .opacity(WelcomeFlow.poseOpacity(chapter: chapter.rawValue, progress: progress))
                             .position(x: m.width / 2,
                                       y: m.groundY - CGFloat(chapter.pose.soleFraction) * m.doddyHeight + m.doddyHeight / 2)

@@ -389,6 +389,30 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.allCases.count, 12)
     }
 
+    func testOnlyConnectionsWithoutAnIOSPermissionStartOn() {
+        let on = Set(VoiceConnection.allCases.filter(\.startsOn))
+        XCTAssertEqual(on, [.maps, .shortcuts, .messages, .blik, .presentations])
+        XCTAssertEqual(Set(VoiceConnection.registeredDefaults.keys), Set(on.map(\.preferenceKey)))
+        XCTAssertTrue(VoiceConnection.registeredDefaults.values.allSatisfy { $0 })
+    }
+
+    func testRegisteredDefaultsLetAStoredOffWin() throws {
+        let suite = "VoiceConnectionDefaultsTests"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.removePersistentDomain(forName: suite)
+        defaults.register(defaults: VoiceConnection.registeredDefaults)
+        XCTAssertTrue(defaults.bool(forKey: VoiceConnection.messages.preferenceKey))
+        XCTAssertFalse(defaults.bool(forKey: VoiceConnection.calendar.preferenceKey))
+        defaults.set(false, forKey: VoiceConnection.messages.preferenceKey)
+        XCTAssertFalse(defaults.bool(forKey: VoiceConnection.messages.preferenceKey))
+    }
+
+    func testAppearanceDefaultsToLight() {
+        XCTAssertEqual(AppearancePreference.default, .light)
+        XCTAssertEqual(AppearancePreference.allCases, [.system, .light, .dark])
+    }
+
     // MARK: Replies
 
     func testReplyPrefixesMatchTheAgentPrompt() {

@@ -180,18 +180,25 @@ struct SceneryBackdrop: View {
 
 /// The picture itself at an exact height, with the paper backing in dark appearance. Shared by
 /// `UploadedCharacterView` and the opening's hand-over (ADR-225), so the opening's last frame
-/// and Home's picture are drawn the same way, pixel for pixel.
+/// and Home's picture are drawn the same way, pixel for pixel. The welcome slides pass
+/// `paperBacking: false`: no box around him; in dark appearance he gets the island's thin cream edge
+/// instead (as `WholeDoddyView` does), so his black outline and limbs don't vanish into the canvas.
 struct CharacterArtImage: View {
     let assetName: String
     let height: CGFloat
+    var paperBacking = true
     @Environment(\.colorScheme) private var colorScheme
+
+    private var showsPaper: Bool { paperBacking && colorScheme == .dark }
+    private var showsEdge: Bool { !paperBacking && colorScheme == .dark }
 
     var body: some View {
         Image(decorative: assetName)
             .resizable().scaledToFit()
             .frame(height: height)
-            .padding(.horizontal, colorScheme == .dark ? 12 : 0)
-            .background(colorScheme == .dark ? Color(red: 245/255, green: 239/255, blue: 226/255) : .clear,
+            .islandCreamEdge(showsEdge)
+            .padding(.horizontal, showsPaper ? 12 : 0)
+            .background(showsPaper ? Color(red: 245/255, green: 239/255, blue: 226/255) : .clear,
                         in: RoundedRectangle(cornerRadius: 24))
             .accessibilityHidden(true)
     }
