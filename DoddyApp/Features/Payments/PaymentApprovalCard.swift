@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// The card that asks "pay this?" (ADR-451). It shows exactly what Doddy's server returned for the
+/// The card that asks "pay this?" (ADR-731). It shows exactly what Doddy's server returned for the
 /// page (never an amount or a recipient the app made up), asks Face ID right before paying, and says
 /// plainly what happened. Never compiled with Xcode when written: see docs/implementation/PAYMENTS_STATUS.md.
 ///

@@ -3,7 +3,7 @@ import XCTest
 @testable import DoddyCore
 
 // NOT RUN when written (2026-10-12): no Swift toolchain was available. Checks for the voice agent's
-// payment tool (ADR-452): the agent only proposes a page; every gate that applies to a write applies to it.
+// payment tool (ADR-732): the agent only proposes a page; every gate that applies to a write applies to it.
 
 private func paymentFixtureText(_ name: String) throws -> Data {
     let root = URL(fileURLWithPath: #filePath)

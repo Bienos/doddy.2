@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Home's reminder that a payment was sent and never confirmed (ADR-452). Doddy can't tell whether it went through:
+/// Home's reminder that a payment was sent and never confirmed (ADR-732). Doddy can't tell whether it went through:
 /// only the person's wallet history can, so this stays until they say they checked. Shown only after payments were
 /// switched on once; otherwise Home never contacts the server about payments.
 struct UnconfirmedPaymentsBanner: View {
