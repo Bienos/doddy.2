@@ -5,7 +5,7 @@ import CryptoKit
 import Crypto
 #endif
 
-// Studio (S0, ADR-584, docs/implementation/STUDIO.md): "research X" becomes a research brief (PDF)
+// Studio (S0, ADR-740, docs/implementation/STUDIO.md): "research X" becomes a research brief (PDF)
 // and an infographic, made in the background by Doddy's messaging server and kept there until the
 // user deletes them. The app shows one ask card for a typed job (never a free-form prompt); on a
 // yes it creates the job on the server and approves it with the digest of exactly that job. That
@@ -196,7 +196,7 @@ extension VoiceToolRequest {
     }
 }
 
-// MARK: - The ask (ASK-01, ADR-584)
+// MARK: - The ask (ASK-01, ADR-740)
 
 /// The card for `make_something`. It changes nothing on the iPhone or in an account, so a spoken
 /// yes or a tap answers it (ASK-01's read rule). It shows the whole job, where it goes and what
@@ -510,7 +510,7 @@ public struct StudioItem: Decodable, Equatable, Sendable, Identifiable {
     public struct Summary: Codable, Equatable, Sendable {
         public let answer: String
         public let confidence: String?
-        /// The infographic's alt text, for VoiceOver (ADR-584). Absent from an older server.
+        /// The infographic's alt text, for VoiceOver (ADR-740). Absent from an older server.
         public let altText: String?
 
         public init(answer: String, confidence: String? = nil, altText: String? = nil) {

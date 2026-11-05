@@ -1,4 +1,4 @@
-// Which Claude model does each Studio step (ADR-584), and what each costs. The owner, 22 Oct: the
+// Which Claude model does each Studio step (ADR-740), and what each costs. The owner, 22 Oct: the
 // first plan (Opus 5.5 for every step) cost too much, so cheaper models do the steps they suit and a
 // real run compares mixes. Prices are Anthropic's list prices read on 22 Oct 2026 (models overview,
 // pricing, web search); the code computes each call's cost with its own model's prices.

@@ -97,8 +97,9 @@ final class ActivityOutcomeCoverageTests: XCTestCase {
         XCTAssertEqual(outcome(VoiceToolReply.bulkResult([(.deleteEvent(event), .unconfirmed)], verb: "deleted")), .notSure)
         XCTAssertEqual(outcome(VoiceToolReply.bulkNothing), .notDone)
         XCTAssertEqual(outcome(VoiceToolReply.bulkTooMany(30)), .notDone)
-        XCTAssertEqual(outcome(VoiceToolReply.alarmNotFound("07:00")), .notDone)
-        XCTAssertEqual(outcome(VoiceToolReply.alarmAmbiguous([alarm, alarm])), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.alarmNotPrepared), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.reminderListNotPrepared("Work")), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.cloudTargetNotFound), .notDone)
         XCTAssertEqual(outcome(VoiceToolReply.alarmCancelUnconfirmed), .notSure)
     }
 

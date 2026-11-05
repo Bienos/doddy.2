@@ -1,4 +1,4 @@
-# Plans screens: describe the plans, buy on the website (ADR-585)
+# Plans screens: describe the plans, buy on the website (ADR-741)
 
 Owner, 22 Oct 2026: paid versions of Doddy are bought **on Doddy's website**, not through the App Store, "to avoid fees". The app gets screens that show what each plan includes and send the person to the website. They live **inside the app** (Settings and Studio), **not** on the intro or in the first conversation.
 

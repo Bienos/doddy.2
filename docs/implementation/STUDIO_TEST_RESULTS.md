@@ -1,6 +1,6 @@
 # Studio S0: every test and showcase result in one place (22 Oct 2026)
 
-Everything measured for Studio S0 (ADR-584) on 22 Oct 2026, in one page. Details per run are in `STUDIO.md` "First real run". Studio is still off by default (`STUDIO_ENABLED=0`). The iPhone app half is **not compiled** (no Xcode here), so nothing in this page says the app works.
+Everything measured for Studio S0 (ADR-740) on 22 Oct 2026, in one page. Details per run are in `STUDIO.md` "First real run". Studio is still off by default (`STUDIO_ENABLED=0`). The iPhone app half is **not compiled** (no Xcode here), so nothing in this page says the app works.
 
 ## 1. Tiers (owner, 22 Oct 2026)
 

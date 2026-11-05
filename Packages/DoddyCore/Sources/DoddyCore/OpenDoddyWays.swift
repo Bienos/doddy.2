@@ -59,17 +59,20 @@ public struct OpenDoddyDevice: Equatable, Sendable {
 }
 
 public enum OpenDoddyWays {
-    /// The ways this device can offer, in the order they are shown: the ones that take something
-    /// in your hand first, Siri (which needs no setup) last. A way the device can't have isn't shown
-    /// at all, so nobody follows steps that lead nowhere.
+    /// The ways this device can offer, in the order they are shown. A way the device can't have
+    /// isn't shown at all, so nobody follows steps that lead nowhere. Siri is no longer offered
+    /// (owner, 3 Nov 2026, ADR-701): "Hey Siri, Talk to Doddy" still works, but this screen doesn't
+    /// list it. It stays only as the last resort when nothing else can be offered (an iPad on iOS 17),
+    /// so the screen is never empty.
     public static func available(on device: OpenDoddyDevice) -> [OpenDoddyWay] {
-        OpenDoddyWay.allCases.filter { way in
+        let shown = OpenDoddyWay.allCases.filter { way in
             switch way {
             case .backTap: device.isPhone
             case .actionButton: device.isPhone && device.actionButton != .no
             case .control: device.supportsControls
-            case .siri: true
+            case .siri: false
             }
         }
+        return shown.isEmpty ? [.siri] : shown
     }
 }

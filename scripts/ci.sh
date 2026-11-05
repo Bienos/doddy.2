@@ -7,11 +7,47 @@
 #                              (on Linux also a type-check of the non-UI app files);
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
+#   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
+#   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
+#                              checks swift backend node messaging ios
+#                              `ios` is the Xcode build and tests; --only never includes it unless listed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-core_only=0
-[ "${1:-}" = "--core-only" ] && core_only=1
+core_only=0 app_only=0 only=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --core-only) core_only=1 ;;
+    --app-only) app_only=1 ;;
+    --only)
+      [ -n "${2:-}" ] || { echo "--only needs a comma-separated list of groups" >&2; exit 64; }
+      only=$2; shift ;;
+    *) echo "unknown argument: $1" >&2; exit 64 ;;
+  esac
+  shift
+done
+if [ "$app_only" -eq 1 ] && { [ "$core_only" -eq 1 ] || [ -n "$only" ]; }; then
+  echo "--app-only cannot be combined with other scope flags" >&2; exit 64
+fi
+if [ "$core_only" -eq 1 ] && [ -n "$only" ]; then
+  echo "--core-only cannot be combined with --only" >&2; exit 64
+fi
+if [ -n "$only" ]; then
+  case ",$only," in *,ios,*) ;; *) core_only=1 ;; esac
+  case "$only" in ,*|*,|*,,*|*[!a-z,]*) echo "empty group in --only" >&2; exit 64 ;; esac
+  for g in $(echo "$only" | tr ',' ' '); do
+    case "$g" in checks|swift|backend|node|messaging|ios) ;; *) echo "unknown group: $g" >&2; exit 64 ;; esac
+  done
+fi
+# want GROUP: does this run include the group? (bash 3.2: no associative arrays)
+want() {
+  if [ "$app_only" -eq 1 ]; then
+    case "$1" in swift|ios) ;; *) return 1 ;; esac
+  fi
+  [ -z "$only" ] && return 0
+  case ",$only," in *",$1,"*) return 0 ;; esac
+  return 1
+}
 
 declare -a results=()
 failed=0 blocked=0
@@ -28,6 +64,12 @@ restart_simulator() {
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
 
+if [ "$app_only" -eq 1 ]; then
+  record "Pack, guard, agent spec, page and catalog checks" "SKIPPED" "--app-only: Linux core runs them"
+  record "Token server, backend, gateway, web, messaging, site and secrets checks" "SKIPPED" "--app-only: Linux core runs them"
+fi
+
+if want checks; then
 run_step "Imported pack integrity" python3 -I scripts/verify_imported_pack.py
 run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
 run_step "Voice agent spec" python3 -I scripts/voice_agent_spec.py check
@@ -45,14 +87,20 @@ if python3 -I -c "import reportlab, matplotlib" 2>/dev/null; then
 else
   not_run "Studio skills: renderers on samples" "python3 needs reportlab and matplotlib (apt python3-reportlab python3-matplotlib, or pip)"
 fi
+run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I tools/gen_web_assets.py --check
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
+run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
+run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
+run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
   not_run "Per-platform Xcode specs in step" "PyYAML not installed (apt install python3-yaml or pip install pyyaml)"
 fi
+fi  # checks
 
-if command -v swift >/dev/null 2>&1; then
+if ! want swift; then :
+elif command -v swift >/dev/null 2>&1; then
   swift --version
   # Ubuntu's system SQLite lacks the snapshot API GRDB enables by default; Doddy does not use it.
   # (No arrays: macOS ships bash 3.2, where an empty "${arr[@]}" fails under `set -u`.)
@@ -65,22 +113,36 @@ if command -v swift >/dev/null 2>&1; then
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
     # The call screens' state, run with fakes for the server and the store (ADR-500).
     run_step "Call screens' state tests" scripts/test_call_cases_model.sh
+    # The Messages screen's state, run with fakes for the store and the server (ADR-585).
+    run_step "Messages screen's state tests" scripts/test_messages_model.sh
+    # The price watch's state, run with a fake for Doddy's server (SHOPPING_WATCH.md).
+    run_step "Price watch state tests" scripts/test_watch_model.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
+    # The kept training plan (ADR-625): read back, edited and unreadable files, delete.
+    run_step "Training plan on real files" scripts/check_training_plan_store.sh
+    # The training log's state (ADR-642), run with a fake store.
+    run_step "Training log screen's state tests" scripts/test_training_log_model.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
   fi
   # Island drawing data matches the owner's SVGs, parses, and maps states correctly (ADR-239).
-  run_step "Dynamic Island art and scenes" scripts/check_island_art.sh
+  if [ "$app_only" -eq 1 ]; then
+    record "Dynamic Island art and scenes" "SKIPPED" "--app-only: Linux core runs them"
+  else
+    run_step "Dynamic Island art and scenes" scripts/check_island_art.sh
+  fi
 else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
 
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   run_step "Voice token server tests" npm test --prefix server/voice-token
 else
   not_run "Voice token server tests" "node/npm not found on PATH"
 fi
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want backend; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   node --version
   if [ ! -d backend/node_modules ]; then run_step "Backend install (npm ci)" npm ci --prefix backend; fi
   run_step "Backend type-check" npm run --prefix backend typecheck
@@ -88,7 +150,8 @@ if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
 else
   not_run "Backend type-check + tests" "node/npm not found on PATH"
 fi
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d gateway/node_modules ]; then run_step "Gateway install (npm ci)" npm ci --prefix gateway; fi
   run_step "Gateway typecheck" npm run typecheck --prefix gateway
   run_step "Gateway tests (node)" npm test --prefix gateway
@@ -96,12 +159,32 @@ else
   not_run "Gateway tests (node)" "node/npm not found on PATH"
 fi
 
+# Doddy Web (web/, ADR-600): type-check, unit tests against the server's own fixtures, and the
+# production build. The end-to-end run (real backend + Chromium) needs a Playwright Chromium; where
+# there is none it is listed as SKIPPED, never PASS.
+if ! want node; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+  if [ ! -d web/node_modules ]; then run_step "Web app install (npm ci)" npm ci --prefix web --no-audit --no-fund; fi
+  run_step "Web app type-check" npm run typecheck --prefix web
+  run_step "Web app unit tests" npm test --prefix web
+  run_step "Web app build" npm run build --prefix web
+  if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ] && [ -d backend/node_modules ] && ls "${PLAYWRIGHT_BROWSERS_PATH}"/chromium-* >/dev/null 2>&1; then
+    run_step "Backend build for the web end-to-end run" npm run build --prefix backend
+    run_step "Web end-to-end (backend + Chromium)" npm run e2e --prefix web
+  else
+    record "Web end-to-end (backend + Chromium)" "SKIPPED" "no Playwright Chromium (PLAYWRIGHT_BROWSERS_PATH)"
+  fi
+else
+  not_run "Web app tests" "node/npm not found on PATH"
+fi
+
 # Messaging server (server/messaging, Node 22 + Postgres). Its database tests need a disposable
 # database in TEST_DATABASE_URL; without one they are skipped and listed as SKIPPED, never PASS.
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want messaging; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d server/messaging/node_modules ]; then run_step "Messaging server install (npm ci)" npm ci --prefix server/messaging --no-audit --no-fund; fi
   run_step "Messaging server typecheck + tests" npm test --prefix server/messaging
-  # Studio (ADR-584): the server's checks on files the real renderers make (needs the build above).
+  # Studio (ADR-740): the server's checks on files the real renderers make (needs the build above).
   if python3 -I -c "import reportlab, matplotlib" 2>/dev/null; then
     run_step "Studio: server checks on rendered samples" scripts/check_studio_crosscheck.sh
   else
@@ -113,7 +196,8 @@ else
 fi
 
 # Landing page waitlist functions (site/api), against an in-memory @vercel/blob stand-in; no network.
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d site/node_modules ]; then run_step "Site install (npm ci)" npm ci --prefix site --no-audit --no-fund; fi
   run_step "Site waitlist function tests" npm test --prefix site
 else
@@ -122,14 +206,16 @@ fi
 
 # Project secrets in 1Password (ADR-493): the manifest, the generated .env.op templates (references
 # only) and the sync tool, against a fake `op` and fake Vercel/Render APIs. No network, no values.
-if command -v node >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1; then
   run_step "Secrets manifest and .env.op templates" node tools/secrets/sync.mjs check
   run_step "Secrets sync tool tests (fake op and hosts)" node --test "tools/secrets/test/*.test.mjs"
 else
   not_run "Secrets manifest and sync tool" "node not found on PATH"
 fi
 
-if [ "$core_only" -eq 1 ]; then
+if ! want ios; then :
+elif [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"
 elif ! command -v xcodebuild >/dev/null 2>&1; then
   not_run "iOS app build + tests" "xcodebuild not found (needs macOS with Xcode)"
@@ -157,14 +243,31 @@ else
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
     if run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
       -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
+      # A per-test time limit (ADR-680): a test that hangs fails after 10 minutes instead of using
+      # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
+      # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
+      test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
+      # shellcheck disable=SC2086
       run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -only-testing:DoddyTests
+        -destination "$dest" -only-testing:DoddyTests $test_limits
       # Only when this script picked the simulator: a DODDY_DESTINATION may name one by name.
       if [ -n "${sim_id:-}" ]; then
         run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
       fi
-      run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -only-testing:DoddyUITests
+      # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
+      # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
+      # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
+      ui_workers=${DODDY_UI_TEST_WORKERS:-1}
+      if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
+        # shellcheck disable=SC2086
+        run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \
+          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyUITests \
+          -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
+      else
+        # shellcheck disable=SC2086
+        run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+          -destination "$dest" -only-testing:DoddyUITests $test_limits
+      fi
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
     fi
@@ -175,5 +278,13 @@ echo; echo "================ SUMMARY"
 for r in "${results[@]}"; do IFS='|' read -r n s d <<<"$r"; printf '%-8s %s %s\n' "$s" "$n" "${d:+($d)}"; done
 if [ "$failed" -ne 0 ]; then echo "RESULT: FAIL"; exit 1; fi
 if [ "$blocked" -ne 0 ]; then echo "RESULT: BLOCKED (a required step could not run)"; exit 2; fi
+if [ -n "$only" ]; then
+  case ",$only," in
+    *,ios,*) echo "RESULT: PASS for groups: $only" ;;
+    *) echo "RESULT: PASS for groups: $only; iOS app NOT verified" ;;
+  esac
+  exit 0
+fi
 if [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for core-only scope; iOS app NOT verified"; exit 0; fi
+if [ "$app_only" -eq 1 ]; then echo "RESULT: PASS for app-only scope; the Linux job (core) runs the other checks"; exit 0; fi
 echo "RESULT: PASS"

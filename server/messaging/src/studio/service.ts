@@ -1,13 +1,20 @@
-// Studio, the app's side (ADR-584, STUDIO.md "Server API"): create a draft, approve it by its digest
+// Studio, the app's side (ADR-740, STUDIO.md "Server API"): create a draft, approve it by its digest
 // within the daily cap, read, download a file, cancel and delete. The rules:
 //   - a draft stores the job encrypted, exactly as sent, with its SHA-256;
 //   - only a draft can be approved, only with its own digest, only within 10 minutes, only while the
 //     account has fewer than STUDIO_MAX_OPEN open jobs and today's spend plus a reserve per open job
 //     stays within STUDIO_DAILY_CAP_USD (counted under an advisory lock);
+//   - the money is capped in code, not in a prompt (ADR-742): per job (STUDIO_JOB_LIMIT_USD, checked by the
+//     pipeline after every model request), per account and day, and for the whole server and day. The server's
+//     counts (approvals, the new-account pool, committed dollars) live in tables with no account in them, so
+//     deleting an item or an account can't give a day back; each approval commits STUDIO_JOB_LIMIT_USD of
+//     STUDIO_DAILY_SERVER_CAP_USD, and a job that ends gives back what it didn't spend;
 //   - delete says "deleted" only after the item and its files read back as gone.
 import { randomUUID } from "node:crypto";
+import type pg from "pg";
 import { sameBytes } from "../crypto.js";
 import { inTransaction } from "../db.js";
+import { takeServerSlots } from "../serverUsage.js";
 import { fileAad, jobAad, resultAad, RESERVE_PER_OPEN_JOB_USD, type StudioContext } from "./context.js";
 import { appState, jobBody, jobDigest, jobJson, type ItemState, type Stage, type StudioJob, type StudioResult } from "./schema.js";
 
@@ -20,6 +27,7 @@ export type Refusal =
   | { status: 409; error: "not_approvable"; state: string }
   | { status: 409; error: "digest_mismatch" | "too_many_open_items" }
   | { status: 409; error: "daily_cap_reached"; capUsd: number; spentUsd: number }
+  | { status: 429; error: "studio_daily_limit"; scope: "account" | "server" }
   | { status: 503; error: "studio_disabled" };
 
 const refuse = (r: Refusal) => ({ refusal: r });
@@ -79,29 +87,72 @@ async function spend(c: { query: StudioContext["db"]["query"] }, accountId: stri
   return { spent: Number(rows[0]?.spent ?? 0), open: rows[0]?.open ?? 0 };
 }
 
+/** Thrown inside the approval's transaction to undo what the earlier checks took (a count, a reservation). */
+class Refused extends Error {
+  constructor(readonly refusal: Refusal) { super(refusal.error); }
+}
+
 export async function approveItem(ctx: StudioContext, accountId: string, id: string, digestHex: string) {
   if (!ctx.enabled) return refuse({ status: 503, error: "studio_disabled" });
   const now = ctx.now();
   const given = Buffer.from(digestHex, "hex");
-  const r = await inTransaction(ctx.db, async (c) => {
-    await c.query("SELECT pg_advisory_xact_lock(hashtext('studio:' || $1))", [accountId]);
-    const { rows } = await c.query<{ state: string; payload_digest: Buffer; expires_at: Date }>(
-      "SELECT state, payload_digest, expires_at FROM studio_items WHERE id = $1 AND account_id = $2 FOR UPDATE", [id, accountId]);
-    const e = rows[0];
-    if (!e) return refuse({ status: 404, error: "not_found" });
-    if (e.state !== "draft" || e.expires_at <= now) return refuse({ status: 409, error: "not_approvable", state: e.state === "draft" ? "expired" : e.state });
-    if (!sameBytes(e.payload_digest, given)) return refuse({ status: 409, error: "digest_mismatch" });
-    const { spent, open } = await spend(c, accountId, now);
-    if (open >= ctx.settings.maxOpen) return refuse({ status: 409, error: "too_many_open_items" });
-    // The real cost of open jobs isn't known yet: each holds a reserve, this one included.
-    if (spent + (open + 1) * RESERVE_PER_OPEN_JOB_USD > ctx.settings.dailyCapUsd) {
-      return refuse({ status: 409, error: "daily_cap_reached", capUsd: ctx.settings.dailyCapUsd, spentUsd: Math.round(spent * 100) / 100 });
+  try {
+    const r = await inTransaction(ctx.db, async (c) => {
+      await c.query("SELECT pg_advisory_xact_lock(hashtext('studio:' || $1))", [accountId]);
+      const { rows } = await c.query<{ state: string; payload_digest: Buffer; expires_at: Date }>(
+        "SELECT state, payload_digest, expires_at FROM studio_items WHERE id = $1 AND account_id = $2 FOR UPDATE", [id, accountId]);
+      const e = rows[0];
+      if (!e) return refuse({ status: 404, error: "not_found" });
+      if (e.state !== "draft" || e.expires_at <= now) return refuse({ status: 409, error: "not_approvable", state: e.state === "draft" ? "expired" : e.state });
+      if (!sameBytes(e.payload_digest, given)) return refuse({ status: 409, error: "digest_mismatch" });
+      const { spent, open } = await spend(c, accountId, now);
+      if (open >= ctx.settings.maxOpen) return refuse({ status: 409, error: "too_many_open_items" });
+      // The real cost of open jobs isn't known yet: each holds a reserve, this one included.
+      if (spent + (open + 1) * RESERVE_PER_OPEN_JOB_USD > ctx.settings.dailyCapUsd) {
+        return refuse({ status: 409, error: "daily_cap_reached", capUsd: ctx.settings.dailyCapUsd, spentUsd: Math.round(spent * 100) / 100 });
+      }
+      // The limits no deletion can reset (ADR-742), taken in this transaction: a refusal below rolls them all back.
+      const day = now.toISOString().slice(0, 10);
+      const { rowCount: perAccount } = await c.query(
+        `INSERT INTO studio_usage (account_id, day, approvals) VALUES ($1, $2, 1)
+         ON CONFLICT (account_id, day) DO UPDATE SET approvals = studio_usage.approvals + 1
+           WHERE studio_usage.approvals < $3`, [accountId, day, ctx.settings.dailyPerAccount]);
+      if (perAccount !== 1) throw new Refused({ status: 429, error: "studio_daily_limit", scope: "account" });
+      const reserve = ctx.settings.jobLimitUsd;
+      const { rowCount: dollars } = await c.query(
+        `INSERT INTO studio_server_spend (day, committed_usd) SELECT $1::date, $2::numeric WHERE $2::numeric <= $3::numeric
+         ON CONFLICT (day) DO UPDATE SET committed_usd = studio_server_spend.committed_usd + $2::numeric
+           WHERE studio_server_spend.committed_usd + $2::numeric <= $3::numeric`, [day, reserve, ctx.settings.dailyServerCapUsd]);
+      if (dollars !== 1) throw new Refused({ status: 429, error: "studio_daily_limit", scope: "server" });
+      // An account still new draws from the new-account pool inside the server's count (ADR-702), 0 by default.
+      const slots = await takeServerSlots(c, "studio", accountId, {
+        perServer: ctx.settings.dailyPerServer, newAccountPool: ctx.settings.dailyForNewAccounts, newAccountHours: ctx.settings.newAccountHours,
+      }, day);
+      if (!slots.ok) throw new Refused({ status: 429, error: "studio_daily_limit", scope: "server" });
+      await c.query("UPDATE studio_items SET state = 'queued', approved_at = $2, reserved_usd = $3 WHERE id = $1", [id, now, reserve]);
+      return { approved: { id, state: "queued" as const } };
+    });
+    if ("approved" in r) ctx.log("studio approved", { itemId: id });
+    return r;
+  } catch (err) {
+    if (err instanceof Refused) {
+      ctx.log("studio approval refused", { itemId: id, error: err.refusal.error });
+      return refuse(err.refusal);
     }
-    await c.query("UPDATE studio_items SET state = 'queued', approved_at = $2 WHERE id = $1", [id, now]);
-    return { approved: { id, state: "queued" as const } };
-  });
-  if ("approved" in r) ctx.log("studio approved", { itemId: id });
-  return r;
+    throw err;
+  }
+}
+
+/**
+ * Gives back to the server's day the part of an approval's reservation the job didn't spend (ADR-742). The day is the
+ * UTC day of the approval. Never gives back more than was reserved, and never goes below zero. Not called for an
+ * interrupted job, whose cost isn't known: its reservation stays.
+ */
+export async function releaseUnspent(c: Pick<pg.PoolClient, "query">, itemId: string, spentUsd: number): Promise<void> {
+  await c.query(
+    `UPDATE studio_server_spend SET committed_usd = greatest(0, committed_usd - greatest(0, i.reserved_usd - $2::numeric))
+     FROM studio_items i WHERE i.id = $1 AND i.approved_at IS NOT NULL AND studio_server_spend.day = (i.approved_at AT TIME ZONE 'utc')::date`,
+    [itemId, spentUsd]);
 }
 
 // ---------- reads ----------
@@ -170,6 +221,8 @@ export async function cancelItem(ctx: StudioContext, accountId: string, id: stri
         await c.query("DELETE FROM studio_items WHERE id = $1", [id]);
         return { ok: "deleted" as const };
       case "queued":
+        // It never ran, so nothing was spent: the whole reservation goes back to the server's day (ADR-742).
+        await releaseUnspent(c, id, 0);
         await c.query("UPDATE studio_items SET state = 'cancelled', finished_at = $2 WHERE id = $1", [id, now]);
         return { ok: "cancelled" as const };
       case "running":

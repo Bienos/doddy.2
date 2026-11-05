@@ -1,4 +1,4 @@
-// Test doubles for Studio (ADR-584): a fake Claude that answers each step, and the files a correct
+// Test doubles for Studio (ADR-740): a fake Claude that answers each step, and the files a correct
 // render would produce. Nothing here calls Anthropic.
 import type { ResearchMessage, ResearchTurn } from "../src/errands/researcher.js";
 import type { StepModels } from "../src/studio/models.js";

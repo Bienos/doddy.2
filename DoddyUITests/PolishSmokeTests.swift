@@ -31,6 +31,8 @@ final class PolishSmokeTests: XCTestCase {
         XCTAssertTrue(app.text("Brak wspomnień").waitForExistence(timeout: 5))
 
         app.goToTab("settings")
+        // "What leaves this iPhone" is on Settings › Privacy (ADR-580).
+        app.openSettingsPage("settings.privacyScreen")
         let link = app.button(labelled: "Co opuszcza tego iPhone’a")
         XCTAssertTrue(app.reveal(link))
         link.tap()

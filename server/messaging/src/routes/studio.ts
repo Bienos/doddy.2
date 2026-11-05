@@ -1,4 +1,4 @@
-// Studio, the app's routes (ADR-584, docs/implementation/STUDIO.md "Server API"). Every body is
+// Studio, the app's routes (ADR-740, docs/implementation/STUDIO.md "Server API"). Every body is
 // strict: approve carries only a digest, cancel and delete nothing.
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { z } from "zod";

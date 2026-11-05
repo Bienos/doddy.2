@@ -11,7 +11,8 @@ final class DoddyArtTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-inMemoryStore", "YES", "-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-onboardingDone", "YES", "-backTapSetupStatus", "deferred",
                                "-appearance", "light", "-openingScene", "NO", "-listenOnOpen", "NO",
-                               "-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO"]
+                               "-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO",
+                               "-legalAcceptanceSkippedForUITests", "YES"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         app.launch()
         XCTAssertTrue(app.waitForTab("home", timeout: 10))
@@ -80,6 +81,8 @@ final class DoddyArtTests: XCTestCase {
         for paused in [true, false] {
             let app = launch(pauseAll: paused)
             app.goToTab("settings")
+            // Settings › Connections (ADR-633).
+            app.openSettingsPage("settings.connectionsHub")
             let toggle = app.switches["settings.pauseAll"]
             // A lazy Form row: it exists only once scrolled to.
             XCTAssertTrue(app.reveal(toggle))
@@ -98,9 +101,8 @@ final class DoddyArtTests: XCTestCase {
     func testEmptyActivityShowsDoddyWaiting() {
         let app = launch()
         app.goToTab("settings")
-        let row = app.buttons["settings.activity"]
-        XCTAssertTrue(app.reveal(row))
-        row.tap()
+        // Settings › Connections › What Doddy did (ADR-633).
+        app.openSettingsPage("settings.activity", under: "settings.connectionsHub")
         XCTAssertTrue(app.navigationBars["What Doddy did"].waitForExistence(timeout: 5))
         XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).waitForExistence(timeout: 5))
     }

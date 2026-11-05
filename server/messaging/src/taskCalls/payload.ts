@@ -107,17 +107,20 @@ export function canonicalJson(value: unknown): string {
 }
 
 /** Keys for one purpose each, derived from MEMORY_ENCRYPTION_KEY. */
-export interface CaseKeys { digest: Buffer; destination: Buffer; callerPhone: Buffer }
+export interface CaseKeys { digest: Buffer; destination: Buffer; callerPhone: Buffer; callerAccount: Buffer }
 export const caseKeys = (cipher: TextCipher): CaseKeys => ({
   digest: cipher.derivedKey("call-payload-digest"),
   destination: cipher.derivedKey("call-destination"),
   callerPhone: cipher.derivedKey("call-caller-phone"),
+  callerAccount: cipher.derivedKey("call-caller-account"),
 });
 
 /** HMAC, not a bare hash, so a digest can't be used to guess a short brief's contents. */
 export const payloadDigest = (keys: CaseKeys, payload: CallPayload) => hmacSha256(keys.digest, canonicalJson(payload));
 export const destinationHash = (keys: CaseKeys, e164: string) => hmacSha256(keys.destination, e164);
 export const callerPhoneHash = (keys: CaseKeys, e164: string) => hmacSha256(keys.callerPhone, e164);
+/** The per-user limits also count by account, so changing the verified number doesn't start them again (ADR-705). */
+export const callerAccountHash = (keys: CaseKeys, accountId: string) => hmacSha256(keys.callerAccount, accountId);
 export const payloadAad = (accountId: string, caseId: string) => `${accountId}:call-case:${caseId}`;
 
 /** What the brief card shows: built from the payload itself, so the card is what will be sent. */

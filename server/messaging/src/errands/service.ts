@@ -4,12 +4,19 @@
 //   - only a draft can be approved, only with its own digest, only within 10 minutes, and only
 //     while the account has fewer than ERRANDS_MAX_OPEN queued or running errands (counted under an
 //     advisory lock, so two approvals can't both take the last place);
+//   - at most ERRANDS_DAILY_PER_ACCOUNT approvals a UTC day per account and ERRANDS_DAILY_PER_SERVER for
+//     the server (ADR-673; 429 errand_daily_limit, nothing queued); the server's count survives
+//     deleting the account; accounts still new (no verified phone number, under a day old) share a small
+//     pool inside the server's count, so mass-made accounts can't use it all up (ADR-702);
+//   - a create request whose words, brief, title or priorities hold a link is refused (ADR-703);
 //   - nothing is created or approved while errands are off or not set up (503 errands_disabled).
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
 import { sameBytes } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
+import { takeServerSlots } from "../serverUsage.js";
 import { contentAad, resultAad, type ErrandContext } from "./context.js";
+import { linkFields } from "./links.js";
 import { contentDigest, contentJson, createBody, type ErrandContent, type ErrandResult } from "./schema.js";
 
 export const DRAFT_MINUTES = 10;
@@ -22,6 +29,7 @@ export type Refusal =
   | { status: 404; error: "not_found" }
   | { status: 409; error: "not_approvable" | "not_cancellable" | "no_result"; state: string }
   | { status: 409; error: "digest_mismatch" | "too_many_open_errands" | "result_mismatch" }
+  | { status: 429; error: "errand_daily_limit"; scope: "account" | "server" }
   | { status: 503; error: "errands_disabled" };
 
 const refuse = (r: Refusal) => ({ refusal: r });
@@ -58,6 +66,9 @@ export async function createErrand(ctx: ErrandContext, accountId: string, body: 
   const parsed = createBody.safeParse(body);
   if (!parsed.success) return refuse({ status: 400, error: "invalid_request", fields: parsed.error.issues.map((i) => i.path.join(".")) });
   const content = parsed.data;
+  // No link in anything the researcher is given (ADR-703). The field names are answered, never the text.
+  const links = linkFields(content);
+  if (links.length) return refuse({ status: 400, error: "invalid_request", fields: links });
   const now = ctx.now();
   const id = randomUUID();
   const digest = contentDigest(content);
@@ -72,6 +83,7 @@ export async function createErrand(ctx: ErrandContext, accountId: string, body: 
     draft: {
       id, digest: digest.toString("hex"), title: content.title, words: content.words, brief: content.brief,
       language: content.language, expiresAt: expiresAt.toISOString(),
+      ...(content.kind ? { kind: content.kind, priorities: content.priorities ?? [] } : {}),
     },
   };
 }
@@ -93,6 +105,22 @@ export async function approveErrand(ctx: ErrandContext, accountId: string, id: s
     const { rows: open } = await c.query<{ n: number }>(
       "SELECT count(*)::int AS n FROM errands WHERE account_id = $1 AND state IN ('queued', 'running')", [accountId]);
     if ((open[0]?.n ?? 0) >= ctx.settings.maxOpen) return refuse({ status: 409, error: "too_many_open_errands" });
+    // The day's caps (ADR-673), counted with the approval in this transaction: a refusal queues nothing.
+    // An account still new draws from the new-account pool inside the server's count (ADR-702); a refusal by the
+    // pool is answered like the server's own cap, because it is one: the pool is the server's limit for new accounts.
+    const day = now.toISOString().slice(0, 10);
+    const slots = await takeServerSlots(c, "errands", accountId, {
+      perServer: ctx.settings.dailyPerServer, newAccountPool: ctx.settings.dailyForNewAccounts, newAccountHours: ctx.settings.newAccountHours,
+    }, day);
+    if (!slots.ok) return refuse({ status: 429, error: "errand_daily_limit", scope: "server" });
+    const { rowCount } = await c.query(
+      `INSERT INTO errand_usage (account_id, day, approvals) VALUES ($1, $2, 1)
+       ON CONFLICT (account_id, day) DO UPDATE SET approvals = errand_usage.approvals + 1
+         WHERE errand_usage.approvals < $3`, [accountId, day, ctx.settings.dailyPerAccount]);
+    if (rowCount !== 1) {
+      await slots.giveBack();
+      return refuse({ status: 429, error: "errand_daily_limit", scope: "account" });
+    }
     await c.query("UPDATE errands SET state = 'queued', approved_at = $2 WHERE id = $1", [id, now]);
     return { approved: { id, state: "queued" as const } };
   });
@@ -111,6 +139,7 @@ function view(ctx: ErrandContext, e: ErrandRow) {
     id: e.id,
     // Content fields exist only while the server holds the content (gone after ack, DELETE or 30 days).
     ...(content ? { title: content.title, words: content.words, brief: content.brief, digest: e.payload_digest.toString("hex") } : {}),
+    ...(content?.kind ? { kind: content.kind, priorities: content.priorities ?? [] } : {}),
     language: e.language,
     state: e.state,
     createdAt: iso(e.created_at),

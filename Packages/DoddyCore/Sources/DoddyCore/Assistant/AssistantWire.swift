@@ -23,6 +23,14 @@ struct AssistWireRequest: Codable, Equatable {
     let userText: String
     let turns: [Turn]
     let memories: [Memory]
+    /// Messages only (the messaging server); absent otherwise, so the gateway never sees the field.
+    var image: Image? = nil
+
+    struct Image: Codable, Equatable {
+        let mediaType: String
+        /// Base64 of the JPEG.
+        let data: String
+    }
 }
 
 struct AssistWireResponse: Codable, Equatable {
@@ -31,11 +39,28 @@ struct AssistWireResponse: Codable, Equatable {
         let outputTokens: Int
     }
 
+    /// A file the person asked for, offered as a card (ADR-606). Absent from older servers and when none was asked for.
+    struct Proposal: Codable, Equatable {
+        let kind: String
+        let title: String
+        let request: String
+    }
+
+    /// A training plan the person asked for, offered as a card (ADR-626). Only a goal and, if said, the days and
+    /// minutes: never a safety answer. Absent from older servers and when none was asked for.
+    struct PlanOffer: Codable, Equatable {
+        let goal: String
+        let daysPerWeek: Int?
+        let minutesPerSession: Int?
+    }
+
     let schemaVersion: Int
     let requestId: String
     let text: String
     let citedMemoryIDs: [String]
     let usage: Usage?
+    var proposal: Proposal? = nil
+    var plan: PlanOffer? = nil
 }
 
 struct AssistWireError: Codable, Equatable {
@@ -91,6 +116,7 @@ enum WireCoding {
                     text: $0.record.currentText,
                     source: $0.record.source.rawValue,
                     capturedAt: $0.record.capturedAt.map(isoDate))
-            })
+            },
+            image: request.image.map { .init(mediaType: AssistantImage.mediaType, data: $0.jpeg.base64EncodedString()) })
     }
 }

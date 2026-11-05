@@ -437,6 +437,14 @@ final class DoddyDirector {
         afterSteps()
     }
 
+    /// Whether the clock should ask for the display's fastest rate (ADR-604). Only real movement
+    /// earns it: a hop, a fade or a shuffle in progress, or a finger on the screen. Breathing and
+    /// blinking while he stands are slow and run at 60 Hz, which also leaves the system room to
+    /// hold an even cadence instead of alternating between rates.
+    var wantsHighRate: Bool {
+        engine.mode != .attached || host.wantsFrames
+    }
+
     /// One frame from the clock, at `time` (seconds).
     func tick(at time: Double) {
         advance(to: time)

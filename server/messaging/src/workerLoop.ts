@@ -1,5 +1,7 @@
 import { purgeExpiredSessions } from "./calls.js";
+import type { AbuseLimits } from "./config.js";
 import type { TextCipher } from "./crypto.js";
+import { pruneCounters } from "./dailyCounters.js";
 import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
@@ -11,6 +13,8 @@ import type { ErrandContext } from "./errands/context.js";
 import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
 import type { StudioContext } from "./studio/context.js";
 import { newStudioLoopState, runStudioPasses, stopStudioRuns } from "./studio/worker.js";
+import type { WatchContext } from "./watches/context.js";
+import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
 
 import { log } from "./log.js";
 
@@ -31,18 +35,25 @@ async function pause(ms: number, shouldStop: () => boolean) {
  * FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext; studio?: StudioContext },
+  db: Db, deps: {
+    push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext;
+    studio?: StudioContext;
+    watches?: WatchContext;
+    /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
+    limits?: Pick<AbuseLimits, "allowedCountryCodes">;
+  },
   shouldStop: () => boolean,
 ): Promise<void> {
   const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
   if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop));
+  if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
   await Promise.all(loops);
 }
 
 /**
- * Studio (ADR-584): starts queued jobs (up to 2 at once in this process), reaps interrupted ones,
+ * Studio (ADR-740): starts queued jobs (up to 2 at once in this process), reaps interrupted ones,
  * deletes expired drafts and keeps deleting copies left at Anthropic. On shutdown, running jobs stop
  * and are stored as `interrupted`.
  */
@@ -58,6 +69,32 @@ async function studioLoop(ctx: StudioContext, shouldStop: () => boolean) {
     await pause(2000, shouldStop);
   }
   await stopStudioRuns(state);
+}
+
+/**
+ * Price watches (shopping stage 2): checks the watches that are due, one at a time and politely, and tidies
+ * drafts and finished watches. Its own loop, so a slow shop never holds back pushes. A watch is checked about
+ * every 6 hours, so the loop looks every 10 seconds (one cheap index lookup) and goes straight on while a full
+ * batch was due. On shutdown the check in flight is given back unrecorded.
+ */
+async function watchLoop(ctx: WatchContext, shouldStop: () => boolean) {
+  const state = newWatchLoopState();
+  const stopWatcher = setInterval(() => { if (shouldStop()) state.shutdown.abort(); }, 500);
+  try {
+    while (!shouldStop()) {
+      let more = false;
+      try {
+        const counts = await runWatchPasses(ctx, state);
+        if (Object.keys(counts).length) log("watch passes", counts);
+        more = (counts.claimed ?? 0) >= BATCH;
+      } catch (err) {
+        log("watch passes failed", { error: (err as Error).message });
+      }
+      if (!more) await pause(10_000, shouldStop);
+    }
+  } finally {
+    clearInterval(stopWatcher);
+  }
 }
 
 /**
@@ -96,15 +133,19 @@ async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
   }
 }
 
-async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }, shouldStop: () => boolean) {
+async function dispatchLoop(
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; limits?: Pick<AbuseLimits, "allowedCountryCodes"> },
+  shouldStop: () => boolean,
+) {
   let lastTidy = 0;
   while (!shouldStop()) {
     try {
-      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher });
+      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher, allowedCountryCodes: deps.limits?.allowedCountryCodes });
       if (Date.now() - lastTidy > 3_600_000) {
         lastTidy = Date.now();
         // Expired sessions are already refused by findSession; this only reclaims space.
         const sessions = await purgeExpiredSessions(db);
+        await pruneCounters(db); // daily counts older than two days (ADR-702)
         const pruned = await pruneNewsCache(db);
         if (sessions || pruned) log("tidied", { sessions, newsCacheRows: pruned });
       }

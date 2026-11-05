@@ -16,7 +16,8 @@ public struct ToolDescriptor: Equatable, Sendable {
         case localChange
         /// Changes something in an online account, through Doddy's server.
         case accountWrite
-        /// Opens another app with something filled in; the user finishes there.
+        /// Opens another app with something filled in; the user finishes there. Also a task
+        /// handed to Doddy's server, which works on it and keeps the result in the app (ADR-716).
         case handoff
         /// Changes the conversation itself (translator mode, the plan card).
         case session
@@ -25,7 +26,8 @@ public struct ToolDescriptor: Equatable, Sendable {
     /// ASK-01 (ADR-483): every tool asks first, except the public lookups that run at once (ADR-575).
     public enum Approval: String, Sendable, CaseIterable {
         /// A public lookup that reads nothing of the user's and changes nothing (`AskFirst.publicLookups`):
-        /// runs when the agent calls it (owner, 21 Oct 2026, ADR-575).
+        /// runs when the agent calls it (owner, 21 Oct 2026, ADR-575). Also translator mode's start
+        /// and stop, which read and send nothing (owner, 24 Oct 2026, ADR-619).
         case runsNow
         /// Changes nothing: the app shows what it will do and runs it on a tap or the user's own
         /// spoken yes (`AskFirst.Need.yesFirst`).
@@ -109,12 +111,20 @@ public enum ToolCatalog {
         .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
         // Motion & Fitness, read only (ADR-568).
         .init(VoiceToolName.readSteps, .lookup, .askFirst),
+        // Apple Health, the week as a summary, after its own consent (ADR-623).
+        .init(VoiceToolName.readHealthWeek, .lookup, .askFirst),
+        // Opens the plan screen on a tap; the safety questions are asked there, never by the agent (ADR-626).
+        .init(VoiceToolName.openTrainingPlan, .handoff, .card),
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
+        // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
+        .init(VoiceToolName.startStopwatch, .localChange, .card),
+        .init(VoiceToolName.stopStopwatch, .localChange, .card),
+        .init(VoiceToolName.checkStopwatch, .lookup, .askFirst),
         // Saving or clearing a spot shows a card; "find" asks first (ADR-301, ASK-01). The card is
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),
@@ -133,16 +143,21 @@ public enum ToolCatalog {
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
         .init(VoiceToolName.openCamera, .handoff, .card),
-        // A task handed over (ADR-570): web research on Doddy's server that changes nothing, so a
-        // spoken yes or a tap starts it; one yes covers every look-up of that task.
-        .init(VoiceToolName.handOverErrand, .lookup, .askFirst),
+        // A task handed over (ADR-570): web research on Doddy's server that changes nothing on the
+        // iPhone; one tap covers every look-up of that task. A tap and not a spoken yes (ADR-716):
+        // its text goes to a server that opens what it names. Checking what it found is a read.
+        .init(VoiceToolName.handOverErrand, .handoff, .card),
         .init(VoiceToolName.checkErrands, .lookup, .askFirst),
-        // A Studio job (ADR-584): web research and files made on Doddy's server, nothing else
-        // changes; a spoken yes or a tap starts it.
-        .init(VoiceToolName.makeSomething, .lookup, .askFirst),
+        // A Studio job (ADR-740): web research and files made on Doddy's server, paid from Doddy's account.
+        // A tap and not a spoken yes (ADR-742), like a handed-over task: it spends money.
+        .init(VoiceToolName.makeSomething, .handoff, .card),
+        // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
+        // changes; it asks first until the owner decides whether it joins the public look-ups.
+        .init(VoiceToolName.findDeals, .lookup, .askFirst),
         // The conversation itself.
-        .init(VoiceToolName.startTranslator, .session, .askFirst),
-        .init(VoiceToolName.stopTranslator, .session, .askFirst),
+        // ADR-619: translator mode starts and stops at once, without asking (owner, 24 Oct 2026).
+        .init(VoiceToolName.startTranslator, .session, .runsNow),
+        .init(VoiceToolName.stopTranslator, .session, .runsNow),
         .init(VoiceToolName.proposePlan, .session, .card),
     ]
 

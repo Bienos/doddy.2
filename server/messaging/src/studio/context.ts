@@ -1,9 +1,10 @@
-// What the Studio code needs, in one object (ADR-584). Built whenever MEMORY_ENCRYPTION_KEY is set, so
+// What the Studio code needs, in one object (ADR-740). Built whenever MEMORY_ENCRYPTION_KEY is set, so
 // stored items can still be read and deleted; new jobs also need the switch on and the model API
 // (an Anthropic key and Doddy's skills). Otherwise create and approve answer 503 studio_disabled.
 import type { TextCipher } from "../crypto.js";
 import type { Db } from "../db.js";
 import type { PushSender } from "../providers/types.js";
+import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "../serverUsage.js";
 import type { StudioModelApi } from "./model.js";
 import { DEFAULT_STEP_MODELS, type StepModels } from "./models.js";
 
@@ -20,12 +21,21 @@ export interface StudioSettings {
   dailyCapUsd: number;
   timeLimitMinutes: number;
   maxOpen: number;
+  /** Approvals per UTC day per account, and for the server (ADR-742); the part of those accounts still new may use. */
+  dailyPerAccount: number;
+  dailyPerServer: number;
+  dailyForNewAccounts: number;
+  newAccountHours: number;
+  /** Dollars the server commits per UTC day: each approval holds `jobLimitUsd` of it until the job's real cost is known. */
+  dailyServerCapUsd: number;
 }
 
 /** For tests and a server without the variables: the code's defaults, switch on (the env's default is off). */
 export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
   enabled: true, models: { ...DEFAULT_STEP_MODELS }, skills: "", maxSearches: 15, maxFetches: 15, blockedDomains: [],
   taskBudgetTokens: 150_000, jobLimitUsd: 2, dailyCapUsd: 3, timeLimitMinutes: 20, maxOpen: 3,
+  dailyPerAccount: 3, dailyPerServer: 10, dailyForNewAccounts: DEFAULT_NEW_ACCOUNT_POOL.studio, newAccountHours: DEFAULT_NEW_ACCOUNT_HOURS,
+  dailyServerCapUsd: 10,
 };
 
 /** Set aside per open job when checking the daily cap, before its real cost is known. */

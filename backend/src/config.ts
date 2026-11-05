@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { InviteLimits } from "./deviceSession.js";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
 import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 
@@ -12,6 +13,11 @@ export type Mode = "mock" | "live";
 export type Env = "development" | "test" | "production";
 export type AuthMode = "dev" | "signed" | "supabase";
 export type CompletionMode = "verifier" | "callback";
+/**
+ * Whether an empty server (no owner row yet) can be claimed by the first iPhone that signs in
+ * (ADR-707). `closed` means nobody can until the operator opens it.
+ */
+export type OwnerClaim = "open" | "closed";
 
 export interface Limits {
   userDailyReads: number;
@@ -23,6 +29,19 @@ export interface Limits {
   /** Claude runs (writing, summaries, documents; Doddy pays) per user, and for the service, per UTC day. */
   userDailyClaude: number;
   serviceDailyClaude: number;
+  /**
+   * One make_document counts as this many Claude runs against both daily caps (ADR-710): a single
+   * document can take up to nine Anthropic calls, so counting it as one understated the cost.
+   */
+  documentClaudeUnits: number;
+  /** Documents being made in the background at the same moment: per user, and for the whole server (ADR-710). */
+  userDocumentJobs: number;
+  serviceDocumentJobs: number;
+  /** Ask Doddy questions (typed, ADR-587; Doddy pays Anthropic) per user, and for the service, per UTC day. */
+  userDailyAsk: number;
+  serviceDailyAsk: number;
+  /** Guests' Ask Doddy questions (`ask` sessions, ADR-587), for the whole service, per UTC day: their own pool, so guests can't use up `serviceDailyAsk`. */
+  serviceDailyGuestAsk: number;
   serviceDailyCalls: number;
   serviceMonthlyCalls: number;
   userConcurrency: number;
@@ -76,10 +95,22 @@ export interface Config {
   authMode: AuthMode;
   /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
   sessionSigningKey: Buffer | null;
+  /** AES-256 key for the notes and conversations kept on request (ADR-603). Null: that feature says "not set up". */
+  memoryKey: Buffer | null;
+  /** Claude for chatting with your memory (ADR-603); defaults to a small, quick model. Null without an Anthropic key. */
+  chatClaude: { apiKey: string; model: string } | null;
   /** Who may sign in with `POST /v1/session/device` (ADR-563). */
-  deviceSignup: "off" | "first-device";
+  deviceSignup: "off" | "first-device" | "open";
   /** Extra invite codes for device sign-in (ADR-563). */
   deviceInviteCodes: string[];
+  /**
+   * Whether the first iPhone to sign in may claim a server that has no owner yet (ADR-707). The app
+   * is built from a public repository, so it can carry no secret for that first claim; instead the
+   * operator opens the claim by hand. Default: `open` in mock mode, `closed` in live mode.
+   */
+  ownerClaim: OwnerClaim;
+  /** Limits on invite codes (ADR-709): tries per client, sessions per code per day, iPhones per code. */
+  inviteLimits: InviteLimits;
   /** Claude for writing, summaries and documents (ADR-564). Null: not set up. */
   claude: ClaudeSettings | null;
   /** Supabase Auth project origin for `supabase` mode (ADR-526): Apple and Google sign-in. */
@@ -89,7 +120,26 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
+  /** Doddy Web (ADR-600). Null: no web routes and no web pages on this server. */
+  web: WebSettings | null;
+  /** `DODDY_TRUST_PROXY=1`: behind one proxy that appends the client to X-Forwarded-For (Render). */
+  trustProxy: boolean;
   limits: Limits;
+}
+
+/**
+ * Doddy Web (ADR-600): the browser app is served by this server, on its own origin, so its session
+ * is a first-party cookie the page's scripts can't read.
+ */
+export interface WebSettings {
+  /** The exact origin the web app is opened at (scheme, host, port). Unsafe requests must come from it. */
+  origin: string;
+  /** Folder with the built web app (`web/dist`). A missing folder serves a plain "not built" page. */
+  distDir: string;
+  /** Behind one proxy that appends the client to X-Forwarded-For (Render): use its last entry. */
+  trustProxy: boolean;
+  /** Sign-in tries per client address (an IPv6 /64) per quarter hour. */
+  signInTriesPerClient: number;
 }
 
 export class ConfigError extends Error {
@@ -128,15 +178,37 @@ const EnvSchema = z.object({
   DODDY_AUTH_MODE: z.enum(["dev", "signed", "supabase"]).default("dev"),
   SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
+  /** Encrypts the notes and conversations a person chooses to keep on the server (ADR-603): base64 of exactly 32 random bytes. */
+  DODDY_MEMORY_KEY: z.string().optional(),
+  /** The model that answers questions about your own notes and conversations (ADR-603). */
+  DODDY_CHAT_MODEL: z.string().default("claude-haiku-5-5"),
   /** Device sign-in for the beta (ADR-563): `first-device` = the first iPhone owns the server. */
-  DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device"]).default("off"),
+  DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device", "open"]).default("off"),
   /** Extra invite codes for more devices (ADR-563), comma-separated. */
   DODDY_DEVICE_INVITE_CODES: z.string().optional(),
+  /**
+   * `open` | `closed` (ADR-707): may the first iPhone to sign in claim a server with no owner yet?
+   * Read as text so a wrong value is reported by name below. Unset or empty: the default, which is
+   * `open` in mock mode and `closed` in live mode.
+   */
+  DODDY_OWNER_CLAIM: z.string().optional(),
+  /** Invite codes (ADR-709): tries per client per hour, sessions per code per UTC day, iPhones per code. */
+  DODDY_INVITE_TRIES_PER_CLIENT: intSetting(20, 1, 1_000),
+  DODDY_INVITE_SESSIONS_PER_CODE_PER_DAY: intSetting(20, 1, 10_000),
+  DODDY_INVITE_DEVICES_PER_CODE: intSetting(5, 1, 100),
   /** Claude for writing, summaries and documents (ADR-564). Empty: those tools say "not set up". */
   ANTHROPIC_API_KEY: z.string().optional(),
   DODDY_CLAUDE_MODEL: z.string().default("claude-sonnet-5-5"),
   DODDY_LIMIT_USER_DAILY_CLAUDE: intSetting(40, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_CLAUDE: intSetting(100, 1, 100_000),
+  /** A document counts as this many Claude runs against both daily caps, and at most this many are made at once (ADR-710). */
+  DODDY_DOCUMENT_CLAUDE_UNITS: intSetting(5, 1, 50),
+  DODDY_LIMIT_USER_DOCUMENT_JOBS: intSetting(1, 1, 10),
+  DODDY_LIMIT_SERVICE_DOCUMENT_JOBS: intSetting(3, 1, 50),
+  /** Ask Doddy (ADR-587): typed questions answered by Claude. */
+  DODDY_LIMIT_USER_DAILY_ASK: intSetting(50, 1, 10_000),
+  DODDY_LIMIT_SERVICE_DAILY_ASK: intSetting(500, 1, 1_000_000),
+  DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK: intSetting(100, 1, 1_000_000),
   COMPOSIO_API_KEY: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION: z.string().optional(),
@@ -166,6 +238,12 @@ const EnvSchema = z.object({
   DODDY_PAGE_SIZE: intSetting(50, 1, 250),
   DODDY_MAX_EVENTS: intSetting(100, 1, 500),
   DODDY_ATTEMPT_TTL_SECONDS: intSetting(600, 60, 3_600),
+  /** Doddy Web (ADR-600): the origin the browser app is opened at. Empty: the web app is off. */
+  DODDY_WEB_ORIGIN: z.string().optional(),
+  DODDY_WEB_DIST: z.string().default("../web/dist"),
+  DODDY_TRUST_PROXY: z.enum(["0", "1"]).default("0"),
+  /** Sign-in tries per client per quarter hour (raise it for an office behind one address). */
+  DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: intSetting(10, 1, 1_000),
 });
 
 /** Custom scheme (`doddy-dev://…`) or https. No query, no fragment: the server adds its own parameters. */
@@ -242,6 +320,15 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       problems.push("DODDY_DEVICE_INVITE_CODES must be 8 to 64 letters, digits, - or _ each");
     }
   }
+
+  // Who may claim a server that has no owner yet (ADR-707). Unset: open for mock runs (tests, demos),
+  // closed for a live server, where an empty owner row after a wipe, a restore or a changed
+  // DATABASE_URL would otherwise make the first caller to post any device ID the owner. Only the
+  // setting's name is reported when it is wrong, never a value.
+  let ownerClaim: OwnerClaim = e.DODDY_MODE === "live" ? "closed" : "open";
+  const claimSetting = (e.DODDY_OWNER_CLAIM ?? "").trim().toLowerCase();
+  if (claimSetting === "open" || claimSetting === "closed") ownerClaim = claimSetting;
+  else if (claimSetting !== "") problems.push("DODDY_OWNER_CLAIM must be open or closed");
 
   let supabaseUrl: string | null = null;
   if (e.DODDY_AUTH_MODE === "supabase") {
@@ -329,6 +416,35 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   const claudeKey = e.DODDY_MODE === "live" ? (e.ANTHROPIC_API_KEY ?? "").trim() : "";
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
+  if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CHAT_MODEL)) problems.push("DODDY_CHAT_MODEL must be a Claude model ID such as claude-haiku-5-5");
+  // The key for kept notes and conversations. A fixed throwaway demo key (published in this repository,
+  // so never a secret) is used only for a mock-mode demo with no hosted database and outside production;
+  // anywhere else there is no key until the owner sets one, and the feature then says "not set up".
+  let memoryKey: Buffer | null = e.DODDY_MODE === "mock" && e.DODDY_ENV !== "production" && !(e.DATABASE_URL ?? "").trim() ? Buffer.alloc(32, 9) : null;
+  if ((e.DODDY_MEMORY_KEY ?? "").trim() !== "") {
+    const key = Buffer.from(e.DODDY_MEMORY_KEY!.trim(), "base64");
+    if (key.length !== 32) problems.push("DODDY_MEMORY_KEY must be base64 of exactly 32 random bytes");
+    else memoryKey = key;
+  }
+
+  // Doddy Web (ADR-600). Off unless an origin is given; https outside loopback development.
+  let web: WebSettings | null = null;
+  const webOrigin = (e.DODDY_WEB_ORIGIN ?? "").trim();
+  if (webOrigin !== "") {
+    let parsed: URL | null = null;
+    try {
+      parsed = new URL(webOrigin);
+    } catch {
+      parsed = null;
+    }
+    if (!parsed || parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname !== "/" && parsed.pathname !== "")) {
+      problems.push("DODDY_WEB_ORIGIN must be an origin without a path, e.g. https://app.doddy.lol");
+    } else if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLoopbackUrl(parsed))) {
+      problems.push("DODDY_WEB_ORIGIN must be https outside loopback development");
+    } else {
+      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1", signInTriesPerClient: e.DODDY_WEB_SIGNIN_TRIES_PER_CLIENT };
+    }
+  }
 
   const databaseUrl = e.DATABASE_URL?.trim() ? e.DATABASE_URL.trim() : null;
   if (databaseUrl !== null && !/^postgres(ql)?:\/\/\S+$/.test(databaseUrl)) {
@@ -336,6 +452,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   }
   // Production keeps its data: a file on an instance disk is lost on every restart of most hosts.
   if (e.DODDY_ENV === "production" && databaseUrl === null) problems.push("DATABASE_URL is required in production");
+  // Live and reachable from outside (the hosted service runs DODDY_ENV=development): a local PGlite
+  // file would be lost on a restart, taking the device owner and the daily caps with it, so the
+  // first caller afterwards would own the server. Loopback development may still use PGlite.
+  else if (e.DODDY_MODE === "live" && databaseUrl === null && !isLoopbackHost(e.DODDY_HOST)) {
+    problems.push("DATABASE_URL is required when DODDY_MODE=live and DODDY_HOST isn't loopback");
+  }
 
   if (problems.length > 0) throw new ConfigError(problems);
 
@@ -351,13 +473,23 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     databaseCaCert: e.DATABASE_CA_CERT?.trim() ? e.DATABASE_CA_CERT.trim().replace(/\\n/g, "\n") : null,
     authMode: e.DODDY_AUTH_MODE,
     sessionSigningKey,
+    memoryKey,
     deviceSignup: e.DODDY_DEVICE_SIGNUP,
     deviceInviteCodes,
+    ownerClaim,
+    inviteLimits: {
+      triesPerClientPerHour: e.DODDY_INVITE_TRIES_PER_CLIENT,
+      sessionsPerCodePerDay: e.DODDY_INVITE_SESSIONS_PER_CODE_PER_DAY,
+      devicesPerCode: e.DODDY_INVITE_DEVICES_PER_CODE,
+    },
     claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL } : null,
+    chatClaude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CHAT_MODEL } : null,
     supabaseUrl,
     composio,
     toolkits,
     monid,
+    web,
+    trustProxy: e.DODDY_TRUST_PROXY === "1",
     limits: {
       userDailyReads: e.DODDY_LIMIT_USER_DAILY_READS,
       userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,
@@ -365,6 +497,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       serviceDailyWebSearches: e.DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES,
       userDailyClaude: e.DODDY_LIMIT_USER_DAILY_CLAUDE,
       serviceDailyClaude: e.DODDY_LIMIT_SERVICE_DAILY_CLAUDE,
+      documentClaudeUnits: e.DODDY_DOCUMENT_CLAUDE_UNITS,
+      userDocumentJobs: e.DODDY_LIMIT_USER_DOCUMENT_JOBS,
+      serviceDocumentJobs: e.DODDY_LIMIT_SERVICE_DOCUMENT_JOBS,
+      userDailyAsk: e.DODDY_LIMIT_USER_DAILY_ASK,
+      serviceDailyAsk: e.DODDY_LIMIT_SERVICE_DAILY_ASK,
+      serviceDailyGuestAsk: e.DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK,
       serviceDailyCalls: e.DODDY_LIMIT_SERVICE_DAILY_CALLS,
       serviceMonthlyCalls: e.DODDY_LIMIT_SERVICE_MONTHLY_CALLS,
       userConcurrency: e.DODDY_LIMIT_USER_CONCURRENCY,
@@ -390,6 +528,12 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     serviceDailyWebSearches: 200,
     userDailyClaude: 40,
     serviceDailyClaude: 100,
+    documentClaudeUnits: 5,
+    userDocumentJobs: 1,
+    serviceDocumentJobs: 3,
+    userDailyAsk: 50,
+    serviceDailyAsk: 500,
+    serviceDailyGuestAsk: 100,
     serviceDailyCalls: 300,
     serviceMonthlyCalls: 3_000,
     userConcurrency: 1,

@@ -2,9 +2,10 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// Voice conversation. It starts in the foreground and keeps running if the user leaves the app
-/// (shown in the Dynamic Island / on the Lock Screen with Mute and End); it ends when the user
-/// taps End or Close, from the island, or when the connection drops.
+/// Voice conversation, shown as the transcript: a sheet over Home since the conversation moved
+/// onto Home (ADR-595). It keeps running if the user closes the sheet or leaves the app (Home, the
+/// Dynamic Island and the Lock Screen show it with Mute and End); it ends when the user taps End,
+/// from the island, or when the connection drops.
 struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
@@ -56,12 +57,8 @@ struct VoiceView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        Task {
-                            await controller?.stop()
-                            dismiss()
-                        }
-                    }
+                    // Closes the transcript only; the conversation goes on on Home (ADR-595).
+                    Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     if let controller {
@@ -82,13 +79,15 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
-            await authSession.restore()
-            if (authSession.isSignedIn || VoiceConfig.directVoiceEnabled) && VoiceProviderConsent.isGranted(for: provider) {
-                await beginConversation()
-            }
-        }
-        .onDisappear {
-            Task { await controller?.stop() }
+            // Started in a task of its own (ADR-672): closing this sheet cancels the view's task, and a
+            // cancelled start ended the conversation as "You're offline". Home holds the conversation
+            // and keeps it going after the sheet closes (ADR-595), as the gate's button already does.
+            await Task { @MainActor in
+                await authSession.restore()
+                if (authSession.isSignedIn || VoiceConfig.talksWithoutAccount(for: provider)) && VoiceProviderConsent.isGranted(for: provider) {
+                    await beginConversation()
+                }
+            }.value
         }
         .sheet(item: $openConnection, onDismiss: {
             Task {
@@ -118,15 +117,25 @@ struct VoiceView: View {
             _ = ShortcutRouter.shared.takeCheckInBriefing()
             _ = ShortcutRouter.shared.takeNoteToAsk()
             self.controller = running
+            HomeConversation.shared.hold(running)
+            return
+        }
+        // A conversation Home holds that waits for the user (a card, a failure): show it here,
+        // never start a second one over it (ADR-595).
+        if let held = HomeConversation.shared.forTranscript {
+            self.controller = held
             return
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
+        // Home shows it and keeps it going after the sheet closes (ADR-595).
+        HomeConversation.shared.hold(controller)
         // Back Tap or another Talk to Doddy shortcut greets with "Hey <name>, what's up?", after the same
         // account and provider-consent gate used by a tap in the app.
+        // The router sets the opening only when it opened a conversation (Back Tap's "Only open
+        // Doddy" opens none; the Action Button's control always talks, ADR-579).
         let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
-        let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
-        let greeting = openedByShortcut && action.startsConversation ? TalkInIsland.greeting(for: profiles.profile) : nil
+        let greeting = openedByShortcut ? TalkInIsland.greeting(for: profiles.profile) : nil
         // The island opens up when Doddy starts speaking, not here (ADR-577): this screen is on top,
         // and iOS doesn't show Doddy's own island over Doddy, so a request now was always lost.
         await controller.start(
@@ -181,6 +190,10 @@ struct VoiceView: View {
                                 .foregroundStyle(Theme.secondaryText)
                                 .accessibilityIdentifier("voice.audioPaused")
                         }
+                        #if DEBUG
+                        // Engineering text (audio session names, in English): the owner's Debug builds
+                        // only, so a failure can be read without Xcode; Release and TestFlight hide it
+                        // (ADR-672). The log line in the controller stays in every build.
                         if let note = controller.audioNote {
                             Text(note)
                                 .font(.caption2)
@@ -188,6 +201,7 @@ struct VoiceView: View {
                                 .textSelection(.enabled)
                                 .accessibilityIdentifier("voice.audioNote")
                         }
+                        #endif
 
                         if controller.isPrivate {
                             Label {
@@ -360,6 +374,18 @@ struct VoiceView: View {
             .sheet(item: $photoNote) { taken in
                 CaptureView(takenPhoto: taken.data)
             }
+            // ADR-626: the training plan screen after the user tapped Open on its card. It asks its own safety questions.
+            .sheet(item: planBinding(controller)) { request in
+                NavigationStack {
+                    TrainingPlanView(prefill: request.ask)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Close") { controller.planClosed() }
+                                    .accessibilityIdentifier("plan.close")
+                            }
+                        }
+                }
+            }
             controls(controller)
                 // ADR-567: the share sheet opens by itself once the file is made, and again from its card.
                 .sheet(item: $sharingPresentation) { ready in
@@ -379,6 +405,12 @@ struct VoiceView: View {
         .onChange(of: controller.presentationReady) { _, ready in
             if let ready { sharingPresentation = ready }
         }
+    }
+
+    private func planBinding(_ controller: VoiceSessionController) -> Binding<PlanAskRequest?> {
+        Binding(
+            get: { controller.planRequest },
+            set: { value in if value == nil { controller.planClosed() } })
     }
 
     private func cameraBinding(_ controller: VoiceSessionController) -> Binding<Bool> {
@@ -572,6 +604,12 @@ struct VoiceView: View {
                 Text(label)
                     .foregroundStyle(Theme.secondaryText)
             }
+            // Said only when it is true: AlarmKit rings it (ADR-650); a notification may be silent.
+            if TimerRinger.canRing {
+                Text("It rings even in Silent mode or a Focus, with the time left on the Lock Screen.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .map(_, let place):
             Text("Open this in Maps?")
                 .font(.headline)
@@ -630,11 +668,12 @@ struct VoiceView: View {
             if let text = plan.replaceNotes {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
+                    // ADR-718: the notes are shown in full, both the old (which this replaces) and the new (which is written).
                     if let old = plan.notesBefore, !old.isEmpty {
-                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(4)
+                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText)
                     }
                     if !text.isEmpty {
-                        Text("New: “\(text)”").font(.footnote).lineLimit(6)
+                        Text("New: “\(text)”").font(.footnote)
                     }
                 }
             }
@@ -661,11 +700,12 @@ struct VoiceView: View {
             if let text = draft.replaceNotes {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
+                    // ADR-718: in full, as for an event.
                     if let old = reminder.notes, !old.isEmpty {
-                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(4)
+                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText)
                     }
                     if !text.isEmpty {
-                        Text("New: “\(text)”").font(.footnote).lineLimit(6)
+                        Text("New: “\(text)”").font(.footnote)
                     }
                 }
             }
@@ -763,6 +803,8 @@ struct VoiceView: View {
                             Text(item)
                             if alreadyOpen.contains(index) {
                                 Text("Already on the list").font(.caption).foregroundStyle(Theme.secondaryText)
+                            } else if controller.ingredientsAtHome.contains(index) {
+                                Text("On your At home list").font(.caption).foregroundStyle(Theme.secondaryText)
                             }
                         }
                         Spacer()
@@ -825,9 +867,14 @@ struct VoiceView: View {
             }
             Text(preview.title)
                 .font(.headline)
-            ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
-                Text(line)
-                    .font(.body)
+            // An email reads as an email (ADR-597); anything else as its lines.
+            if let email = EmailPreviewLayout.parse(preview.lines) {
+                EmailPreviewCard(email: email)
+            } else {
+                ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                        .font(.body)
+                }
             }
         case .plan(_, let steps, let blocked):
             planContent(steps: steps, blocked: blocked, controller: controller)
@@ -1028,7 +1075,7 @@ struct VoiceView: View {
         case .presentation: (NSLocalizedString("Make presentation", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .camera: (NSLocalizedString("Open camera", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
-        // A card may name its own other button ("Not now" on a Studio job, ADR-584).
+        // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
         case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
@@ -1121,6 +1168,17 @@ struct VoiceView: View {
                 Button("Change time") { editingNoteReminderTime = true }
                     .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("voice.noteReminder.changeTime")
+            }
+            // ADR-651: only where it can ring; a monthly repeat says why it can't.
+            if ReminderRinger.isAvailable {
+                let reason = ReminderRing.unsupportedReason(
+                    ReminderRing.support(repeats: repeats, isPlace: false), NotificationLanguage.current)
+                Toggle("Ring like an alarm", isOn: Binding(get: { controller.noteReminderRings }, set: { controller.setNoteReminderRings($0) }))
+                    .disabled(reason != nil)
+                    .accessibilityIdentifier("voice.noteReminder.rings")
+                Text(reason ?? NSLocalizedString("Rings even in Silent mode or a Focus, with Stop and In 10 min.", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
             }
         case .place(let results, let onArrival):
             Picker("When", selection: Binding(get: { onArrival }, set: { controller.setNoteReminderOnArrival($0) })) {

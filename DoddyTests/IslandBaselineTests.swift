@@ -23,6 +23,8 @@ final class IslandBaselineTests: XCTestCase {
             .noteWaiting, .noteSaved, .planWaiting(steps: 2), .planRunning(step: 1, of: 2),
             .reminderWaiting, .reminderAdding, .reminderSet, .translating(from: "en", to: "?", bothWays: true),
         ]
+            + IslandAction.allCases.map { DoddyVoiceAttributes.ContentState.Moment.actionWaiting($0) }
+            + IslandResult.allCases.map { DoddyVoiceAttributes.ContentState.Moment.resultReady($0) }
         for moment in moments {
             var state = DoddyVoiceAttributes.ContentState(status: .listening, isMuted: false)
             state.moment = moment
@@ -30,7 +32,9 @@ final class IslandBaselineTests: XCTestCase {
             XCTAssertEqual(Set(json.keys), ["status", "isMuted", "savedCount", "islandStyle", "moment"], "\(moment)")
             // Every string anywhere in the payload is a fixed value: the status, the style, or a
             // language code of at most two letters ("?" while unknown).
+            // ADR-616: a card's or a result's kind is one fixed word too.
             let fixed = Set(["listening", state.islandStyle.rawValue])
+                .union(IslandAction.allCases.map(\.rawValue)).union(IslandResult.allCases.map(\.rawValue))
             for text in strings(in: json) where !fixed.contains(text) {
                 XCTAssertLessThanOrEqual(text.count, 2, "\(moment) carries text: \(text)")
             }

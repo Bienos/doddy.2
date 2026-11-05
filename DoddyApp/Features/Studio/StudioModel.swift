@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-// Studio (S0, ADR-584, docs/implementation/STUDIO.md): research briefs and infographics Doddy's
+// Studio (S0, ADR-740, docs/implementation/STUDIO.md): research briefs and infographics Doddy's
 // server makes in the background and keeps until the user deletes them. The rules live in DoddyCore
 // and on the server, which checks everything again. Nothing here says a job started, is ready or
 // was deleted unless the server said so: a job whose approval answer never came back is "unknown",

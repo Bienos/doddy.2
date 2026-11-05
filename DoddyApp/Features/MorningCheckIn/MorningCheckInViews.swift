@@ -11,7 +11,10 @@ struct MorningCheckInView: View {
     let openSettings: () -> Void
 
     private var briefing: MorningBriefing {
-        MorningBriefing.make(now: .now, memories: store.memories, lists: store.lists, reminders: noteReminders.reminders)
+        // A Private note's words are never in it, on the screen or in what the agent is given (ADR-722).
+        MorningBriefing.make(
+            now: .now, memories: store.memories, lists: store.lists, reminders: noteReminders.reminders,
+            privateNotes: PrivateNotesStore.current())
     }
 
     var body: some View {
@@ -33,7 +36,12 @@ struct MorningCheckInView: View {
                         ForEach(briefing.reminders, id: \.memoryID) { line in
                             HStack(alignment: .firstTextBaseline) {
                                 Text(line.time, format: .dateTime.hour().minute()).monospacedDigit()
-                                Text(line.text)
+                                if line.isPrivate {
+                                    // A private note's words show only on its own screen after Face ID (ADR-310).
+                                    Label("Private note", systemImage: "lock.fill").foregroundStyle(Theme.secondaryText)
+                                } else {
+                                    Text(line.text)
+                                }
                             }
                         }
                     }
@@ -81,8 +89,10 @@ struct MorningCheckInSettingsSection: View {
             get: { Calendar.current.date(from: DateComponents(hour: settings.hour, minute: settings.minute)) ?? .now },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                settings.hour = parts.hour ?? 8
-                settings.minute = parts.minute ?? 0
+                // Quiet hours (ADR-651): the picker shows where the time really goes.
+                let time = QuietHours.adjusted(hour: parts.hour ?? 8, minute: parts.minute ?? 0)
+                settings.hour = time.hour
+                settings.minute = time.minute
             })
     }
 

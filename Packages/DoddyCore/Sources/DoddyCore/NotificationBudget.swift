@@ -11,7 +11,7 @@ public enum NotificationBudget {
     public static let systemLimit = 64
 
     /// Always left free for what Doddy schedules on its own or for a short time: the morning
-    /// check-in (up to 5), the evening wrap-up, weekly look-back and tidy-up (1 each), the weekly
+    /// check-in (up to 5), the evening wrap-up, weekly look-back, weekly plan and tidy-up (1 each), the weekly
     /// "Open Doddy faster" reminders (up to 4, ADR-559), plus timers, focus, leave-by, snoozes and
     /// event nudges. Past 14 together they shrink what notes and birthdays may hold, never the reverse.
     public static let reserved = 14

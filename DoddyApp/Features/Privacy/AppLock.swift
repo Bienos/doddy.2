@@ -62,6 +62,24 @@ final class AppLock {
     static var isAvailable: Bool {
         LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
     }
+
+    /// Which biometry this device really has, for a button's name (Apple's HIG: name the method
+    /// that exists, never one that doesn't). Read only: it asks iOS nothing and shows no prompt. This
+    /// file is the only one that may import LocalAuthentication (check_forbidden_capabilities.sh).
+    enum Biometry: Equatable {
+        case faceID, touchID, unavailable
+    }
+
+    static var biometry: Biometry {
+        let context = LAContext()
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else { return .unavailable }
+        switch context.biometryType {
+        case .faceID: return .faceID
+        case .touchID: return .touchID
+        default: return .unavailable
+        }
+    }
 }
 
 /// Which notes are private, on this iPhone only (ADR-310). Every change is read back.

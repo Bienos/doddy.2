@@ -1,4 +1,4 @@
-// Studio's calls to Claude (ADR-584, STUDIO.md "The pipeline"), behind one interface so the tests
+// Studio's calls to Claude (ADR-740, STUDIO.md "The pipeline"), behind one interface so the tests
 // drive the whole pipeline with a fake. The real one uses the official SDK, like Errands.
 //   - plan, pack, write: structured output, no tools;
 //   - research: web search and web fetch only, capped by max_uses, streamed;
@@ -124,7 +124,10 @@ export class AnthropicStudioApi implements StudioModelApi {
     this.models = options.models;
     this.model = options.modelLabel;
     this.skills = options.skills;
-    this.client = options.client ?? new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 2, timeout: 15 * 60_000 });
+    // No automatic retries (ADR-742): a model request that may have run and billed is never repeated blindly; a
+    // failure ends the job as `provider_error` and the user asks again. The only repeats are the pipeline's own,
+    // each bounded and decided by code (a write that broke a rule, a render that failed its checks).
+    this.client = options.client ?? new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 0, timeout: 15 * 60_000 });
   }
 
   /** A safety decline is retried on Anthropic's recommended fallback, in the same call, where Anthropic offers it. */

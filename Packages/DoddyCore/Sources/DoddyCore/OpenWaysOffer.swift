@@ -55,6 +55,18 @@ public enum OpenWaysOffer {
     /// The card comes back once: after the second "later" it stays gone (Settings still has it).
     public static let deferralsBeforeStopping = 2
 
+    /// The words of Home's slim row (owner, 3 Nov 2026, ADR-699): casual and general (no Siri, no
+    /// named ways), nothing about how easy or how long. The English title is the owner's own
+    /// ("I'm here non-stop"); the Polish one stays "Jestem pod ręką", because Doddy is not there
+    /// without internet or voice. Tapping the row opens the ways.
+    public static func rowTitle(_ language: NotificationLanguage) -> String {
+        language == .polish ? "Jestem pod ręką" : "I'm here non-stop"
+    }
+
+    public static func rowLine(_ language: NotificationLanguage) -> String {
+        language == .polish ? "Ustaw sposób, żeby mnie zawołać." : "Set up a way to call me."
+    }
+
     /// The person is already using a way, or said their Back Tap test worked.
     public static func isDone(phase: BackTapSetupPhase, state: OpenWaysOfferState) -> Bool {
         if state.usedAWay { return true }
@@ -114,7 +126,7 @@ public enum OpenWaysReminder {
 
     public static func body(_ language: NotificationLanguage) -> String {
         language == .polish
-            ? "Stuknij dwa razy w tył iPhone’a, naciśnij przycisk albo zapytaj Siri. Wybierz sposób, kiedy chcesz."
-            : "Double-tap the back of your iPhone, press a button or ask Siri. Pick a way whenever you like."
+            ? "Stuknij dwa razy w tył iPhone’a albo naciśnij przycisk. Wybierz sposób, kiedy chcesz."
+            : "Double-tap the back of your iPhone or press a button. Pick a way whenever you like."
     }
 }

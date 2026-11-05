@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { CLOUD_TOOLS, evaluateToolkitGrant, TOOLKITS } from "../src/tools/catalog.js";
+import { LOOKUP_FAILED } from "../src/tools/service.js";
 import { USER_A } from "./helpers.js";
 import { connect, on, type Rig, runRaw, start } from "./toolsRig.js";
 
@@ -69,7 +70,8 @@ test("Google: change finds the one event by title and start, shows it, and moves
   // A cancelled event with the same title and start is ignored; a wrong start finds nothing.
   const none = await prepare(rig, "change_google_event", { ...args, start: "2026-10-12T14:00" });
   assert.equal(none.status, 404);
-  assert.match(none.body.error.message, /Nothing was changed/);
+  // ADR-708: one answer for every lookup that gives no card, not wording that depends on what was (not) found.
+  assert.equal(none.body.error.message, LOOKUP_FAILED);
   assert.equal((await prepare(rig, "change_google_event", args, null)).status, 400, "needs the user's time zone");
 });
 

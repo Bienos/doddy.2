@@ -4,7 +4,7 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
-// Studio (S0, ADR-584): the list of what Doddy made, and one item with its brief (Quick Look), its
+// Studio (S0, ADR-740): the list of what Doddy made, and one item with its brief (Quick Look), its
 // infographic, its sources and dates, Share and Delete. Everything shown comes from the server's
 // answer; an item still being made never shows files, and "deleted" is said only after the list
 // was read back without it (StudioModel).

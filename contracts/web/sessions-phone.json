@@ -1,0 +1,13 @@
+{
+  "sessions": [
+    {
+      "id": "1cd78d11-ffa3-40be-b23a-97fb709573bd",
+      "browser": "chrome",
+      "os": "macos",
+      "createdAt": "2026-10-22T10:00:00.000Z",
+      "lastSeenAt": "2026-10-22T10:00:00.000Z",
+      "expiresAt": "2026-11-05T10:00:00.000Z",
+      "current": false
+    }
+  ]
+}

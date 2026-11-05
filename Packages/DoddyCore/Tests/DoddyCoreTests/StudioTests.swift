@@ -1,7 +1,7 @@
 @testable import DoddyCore
 import XCTest
 
-/// Studio (S0, ADR-584, docs/implementation/STUDIO.md): the typed job keeps the user's words and
+/// Studio (S0, ADR-740, docs/implementation/STUDIO.md): the typed job keeps the user's words and
 /// its digest is the server's; the replies decode as the contract writes them (a newer server's
 /// states don't break the app); the client never reports "started" or "deleted" without the
 /// server's word; the ask is a read under ASK-01 that shows the whole job; and what the agent hears
@@ -182,6 +182,7 @@ final class StudioTests: XCTestCase {
             (reply(400, #"{"error":"invalid_request","fields":["topic","sources.0.url"]}"#), .invalid(fields: ["topic", "sources.0.url"])),
             (reply(404, #"{"error":"not_found"}"#), .notFound),
             (reply(429), .server(.rateLimited)),
+            (reply(429, #"{"error":"studio_daily_limit","scope":"server"}"#), .dailyCapReached(capUsd: nil, spentUsd: nil)),
             (reply(500), .server(.unexpected(status: 500))),
         ]
         for (response, expected) in cases {
@@ -356,11 +357,11 @@ final class StudioTests: XCTestCase {
         XCTAssertTrue(StudioDeleteRule.confirmation(nil, language: .polish) == "Usunięto.")
     }
 
-    // MARK: Ask first (ASK-01, ADR-584) and the voice tool
+    // MARK: Ask first (ASK-01, ADR-740, tap only by ADR-742) and the voice tool
 
-    func testTheCardShowsTheWholeJobWhereItGoesAndIsARead() {
+    func testTheCardShowsTheWholeJobWhereItGoesAndNeedsATap() {
         let need = AskFirst.need(for: .makeSomething(fullJob))
-        XCTAssertEqual(need, .yesFirst(AskCard(
+        XCTAssertEqual(need, .tapFirst(AskCard(
             title: "Make this with Doddy?",
             lines: [
                 "Research “Heat pumps \"in\" Poland\\2026” on the web and make a research brief (PDF) and an infographic.",
@@ -372,7 +373,7 @@ final class StudioTests: XCTestCase {
                 "It takes a few minutes. Nothing is published or sent anywhere.",
             ],
             confirmLabel: "Allow", declineLabel: "Not now")))
-        XCTAssertFalse(AskFirst.needsTap(need), "a read: a spoken yes or a tap")
+        XCTAssertTrue(AskFirst.needsTap(need), "it spends money: a spoken yes cannot start it (ADR-742)")
         let polish = StudioAsk.card(job)
         XCTAssertEqual(polish.title, "Przygotować to z Doddym?")
         XCTAssertEqual(polish.lines.first, "Doddy poszuka w sieci informacji o „Pompy ciepła w polskich domach” i przygotuje raport (PDF) oraz infografikę.")
@@ -380,21 +381,24 @@ final class StudioTests: XCTestCase {
         XCTAssertTrue(polish.lines.contains { $0.contains("nie jest objęte zerową retencją") })
         XCTAssertEqual(polish.confirmLabel, "Zezwól")
         XCTAssertEqual(polish.declineLabel, "Nie teraz")
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.makeSomething)?.effect, .lookup)
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.makeSomething)?.approval, .askFirst)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.makeSomething)?.effect, .handoff)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.makeSomething)?.approval, .card)
         XCTAssertNil(VoiceConnection.serving(VoiceToolName.makeSomething))
         XCTAssertFalse(AskFirst.publicLookups.contains(VoiceToolName.makeSomething), "never runs without asking")
     }
 
-    func testOneSpokenYesRunsTheJobOnceAndOnlyThatJob() {
+    func testOneTapRunsTheJobOnceAndOnlyThatJob() {
         var ledger = AskLedger()
         let now = Date(timeIntervalSince1970: 1_792_000_000)
         let request = VoiceToolRequest.makeSomething(job)
+        ledger.asked("c0", request: request, needsTap: AskFirst.needsTap(AskFirst.need(for: request)), at: now)
+        XCTAssertNotEqual(ledger.answer(.userSaid("tak"), for: "c0", at: now.addingTimeInterval(2)), .granted, "a spoken yes does not start a Studio job")
+        XCTAssertFalse(ledger.mayRun("c0", request: request, at: now.addingTimeInterval(3)))
         ledger.asked("c1", request: request, needsTap: AskFirst.needsTap(AskFirst.need(for: request)), at: now)
-        XCTAssertEqual(ledger.answer(.userSaid("tak"), for: "c1", at: now.addingTimeInterval(2)), .granted)
+        XCTAssertEqual(ledger.answer(.tapped, for: "c1", at: now.addingTimeInterval(2)), .granted)
         XCTAssertFalse(ledger.mayRun("c1", request: .makeSomething(StudioJob(topic: heat + " i fotowoltaika")), at: now.addingTimeInterval(3)))
-        ledger.asked("c2", request: request, needsTap: false, at: now)
-        XCTAssertEqual(ledger.answer(.userSaid("tak"), for: "c2", at: now.addingTimeInterval(2)), .granted)
+        ledger.asked("c2", request: request, needsTap: true, at: now)
+        XCTAssertEqual(ledger.answer(.tapped, for: "c2", at: now.addingTimeInterval(2)), .granted)
         XCTAssertTrue(ledger.mayRun("c2", request: request, at: now.addingTimeInterval(3)))
         XCTAssertFalse(ledger.mayRun("c2", request: request, at: now.addingTimeInterval(4)), "once")
     }
@@ -430,7 +434,7 @@ final class StudioTests: XCTestCase {
 
     func testPauseAllCarAndActivityRows() {
         XCTAssertTrue(ConnectionPause.applies(to: .makeSomething(job)), "the server reads the web for it")
-        XCTAssertEqual(CarProfile.decision(for: .makeSomething(job)), .run)
+        guard case .refuse = CarProfile.decision(for: .makeSomething(job)) else { return XCTFail("a tap is not possible while driving") }
         let row = ActivityRequest.describe(.makeSomething(job), calendar: .current)
         XCTAssertEqual(row?.title, "Make a research brief")
         XCTAssertEqual(row?.detail, "“Pompy ciepła w polskich domach”")

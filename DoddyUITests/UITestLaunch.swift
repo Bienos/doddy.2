@@ -24,7 +24,8 @@ enum UITestLaunch {
 
     static func arguments(
         store: Store, onboardingDone: Bool = true, appearance: String = "system", backTapSetup: String = "deferred",
-        opening: Bool = false, listen: Bool = false, language: Language = .english
+        opening: Bool = false, listen: Bool = false, language: Language = .english, welcome: Bool = false,
+        legalAccepted: Bool = true
     ) -> [String] {
         var arguments: [String]
         switch store {
@@ -37,6 +38,9 @@ enum UITestLaunch {
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
         arguments += ["-voiceAgentID", ""]
         arguments += ["-openingScene", opening ? "YES" : "NO", "-listenOnOpen", listen ? "YES" : "NO"]
+        // The first-launch welcome (ADR-598) would cover every fresh-install test; a test that is
+        // about it asks for it (`welcome: true`).
+        arguments += ["-welcome", welcome ? "YES" : "NO"]
         // The opening's whole timeline is 2.4 s, and on CI the launch and the first idle wait can
         // take longer than that, so a test sometimes looked only after it had ended. Played 6×
         // slower (14.4 s) it is still on screen when the test first looks, and still ends by itself.
@@ -44,6 +48,9 @@ enum UITestLaunch {
         // Memories remembers Notes or Lists in UserDefaults, which outlive the in-memory store: a
         // test that opened Lists would leave every later test looking at Lists, not the notes.
         arguments += ["-memoriesShowsLists", "NO"]
+        // "Before we start" (ADR-581) would cover every first screen; Debug builds skip it with
+        // this. `LegalAcceptanceUITests` turns it off to test the step itself.
+        if legalAccepted { arguments += ["-legalAcceptanceSkippedForUITests", "YES"] }
         return arguments
     }
 }
@@ -107,16 +114,35 @@ extension XCUIApplication {
             .waitForExistence(timeout: timeout)
     }
 
-    /// Goes to tab `name` ("memories", "settings"): the tab bar where there is one, else Home's
-    /// ••• menu (ADR-545).
+    /// Goes to tab `name` ("memories", "settings"): the tab bar (or iPad's sidebar) where there is
+    /// one, else Home's ••• menu (ADR-545). Notes and lists have no tab on iPhone any more: they
+    /// open from Settings › Doddy's memory › Notes (ADR-633).
     @MainActor
     func goToTab(_ name: String) {
+        if name == "memories" {
+            let sidebar = descendants(matching: .any)["tab.memories"].firstMatch
+            if sidebar.exists && sidebar.isHittable { sidebar.tap(); return }
+            goToTab("settings")
+            openSettingsPage("settings.memory.notes", under: "settings.memory")
+            return
+        }
         _ = waitForTab(name, timeout: 5)
         let tab = buttons["tab.\(name)"]
         if tab.exists && tab.isHittable {
             tab.tap()
         } else {
             tapHomeMenuItem("home.menu.\(name)")
+        }
+        // Settings keeps the page it was on: Doddy's memory, when notes were opened from it (ADR-633).
+        // Back to its first page (Voice is its first row), where the tests start.
+        if name == "settings" {
+            _ = buttons["settings.voice"].waitForExistence(timeout: 2)
+            for _ in 0..<3 where !buttons["settings.voice"].exists {
+                let back = navigationBars.buttons.element(boundBy: 0)
+                guard back.exists else { break }
+                back.tap()
+                _ = buttons["settings.voice"].waitForExistence(timeout: 2)
+            }
         }
     }
 
@@ -129,6 +155,22 @@ extension XCUIApplication {
         let item = buttons[identifier]
         _ = item.waitForExistence(timeout: 5)
         item.tap()
+    }
+
+    /// Settings (ADR-580): scrolls to a group's row and opens its page.
+    @MainActor
+    func openSettingsPage(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {
+        let row = buttons[identifier]
+        XCTAssertTrue(reveal(row), "Settings row \(identifier)", file: file, line: line)
+        row.tap()
+    }
+
+    /// A row on one of Settings' short pages (ADR-633): opens the page `group` first ("settings.voice",
+    /// "settings.memory", "settings.connectionsHub", "settings.advanced"), unless it is open already.
+    @MainActor
+    func openSettingsPage(_ identifier: String, under group: String, file: StaticString = #filePath, line: UInt = #line) {
+        if !buttons[identifier].exists { openSettingsPage(group, file: file, line: line) }
+        openSettingsPage(identifier, file: file, line: line)
     }
 
     /// A button found by what it says. A Section's accessibility identifier (Settings' Privacy

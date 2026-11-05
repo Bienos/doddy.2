@@ -4,9 +4,12 @@ import Foundation
 // ask." Before every action of every tool, reads included, Doddy says exactly what it will do and
 // waits for a yes for that one action. A task handed over (`hand_over_errand`) is that one action:
 // its single yes covers every web search and page read Doddy's server makes for that task, with no
-// limit, and nothing else (owner, 21 Oct 2026, ADR-570). A Studio job (`make_something`, ADR-584) is
-// the second such action: its yes covers that job's web look-ups (capped by the server's max_uses) and
-// the making of its files in Anthropic's container, and nothing else. Anything that changes, sends, deletes, books or shares
+// limit, and nothing else (owner, 21 Oct 2026, ADR-570). That yes is a tap since ADR-716: the task's
+// text goes to a server that opens whatever it names, so a spoken "yes" (to another question, or
+// anything the microphone heard) must not start one. A Studio job (`make_something`, ADR-740) is the
+// second such action, a tap too (ADR-742: it spends money): its tap covers that job's web look-ups
+// (capped by the server's max_uses) and the making of its files in Anthropic's container, within the
+// server's dollar limits, and nothing else. Anything that changes, sends, deletes, books or shares
 // something needs a tap on a card with the exact payload: a spoken yes is not enough there,
 // because the model hears it (model-only approval is forbidden, DOD-07). No yes, a no, an unclear
 // answer or a timeout: nothing runs, and the agent is told so. Text from emails, the web or
@@ -47,7 +50,8 @@ public enum AskFirst {
         /// only after a tap, or the user's own spoken yes said after the card appeared.
         case yesFirst(AskCard)
         /// A change with no card of its own (list items, clearing the parking spot): this card
-        /// shows the exact change, and only a tap runs it.
+        /// shows the exact change, and only a tap runs it. Also a task handed over to Doddy's
+        /// server (ADR-716) and a trip's travel time, which reads where the iPhone is (ADR-718).
         case tapFirst(AskCard)
         /// The tool's own flow shows the exact payload on a card and changes something only on a
         /// tap (notes, calendar, reminders, alarms, timers, messages, shortcuts, Maps, plans).
@@ -70,7 +74,8 @@ public enum AskFirst {
 
     /// Every request has an answer here; the switch has no default, so a new tool doesn't compile
     /// until it says how it asks.
-    public static func need(for request: VoiceToolRequest, calendar: Calendar = .current) -> Need {
+    /// `polish`: the app is shown in Polish, for the cards whose words are chosen here (ADR-666: leaflets).
+    public static func need(for request: VoiceToolRequest, calendar: Calendar = .current, polish: Bool = false) -> Need {
         switch request {
         case .unsupported, .invalid, .needsClarification:
             return .nothingRuns
@@ -94,28 +99,46 @@ public enum AskFirst {
             return .yesFirst(AskCard(title: "Look through your photos?", lines: [request.text(calendar: calendar), "Only the counts and times go to Doddy's voice; the photos stay on your screen."], confirmLabel: "Yes, look"))
         case .readSteps(let day):
             return .yesFirst(AskCard(title: "Read your steps?", lines: ["\(day.text), from Motion & Fitness"], confirmLabel: "Yes, read them"))
+        case .readHealthWeek:
+            return .yesFirst(AskCard(title: "Read your week from Apple Health?", lines: ["Workouts, sleep and heart, the last 7 days", "A short summary goes to Doddy's voice"], confirmLabel: "Yes, read it"))
+        case .openTrainingPlan(let ask):
+            // ADR-626: opens a screen and makes nothing; a tap, because it changes what the person sees.
+            return .tapFirst(AskCard(title: "Make a training plan?", lines: ask.cardLines, confirmLabel: "Open"))
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
+        case .startStopwatch(let label):
+            return .tapFirst(AskCard(
+                title: "Start a stopwatch?", lines: [label.map { "“\($0)”" } ?? "It counts up until you stop it"], confirmLabel: "Start"))
+        case .stopStopwatch:
+            return .tapFirst(AskCard(title: "Stop the stopwatch?", lines: ["It stops and keeps the time it reached"], confirmLabel: "Stop"))
+        case .checkStopwatch:
+            return .yesFirst(AskCard(title: "Read your stopwatch?", lines: ["How long it has been running"], confirmLabel: "Yes, read it"))
         case .readList(let name):
             return .yesFirst(AskCard(title: "Read a list?", lines: ["List: \(name)"], confirmLabel: "Yes, read it"))
         case .parkingSpot(.find):
             return .yesFirst(AskCard(title: "Find your parking spot?", lines: ["Uses where your iPhone is now"], confirmLabel: "Yes, find it"))
-        case .startTranslator:
-            return .yesFirst(AskCard(
-                title: "Start translator mode?",
-                lines: ["This conversation ends and a new one starts for translating. It has none of your notes, profile or lists."],
-                confirmLabel: "Yes, start"))
-        case .stopTranslator:
-            return .yesFirst(AskCard(title: "Stop translator mode?", lines: ["Doddy stops translating."], confirmLabel: "Yes, stop"))
+        // ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
+        // tłumaczyć"), replacing ADR-542: translator mode starts and stops the moment the user asks.
+        // It reads nothing and sends nothing; the conversation turns private, and the other person
+        // still hears the AI translator disclosure first.
+        case .startTranslator, .stopTranslator:
+            return .runsNow
         case .handOverErrand(let draft):
-            // Reads the web and changes nothing (ADR-570); the card shows the user's exact words.
-            return .yesFirst(ErrandAsk.handOverCard(draft))
+            // Reads the web and changes nothing on the iPhone (ADR-570), but the text goes to a server
+            // that opens what it names, and a spoken "yes" could be anything the microphone heard, so
+            // only a tap starts it (ADR-716). The card shows whose each text is, in full.
+            return .tapFirst(ErrandAsk.handOverCard(draft))
         case .checkErrands:
             return .yesFirst(ErrandAsk.checkCard)
         case .makeSomething(let job):
-            // ADR-584: web research and files made in Anthropic's container; nothing outside Doddy
-            // changes, so a spoken yes or a tap starts it. The card shows the whole job.
-            return .yesFirst(StudioAsk.card(job))
+            // ADR-740: web research and files made in Anthropic's container, paid from Doddy's account.
+            // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
+            // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
+            return .tapFirst(StudioAsk.card(job))
+        case .findDeals(let request):
+            // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
+            // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.
+            return .yesFirst(DealsAsk.card(request, polish: polish))
         case .addToList(let request):
             return .tapFirst(AskCard(title: "Add to \(request.list)?", lines: request.items, confirmLabel: "Add"))
         case .checkOff(let request):
@@ -129,9 +152,14 @@ public enum AskFirst {
                 title: "Note that Doddy couldn't do this?",
                 lines: ["Kept on this iPhone as a category only: \(category.rawValue.replacingOccurrences(of: "_", with: " "))"],
                 confirmLabel: "Note it"))
+        case .leaveBy(let request):
+            // Working out the trip reads where the iPhone is and asks Apple Maps, so nothing of it
+            // happens, and the agent hears nothing of it, until this tap; the payload card with the
+            // place Maps found and the leave time follows (ADR-718).
+            return .tapFirst(LeaveByAsk.card(request, calendar: calendar))
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
-             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
+             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save):
             return .ownPayloadCard
         case .cloudTool(let call):
             return !call.isWrite && publicLookups.contains(call.name) ? .runsNow : .serverCard(isWrite: call.isWrite)
@@ -176,7 +204,9 @@ public enum SpokenYes {
         "yes go ahead", "yes do it", "ok go ahead", "okay go ahead", "sure go ahead",
         // Polish
         "tak", "tak proszę", "tak prosze", "dobrze", "jasne", "śmiało", "smialo", "zrób to", "zrob to", "tak zrób to", "tak zrob to", "okej", "pewnie",
-        // German
+        // German. "ja" is also Polish for "I", so a stray one could pass as a yes. It stays: it is the
+        // German yes, a spoken yes answers reads only (a hand-over needs a tap since ADR-716), and a list
+        // per language is the owner's call.
         "ja", "ja bitte", "klar", "mach das", "ja mach das", "in ordnung",
         // French
         "oui", "oui vas-y", "oui vas y", "vas-y", "vas y", "d'accord", "oui s'il te plaît", "oui s'il te plait",

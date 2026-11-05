@@ -19,6 +19,10 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case steps
     /// The photo library and Doddy's camera (ADR-569).
     case photos, camera
+    /// Apple Health, read only (ADR-621, ADR-623).
+    case health
+    /// The training plan screen (ADR-626).
+    case training
 
     public var title: String {
         switch self {
@@ -42,6 +46,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .steps: "Steps"
         case .photos: "Photos"
         case .camera: "Camera"
+        case .health: "Apple Health"
+        case .training: "Training plan"
         }
     }
 }
@@ -77,6 +83,18 @@ public enum ActivityOutcome: String, Codable, Sendable {
         case .inProgress: "In progress"
         case .shown: "Shown for you to send"
         }
+    }
+}
+
+/// What a save writes beyond its title and time, as a plan card's step line says it (ADR-718): the
+/// place of an event and the notes of an event or reminder, each in full and in the user's words.
+/// Empty when there is neither, so a step without them reads as it always did.
+enum WrittenFields {
+    static func line(place: String? = nil, notes: String? = nil) -> String {
+        var text = ""
+        if let place, !place.isEmpty { text += " · place “\(place)”" }
+        if let notes, !notes.isEmpty { text += " · notes “\(notes)”" }
+        return text
     }
 }
 
@@ -159,15 +177,19 @@ public struct ActivityRequest: Equatable, Sendable {
         case .createCalendarEvent(let draft):
             let time = draft.allDay ? "\(when(draft.start, hasTime: false)), all day" : when(draft.start, hasTime: true)
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            let kept = "“\(draft.title)” · \(time)\(repeats)"
+            // ADR-718: the save also writes the place and the notes, so the plan card's step names them in
+            // full; the 30-day log keeps what it always kept.
             return ActivityRequest(
-                app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)\(repeats)", isLookup: false,
-                operationKey: EventIdempotency.key(draft))
+                app: .calendar, title: "Add event", detail: kept + WrittenFields.line(place: draft.location, notes: draft.notes),
+                logDetail: kept, isLookup: false, operationKey: EventIdempotency.key(draft))
         case .createReminder(let draft):
             let due = draft.due.map { " · due \(ReminderText.due($0))" } ?? ""
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            let kept = "“\(draft.title)”\(due)\(repeats)"
             return ActivityRequest(
-                app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)\(repeats)", isLookup: false,
-                reminderKey: ReminderWrite(draft).key)
+                app: .reminders, title: "Add reminder", detail: kept + WrittenFields.line(notes: draft.notes),
+                logDetail: kept, isLookup: false, reminderKey: ReminderWrite(draft).key)
         case .remindAboutNote(let draft):
             let target: String
             switch draft.target {
@@ -217,6 +239,10 @@ public struct ActivityRequest: Equatable, Sendable {
                 logDetail: "\(draft.slideCount) slides", isLookup: false)
         case .readSteps(let day):
             return ActivityRequest(app: .steps, title: "Read steps", detail: day.text, isLookup: true)
+        case .readHealthWeek:
+            return ActivityRequest(app: .health, title: "Read the week from Apple Health", detail: "Last 7 days", isLookup: true)
+        case .openTrainingPlan(let ask):
+            return ActivityRequest(app: .training, title: "Open the training plan", detail: PlanAsk.goalTitle(ask.goal), isLookup: false)
         case .findPhotos(let request):
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:
@@ -275,6 +301,12 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .timers, title: "Read alarms", detail: "Doddy's alarms", isLookup: true)
         case .cancelAlarm(let clock, let label):
             return ActivityRequest(app: .timers, title: "Turn off alarm", detail: [clock, label.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+        case .startStopwatch(let label):
+            return ActivityRequest(app: .timers, title: "Start stopwatch", detail: label.map { "“\($0)”" } ?? "Counts up", isLookup: false)
+        case .stopStopwatch:
+            return ActivityRequest(app: .timers, title: "Stop stopwatch", detail: "Doddy's stopwatch", isLookup: false)
+        case .checkStopwatch:
+            return ActivityRequest(app: .timers, title: "Read stopwatch", detail: "Doddy's stopwatch", isLookup: true)
         case .deleteCalendarEvents(let range):
             return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
         case .moveReminders(let dueBy, let to):
@@ -307,8 +339,15 @@ public struct ActivityRequest: Equatable, Sendable {
         case .checkErrands:
             return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
         case .makeSomething(let job):
-            // ADR-584: the 30-day log keeps that a Studio job was asked for, not its topic.
+            // ADR-740: the 30-day log keeps that a Studio job was asked for, not its topic.
             return ActivityRequest(app: .web, title: "Make a research brief", detail: "\u{201C}\(job.topic)\u{201D}", logDetail: nil, isLookup: false)
+        case .findDeals(let request):
+            // SHOPPING.md: the card shows the items; the 30-day log keeps only how many and where.
+            let count = request.items.count
+            let chains = request.chainsAsked.map(\.name).joined(separator: ", ")
+            return ActivityRequest(
+                app: .web, title: "Checked the leaflets", detail: request.items.joined(separator: ", ") + " · " + chains,
+                logDetail: "\(count) item\(count == 1 ? "" : "s") · \(chains)", isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and

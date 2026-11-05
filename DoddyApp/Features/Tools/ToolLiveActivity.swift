@@ -93,10 +93,10 @@ final class ToolLiveActivity {
         }
     }
 
-    /// The state with the island style picked in Settings (ADR-299), read when it is sent.
+    /// The state with the island's look (Whole Doddy, ADR-299), set when it is sent.
     private static func styled(_ state: DoddyToolAttributes.ContentState) -> DoddyToolAttributes.ContentState {
         var state = state
-        state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
+        state.islandStyle = .wholeDoddy
         return state
     }
 
@@ -105,6 +105,8 @@ final class ToolLiveActivity {
         switch kind {
         case .focus, .breathing: return state.endsAt
         case .readAloud: return Date().addingTimeInterval(Self.heartbeatStaleAfter)
+        // Nothing ends it, so it is never stale (ADR-652).
+        case .stopwatch: return nil
         }
     }
 

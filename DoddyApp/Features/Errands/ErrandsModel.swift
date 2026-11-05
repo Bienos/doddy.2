@@ -73,11 +73,13 @@ final class ErrandsModel {
         hasLoaded = true
     }
 
-    // MARK: Hand-over (the voice tool, after the user's yes)
+    // MARK: Hand-over (the voice tool, after the user's tap)
 
     /// Creates the task on the server and approves it with the digest of exactly these words. The
     /// returned text is the tool result for the agent. Never approves twice, never retries.
     func handOver(_ draft: ErrandDraft, now: Date = Date()) async -> String {
+        // ADR-716: whoever calls this, nothing with a link in it (or any other issue) is sent to the server.
+        if let issue = draft.validationIssues().first { return VoiceToolReply.failed("The request was incomplete (\(issue.reason)).") }
         guard let backend else { return VoiceToolReply.errandNotStarted(ErrandError.errandsDisabled) }
         let preview: ErrandPreview
         do {
@@ -176,7 +178,9 @@ final class ErrandsModel {
         for summary in listed where !known.contains(summary.id) {
             guard let snapshot = try? await backend.errand(summary.id),
                   let words = snapshot.words, let brief = snapshot.brief, let title = snapshot.title else { continue }
-            let draft = ErrandDraft(words: words, brief: brief, title: title, language: snapshot.language ?? ErrandDraft.defaultLanguage)
+            // A shopping task keeps its kind and priorities (SHOPPING.md), so its card and report show them.
+            let draft = ErrandDraft(words: words, brief: brief, title: title, language: snapshot.language ?? ErrandDraft.defaultLanguage,
+                                    kind: snapshot.kind.flatMap(ErrandKind.init(rawValue:)), priorities: snapshot.priorities ?? [])
             let adopted = StoredErrand(id: snapshot.id, createdAt: snapshot.createdAt, state: .unknown, draft: draft).applying(snapshot, at: now)
             if let saved = await keep(adopted), saved.state.isFinished { markUnseen(saved.id) }
         }

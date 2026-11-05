@@ -1,4 +1,4 @@
-// Studio (ADR-584, docs/implementation/STUDIO.md): the job the app sends and the user approves, the
+// Studio (ADR-740, docs/implementation/STUDIO.md): the job the app sends and the user approves, the
 // shapes the model returns at each step, and the content the renderers read. Model-facing schemas
 // have no length limits (structured output refuses them); code checks the limits afterwards.
 import { createHash } from "node:crypto";

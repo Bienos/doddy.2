@@ -1,4 +1,4 @@
-// Studio's background passes (ADR-584, STUDIO.md), in their own loop like errands. A queued item is
+// Studio's background passes (ADR-740, STUDIO.md), in their own loop like errands. A queued item is
 // claimed with FOR UPDATE SKIP LOCKED before any model call, so no job runs twice. The outcome is
 // stored in steps: files first (stage `store`), then each file is read back and compared by SHA-256,
 // and only then the item becomes ready and the push is queued. The push never carries words.
@@ -10,7 +10,7 @@ import { sha256, type MadeFile } from "./checks.js";
 import { fileAad, resultAad, type StudioContext } from "./context.js";
 import { runStudio, type StudioOutcome } from "./pipeline.js";
 import { FILE_SPECS, jobDigest, type Stage } from "./schema.js";
-import { decryptJob } from "./service.js";
+import { decryptJob, releaseUnspent } from "./service.js";
 
 export const MAX_CONCURRENT_RUNS = 2;
 export const INTERRUPTED_GRACE_MS = 5 * 60_000;
@@ -180,6 +180,9 @@ async function finish(ctx: StudioContext, e: Claimed, outcome: StudioOutcome): P
       "SELECT state, cancel_requested_at FROM studio_items WHERE id = $1 FOR UPDATE", [e.id]);
     const r = rows[0];
     if (!r || r.state !== "running") return r ? `already_${r.state}` : "deleted";
+    // What the job didn't spend goes back to the server's day (ADR-742). A job cut short by an error of ours
+    // (`interrupted`) may have spent more than was counted, so its reservation stays.
+    if (!(outcome.kind === "failed" && outcome.code === "interrupted")) await releaseUnspent(c, e.id, outcome.costUsd);
     const end = `stage = NULL, finished_at = $11, ${setStats}`;
     if (outcome.kind === "cancelled" || r.cancel_requested_at) {
       await c.query("DELETE FROM studio_files WHERE item_id = $1", [e.id]);

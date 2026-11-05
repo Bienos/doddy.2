@@ -1,4 +1,4 @@
-// Cross-check (ADR-584): the server's own Studio checks, run on files the real renderers made.
+// Cross-check (ADR-740): the server's own Studio checks, run on files the real renderers made.
 // Keeps studio-skills/ (Python) and src/studio/checks.ts (TypeScript) from drifting apart.
 //   node scripts/check-studio-render.mjs <content.json> <dir with the four files>
 // Needs the compiled server (npm run build or npm test first). Prints each check; exit 1 on a failure.

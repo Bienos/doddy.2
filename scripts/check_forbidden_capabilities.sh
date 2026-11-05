@@ -4,8 +4,14 @@
 #    provider-token requests, all to the token server; ADR-494), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
-#    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
-#    (ADR-300), which downloads only the ECB's public rates file,
+#    (ADR-265), whose WebSocket lives in one file in Features/Voice, the exchange-rate client
+#    (ADR-300), which downloads only the ECB's public rates file, and the Open Food Facts client
+#    (ADR-631), which asks only the address DoddyCore builds from a checked barcode, and the InPost
+#    tracking client (ADR-641), which asks only the address DoddyCore builds from a checked parcel number;
+#    there is no inFakt client yet (ADR-640: its wire format is unverified), so nothing may talk to inFakt,
+#  - the Keychain (Security framework) only in the files that already hold a token or key, and a key the
+#    person pasted in for their own account (AccountKeyStore, ADR-640) is read only by the one file that
+#    will put it in a request header, never by a screen,
 #  - the system authentication browser is used only by Connected Apps; Sign in with Apple
 #    (AuthenticationServices without a browser or web view) only in the voice account sign-in
 #    (VoiceAccessGate, VoiceAuthSession), whose calls go to the voice token server's
@@ -15,10 +21,12 @@
 #    phone with an x_doddy.ask; every server tool has a card (preview) and runs only through the
 #    one approval gate (backend/src/tools/askFirst.ts); the voice controller checks AskFirst
 #    before any tool runs,
-#  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
-#    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
-#  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
-#    request there sets requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
+#  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there, in
+#    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230) and in
+#    DoddyApp/Features/Recordings (DODDY Capture: long recordings, ADR-588),
+#  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos and DoddyApp/Features/Recordings,
+#    and every recognition request in either sets requiresOnDeviceRecognition = true (nothing is
+#    sent to Apple's servers),
 #  - calendar (EventKit), contacts and Motion & Fitness step counts (CoreMotion's pedometer,
 #    ADR-568) code only inside DoddyApp/Infrastructure/Connections,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
@@ -37,11 +45,14 @@
 #    `node tools/secrets/sync.mjs check`),
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
-#  - AlarmKit only inside DoddyApp/Features/Alarms, plus the shared alarm metadata and the snooze
-#    countdown widget (ADR-260, ADR-283),
+#  - AlarmKit only inside DoddyApp/Features/Alarms, plus Shared/Alarms (the shared alarm metadata and
+#    the timer card's Pause, Resume and Stop buttons) and the countdown widget (ADR-260, ADR-283, ADR-650),
 #  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-263),
+#  - Apple Health (HealthKit, sport mode step 1, ADR-621) only in DoddyApp/Infrastructure/Health/HealthReader.swift,
+#    read only: no write access asked for, no save or delete, no clinical records, no background delivery,
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
-#    reminders, contacts, Motion & Fitness (steps, ADR-568), the camera and reading the photo library (ADR-569)
+#    reminders, contacts, Motion & Fitness (steps, ADR-568), the camera and reading the photo library (ADR-569),
+#    reading Apple Health (ADR-621)
 #    and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
@@ -49,7 +60,7 @@
 #    and Monid only in the web search module, with fixed endpoints (web search, news, places; ADR-489; no discover/inspect: the model
 #    can never pick another paid endpoint),
 #  - the messaging server's background workers declare only their pinned tools: errands Anthropic's web
-#    search and web fetch (ADR-570), Studio those two and code execution (ADR-584).
+#    search and web fetch (ADR-570), Studio those two and code execution (ADR-740).
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -67,6 +78,17 @@ assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
 # The ECB's public daily rates file, one fixed address (ADR-300).
 rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
+# A scanned product's barcode digits, one address built by DoddyCore (ADR-631).
+off_client=DoddyApp/Infrastructure/Network/OpenFoodFactsClient.swift
+# A parcel number, one address built by DoddyCore (ADR-641).
+inpost_client=DoddyApp/Infrastructure/Network/InPostTrackingClient.swift
+# The Keychain: the files that hold a token or key. AccountKeyStore (ADR-640) holds keys the person pasted in.
+keychain_only='import Security|SecItem(Add|Update|Delete|CopyMatching)|kSecClass'
+keychain_files='^(DoddyApp/Infrastructure/(Network/KeychainCredentialStore|Server/ServerKeychainStore|DeviceSession|KeychainSessionStore|AccountKeyStore)|DoddyApp/Features/Voice/VoiceAuthSession)\.swift:'
+account_key_store=DoddyApp/Infrastructure/AccountKeyStore.swift
+# The one file that will put the inFakt key in a header. It does not exist yet (ADR-640): until a sandbox call
+# has settled how inFakt takes an invoice, nothing in the app reads the key or talks to inFakt.
+infakt_client=DoddyApp/Infrastructure/Network/InFaktClient.swift
 # Every way Foundation can reach the network: sessions and their tasks, URL byte streams,
 # loading a web address straight into Data or String, and the older connection APIs. The app's own
 # URLSessionTransport type name is not networking and stays allowed.
@@ -81,6 +103,7 @@ voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
 apple_sign_in_other='ASAuthorizationPasswordProvider|ASAuthorizationPlatformPublicKeyCredential|ASAuthorizationSecurityKey|ASCredentialProvider|ASAuthorizationProviderExtension|ASPasskey'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
+recordings_dir=DoddyApp/Features/Recordings
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
 speech_only='import Speech|SFSpeech'
 watch_link_dir=DoddyApp/Features/Watch
@@ -101,12 +124,17 @@ photo_library='import Photos($|[^A-Za-z])|PHPhotoLibrary|PHAsset|PHImageManager|
 camera_ui_file=DoddyApp/Features/Photos/CameraCapture.swift
 camera_ui='UIImagePickerController'
 camera_access_file=DoddyApp/Infrastructure/Connections/CameraAccess.swift
+# ADR-621: Apple Health is read in one file, and never written.
+health_file=DoddyApp/Infrastructure/Health/HealthReader.swift
+health_only='import HealthKit|HKHealthStore|HKSampleQueryDescriptor|HKQuantityType|HKCategoryType|HKObjectType|HKWorkout'
+health_never='NSHealthClinicalHealthRecordsShareUsageDescription|NSHealthRequiredReadAuthorizationTypeIdentifiers|HKClinicalType|healthkit\.background-delivery|enableBackgroundDelivery|HKObserverQuery|HKWorkoutSession|HKWorkoutBuilder'
+health_writes='\.save\(|\.delete\(|deleteObjects|toShare:[[:space:]]*\[[^]]'
 # Never, anywhere: a camera session of Doddy's own, or a write to the user's photo library.
 camera_and_library_never='AVCaptureSession|AVCapturePhotoOutput|AVCaptureVideoDataOutput|AVCaptureMovieFileOutput|PHAssetChangeRequest|PHAssetCreationRequest|UIImageWriteToSavedPhotosAlbum|NSPhotoLibraryAddUsageDescription|performChanges'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
 secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
-allowed_permissions='NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
+allowed_permissions='NSHealthShareUsageDescription|NSHealthUpdateUsageDescription|NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
 code_only() { grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)'; }
@@ -124,8 +152,25 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$voice_auth:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice and $rates_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$voice_auth:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client, $off_client and $inpost_client." >&2; status=1
+fi
+# The Keychain only where a token or key already lives (ADR-640).
+if grep -RInE --include='*.swift' "$keychain_only" "${dirs[@]}" | code_only | grep -vE "$keychain_files"; then
+  echo "FAIL: Keychain code outside the files that hold a token or key (see keychain_files in this script)." >&2; status=1
+fi
+# A key the person pasted in is never read by a screen or anything else: only the inFakt client (not built yet),
+# which is the only place that may put it in a request. Its masked state is all a screen sees.
+if grep -RInE --include='*.swift' 'AccountKeyStore\.read\(|KeychainAccountKey' "${dirs[@]}" | code_only | grep -v -e "^$infakt_client:" -e "^$account_key_store:"; then
+  echo "FAIL: reading a pasted-in key outside $infakt_client; screens use AccountKeyStore.manager(for:), which has no key in it (ADR-640)." >&2; status=1
+fi
+# No key, however it is named, in a log line, a print or a string shown to the person.
+if [ -f "$account_key_store" ] && grep -nE 'print\(|NSLog|os_log|Logger|debugPrint|dump\(' "$account_key_store" | code_only; then
+  echo "FAIL: $account_key_store may not log or print anything (ADR-640)." >&2; status=1
+fi
+# Nothing in the app talks to inFakt until a client exists and its wire format is verified (ADR-640).
+if [ ! -f "$infakt_client" ] && grep -RInE --include='*.swift' 'api\.infakt\.pl|sandbox-infakt\.pl|X-inFakt-ApiKey|InFaktAPI\.(productionBase|sandboxBase|apiKeyHeader)' DoddyApp DoddyWidgets DoddyShare DoddyWatch | code_only; then
+  echo "FAIL: the app names inFakt's address or key header without a verified client at $infakt_client (ADR-640)." >&2; status=1
 fi
 # The voice account client may only post to VoiceConfig.authEndpoint, never an address it builds (ADR-484).
 if [ -f "$voice_auth" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$voice_auth" | code_only; then
@@ -139,6 +184,14 @@ fi
 if [ -f "$rates_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$rates_client" | code_only; then
   echo "FAIL: $rates_client may only fetch ExchangeRateSource.url." >&2; status=1
 fi
+# The Open Food Facts client may only ask OpenFoodFacts.productURL(for:) (ADR-631), never an address it builds.
+if [ -f "$off_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ O]' "$off_client" | code_only; then
+  echo "FAIL: $off_client may only ask OpenFoodFacts.productURL(for:)." >&2; status=1
+fi
+# The InPost client may only ask InPostTracking.url(for:) (ADR-641), never an address it builds.
+if [ -f "$inpost_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ I]' "$inpost_client" | code_only; then
+  echo "FAIL: $inpost_client may only ask InPostTracking.url(for:)." >&2; status=1
+fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
 fi
@@ -149,18 +202,22 @@ if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_onl
   echo "FAIL: password, passkey or credential-provider APIs; only Sign in with Apple is allowed (ADR-494)." >&2; status=1
 fi
 # ASK-01 (ADR-483): a tool without a way to ask first fails here. Only the public lookups of
-# ADR-575 (web, weather, Wikipedia, news, places, sums, conversions) may run at once.
+# ADR-575 (web, weather, Wikipedia, news, places, sums, conversions) and translator start and
+# stop (ADR-619, run on the phone) may run at once.
 if ! python3 -I - voice-agent/tools.json <<'PY'
 import json, sys
 PUBLIC = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
           "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
+MODES = {"start_translator", "stop_translator"}
 bad = []
 for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
     x = t.get("x_doddy", {})
     if x.get("ask") == "runs_now":
         # ADR-575: public lookups run at once; they may never be a change.
-        if x.get("confirm_on_screen") or t.get("name") not in PUBLIC:
-            bad.append(t.get("name"))
+        # ADR-619: translator start and stop run at once, on the phone, with no card.
+        name = t.get("name")
+        if x.get("confirm_on_screen") or not (name in PUBLIC or (name in MODES and x.get("runs_on") == "phone")):
+            bad.append(name)
         continue
     if x.get("runs_on") != "phone" or x.get("ask") not in ("yes_or_tap", "tap") or (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
         bad.append(t.get("name"))
@@ -169,7 +226,7 @@ if bad:
     sys.exit(1)
 PY
 then
-  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen), except ADR-575's public lookups." >&2; status=1
+  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen), except ADR-575's public lookups and ADR-619's translator start and stop." >&2; status=1
 fi
 voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
 if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then
@@ -181,11 +238,11 @@ fi
 if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
   echo "FAIL: ElevenLabs code outside $voice_dir." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$audio_only" "${dirs[@]}" | grep -v -e "^$voice_dir/" -e "^$memos_dir/" -e "^$camera_access_file:[0-9]*:import AVFoundation$"; then
-  echo "FAIL: audio code outside $voice_dir and $memos_dir (the camera permission file may only import AVFoundation)." >&2; status=1
+if grep -RInE --include='*.swift' "$audio_only" "${dirs[@]}" | grep -v -e "^$voice_dir/" -e "^$memos_dir/" -e "^$recordings_dir/" -e "^$camera_access_file:[0-9]*:import AVFoundation$"; then
+  echo "FAIL: audio code outside $voice_dir, $memos_dir and $recordings_dir (the camera permission file may only import AVFoundation)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$speech_only" "${dirs[@]}" | grep -v "^$memos_dir/"; then
-  echo "FAIL: speech recognition outside $memos_dir (ADR-230)." >&2; status=1
+if grep -RInE --include='*.swift' "$speech_only" "${dirs[@]}" | grep -v -e "^$memos_dir/" -e "^$recordings_dir/"; then
+  echo "FAIL: speech recognition outside $memos_dir and $recordings_dir (ADR-230, ADR-588)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$watch_only" "${dirs[@]}" | grep -v -e "^$watch_link_dir/" -e "^$watch_app_dir/"; then
   echo "FAIL: WatchConnectivity outside $watch_link_dir and $watch_app_dir (ADR-232)." >&2; status=1
@@ -203,15 +260,22 @@ fi
 if grep -RInE --include='*.swift' 'import GRDB|DoddyPersistence|URLSession|import Network|AVAudio|import Speech' DoddyMacWidgets; then
   echo "FAIL: the Mac desktop widget may only read the note count (ADR-439)." >&2; status=1
 fi
-if [ -d "$memos_dir" ]; then
-  for f in $(grep -RlE --include='*.swift' 'SFSpeech(URL|AudioBuffer)RecognitionRequest' "$memos_dir"); do
-    if ! grep -qE 'requiresOnDeviceRecognition = true' "$f"; then
-      echo "FAIL: $f makes a speech request without requiresOnDeviceRecognition = true." >&2; status=1
+for speech_dir in "$memos_dir" "$recordings_dir"; do
+  if [ -d "$speech_dir" ]; then
+    for f in $(grep -RlE --include='*.swift' 'SFSpeech(URL|AudioBuffer)RecognitionRequest' "$speech_dir"); do
+      if ! grep -qE 'requiresOnDeviceRecognition = true' "$f"; then
+        echo "FAIL: $f makes a speech request without requiresOnDeviceRecognition = true." >&2; status=1
+      fi
+    done
+    if grep -RInE --include='*.swift' 'requiresOnDeviceRecognition = false' "$speech_dir"; then
+      echo "FAIL: speech recognition may not leave the iPhone (ADR-230, ADR-588)." >&2; status=1
     fi
-  done
-  if grep -RInE --include='*.swift' 'requiresOnDeviceRecognition = false' "$memos_dir"; then
-    echo "FAIL: speech recognition may not leave the iPhone (ADR-230)." >&2; status=1
   fi
+done
+# DODDY Capture's audio and words never leave the iPhone (ADR-588): no networking of any kind in its
+# folder, and no upload API, whatever the general networking rule above allows elsewhere.
+if [ -d "$recordings_dir" ] && grep -RInE --include='*.swift' 'URLSession|URLRequest|import Network|uploadTask|\.upload\(|WCSession|import CloudKit' "$recordings_dir" | code_only; then
+  echo "FAIL: $recordings_dir may not send anything anywhere (ADR-588)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$connections_dir/"; then
   echo "FAIL: calendar, contacts, location or Motion & Fitness code outside $connections_dir." >&2; status=1
@@ -233,6 +297,24 @@ if grep -RInE --include='*.swift' "$camera_ui" "${dirs[@]}" | code_only | grep -
 fi
 if grep -RInE --include='*.swift' 'AVCaptureDevice' "${dirs[@]}" | code_only | grep -v "^$camera_access_file:"; then
   echo "FAIL: camera permission code outside $camera_access_file (ADR-569)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$health_only" "${dirs[@]}" | code_only | grep -v "^$health_file:"; then
+  echo "FAIL: Apple Health code outside $health_file (ADR-621)." >&2; status=1
+fi
+if grep -RInE "$health_never" "${dirs[@]}" project.yml Config | code_only; then
+  echo "FAIL: Apple Health is read only: no write prompt, clinical records, background delivery or workout sessions (ADR-621)." >&2; status=1
+fi
+if [ -f "$health_file" ] && grep -HnE "$health_writes" "$health_file" | code_only; then
+  echo "FAIL: $health_file may not write to or delete from Apple Health (ADR-621)." >&2; status=1
+fi
+# ADR-693: HealthReader asks through requestAuthorization(toShare:read:), and App Store Connect rejects a build
+# that has the call without both Health purpose strings. The Update text is in the partial Info.plist, the Share
+# text is a build setting in project.yml. Their absence is as much a failure as a write.
+if [ -f "$health_file" ]; then
+  grep -q 'NSHealthUpdateUsageDescription' Config/Doddy-Info.plist \
+    || { echo "FAIL: Config/Doddy-Info.plist lacks NSHealthUpdateUsageDescription; App Store Connect rejects the build without it (ADR-693)." >&2; status=1; }
+  grep -q 'NSHealthShareUsageDescription' project.yml \
+    || { echo "FAIL: project.yml lacks NSHealthShareUsageDescription, which HealthReader needs (ADR-621)." >&2; status=1; }
 fi
 if grep -RInE "$camera_and_library_never" "${dirs[@]}" project.yml Config | code_only; then
   echo "FAIL: a capture session or a write to the photo library; Doddy only reads the library and uses iOS's camera screen (ADR-569)." >&2; status=1
@@ -338,11 +420,11 @@ fi
 if grep -RInE --include='*.swift' "$sharing_only" "${dirs[@]}" | code_only | grep -v "^$sharing_dir/"; then
   echo "FAIL: CloudKit outside $sharing_dir." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v -e "^$alarms_dir/" -e "^Shared/Alarms/DoddyAlarmMetadata.swift:" -e "^DoddyWidgets/AlarmLiveActivity.swift:"; then
+if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v -e "^$alarms_dir/" -e "^Shared/Alarms/DoddyAlarmMetadata.swift:" -e "^Shared/Alarms/DoddyTimerIntents.swift:" -e "^DoddyWidgets/AlarmLiveActivity.swift:"; then
   echo "FAIL: AlarmKit outside $alarms_dir." >&2; status=1
 fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
-  echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
+  echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
 fi
 # Background workers' tools (ADR-570, ADR-584). ASK-01's two exceptions rest on these lists: one
 # yes on a handed-over task covers only Anthropic's web search and web fetch; one yes on a Studio job
@@ -361,8 +443,8 @@ fi
 if [ -d server/messaging/src/studio ]; then
   extra=$(worker_tools server/messaging/src/studio | grep -vxE 'web_search_20260209|web_fetch_20260209|code_execution_20250825' || true)
   if [ -n "$extra" ]; then
-    echo "FAIL: the Studio worker declares a tool beyond web search, web fetch and code execution (ADR-584): $extra" >&2; status=1
+    echo "FAIL: the Studio worker declares a tool beyond web search, web fetch and code execution (ADR-740): $extra" >&2; status=1
   fi
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution; the errands worker declares only web search and web fetch and the Studio worker only those and code execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client and the InPost client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution.; the errands worker declares only web search and web fetch and the Studio worker only those and code execution."
 exit "$status"

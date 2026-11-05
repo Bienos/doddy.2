@@ -5,7 +5,10 @@ import Security
 /// The Doddy server session token lives only in the iOS Keychain (this device only, never in
 /// UserDefaults, backups or the app bundle). Provider tokens never reach the app at all.
 /// It is stored with the server that issued it (`BoundSessionToken`), and the clients send it
-/// only to that server, so changing the address in Settings can't hand it to another host (DOD-11).
+/// only to that server, so changing the address can't hand the TOKEN to another host (DOD-11).
+/// That binding does not protect the DEVICE ID, the credential that mints tokens: `DeviceSession`
+/// sends it to whatever address `DeviceSession.serverURL()` returns, which in a shipped build is only
+/// the one built into the app and never one typed in Settings (ADR-720).
 enum KeychainSessionStore {
     private static let service = "com.bienos.doddy2.connected-apps"
     private static let account = "session-token"
@@ -21,7 +24,8 @@ enum KeychainSessionStore {
     /// Tokens saved before tokens were bound are plain text. Such a token is bound to the server
     /// address set in Settings now, which is the one it has been sent to so far, and saved again
     /// in the new form. Without a usable address it isn't used until one is set; the old form
-    /// had no record of its server, so there is nothing better to bind it to.
+    /// had no record of its server, so there is nothing better to bind it to. A shipped build has
+    /// no such address (ADR-720), so it never uses one; the next sign-in replaces it.
     static func read() -> BoundSessionToken? {
         guard let data = readData() else { return nil }
         if let bound = try? JSONDecoder().decode(BoundSessionToken.self, from: data) { return bound }
@@ -67,11 +71,10 @@ enum KeychainSessionStore {
         return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
     }
 
-    /// The Connected Apps server address from Settings, if it is a URL with a scheme and host.
+    /// The Connected Apps server address from Settings, if the address policy lets it through. Only a
+    /// development build has one (ADR-720); a shipped build ignores what was typed. Asked of
+    /// `DeviceSession`, the one place that reads the typed address.
     private static func configuredServer() -> URL? {
-        let address = UserDefaults.standard.string(forKey: PreferenceKey.connectedAppsServerURL)?
-            .trimmingCharacters(in: .whitespaces) ?? ""
-        guard let url = URL(string: address), url.scheme != nil, url.host != nil else { return nil }
-        return url
+        DeviceSession.typedServerURL()
     }
 }

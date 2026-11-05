@@ -21,13 +21,24 @@ test("limits can only be lowered below the code's ceilings", () => {
 
 test("errands: off by default (switched on with ERRANDS_ENABLED=1), Opus 5.5 at high effort, 30 minutes, 5 open; empty values count as unset", () => {
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_ENABLED: "", ERRANDS_MODEL: "", ERRANDS_EFFORT: "" });
-  assert.deepEqual(c.errandSettings, { enabled: false, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5 });
+  assert.deepEqual(c.errandSettings, {
+    enabled: false, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5, dailyPerAccount: 10, dailyPerServer: 30,
+    // ADR-702: a pool of 10 a day for accounts still new, "new" for 24 hours, and a finite research budget per errand.
+    dailyForNewAccounts: 10, newAccountHours: 24,
+    budget: { maxSearches: 40, maxFetches: 40, maxRequests: 30, maxOutputTokens: 300_000 },
+  });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_ENABLED: "1" }).errandSettings.enabled, true);
   const set = loadConfig({
     DATABASE_URL: "postgres://x/y", ERRANDS_ENABLED: "0", ERRANDS_MODEL: "claude-sonnet-5-5", ERRANDS_EFFORT: "xhigh",
-    ERRAND_TIME_LIMIT_MINUTES: "45", ERRANDS_MAX_OPEN: "2",
+    ERRAND_TIME_LIMIT_MINUTES: "45", ERRANDS_MAX_OPEN: "2", ERRANDS_DAILY_PER_ACCOUNT: "3", ERRANDS_DAILY_PER_SERVER: "12",
   });
-  assert.deepEqual(set.errandSettings, { enabled: false, model: "claude-sonnet-5-5", effort: "xhigh", timeLimitMinutes: 45, maxOpen: 2 });
+  assert.deepEqual(set.errandSettings, {
+    enabled: false, model: "claude-sonnet-5-5", effort: "xhigh", timeLimitMinutes: 45, maxOpen: 2, dailyPerAccount: 3, dailyPerServer: 12,
+    dailyForNewAccounts: 10, newAccountHours: 24,
+    budget: { maxSearches: 40, maxFetches: 40, maxRequests: 30, maxOutputTokens: 300_000 },
+  });
+  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_DAILY_PER_ACCOUNT: "0" }));
+  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_DAILY_PER_SERVER: "-1" }));
 });
 
 test("errands: effort, time limit, open limit and the switch are validated", () => {
@@ -58,8 +69,29 @@ test("studio: off by default; the mid tier (Sonnet) for every step, $2 a job and
   assert.deepEqual(c.studioSettings, {
     enabled: false, models: { plan: "claude-sonnet-5-5", research: "claude-sonnet-5-5", pack: "claude-sonnet-5-5", write: "claude-sonnet-5-5", make: "claude-sonnet-5-5" },
     skills: "", maxSearches: 15, maxFetches: 15, blockedDomains: [], taskBudgetTokens: 150_000, jobLimitUsd: 2, dailyCapUsd: 3, timeLimitMinutes: 20, maxOpen: 3,
+    dailyPerAccount: 3, dailyPerServer: 10, dailyForNewAccounts: 0, newAccountHours: 24, dailyServerCapUsd: 10,
   });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", STUDIO_ENABLED: "1" }).studioSettings.enabled, true);
+});
+
+test("studio: the model API exists only with STUDIO_ENABLED=1, an Anthropic key and skills; a key alone, or the switch alone, starts nothing", async () => {
+  const { providersFrom } = await import("../src/providers/index.js");
+  const base = { DATABASE_URL: "postgres://x/y", MEMORY_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString("base64") };
+  assert.equal(providersFrom(loadConfig(base)).studio.api, undefined);
+  // Keyed, with skills, but STUDIO_ENABLED defaults to "0": still none.
+  assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", STUDIO_SKILLS: "skill_a" })).studio.api, undefined);
+  assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", STUDIO_SKILLS: "skill_a", STUDIO_ENABLED: "0" })).studio.api, undefined);
+  // Switched on but no key, or no skills: still none.
+  assert.equal(providersFrom(loadConfig({ ...base, STUDIO_SKILLS: "skill_a", STUDIO_ENABLED: "1" })).studio.api, undefined);
+  assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", STUDIO_ENABLED: "1" })).studio.api, undefined);
+  // The new-account pool is closed and the server's dollar cap is set, whatever else is configured.
+  const on = providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", STUDIO_SKILLS: "skill_a", STUDIO_ENABLED: "1" })).studio;
+  assert.ok(on.api);
+  assert.equal(on.settings.dailyForNewAccounts, 0);
+  assert.equal(on.settings.dailyServerCapUsd, 10);
+  for (const bad of [{ STUDIO_DAILY_SERVER_CAP_USD: "0" }, { STUDIO_DAILY_PER_ACCOUNT: "0" }, { STUDIO_DAILY_PER_SERVER: "0" }, { STUDIO_DAILY_SERVER_CAP_USD: "6000" }]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
 });
 
 test("studio: STUDIO_TIER picks free (Haiku), plus (Sonnet, the default), pro (Opus) or max (Fable); STUDIO_MODEL and step variables still win; a bad tier is refused", () => {
@@ -87,4 +119,151 @@ test("studio: STUDIO_MODEL sets every step first, a step variable overrides it, 
   for (const bad of [{ STUDIO_MODEL_PLAN: "Not A Model!" }, { STUDIO_TASK_BUDGET_TOKENS: "1000" }, { STUDIO_JOB_LIMIT_USD: "0" }, { STUDIO_BLOCKED_DOMAINS: "http://x.example" }, { STUDIO_SKILLS: "bad skill" }]) {
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
   }
+});
+test("Messages: off by default, Haiku 5.5 at medium effort, 100 per account and 1000 per server; caps only go down", () => {
+  const base = { DATABASE_URL: "postgres://x/y" };
+  const c = loadConfig({ ...base, ASSISTANT_ENABLED: "", ASSISTANT_MODEL: "", ASSISTANT_EFFORT: "" });
+  assert.deepEqual(c.assistantSettings, {
+    enabled: false, model: "claude-haiku-5-5", effort: "medium", dailyPerAccount: 100, dailyPerServer: 1000, dailyForNewAccounts: 200, newAccountHours: 24,
+  });
+  const on = loadConfig({ ...base, ASSISTANT_ENABLED: "1", ASSISTANT_MODEL: "claude-sonnet-5-5", ASSISTANT_EFFORT: "low", ASSISTANT_DAILY_PER_ACCOUNT: "20", ASSISTANT_DAILY_PER_SERVER: "200" });
+  assert.deepEqual(on.assistantSettings, {
+    enabled: true, model: "claude-sonnet-5-5", effort: "low", dailyPerAccount: 20, dailyPerServer: 200, dailyForNewAccounts: 200, newAccountHours: 24,
+  });
+  for (const bad of [{ ASSISTANT_ENABLED: "yes" }, { ASSISTANT_EFFORT: "max" }, { ASSISTANT_DAILY_PER_ACCOUNT: "0" },
+    { ASSISTANT_DAILY_PER_ACCOUNT: "1001" }, { ASSISTANT_DAILY_PER_SERVER: "100001" }, { ASSISTANT_MODEL: "Claude Haiku" }]) {
+    assert.throws(() => loadConfig({ ...base, ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("Messages gets a responder only with an Anthropic key and the switch on", async () => {
+  const { providersFrom } = await import("../src/providers/index.js");
+  const base = { DATABASE_URL: "postgres://x/y" };
+  assert.equal(providersFrom(loadConfig(base)).assistant.responder, undefined);
+  assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key" })).assistant.responder, undefined, "keyed but not switched on");
+  assert.equal(providersFrom(loadConfig({ ...base, ASSISTANT_ENABLED: "1" })).assistant.responder, undefined, "switched on but no key");
+  const on = providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", ASSISTANT_ENABLED: "1", ASSISTANT_MODEL: "claude-sonnet-5-5" })).assistant;
+  assert.equal(on.responder?.model, "claude-sonnet-5-5");
+});
+
+test("shopping errands (ADR-607, ADR-611): Haiku 5.5 for everyone, Sonnet 5.5 for listed premium accounts, 8 offer searches and 15 page reads, no Serper key unless set", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", SHOPPING_MODEL: "", SERPER_API_KEY: "" });
+  assert.deepEqual(c.shoppingSettings, {
+    model: "claude-haiku-5-5", premiumModel: "claude-sonnet-5-5", premiumAccountIds: [],
+    effort: "medium", maxOfferSearches: 8, maxPageChecks: 15, serperApiKey: undefined, affiliateRules: [],
+  });
+  const ids = ["0c5d3f2e-8d3a-4b3e-9a57-0f2f0f5a1111", "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"];
+  const set = loadConfig({
+    DATABASE_URL: "postgres://x/y", SHOPPING_MODEL: "claude-sonnet-5-5", SHOPPING_PREMIUM_MODEL: "claude-opus-5-5", SHOPPING_EFFORT: "low",
+    SHOPPING_PREMIUM_ACCOUNTS: ` ${ids[0]} , ${ids[1]},`,
+    SHOPPING_MAX_OFFER_SEARCHES: "3", SHOPPING_MAX_PAGE_CHECKS: "5", SERPER_API_KEY: "serper-test-key",
+  });
+  assert.deepEqual(set.shoppingSettings, {
+    model: "claude-sonnet-5-5", premiumModel: "claude-opus-5-5", premiumAccountIds: ids,
+    effort: "low", maxOfferSearches: 3, maxPageChecks: 5, serperApiKey: "serper-test-key", affiliateRules: [],
+  });
+  for (const bad of [
+    { SHOPPING_MAX_OFFER_SEARCHES: "0" }, { SHOPPING_MAX_OFFER_SEARCHES: "21" }, { SHOPPING_MAX_PAGE_CHECKS: "41" }, { SHOPPING_EFFORT: "extreme" },
+    { SHOPPING_PREMIUM_ACCOUNTS: "not-an-account-id" }, { SHOPPING_PREMIUM_ACCOUNTS: `${ids[0]};${ids[1]}` },
+  ]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("affiliate links (ADR-612): none by default; a rule is a shop host and an https template with one {url}", () => {
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y" }).shoppingSettings.affiliateRules, []);
+  const tpl = "https://network.example/click?id=7&to={url}";
+  const set = loadConfig({ DATABASE_URL: "postgres://x/y", AFFILIATE_LINKS: JSON.stringify({ "mediaexpert.pl": tpl }) });
+  assert.deepEqual(set.shoppingSettings.affiliateRules, [{ host: "mediaexpert.pl", template: tpl }]);
+  for (const bad of ["not json", "[]", '{"Media Expert": "https://n.example/?u={url}"}', '{"mediaexpert.pl": "https://n.example/"}',
+    '{"mediaexpert.pl": "https://n.example/?a={url}&b={url}"}', '{"mediaexpert.pl": "http://n.example/?u={url}"}', '{"mediaexpert.pl": 5}']) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", AFFILIATE_LINKS: bad }), bad);
+  }
+});
+
+test("search further (ADR-666): Allegro then Ceneo by default, {} for none, a bad setting stops the start", () => {
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y" }).dealsSearchShops.map((s) => s.name), ["Allegro", "Ceneo"]);
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SEARCH_SHOPS: "{}" }).dealsSearchShops, []);
+  const shop = { name: "Sklep", template: "https://shop.example/search?q={q}" };
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SEARCH_SHOPS: JSON.stringify({ Sklep: shop.template }) }).dealsSearchShops, [shop]);
+  for (const bad of ["not json", "[]", '{"A": "https://a.example/"}', '{"A": "https://a.example/?q={q}&r={q}"}', '{"A": "http://a.example/?q={q}"}',
+    '{"A": 5}', '{"": "https://a.example/?q={q}"}', JSON.stringify(Object.fromEntries(["A", "B", "C", "D", "E"].map((n) => [n, "https://a.example/?q={q}"])))]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SEARCH_SHOPS: bad }), bad);
+  }
+});
+
+test("leaflets (ADR-609, 662): off by default, Haiku 5.5 reads pages, 40 pages per chain, 120 screened, 30 a day per account, 1000 per server", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "" });
+  assert.deepEqual(c.dealsSettings, {
+    enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000,
+    dailyForNewAccounts: 200, newAccountHours: 24,
+  });
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "1" }).dealsSettings.enabled, true);
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SCREEN_PAGES: "0" }).dealsSettings.screenPages, 0, "0 turns screening off");
+  for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_SCREEN_PAGES: "201" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" }]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("price watches (shopping stage 2): off by default, 5 open, a check every 6 hours; empty values count as unset; limits are validated", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "", WATCHES_MAX_OPEN: "", WATCHES_CHECK_HOURS: "" });
+  assert.deepEqual(c.watchSettings, { enabled: false, maxOpen: 5, checkHours: 6 });
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y" }).watchSettings, { enabled: false, maxOpen: 5, checkHours: 6 });
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1" }).watchSettings.enabled, true);
+  const set = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1", WATCHES_MAX_OPEN: "20", WATCHES_CHECK_HOURS: "24" });
+  assert.deepEqual(set.watchSettings, { enabled: true, maxOpen: 20, checkHours: 24 });
+  const low = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_MAX_OPEN: "1", WATCHES_CHECK_HOURS: "6" });
+  assert.deepEqual(low.watchSettings, { enabled: false, maxOpen: 1, checkHours: 6 });
+  const bad: Record<string, string>[] = [
+    { WATCHES_ENABLED: "yes" }, { WATCHES_ENABLED: "true" }, { WATCHES_MAX_OPEN: "0" }, { WATCHES_MAX_OPEN: "21" }, { WATCHES_MAX_OPEN: "2.5" },
+    { WATCHES_CHECK_HOURS: "0" }, { WATCHES_CHECK_HOURS: "5" }, { WATCHES_CHECK_HOURS: "25" }, { WATCHES_CHECK_HOURS: "1.5" }, { WATCHES_CHECK_HOURS: "six" },
+  ];
+  for (const env of bad) assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...env }), JSON.stringify(env));
+});
+
+test("price watches read pages through the one shared polite fetcher, with the configured settings", async () => {
+  const { providersFrom } = await import("../src/providers/index.js");
+  const { PoliteFetcher } = await import("../src/deals/fetcher.js");
+  const p = providersFrom(loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1", WATCHES_CHECK_HOURS: "12", WATCHES_MAX_OPEN: "3" }));
+  assert.ok(p.watches.fetcher instanceof PoliteFetcher);
+  assert.equal(p.watches.fetcher, p.deals.fetcher, "the same instance as the leaflets (one robots.txt cache, one user agent)");
+  assert.deepEqual(p.watches.settings, { enabled: true, maxOpen: 3, checkHours: 12 });
+});
+
+test("a bad APNS_PRIVATE_KEY leaves push off instead of stopping the server, and the key is never logged", async () => {
+  const { generateKeyPairSync } = await import("node:crypto");
+  const { providersFrom, pushSenderFrom } = await import("../src/providers/index.js");
+  const apns = { teamId: "TEAM123456", keyId: "KEY1234567", bundleId: "com.example.doddy" };
+  const reports: { msg: string; extra: object }[] = [];
+  const report = (msg: string, extra: object = {}) => { reports.push({ msg, extra }); };
+
+  // Not configured: no sender, nothing reported.
+  assert.equal(pushSenderFrom(undefined, undefined, report), undefined);
+  assert.equal(reports.length, 0);
+
+  // A real P-256 key, as a .p8 holds it: a sender is made (constructing one opens no connection).
+  const pem = generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey.export({ format: "pem", type: "pkcs8" }).toString();
+  const good = pushSenderFrom({ ...apns, privateKey: pem }, undefined, report);
+  assert.ok(good, "a readable key gives a sender");
+  good.close();
+  assert.equal(reports.length, 0);
+
+  // The mistake seen on 3 Nov 2026: the Key ID pasted where the key belongs. And a key cut short.
+  for (const bad of ["TBL2Q27UL9", pem.slice(0, 60)]) {
+    reports.length = 0;
+    assert.equal(pushSenderFrom({ ...apns, privateKey: bad }, undefined, report), undefined);
+    assert.equal(reports.length, 1);
+    assert.match(reports[0]!.msg, /^push off: APNS_PRIVATE_KEY is not a readable private key/);
+    assert.equal(typeof (reports[0]!.extra as { error?: unknown }).error, "string");
+    assert.ok(!JSON.stringify(reports[0]).includes(bad), "the key's text is not in the log line");
+  }
+
+  // Something other than an unreadable key is not hidden: only what `make` throws is caught, and it is reported.
+  reports.length = 0;
+  assert.equal(pushSenderFrom({ ...apns, privateKey: pem }, () => { throw new Error("boom"); }, report), undefined);
+  assert.equal((reports[0]!.extra as { error?: unknown }).error, "unreadable_key");
+
+  // End to end through the real config: the server's providers come up, with push off.
+  const env = { DATABASE_URL: "postgres://x/y", APNS_TEAM_ID: "TEAM123456", APNS_KEY_ID: "KEY1234567", APNS_BUNDLE_ID: "com.example.doddy", APNS_PRIVATE_KEY: "TBL2Q27UL9" };
+  assert.equal(providersFrom(loadConfig(env)).push, undefined);
 });

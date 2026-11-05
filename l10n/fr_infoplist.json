@@ -1,7 +1,7 @@
 {
   "NSAlarmKitUsageDescription": {
-    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
-    "fr": "Doddy ne règle une alarme que si tu le demandes et touches Régler l’alarme. Ses alarmes sonnent même en mode Silence ou en mode Concentration. Désactive-les dans les Réglages de Doddy, Alarmes."
+    "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.",
+    "fr": "Doddy ne règle une alarme ou un minuteur que si tu le demandes et touches Régler l’alarme ou Commencer. Ils sonnent même en mode Silence ou en mode Concentration. Désactive les alarmes dans les Réglages de Doddy, Alarmes."
   },
   "NSCalendarsFullAccessUsageDescription": {
     "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",
@@ -20,20 +20,28 @@
     "fr": "Doddy n’utilise ta position que lorsque tu le demandes : pour les rappels que tu règles à un lieu (pour trouver où tu es quand tu touches Utiliser ma position actuelle, et pour qu’iOS puisse te faire un rappel quand tu arrives ou pars), pour enregistrer où tu t’es garé, et pour calculer avec Apple Plans quand partir quelque part. Doddy ne la conserve pas et ne suit pas où tu vas."
   },
   "NSMicrophoneUsageDescription": {
-    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
-    "fr": "Pour t'entendre, Doddy a besoin du micro. Doddy écoute pendant que tu lui parles : après que tu as touché Parler à Doddy, ou dès que tu ouvres Doddy si tu l’as activé dans Réglages. Ta voix en conversation est envoyée à ElevenLabs pour la mener, ou à OpenAI si tu as choisi OpenAI comme voix sur l’Accueil. Un mémo vocal que tu enregistres sur une note reste sur cet iPhone."
+    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
+    "fr": "Pour t'entendre, Doddy a besoin du micro. Doddy écoute pendant que tu lui parles : après que tu as touché Parler à Doddy, ou dès que tu ouvres Doddy si tu l’as activé dans Réglages. Ta voix en conversation est envoyée à ElevenLabs pour la mener, ou à OpenAI si tu as choisi OpenAI comme voix sur l’Accueil. Un mémo vocal que tu enregistres sur une note reste sur cet iPhone. Un enregistrement que tu lances avec Enregistrer reste lui aussi sur cet iPhone, et Doddy l’indique pendant tout le temps où il enregistre."
   },
   "NSRemindersFullAccessUsageDescription": {
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
     "fr": "Doddy n’ajoute, ne modifie, ne termine ou ne supprime un rappel qu’après que tu as touché Ajouter, Modifier, Marquer comme fait ou Supprimer. Désactive ceci dans Réglages, Connexions."
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-    "fr": "Doddy transcrit un mémo vocal sur cet iPhone quand tu en enregistres un, pour que tu puisses vérifier ses mots avant d’enregistrer. L’enregistrement et ses mots ne sont envoyés nulle part."
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message.",
+    "fr": "Doddy transcrit les mémos vocaux et les enregistrements sur cet iPhone, pour que tu puisses vérifier et rechercher leurs mots. Il écrit aussi ce que tu dis quand tu touches le micro dans Messages. L’audio et ses mots ne sont envoyés nulle part ; les mots que tu dictes dans Messages ne quittent cet iPhone que si tu les envoies ensuite comme message."
   },
   "NSMotionUsageDescription": {
-    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
-    "fr": "Doddy lit tes pas, la distance parcourue à pied et les étages montés dans Mouvements et forme uniquement quand tu le demandes, pour un jour parmi les sept derniers. Dans une conversation vocale, ces chiffres vont à ElevenLabs, qui fait tourner la voix de Doddy, ou à OpenAI si tu choisis cette voix sur l’écran d’accueil. Doddy n’en garde rien et ne lit rien dans Santé. Désactive ceci dans Réglages, Connexions."
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+    "fr": "Doddy lit tes pas, la distance parcourue à pied et les étages montés dans Mouvements et forme uniquement quand tu le demandes, pour un jour parmi les sept derniers. Dans une conversation vocale, ces chiffres vont à ElevenLabs, qui fait tourner la voix de Doddy, ou à OpenAI si tu choisis cette voix sur l’écran d’accueil. Doddy n’en garde rien. Désactive ceci dans Réglages, Connexions."
+  },
+  "NSHealthShareUsageDescription": {
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "fr": "Doddy lit tes entraînements, ta fréquence cardiaque, ta fréquence cardiaque au repos, ta variabilité de la fréquence cardiaque (VFC), ton sommeil et ta VO2 max dans Santé pour te les montrer sur son écran Apple Health. Seul un court résumé de la semaine quitte cet iPhone, et seulement si tu le permets : dans Messages quand tu l’envoies toi-même, ou à la voix de Doddy quand tu demandes et dis oui. Doddy n’en garde rien et n’écrit rien dans Santé. Désactive ceci dans Réglages, Connexions, Apple Health, ou dans l’app Santé."
+  },
+  "NSHealthUpdateUsageDescription": {
+    "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+    "fr": "Doddy n’écrit jamais dans Santé et n’y modifie rien. Il demande seulement à lire tes entraînements, ta fréquence cardiaque, ta fréquence cardiaque au repos, ta variabilité de la fréquence cardiaque (VFC), ton sommeil et ta VO2 max. iOS demande ce texte aux apps parce que son écran d’autorisation de Santé couvre à la fois la lecture et l’écriture."
   },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",

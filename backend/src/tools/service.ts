@@ -7,6 +7,7 @@ import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
 import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
 import {
+  bindsTimeZone,
   CLOUD_TOOLS,
   type CloudToolDefinition,
   type Context,
@@ -43,8 +44,10 @@ import {
   fileName,
   isClaudeTool,
   KIND_INFO,
+  MAKE_DOCUMENT_TOOL,
   MakeDocumentInput,
   type MakeDocumentArgs,
+  MODEL_TEXT_LABEL,
 } from "./claude.js";
 import type { DocumentLinks } from "../documents.js";
 import { MockToolsProvider, type ToolsMockScenario } from "./mock.js";
@@ -124,6 +127,9 @@ export class CloudToolsService {
   private readonly sleep: (ms: number) => Promise<void>;
   /** Document jobs still running after their reply (ADR-564); tests wait on them. */
   private readonly background = new Set<Promise<void>>();
+  /** Document jobs running now, per user and in all (ADR-710). Per process, like the provider slots in `UsageLimiter`. */
+  private readonly documentJobs = new Map<string, number>();
+  private documentJobsTotal = 0;
 
   constructor(private readonly deps: ToolsServiceDeps) {
     this.mode = deps.provider.mode;
@@ -525,6 +531,12 @@ export class CloudToolsService {
    * counted like one; never the write), shows that in the preview, and binds the approval to it too.
    * If the same write ran in the last day, the card says so (ADR-322); after a try whose outcome is
    * unknown, a write that can be looked for is looked for first.
+   *
+   * ADR-708: that lookup is a read of the account before the user's yes. The card needs it, so it stays,
+   * but what it finds goes ONLY into `preview` (the card the user reads); when it gives no card, every
+   * kind of failure (nothing found, several found, no usable sender, a provider error) answers alike,
+   * so the answer isn't a way to ask the account what it holds. A run can't use the lookup without a
+   * card either (`run`). Nothing here proves a person tapped: that is the app's half (`askFirst.ts`).
    */
   async prepare(userId: string, body: unknown): Promise<PrepareResult> {
     const request = parse(PrepareRequestSchema, body);
@@ -535,10 +547,12 @@ export class CloudToolsService {
     if (request.timeZone !== undefined && !isSupportedTimeZone(request.timeZone)) {
       throw new AppError("invalid_request", { message: "Use an IANA time zone such as Europe/Warsaw." });
     }
-    if (tool.resolve?.needsTimeZone && request.timeZone === undefined) {
+    if ((tool.resolve?.needsTimeZone || bindsTimeZone(tool)) && request.timeZone === undefined) {
       throw new AppError("invalid_request", { message: "This tool needs the user's time zone." });
     }
     const context: Context | undefined = request.timeZone === undefined ? undefined : { timeZone: request.timeZone };
+    // ADR-710: for a write that reads the zone, the zone the card was made for is part of the approval.
+    const boundZone = bindsTimeZone(tool) ? (request.timeZone ?? null) : null;
     const now = this.now();
     await this.limiter.reserveRequest(userId, now);
     const row = await this.checkUsable(userId, tool, tool.risk);
@@ -553,10 +567,10 @@ export class CloudToolsService {
       try {
         target = (await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id, context))).target;
       } catch (error) {
-        throw await this.failure(userId, tool, error, false);
+        throw await this.lookupFailure(userId, tool, error);
       }
     }
-    const argsDigest = approvalDigest(args, target);
+    const argsDigest = approvalDigest(args, target, boundZone);
     const { approvalId, expiresAt } = await this.ask.issue({ userId, tool: tool.name, accountId: row.connection_id, argsDigest });
     const preview = tool.preview(args, target);
     const result: PrepareResult = { mode: this.mode, tool: tool.name, preview, approvalId, expiresAt: new Date(expiresAt).toISOString() };
@@ -578,6 +592,10 @@ export class CloudToolsService {
    * After a try whose outcome is unknown: looks for the write with the tool's own read, only if
    * the user has that read switched on. True only when it is found; any failure or "not listed"
    * is false, which proves nothing (ADR-322).
+   *
+   * ASK-01 (ADR-708): this list-read happens before a yes for the new card, so the user's own switch
+   * for that read gates it, on the first line below. A user who switched it off is never read from
+   * here, and the card only warns that the earlier try may have gone through.
    */
   private async foundExisting(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, row: ConnectionRow, now: number): Promise<boolean> {
     const finder = tool.findExisting;
@@ -607,12 +625,12 @@ export class CloudToolsService {
    * A repeated run of an approval that was already used (the phone lost the answer): what happened
    * the first time answers it, and nothing runs again (ADR-322). Null when it was never used.
    */
-  private async repeatOfUsedApproval(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, approvalId: string, accountId: string): Promise<RunResult | null> {
+  private async repeatOfUsedApproval(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, approvalId: string, accountId: string, boundZone: string | null): Promise<RunResult | null> {
     // A tool with a lookup bound its approval to the target as it was then, which can't be read
     // again (a completed task is gone), so it is matched without the digest and its answer uses
     // no words from this request.
     const earlier = await this.store.approvalOutcome({
-      approvalId, userId, capability: tool.name, accountId, argsDigest: tool.resolve ? null : argumentDigest(args),
+      approvalId, userId, capability: tool.name, accountId, argsDigest: tool.resolve ? null : approvalDigest(args, null, boundZone),
     });
     if (!earlier) return null;
     const title = TOOLKITS[tool.toolkit].title;
@@ -659,12 +677,33 @@ export class CloudToolsService {
     );
     const found = lookup.read(result.raw, args, context);
     if (found !== null && found.kind !== "missing") return { target: found, missing: null };
-    const message = found?.message ?? lookup.notFound;
-    if (tool.risk === "read") return { target: null, missing: message };
-    throw new AppError("not_found", {
-      message,
-      receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", `Not done: ${message}`, "not_found", result.providerReference),
-    });
+    // A read says what it found (or that nothing matched) after the user's yes for it. A write's miss
+    // is one answer for every cause (ADR-708): the lookup came before any yes.
+    if (tool.risk === "read") return { target: null, missing: found?.message ?? lookup.notFound };
+    throw await this.lookupFailed(userId, tool, "not_found");
+  }
+
+  /**
+   * The one answer for a write whose lookup gave no card (ADR-708): one code, one message, one receipt,
+   * whatever the cause. Which cause it was goes to the server's log as a fixed word, never to the caller.
+   */
+  private async lookupFailed(userId: string, tool: CloudToolDefinition, kind: string): Promise<AppError> {
+    this.deps.log?.({ level: "info", event: "lookup_failed", tool: tool.name, kind });
+    const receipt = await this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", `Not done: ${LOOKUP_FAILED}`, "not_found", null);
+    return new AppError("not_found", { message: LOOKUP_FAILED, receipt });
+  }
+
+  /**
+   * A failure while a write looked up its target before the card. Everything that depends on the target
+   * or on what the provider made of it is `lookupFailed`. Two things are not: Doddy's own `busy` (nothing
+   * was looked up), and a dead connection, which is a fact about the account rather than what it holds
+   * and which the app answers with a Connect button.
+   */
+  private async lookupFailure(userId: string, tool: CloudToolDefinition, error: unknown): Promise<AppError> {
+    if (error instanceof AppError) return error;
+    const failed = toAppError(error, TOOLKITS[tool.toolkit].title);
+    if (failed.code === "connection_expired" || failed.code === "permission_insufficient") return this.failure(userId, tool, error, false);
+    return this.lookupFailed(userId, tool, failed.code);
   }
 
   /** Reserves today's tool runs for this call, with a blocked receipt when a Doddy limit says no. */
@@ -722,8 +761,11 @@ export class CloudToolsService {
     // limit or "busy" refusal in between doesn't cost the user their confirmation. For a tool with
     // a lookup the approval is bound to the target too, so before the lookup only its presence is checked.
     // ASK-01: reads are bound to their arguments only (nothing was looked up before the yes).
+    // ADR-710: a write that reads the zone runs only in the zone its approval was made for. The digest
+    // below includes the zone this request names, so an approval from another zone doesn't match.
+    const boundZone = bindsTimeZone(tool) ? request.timeZone : null;
     const binding = (target: ResolvedTarget | null): AskBinding => ({
-      userId, tool: tool.name, accountId: row.connection_id, argsDigest: op === "write" ? approvalDigest(args, target) : argumentDigest(args),
+      userId, tool: tool.name, accountId: row.connection_id, argsDigest: op === "write" ? approvalDigest(args, target, boundZone) : argumentDigest(args),
     });
     const approval = (target: ResolvedTarget | null, checkOnly: boolean) => this.ask.allows(binding(target), request.approvalId, checkOnly ? "check" : "use");
     const unconfirmed = async () =>
@@ -734,10 +776,18 @@ export class CloudToolsService {
           })
         : askFirstRefusal(await this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
     if (tool.risk === "write" && request.approvalId !== undefined) {
-      const repeat = await this.repeatOfUsedApproval(userId, tool, args, request.approvalId, row.connection_id);
+      const repeat = await this.repeatOfUsedApproval(userId, tool, args, request.approvalId, row.connection_id, boundZone);
       if (repeat) return repeat;
     }
-    if (tool.risk === "write" && (tool.resolve ? request.approvalId === undefined : !(await approval(null, true)))) throw await unconfirmed();
+    // A write with a lookup can only match its approval in full after the lookup, so before it the
+    // approval must at least be one `prepare` issued to this user for this tool and account (ADR-708):
+    // a run with no card, or a made-up approval, looks nothing up.
+    if (
+      tool.risk === "write" &&
+      (tool.resolve ? !(await this.ask.issuedFor({ userId, tool: tool.name, accountId: row.connection_id }, request.approvalId)) : !(await approval(null, true)))
+    ) {
+      throw await unconfirmed();
+    }
     if (tool.risk === "read" && !(await approval(null, true))) throw await unconfirmed();
 
     // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
@@ -921,46 +971,91 @@ export class CloudToolsService {
     const binding: AskBinding = { userId, tool, accountId: CLAUDE_ACCOUNT, argsDigest: argumentDigest(args) };
     const unasked = async () => askFirstRefusal(await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
     if (!(await this.ask.allows(binding, request.approvalId, "check"))) throw await unasked();
+
+    // ADR-710: a document is minutes of Anthropic time and up to nine calls, so only so many are made at
+    // once, per user and in all. Past that it is refused here, before anything is counted and before the
+    // yes is used up, so the user can say yes again in a few minutes.
+    const slot = tool === MAKE_DOCUMENT_TOOL ? this.takeDocumentSlot(userId) : null;
+    if (tool === MAKE_DOCUMENT_TOOL && slot === null) {
+      const message = "Doddy is already making files and can't start another yet. Try again in a few minutes.";
+      throw new AppError("busy", {
+        message,
+        retryAfterSeconds: 120,
+        receipt: await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "blocked", `Not done: ${message}`, "busy", null),
+      });
+    }
+    // True once the running job owns the slot and gives it back itself when it ends.
+    let jobOwnsSlot = false;
     try {
-      await this.limiter.reserveClaude(userId, now);
-    } catch (error) {
-      if (error instanceof AppError) return await blocked("quota_exceeded", "Today's Claude limit was reached.", error.code);
-      throw error;
-    }
-    if (!(await this.ask.allows(binding, request.approvalId, "use"))) throw await unasked();
-
-    if (tool === ASK_CLAUDE_TOOL) {
       try {
-        const answer = await claude.ask(args as never, AbortSignal.timeout(ASK_CLAUDE_TIMEOUT_MS));
-        const text = `Claude's answer (written for this user; read it out or sum it up, in your own words if it's long):\n${answer.text}`;
-        const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "succeeded", "Asked Claude.", null, null);
-        return { mode: this.mode, tool, text, count: 1, truncated: false, receipt };
+        // A document counts as several runs against both daily caps (ADR-710); a quick answer is one.
+        await this.limiter.reserveClaude(userId, now, tool === MAKE_DOCUMENT_TOOL ? this.limits.documentClaudeUnits : 1);
       } catch (error) {
-        const appError = toAppError(error, "Claude");
-        const message = appError.code === "provider_timeout" ? "Claude took too long. For something long, ask Doddy to make it as a document." : appError.code === "rate_limited" ? "Claude is busy right now. Try again shortly." : "Claude couldn't be reached. Nothing is shown instead.";
-        const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "failed", message, appError.code, null);
-        throw new AppError(appError.code, { ...appError.options, message, receipt });
+        if (error instanceof AppError) return await blocked("quota_exceeded", "Today's Claude limit was reached.", error.code);
+        throw error;
       }
-    }
+      if (!(await this.ask.allows(binding, request.approvalId, "use"))) throw await unasked();
 
-    const doc = args as MakeDocumentArgs;
-    const info = KIND_INFO[doc.kind];
-    const name = fileName(doc.title, info.ext);
-    const id = await this.store.startDocument(userId, name, info.mime, now);
-    const url = this.deps.documentLinks!.link(id, new Date(now));
-    const job = this.makeDocumentInBackground(id, doc, claude).finally(() => this.background.delete(job));
-    this.background.add(job);
-    const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "succeeded", `Started a ${info.label}: ${doc.title}`.slice(0, 200), null, null);
-    return {
-      mode: this.mode,
-      tool,
-      text:
-        `started: Claude is making the ${info.label} "${doc.title}". It takes one to three minutes. ` +
-        "A button to open it is on the user's screen now; it shows the file as soon as it's ready. Tell the user that in one sentence. Don't read out any link.",
-      count: 1,
-      truncated: false,
-      document: { url, name, kind: doc.kind, status: "working" },
-      receipt,
+      if (tool === ASK_CLAUDE_TOOL) {
+        try {
+          const answer = await claude.ask(args as never, AbortSignal.timeout(ASK_CLAUDE_TIMEOUT_MS));
+          // ADR-710: Claude worked from material that may be untrusted (an email, a page), so what it wrote
+          // goes back marked as information, the way the read tools mark theirs.
+          const text = `Claude's answer (written for this user; read it out or sum it up, in your own words if it's long). ${MODEL_TEXT_LABEL}\n${answer.text}`;
+          const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "succeeded", "Asked Claude.", null, null);
+          return { mode: this.mode, tool, text, count: 1, truncated: false, receipt };
+        } catch (error) {
+          const appError = toAppError(error, "Claude");
+          this.deps.log?.({ level: "info", event: "ask_claude_failed", code: appError.code, ...providerLog(error) });
+          const message = appError.code === "provider_timeout" ? "Claude took too long. For something long, ask Doddy to make it as a document." : appError.code === "rate_limited" ? "Claude is busy right now. Try again shortly." : "Claude couldn't be reached. Nothing is shown instead.";
+          const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "failed", message, appError.code, null);
+          throw new AppError(appError.code, { ...appError.options, message, receipt });
+        }
+      }
+
+      const doc = args as MakeDocumentArgs;
+      const info = KIND_INFO[doc.kind];
+      const name = fileName(doc.title, info.ext);
+      const id = await this.store.startDocument(userId, name, info.mime, now);
+      const url = this.deps.documentLinks!.link(id, new Date(now));
+      const job = this.makeDocumentInBackground(id, doc, claude).finally(() => {
+        slot?.();
+        this.background.delete(job);
+      });
+      jobOwnsSlot = true;
+      this.background.add(job);
+      const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "succeeded", `Started a ${info.label}: ${doc.title}`.slice(0, 200), null, null);
+      return {
+        mode: this.mode,
+        tool,
+        text:
+          `started: Claude is making the ${info.label} "${doc.title}". It takes one to three minutes. ` +
+          "A button to open it is on the user's screen now; it shows the file as soon as it's ready. Tell the user that in one sentence. Don't read out any link. " +
+          MODEL_TEXT_LABEL,
+        count: 1,
+        truncated: false,
+        document: { url, name, kind: doc.kind, status: "working" },
+        receipt,
+      };
+    } finally {
+      if (!jobOwnsSlot) slot?.();
+    }
+  }
+
+  /** A place for one more document job, or null when this user or the whole server is at its limit (ADR-710). The returned function gives it back; calling it twice is harmless. */
+  private takeDocumentSlot(userId: string): (() => void) | null {
+    const mine = this.documentJobs.get(userId) ?? 0;
+    if (mine >= this.limits.userDocumentJobs || this.documentJobsTotal >= this.limits.serviceDocumentJobs) return null;
+    this.documentJobs.set(userId, mine + 1);
+    this.documentJobsTotal += 1;
+    let given = false;
+    return () => {
+      if (given) return;
+      given = true;
+      const left = (this.documentJobs.get(userId) ?? 1) - 1;
+      if (left <= 0) this.documentJobs.delete(userId);
+      else this.documentJobs.set(userId, left);
+      this.documentJobsTotal -= 1;
     };
   }
 
@@ -972,7 +1067,7 @@ export class CloudToolsService {
     } catch (error) {
       await this.store.failDocument(id).catch(() => {});
       // Content-free: the kind and the error class only.
-      this.deps.log?.({ level: "error", event: "document_failed", kind: args.kind, code: error instanceof ProviderError ? error.code : "internal" });
+      this.deps.log?.({ level: "error", event: "document_failed", kind: args.kind, code: error instanceof ProviderError ? error.code : "internal", ...providerLog(error) });
     }
   }
 
@@ -1083,10 +1178,19 @@ export class CloudToolsService {
 const LOOKUP_RETRIES = 1;
 
 /**
- * What an approval is bound to: the validated arguments, plus, for a tool with a lookup, the target
- * the card showed (so a task that changed since the card needs a fresh confirmation).
+ * What a write answers when its lookup gave no card, whatever the cause (ADR-708): nothing found, several
+ * found, a sender with no address, a provider error. Nothing the lookup found is in it.
  */
-function approvalDigest(args: Record<string, unknown>, target: ResolvedTarget | null): string {
+export const LOOKUP_FAILED = "Doddy couldn't find that, so nothing was changed. Ask the user which one they meant.";
+
+/**
+ * What an approval is bound to: the validated arguments, plus, for a tool with a lookup, the target
+ * the card showed (so a task that changed since the card needs a fresh confirmation), plus, for a
+ * write that reads the time zone, the zone the card was made for (ADR-710). Without a zone the digest
+ * is what it always was, so earlier approvals and the "already done in the last day" check still match.
+ */
+function approvalDigest(args: Record<string, unknown>, target: ResolvedTarget | null, timeZone: string | null = null): string {
+  if (timeZone !== null) return argumentDigest({ arguments: args, ...(target === null ? {} : { target }), timeZone });
   return target === null ? argumentDigest(args) : argumentDigest({ arguments: args, target });
 }
 
@@ -1169,4 +1273,11 @@ function providerMessage(code: ProviderError["code"], title: string): string {
     case "provider_unavailable":
       return `${title} couldn't be reached. Nothing was changed.`;
   }
+}
+
+/** A provider's status, error type and hint for the log (content-free); nothing for any other error. */
+function providerLog(error: unknown): Record<string, unknown> {
+  return error instanceof ProviderError && error.detail
+    ? { providerStatus: error.detail.status, providerError: error.detail.type, providerHint: error.detail.hint }
+    : {};
 }

@@ -1,4 +1,4 @@
-// One Studio job from plan to checked files (ADR-584, STUDIO.md "The pipeline"). Never throws for
+// One Studio job from plan to checked files (ADR-740, STUDIO.md "The pipeline"). Never throws for
 // model, network or file problems: each ends as a failure code. Files made at Anthropic are always
 // deleted there before this returns; any delete not read back as gone is returned as `pending`.
 import Anthropic from "@anthropic-ai/sdk";

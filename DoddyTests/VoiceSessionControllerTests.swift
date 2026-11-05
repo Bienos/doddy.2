@@ -89,11 +89,11 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.eventDeleted(event, calendar: .current))
     }
 
-    /// ASK-01 (ADR-483, `docs/trust/ASK_FIRST.md`): starting translator mode asks first, with a
-    /// spoken yes or a tap, and then starts at once with no second card (the 16 Oct change that
-    /// took out the translator's own setup card).
+    /// ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się"): translator mode
+    /// starts the moment the agent asks for it, with no card or question, and the result tells
+    /// Doddy to ask what to translate. ADR-542 had it ask first.
     @MainActor
-    func testTranslatorAsksFirstThenStartsWithoutASecondCard() async {
+    func testTranslatorStartsAtOnceWithoutAQuestion() async {
         let t = Harness()
         defer { t.restore() }
         t.controller.beginForTesting(link: t.link)
@@ -101,21 +101,11 @@ final class VoiceSessionControllerTests: XCTestCase {
         await t.controller.receiveToolCallForTesting(
             name: VoiceToolName.startTranslator, id: "translator-1", parameters: #"{"their_language":"es"}"#).value
 
-        guard case .ask(let id, _, let needsTap, let toolName, _)? = t.controller.pendingAction else {
-            return XCTFail("expected the ASK-01 question, got \(String(describing: t.controller.pendingAction))")
-        }
-        XCTAssertEqual(id, "translator-1")
-        XCTAssertEqual(toolName, VoiceToolName.startTranslator)
-        XCTAssertFalse(needsTap, "a spoken yes is enough")
-        XCTAssertNil(t.controller.translator, "nothing starts before the answer")
-        XCTAssertTrue(t.link.results.isEmpty)
-
-        await t.controller.confirmPendingAction()
-
-        XCTAssertNil(t.controller.pendingAction, "no second card after the yes")
+        XCTAssertNil(t.controller.pendingAction, "no card, no question")
         XCTAssertEqual(t.controller.translator?.setup.other?.code, "es")
         XCTAssertEqual(t.link.results.map(\.id), ["translator-1"])
         XCTAssertTrue(t.link.results.first?.text.hasPrefix("started:") == true)
+        XCTAssertTrue(t.link.results.first?.text.contains("what to translate") == true)
     }
 
     // MARK: Declined card runs nothing
@@ -365,7 +355,7 @@ final class StaleToolCallTests: XCTestCase {
         await call.value
 
         XCTAssertEqual(link.results.map(\.id), ["now-lookup"])
-        XCTAssertEqual(link.results.first?.text, VoiceToolReply.reminderNotFound("Buy milk"))
+        XCTAssertEqual(link.results.first?.text, VoiceToolReply.reminderNotPrepared)
     }
 
     // MARK: Helpers
@@ -604,6 +594,117 @@ final class PermissionSheetTests: XCTestCase {
     }
 }
 
+/// Voice fixes from the read-only review of 29 Oct (ADR-672, tests ADR-681): the voice meter is
+/// detached from the conversation it was attached to, and a capability gap is "written down" only
+/// after a verified write. App-target tests: hosted Mac job only (no Xcode where they were written).
+final class VoiceReviewFixesTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testEndDetachesTheVoiceMeterFromTheConversationItWasAttachedTo() async {
+        let t = Harness()
+        defer { t.restore() }
+        let link = MeterLink()
+        t.controller.beginForTesting(link: link)
+        t.controller.speakForTesting()
+        XCTAssertEqual(link.attached, 1, "attached when Doddy starts speaking")
+
+        await t.controller.stop()
+
+        XCTAssertEqual(link.detached, 1, "stop() clears the conversation first; the meter is still let go of that one")
+        XCTAssertFalse(AgentVoiceMeter.shared.hasSource)
+    }
+
+    @MainActor
+    func testADisconnectDetachesTheVoiceMeterToo() async {
+        let t = Harness()
+        defer { t.restore() }
+        let link = MeterLink()
+        t.controller.beginForTesting(link: link)
+        t.controller.speakForTesting()
+
+        t.controller.disconnectForTesting(.user)
+
+        XCTAssertEqual(link.detached, 1)
+        XCTAssertFalse(AgentVoiceMeter.shared.hasSource)
+    }
+
+    @MainActor
+    func testAGapIsNotCalledWrittenDownWhenNothingWasWritten() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        // The harness's store has no learning store, so nothing can be written.
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.noteCapabilityGap, id: "gap-1", parameters: #"{"category":"music"}"#).value
+        guard case .ask? = t.controller.pendingAction else {
+            return XCTFail("ASK-01: the gap is noted after a tap, got \(String(describing: t.controller.pendingAction))")
+        }
+
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.link.results.map(\.id), ["gap-1"])
+        XCTAssertEqual(t.link.results.first?.text, LearningPrompt.gapNotNoted)
+        XCTAssertFalse(t.link.results.first?.text.contains("It's written down") ?? true)
+    }
+}
+
+/// A phone call during a conversation (ADR-696): iOS taking the audio and not giving it back in a
+/// way that can resume ends the conversation as interrupted, never "listening" with a deaf microphone.
+/// The short-interruption resume activates the real audio session, so it is left to a device test.
+/// App-target tests: hosted Mac job only.
+final class CallInterruptionTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testAnInterruptionMarksTheConversationPaused() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: true, shouldResume: false)
+        XCTAssertTrue(t.controller.audioPausedByOtherApp)
+        XCTAssertTrue(t.controller.isLive, "a short interruption may still be resumed")
+        await t.controller.stop()
+        XCTAssertFalse(t.controller.audioPausedByOtherApp, "End stops the wait for iOS")
+    }
+
+    @MainActor
+    func testAnInterruptionThatEndsWithoutResumeEndsTheConversationAsInterrupted() {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: true, shouldResume: false)
+        t.controller.audioInterruptionForTesting(began: false, shouldResume: false)
+
+        XCTAssertEqual(t.controller.sessionEnd, .dropped(.audioInterrupted))
+        let expected = SessionRecovery.status(.dropped(.audioInterrupted), connected: true, language: .current).detail ?? ""
+        XCTAssertEqual(t.controller.phase, .failed(expected))
+        XCTAssertFalse(t.controller.isLive, "the microphone, the island and the gate are freed")
+        XCTAssertFalse(t.controller.audioPausedByOtherApp)
+    }
+
+    @MainActor
+    func testAMediaServicesResetEndsTheConversationAsInterrupted() {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.mediaServicesResetForTesting()
+        XCTAssertEqual(t.controller.sessionEnd, .dropped(.audioInterrupted))
+        XCTAssertFalse(t.controller.isLive)
+    }
+
+    @MainActor
+    func testAnEndWithoutABeginningChangesNothing() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: false, shouldResume: false)
+        XCTAssertTrue(t.controller.isLive)
+        XCTAssertNil(t.controller.sessionEnd)
+        await t.controller.stop()
+    }
+}
+
 /// find_photos and open_camera (ADR-569) with the fake device: a read asks first and the agent
 /// hears counts only; a device without a camera says so instead of asking for a permission.
 final class PhotosAndCameraControllerTests: XCTestCase {
@@ -794,5 +895,24 @@ private final class FakeLink: LiveVoiceLink, @unchecked Sendable {
     func updateContext(_ context: String) async throws { lock.withLock { sentContext.append(context) } }
     func endConversation() async {}
     func setAgentVolume(_ volume: Double) -> Double? { nil }
+}
+
+/// A provider link with a voice to listen to, counting the meter's attach and detach (ADR-655).
+@MainActor
+private final class MeterLink: LiveVoiceLink {
+    private(set) var attached = 0
+    private(set) var detached = 0
+
+    func sendToolResult(for toolCallId: String, result: String, isError: Bool) async throws {}
+    func setMuted(_ muted: Bool) async throws {}
+    func sendMessage(_ text: String) async throws {}
+    func updateContext(_ context: String) async throws {}
+    func endConversation() async {}
+    func setAgentVolume(_ volume: Double) -> Double? { nil }
+    func attachAgentLevelMeter(_ meter: AgentVoiceMeter) -> Bool {
+        attached += 1
+        return true
+    }
+    func detachAgentLevelMeter(_ meter: AgentVoiceMeter) { detached += 1 }
 }
 #endif

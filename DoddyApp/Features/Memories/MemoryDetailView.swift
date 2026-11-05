@@ -172,6 +172,11 @@ struct MemoryDetailView: View {
         // What leaves the app follows straight away: widgets, the watch and the call copy.
         WidgetSync.shared.refresh()
         MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
+        // Notes kept on Doddy's server (ADR-603), if the person turned that on. Making a note private takes
+        // it off the server at the next send.
+        WebMemory.shared.scheduleNotes(store.memories, privateNotes: PrivateNotesStore.current())
+        // Its waiting reminder banner and alarm title are written again, with or without its words (ADR-722).
+        Task { await noteReminders.refreshContent(forMemory: memoryID) }
     }
 
     private func togglePin(_ record: MemoryRecord) {
@@ -180,7 +185,8 @@ struct MemoryDetailView: View {
     }
 
     private func copy(_ record: MemoryRecord) {
-        UIPasteboard.general.string = record.currentText
+        // This iPhone only, and gone from the clipboard after two minutes (ADR-724).
+        NoteClipboard.copy(record.currentText)
         copied = true
     }
 

@@ -270,6 +270,8 @@ def _page(title: str, description: str, path: str, main: str, og_type: str = "we
           <li><a href="/blog/">Blog</a></li>
           <li><a href="/blog/feed.xml">RSS</a></li>
           <li><a href="/#join">Join early access</a></li>
+          <li><a href="/terms/">Terms</a></li>
+          <li><a href="/privacy/">Privacy Policy</a></li>
           <li><a href="{TELEGRAM}" target="_blank" rel="noopener">Telegram group</a></li>
           <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
           <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>

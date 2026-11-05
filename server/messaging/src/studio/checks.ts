@@ -1,4 +1,4 @@
-// Studio's check step (ADR-584, STUDIO.md "The files"): code, not the model, decides whether the
+// Studio's check step (ADR-740, STUDIO.md "The files"): code, not the model, decides whether the
 // files Claude rendered are what Doddy promised. Each check is named so the item can show it and a
 // failed one can go back to the make step in plain words.
 import { createHash } from "node:crypto";

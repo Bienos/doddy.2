@@ -1,4 +1,4 @@
-// Studio end to end against real Postgres, through the HTTP API, with a fake Claude (ADR-584,
+// Studio end to end against real Postgres, through the HTTP API, with a fake Claude (ADR-740,
 // docs/implementation/STUDIO.md). Nothing here calls Anthropic or APNs.
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, test } from "node:test";
@@ -13,14 +13,17 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
   let db: Db;
   before(async () => { db = await freshDb(); });
   after(async () => { await db?.end(); });
-  beforeEach(async () => { await db.query("DELETE FROM studio_items; DELETE FROM studio_orphan_files;"); });
+  beforeEach(async () => {
+    await db.query("DELETE FROM studio_items; DELETE FROM studio_orphan_files; DELETE FROM studio_usage; DELETE FROM studio_server_spend;");
+    await db.query("DELETE FROM server_daily_usage WHERE feature IN ('studio', 'studio_new')");
+  });
 
   async function world(opts: { settings?: Partial<StudioSettings>; api?: FakeStudioApi | null } = {}) {
     const api = opts.api === null ? undefined : opts.api ?? new FakeStudioApi();
     const clock = { now: new Date(Date.now() - 3600_000) };
     const logs: { msg: string; extra?: object }[] = [];
     const base = await testApp(db, {
-      studio: { settings: { ...DEFAULT_STUDIO_SETTINGS, ...opts.settings }, api, now: () => clock.now, cancelPollMs: 10 },
+      studio: { settings: { ...DEFAULT_STUDIO_SETTINGS, dailyForNewAccounts: 10, ...opts.settings }, api, now: () => clock.now, cancelPollMs: 10 },
       studioLog: (msg, extra) => logs.push({ msg, extra }),
     });
     const r = await base.app.inject({ method: "POST", url: "/v1/accounts" });
@@ -166,6 +169,88 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
     await approveJob(roomy);
     const next = (await roomy.call("POST", "/v1/studio", job)).json();
     assert.equal((await roomy.call("POST", `/v1/studio/${next.id}/approve`, { digest: next.digest })).json().error, "too_many_open_items");
+  });
+
+  const approveRefusal = async (w: World) => {
+    const d = (await w.call("POST", "/v1/studio", job)).json();
+    const r = await w.call("POST", `/v1/studio/${d.id}/approve`, { digest: d.digest });
+    return { status: r.statusCode, body: r.json(), draft: d };
+  };
+  const dayRows = async () => ({
+    spend: Number((await db.query("SELECT coalesce(sum(committed_usd), 0)::text AS n FROM studio_server_spend")).rows[0].n),
+    server: Number((await db.query("SELECT coalesce(sum(requests), 0)::text AS n FROM server_daily_usage WHERE feature = 'studio'")).rows[0].n),
+    account: Number((await db.query("SELECT coalesce(sum(approvals), 0)::text AS n FROM studio_usage")).rows[0].n),
+  });
+
+  test("ADR-742: per-account, per-server and dollar caps are counted where deleting an item can't give them back", async () => {
+    // Two approvals a day per account. Deleting an item doesn't give one back.
+    const w = await world({ settings: { dailyPerAccount: 2, dailyCapUsd: 100, maxOpen: 10, dailyServerCapUsd: 100 } });
+    const first = await approveJob(w);
+    await approveJob(w);
+    assert.deepEqual(await dayRows(), { spend: 4, server: 2, account: 2 });
+    assert.equal((await w.call("DELETE", `/v1/studio/${first.id}`)).statusCode, 200);
+    const third = await approveRefusal(w);
+    assert.deepEqual([third.status, third.body], [429, { error: "studio_daily_limit", scope: "account" }]);
+    assert.deepEqual(await dayRows(), { spend: 4, server: 2, account: 2 }, "a refusal takes nothing: no count, no dollars");
+    assert.equal((await row(third.draft.id)).state, "draft");
+
+    // The server's dollars: each approval commits the job limit ($2) of the day's cap, whoever asks and whatever is deleted.
+    const tight = await world({ settings: { dailyServerCapUsd: 3, dailyCapUsd: 100, maxOpen: 10, dailyPerAccount: 10 } });
+    await db.query("DELETE FROM studio_server_spend; DELETE FROM studio_usage; DELETE FROM server_daily_usage WHERE feature = 'studio'");
+    const one = await approveJob(tight);
+    const refused = await approveRefusal(tight);
+    assert.deepEqual([refused.status, refused.body], [429, { error: "studio_daily_limit", scope: "server" }]);
+    assert.deepEqual(await dayRows(), { spend: 2, server: 1, account: 1 }, "the refusal rolled back its account count");
+    await tight.call("DELETE", `/v1/studio/${one.id}`);
+    await db.query("DELETE FROM accounts WHERE id = $1", [tight.accountId]);
+    assert.equal((await dayRows()).spend, 2, "deleting the item and then the account gave no dollars back");
+    assert.equal((await dayRows()).server, 1);
+
+    // The server's approvals.
+    const few = await world({ settings: { dailyPerServer: 1, dailyCapUsd: 100, dailyServerCapUsd: 100, maxOpen: 10 } });
+    await db.query("DELETE FROM server_daily_usage WHERE feature = 'studio'");
+    await approveJob(few);
+    const second = await approveRefusal(few);
+    assert.deepEqual([second.status, second.body], [429, { error: "studio_daily_limit", scope: "server" }]);
+  });
+
+  test("ADR-742: an account still new can't start a Studio job unless the owner opens a pool for new accounts", async () => {
+    const closed = await world({ settings: { dailyForNewAccounts: 0, dailyCapUsd: 100 } });
+    const r = await approveRefusal(closed);
+    assert.deepEqual([r.status, r.body], [429, { error: "studio_daily_limit", scope: "server" }]);
+    assert.deepEqual(await dayRows(), { spend: 0, server: 0, account: 0 }, "nothing was taken");
+    assert.equal((await row(r.draft.id)).state, "draft");
+    // An established account (a verified phone number, or older than NEW_ACCOUNT_HOURS) is not held back by the pool.
+    await db.query("UPDATE accounts SET created_at = now() - interval '3 days' WHERE id = $1", [closed.accountId]);
+    assert.equal((await closed.call("POST", `/v1/studio/${r.draft.id}/approve`, { digest: r.draft.digest })).statusCode, 202);
+  });
+
+  test("ADR-742: what a job didn't spend goes back to the server's day; an interrupted job's reservation stays", async () => {
+    const w = await world({ settings: { dailyServerCapUsd: 100, dailyCapUsd: 100, maxOpen: 10, dailyPerAccount: 10 } });
+    const a = await approveJob(w);
+    const b = await approveJob(w);
+    assert.equal((await dayRows()).spend, 4);
+    w.clock.now = new Date(w.clock.now.getTime() + 5000);
+    const ranId = await runNext(w.ctx);
+    const done = ranId === a.id ? a : b;
+    const queued = ranId === a.id ? b : a;
+    assert.equal(ranId, done.id);
+    const cost = Number((await row(done.id)).cost_usd);
+    assert.ok(cost > 0 && cost < 2, `the fake run cost ${cost}`);
+    assert.ok(Math.abs((await dayRows()).spend - (4 - (2 - cost))) < 0.001, "the unspent part of the first job came back");
+    // A queued job that is cancelled never ran: its whole reservation goes back, its counts don't.
+    assert.equal((await w.call("POST", `/v1/studio/${queued.id}/cancel`)).statusCode, 204);
+    assert.ok(Math.abs((await dayRows()).spend - cost) < 0.001);
+    assert.deepEqual([(await dayRows()).server, (await dayRows()).account], [2, 2]);
+
+    // A job whose worker died is `interrupted`: its cost isn't known, so its reservation stays.
+    const lost = await approveJob(w);
+    const before = (await dayRows()).spend;
+    assert.equal((await claimNext(w.ctx))?.id, lost.id);
+    w.clock.now = new Date(w.clock.now.getTime() + 60 * 60_000);
+    assert.equal(await reapInterrupted(w.ctx), 1);
+    assert.equal((await row(lost.id)).failure, "interrupted");
+    assert.equal((await dayRows()).spend, before, "nothing came back for a job whose cost is unknown");
   });
 
   test("a draft expires after 10 minutes; off, unconfigured or without skills answers 503", async () => {

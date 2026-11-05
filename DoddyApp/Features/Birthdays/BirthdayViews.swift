@@ -33,6 +33,7 @@ enum BirthdayScheduler {
             // Doddy waving: "maybe say hello" (ADR-323). Each notification gets its own copy.
             if let art = NotificationArt.attachment(.wave) { content.attachments = [art] }
             content.sound = .default
+            content.interruptionLevel = DoddyNotificationKind.birthday.interruptionLevel
             let day = Birthdays.scheduledDay(contact)
             let when = DateComponents(month: day.month, day: day.day, hour: Birthdays.hour)
             let request = UNNotificationRequest(

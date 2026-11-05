@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
+import type { AbuseLimits } from "./config.js";
 import type { Db } from "./db.js";
 import type { TextCipher } from "./crypto.js";
 import type { OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
@@ -21,6 +22,12 @@ import { errandRoutes } from "./routes/errands.js";
 import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
 import { studioRoutes } from "./routes/studio.js";
 import { studioContext, type StudioContext, type StudioDeps } from "./studio/context.js";
+import { assistantRoutes } from "./routes/assistant.js";
+import { dealsRoutes } from "./routes/deals.js";
+import type { DealsDeps } from "./deals/service.js";
+import type { AssistantDeps } from "./assistant/deps.js";
+import { watchRoutes } from "./routes/watches.js";
+import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -30,6 +37,8 @@ declare module "fastify" {
     errandContext: ErrandContext | null;
     /** The Studio context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     studioContext: StudioContext | null;
+    /** The price-watch context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
+    watchContext: WatchContext | null;
   }
 }
 
@@ -54,18 +63,32 @@ export interface Deps {
   trustProxyHops?: number;
   /** Verify codes the whole server may start per UTC day. Default 200. */
   verifyDailyCap?: number;
+  /** Account, verification, text and call caps and the countries whose numbers are allowed (ADR-702, ADR-704). Defaults: DEFAULT_ABUSE_LIMITS. */
+  limits?: Partial<AbuseLimits>;
   /** Calls Doddy places for the user (ADR-500). Needs `cipher` and `publicBaseUrl` too. */
   taskCalls?: TaskCallDeps;
   /** Where task-call log lines go (tests capture them); default: the request logger. */
   taskCallLog?: (msg: string, extra?: object) => void;
   /** Errands (ADR-570): settings and the researcher (needs an Anthropic key). Needs `cipher` too. */
   errands?: ErrandDeps;
+  /** Leaflets (ADR-609, SHOPPING.md section 2): settings, the polite fetcher and the Haiku reader. */
+  deals?: DealsDeps;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
-  /** Studio (ADR-584): settings and the model API (needs an Anthropic key and Doddy's skills). Needs `cipher` too. */
+  /** Studio (ADR-740): settings and the model API (needs an Anthropic key and Doddy's skills). Needs `cipher` too. */
   studio?: StudioDeps;
   /** Where Studio log lines go (tests capture them); default: the request logger. */
   studioLog?: (msg: string, extra?: object) => void;
+  /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
+  assistant?: AssistantDeps;
+  /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
+  watches?: WatchDeps;
+  /** Where price-watch log lines go (tests capture them); default: the request logger. */
+  watchLog?: (msg: string, extra?: object) => void;
+  /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
+  smsChatLog?: (msg: string, extra?: object) => void;
+  /** Called with each inbound text's answer in flight (tests await it). */
+  onSmsChat?: (done: Promise<import("./smsChat.js").SmsChatOutcome>) => void;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
@@ -120,6 +143,9 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const studioCtx = studioContext(deps.db, deps.studio, deps.cipher, deps.push,
     deps.studioLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("studioContext", studioCtx ?? null);
+  const watchCtx = watchContext(deps.db, deps.watches, deps.cipher, deps.push,
+    deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("watchContext", watchCtx ?? null);
 
   await app.register(accountRoutes(deps, taskCtx));
   await app.register(phoneRoutes(deps));
@@ -132,6 +158,9 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));
   await app.register(studioRoutes(deps, studioCtx));
+  await app.register(assistantRoutes(deps));
+  await app.register(dealsRoutes(deps));
+  await app.register(watchRoutes(deps, watchCtx));
   return app;
 }
 

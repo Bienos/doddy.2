@@ -3,23 +3,22 @@ import DoddyPersistence
 import Foundation
 import SwiftUI
 
-/// What the typed assistant (M2) needs from the app: where credentials live and how HTTP is sent.
-/// The gateway address comes from Settings at question time, so changing it needs no restart.
+/// What the typed assistant (Messages, ADR-586) needs from the app: the messaging server it asks, which asks
+/// Claude. There is no key, gateway address or invite code on the iPhone. The server is looked up at question
+/// time, so a build with no server address (`ServerConfig`) has no service and Messages says so.
 struct AssistantWiring: Sendable {
-    let credentials: any DeviceCredentialStore
-    let transport: any GatewayTransport
+    let server: @Sendable () -> DoddyServerClient?
 
-    func service(gatewayAddress: String, recall: any RecallService) -> AssistantService {
-        let client = GatewayAssistantClient(
-            configuration: GatewayConfiguration(string: gatewayAddress),
-            transport: transport,
-            credentials: credentials)
-        return AssistantService(recall: recall, client: client)
+    static let live = AssistantWiring(server: { ServerConfig.client() })
+
+    func service(recall: any RecallService) -> AssistantService? {
+        guard let server = server() else { return nil }
+        return AssistantService(recall: recall, client: ServerAssistantClient(server: server))
     }
 }
 
 /// Composition root. Local memory and the reviewed profile use one SQLite file; voice uses the
-/// ElevenLabs agent (VoiceView); typed questions go through the Doddy gateway (AskView); the Talk to
+/// ElevenLabs agent (VoiceView); typed questions go to the messaging server, which asks Claude (MessagesView, ADR-586); the Talk to
 /// Doddy shortcut and Back Tap guide live in `ShortcutRouter`; Connected Apps talks to a Doddy server
 /// (ConnectedAppsScreen); other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
@@ -54,6 +53,12 @@ struct AppEnvironment: Sendable {
     /// Tasks handed to Doddy's background worker (ADR-570): the user's words, the state, and the
     /// result once it is saved here (then the server deletes its copy), in the same file.
     var errandRepository: any ErrandRepository = UnavailableErrandRepository()
+    /// The typed conversation with Doddy (ADR-585): messages kept on this iPhone until deleted, in the same file.
+    var messageThreadRepository: any MessageThreadRepository = UnavailableMessageThreadRepository()
+    /// DODDY Capture (ADR-588): recordings, their parts and words, in the same file, and the folder of
+    /// audio next to it. `nil` when the memory store is not open: nothing can be recorded then.
+    var recordingRepository: (any RecordingRepository)?
+    var recordingFiles: RecordingFiles = .unavailable
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -77,18 +82,22 @@ struct AppEnvironment: Sendable {
             let databaseFile = isUITest ? nil : try databaseURL(arguments: arguments)
             let database = try databaseFile.map { try DoddyDatabase(path: $0.path) } ?? DoddyDatabase.inMemory()
             let repository = SQLiteMemoryRepository(database: database)
-            let credentials: any DeviceCredentialStore = isUITest ? InMemoryCredentialStore() : KeychainCredentialStore()
             // UI-test launches never touch iOS notifications: reminders stay inside Doddy.
             let notifications: any NoteNotificationScheduling = isUITest ? DisabledNoteNotifications() : SystemNoteNotifications()
+            // A Private note's words never reach a banner, whatever "Show note text in notifications" says (ADR-722).
             let noteReminders = NoteReminderCoordinator(
-                repository: SQLiteNoteReminderRepository(database: database), center: notifications,
+                repository: PrivacyAwareNoteReminderRepository(
+                    base: SQLiteNoteReminderRepository(database: database),
+                    privateIDs: { PrivateNotes(stored: UserDefaults.standard.string(forKey: PrivateNotes.storageKey)).ids },
+                    language: { .current }),
+                center: notifications,
                 showNoteText: { UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications) },
                 language: { .current })
             return AppEnvironment(
                 memoryRepository: repository,
                 profileRepository: SQLiteProfileRepository(database: database),
                 recallService: RepositoryRecallService(repository: repository),
-                assistant: AssistantWiring(credentials: credentials, transport: AppHTTPTransport()),
+                assistant: .live,
                 toolExecutor: UnavailableToolExecutor(),
                 noteReminders: noteReminders,
                 // Notifications, texts, calls and news say "needs setup" until a messaging server is set.
@@ -106,7 +115,10 @@ struct AppEnvironment: Sendable {
                     procedures: SQLiteProcedureRepository(database: database),
                     outcomes: SQLiteOutcomeEventRepository(database: database)),
                 callCaseRepository: SQLiteCallCaseRepository(database: database),
-                errandRepository: SQLiteErrandRepository(database: database))
+                errandRepository: SQLiteErrandRepository(database: database),
+                messageThreadRepository: SQLiteMessageThreadRepository(database: database),
+                recordingRepository: SQLiteRecordingRepository(database: database),
+                recordingFiles: databaseFile.map(RecordingFiles.beside(database:)) ?? .temporary())
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

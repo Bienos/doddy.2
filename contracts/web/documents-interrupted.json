@@ -1,0 +1,32 @@
+{
+  "documents": [
+    {
+      "id": "1EXCE-KDiKUmQQv5JB97R7js",
+      "name": "Barcelona trip notes.md",
+      "kind": "text",
+      "status": "ready",
+      "createdAt": "2026-10-22T10:01:00.000Z",
+      "deleteAfter": "2026-10-29T10:01:00.000Z",
+      "sizeBytes": 31
+    },
+    {
+      "id": "L3YP_L9RFG1XR7_jsVJ3eVa9",
+      "name": "Mechanics price check.pdf",
+      "kind": "pdf",
+      "status": "interrupted",
+      "createdAt": "2026-10-22T10:01:00.000Z",
+      "deleteAfter": "2026-10-29T10:01:00.000Z",
+      "sizeBytes": null
+    },
+    {
+      "id": "1H-4HeVuh6d5Excnd-bfCsSt",
+      "name": "Laptops for university.pptx",
+      "kind": "deck",
+      "status": "ready",
+      "createdAt": "2026-10-22T10:00:00.000Z",
+      "deleteAfter": "2026-10-29T10:00:00.000Z",
+      "sizeBytes": 33
+    }
+  ],
+  "keptDays": 7
+}

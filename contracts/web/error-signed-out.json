@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "unauthenticated",
+    "message": "You're signed out. Get a sign-in code on your iPhone.",
+    "correlationId": "28203479-e015-4312-a717-db5a007bc177"
+  }
+}

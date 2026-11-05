@@ -17,13 +17,55 @@ enum DeviceSession {
     /// Ask for a new token when the old one has less than this left (tokens last 30 days).
     private static let renewBefore: TimeInterval = 2 * 24 * 60 * 60
 
-    /// The server address: Settings' development field when set, else the one built into the app.
+    /// Whether this is a development build. Compile-time, like `ServerConfig` (ADR-175): nothing typed
+    /// in Settings can change it, and a shipped build has no code path that reads the typed address.
+    private static var isDevelopmentBuild: Bool {
+        #if DEBUG
+        true
+        #else
+        false
+        #endif
+    }
+
+    /// The server address, and the ONE place the app decides it (ADR-720): every client, the sign-in,
+    /// the account erasure and the warm-up ask here. The device ID is sent to this address and it is
+    /// the credential that mints session tokens, so a shipped build uses only the address built into
+    /// the app. A development build also takes the address typed in Settings › Advanced, but only
+    /// https, or http to this computer (`ServerAddressPolicy`, tested in DoddyCore).
     static func serverURL() -> URL? {
-        let typed = UserDefaults.standard.string(forKey: PreferenceKey.connectedAppsServerURL)?
-            .trimmingCharacters(in: .whitespaces) ?? ""
-        let address = typed.isEmpty ? (Bundle.main.object(forInfoDictionaryKey: "DoddyServerURL") as? String ?? "") : typed
-        guard let url = URL(string: address), url.host != nil, url.scheme == "https" || url.scheme == "http" else { return nil }
+        ServerAddressPolicy.resolve(
+            typed: typedServerAddress, builtIn: Bundle.main.object(forInfoDictionaryKey: "DoddyServerURL") as? String,
+            debug: isDevelopmentBuild)
+    }
+
+    /// What was typed in Settings › Advanced, as typed. The only place that reads it (ADR-720), and only a
+    /// development build does: in a shipped build this is always nil.
+    private static var typedServerAddress: String? {
+        #if DEBUG
+        UserDefaults.standard.string(forKey: PreferenceKey.connectedAppsServerURL)
+        #else
+        nil
+        #endif
+    }
+
+    /// The typed development address alone, when the policy lets it through; nil in a shipped build.
+    /// `KeychainSessionStore` binds a token saved before tokens were bound to it.
+    static func typedServerURL() -> URL? {
+        guard let typed = typedServerAddress?.trimmingCharacters(in: .whitespacesAndNewlines), !typed.isEmpty,
+              let url = URL(string: typed), ServerAddressPolicy.accepts(url, debug: isDevelopmentBuild)
+        else { return nil }
         return url
+    }
+
+    /// Called at launch (ADR-720). A shipped build no longer reads the address typed in Settings, so
+    /// one saved by an earlier build is removed: a phone that was talked into pasting a stranger's
+    /// address recovers by updating. The session token that server issued is bound to its host
+    /// (`BoundSessionToken`), so it isn't used with the real one; the next sign-in replaces it. The
+    /// device ID is not changed (see the ADR).
+    static func removeSavedServerOverride(defaults: UserDefaults = .standard) {
+        #if !DEBUG
+        defaults.removeObject(forKey: PreferenceKey.connectedAppsServerURL)
+        #endif
     }
 
     /// True when a usable token for `server` is in the Keychain, getting one first if needed.
@@ -45,6 +87,8 @@ enum DeviceSession {
     }
 
     private static func signIn(server: URL) async -> Bool {
+        // The device ID goes only to an address the policy lets through, whoever asks (ADR-720).
+        guard ServerAddressPolicy.accepts(server, debug: isDevelopmentBuild) else { return false }
         guard let deviceID = deviceID() else { return false }
         let code = Bundle.main.object(forInfoDictionaryKey: "DoddyInviteCode") as? String
         guard let issued = await DeviceSessionClient.signIn(
@@ -55,14 +99,15 @@ enum DeviceSession {
         return true
     }
 
-    /// This iPhone's device ID, made once. Nil only if the Keychain refuses to keep it.
-    static func deviceID() -> String? {
-        let base: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        var read = base
+    private static var idQuery: [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: service,
+         kSecAttrAccount as String: account]
+    }
+
+    /// The device ID if one was made already. Reads only; it never makes one.
+    private static func storedDeviceID() -> String? {
+        var read = idQuery
         read[kSecReturnData as String] = true
         read[kSecMatchLimit as String] = kSecMatchLimitOne
         var item: CFTypeRef?
@@ -70,6 +115,25 @@ enum DeviceSession {
            let data = item as? Data, let id = String(data: data, encoding: .utf8), UUID(uuidString: id) != nil {
             return id
         }
+        return nil
+    }
+
+    /// True when this iPhone already has a device ID, so it has signed in to Doddy's server or is about
+    /// to. Reads only, so the privacy screen can ask without making one (ADR-721).
+    static var hasDeviceID: Bool { storedDeviceID() != nil }
+
+    /// What the privacy screen means by "Doddy's server is in use" (ADR-721): there is an address the app
+    /// would use, and the phone has a session with it or has made the device ID that signs in. Before that
+    /// nothing has been sent there.
+    static func isServerInUse() -> Bool {
+        guard let server = serverURL() else { return false }
+        return KeychainSessionStore.read()?.token(for: server) != nil || hasDeviceID
+    }
+
+    /// This iPhone's device ID, made once. Nil only if the Keychain refuses to keep it.
+    static func deviceID() -> String? {
+        if let id = storedDeviceID() { return id }
+        let base = idQuery
         let id = UUID().uuidString.lowercased()
         SecItemDelete(base as CFDictionary)
         var add = base

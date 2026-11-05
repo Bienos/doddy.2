@@ -20,10 +20,14 @@ enum TidyUpScheduler {
         let content = UNMutableNotificationContent()
         content.title = TidyUp.title(language)
         content.body = TidyUp.body(language)
+        // A routine: no sound, never through a Focus (ADR-650).
+        content.interruptionLevel = DoddyNotificationKind.tidyUp.interruptionLevel
         var when = DateComponents()
         when.weekday = settings.weekday
-        when.hour = settings.hour
-        when.minute = settings.minute
+        // Never in quiet hours (ADR-651).
+        let time = QuietHours.adjusted(hour: settings.hour, minute: settings.minute)
+        when.hour = time.hour
+        when.minute = time.minute
         let request = UNNotificationRequest(
             identifier: TidyUp.notificationID, content: content,
             trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true))
@@ -46,10 +50,13 @@ struct TidyUpView: View {
     private let sharing = SharedListsController.shared
 
     /// Notes with a photo or a voice memo are never offered as copies (review D2): deleting one
-    /// would delete a different photo or recording.
+    /// would delete a different photo or recording. A private note's words show only after Face ID
+    /// (ADR-310), so until then it is not offered here, as a copy or as a reminder that passed: no card
+    /// would show them (ADR-722). `TidyUp.suggestions` only knows the notes it is given.
     private var tidy: TidyUp.Suggestions {
-        TidyUp.suggestions(
-            memories: store.memories, lists: store.lists, reminders: noteReminders.reminders, now: .now,
+        let memories = AppLock.shared.privateUnlocked ? store.memories : PrivateNotesStore.current().shareable(store.memories)
+        return TidyUp.suggestions(
+            memories: memories, lists: store.lists, reminders: noteReminders.reminders, now: .now,
             withAttachments: Set(store.photos.keys).union(store.recordings.keys))
     }
 
@@ -245,8 +252,10 @@ struct TidyUpSettingsSection: View {
             get: { Calendar.current.date(from: DateComponents(hour: settings.hour, minute: settings.minute)) ?? .now },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                settings.hour = parts.hour ?? 18
-                settings.minute = parts.minute ?? 0
+                // Quiet hours (ADR-651): the picker shows where the time really goes.
+                let time = QuietHours.adjusted(hour: parts.hour ?? 18, minute: parts.minute ?? 0)
+                settings.hour = time.hour
+                settings.minute = time.minute
             })
     }
 

@@ -104,6 +104,34 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual((input["transcription"] as? [String: Any])?["model"] as? String, OpenAIRealtimeWire.transcriptionModel)
     }
 
+    func testPolishSessionNamesTheLanguageAndAsksForPolishInTheMasculine() throws {
+        let tools = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/tools.json"))
+        let text = try OpenAIRealtimeWire.sessionUpdate(instructions: "Be Doddy.", toolsJSON: tools, eagerness: .low, languageCode: "pl")
+        let session = try XCTUnwrap(try object(text)["session"] as? [String: Any])
+        let input = try XCTUnwrap((session["audio"] as? [String: Any])?["input"] as? [String: Any])
+        XCTAssertEqual((input["transcription"] as? [String: Any])?["language"] as? String, "pl")
+        XCTAssertEqual((input["turn_detection"] as? [String: Any])?["eagerness"] as? String, "low")
+        let instructions = try XCTUnwrap(session["instructions"] as? String)
+        XCTAssertTrue(instructions.hasPrefix("Be Doddy."))
+        XCTAssertTrue(instructions.contains("Polish"))
+        XCTAssertTrue(instructions.contains("masculine"))
+    }
+
+    func testOtherLanguageNamesItToTheTranscriberOnlyAndNoLanguageChangesNothing() throws {
+        let tools = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/tools.json"))
+        let german = try object(try OpenAIRealtimeWire.sessionUpdate(instructions: "Be Doddy.", toolsJSON: tools, eagerness: .low, languageCode: "de"))
+        let germanSession = try XCTUnwrap(german["session"] as? [String: Any])
+        XCTAssertEqual(germanSession["instructions"] as? String, "Be Doddy.")
+        let germanInput = try XCTUnwrap((germanSession["audio"] as? [String: Any])?["input"] as? [String: Any])
+        XCTAssertEqual((germanInput["transcription"] as? [String: Any])?["language"] as? String, "de")
+
+        let none = try object(try OpenAIRealtimeWire.sessionUpdate(instructions: "Be Doddy.", toolsJSON: tools, eagerness: .low))
+        let noneSession = try XCTUnwrap(none["session"] as? [String: Any])
+        XCTAssertEqual(noneSession["instructions"] as? String, "Be Doddy.")
+        let noneInput = try XCTUnwrap((noneSession["audio"] as? [String: Any])?["input"] as? [String: Any])
+        XCTAssertNil((noneInput["transcription"] as? [String: Any])?["language"])
+    }
+
     func testToolsAreTheSpecWithoutAppOnlyMetadata() throws {
         let data = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/tools.json"))
         let spec = try RealtimeToolCatalog.decode(data)

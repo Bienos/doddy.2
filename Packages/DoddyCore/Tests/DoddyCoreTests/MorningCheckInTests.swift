@@ -46,7 +46,7 @@ final class MorningCheckInTests: XCTestCase {
         let note = try MemoryRecord(id: UUID(), rawText: "Late call", source: .explicitText, category: .other, capturedAt: date(8))
         func briefing(now: Date, fireAt: Date) -> MorningBriefing {
             let reminder = MemoryReminder(id: UUID(), memoryID: note.id, fireAt: fireAt, timeZoneID: "Europe/Warsaw", createdAt: now)
-            return MorningBriefing.make(now: now, memories: [note], lists: [], reminders: [reminder], calendar: calendar)
+            return MorningBriefing.make(now: now, memories: [note], lists: [], reminders: [reminder], privateNotes: PrivateNotes(), calendar: calendar)
         }
         func at(_ month: Int, _ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
             calendar.date(from: DateComponents(year: 2026, month: month, day: day, hour: hour, minute: minute))!
@@ -79,7 +79,8 @@ final class MorningCheckInTests: XCTestCase {
         ])
 
         let briefing = MorningBriefing.make(
-            now: now, memories: [dentist, bins, later], lists: [packing, shopping], reminders: reminders, calendar: calendar)
+            now: now, memories: [dentist, bins, later], lists: [packing, shopping], reminders: reminders, privateNotes: PrivateNotes(),
+            calendar: calendar)
         XCTAssertEqual(briefing.reminders.map(\.text), ["Dentist at Mokotów", "Put the bins out"], "today, ahead, in time order")
         XCTAssertEqual(briefing.lists.map(\.name), ["Shopping"], "only lists with something left")
         XCTAssertEqual(briefing.lists.first?.openCount, 2)
@@ -91,9 +92,54 @@ final class MorningCheckInTests: XCTestCase {
         XCTAssertFalse(text.contains("passport"))
         XCTAssertEqual(MorningCheckInPrompt.render(nil), "none")
 
-        let empty = MorningBriefing.make(now: now, memories: [], lists: [], reminders: [], calendar: calendar)
+        let empty = MorningBriefing.make(now: now, memories: [], lists: [], reminders: [], privateNotes: PrivateNotes(), calendar: calendar)
         XCTAssertTrue(empty.isEmpty)
         XCTAssertTrue(MorningCheckInPrompt.render(empty).contains("Doddy reminders today: none."))
+    }
+
+    /// ADR-722: the check-in used to be built from every note, so the words of a Private note with a reminder today
+    /// went to the voice agent. Now they never enter the briefing, and the prompt leaves the reminder out altogether.
+    func testAPrivateNotesWordsNeverReachTheBriefingOrThePrompt() throws {
+        let now = date(8)
+        let secret = try MemoryRecord(id: UUID(), rawText: "Bank PIN 4417 for the safe", source: .explicitText, category: .other, capturedAt: now)
+        let plain = try MemoryRecord(id: UUID(), rawText: "Dentist at Mokotów", source: .explicitText, category: .other, capturedAt: now)
+        let reminders = [
+            MemoryReminder(id: UUID(), memoryID: secret.id, fireAt: date(9), timeZoneID: "Europe/Warsaw", createdAt: now),
+            MemoryReminder(id: UUID(), memoryID: plain.id, fireAt: date(10), timeZoneID: "Europe/Warsaw", createdAt: now),
+        ]
+        let briefing = MorningBriefing.make(
+            now: now, memories: [secret, plain], lists: [], reminders: reminders,
+            privateNotes: PrivateNotes(ids: [secret.id]), calendar: calendar)
+
+        // The screen still lists it, as "Private note": "None set for today" would be untrue.
+        XCTAssertEqual(briefing.reminders.map(\.text), [PrivateNotes.hiddenText, "Dentist at Mokotów"])
+        XCTAssertEqual(briefing.reminders.map(\.isPrivate), [true, false])
+        XCTAssertFalse(String(describing: briefing).contains("4417"), "the words are not in the briefing at all")
+        XCTAssertFalse(String(describing: briefing).contains("PIN"))
+
+        let prompt = MorningCheckInPrompt.render(briefing, timeZone: calendar.timeZone)
+        XCTAssertFalse(prompt.contains("4417"))
+        XCTAssertFalse(prompt.contains("PIN"))
+        XCTAssertFalse(prompt.contains(PrivateNotes.hiddenText), "the agent is not even told a private reminder exists")
+        XCTAssertTrue(prompt.contains("10:00 Dentist at Mokotów."), "the other reminder is given as before")
+        XCTAssertFalse(prompt.contains("09:00"))
+    }
+
+    func testOnlyPrivateRemindersTodayReadAsNoneForTheAgentButNotForTheScreen() throws {
+        let now = date(8)
+        let secret = try MemoryRecord(id: UUID(), rawText: "Call the clinic about the results", source: .explicitText, category: .other, capturedAt: now)
+        let reminder = MemoryReminder(id: UUID(), memoryID: secret.id, fireAt: date(15), timeZoneID: "Europe/Warsaw", createdAt: now)
+        let briefing = MorningBriefing.make(
+            now: now, memories: [secret], lists: [], reminders: [reminder],
+            privateNotes: PrivateNotes(ids: [secret.id]), calendar: calendar)
+        XCTAssertEqual(briefing.reminders.count, 1)
+        XCTAssertFalse(briefing.isEmpty, "the screen has a line to show")
+        XCTAssertTrue(MorningCheckInPrompt.render(briefing, timeZone: calendar.timeZone).contains("Doddy reminders today: none."))
+
+        // The same note, not private: its words are in the prompt, so the filter above is what hides it.
+        let open = MorningBriefing.make(
+            now: now, memories: [secret], lists: [], reminders: [reminder], privateNotes: PrivateNotes(), calendar: calendar)
+        XCTAssertTrue(MorningCheckInPrompt.render(open, timeZone: calendar.timeZone).contains("15:00 Call the clinic about the results"))
     }
 
     func testWhatLeavesThisIPhoneSaysSoOnlyWhenOn() {

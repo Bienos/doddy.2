@@ -25,6 +25,22 @@ export const unauthorized = (prompt = true) =>
     },
   });
 
+// How long a request that brought a wrong password waits before it is answered (ADR-714). It slows a
+// script guessing the password to a few guesses a second per connection and no more: serverless runs as
+// many instances as there are requests, so the real brake is a rate limit in the Vercel Firewall.
+export const FAILED_LOGIN_DELAY_MS = 750;
+
+// The answer for a request that is not the admin's. A request with no credentials (the browser's first
+// visit, before it asks for the password) is answered at once; one that carried credentials is a failed
+// login: it is counted in a log line that holds nothing from the request, then answered after the delay.
+export async function refuse(request, route, prompt = true) {
+  if (request.headers.has("authorization")) {
+    console.warn(JSON.stringify({ event: "waitlist_admin_login_failed", route, method: request.method }));
+    await new Promise((resolve) => setTimeout(resolve, FAILED_LOGIN_DELAY_MS));
+  }
+  return unauthorized(prompt);
+}
+
 async function readRecord(pathname) {
   const result = await get(pathname, { access: "private" });
   if (result?.statusCode !== 200) return null;

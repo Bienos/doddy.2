@@ -1,11 +1,13 @@
 // The errand runner (ADR-570, ERRANDS.md "The runner"). Phase 1: Claude researches with Anthropic's
 // web search and web fetch tools (no other tool exists, so nothing it reads can book, buy, send or
-// start anything), resuming `pause_turn` until the model ends its turn. Phase 2: a second call
+// start anything), resuming `pause_turn` until the model ends its turn, the time limit passes or the
+// research budget is used up (budget.ts, ADR-702). Phase 2: a second call
 // writes the result card in a fixed schema, then card.ts applies the code rules (links only from
 // this run, no price without its page). Logs carry ids and counts only, never words.
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { ErrandEffort } from "../config.js";
+import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, withMaxUses, type BudgetLeft, type ResearchBudget } from "./budget.js";
 import { buildResult } from "./card.js";
 import { CardOutput, type ErrandResult, type FailureCode } from "./schema.js";
 
@@ -31,8 +33,9 @@ export type CardReply =
 /** The two model calls, behind an interface so tests drive the loop with a fake. */
 export interface ErrandModelApi {
   readonly model: string;
-  /** One research request, streamed; resolves with the final message. Throws on API errors. */
-  research(messages: ResearchTurn[], signal: AbortSignal): Promise<ResearchMessage>;
+  /** One research request, streamed; resolves with the final message. Throws on API errors. `left` is what the
+   * errand's research budget still allows this request (ADR-702); absent means the API's own default budget. */
+  research(messages: ResearchTurn[], signal: AbortSignal, left?: BudgetLeft): Promise<ResearchMessage>;
   /** The card request. Throws on API errors; a reply that doesn't fit the schema is "unparsed". */
   card(input: string, signal: AbortSignal): Promise<CardReply>;
 }
@@ -42,6 +45,12 @@ export interface ErrandTask {
   words: string;
   brief: string;
   language: string;
+  /** "shopping" runs the shopping runner (docs/implementation/SHOPPING.md); absent is research. */
+  kind?: "shopping";
+  /** A shopping errand's priorities, in the user's order. */
+  priorities?: string[];
+  /** The account (shopping errands only), to pick the premium model for listed accounts. Never logged with words. */
+  accountId?: string;
 }
 
 export interface ResearchControl {
@@ -182,8 +191,14 @@ const textOf = (content: readonly Block[]) =>
 
 type StopReason = "time_limit" | "cancelled" | "interrupted";
 
-/** Runs both phases. Never throws for model or network problems: they end as a failure code. */
-export async function runResearch(api: ErrandModelApi, task: ErrandTask, control: ResearchControl): Promise<ResearchOutcome> {
+/**
+ * Runs both phases. Never throws for model or network problems: they end as a failure code. The research phase ends
+ * when the model is done, the time limit passes, or `budget` is used up; in that last case what it wrote so far
+ * becomes the notes and the card is still made (ADR-702).
+ */
+export async function runResearch(
+  api: ErrandModelApi, task: ErrandTask, control: ResearchControl, budget: ResearchBudget = DEFAULT_RESEARCH_BUDGET,
+): Promise<ResearchOutcome> {
   const now = control.now ?? (() => new Date());
   const log = control.log ?? (() => {});
   const usage = emptyUsage();
@@ -242,7 +257,14 @@ export async function runResearch(api: ErrandModelApi, task: ErrandTask, control
   for (;;) {
     const stop = await before();
     if (stop) return stopped(stop);
-    const r = await guarded(control.deadline, (signal) => api.research(messages, signal));
+    const room = budgetLeft(budget, {
+      requests, searches: Math.max(searches, reportedSearches), fetches: Math.max(fetches, reportedFetches), outputTokens: usage.outputTokens,
+    });
+    if ("reached" in room) {
+      log("errand research budget reached; using its notes", { errandId: task.id, limit: room.reached, requests });
+      break;
+    }
+    const r = await guarded(control.deadline, (signal) => api.research(messages, signal, room.left));
     if ("stop" in r) return stopped(r.stop);
     if ("error" in r) {
       log("errand research request failed", { errandId: task.id, requests, error: errorCode(r.error) });
@@ -307,7 +329,8 @@ function errorCode(err: unknown): string {
 
 export const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 export const RESEARCH_TOOLS = [
-  // No max_uses on either tool: the owner's decision is no cap on look-ups (ERRANDS.md).
+  // The tools as defined; `max_uses` comes from the errand's research budget (budget.ts, ADR-702), which narrows
+  // ADR-570's "no cap on look-ups": an owner who wants none sets the limits to 0.
   { type: "web_search_20260209", name: "web_search" },
   { type: "web_fetch_20260209", name: "web_fetch" },
 ] as const;
@@ -317,17 +340,19 @@ export class AnthropicErrandApi implements ErrandModelApi {
   readonly model: string;
   private readonly effort: ErrandEffort;
   private readonly client: Anthropic;
+  private readonly budget: ResearchBudget;
 
-  constructor(apiKey: string, options: { model?: string; effort?: ErrandEffort; baseURL?: string } = {}) {
+  constructor(apiKey: string, options: { model?: string; effort?: ErrandEffort; baseURL?: string; budget?: ResearchBudget } = {}) {
     this.model = options.model ?? "claude-opus-5-5";
     this.effort = options.effort ?? "high";
+    this.budget = options.budget ?? DEFAULT_RESEARCH_BUDGET;
     this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 2, timeout: 15 * 60_000 });
   }
 
-  async research(messages: ResearchTurn[], signal: AbortSignal): Promise<ResearchMessage> {
+  async research(messages: ResearchTurn[], signal: AbortSignal, left?: BudgetLeft): Promise<ResearchMessage> {
     const stream = this.client.beta.messages.stream({
       model: this.model,
-      max_tokens: 64000,
+      max_tokens: requestTokens(left, this.budget),
       thinking: { type: "adaptive" },
       output_config: { effort: this.effort },
       // A safety decline on one model is retried on Anthropic's recommended fallback, in the same call.
@@ -336,7 +361,7 @@ export class AnthropicErrandApi implements ErrandModelApi {
       // Each resumed turn resends the whole history: cache it.
       cache_control: { type: "ephemeral" },
       system: RESEARCH_SYSTEM,
-      tools: [...RESEARCH_TOOLS],
+      tools: withMaxUses(RESEARCH_TOOLS, left, this.budget) as never,
       messages: messages as never,
     }, { signal });
     return (await stream.finalMessage()) as unknown as ResearchMessage;
@@ -371,13 +396,15 @@ export class AnthropicErrandApi implements ErrandModelApi {
 export class ClaudeErrandResearcher implements ErrandResearcher {
   readonly provider = "anthropic" as const;
   readonly api: ErrandModelApi;
+  private readonly budget: ResearchBudget;
   get model() { return this.api.model; }
 
-  constructor(apiOrKey: ErrandModelApi | string, options: { model?: string; effort?: ErrandEffort; baseURL?: string } = {}) {
+  constructor(apiOrKey: ErrandModelApi | string, options: { model?: string; effort?: ErrandEffort; baseURL?: string; budget?: ResearchBudget } = {}) {
     this.api = typeof apiOrKey === "string" ? new AnthropicErrandApi(apiOrKey, options) : apiOrKey;
+    this.budget = options.budget ?? DEFAULT_RESEARCH_BUDGET;
   }
 
   research(task: ErrandTask, control: ResearchControl): Promise<ResearchOutcome> {
-    return runResearch(this.api, task, control);
+    return runResearch(this.api, task, control, this.budget);
   }
 }

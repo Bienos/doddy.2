@@ -23,8 +23,10 @@ public enum VoiceToolName {
     public static let handOverErrand = "hand_over_errand"
     /// What Doddy found for the tasks handed over, as saved on this iPhone.
     public static let checkErrands = "check_errands"
-    /// "Research X": a research brief and an infographic made in the background (ADR-584, Studio.swift).
+    /// "Research X": a research brief and an infographic made in the background (ADR-740, Studio.swift).
     public static let makeSomething = "make_something"
+    /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
+    public static let findDeals = "find_deals"
 }
 
 /// The functions a user turns on in Settings, Connections. All start off, and each one may also
@@ -216,6 +218,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case listAlarms
     /// Turn one of Doddy's alarms off, after a card.
     case cancelAlarm(clock: String, label: String?)
+    /// A stopwatch that counts up (ADR-652): started and stopped after a card, read after a "yes".
+    case startStopwatch(label: String?)
+    case stopStopwatch
+    case checkStopwatch
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
@@ -226,6 +232,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-568).
     case readSteps(StepDay)
+    /// The last 7 days from Apple Health as a short summary, after a consent of its own (ADR-623).
+    case readHealthWeek
+    /// Opens the training plan screen with a goal chosen, after a tap (ADR-626). The person answers the
+    /// safety questions there; the agent never sees them or the plan.
+    case openTrainingPlan(PlanAsk)
     /// Counts of the photos in the library for a span of days; pictures on screen only (ADR-569).
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
@@ -260,14 +271,17 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findFreeTime(FreeTimeRequest)
     /// "Remind me when to leave" (ADR-335): travel time from Apple Maps, then a card.
     case leaveBy(LeaveByRequest)
-    /// A task Doddy's server researches in the background (ADR-570). One yes covers every look-up
-    /// of this task and nothing else; nothing is booked, bought or sent.
+    /// A task Doddy's server researches in the background (ADR-570). One tap (not a spoken yes,
+    /// ADR-716) covers every look-up of this task and nothing else; nothing is booked, bought or sent.
     case handOverErrand(ErrandDraft)
     /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
     case checkErrands(about: String?)
-    /// A Studio job (ADR-584): one yes covers its web look-ups (capped on the server) and making its
+    /// A Studio job (ADR-740): one yes covers its web look-ups (capped on the server) and making its
     /// files in Anthropic's container, nothing else; nothing is published or sent.
     case makeSomething(StudioJob)
+    /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
+    /// server, after the user's yes. Nothing about the user goes to the shops.
+    case findDeals(DealsRequest)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -334,6 +348,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .listAlarms
         case VoiceToolName.cancelAlarm:
             return parseCancelAlarm(args, name: name)
+        case VoiceToolName.startStopwatch:
+            return .startStopwatch(label: Stopwatch.cleanLabel(args.text("label")))
+        case VoiceToolName.stopStopwatch:
+            return .stopStopwatch
+        case VoiceToolName.checkStopwatch:
+            return .checkStopwatch
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place)
@@ -348,6 +368,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:
             return parseSteps(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.readHealthWeek:
+            return .readHealthWeek
+        case VoiceToolName.openTrainingPlan:
+            return parseTrainingPlan(args, name: name)
         case VoiceToolName.findPhotos:
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:
@@ -368,6 +392,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCheckErrands(args)
         case VoiceToolName.makeSomething:
             return parseMakeSomething(args, name: name)
+        case VoiceToolName.findDeals:
+            return parseFindDeals(args, name: name)
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }
@@ -537,6 +563,24 @@ struct Arguments {
         return text(key).map { [$0] }
     }
 
+    /// A list that must hold only strings (priorities, leaflet items, chains). Unlike `texts`,
+    /// nothing is dropped: a number or an object in it makes the whole list `notStrings`, so the
+    /// agent hears why instead of a list that lost an entry. A single string counts as a list of
+    /// one; missing or null is `absent`. The strings are as sent (blank ones included).
+    enum StringList: Equatable {
+        case absent
+        case list([String])
+        case notStrings
+    }
+
+    func stringList(_ key: String) -> StringList {
+        guard let value = values[key], !(value is NSNull) else { return .absent }
+        if let single = value as? String { return .list([single]) }
+        guard let list = value as? [Any] else { return .notStrings }
+        let strings = list.compactMap { $0 as? String }
+        return strings.count == list.count ? .list(strings) : .notStrings
+    }
+
     func flag(_ key: String) -> Bool {
         values[key] as? Bool ?? false
     }
@@ -583,7 +627,7 @@ public enum VoiceTextLimits {
         // A task handed over (ADR-570): the user's words and Doddy's brief, as the server allows.
         case "words": ErrandDraft.maxWords
         case "brief": ErrandDraft.maxBrief
-        // A Studio job (ADR-584): the topic and the user's own words, as the server allows.
+        // A Studio job (ADR-740): the topic and the user's own words, as the server allows.
         case "topic": StudioJob.maxTopic
         case "details": StudioJob.maxDetails
         case "query", "place": search
@@ -797,8 +841,15 @@ public enum VoiceToolReply {
 
     /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`. A label is the
     /// agent's words, so it follows as data (ToolData).
-    public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar) -> String {
-        let text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+    /// `ring` (ADR-650) adds how it will ring, so the agent never promises a sound the iPhone
+    /// won't make; nil leaves the line as it was.
+    public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar, ring: TimerRing? = nil) -> String {
+        var text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+        switch ring {
+        case .alarm: text += " It rings like the Clock app's timer, even in Silent mode or a Focus."
+        case .notification: text += " It comes as a notification: in Silent mode it only vibrates."
+        case nil: break
+        }
         guard let label = draft.label else { return text }
         return text + " Its label:\n" + ToolData.block([quoted("Label", label)])
     }

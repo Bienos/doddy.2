@@ -1,8 +1,8 @@
-# Studio: research it, make it, keep it (S0, ADR-584)
+# Studio: research it, make it, keep it (S0, ADR-740)
 
 > All measured results (runs, costs, showcase files, tests) are collected in `STUDIO_TEST_RESULTS.md`.
 
-**Status, 22 Oct 2026: S0 is built on `claude/new-session-ayk8tq` (ADR-584). Off by default (`STUDIO_ENABLED=0`).** On 22 Oct one real job ran against the Anthropic API as far as the write step (see "First real run"); nothing here has run against APNs, Render or a device, and the make step has never run for real; the server ran against a local Postgres 16 with a fake model API. The SwiftUI views and the voice controller change are not compiled (no Xcode here). The audit that came first is `STUDIO_AUDIT.md`. The owner chose S0 on 22 Oct ("S0: Studio") after the audit; the open decisions are listed at the end, and where S0 had to pick, the pick is marked **default**.
+**Status, 22 Oct 2026: S0 is built on `claude/new-session-ayk8tq` (ADR-740). Off by default (`STUDIO_ENABLED=0`).** On 22 Oct one real job ran against the Anthropic API as far as the write step (see "First real run"); nothing here has run against APNs, Render or a device, and the make step has never run for real; the server ran against a local Postgres 16 with a fake model API. The SwiftUI views and the voice controller change are not compiled (no Xcode here). The audit that came first is `STUDIO_AUDIT.md`. The owner chose S0 on 22 Oct ("S0: Studio") after the audit; the open decisions are listed at the end, and where S0 had to pick, the pick is marked **default**.
 
 S0 is one kind: **a research brief and an infographic.** The owner says "research X" (or "make me an infographic about X"); Doddy shows one card; on Allow, the messaging server's worker plans, researches the web, writes the content, has Claude render it with Doddy's own scripts in Anthropic's container, checks the files in code, stores them, and sends a push with no words. The item appears in Home ••• → Studio, where it opens, shares and deletes.
 
@@ -118,7 +118,7 @@ Paper `#FFF7E9` background; ink `#171715` text; orange `#FF6A00` for decoration 
 
 **Data, not instructions:** the job's `topic`, `details` and `sources`, everything the web returns, and the pack are passed as JSON data in every prompt, and every system prompt says so.
 
-**Money:** each job has a token budget on the research call (advisory to the model), a dollar limit per job (`STUDIO_JOB_LIMIT_USD`, **default** $2, checked after every request), and a daily cap per account (`STUDIO_DAILY_CAP_USD`, **default** $3, checked at approve against today's spend plus a $1 reserve per open job). Each item records its cost from the API's usage, **each call priced with its own step's model** (`src/studio/models.ts`: Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10, Haiku 5.5 $0.10 / $0.50 per million tokens, Haiku $0.50 / $2.50 beyond 100K prompt tokens; cache reads at the model's own fraction; searches at $10 per 1,000; container time is recorded but counted as $0, inside the free hours). An unknown model is counted at the dearest price.
+**Money, enforced in code and not in a prompt (ADR-742):** an approval is refused with `429 studio_daily_limit` (`scope` `account` or `server`) when this account's approvals, the server's approvals, the new-account pool or the server's dollars for the UTC day are used up; those counts and dollars are kept in tables that deleting an item or an account can't reduce, and a refusal takes nothing. The model client makes no automatic retries (`maxRetries: 0`): a request that may have run and billed is never repeated blindly. Each job has a token budget on the research call (advisory to the model), a dollar limit per job (`STUDIO_JOB_LIMIT_USD`, **default** $2, checked after every request), and a daily cap per account (`STUDIO_DAILY_CAP_USD`, **default** $3, checked at approve against today's spend plus a $1 reserve per open job). Each item records its cost from the API's usage, **each call priced with its own step's model** (`src/studio/models.ts`: Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10, Haiku 5.5 $0.10 / $0.50 per million tokens, Haiku $0.50 / $2.50 beyond 100K prompt tokens; cache reads at the model's own fraction; searches at $10 per 1,000; container time is recorded but counted as $0, inside the free hours). An unknown model is counted at the dearest price.
 
 ## Settings (`server/messaging`)
 
@@ -131,8 +131,12 @@ Paper `#FFF7E9` background; ink `#171715` text; orange `#FF6A00` for decoration 
 | `STUDIO_MAX_SEARCHES`, `STUDIO_MAX_FETCHES` | 15, 15 | `max_uses` per job |
 | `STUDIO_BLOCKED_DOMAINS` | empty | Comma-separated hostnames for `blocked_domains` (owner decision 10) |
 | `STUDIO_TASK_BUDGET_TOKENS` | 150000 | The research call's task budget (minimum 20,000) |
-| `STUDIO_JOB_LIMIT_USD` | 4 | |
-| `STUDIO_DAILY_CAP_USD` | 5 | Per account, per UTC day |
+| `STUDIO_JOB_LIMIT_USD` | 2 | Per job, checked in code after every model request (a job can overshoot by at most one request) |
+| `STUDIO_DAILY_CAP_USD` | 3 | Per account, per UTC day, against today's spend plus a $1 reserve per open job (counted from the items, so deleting an item lowers it: the server-wide limits below are the ones nothing resets) |
+| `STUDIO_DAILY_PER_ACCOUNT` | 3 | Approvals per account per UTC day (ADR-742); deleting an item doesn't give one back |
+| `STUDIO_DAILY_PER_SERVER` | 10 | Approvals for the whole server per UTC day, counted in `server_daily_usage` (migration 015/017: no account in it) |
+| `STUDIO_DAILY_NEW_ACCOUNTS` | 0 | Of those, what accounts still new (no verified phone number, under `NEW_ACCOUNT_HOURS`) may use together. **0: a new account can't start a job** (ADR-702) |
+| `STUDIO_DAILY_SERVER_CAP_USD` | 10 | Dollars the server commits per UTC day (`studio_server_spend`, no account in it): each approval holds `STUDIO_JOB_LIMIT_USD` until its job ends and gives back what it didn't spend; an interrupted job's hold stays |
 | `STUDIO_TIME_LIMIT_MINUTES` | 20 | |
 | `STUDIO_MAX_OPEN` | 3 | Queued or running per account |
 
@@ -143,7 +147,7 @@ Paper `#FFF7E9` background; ink `#171715` text; orange `#FF6A00` for decoration 
 - **DoddyCore** (`Studio.swift`, `StudioClient.swift`): the job and its validation, the canonical digest (pinned by the same two test vectors the server's tests use), the item and its states, the card text, the tool replies, the delete rule. Linux tests. A downloaded file is used only if its size and SHA-256 match what the server listed.
 - **No copy on the iPhone in S0:** the server holds the items; the app keeps only each job's topic (UserDefaults, until the server has a title) and opened files in Caches. Delete everything clears those and says Studio items stay on the server until deleted in Studio (or with the account).
 
-## ASK-01 (ADR-584)
+## ASK-01 (ADR-740)
 
 A second exception next to Errands: the yes on a `make_something` card covers that one job's web searches and page reads (capped by `max_uses`) and the making of its files in Anthropic's container, and nothing else. The worker's research request has only `web_search` and `web_fetch`; the make request has only code execution with Doddy's skills. Neither can book, buy, send, publish or start another job. Enforced in `AskFirst.swift`, `askFirst.ts` (documented: Studio doesn't go through the backend), `check_forbidden_capabilities.sh` (the worker's tool lists are pinned) and `voice_agent_spec.py`.
 
@@ -263,7 +267,7 @@ What the outputs look like: all four briefs are readable and on brand. Opus: hea
 | Rule | Enforcing code | Tests | Gaps and claims to keep limited |
 |---|---|---|---|
 | ASK-01 / DOD-07: ask first, exact payload | App: `AskFirst.swift` (`make_something` asks; spoken yes or tap), `StudioJob.digest`; server: `approveItem` refuses any digest but the draft's; worker re-checks the digest before running | `StudioTests` (shared digest vectors, card text), `studio.test.ts` (digest mismatch, expiry), `studioUnits.test.ts` (canonical JSON) | The card isn't compiled in the app yet (no Xcode); the live agent doesn't have the tool |
-| ASK-01 exception scope (ADR-584) | `model.ts`: research has only `web_search_20260209`/`web_fetch_20260209` with `max_uses`; make has only `code_execution_20250825` with Doddy's skills; `check_forbidden_capabilities.sh` pins both workers' tool types | `studioUnits.test.ts` "research has only web search and fetch…"; the guard: PASS; mutation checked 22 Oct: code execution added to the Errands worker → FAIL (both rules), a `computer_20251124` tool added to Studio → FAIL; restored → PASS | The guard is a text scan of tool literals, not a runtime check |
+| ASK-01 exception scope (ADR-740) | `model.ts`: research has only `web_search_20260209`/`web_fetch_20260209` with `max_uses`; make has only `code_execution_20250825` with Doddy's skills; `check_forbidden_capabilities.sh` pins both workers' tool types | `studioUnits.test.ts` "research has only web search and fetch…"; the guard: PASS; mutation checked 22 Oct: code execution added to the Errands worker → FAIL (both rules), a `computer_20251124` tool added to Studio → FAIL; restored → PASS | The guard is a text scan of tool literals, not a runtime check |
 | DOD-08: done only when confirmed | Worker stores files, reads each back and compares SHA-256 before `ready` and before the push; the agent hears `started`, never "done" | `studio.test.ts` (ready only after the run; files served match) | No real storage outage was simulated |
 | DOD-09: unknown is never success, no blind retry | App: an approve whose answer never came is `unknown` and never re-sent; server: a dead worker's job is `interrupted`, never re-run | `StudioTests` (unknown approval), `studio.test.ts` (reaper) | |
 | DOD-02: honest content | Claims kept only if their page was seen in the run (`buildPack`); every point, fact, headline and chart must name pack claims (`contentProblems`); two failed checks → `needs_look` | `studioUnits.test.ts` (unseen URL dropped, unknown claim refused, needs_look) | Code can't check that a sentence says no more than its claims; wording faithfulness is the model's |

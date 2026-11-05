@@ -10,10 +10,10 @@
 2. **One ask.** Doddy calls `hand_over_errand` with the user's exact words, its one-line brief (with any assumption it said out loud) and a short title. The app shows one card:
    > **Hand this to Doddy?**
    > "chcę jechać do Rzymu w przyszłym miesiącu na 7 dni, sprawdź loty i hotele do 2000 zł"
-   > Doddy searches the web and reads pages as often as this needs, in the background, and sends you a notification when it's done. Nothing is booked, bought or sent.
+   > Doddy searches the web and reads pages as often as this needs, in the background. The result waits in Tasks in the app when it's done. Nothing is booked, bought or sent.
    > **Yes, go**
 
-   A spoken yes or a tap starts it (it reads the web and changes nothing; ASK-01's read rule). **That one yes covers every look-up of this errand, with no limit on how many** (owner, 21 Oct). It covers nothing else: no booking, no message, no other errand.
+   Only a tap on the card starts it: a spoken yes does not (ADR-716). **That one tap covers the look-ups of this errand within the per-errand research budget** (ADR-702: 40 searches, 40 page fetches, 30 requests and 300,000 output tokens by default; the owner's 21 Oct "no cap" is narrowed and waits for the owner's confirmation; a value of 0 in the setting means no limit). The words, the note and the title carry no links (ADR-703). It covers nothing else: no booking, no message, no other errand.
 3. **The app creates the errand on the server, then approves it** with the digest the server returned for exactly those words (`POST /v1/errands`, then `POST /v1/errands/:id/approve`). The agent hears `started: …` and tells the user they can close the app.
 4. **The server's worker researches it** with Claude and Anthropic's web search and web fetch tools, then writes the result card in a second call with a fixed schema.
 5. **Done:** a push notification with no words in it ("Gotowe. Wynik sprawy czeka w aplikacji." / "Done. Your task's result is waiting in the app."), like call results (ADR-500). Pushes can't carry an id yet (`apns.ts` sends only title and body), so the app checks its open errands when it comes to the front and shows the finished one on Home and in Sprawy. The app saves the result on the iPhone, then tells the server (`ack`), which deletes its copy of the words, brief and result.
@@ -67,7 +67,7 @@ Failure codes: `interrupted` (the worker stopped mid-run; it is **not** re-run b
 - **Model:** `claude-opus-5-5` (env `ERRANDS_MODEL`), adaptive thinking, effort `high` (env `ERRANDS_EFFORT`), streamed, with prompt caching (each resumed turn resends the whole history). Server-side fallbacks are on (`fallbacks: "default"`), so a safety decline on one model is retried on another inside the same call. The card call uses the same model at effort `medium`, no tools, and may run up to 4 minutes past the time limit.
 - **Tools:** `web_search_20260209` and `web_fetch_20260209`, **with no `max_uses`** (owner: no cap). `pause_turn` is resumed until the model ends its turn.
 - **What stops a run:** the model finishing; the user's Cancel; the time limit (env `ERRAND_TIME_LIMIT_MINUTES`, default 30), so a stuck run ends as `failed: time_limit` instead of running forever; a refusal or provider error.
-- **Limits that are not look-up caps:** at most 5 open errands per account (env `ERRANDS_MAX_OPEN`); 30 creates and 30 approvals an hour per device; up to 3 runs at once per server process; the switch `ERRANDS_ENABLED`, **off (`0`) by default**. There is no daily spend cap (owner decision open).
+- **Limits that are not look-up caps:** at most 5 open errands per account (env `ERRANDS_MAX_OPEN`); 30 creates and 30 approvals an hour per device; up to 3 runs at once per server process; the switch `ERRANDS_ENABLED`, **off (`0`) by default**. At most `ERRANDS_DAILY_PER_ACCOUNT` (default 10) approvals a UTC day per account and `ERRANDS_DAILY_PER_SERVER` (default 30) for the server (ADR-673, 1 Nov 2026, owner: "Do what you think is best for all"; the amounts are the owner's to change); over either, approve answers 429 `errand_daily_limit` and nothing is queued. The server's count survives deleting an account. Still no cap on look-ups within one errand.
 - **Costs** are logged per errand (input and output tokens, searches, fetches), never the words.
 
 ## Where it runs
@@ -79,7 +79,7 @@ Failure codes: `interrupted` (the worker stopped mid-run; it is **not** re-run b
 - **Sent to Anthropic:** the user's words, the brief, the language and today's date (not the title), plus whatever the run searches and reads; search words made from the task go on to Anthropic's search provider. Nothing from notes, lists, the profile or earlier conversations.
 - **On the server:** the words, brief, title and language as one encrypted blob, and the result, encrypted with the existing text key (`MEMORY_ENCRYPTION_KEY`), until the app acknowledges the result. The approved digest covers exactly the stored blob and the worker checks it again before running. A draft that's never approved is deleted after 10 minutes; any finished errand's content is deleted after 30 days. Receipts go in `errand_deletions`. Without the key the server refuses errands (`503 errands_disabled`).
 - **On the iPhone:** the result, in Doddy's database (`v15_errands`), with the user's words. Deleting it in the app deletes it there; the server copy is already gone after `ack`.
-- **The push** carries no words from the errand, not even its title (owner decision open: the title on the Lock Screen would be more useful and less private).
+- **The push** carries no words from the errand, not even its title. Decided 24 Oct 2026 (owner: "zrób jak trzeba"): it stays that way. The title would have to travel in the push payload (read by the server and Apple) or be filled in by a notification service extension on the phone, which can't be built or tried here.
 
 ## Failure paths
 

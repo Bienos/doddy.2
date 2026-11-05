@@ -102,13 +102,18 @@ public enum BlikRecipient: Equatable, Sendable {
     /// More than one contact matched; the agent asks which one.
     case several(names: [String])
 
-    /// `matches` is what the Contacts search found, in its order.
-    public static func resolve(_ matches: [(name: String, phoneNumbers: [String])]) -> BlikRecipient {
-        switch matches.count {
-        case 0: return .nameOnly
-        case 1: return .contact(name: matches[0].name, numbers: BlikPhone.numbers(matches[0].phoneNumbers))
-        default: return .several(names: matches.map(\.name))
+    /// `matches` is what the Contacts search found, in its order; `query` is the name searched for.
+    /// Among several, a contact whose whole name is exactly the query is the one (ADR-717), so the
+    /// full name the agent was asked for resolves; otherwise none is picked.
+    public static func resolve(_ matches: [(name: String, phoneNumbers: [String])], query: String? = nil) -> BlikRecipient {
+        guard !matches.isEmpty else { return .nameOnly }
+        if matches.count > 1 {
+            guard let query, let index = ContactName.only(query: query, names: matches.map(\.name)) else {
+                return .several(names: matches.map(\.name))
+            }
+            return .contact(name: matches[index].name, numbers: BlikPhone.numbers(matches[index].phoneNumbers))
         }
+        return .contact(name: matches[0].name, numbers: BlikPhone.numbers(matches[0].phoneNumbers))
     }
 }
 
@@ -209,10 +214,11 @@ extension VoiceToolReply {
 
     public static let blikDeclined = "declined: the user closed the BLIK transfer card. Nothing was sent; Doddy never sends money."
 
-    /// More than one contact has the name the agent sent. Names are from Contacts: data.
+    /// More than one contact has the name the agent sent. How many, and at most three names from
+    /// Contacts (data), never the whole list (ADR-717).
     public static func blikSeveralContacts(_ names: [String], query: String) -> String {
-        "failed: more than one contact matches the name below, so no transfer was shown. Ask the user which person they mean, then call "
-            + "\(VoiceToolName.draftBlikTransfer) again with that contact's full name. Never read out a number. Nothing was sent.\n"
-            + ToolData.block([quoted("Searched for", query)] + names.map { "- \(ToolData.clean($0))" })
+        "failed: \(names.count) contacts match the name below, so no transfer was shown. Ask the user for the person's full name, then call "
+            + "\(VoiceToolName.draftBlikTransfer) again with it. Never read out a number. Nothing was sent.\n"
+            + severalContactsData(names, query: query)
     }
 }

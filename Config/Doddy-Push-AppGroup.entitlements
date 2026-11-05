@@ -5,11 +5,19 @@
 <dict>
 	<key>com.apple.developer.applesignin</key>
 	<array><string>Default</string></array>
+	<!-- Timers, reminders and "time to leave" come through a Focus where the user allows it (ADR-650). -->
+	<key>com.apple.developer.usernotifications.time-sensitive</key>
+	<true/>
 	<key>aps-environment</key>
 	<string>development</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
 	</array>
+	<!-- Sport mode step 1 (ADR-621): read Apple Health. No clinical records. -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
 </dict>
 </plist>

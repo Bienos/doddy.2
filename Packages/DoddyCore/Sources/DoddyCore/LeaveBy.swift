@@ -1,10 +1,11 @@
 import Foundation
 
-// "Remind me when to leave" (ADR-335). For a place and an arrival time, the app reads where the
-// iPhone is once (While Using location), asks Apple Maps for the travel time to arrive by then,
-// and shows a card: the place Maps found, the travel time, and when to leave. Only after Set
-// reminder is a local notification scheduled, and it is read back from iOS. The travel time is
-// worked out when the card is made; traffic can change, and the card and reply say so.
+// "Remind me when to leave" (ADR-335). For a place and an arrival time, the app first shows what
+// was asked and waits for a tap (ADR-718); then it reads where the iPhone is once (While Using
+// location), asks Apple Maps for the travel time to arrive by then, and shows a card: the place
+// Maps found, the travel time, and when to leave. Only after Set reminder is a local notification
+// scheduled, and it is read back from iOS. The travel time is worked out when the card is made;
+// traffic can change, and the card and reply say so.
 
 public enum TravelMode: String, Codable, Equatable, Sendable, CaseIterable {
     case driving, walking, transit
@@ -93,6 +94,24 @@ public enum LeaveBy {
     static func day(_ date: Date, calendar: Calendar) -> String {
         let parts = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
+}
+
+/// The first card of "remind me when to leave" (ADR-718). Working out the trip reads where the iPhone
+/// is and asks Apple Maps, which the agent must not learn anything from before the user agrees: so
+/// the app shows what was asked, waits for a tap, and only then reads the position and builds the
+/// second card (place Maps found, travel time, leave time) that Set reminder answers.
+public enum LeaveByAsk {
+    public static func card(_ request: LeaveByRequest, calendar: Calendar = .current) -> AskCard {
+        AskCard(
+            title: "Work out when to leave?",
+            lines: [
+                "To: \(request.place)",
+                "Arrive by: \(LeaveBy.day(request.arriveBy, calendar: calendar)) \(LeaveBy.clock(request.arriveBy, calendar: calendar))",
+                "Travelling \(request.mode.phrase), with \(request.bufferMinutes) min to spare",
+                "Doddy uses where your iPhone is now, once, to ask Apple Maps for the travel time. Your position isn't kept. You see the place Maps found and the time to leave next, and nothing is set until you tap Set reminder.",
+            ],
+            confirmLabel: "Work it out")
     }
 }
 

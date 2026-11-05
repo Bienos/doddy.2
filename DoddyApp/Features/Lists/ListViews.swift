@@ -124,6 +124,15 @@ struct ListDetailView: View {
     /// The last open item was just ticked (ADR-313): Doddy jumps, once.
     @State private var finishedNow = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    /// Shopping list+ (ADR-631): which list is the At home list, on this iPhone; "" for none.
+    @AppStorage(HomeStock.preferenceKey) private var homeListID = ""
+    /// Shopping list+ (ADR-631): a product's barcode, read on this iPhone, asked of Open Food Facts.
+    @State private var showingScanner = false
+    @State private var scannedPhoto: Data?
+    @State private var isLookingUp = false
+    @State private var scan: BarcodeScan?
+
+    private var homeList: DoddyList? { HomeStock.list(storedID: homeListID, in: store.lists) }
 
     var body: some View {
         Group {
@@ -155,6 +164,12 @@ struct ListDetailView: View {
                     Text(list.name).font(.largeTitle.weight(.medium)).accessibilityAddTraits(.isHeader)
                         .accessibilityIdentifier("list.name")
                     Text(list.summary).font(.subheadline).foregroundStyle(Theme.secondaryText)
+                    if homeList?.id == list.id {
+                        Label("Your At home list", systemImage: "house")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                            .accessibilityIdentifier("list.atHome")
+                    }
                 }
                 .listRowBackground(Theme.canvas)
                 if let link = sharing.isShared(list.id) {
@@ -188,6 +203,23 @@ struct ListDetailView: View {
                     .tint(Theme.ink)
                     .accessibilityLabel("Add")
                     .disabled(ListText.cleaned(newItem) == nil)
+                    if CameraCapture.isAvailable {
+                        Button { openScanner() } label: {
+                            Group {
+                                if isLookingUp {
+                                    ProgressView()
+                                } else {
+                                    Image(systemName: "barcode.viewfinder")
+                                }
+                            }
+                            .frame(width: 44, height: 44)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Theme.ink)
+                        .disabled(isLookingUp)
+                        .accessibilityLabel("Scan a barcode")
+                        .accessibilityIdentifier("list.scanBarcode")
+                    }
                 }
                 .listRowBackground(Theme.canvas)
                 if let addNote {
@@ -244,7 +276,7 @@ struct ListDetailView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .safeAreaInset(edge: .bottom) {
-            if let undo = store.listUndo, undo.listID == listID {
+            if let undo = store.listUndo, undo.listID == listID || undo.shownOn == listID {
                 // A new identity per change, so a failed undo isn't carried to the next one (review F7).
                 ListUndoBar(undo: undo).id(undo.id)
             }
@@ -258,7 +290,26 @@ struct ListDetailView: View {
             Button("Cancel", role: .cancel) {}
         }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
-        .coversDoddy(showReminder || cloudShare != nil)
+        // Shopping list+ (ADR-631): iOS's own camera screen; the photo is read here, then dropped.
+        .fullScreenCover(isPresented: $showingScanner, onDismiss: {
+            guard let data = scannedPhoto else { return }
+            scannedPhoto = nil
+            Task { await lookUp(data) }
+        }) {
+            CameraCapture(
+                onPhoto: { data in
+                    scannedPhoto = data
+                    showingScanner = false
+                },
+                onCancel: { showingScanner = false })
+                .ignoresSafeArea()
+        }
+        .sheet(item: $scan) { scan in
+            BarcodeProductSheet(product: scan.product, listName: list.name) {
+                Task { await add(list, scanned: scan.product.itemText) }
+            }
+        }
+        .coversDoddy(showReminder || cloudShare != nil || showingScanner || scan != nil)
         .sheet(item: $cloudShare) { sheet in
             CloudSharingView(sheet: sheet, listName: list.name, onStopped: {
                 // Apple's "Stop Sharing" removes only the share, so the copy in iCloud and the
@@ -285,9 +336,22 @@ struct ListDetailView: View {
             .accessibilityValue(item.isDone ? "Ticked" : "Not ticked")
             .accessibilityAddTraits(.isToggle)
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.text)
-                    .strikethrough(item.isDone)
-                    .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                // Shopping list+ (ADR-631): a quantity read from the words shows as a label
+                // ("mleka · 2 l"); VoiceOver and every other place keep the full words.
+                let words = ListItemWords.read(item.text)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(verbatim: words.quantity == nil ? item.text : words.product)
+                        .strikethrough(item.isDone)
+                        .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                    if let quantity = words.quantity {
+                        Text(verbatim: quantity.display(polish: Self.polishLabels))
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .overlay(Capsule().stroke(Theme.secondaryText.opacity(0.5), lineWidth: 1))
+                    }
+                }
                 // Shared lists (ADR-285): who else added or ticked it, on this iPhone only.
                 let who = sharing.label(for: item)
                 if !who.isEmpty {
@@ -410,6 +474,7 @@ struct ListDetailView: View {
                     Button { confirmSharing = true } label: { Label("Share with people…", systemImage: "person.2") }
                 }
             }
+            atHomeMenu(list)
             // List templates (ADR-334): the items as written, ticks not kept.
             Button { saveTemplate(list) } label: { Label("Save as template", systemImage: "square.on.square") }
                 .disabled(list.items.isEmpty)
@@ -455,6 +520,9 @@ struct ListDetailView: View {
         }
     }
 
+    /// Quantity labels in the screens' language: "1,5 kg", "10 szt." in Polish; "1.5 kg", "10 pcs" otherwise.
+    static var polishLabels: Bool { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish }
+
     /// "Added by Marta · Ticked by Tom" (ADR-285).
     static func whoText(_ label: SharedItemLabel) -> String {
         func shown(_ name: String) -> String { name == "someone else" ? NSLocalizedString("someone else", comment: "") : name }
@@ -464,17 +532,120 @@ struct ListDetailView: View {
             .compactMap { $0 }.joined(separator: " · ")
     }
 
-    private func add(_ list: DoddyList) async {
-        guard let text = ListText.cleaned(newItem) else { return }
+    /// Shopping list+ (ADR-631): choose the At home list, and add ticked items between it and
+    /// another list. Each move is one ordinary add to one list, with its Undo.
+    @ViewBuilder
+    private func atHomeMenu(_ list: DoddyList) -> some View {
+        if homeList?.id == list.id {
+            Button { homeListID = "" } label: { Label("Not my At home list", systemImage: "house.slash") }
+            let others = store.lists.filter { $0.id != list.id }
+            if !list.done.isEmpty, !others.isEmpty {
+                Menu {
+                    ForEach(others) { other in
+                        Button(other.name) { addTicked(from: list, to: other) }
+                    }
+                } label: { Label("Add ticked to a list", systemImage: "cart.badge.plus") }
+            }
+        } else {
+            Button { homeListID = list.id.uuidString } label: { Label("This is my At home list", systemImage: "house") }
+            if let home = homeList, !list.done.isEmpty {
+                Button { addTicked(from: list, to: home) } label: {
+                    Label(String(format: NSLocalizedString("Add ticked to “%@”", comment: ""), home.name), systemImage: "house")
+                }
+            }
+        }
+    }
+
+    /// iOS asks for the camera the first time; once refused, only iPhone Settings can allow it again.
+    private func openScanner() {
+        errorMessage = nil
+        addNote = nil
+        guard CameraAccess.access() != .denied else {
+            errorMessage = NSLocalizedString("The camera is off for Doddy. You can allow it in iPhone Settings, Doddy, Camera.", comment: "")
+            return
+        }
+        showingScanner = true
+    }
+
+    /// The barcode is read on this iPhone; only its digits go to Open Food Facts. Nothing is added
+    /// here: the answer opens a card, and only its Add puts the product on the list.
+    private func lookUp(_ data: Data) async {
+        isLookingUp = true
+        defer { isLookingUp = false }
+        let code: ProductBarcode?
+        do {
+            code = try await PhotoBarcodeReader.read(data)
+        } catch {
+            errorMessage = NSLocalizedString("That photo couldn't be read. Try again, close to the barcode.", comment: "")
+            return
+        }
+        guard let code else {
+            errorMessage = NSLocalizedString("No product barcode was found in the photo. Try again with the barcode filling more of the picture, or type the item.", comment: "")
+            return
+        }
+        guard !UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) else {
+            errorMessage = NSLocalizedString("Connections are paused, so Doddy didn't look the barcode up. You can type the item instead.", comment: "")
+            return
+        }
+        switch await OpenFoodFactsClient.shared.product(for: code) {
+        case .found(let product):
+            scan = BarcodeScan(product: product)
+        case .notFound:
+            errorMessage = String(format: NSLocalizedString("Open Food Facts doesn't know the product %@. You can type it instead.", comment: ""), code.digits)
+        case .tooMany:
+            errorMessage = NSLocalizedString("That's a lot of barcodes in a minute. Wait a moment and try again.", comment: "")
+        case .failed:
+            errorMessage = NSLocalizedString("Open Food Facts couldn't be reached, so nothing was added. You can type the item instead.", comment: "")
+        }
+    }
+
+    private func addTicked(from list: DoddyList, to target: DoddyList) {
+        let words = HomeStock.tickedWords(of: list)
+        guard !words.isEmpty else { return }
+        errorMessage = nil
+        Task {
+            do {
+                let result = try await store.addToList(words, listID: target.id, source: .typed, shownOn: list.id)
+                addNote = Self.addedTickedNote(result, to: target.name)
+            } catch {
+                errorMessage = UserFacingError.listMessage(for: error)
+            }
+        }
+    }
+
+    /// "Added 3 to “W domu”. Already there: rice."
+    static func addedTickedNote(_ result: ListAddResult, to name: String) -> String {
+        var parts: [String] = []
+        if !result.added.isEmpty {
+            parts.append(String(format: NSLocalizedString("Added %lld to “%@”.", comment: ""), result.added.count, name))
+        }
+        if !result.alreadyThere.isEmpty {
+            parts.append(String(format: NSLocalizedString("Already there: %@.", comment: ""), result.alreadyThere.joined(separator: ", ")))
+        }
+        if !result.noRoom.isEmpty {
+            parts.append(String(format: NSLocalizedString("No room for %lld: “%@” is full.", comment: ""), result.noRoom.count, name))
+        }
+        return parts.isEmpty ? NSLocalizedString("Nothing was added.", comment: "") : parts.joined(separator: " ")
+    }
+
+    /// `scanned`: a product's words from its barcode (ADR-631); the add field is left as it is.
+    private func add(_ list: DoddyList, scanned: String? = nil) async {
+        guard let text = ListText.cleaned(scanned ?? newItem) else { return }
         errorMessage = nil
         do {
             let result = try await store.addToList([text], listID: list.id, source: .typed)
-            if !result.added.isEmpty { newItem = "" }
+            if !result.added.isEmpty, scanned == nil { newItem = "" }
             addNote = result.alreadyThere.isEmpty ? (result.tooLong.isEmpty ? (result.noRoom.isEmpty ? nil
                 : "The list is full (\(ListLimits.itemsPerList) items).")
                 : "An item can be up to \(ListLimits.itemLength) characters.")
                 : "“\(text)” is already on the list."
-            addFocused = true
+            // Shopping list+ (ADR-631): added anyway; the At home list has it open.
+            let atHome = HomeStock.onHomeList(result.added.map(\.text), home: homeList, addingTo: list.id)
+            if addNote == nil, !atHome.isEmpty, let home = homeList {
+                addNote = String(format: NSLocalizedString("Also on “%@”: %@.", comment: ""), home.name, atHome.joined(separator: ", "))
+            }
+            // After a scan the keyboard stays down; typing goes on with it up.
+            if scanned == nil { addFocused = true }
         } catch {
             errorMessage = UserFacingError.listMessage(for: error)
         }

@@ -19,16 +19,20 @@ public enum CarDecision: Equatable, Sendable {
 public enum CarProfile {
     public static func decision(for request: VoiceToolRequest) -> CarDecision {
         switch request {
-        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .findPhotos, .calculate, .convertUnits,
-             .convertCurrency, .readList, .listAlarms, .needsClarification, .unsupported, .invalid:
+        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .readHealthWeek, .findPhotos, .calculate, .convertUnits,
+             .convertCurrency, .readList, .listAlarms, .checkStopwatch, .needsClarification, .unsupported, .invalid:
             return .run
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
             return .run
-        case .handOverErrand, .checkErrands, .makeSomething:
-            // A task handed over, or a Studio job, is work on Doddy's server that changes nothing
-            // (ADR-570, ADR-584); its ask is answered by voice like any other look-up.
+        case .checkErrands, .findDeals:
+            // Reading what a task found, and this week's leaflets (SHOPPING.md), change nothing: the
+            // ask is answered by voice like any other look-up.
             return .run
+        case .handOverErrand, .makeSomething:
+            // Web research on Doddy's server changes nothing (ADR-570), but starting it takes a tap on
+            // its card, not a spoken yes (ADR-716; a Studio job too, ADR-742), so it waits until the user isn't driving.
+            return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         case .parkingSpot(let action):
             // Finding the car is a look-up; saving or clearing the spot waits until parked.
             if case .find = action { return .run }
@@ -45,7 +49,7 @@ public enum CarProfile {
         case .addToList(let request):
             return .askAloud(readBack: CarConfirmation.readBack(adding: request.items, to: request.list))
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
-             .setTimer, .setAlarm, .cancelAlarm, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .startTranslator,
+             .setTimer, .setAlarm, .cancelAlarm, .startStopwatch, .stopStopwatch, .openTrainingPlan, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .startTranslator,
              .stopTranslator, .checkOff, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")

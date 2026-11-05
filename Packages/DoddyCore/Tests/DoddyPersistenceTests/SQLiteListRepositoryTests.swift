@@ -287,4 +287,33 @@ extension SQLiteListRepositoryTests {
         XCTAssertEqual(NoteReminderCopy.body(noteText: "x", showNoteText: false, language: .polish, isList: true), "Lista, którą chcesz zobaczyć ponownie.")
         XCTAssertEqual(NoteReminderCopy.body(noteText: "x", showNoteText: false), NoteReminderCopy.privateBody)
     }
+
+    /// A list is a note row, so its first name stays as `rawText` on purpose (ADR-252). A name that
+    /// was renamed away, by the user or by a shared copy, must be nowhere else in the file (ADR-584).
+    func testRenamedListNamesStayOnlyInTheOriginalWording() async throws {
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("doddy-lists-\(UUID()).sqlite").path
+        defer { DatabaseFileBytes.remove(path) }
+        let renamed = "qzxvrenamedwolf", shared = "qzxvsharedwolf"
+        let database = try DoddyDatabase(path: path)
+        let lists = SQLiteListRepository(database: database)
+        let first = try await lists.create(name: "Shop \(renamed)", items: ["milk"], source: .voice)
+        let second = try await lists.create(name: "Trip \(shared)", items: ["tent"], source: .voice)
+        for word in [renamed, shared] {
+            XCTAssertTrue(try DatabaseFileBytes.indexFinds(word, in: "memories_fts", at: path), "\(word) was really indexed")
+        }
+
+        _ = try await lists.rename(listID: first.id, to: "Groceries")
+        _ = try await lists.replaceShared(listID: second.id, with: SharedListState(name: "Holiday", items: SharedListState(second).items))
+        for word in [renamed, shared] {
+            XCTAssertFalse(try DatabaseFileBytes.indexFinds(word, in: "memories_fts", at: path))
+            XCTAssertEqual(DatabaseFileBytes.occurrences(of: word, at: path), 1, "only the list's first name (rawText) keeps \(word)")
+        }
+
+        let memories = SQLiteMemoryRepository(database: database)
+        try await memories.delete(id: first.id)
+        try await memories.delete(id: second.id)
+        for word in [renamed, shared] {
+            XCTAssertEqual(DatabaseFileBytes.occurrences(of: word, at: path), 0, "deleting the list takes its first name too")
+        }
+    }
 }

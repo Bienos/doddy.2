@@ -6,10 +6,16 @@ public enum DeepLink: String, CaseIterable, Sendable {
     case home, memories, settings
     /// The parking widget (ADR-315): opens the saved spot in Maps, if there is one.
     case parking
+    /// DODDY Capture (ADR-588): the list of recordings. The Live Activity's Open button uses it.
+    case recordings
+    /// The voice island's Show button (ADR-616): the running conversation with the card that waits
+    /// for the user, or what Doddy just made. Navigation only: nothing is approved by opening it.
+    case conversation
 
     public static let scheme = "doddy"
 
-    /// `doddy://home`, `doddy://memories`, `doddy://settings`, `doddy://parking`. A bare `doddy://` opens Home.
+    /// `doddy://home`, `doddy://memories`, `doddy://settings`, `doddy://parking`, `doddy://recordings`,
+    /// `doddy://conversation`. A bare `doddy://` opens Home.
     /// Anything else, including other schemes and unknown places, returns nil.
     public init?(url: URL) {
         guard url.scheme?.lowercased() == Self.scheme else { return nil }

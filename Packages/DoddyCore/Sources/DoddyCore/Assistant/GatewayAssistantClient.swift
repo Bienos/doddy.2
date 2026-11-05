@@ -1,7 +1,9 @@
 import Foundation
 
-/// The one real `AssistantClient`: talks to the Doddy gateway, which holds the provider key.
-/// Nothing here logs text. Errors are the `AssistantError` taxonomy.
+/// The first `AssistantClient`: talks to the separate Doddy gateway (OpenAI), which holds the
+/// provider key. Since ADR-587 the app uses `BackendAssistantClient` (Doddy's own server, Claude)
+/// instead, and nothing in the app builds this one; it stays, tested, with `gateway/`, until the
+/// owner decides to delete both. Nothing here logs text. Errors are the `AssistantError` taxonomy.
 public struct GatewayAssistantClient: AssistantClient {
     private let configuration: GatewayConfiguration?
     private let transport: any GatewayTransport
@@ -95,8 +97,11 @@ public struct GatewayAssistantClient: AssistantClient {
 
     // MARK: - Decoding
 
-    static func interpret(_ response: GatewayHTTPResponse, for request: AssistantRequest) throws -> AssistantReply {
-        guard response.status == 200 else { throw error(from: response) }
+    static func interpret(
+        _ response: GatewayHTTPResponse, for request: AssistantRequest,
+        errorMapper: (GatewayHTTPResponse) -> AssistantError = GatewayAssistantClient.error(from:)
+    ) throws -> AssistantReply {
+        guard response.status == 200 else { throw errorMapper(response) }
         guard let wire = try? JSONDecoder().decode(AssistWireResponse.self, from: response.body),
               wire.schemaVersion == 1,
               wire.requestId.lowercased() == WireCoding.uuid(request.requestID)
@@ -107,7 +112,12 @@ public struct GatewayAssistantClient: AssistantClient {
             guard let id = UUID(uuidString: raw) else { throw AssistantError.invalidCitations }
             cited.append(id)
         }
-        return AssistantReply(text: wire.text, citedMemoryIDs: cited)
+        // A proposal that does not fit the limits is dropped; the answer is still shown.
+        let proposal = wire.proposal.flatMap { AssistantProposal.make(kind: $0.kind, title: $0.title, request: $0.request) }
+        // A plan offer that is not one of the five goals is dropped the same way; days and minutes the screen
+        // doesn't offer become the screen's own defaults (ADR-626).
+        let planAsk = wire.plan.flatMap { PlanAsk.make(goalName: $0.goal, daysPerWeek: $0.daysPerWeek, minutesPerSession: $0.minutesPerSession) }
+        return AssistantReply(text: wire.text, citedMemoryIDs: cited, proposal: proposal, planAsk: planAsk)
     }
 
     static func error(from response: GatewayHTTPResponse) -> AssistantError {

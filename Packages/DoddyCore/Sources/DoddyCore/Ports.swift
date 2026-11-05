@@ -122,6 +122,8 @@ public struct AssistantRequest: Equatable, Sendable {
     public let recentTurns: [ConversationTurn]
     /// BCP 47 language code of the app, e.g. "en" or "pl".
     public let locale: String
+    /// A photo sent with this question only (Messages). Never sent again with a later question.
+    public let image: AssistantImage?
 
     public init(
         sessionID: UUID,
@@ -129,6 +131,7 @@ public struct AssistantRequest: Equatable, Sendable {
         groundingMemories: [MemoryCandidate] = [],
         recentTurns: [ConversationTurn] = [],
         locale: String = "en",
+        image: AssistantImage? = nil,
         requestID: UUID = UUID()
     ) {
         self.requestID = requestID
@@ -137,6 +140,23 @@ public struct AssistantRequest: Equatable, Sendable {
         self.groundingMemories = groundingMemories
         self.recentTurns = recentTurns
         self.locale = locale
+        self.image = image
+    }
+}
+
+/// A photo the person attached to a message, already made smaller on the iPhone. JPEG only, within the size the
+/// server accepts; anything else is refused here so it never leaves the iPhone.
+public struct AssistantImage: Equatable, Sendable {
+    /// Bytes of the JPEG; the server's limit is 1.5 MB of base64, so this stays under it.
+    public static let maxBytes = 1_000_000
+    public static let mediaType = "image/jpeg"
+
+    public let jpeg: Data
+
+    /// Nil when the data is empty, too large, or not a JPEG.
+    public init?(jpeg: Data) {
+        guard !jpeg.isEmpty, jpeg.count <= Self.maxBytes, jpeg.starts(with: [0xFF, 0xD8, 0xFF]) else { return nil }
+        self.jpeg = jpeg
     }
 }
 
@@ -144,10 +164,17 @@ public struct AssistantReply: Equatable, Sendable {
     public let text: String
     /// Must be a subset of the request's grounding memory IDs. `CitationVerifier` enforces this.
     public let citedMemoryIDs: [UUID]
+    /// A file the person asked for (ADR-606), already checked against the limits; nil when none was asked for.
+    public let proposal: AssistantProposal?
+    /// A training plan the person asked for (ADR-626): a goal and maybe days and minutes, checked here. The plan screen
+    /// opens only on a tap, and asks the safety questions itself. nil when none was asked for.
+    public let planAsk: PlanAsk?
 
-    public init(text: String, citedMemoryIDs: [UUID] = []) {
+    public init(text: String, citedMemoryIDs: [UUID] = [], proposal: AssistantProposal? = nil, planAsk: PlanAsk? = nil) {
         self.text = text
         self.citedMemoryIDs = citedMemoryIDs
+        self.proposal = proposal
+        self.planAsk = planAsk
     }
 }
 

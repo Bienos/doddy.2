@@ -1,0 +1,252 @@
+<title>Dodi na dziś</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&family=Caveat:wght@600&display=swap">
+<style>
+/* Layout: one column of bands, each a single question (where are we, why slow, what costs, what next). Orange is the only accent. */
+:root {
+  --bg: #F2F4F7; --surface: #FFFFFF; --ink: #131820; --muted: #5B6573; --line: #D9DEE5;
+  --orange: #E85D00; --orange-soft: #FFE6D2; --ok: #1B7F55; --warn: #A86400; --bad: #B83232; --bar: #C9D0DA;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-hand: "Caveat", "Bradley Hand", cursive;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1117; --surface: #161C25; --ink: #EDF0F4; --muted: #9AA5B4; --line: #2A323E;
+    --orange: #FF7A1F; --orange-soft: #3A2414; --ok: #4CC68F; --warn: #E3A33F; --bad: #F08080; --bar: #3A4452; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1117; --surface: #161C25; --ink: #EDF0F4; --muted: #9AA5B4; --line: #2A323E;
+  --orange: #FF7A1F; --orange-soft: #3A2414; --ok: #4CC68F; --warn: #E3A33F; --bad: #F08080; --bar: #3A4452; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--font-body); padding-block: 8px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(34px, 9vw, 54px); line-height: 1.02; font-weight: 800; }
+h2 { font-size: 22px; line-height: 1.15; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 700; }
+p { margin: 0; }
+.hand { font-family: var(--font-hand); font-size: 24px; color: var(--orange); line-height: 1; }
+.label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.muted { color: var(--muted); }
+section { display: grid; gap: 12px; }
+.hero { display: grid; gap: 10px; padding-top: 12px; }
+.warn { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--surface); font-size: 13px; color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.stat b { display: block; font: 800 28px/1.05 var(--font-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+svg { display: block; width: 100%; height: auto; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { font-size: 12.5px; padding: 3px 9px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; }
+.t-ok { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.t-warn { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+.t-bad { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+.t-mute { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.fix { display: grid; gap: 4px; }
+.fix .was { color: var(--bad); font-size: 13.5px; }
+.fix .now { color: var(--ok); font-size: 13.5px; }
+.bars { display: grid; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: minmax(96px, 36%) 1fr auto; gap: 8px; align-items: center; font-size: 13px; }
+.bar-row .name { min-width: 0; line-height: 1.2; }
+.track { height: 14px; background: color-mix(in srgb, var(--bar) 35%, transparent); border-radius: 4px; overflow: hidden; }
+.fill { height: 100%; background: var(--bar); border-radius: 4px; }
+.fill.hot { background: var(--orange); }
+.fill.good { background: var(--ok); }
+.val { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13px; }
+.tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.tier h3 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.price { font: 800 20px/1 var(--font-display); color: var(--orange); white-space: nowrap; }
+.tier ul { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; display: grid; gap: 3px; }
+.phase { display: grid; grid-template-columns: 78px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.phase:first-of-type { border-top: 0; }
+.phase .when { font: 700 13px/1.2 var(--font-display); color: var(--orange); }
+.phase ul { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; display: grid; gap: 2px; }
+ol.decide { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+ol.decide li { padding-left: 4px; }
+.foot { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.axis { fill: var(--muted); font: 500 15px var(--font-body); }
+.barlbl { fill: var(--ink); font: 700 15px var(--font-body); }
+</style>
+
+<main class="wrap">
+
+<header class="hero">
+  <span class="hand">Dodi, 24 października 2026</span>
+  <h1>Gdzie jesteśmy i co dalej</h1>
+  <p class="warn">Nic z tej strony nie było jeszcze sprawdzone na telefonie. Liczby kosztów to ceny z oficjalnych stron z 23–24 paź albo szacunki (opisane).</p>
+  <div class="stats">
+    <div class="stat"><b>16 dni</b><span>od pierwszego commitu (8 paź)</span></div>
+    <div class="stat"><b>1 319</b><span>commitów, 133 PR (108 scalonych)</span></div>
+    <div class="stat"><b>1 672</b><span>testów logiki, 0 błędów (Linux)</span></div>
+    <div class="stat"><b>11 paź</b><span>ostatnia wersja widziana na telefonie</span></div>
+  </div>
+</header>
+
+<section>
+  <h2>Tempo pracy: commity dziennie</h2>
+  <div class="card">
+    <svg viewBox="0 0 640 230" role="img" aria-label="Commity na dzień od 8 do 23 października; szczyt 427 dnia 11 października">
+      <g id="bars"></g>
+    </svg>
+    <p class="muted" style="font-size:13px;margin-top:6px">Szczyt 11 paź (427): wyspa, Siri, Watch, pętla uczenia. Od 18 paź ok. 50–80 dziennie: bezpieczeństwo, serwery, strona i aplikacja internetowa.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Co jest, a w jakim stanie</h2>
+  <div class="cols">
+    <div class="card"><span class="tag t-ok">Widziane na telefonie</span>
+      <p>Rozmowa głosowa z agentem, zapis i szukanie notatek, wyspa (10 paź).</p>
+      <div class="chips"><span class="chip">głos</span><span class="chip">pamięć</span><span class="chip">wyspa</span></div></div>
+    <div class="card"><span class="tag t-warn">Zbudowane, kompilowane w CI, nie na telefonie</span>
+      <p>Przypomnienia, alarmy, listy, kalendarz, zdjęcia, kroki, tłumacz, Capture, BLIK, połączenia „w Twoim imieniu", Action Button, powitanie, Ustawienia.</p>
+      <div class="chips"><span class="chip">~92 narzędzia głosu</span><span class="chip">10 języków</span><span class="chip">6 Live Activities</span></div></div>
+    <div class="card"><span class="tag t-bad">Wyłączone albo bez dowodu</span>
+      <p>Zadania w tle, czat z Claude (nigdy nie odpowiedział), numer telefonu Dodiego, płatności, agent do połączeń.</p>
+      <div class="chips"><span class="chip">autoryzacja agenta: wył.</span><span class="chip">baza Render wygasa 10 lis</span></div></div>
+    <div class="card"><span class="tag t-mute">Wstrzymane</span>
+      <p>Apple Watch i Mac (kod zostaje). Pierwszeństwo: iPhone i strona.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Wyspa: trzy powody, że się zacinała</h2>
+  <div class="cols">
+    <div class="card fix"><h3>1. Nie wiedziała, że Dodi mówi</h3>
+      <p class="was">Aplikacja nigdy nie włączyła zdarzeń stanu w SDK ElevenLabs, więc wyspa stała na „Słucham" i nie rozwijała się.</p>
+      <p class="now">Zdarzenia włączone: „mówi / myśli / słucha" docierają.</p></div>
+    <div class="card fix"><h3>2. Aktualizacje szły w kolejce</h3>
+      <p class="was">Każda zmiana czekała na poprzednią; przy szybkich zmianach wyspa nadrabiała stare stany.</p>
+      <p class="now">Jedno wysyłanie: zawsze najnowszy stan, co najwyżej co 0,5 s (10 testów).</p></div>
+    <div class="card fix"><h3>3. Fale pracowały za mocno</h3>
+      <p class="was">120 klatek na sekundę, dziewięć linii z osobną warstwą przezroczystości.</p>
+      <p class="now">30 klatek, kolor z przezroczystością zamiast warstwy.</p></div>
+  </div>
+  <p class="muted" style="font-size:13px">Poprawki kompiluje teraz CI na Macu (przebieg uruchomiony ręcznie). Dla pełnej płynności zmierz w Instruments na iPhonie z ProMotion, wersja Release. Do zrobienia po Twojej stronie: dodać zdarzenie <b>agent_tool_request</b> w agencie ElevenLabs.</p>
+</section>
+
+<section>
+  <h2>Ile kosztuje minuta rozmowy</h2>
+  <div class="card">
+    <div class="bars" id="cost"></div>
+    <p style="margin-top:12px"><b>92% rachunku to opłata platformy ElevenLabs (0,08 $ za minutę połączenia na każdym planie).</b> Zmiana modelu w ElevenLabs prawie nic nie da. Własny potok (rozpoznawanie mowy + tani model + głos) to ok. 0,024–0,034 $/min, czyli ok. 60–70% taniej, ale najpierw test polskich głosów. Duży użytkownik (400 min) kosztuje dziś do 34,60 $ miesięcznie.</p>
+    <p class="muted" style="font-size:12.5px;margin-top:6px">Tylko cena ElevenLabs jest potwierdzona na oficjalnej stronie; reszta to szacunki z założeniem 45% mowy Dodiego i promptu ok. 9 000 tokenów. Zmierzone przez Ciebie 0,05 $ za 79 s jest o połowę niższe od katalogowej ceny: sprawdź w panelu dlaczego.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Co darmowe, co płatne</h2>
+  <div class="tiers">
+    <div class="card tier"><h3>Pocket Doddy <span class="price">0 zł</span></h3>
+      <ul><li>pamięć, szukanie tekstu, listy, przypomnienia</li><li>eksport, usuwanie, Face ID</li><li>3 min głosu na start</li><li>bez AI w chmurze</li></ul></div>
+    <div class="card tier"><h3>Best Mate <span class="price">34,99–49,99 zł</span></h3>
+      <ul><li>7 dni próby po pierwszym zapisie</li><li>40 min głosu miesięcznie</li><li>300 odpowiedzi tekstowych</li><li>działania w Kalendarzu i Przypomnieniach</li><li>roczny: ok. 349,99 zł</li></ul></div>
+    <div class="card tier"><h3>Pro (po 2–3 mies.) <span class="price">ok. 99,99 zł</span></h3>
+      <ul><li>80 min głosu + 10 min „na żywo"</li><li>50 odpowiedzi „pomyśl głębiej"</li><li>pakiet 30 min: 19,99 zł</li></ul></div>
+    <div class="card tier"><h3>Crew / Founding <span class="price">79,99 zł · 499,99 zł</span></h3>
+      <ul><li>Crew: do 6 osób, gdy płaci ≥4%</li><li>Founding: 500 miejsc, jednorazowo</li></ul></div>
+  </div>
+  <p class="muted" style="font-size:13px">Plan na 2–3% płacących, nie 5%. Testować dwie ceny (34,99 i 49,99 zł), bo ChatGPT Go kosztuje 34,99 zł. Eksport, usuwanie i komunikaty bezpieczeństwa nigdy za paywallem.</p>
+</section>
+
+<section>
+  <h2>Funkcje na kolejne tygodnie</h2>
+  <div class="cols">
+    <div class="card"><span class="tag t-ok">Teraz (dni–tydzień)</span>
+      <ul style="margin:0;padding-left:18px;display:grid;gap:3px;font-size:13.5px">
+        <li>Dodi w StandBy, poziomo, na Watch i CarPlay (iOS 27)</li><li>Tag NFC „Dobranoc"</li><li>Paragony działań: szkic → zatwierdzone → potwierdzone</li><li>Pisma po polsku jako szkic</li><li>Panel uprawnień</li></ul></div>
+    <div class="card"><span class="tag t-warn">Potem (1–2 tyg.)</span>
+      <ul style="margin:0;padding-left:18px;display:grid;gap:3px;font-size:13.5px">
+        <li>Zadania zaplanowane przez Ciebie (poranny brief)</li><li>Zadzwoń do Dodiego: polski numer</li><li>Skarbiec paragonów i gwarancji</li><li>Porównanie ofert przez telefon</li><li>Przypomnienia o lekach</li></ul></div>
+    <div class="card"><span class="tag t-mute">Później</span>
+      <ul style="margin:0;padding-left:18px;display:grid;gap:3px;font-size:13.5px">
+        <li>Krąg rodzinny: wspólne listy</li><li>Linia dla rodzica bez aplikacji</li><li>CarPlay (zgoda Apple)</li><li>WhatsApp (kanał wymienny)</li></ul></div>
+  </div>
+  <div class="card">
+    <h3>Wejście jednym ruchem</h3>
+    <div class="chips">
+      <span class="chip">Action Button</span><span class="chip">Back Tap</span><span class="chip">Centrum Sterowania</span><span class="chip">Ekran blokady</span><span class="chip">Widget</span><span class="chip">NFC</span><span class="chip">Camera Control</span><span class="chip">StandBy</span><span class="chip">Numer telefonu</span>
+    </div>
+    <p class="muted" style="font-size:13px;margin-top:8px">„Hey Siri" po polsku nie zadziała: Apple Intelligence w iOS 27 nie ma polskiego, a Siri AI nie jest na iPhone'ach w UE. Dlatego własna rozmowa jest przewagą.</p>
+  </div>
+  <p class="muted" style="font-size:13px">Pełna lista (ok. 60 pozycji, 15 trików iPhone'a) jest w <b>docs/strategy/DODI_PLAN_2026-10.md</b>.</p>
+</section>
+
+<section>
+  <h2>Wejście na rynek: 90 dni</h2>
+  <div class="card">
+    <div class="phase"><div class="when">26 paź – 22 lis</div><div><h3>Przygotowanie</h3><ul><li>płatny zespół Apple, identyfikator, uwierzytelnianie agenta, limity wydatków</li><li>zgłoszenie do wyróżnienia w App Store (min. 2 tyg. wcześniej)</li><li>3–5 polskich filmów z postacią tygodniowo, 10 mikrotwórców na TestFlight</li></ul></div></div>
+    <div class="phase"><div class="when">23 lis – 20 gru</div><div><h3>Beta</h3><ul><li>20–24 osoby spoza znajomych, potem 100–300</li><li>mierzyć aktywację, prawdziwy koszt minuty, opóźnienie ≤1,2 s</li><li>test cen i polskich głosów</li></ul></div></div>
+    <div class="phase"><div class="when">21 gru – 24 sty</div><div><h3>Premiera, jeśli progi spełnione</h3><ul><li>cel: 12–19 stycznia; prasa pod embargiem 2 tyg. wcześniej</li><li>progi: aktywacja ≥50%, próba → płatny ≥25%, płacący ≥4% w 3. mies.</li><li>reklama płatna tylko poniżej 20 € za płacącego</li></ul></div></div>
+  </div>
+  <p class="muted" style="font-size:13px">Budżet orientacyjny: 2,5–4 tys. € oszczędnie, do 12–16 tys. € rozszerzony. Przed startem: zgoda na AI z nazwą dostawcy (Apple 5.1.2(i)), informacja „to AI" (AI Act art. 50), umowy powierzenia, opinia prawnika o nagrywaniu rozmów.</p>
+</section>
+
+<section>
+  <h2>Twoje decyzje, od najważniejszej</h2>
+  <div class="card">
+    <ol class="decide">
+      <li>Dodać <b>agent_tool_request</b> do zdarzeń klienta agenta ElevenLabs (nie ruszałem agenta).</li>
+      <li>Włączyć uwierzytelnianie agenta, limit przechowywania nagrań i limit wydatków u Anthropic.</li>
+      <li>Zatwierdzić test polskich głosów i budowę taniego potoku.</li>
+      <li>Wybrać dwie ceny do testu i 40 min w Best Mate.</li>
+      <li>Zdecydować o numerze „Zadzwoń do Dodiego" (ok. 3 $/mies. + 0,09 $/min).</li>
+      <li>Wykupić płatny plan Render przed 10 listopada.</li>
+    </ol>
+  </div>
+</section>
+
+<p class="foot">Źródła, daty i niepewności: docs/research/2026-10-24/. Liczba commitów i PR według odczytu GitHub z 23 paź. Apple Intelligence bez polskiego, ceny ElevenLabs i RevenueCat: strony pierwotne. Pozostałe wnioski o rynku częściowo ze źródeł wtórnych (opisane w raportach).</p>
+</main>
+
+<script>
+(function () {
+  // Commits per day, UTC, 8 to 23 October (GitHub history).
+  var days = [14, 76, 233, 427, 46, 123, 32, 3, 2, 1, 83, 82, 70, 50, 64, 13];
+  var g = document.getElementById('bars');
+  var W = 640, H = 230, padL = 10, padB = 26, padT = 24, n = days.length;
+  var slot = (W - padL * 2) / n, bw = slot * 0.64, max = 427, ns = 'http://www.w3.org/2000/svg';
+  days.forEach(function (v, i) {
+    var h = Math.max(2, (H - padB - padT) * v / max);
+    var x = padL + i * slot + (slot - bw) / 2, y = H - padB - h;
+    var r = document.createElementNS(ns, 'rect');
+    r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', bw); r.setAttribute('height', h); r.setAttribute('rx', 3);
+    r.setAttribute('fill', v === max ? 'var(--orange)' : 'var(--bar)');
+    g.appendChild(r);
+    var t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', x + bw / 2); t.setAttribute('y', H - 8); t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', 'axis');
+    t.textContent = String(8 + i); g.appendChild(t);
+    if (v === max || v === 233 || v === 123) {
+      var l = document.createElementNS(ns, 'text');
+      l.setAttribute('x', x + bw / 2); l.setAttribute('y', y - 6); l.setAttribute('text-anchor', 'middle'); l.setAttribute('class', 'barlbl');
+      l.textContent = String(v); g.appendChild(l);
+    }
+  });
+  // Cost per voice minute, USD.
+  var rows = [
+    ['ElevenLabs dziś (cena katalogowa)', 0.0865, 'hot'],
+    ['ElevenLabs, jak zmierzono', 0.038, ''],
+    ['OpenAI mini, bez pamięci podręcznej', 0.079, ''],
+    ['Gemini Live (planowo)', 0.030, ''],
+    ['Własny potok (D1)', 0.024, 'good'],
+    ['OpenAI mini, z pamięcią podręczną', 0.018, ''],
+    ['Własny potok z tanim głosem (D2)', 0.014, 'good']
+  ];
+  var box = document.getElementById('cost');
+  rows.forEach(function (r) {
+    var row = document.createElement('div'); row.className = 'bar-row';
+    var name = document.createElement('div'); name.className = 'name'; name.textContent = r[0];
+    var track = document.createElement('div'); track.className = 'track';
+    var fill = document.createElement('div'); fill.className = 'fill ' + r[2]; fill.style.width = (r[1] / 0.0865 * 100) + '%';
+    track.appendChild(fill);
+    var val = document.createElement('div'); val.className = 'val'; val.textContent = r[1].toFixed(3).replace('.', ',') + ' $';
+    row.appendChild(name); row.appendChild(track); row.appendChild(val); box.appendChild(row);
+  });
+})();
+</script>

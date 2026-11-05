@@ -1,4 +1,4 @@
-// Studio without a database (ADR-584): the job contract and digest, the content rules, the research
+// Studio without a database (ADR-740): the job contract and digest, the content rules, the research
 // pack, every file check, the cost, and the whole pipeline against a fake Claude.
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";

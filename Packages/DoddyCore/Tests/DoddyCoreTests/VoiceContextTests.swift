@@ -39,10 +39,11 @@ final class VoiceContextTests: XCTestCase {
         let events = VoiceToolReply.calendarEvents([event], range: range, calendar: calendar)
         XCTAssertTrue(events.hasPrefix("Found 1 calendar event"))
         assertOneBlock(events)
-        assertOneBlock(VoiceToolReply.eventAmbiguous([event, event], calendar: calendar))
-        XCTAssertTrue(VoiceToolReply.eventAmbiguous([event, event], calendar: calendar).hasPrefix("not changed:"))
-        let reminder = ReminderSnapshot(id: "r", title: injection, listTitle: "Reminders", due: nil, markerURL: nil)
-        assertOneBlock(VoiceToolReply.reminderAmbiguous([reminder, reminder]))
+        // ADR-725: the "several match" answer carries none of the matching events' or reminders' text, so
+        // there is nothing in it for an injected title to ride on.
+        XCTAssertFalse(VoiceToolReply.eventNotPrepared.contains(injection))
+        XCTAssertTrue(VoiceToolReply.eventNotPrepared.hasPrefix("not changed:"))
+        XCTAssertFalse(VoiceToolReply.reminderNotPrepared.contains(injection))
 
         let note = try record(injection, at: t0)
         let search = VoiceToolReply.search(.matches([MemoryCandidate(record: note, matchedTerms: ["lunch"])]))

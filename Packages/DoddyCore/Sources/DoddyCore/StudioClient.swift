@@ -1,6 +1,6 @@
 import Foundation
 
-// The app's side of Studio (server/messaging, docs/implementation/STUDIO.md, ADR-584). Like the
+// The app's side of Studio (server/messaging, docs/implementation/STUDIO.md, ADR-740). Like the
 // rest of the client: nothing is reported as started, ready or deleted unless the server said so,
 // and an approval that may have reached the server without an answer coming back is "unknown",
 // never "offline, try again". Every error these calls throw is a `StudioError`.
@@ -127,6 +127,9 @@ extension DoddyServerClient {
         case (409, "too_many_open_items"): return .tooManyOpenItems
         case (409, "daily_cap_reached"): return .dailyCapReached(capUsd: body?.capUsd, spentUsd: body?.spentUsd)
         case (409, let code): return .conflict(code)
+        // The server's own limits for the day (ADR-742): this account's approvals, the whole server's approvals or dollars,
+        // or the pool for new accounts. All are "today's limit is reached" for the user.
+        case (429, "studio_daily_limit"): return .dailyCapReached(capUsd: nil, spentUsd: nil)
         case (503, "studio_disabled"): return .studioDisabled
         case (400, _): return .invalid(fields: body?.fields ?? [])
         case (404, _): return .notFound

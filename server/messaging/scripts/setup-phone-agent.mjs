@@ -88,6 +88,9 @@ const agent = await api("POST", "/v1/convai/agents/create", {
       dynamic_variables: { dynamic_variable_placeholders: el.placeholders },
       prompt: { prompt, llm: el.llm, temperature: el.temperature, timezone: el.timezone, tool_ids: toolIds },
     },
+    // The longest call (ADR-704): ElevenLabs ends it there. Without this the platform's own default applies, so a call
+    // to a number someone else controls could run for as long as that default allows.
+    ...(el.max_duration_seconds ? { conversation: { max_duration_seconds: el.max_duration_seconds } } : {}),
   },
   platform_settings: {
     overrides: el.overrides,

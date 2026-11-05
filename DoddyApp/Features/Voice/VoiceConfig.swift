@@ -27,13 +27,47 @@ enum VoiceConfig {
     static var directVoiceEnabled: Bool { false }
     #endif
 
-    /// How a conversation reaches the voice service: the Debug developer connection when it is on
-    /// (ADR-551), otherwise the token server. The voice screen and Talk in the Island (ADR-577) both
-    /// start with it.
-    static var connectionMode: VoiceConnectionMode {
-        if directVoiceEnabled { return .directAgent(agentID: directAgentID) }
+    /// Settings key of the Debug-only switch "OpenAI without a voice account" (ADR-726).
+    static let openAIWithoutAccountKey = "developer.openAIWithoutAccount"
+
+    #if DEBUG
+    /// Owner decision (ADR-726): a Debug build may ask the token server for an OpenAI voice with no
+    /// Doddy voice account. It works only while the server has OPENAI_OPEN_ACCESS on; otherwise the
+    /// server answers 401 and the app says the voice account is needed. On by default in Debug;
+    /// Release and TestFlight builds compile this to `false` and always need the account.
+    static var openAIWithoutAccount: Bool { UserDefaults.standard.object(forKey: openAIWithoutAccountKey) as? Bool ?? true }
+    #else
+    static var openAIWithoutAccount: Bool { false }
+    #endif
+
+    /// True when `provider` can start with no Doddy voice account: the ElevenLabs developer
+    /// connection (ADR-551) or OpenAI through the open token server (ADR-726).
+    static func talksWithoutAccount(for provider: VoiceProvider) -> Bool {
+        usesDirectAgent(for: provider) || (provider == .openAIRealtime && openAIWithoutAccount)
+    }
+
+    /// The voice the next conversation uses (ElevenLabs unless the user picked OpenAI, ADR-546).
+    static var chosenProvider: VoiceProvider {
+        VoiceProvider.effective(stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
+    }
+
+    /// The Debug developer connection (ADR-551) reaches only the ElevenLabs agent. OpenAI's key stays on
+    /// the token server, so OpenAI always goes through it, with a Doddy voice account (ADR-633).
+    static func usesDirectAgent(for provider: VoiceProvider) -> Bool {
+        directVoiceEnabled && provider == .elevenLabs
+    }
+
+    /// How a conversation with `provider` reaches the voice service: the Debug developer connection for
+    /// ElevenLabs when it is on (ADR-551), otherwise the token server.
+    static func connectionMode(for provider: VoiceProvider) -> VoiceConnectionMode {
+        if usesDirectAgent(for: provider) { return .directAgent(agentID: directAgentID) }
         return VoiceConnectionMode.resolve(serverAddress: tokenEndpointAddress)
     }
+
+    /// The connection for the chosen voice. The voice screen, Home and Talk in the Island (ADR-577)
+    /// all start with it. It used to ignore the voice, so in a Debug build OpenAI got the developer
+    /// connection and failed with "Voice isn't set up yet" before any network call (ADR-633).
+    static var connectionMode: VoiceConnectionMode { connectionMode(for: chosenProvider) }
 
     static var authEndpoint: URL? {
         guard let tokenEndpoint else { return nil }

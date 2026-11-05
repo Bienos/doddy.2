@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Studio (ADR-584): render the skills' samples with the real Python renderers, then run the messaging
+# Studio (ADR-740): render the skills' samples with the real Python renderers, then run the messaging
 # server's own TypeScript checks on the files (server/messaging/scripts/check-studio-render.mjs).
 # The two checkers can't drift apart without this failing. Needs python3 with reportlab and
 # matplotlib, and the compiled messaging server (its `npm test` builds it).

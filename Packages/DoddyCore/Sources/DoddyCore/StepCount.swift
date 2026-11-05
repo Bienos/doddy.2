@@ -3,7 +3,8 @@ import Foundation
 // "How many steps today?" (ADR-568). The iPhone counts steps, walking distance and floors climbed
 // in Motion & Fitness and keeps the last seven days. Doddy reads one day's totals when asked,
 // after the user's yes (ASK-01), and keeps nothing: the numbers go to the voice agent in that
-// conversation only. No Health data is read (HealthKit needs a paid Apple team and Apple's review).
+// conversation only. These come from Motion & Fitness, not from Health (Apple Health is read only by
+// the sport-mode screen, ADR-621).
 
 extension VoiceToolName {
     public static let readSteps = "read_steps"

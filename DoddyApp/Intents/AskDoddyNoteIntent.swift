@@ -11,7 +11,7 @@ import SwiftUI
 struct AskDoddyNoteIntent: AppIntent {
     static let title: LocalizedStringResource = "Ask Doddy what I saved"
     static var description: IntentDescription {
-        IntentDescription("Searches your saved notes on this iPhone and reads the matching note aloud. Works only when your iPhone is unlocked.")
+        IntentDescription("Searches your saved notes and reads the matching note aloud. Works only when your device is unlocked.")
     }
     static let openAppWhenRun = false
     static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication

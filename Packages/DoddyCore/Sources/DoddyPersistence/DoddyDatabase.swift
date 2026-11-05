@@ -39,6 +39,15 @@ public final class DoddyDatabase: Sendable {
         return config
     }
 
+    /// `secure_delete` overwrites a deleted row's pages but not the words an FTS5 index keeps of it:
+    /// FTS5 records a delete as new index entries and leaves the old ones until its segments merge
+    /// (measured: a deleted note's words were still in the file). Merging them in the same write
+    /// transaction as the delete or rewrite is what makes the words leave the file (ADR-584).
+    /// `index` is the name of one of the FTS5 tables below, never user input.
+    static func compactSearchIndex(_ index: String, in db: Database) throws {
+        try db.execute(sql: "INSERT INTO \(index)(\(index)) VALUES('optimize')")
+    }
+
     /// Shipped migrations are never edited; add a new one instead.
     static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
@@ -333,6 +342,130 @@ public final class DoddyDatabase: Sendable {
                 );
                 CREATE INDEX errands_created ON errands(created_at_ms);
                 """)
+        }
+        // DODDY Capture (ADR-588): recordings, their audio parts, their words (searchable) and the
+        // notes the user chose to remember from them. A row exists before the audio does, so a kill
+        // leaves something to recover. Values are checked by length rather than by list, so a later
+        // build can add a kind or a phase without a new migration. A note's link to its recording
+        // is cleared, not deleted, with the recording: the note is the user's.
+        migrator.registerMigration("v16_recordings") { db in
+            try db.execute(sql: """
+                CREATE TABLE recordings (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    title TEXT NOT NULL DEFAULT '' CHECK (length(title) <= \(CaptureLimits.maxTitleCharacters)),
+                    kind TEXT NOT NULL CHECK (length(kind) BETWEEN 1 AND 40),
+                    origin TEXT NOT NULL CHECK (length(origin) BETWEEN 1 AND 40),
+                    phase TEXT NOT NULL CHECK (length(phase) BETWEEN 1 AND 40),
+                    language TEXT NOT NULL CHECK (length(language) BETWEEN 2 AND 35),
+                    started_at_ms INTEGER NOT NULL,
+                    ended_at_ms INTEGER CHECK (ended_at_ms IS NULL OR ended_at_ms >= started_at_ms),
+                    duration_ms INTEGER NOT NULL DEFAULT 0 CHECK (duration_ms >= 0),
+                    end_reason TEXT CHECK (end_reason IS NULL OR length(end_reason) BETWEEN 1 AND 40),
+                    transcription TEXT NOT NULL DEFAULT 'notStarted' CHECK (length(transcription) BETWEEN 1 AND 40),
+                    gaps_json TEXT NOT NULL DEFAULT '[]',
+                    CHECK ((phase = 'recording') = (ended_at_ms IS NULL))
+                );
+                CREATE INDEX recordings_started ON recordings(started_at_ms);
+
+                CREATE TABLE recording_parts (
+                    recording_id TEXT NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+                    idx INTEGER NOT NULL CHECK (idx BETWEEN 1 AND 9999),
+                    file_name TEXT NOT NULL CHECK (file_name GLOB 'part-[0-9][0-9][0-9][0-9].caf'),
+                    start_offset_ms INTEGER NOT NULL CHECK (start_offset_ms >= 0),
+                    duration_ms INTEGER CHECK (duration_ms IS NULL OR duration_ms >= 0),
+                    PRIMARY KEY (recording_id, idx)
+                ) WITHOUT ROWID;
+
+                CREATE TABLE recording_segments (
+                    recording_id TEXT NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+                    idx INTEGER NOT NULL CHECK (idx >= 0),
+                    start_ms INTEGER NOT NULL CHECK (start_ms >= 0),
+                    end_ms INTEGER NOT NULL CHECK (end_ms >= start_ms),
+                    text TEXT NOT NULL CHECK (length(trim(text)) > 0),
+                    original_text TEXT NOT NULL,
+                    confidence REAL CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
+                    search_text TEXT NOT NULL,
+                    UNIQUE (recording_id, idx)
+                );
+                CREATE INDEX recording_segments_time ON recording_segments(recording_id, start_ms);
+
+                CREATE TABLE recording_memories (
+                    memory_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    recording_id TEXT REFERENCES recordings(id) ON DELETE SET NULL,
+                    at_ms INTEGER NOT NULL CHECK (at_ms >= 0),
+                    recording_title TEXT NOT NULL,
+                    linked_at_ms INTEGER NOT NULL
+                );
+                CREATE INDEX recording_memories_recording ON recording_memories(recording_id);
+                """)
+            try db.create(virtualTable: "recording_segments_fts", using: FTS5()) { t in
+                t.synchronize(withTable: "recording_segments")
+                t.tokenizer = .unicode61()
+                t.column("search_text")
+            }
+        }
+        // The thread with Doddy (ADR-585): typed messages kept on this iPhone until the user deletes them.
+        // The table refuses what the rules never produce: a Doddy message that is not "sent", a user
+        // message with a basis, a Doddy message without one. (v16 belongs to Capture, ADR-588, registered above.)
+        migrator.registerMigration("v17_message_thread") { db in
+            try db.execute(sql: """
+                CREATE TABLE thread_messages (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    sender TEXT NOT NULL CHECK (sender IN ('user', 'doddy')),
+                    text TEXT NOT NULL CHECK (length(text) BETWEEN 1 AND 50000),
+                    created_at_ms INTEGER NOT NULL,
+                    delivery TEXT NOT NULL CHECK (delivery IN ('sending', 'sent', 'failed')),
+                    basis TEXT CHECK (basis IS NULL OR basis IN ('savedNotes', 'general')),
+                    note_ids TEXT NOT NULL DEFAULT '[]',
+                    notes_sent INTEGER NOT NULL DEFAULT 0 CHECK (notes_sent >= 0),
+                    notes_search_failed INTEGER NOT NULL DEFAULT 0 CHECK (notes_search_failed IN (0, 1)),
+                    CHECK (sender = 'user' OR delivery = 'sent'),
+                    CHECK ((sender = 'doddy') = (basis IS NOT NULL))
+                );
+                CREATE INDEX thread_messages_created ON thread_messages(created_at_ms);
+                """)
+        }
+        // A file Doddy made from a message (ADR-606): its name, kind and link as JSON. Older rows have none.
+        migrator.registerMigration("v18_thread_document") { db in
+            try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN document_json TEXT")
+        }
+        // The training logbook (ADR-642): what the person did in a session, kept only with their yes.
+        // The checks sit in the table as well as in `LoggedSession`, so a row that breaks a rule cannot
+        // be written by any other path. Load is in grams so 2.5 kg compares exactly.
+        migrator.registerMigration("v19_training_log") { db in
+            try db.execute(sql: """
+                CREATE TABLE training_log_consent (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    granted INTEGER NOT NULL CHECK (granted IN (0, 1)),
+                    changed_at_ms INTEGER NOT NULL
+                )
+                """)
+            try db.execute(sql: """
+                CREATE TABLE training_sessions (
+                    id TEXT PRIMARY KEY,
+                    performed_at_ms INTEGER NOT NULL,
+                    plan_week INTEGER CHECK (plan_week IS NULL OR plan_week BETWEEN 1 AND 52),
+                    feeling TEXT NOT NULL CHECK (feeling IN ('easy', 'okay', 'hard', 'pain')),
+                    run_minutes INTEGER CHECK (run_minutes IS NULL OR run_minutes BETWEEN 1 AND 600)
+                )
+                """)
+            try db.execute(sql: "CREATE INDEX training_sessions_performed_at ON training_sessions(performed_at_ms)")
+            try db.execute(sql: """
+                CREATE TABLE training_sets (
+                    session_id TEXT NOT NULL REFERENCES training_sessions(id) ON DELETE CASCADE,
+                    position INTEGER NOT NULL CHECK (position >= 0),
+                    exercise_key TEXT NOT NULL CHECK (length(exercise_key) BETWEEN 1 AND 48),
+                    reps INTEGER NOT NULL CHECK (reps BETWEEN 0 AND 200),
+                    load_grams INTEGER CHECK (load_grams IS NULL OR load_grams BETWEEN 0 AND 500000),
+                    reps_in_reserve INTEGER CHECK (reps_in_reserve IS NULL OR reps_in_reserve BETWEEN 0 AND 10),
+                    PRIMARY KEY (session_id, position)
+                )
+                """)
+        }
+        // A message the person sent with a photo (Messages, 28 Oct 2026): only that it had one. The photo itself goes
+        // with the question to Doddy's server and on to Anthropic, and is kept neither on this iPhone nor on the server.
+        migrator.registerMigration("v20_thread_photo") { db in
+            try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN has_photo INTEGER NOT NULL DEFAULT 0 CHECK (has_photo IN (0, 1))")
         }
         return migrator
     }

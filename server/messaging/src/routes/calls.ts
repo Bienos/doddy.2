@@ -5,8 +5,11 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, openSession } from "../calls.js";
+import { abuseLimits } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
+import { isAllowedNumber } from "../phoneCountries.js";
+import { returnServerSlot, takeServerSlot } from "../serverUsage.js";
 
 const settingsBody = z.object({
   inboundEnabled: z.boolean().optional(),
@@ -33,6 +36,7 @@ const forgetPinOnCalls = (c: pg.PoolClient, accountId: string) =>
 export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
+  const limits = abuseLimits(deps.limits);
   const ensureRow = (accountId: string) =>
     db.query("INSERT INTO call_settings (account_id) VALUES ($1) ON CONFLICT DO NOTHING", [accountId]);
 
@@ -117,6 +121,8 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const target = rows[0];
     if (!target) return reply.code(409).send({ error: "no_verified_phone" });
     if (!target.consent) return reply.code(409).send({ error: "outbound_not_enabled" });
+    // A number verified before the country list existed (or before it changed) is not called either (ADR-704).
+    if (!isAllowedNumber(target.e164, limits.allowedCountryCodes)) return reply.code(409).send({ error: "phone_not_allowed" });
     const callId = randomUUID();
     const underLimit = await inTransaction(db, async (c) => {
       // Count and insert under one per-account lock, so parallel taps can't pass the limit together.
@@ -125,6 +131,9 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
         `SELECT count(*)::int AS n FROM calls WHERE account_id = $1 AND direction = 'outbound'
          AND created_at > now() - interval '1 day'`, [accountId]);
       if ((today.rows[0]?.n ?? 0) >= OUTBOUND_DAILY_LIMIT) return false;
+      // And a cap for the whole server per UTC day, taken in the same transaction as the call row (ADR-704): the
+      // account's ten a day are free to make, so on their own they would not bound what a flood of accounts costs.
+      if (!(await takeServerSlot(c, "outbound_calls", limits.outboundCallsPerServerDay))) return false;
       await c.query(
         "INSERT INTO calls (id, account_id, direction, status) VALUES ($1, $2, 'outbound', 'requested')", [callId, accountId]);
       return true;
@@ -139,7 +148,12 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
         outcome.kind === "accepted" ? outcome.conversationId ?? null : null,
         outcome.kind === "accepted" ? outcome.callSid ?? null : null,
         outcome.kind === "accepted" ? null : outcome.code]);
-    if (status === "failed") return reply.code(502).send({ error: "provider_unavailable", callId });
+    // Refused by the provider: no call was placed, so it doesn't use up the server's day. (An unknown outcome might be
+    // ringing, so that one stays counted.) The account's own count stays, as before.
+    if (status === "failed") {
+      await returnServerSlot(db, "outbound_calls").catch(() => {});
+      return reply.code(502).send({ error: "provider_unavailable", callId });
+    }
     return reply.code(202).send({ callId, status });
   });
 

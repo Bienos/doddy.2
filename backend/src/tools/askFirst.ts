@@ -14,7 +14,7 @@ import type { Store } from "../store.js";
  *
  * ASK-01's two exceptions don't pass through this gate: they run on the messaging server, where
  * the approval is the digest of exactly the job on the card. Errands (ADR-570): one yes covers
- * that task's web searches and page reads. Studio (ADR-584): one yes covers that job's capped web
+ * that task's web searches and page reads. Studio (ADR-740): one yes covers that job's capped web
  * look-ups and the making of its files in Anthropic's container. Their tool lists are pinned by
  * scripts/check_forbidden_capabilities.sh; nothing in this backend can widen them.
  */
@@ -50,6 +50,17 @@ export class AskGate {
       now: this.now(),
       ttlSeconds: ASK_TTL_SECONDS,
     });
+  }
+
+  /**
+   * True when `prepare` issued this approval to this user for this tool and account, and it is unused and
+   * unexpired, whatever it is bound to. A write with a lookup is bound to what the lookup finds, so it can
+   * only be checked in full after the lookup; this is the check that comes first, so a run that never had
+   * a card can't be used to look things up (ADR-708).
+   */
+  issuedFor(binding: Pick<AskBinding, "userId" | "tool" | "accountId">, approvalId: string | undefined): Promise<boolean> {
+    if (approvalId === undefined) return Promise.resolve(false);
+    return this.store.approvalIssuedFor({ approvalId, userId: binding.userId, capability: binding.tool, accountId: binding.accountId, now: this.now() });
   }
 
   /**

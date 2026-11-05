@@ -5,9 +5,10 @@ try {
   const config = loadConfig();
   const { server, store } = await buildApp(config);
   server.listen(config.port, config.host, () => {
-    // Names and modes only; no secrets or IDs.
+    // Names and modes only; no secrets or IDs. `ownerClaim` (ADR-707) says whether the first iPhone to
+    // sign in may claim a server that has no owner yet: `closed` is the live default.
     process.stdout.write(
-      `${JSON.stringify({ level: "info", event: "listening", host: config.host, port: config.port, mode: config.mode, auth: config.authMode, env: config.env, store: store.db.kind })}\n`,
+      `${JSON.stringify({ level: "info", event: "listening", host: config.host, port: config.port, mode: config.mode, auth: config.authMode, env: config.env, store: store.db.kind, web: config.web ? "on" : "off", ownerClaim: config.ownerClaim })}\n`,
     );
     if (config.mode === "mock") {
       process.stdout.write(

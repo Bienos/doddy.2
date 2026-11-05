@@ -6,6 +6,7 @@ import { taskCallContext } from "./taskCalls/context.js";
 import { errandContext } from "./errands/context.js";
 import { studioContext } from "./studio/context.js";
 import { modelLabel } from "./studio/models.js";
+import { watchContext } from "./watches/context.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
@@ -24,6 +25,10 @@ app.log.info({
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
   studio: !!(providers.studio.api && providers.cipher), studioModels: modelLabel(config.studioSettings.models),
+  assistant: !!providers.assistant.responder, assistantModel: config.assistantSettings.model,
+  deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
+  dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
+  watches: config.watchSettings.enabled && !!providers.cipher,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
@@ -36,7 +41,8 @@ if (config.runWorkerInWeb) {
   const taskCtx = taskCallContext(db, providers.taskCalls, providers.cipher, config.publicBaseUrl, providers.push, log);
   const errandCtx = errandContext(db, providers.errands, providers.cipher, providers.push, log);
   const studioCtx = studioContext(db, providers.studio, providers.cipher, providers.push, log);
-  workerDone = runWorkerLoop(db, { ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx }, () => stopping);
+  const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
+  workerDone = runWorkerLoop(db, { ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx }, () => stopping);
 }
 
 const shutdown = async () => {
