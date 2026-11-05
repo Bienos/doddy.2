@@ -9779,6 +9779,17 @@
         }
       }
     },
+    "Call recap": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie rozmowy"
+          }
+        }
+      }
+    },
     "Call them as you would on the phone. Say \"koniec próby\" for tips.": {
       "extractionState": "manual",
       "localizations": {
@@ -14654,6 +14665,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法连接到 Doddy 消息服务器。请检查网络连接后重试。"
+          }
+        }
+      }
+    },
+    "Couldn't save this story. Nothing was kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zapisać tego artykułu. Nic nie zostało zachowane."
           }
         }
       }
@@ -20816,6 +20838,17 @@
         }
       }
     },
+    "Doddy is making a call for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni dla ciebie"
+          }
+        }
+      }
+    },
     "Doddy is on a call": {
       "extractionState": "manual",
       "localizations": {
@@ -23463,6 +23496,17 @@
         }
       }
     },
+    "Doddy's server looks for these words in the stories of your other follows.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego szuka tych słów w artykułach z pozostałych śledzonych tematów."
+          }
+        }
+      }
+    },
     "Doddy's server reads each shop's page a few times a day while a watch is on. It only tells you; it never buys anything.": {
       "extractionState": "manual",
       "localizations": {
@@ -23470,6 +23514,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego czyta stronę każdego sklepu kilka razy dziennie, dopóki pilnowanie trwa. Tylko daje znać; niczego nie kupuje."
+          }
+        }
+      }
+    },
+    "Doddy's server searches news sources for these words.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego przeszukuje źródła wiadomości pod kątem tych słów."
           }
         }
       }
@@ -25273,6 +25328,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyciskanie hantli nad głowę"
+          }
+        }
+      }
+    },
+    "Duration": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas trwania"
           }
         }
       }
@@ -28511,6 +28577,50 @@
         }
       }
     },
+    "Follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledź"
+          }
+        }
+      }
+    },
+    "Follow these words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledź te słowa"
+          }
+        }
+      }
+    },
+    "Following": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledzone"
+          }
+        }
+      }
+    },
+    "Following needs a Doddy messaging server, and none is connected in this build yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledzone wymaga serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
+          }
+        }
+      }
+    },
     "For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -29440,6 +29550,17 @@
         }
       }
     },
+    "Give it a name and at least one word of two or more letters.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nadaj nazwę i podaj co najmniej jedno słowo z dwóch lub więcej liter."
+          }
+        }
+      }
+    },
     "Give the list a name.": {
       "extractionState": "manual",
       "localizations": {
@@ -29933,6 +30054,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czy lekarz zalecił Ci ograniczenie wysiłku?"
+          }
+        }
+      }
+    },
+    "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPad and is sent with each refresh to your Doddy server, which keeps none of it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nagłówki, streszczenia i zdjęcia pochodzą od wydawców, z ich publicznych kanałów; link otwiera cały artykuł. Żadna AI niczego tu nie napisała ani nie wybrała. To, co śledzisz, zostaje na tym iPadzie i jest wysyłane przy każdym odświeżeniu do Twojego serwera Doddy’ego, który nic z tego nie zachowuje."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nagłówki, streszczenia i zdjęcia pochodzą od wydawców, z ich publicznych kanałów; link otwiera cały artykuł. Żadna AI niczego tu nie napisała ani nie wybrała. To, co śledzisz, zostaje na tym iPhonie i jest wysyłane przy każdym odświeżeniu do Twojego serwera Doddy’ego, który nic z tego nie zachowuje."
+                }
+              }
+            }
           }
         }
       }
@@ -38302,6 +38464,17 @@
         }
       }
     },
+    "Loading topics…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytywanie tematów…"
+          }
+        }
+      }
+    },
     "Loading…": {
       "extractionState": "manual",
       "localizations": {
@@ -41665,6 +41838,17 @@
         }
       }
     },
+    "My own words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje własne słowa"
+          }
+        }
+      }
+    },
     "My profile": {
       "extractionState": "manual",
       "localizations": {
@@ -41867,6 +42051,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nazwij to nagranie"
+          }
+        }
+      }
+    },
+    "Name, e.g. CPK": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa, np. CPK"
           }
         }
       }
@@ -46596,6 +46791,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有说出具体内容，所以没有可保存的。"
+          }
+        }
+      }
+    },
+    "Nothing from the last two days for what you follow. Pull down to look again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic z ostatnich dwóch dni o tym, co śledzisz. Pociągnij w dół, żeby sprawdzić ponownie."
           }
         }
       }
@@ -52778,6 +52984,17 @@
         }
       }
     },
+    "Open the full story": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz cały artykuł"
+          }
+        }
+      }
+    },
     "Open the leaflet": {
       "extractionState": "manual",
       "localizations": {
@@ -53780,6 +53997,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "其他"
+          }
+        }
+      }
+    },
+    "Other side": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Druga strona"
+          }
+        }
+      }
+    },
+    "Outcome": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wynik"
           }
         }
       }
@@ -57397,6 +57636,17 @@
         }
       }
     },
+    "Question": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytanie"
+          }
+        }
+      }
+    },
     "Quick picks": {
       "extractionState": "manual",
       "localizations": {
@@ -57511,6 +57761,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "退出 Doddy"
+          }
+        }
+      }
+    },
+    "Quote": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cytat"
           }
         }
       }
@@ -64823,6 +65084,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已保存到你的记忆，但无法从这个清单中移除。轻点“放弃”来移除它。"
+          }
+        }
+      }
+    },
+    "Saved to your notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano w Twoich notatkach."
           }
         }
       }
@@ -73153,6 +73425,17 @@
         }
       }
     },
+    "Swipe to stop following. Drag to change the order of the row at the top.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń, aby przestać śledzić. Przeciągnij, aby zmienić kolejność w rzędzie na górze."
+          }
+        }
+      }
+    },
     "Switch off in Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -77315,6 +77598,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa osiągnęła limit czasu."
+          }
+        }
+      }
+    },
+    "The calls kept on this iPhone couldn't be read.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The calls kept on this iPad couldn't be read."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The calls kept on this iPhone couldn't be read."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać rozmów zapisanych na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać rozmów zapisanych na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -91174,6 +91498,17 @@
         }
       }
     },
+    "Warnings": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostrzeżenia"
+          }
+        }
+      }
+    },
     "Watch out for": {
       "extractionState": "manual",
       "localizations": {
@@ -91785,6 +92120,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To, co Doddy zapisał najpierw, zostaje zachowane. To zmienia tylko to, co widzisz i przeszukujesz."
+          }
+        }
+      }
+    },
+    "What Doddy found out on the calls he made for you. The whole log is in Settings › Phone calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy ustalił w rozmowach, które odbył dla ciebie. Cały log jest w Ustawieniach › Rozmowy telefoniczne."
           }
         }
       }
@@ -92869,6 +93215,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你请求过但 Doddy 无法做到的事，只记录主题。这只留在你的 iPhone 上。"
+          }
+        }
+      }
+    },
+    "What you follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co śledzisz"
           }
         }
       }
@@ -94418,6 +94775,17 @@
         }
       }
     },
+    "Words to look for, comma separated": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Słowa do wyszukania, oddzielone przecinkami"
+          }
+        }
+      }
+    },
     "Work out the basket: one shop or two": {
       "extractionState": "manual",
       "localizations": {
@@ -95247,6 +95615,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ty"
+          }
+        }
+      }
+    },
+    "You already follow that, or you follow ten things already.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Już to śledzisz albo śledzisz już dziesięć rzeczy."
           }
         }
       }
@@ -96295,6 +96674,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dyktujesz w Wiadomościach. Przestań dyktować, aby porozmawiać z Doddym."
+          }
+        }
+      }
+    },
+    "You're not following anything. Add a topic or your own words above.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie śledzisz. Dodaj temat albo własne słowa powyżej."
           }
         }
       }
@@ -100985,256 +101375,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "„Hej Siri, otwórz Doddy” też działa."
-          }
-        }
-      }
-    },
-    "Couldn't save this story. Nothing was kept.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie udało się zapisać tego artykułu. Nic nie zostało zachowane."
-          }
-        }
-      }
-    },
-    "Doddy's server looks for these words in the stories of your other follows.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Serwer Doddy’ego szuka tych słów w artykułach z pozostałych śledzonych tematów."
-          }
-        }
-      }
-    },
-    "Doddy's server searches news sources for these words.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Serwer Doddy’ego przeszukuje źródła wiadomości pod kątem tych słów."
-          }
-        }
-      }
-    },
-    "Follow": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Śledź"
-          }
-        }
-      }
-    },
-    "Follow these words": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Śledź te słowa"
-          }
-        }
-      }
-    },
-    "Following": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Śledzone"
-          }
-        }
-      }
-    },
-    "Following needs a Doddy messaging server, and none is connected in this build yet.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Śledzone wymaga serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
-          }
-        }
-      }
-    },
-    "Give it a name and at least one word of two or more letters.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nadaj nazwę i podaj co najmniej jedno słowo z dwóch lub więcej liter."
-          }
-        }
-      }
-    },
-    "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPad and is sent with each refresh to your Doddy server, which keeps none of it."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Nagłówki, streszczenia i zdjęcia pochodzą od wydawców, z ich publicznych kanałów; link otwiera cały artykuł. Żadna AI niczego tu nie napisała ani nie wybrała. To, co śledzisz, zostaje na tym iPadzie i jest wysyłane przy każdym odświeżeniu do Twojego serwera Doddy’ego, który nic z tego nie zachowuje."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Nagłówki, streszczenia i zdjęcia pochodzą od wydawców, z ich publicznych kanałów; link otwiera cały artykuł. Żadna AI niczego tu nie napisała ani nie wybrała. To, co śledzisz, zostaje na tym iPhonie i jest wysyłane przy każdym odświeżeniu do Twojego serwera Doddy’ego, który nic z tego nie zachowuje."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "Loading topics…": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wczytywanie tematów…"
-          }
-        }
-      }
-    },
-    "My own words": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moje własne słowa"
-          }
-        }
-      }
-    },
-    "Name, e.g. CPK": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nazwa, np. CPK"
-          }
-        }
-      }
-    },
-    "Nothing from the last two days for what you follow. Pull down to look again.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nic z ostatnich dwóch dni o tym, co śledzisz. Pociągnij w dół, żeby sprawdzić ponownie."
-          }
-        }
-      }
-    },
-    "Open the full story": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otwórz cały artykuł"
-          }
-        }
-      }
-    },
-    "Saved to your notes.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapisano w Twoich notatkach."
-          }
-        }
-      }
-    },
-    "Swipe to stop following. Drag to change the order of the row at the top.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przesuń, aby przestać śledzić. Przeciągnij, aby zmienić kolejność w rzędzie na górze."
-          }
-        }
-      }
-    },
-    "What you follow": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Co śledzisz"
-          }
-        }
-      }
-    },
-    "Words to look for, comma separated": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Słowa do wyszukania, oddzielone przecinkami"
-          }
-        }
-      }
-    },
-    "You already follow that, or you follow ten things already.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Już to śledzisz albo śledzisz już dziesięć rzeczy."
-          }
-        }
-      }
-    },
-    "You're not following anything. Add a topic or your own words above.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nic nie śledzisz. Dodaj temat albo własne słowa powyżej."
           }
         }
       }

@@ -2577,5 +2577,15 @@
   "You're dictating in Messages. Stop dictating to talk to Doddy.": "Dyktujesz w Wiadomościach. Przestań dyktować, aby porozmawiać z Doddym.",
   "A call rehearsal has the microphone. End it to talk to Doddy.": "Mikrofonu używa próba rozmowy. Zakończ ją, aby porozmawiać z Doddym.",
   "Something else in Doddy has the microphone. Finish it to talk to him.": "Mikrofonu używa coś innego w Doddym. Zakończ to, aby z nim porozmawiać.",
-  "Stop dictating to play this.": "Przestań dyktować, aby to odtworzyć."
+  "Stop dictating to play this.": "Przestań dyktować, aby to odtworzyć.",
+  "Doddy is making a call for you": "Doddy dzwoni dla ciebie",
+  "Call recap": "Podsumowanie rozmowy",
+  "Question": "Pytanie",
+  "Outcome": "Wynik",
+  "Quote": "Cytat",
+  "Warnings": "Ostrzeżenia",
+  "Duration": "Czas trwania",
+  "Other side": "Druga strona",
+  "What Doddy found out on the calls he made for you. The whole log is in Settings › Phone calls.": "Co Doddy ustalił w rozmowach, które odbył dla ciebie. Cały log jest w Ustawieniach › Rozmowy telefoniczne.",
+  "The calls kept on this iPhone couldn't be read.": "Nie udało się odczytać rozmów zapisanych na tym iPhonie."
 }

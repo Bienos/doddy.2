@@ -167,6 +167,8 @@ struct HomeView: View {
                 if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
                 }
+                // One small mark while Doddy has a call going for the person; nothing otherwise.
+                ActiveCallBadge()
                 Spacer()
                 moreMenu
             }

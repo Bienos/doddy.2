@@ -162,7 +162,9 @@ struct OpenedCase: Identifiable, Hashable {
     @MainActor
     init(open record: StoredCallCase, in list: CallCasesModel) {
         id = record.id
-        model = list.caseModel(for: record, activity: CallLiveActivity.shared)
+        // No Lock Screen Live Activity (owner, 2026-11-05: calls are invisible; one small mark on Home,
+        // then the recap). The call's own screen, Przejmij and Zakończ are one tap from that mark.
+        model = list.caseModel(for: record, activity: nil)
     }
 
     static func == (a: OpenedCase, b: OpenedCase) -> Bool { a.id == b.id && a.model === b.model }

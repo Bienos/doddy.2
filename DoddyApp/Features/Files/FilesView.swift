@@ -21,6 +21,7 @@ struct FilesSheet: View {
         NavigationStack {
             List {
                 madeByDoddy
+                CallRecapSection(preview: $preview)
                 Section {
                     Button { showRecordings = true } label: {
                         Label("Recordings", systemImage: "waveform.circle")
