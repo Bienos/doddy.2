@@ -9,7 +9,7 @@ struct AppLanguageSettingsSection: View {
 
     var body: some View {
         Section {
-            // The build's languages (ADR-732), plus the current choice if it is one the build hides.
+            // The build's languages (ADR-813), plus the current choice if it is one the build hides.
             Picker("App language", selection: $selection) {
                 ForEach(ReleaseScopeStore.current.languageChoices(current: selection), id: \.self) { language in
                     if let name = language.nativeName {

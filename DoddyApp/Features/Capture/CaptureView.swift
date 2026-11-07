@@ -110,7 +110,7 @@ struct CaptureView: View {
                             ProblemView(message: takenPhotoProblem).accessibilityIdentifier("capture.takenPhotoProblem")
                         }
                         CapturePhotoPicker(text: $text, prepared: $photo, isDisabled: isSaving)
-                        // A second microphone path; hidden in the beta (ADR-732).
+                        // A second microphone path; hidden in the beta (ADR-813).
                         if ReleaseScopeStore.current.shows(.voiceMemos) {
                             CaptureVoiceMemo(text: $text, draft: $memo, isDisabled: isSaving)
                         }

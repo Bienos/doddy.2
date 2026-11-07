@@ -9,7 +9,7 @@ adding one adapter, not rewriting the app or the agent.
 | `instructions.md` | Doddy's system prompt with `{{placeholders}}` | Agent prompt; placeholders are dynamic variables the app passes at `startConversation` | `session.instructions`, rendered on the phone by `RealtimeInstructions.render` |
 | `tools.json` | 102 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy`; `python3 -I scripts/voice_agent_spec.py check` counts them | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 
-**Release scope (ADR-732, 7 Nov 2026):** the app refuses the tools of a feature its build hides (`ReleaseScope.shipping` in DoddyCore; `docs/implementation/RELEASE_SCOPE.md` lists the 61 tools the beta's agent should lose and the 41 it keeps). The spec here still describes every tool; taking the hidden ones off the live agent is the owner's change, as always.
+**Release scope (ADR-813, 7 Nov 2026):** the app refuses the tools of a feature its build hides (`ReleaseScope.shipping` in DoddyCore; `docs/implementation/RELEASE_SCOPE.md` lists the 61 tools the beta's agent should lose and the 41 it keeps). The spec here still describes every tool; taking the hidden ones off the live agent is the owner's change, as always.
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
 **OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).

@@ -45,7 +45,7 @@ struct DoddyMemorySettingsView: View {
                                   : (profiles.profile.value(.name) ?? NSLocalizedString("Saved", comment: "")))
                 }
                 .accessibilityIdentifier("settings.profile")
-                // The learning loop waits for the beta's result (ADR-732, M6): hidden with its row.
+                // The learning loop waits for the beta's result (ADR-813, M6): hidden with its row.
                 if ReleaseScopeStore.current.shows(.learning) {
                     NavigationLink {
                         KnowledgeSettingsView()
@@ -76,7 +76,7 @@ struct ConnectionsSettingsView: View {
     @State private var connections = ConnectionController()
 
     private var activityLog: ActivityLogStore { .shared }
-    /// Each row below is a feature's way in; a hidden one has no row (ADR-732).
+    /// Each row below is a feature's way in; a hidden one has no row (ADR-813).
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 
     var body: some View {
@@ -210,7 +210,7 @@ struct ConnectionsSettingsView: View {
 }
 
 /// Settings › Notifications (ADR-633): everything that can reach the user without opening Doddy.
-/// A row whose feature the build hides is left out (ADR-732).
+/// A row whose feature the build hides is left out (ADR-813).
 struct NotificationsSettingsView: View {
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 

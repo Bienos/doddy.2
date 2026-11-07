@@ -80,7 +80,7 @@ public enum CaptureFailure: Equatable, Sendable {
 
 public enum StartRejection: Equatable, Sendable {
     case alreadyActive
-    /// Recordings are hidden in this build (ADR-732): Siri, the control and the Action Button still
+    /// Recordings are hidden in this build (ADR-813): Siri, the control and the Action Button still
     /// know the intent, so the answer says why nothing started.
     case notInThisVersion
 

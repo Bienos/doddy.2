@@ -1,6 +1,6 @@
 import Foundation
 
-/// A feature the release scope can hide (ADR-732). Hiding is "no way in": the row in Settings, the
+/// A feature the release scope can hide (ADR-813). Hiding is "no way in": the row in Settings, the
 /// card or menu item on Home, the icon's quick action and the voice tool all go; the code and the
 /// person's data stay. Nothing here deletes or changes what the person saved.
 ///
@@ -167,7 +167,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     }
 }
 
-/// Which features a build shows (ADR-732; `docs/implementation/RELEASE_SCOPE.md`). One list, read
+/// Which features a build shows (ADR-813; `docs/implementation/RELEASE_SCOPE.md`). One list, read
 /// by every way in: the voice tool gate, Home's menu and bottom bar, the Settings rows, the icon's
 /// quick actions, the language picker and the capability catalog. There was no switch for "Hide"
 /// before this (`GO_LIVE_CHECKLIST.md` B2): a feature could only be shipped or deleted.
@@ -183,7 +183,7 @@ public struct ReleaseScope: Equatable, Sendable {
         self.hidden = hidden
     }
 
-    /// Every feature, as the code was built until ADR-732.
+    /// Every feature, as the code was built until ADR-813.
     public static let everything = ReleaseScope(hidden: [])
 
     /// The v1 beta (`docs/product/V1_SCOPE.md`, `PRZEGLAD_FUNKCJI_2026-11-07.md` §6): the

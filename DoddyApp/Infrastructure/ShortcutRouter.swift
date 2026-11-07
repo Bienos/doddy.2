@@ -269,7 +269,7 @@ final class ShortcutRouter {
     private var recordingToOpen: UUID?
 
     func openRecordings() {
-        // Hidden in this build (ADR-732): a link or an older control opens nothing.
+        // Hidden in this build (ADR-813): a link or an older control opens nothing.
         guard ReleaseScopeStore.current.shows(.recordings) else { return }
         guard mayGoAhead(.openRecordings, again: { [self] in openRecordings() }) else { return }
         guard !isVoicePresented, drafts.shown == nil else { return }

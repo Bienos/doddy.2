@@ -804,7 +804,7 @@ public enum VoiceToolReply {
             + ToolData.block([quoted("Tool", name)])
     }
 
-    /// A tool of a feature this build hides (ADR-732). Nothing was looked up, saved or changed, and
+    /// A tool of a feature this build hides (ADR-813). Nothing was looked up, saved or changed, and
     /// the call isn't logged. The agent says so in one line and carries on with what the app has.
     public static func hidden(_ name: String) -> String {
         "not available: this version of the Doddy app doesn't include the tool below, so nothing was looked up, saved or changed. Tell the user in one short sentence that this isn't in the app yet, and go on with what you can do.\n"

@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// The release scope (ADR-732): one list that hides a feature's every way in, and the tools the
+/// The release scope (ADR-813): one list that hides a feature's every way in, and the tools the
 /// live agent loses with it. Checked against `voice-agent/tools.json`, so a tool that belongs to no
 /// feature and isn't core fails here before it can slip into a build unplaced.
 final class ReleaseScopeTests: XCTestCase {

@@ -16,7 +16,7 @@ struct ConnectionsView: View {
                 Text("Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.")
                     .foregroundStyle(Theme.secondaryText)
 
-                // A group whose every switch the build hides (ADR-732) goes with its heading.
+                // A group whose every switch the build hides (ADR-813) goes with its heading.
                 ForEach(ConnectionGroup.shown(in: ReleaseScopeStore.current)) { group in
                     VStack(alignment: .leading, spacing: 12) {
                         Text(group.title)
@@ -76,7 +76,7 @@ struct ConnectionGroup: Identifiable {
         ConnectionGroup(title: "Money", items: [.blik]),
     ]
 
-    /// The groups with the switches the scope shows (ADR-732); a group left with no switch is dropped.
+    /// The groups with the switches the scope shows (ADR-813); a group left with no switch is dropped.
     static func shown(in scope: ReleaseScope) -> [ConnectionGroup] {
         all.compactMap { group in
             let items = group.items.filter { scope.shows($0) }

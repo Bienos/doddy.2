@@ -15,7 +15,7 @@ enum QuickActions {
     @discardableResult
     static func handle(_ shortcutItem: UIApplicationShortcutItem) -> Bool {
         guard let action = QuickAction(rawValue: shortcutItem.type) else { return false }
-        // An item from a menu installed by an older build, for a feature this build hides (ADR-732).
+        // An item from a menu installed by an older build, for a feature this build hides (ADR-813).
         if action == .parking, !ReleaseScopeStore.current.shows(.parking) { return false }
         let router = ShortcutRouter.shared
         switch action {

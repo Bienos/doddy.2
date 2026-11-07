@@ -2665,7 +2665,7 @@ final class VoiceSessionController {
         callOwners.record(call.toolCallId, attempt: attempt)
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
-        // The release scope (ADR-732), translator (ADR-215), plan, Pause all, then the tool's switch,
+        // The release scope (ADR-813), translator (ADR-215), plan, Pause all, then the tool's switch,
         // in that order (ToolGate).
         let gate = ToolGate.decide(
             toolName: call.toolName, request: request, translatorOn: translator != nil,

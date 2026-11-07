@@ -41,7 +41,7 @@ final class ToolGateTests: XCTestCase {
         }
     }
 
-    // MARK: The release scope (ADR-732)
+    // MARK: The release scope (ADR-813)
 
     func testHiddenToolIsRefusedBeforeEverything() {
         // A hidden tool is hidden whatever else is on: translator, Pause all, a switch.

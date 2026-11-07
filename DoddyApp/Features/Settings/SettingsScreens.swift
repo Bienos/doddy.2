@@ -136,7 +136,7 @@ struct VoiceSettingsView: View {
                 PersonalityLinkRow()
             }
             Section {
-                // One voice provider in the beta (ADR-732, V1 decision 5): the picker is hidden with the feature.
+                // One voice provider in the beta (ADR-813, V1 decision 5): the picker is hidden with the feature.
                 if ReleaseScopeStore.current.shows(.voiceProviderPicker) {
                     VoiceProviderPicker(idPrefix: "settings")
                 }
@@ -342,7 +342,7 @@ struct MemoriesSettingsView: View {
 
             BackupSettingsSection()
 
-            // Hidden in the beta until one real Takeout export has been tried (ADR-732).
+            // Hidden in the beta until one real Takeout export has been tried (ADR-813).
             if ReleaseScopeStore.current.shows(.noteImport) {
                 NoteImportSettingsSection()
             }
@@ -548,7 +548,7 @@ struct PrivacySettingsView: View {
             Section {
                 // ADR-310: Face ID when Doddy opens, and after a minute away.
                 AppLockToggle()
-                // iPhone search (ADR-330), off until switched on; no row at all when the build hides it (ADR-732).
+                // iPhone search (ADR-330), off until switched on; no row at all when the build hides it (ADR-813).
                 if ReleaseScopeStore.current.shows(.spotlight) {
                     SpotlightToggle()
                 }
@@ -696,7 +696,7 @@ struct RoutinesSettingsView: View {
                     .foregroundStyle(Theme.secondaryText)
             }
             MorningCheckInSettingsSection()
-            // Each routine the build hides (ADR-732) loses its section; the morning check-in stays, off by default.
+            // Each routine the build hides (ADR-813) loses its section; the morning check-in stays, off by default.
             if ReleaseScopeStore.current.shows(.eveningWrapUp) { EveningWrapUpSettingsSection() }
             if ReleaseScopeStore.current.shows(.weeklyPlan) { WeeklyPlanSettingsSection() }
             if ReleaseScopeStore.current.shows(.weeklyLookBack) { WeeklyLookBackSettingsSection() }
@@ -720,7 +720,7 @@ struct AdvancedSettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     #if DEBUG
-    /// Shows every feature on the owner's phone (ADR-732). Only a Debug build has the toggle or reads the key.
+    /// Shows every feature on the owner's phone (ADR-813). Only a Debug build has the toggle or reads the key.
     @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = false
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
@@ -772,7 +772,7 @@ struct AdvancedSettingsView: View {
     }
 
     #if DEBUG
-    /// The release scope (ADR-732): what this build hides, and the switch to see it all. Debug only.
+    /// The release scope (ADR-813): what this build hides, and the switch to see it all. Debug only.
     private var releaseScope: some View {
         Section {
             Toggle("Developer: show every feature", isOn: $previewEverything)

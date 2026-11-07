@@ -223,7 +223,7 @@ struct HomeView: View {
                 // first screen at the largest text size, whatever tools are added below it.
                 Button { selectedTab = .settings } label: { Label("Settings", systemImage: "slider.horizontal.3") }
                     .accessibilityIdentifier("home.menu.settings")
-                // Each item below is a feature's way in; the build's scope decides which exist (ADR-732).
+                // Each item below is a feature's way in; the build's scope decides which exist (ADR-813).
                 if scope.shows(.translator) {
                     Button { showTranslator = true } label: { Label("Translate", systemImage: "character.bubble") }
                         .disabled(!canTalk)
@@ -599,7 +599,7 @@ struct HomeView: View {
             .buttonStyle(DoddyPressStyle())
             .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
             .accessibilityIdentifier("home.ask")
-            // Files Doddy made on his server (ADR-633): with the feature (ADR-732), the pill is Messages alone.
+            // Files Doddy made on his server (ADR-633): with the feature (ADR-813), the pill is Messages alone.
             if scope.shows(.files) {
                 Rectangle().fill(Theme.separator).frame(width: 1, height: 24)
                 Button { showFiles = true } label: {
@@ -623,7 +623,7 @@ struct HomeView: View {
 
     private var canTalk: Bool { store.environment.capabilities.isAvailable(.voiceInput) }
 
-    /// Which features this build shows (ADR-732). Read each time, so the Debug toggle shows on the next draw.
+    /// Which features this build shows (ADR-813). Read each time, so the Debug toggle shows on the next draw.
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 
     /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under

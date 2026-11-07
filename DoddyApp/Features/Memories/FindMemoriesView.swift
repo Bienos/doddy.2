@@ -74,7 +74,7 @@ struct FindMemoriesView: View {
             outcome = result
             isRunning = false
             // Then, without holding up the word results: notes close in meaning, on this iPhone.
-            // Hidden in the beta (ADR-732): the word search stands alone.
+            // Hidden in the beta (ADR-813): the word search stands alone.
             guard ReleaseScopeStore.current.shows(.meaningSearch) else { return }
             var found: Set<UUID> = []
             if case .matches(let candidates) = result { found = Set(candidates.map(\.memoryID)) }

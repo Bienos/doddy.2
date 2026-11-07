@@ -1,4 +1,4 @@
-# Release scope: the "Hide" switch (ADR-732, 7 Nov 2026)
+# Release scope: the "Hide" switch (ADR-813, 7 Nov 2026)
 
 One list in DoddyCore says which features a build shows. Before it, a feature could only ship or be deleted (`GO_LIVE_CHECKLIST.md` B2: "There is no switch for this today"). Now a feature can be **hidden**: its ways in go, its code and the person's data stay.
 

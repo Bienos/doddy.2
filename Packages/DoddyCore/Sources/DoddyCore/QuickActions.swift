@@ -9,7 +9,7 @@ public enum QuickAction: String, CaseIterable, Sendable {
     case parking = "doddy.quick.parking"
 
     /// The actions to show, in order. "Where I parked" only when there's a spot to show, and only
-    /// when the build shows the parking spot at all (ADR-732).
+    /// when the build shows the parking spot at all (ADR-813).
     public static func shown(hasParkingSpot: Bool, scope: ReleaseScope = .everything) -> [QuickAction] {
         hasParkingSpot && scope.shows(.parking) ? [.talk, .newNote, .find, .parking] : [.talk, .newNote, .find]
     }
