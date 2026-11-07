@@ -149,7 +149,10 @@ describe("client bucket (ADR-702)", () => {
     const secret = randomBytes(32);
     const key = counterKey(secret, "203.0.113.7");
     assert.match(key, /^[0-9a-f]{64}$/);
-    assert.ok(!key.includes("203"));
+    // The key is 64 random-looking hex digits, so any three-digit substring such as "203" turns up
+    // by chance in about 1.5% of keys (the old check here failed CI that often, e.g. 7 Nov 2026).
+    // What must never appear is the address itself.
+    assert.ok(!key.includes("203.0.113.7"), "the key never holds the address");
     assert.notEqual(key, counterKey(undefined, "203.0.113.7"), "with a secret the key is an HMAC, not the bare hash");
     assert.equal(key, counterKey(secret, "203.0.113.7"));
     assert.notEqual(key, counterKey(randomBytes(32), "203.0.113.7"));
