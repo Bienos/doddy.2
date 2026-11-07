@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// "Na oku" (working name, ADR-728): one read-only list of what Doddy is holding for the person, from the
+/// "Na oku" (working name, ADR-756): one read-only list of what Doddy is holding for the person, from the
 /// reminders, calendar, tasks, price watches and parcels the app already has. Nothing is created, changed
 /// or sent from here, and a source that couldn't be read is named, never shown as empty.
 /// NOT COMPILED in the session that wrote it (no Xcode), and not seen on a device: the hosted Mac job is its first build.

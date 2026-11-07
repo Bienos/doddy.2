@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// The only place the "Na oku" page reads the app's stores (ADR-728). It collects what each source already
+/// The only place the "Na oku" page reads the app's stores (ADR-756). It collects what each source already
 /// holds into an `OpenLoopsInput` and decides two things for the builder:
 /// - **Words.** A reminder on a private note comes back with `.hidden` words unless Face ID has unlocked private
 ///   notes, the same rule as Home's "Due now" card (ADR-310). A note that no longer exists is `.hidden` too.

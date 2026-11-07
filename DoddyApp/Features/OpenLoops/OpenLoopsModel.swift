@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// The "Na oku" page's state (ADR-728), without the views, so it is type-checked and tested on Linux. It
+/// The "Na oku" page's state (ADR-756), without the views, so it is type-checked and tested on Linux. It
 /// stores nothing and sends nothing: it asks a source provider for what the app already holds, builds the
 /// list with `OpenLoopsBuilder`, and keeps the last list for the screen. The provider is the only place
 /// that reads the stores (Calendar, Reminders, tasks, watches, parcels, reminders on notes) and it decides

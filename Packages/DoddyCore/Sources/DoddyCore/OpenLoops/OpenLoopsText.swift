@@ -1,11 +1,11 @@
 import Foundation
 
-/// The words of the open-loops page (ADR-728), in Polish and English like `ParcelStatuses` and
+/// The words of the open-loops page (ADR-756), in Polish and English like `ParcelStatuses` and
 /// `NoteReminderCopy`; the other languages show English until the catalogs have them. Plain sentences,
 /// no exclamation marks, no promises: a line says what the source says and nothing about how the person
 /// is doing. Clock times are not written here; the screen shows `when` with the iPhone's own formatter.
 public enum OpenLoopsText {
-    /// Working name, still the owner's to confirm (ADR-728).
+    /// Working name, still the owner's to confirm (ADR-756).
     public static func screenTitle(_ language: NotificationLanguage) -> String {
         language == .polish ? "Na oku" : "On the radar"
     }

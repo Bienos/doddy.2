@@ -5,7 +5,7 @@ import XCTest
 @testable import Doddy
 #endif
 
-// The "Na oku" page's state (ADR-728): it builds its list from what the provider returns, shows a progress
+// The "Na oku" page's state (ADR-756): it builds its list from what the provider returns, shows a progress
 // state until the first read finishes (never "nothing waiting" before then), names a source the provider
 // could not read, and reads one time at a time. The list rules themselves are held by DoddyCore's
 // OpenLoopsTests. Also run on Linux by scripts/test_open_loops_model.sh.

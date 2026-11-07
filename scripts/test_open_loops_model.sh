@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the "Na oku" page's state tests (DoddyTests/OpenLoopsModelTests.swift, ADR-728) on Linux:
+# Runs the "Na oku" page's state tests (DoddyTests/OpenLoopsModelTests.swift, ADR-756) on Linux:
 # the model file and its tests are linked into the DoddyCore test target for one run, then removed.
 # The model imports only Foundation, Observation and DoddyCore, so no Xcode is needed. The same test
 # file runs in Xcode as part of DoddyTests.

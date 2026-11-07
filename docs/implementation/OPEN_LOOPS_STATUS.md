@@ -1,6 +1,6 @@
-# Open loops, step L0: status (ADR-728)
+# Open loops, step L0: status (ADR-756)
 
-Branch `claude/eloquent-lovelace-ldlkec`, 5 Nov 2026. Owner: asked how Doddy can help the user remember and remind about important things, then "rób wszystko co trzeba". Design: `docs/product/KEEP_TRACK_AND_REMIND_DESIGN.md` (this is its step **L0**, the first milestone it recommends). Companion: `docs/product/PROACTIVE_COMPANION_PROMPT.md` (step L4).
+Branch `claude/eloquent-lovelace-ldlkec` (PR #197), 5 Nov 2026. **ADR number:** first written as 728, renumbered to 756 on 7 Nov because the open PRs #194 and #195 hold 727 to 731 and #196 holds up to 755; the next free number was read from those branches that day, so check again before merging. Owner: asked how Doddy can help the user remember and remind about important things, then "rób wszystko co trzeba". Design: `docs/product/KEEP_TRACK_AND_REMIND_DESIGN.md` (this is its step **L0**, the first milestone it recommends). Companion: `docs/product/PROACTIVE_COMPANION_PROMPT.md` (step L4).
 
 ## What was built
 
@@ -48,7 +48,7 @@ Choices I made for the owner, to confirm or change:
 - `Packages/DoddyCore/Sources/DoddyCore/OpenLoops/OpenLoops.swift`: types and the builder. Foundation only, so it builds on every platform (iPhone; Watch and Mac are paused and don't use it).
 - `Packages/DoddyCore/Tests/DoddyCoreTests/OpenLoopsTests.swift` (14 tests), `OpenLoopsTextTests.swift` (5), `DoddyTests/OpenLoopsModelTests.swift` (6).
 - `Packages/DoddyCore/Sources/DoddyCore/OpenLoops/OpenLoopsText.swift`, `DoddyApp/Features/OpenLoops/*` (see the table above).
-- `DECISIONS.md`: ADR-728.
+- `DECISIONS.md`: ADR-756.
 - `docs/product/KEEP_TRACK_AND_REMIND_DESIGN.md`, `docs/product/PROACTIVE_COMPANION_PROMPT.md`: the design and the prompt proposal.
 
 ## Checks run (Linux, Swift 6.1.3, 5 Nov 2026)
