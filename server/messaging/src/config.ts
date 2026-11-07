@@ -5,6 +5,7 @@ import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "./serverUsa
 import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
 import { parseSearchShops, type SearchShop } from "./deals/further.js";
 import { z } from "zod";
+import { parseClock, QUIET_HOURS_DEFAULT, type QuietHours } from "./quietHours.js";
 import type { StudioSettings } from "./studio/context.js";
 import { PLAN_TIER_NAMES, stepModelsFrom, type PlanTier } from "./studio/models.js";
 
@@ -66,13 +67,24 @@ const schema = z.object({
   // "1": run the worker loop inside the web process (one service; e.g. Render free/starter).
   RUN_WORKER_IN_WEB: z.enum(["0", "1"]).default("0"),
   ELEVENLABS_PHONE_AGENT_ID: optional,
-  ELEVENLABS_PHONE_NUMBER_ID: optional, // ElevenLabs id of the imported Twilio number
   // News digests
   ANTHROPIC_API_KEY: optional, // Claude writes the one-line summaries
   OPENAI_API_KEY: optional, // or OpenAI, when there is no Anthropic key (ADR-197)
   OPENAI_MODEL: optional, // default gpt-5-mini
   GNEWS_API_KEY: optional, // keyword search across news sources (paid plan for commercial use)
+  // Replies to the user's texts (ADR-753) use ANTHROPIC_API_KEY, with this model (owner decision 7).
+  TEXT_REPLY_MODEL: optional, // default claude-opus-5-5
+  // Hours after a message or call is final before its record is deleted at Twilio (ADR-753).
+  // 0 means as soon as Twilio allows (about 2 minutes).
+  // An empty value means the default (z.coerce would read "" as 0, deleting at once).
+  TWILIO_RECORD_DELETE_AFTER_HOURS: z.preprocess((v) => (v === "" ? undefined : v),
+    z.coerce.number().min(0).max(24 * 30).default(24)),
   DODDY_PHONE_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
+  // Quiet hours for scheduled calls, "HH:MM" on the user's own clock (ADR-754). Default 21:00–08:00.
+  QUIET_HOURS_START: z.preprocess((v) => (v === "" ? undefined : v),
+    z.string().refine((v) => parseClock(v) !== undefined, "QUIET_HOURS_START must be HH:MM").optional()),
+  QUIET_HOURS_END: z.preprocess((v) => (v === "" ? undefined : v),
+    z.string().refine((v) => parseClock(v) !== undefined, "QUIET_HOURS_END must be HH:MM").optional()),
 
   // Calls Doddy makes for the user (call cases, ADR-500). Our server places the Twilio call and
   // ElevenLabs is only the voice (register-call). docs/decisions/calls.md.
@@ -255,7 +267,8 @@ export interface ApnsConfig { teamId: string; keyId: string; privateKey: string;
 export interface TwilioConfig {
   accountSid: string; authToken: string; messagingServiceSid: string; verifyServiceSid: string;
 }
-export interface PhoneAgentConfig { apiKey: string; agentId: string; phoneNumberId: string }
+/** The phone agent that answers calls this server lets through (ElevenLabs register-call, ADR-750). */
+export interface PhoneAgentConfig { apiKey: string; agentId: string }
 
 export type RecordingNotice = "off" | "nagrywana" | "zapisywana";
 
@@ -353,6 +366,9 @@ export interface Config {
   openaiApiKey?: string;
   openaiModel?: string;
   gnewsApiKey?: string;
+  textReplyModel?: string;
+  twilioRecordDeleteAfterHours: number;
+  quietHours: QuietHours;
   taskCalls?: TaskCallConfig;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
@@ -398,13 +414,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     memoryEncryptionKey: e.MEMORY_ENCRYPTION_KEY,
     toolSecret: e.ELEVENLABS_TOOL_SECRET,
     phoneAgent: all<PhoneAgentConfig>({
-      apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_PHONE_AGENT_ID, phoneNumberId: e.ELEVENLABS_PHONE_NUMBER_ID,
+      apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_PHONE_AGENT_ID,
     }),
     doddyPhoneNumber: e.DODDY_PHONE_NUMBER,
     anthropicApiKey: e.ANTHROPIC_API_KEY,
     openaiApiKey: e.OPENAI_API_KEY,
     openaiModel: e.OPENAI_MODEL,
     gnewsApiKey: e.GNEWS_API_KEY,
+    textReplyModel: e.TEXT_REPLY_MODEL,
+    twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,
+    quietHours: {
+      start: e.QUIET_HOURS_START ? parseClock(e.QUIET_HOURS_START)! : QUIET_HOURS_DEFAULT.start,
+      end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,
+    },
     taskCalls: all<TaskCallConfig>({
       twilioAccountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
       twilioAuthToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,

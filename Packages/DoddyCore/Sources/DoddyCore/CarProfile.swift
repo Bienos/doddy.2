@@ -45,6 +45,12 @@ public enum CarProfile {
             return CloudToolName.isWrite(call.name)
                 ? .refuse(reason: "Drafts and tasks in online accounts need a tap on the iPhone, so not while driving.")
                 : .run
+        case .textMe:
+            // Leaves the iPhone through Doddy's server and Twilio (ADR-750 U2).
+            return .refuse(reason: "A text from Doddy's number needs a tap on the iPhone, so it waits until the user isn't driving.")
+        case .callMeLater:
+            // A call booked through Doddy's server (ADR-754): the card is the approval.
+            return .refuse(reason: "Booking a call from Doddy needs a tap on the iPhone, so it waits until the user isn't driving.")
         case .draftInvoice:
             // An invoice is checked line by line on the screen (ADR-677), so not while driving.
             return .refuse(reason: "An invoice draft is checked on the iPhone's screen, so it waits until the user isn't driving.")

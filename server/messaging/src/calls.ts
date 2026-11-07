@@ -14,12 +14,15 @@ export const PIN_LOCK_MINUTES = 15;
 export function pinLockMinutes(previousLocks: number): number {
   return Math.min(PIN_LOCK_MINUTES * 4 ** previousLocks, 24 * 60);
 }
+/** Doddy's calls to the user; mirrored in docs/trust/config/doddy_rules.yaml (contact_policy). */
+export const OUTBOUND_HOURLY_LIMIT = 3;
 export const OUTBOUND_DAILY_LIMIT = 10;
 export const MAX_PENDING_NOTES = 20;
 
 /**
- * Variables handed to the phone agent at the start of every call. The agent defines all of
- * them, so every response must contain all of them (ElevenLabs requirement).
+ * Variables handed to the phone agent at the start of every call it takes (through ElevenLabs
+ * register-call, ADR-750). The agent defines all of them, so every call must carry all of them.
+ * Only verified callers reach the agent now; the other caller values stay for the prompt's sake.
  * `secret__doddy_session` is only ever placed in tool request headers by ElevenLabs and is
  * never sent to the language model.
  */
@@ -29,10 +32,25 @@ export interface CallVariables {
   doddy_memory: "on" | "off";
   doddy_pin: "set" | "not_set";
   doddy_direction: "inbound" | "outbound";
+  /** A scheduled call's reason as the user approved it on the card, or "none" (ADR-754). */
+  doddy_call_reason: string;
+  /** The agent's first sentence, written by the server (callOpening below). */
+  doddy_call_opening: string;
 }
 
-export function variablesFor(caller: CallVariables["doddy_caller"], direction: CallVariables["doddy_direction"]): CallVariables {
-  return { secret__doddy_session: "none", doddy_caller: caller, doddy_memory: "off", doddy_pin: "not_set", doddy_direction: direction };
+export type Language = "en" | "pl";
+export const lang = (v: string | null | undefined): Language => (v === "pl" ? "pl" : "en");
+
+/**
+ * The phone agent's first sentence (its first message is exactly this variable). Written here, not
+ * by the model, and it always says Doddy is an AI (DOD-03). On a scheduled call it says the
+ * reason the user approved, word for word.
+ */
+export function callOpening(reason: string | undefined, language: Language): string {
+  if (reason === undefined) return "Hi, this is Doddy, an AI assistant. How can I help?";
+  return language === "pl"
+    ? `Cześć, tu Doddy, asystent AI. Dzwonię zgodnie z Twoją prośbą w sprawie: ${reason}`
+    : `Hi, this is Doddy, an AI assistant. You asked me to call you about this: ${reason}`;
 }
 
 export function sameSecret(expected: string, given: string | undefined): boolean {
@@ -45,6 +63,7 @@ export function sameSecret(expected: string, given: string | undefined): boolean
 /** Creates the per-call capability and returns the variables for a recognised caller. */
 export async function openSession(
   db: Db, accountId: string, callId: string, direction: CallVariables["doddy_direction"],
+  purpose?: { reason: string; language: Language },
 ): Promise<CallVariables> {
   const token = randomBytes(32).toString("base64url");
   await db.query(
@@ -60,6 +79,8 @@ export async function openSession(
     doddy_memory: rows[0]?.memory_on ? "on" : "off",
     doddy_pin: rows[0]?.pin_set ? "set" : "not_set",
     doddy_direction: direction,
+    doddy_call_reason: purpose?.reason ?? "none",
+    doddy_call_opening: callOpening(purpose?.reason, purpose?.language ?? "en"),
   };
 }
 

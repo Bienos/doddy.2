@@ -8,6 +8,12 @@ import Observation
 final class CallsModel {
     private(set) var client: DoddyServerClient?
     private(set) var settings: CallSettings?
+    /// Texts to Doddy (ADR-753); nil until the server answered.
+    private(set) var textSettings: TextSettings?
+    /// Why the texts settings couldn't be loaded, or nil. A failed load never reads as "not set up".
+    private(set) var textsProblem: String?
+    /// The exported history, ready to share, after Export phone and text history.
+    private(set) var historyFile: URL?
     private(set) var notes: [CallNote] = []
     /// Notes the server holds but can't read any more; they can only be discarded.
     private(set) var unreadableNotes: [UnreadableCallNote] = []
@@ -17,6 +23,10 @@ final class CallsModel {
     /// only retries the removal, so the memory isn't saved twice (DOD-06).
     private(set) var savedNoteIDs: Set<UUID> = []
     private(set) var recent: [CallRecord] = []
+    /// Calls booked for later (ADR-754), newest first, as the server lists them.
+    private(set) var scheduled: [ScheduledCall] = []
+    /// Why the booked calls couldn't be loaded, or nil. A failed load is never shown as "none".
+    private(set) var scheduledProblem: String?
     private(set) var isWorking = false
     private(set) var message: String?
 
@@ -32,7 +42,18 @@ final class CallsModel {
             let settings = try await client.callSettings()
             self.settings = settings
             self.recent = (try? await client.recentCalls()) ?? []
-            if settings.available.inbound {
+            await self.loadScheduled(client, settings: settings)
+            do {
+                let texts = try await client.textSettings()
+                self.textSettings = texts
+                self.textsProblem = nil
+                Self.mirror(texts)
+            } catch {
+                self.textsProblem = String(
+                    format: NSLocalizedString("Couldn't load the settings for texts to Doddy. %@", comment: ""), Self.text(for: error))
+            }
+            // The inbox holds notes from calls and from texts (ADR-753).
+            if settings.available.inbound || self.textSettings?.available.notes == true {
                 do {
                     let inbox = try await client.callInbox()
                     self.notes = inbox.notes
@@ -40,7 +61,7 @@ final class CallsModel {
                     self.notesProblem = nil
                 } catch {
                     self.notesProblem = String(
-                        format: NSLocalizedString("Couldn't load the notes from your calls. %@", comment: ""), Self.text(for: error))
+                        format: NSLocalizedString("Couldn't load your notes. %@", comment: ""), Self.text(for: error))
                 }
             } else {
                 self.notes = []
@@ -87,6 +108,55 @@ final class CallsModel {
         }
     }
 
+    // MARK: Texts to Doddy (ADR-753)
+
+    func setTextsToDoddy(_ on: Bool) async { await changeTexts { try await $0.setTextsToDoddy(on, language: .current) } }
+
+    /// Writes, then reads back what the server now holds, as `change` does for calls.
+    private func changeTexts(_ work: @escaping (DoddyServerClient) async throws -> Void) async {
+        guard let client else { return }
+        await run {
+            var failure: (any Error)?
+            do {
+                try await work(client)
+            } catch {
+                failure = error
+            }
+            do {
+                let texts = try await client.textSettings()
+                self.textSettings = texts
+                self.textsProblem = nil
+                Self.mirror(texts)
+            } catch {
+                if failure == nil { self.message = UpdatesModel.savedButNotReadBack }
+            }
+            if let failure { throw failure }
+        }
+    }
+
+    /// What leaves this iPhone reads these; the server's answer is the only source.
+    private static func mirror(_ texts: TextSettings) {
+        UserDefaults.standard.set(texts.inboundEnabled, forKey: PreferenceKey.textsToDoddyOn)
+    }
+
+    /// The server's JSON, saved to a file this iPhone shares from. Nothing else is added to it.
+    func exportHistory() async {
+        guard let client else { return }
+        clearExport()
+        await run {
+            let data = try await client.phoneHistory()
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("Doddy phone and text history.json")
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            self.historyFile = url
+        }
+    }
+
+    /// The export holds the phone number and the waiting notes: it isn't left behind.
+    func clearExport() {
+        if let file = historyFile { try? FileManager.default.removeItem(at: file) }
+        historyFile = nil
+    }
+
     func callMeNow() async {
         guard let client else { return }
         await run {
@@ -105,13 +175,60 @@ final class CallsModel {
         }
     }
 
+    // MARK: Calls booked for later (ADR-754)
+
+    /// The list, and the iPhone's zone when a call is waiting and the server has another one, so
+    /// quiet hours are checked where the user is now. The zone is sent only then.
+    private func loadScheduled(_ client: DoddyServerClient, settings: CallSettings) async {
+        guard settings.available.outbound else {
+            scheduled = []
+            scheduledProblem = nil
+            return
+        }
+        do {
+            scheduled = try await client.scheduledCalls()
+            scheduledProblem = nil
+        } catch {
+            scheduledProblem = String(format: NSLocalizedString("Couldn't load your booked calls. %@", comment: ""), Self.text(for: error))
+            return
+        }
+        let defaults = UserDefaults.standard
+        defaults.set(CallZoneSync.waitingUntil(scheduled), forKey: CallZoneSync.waitingUntilKey)
+        let zone = TimeZone.current.identifier
+        if scheduled.contains(where: \.canCancel), settings.timeZone != zone {
+            if (try? await client.setCallTimeZone(zone)) != nil { defaults.set(zone, forKey: CallZoneSync.lastSentKey) }
+        } else if let held = settings.timeZone {
+            defaults.set(held, forKey: CallZoneSync.lastSentKey)
+        }
+    }
+
+    /// Only a call still waiting; the list is read back afterwards either way.
+    func cancel(_ call: ScheduledCall) async {
+        guard let client else { return }
+        await run {
+            var failure: (any Error)?
+            do {
+                try await client.cancelScheduledCall(call.id)
+            } catch ServerError.notEnabled("already_placed_or_done") {
+                self.message = NSLocalizedString("That call isn't waiting any more: it was placed, cancelled or skipped.", comment: "")
+            } catch {
+                failure = error
+            }
+            if let settings = self.settings { await self.loadScheduled(client, settings: settings) }
+            if let failure { throw failure }
+        }
+    }
+
     /// Saves the note as a memory (as said on the call, at that time), then removes it from the inbox.
     func keep(_ note: CallNote, into store: MemoryStore) async {
         guard let client else { return }
         await run {
             if !self.savedNoteIDs.contains(note.id) {
+                // The user's own text is a typed note; a note Doddy took on a call is Doddy's note
+                // that the user saved (ADR-753).
                 _ = try await store.save(
-                    text: note.text, category: .other, source: .explicitVoice, capturedAt: note.createdDate ?? Date())
+                    text: note.text, category: .other, source: note.fromText ? .explicitText : .notedByDoddy,
+                    capturedAt: note.createdDate ?? Date())
                 self.savedNoteIDs.insert(note.id)
             }
             do {
@@ -173,9 +290,57 @@ final class CallsModel {
         switch error as? ServerError {
         case .notEnabled("no_verified_phone"): NSLocalizedString("Verify your phone number first, in Settings → Notifications and texts.", comment: "")
         case .notEnabled("outbound_not_enabled"): NSLocalizedString("Turn on \"Doddy may call me\" first.", comment: "")
-        case .rateLimited: NSLocalizedString("That's the limit for calls for now. Try again later.", comment: "")
+        case .notEnabled("sms_not_enabled"): NSLocalizedString("Texts from Doddy are off: turn on texts in Notifications and texts first. If you sent STOP, text START to Doddy's number.", comment: "")
+        case .notEnabled("phone_not_allowed"): NSLocalizedString("Doddy doesn't text or call numbers in that country.", comment: "")
+        case .rateLimited: NSLocalizedString("That's the limit for now. Try again later.", comment: "")
         case .notConfigured: NSLocalizedString("Doddy's phone line isn't set up on the server yet.", comment: "")
         default: UpdatesModel.text(for: error)
+        }
+    }
+}
+
+extension TextsBlocker {
+    /// `message` in the app's language; literal keys, so the strings catalog finds them.
+    var localized: String {
+        switch self {
+        case .notSetUp: NSLocalizedString("Texts to Doddy aren't set up on Doddy's server yet.", comment: "")
+        case .noVerifiedPhone: NSLocalizedString("Verify your phone number in Notifications and texts first.", comment: "")
+        }
+    }
+}
+
+extension TextsPause {
+    /// `message` in the app's language; literal keys, so the strings catalog finds them.
+    var localized: String {
+        switch self {
+        case .notReceiving: NSLocalizedString("Doddy's server can't receive texts right now, so nothing you text it is kept.", comment: "")
+        }
+    }
+}
+
+/// Tells Doddy's server the iPhone's time zone when Doddy comes to the front while a call it
+/// booked may still be waiting (ADR-754), so quiet hours are checked where the user is. Sends
+/// nothing otherwise, and never creates a server account to do it.
+@MainActor
+enum CallZoneSender {
+    private static var sending = false
+
+    static func sendIfNeeded(now: Date = Date()) {
+        let defaults = UserDefaults.standard
+        let current = TimeZone.current.identifier
+        guard !sending,
+              CallZoneSync.shouldSend(
+                now: now, waitingUntil: defaults.object(forKey: CallZoneSync.waitingUntilKey) as? Date,
+                lastSent: defaults.string(forKey: CallZoneSync.lastSentKey), current: current),
+              let client = ServerConfig.client()
+        else { return }
+        sending = true
+        Task { @MainActor in
+            defer { sending = false }
+            guard await client.hasAccount() else { return }
+            if (try? await client.setCallTimeZone(current)) != nil {
+                UserDefaults.standard.set(current, forKey: CallZoneSync.lastSentKey)
+            }
         }
     }
 }

@@ -162,7 +162,9 @@ public enum AskFirst {
             return .tapFirst(LeaveByAsk.card(request, calendar: calendar))
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
              .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
-             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save):
+             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
+             // The card shows the exact text, or the time and the exact reason; the tap approves exactly that (ADR-752, ADR-754).
+             .textMe, .callMeLater:
             return .ownPayloadCard
         case .lostWallet:
             // ADR-692: the checklist is its own card. Showing it reads and changes nothing; each
