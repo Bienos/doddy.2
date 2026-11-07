@@ -61,6 +61,18 @@ final class DealsModel {
         }
     }
 
+    #if DEBUG
+    /// Test seam only (ADR-821, the screens run): an answer as if a search had just returned it.
+    func seedForTesting(request: DealsRequest, result: DealsResult, homeCard: Bool) {
+        lastRequest = request
+        lastResult = result
+        lastQuantities = Array(repeating: nil, count: request.items.count)
+        lastLeftOut = []
+        phase = .idle
+        homeCardDue = homeCard
+    }
+    #endif
+
     /// The leaflet screen was opened, or the card on Home was put away.
     func homeCardSeen() {
         homeCardDue = false

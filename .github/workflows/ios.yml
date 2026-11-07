@@ -25,9 +25,9 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-618); not enough for a merge."
+        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-618). screens: a picture of each screen, about 40-60 minutes (ADR-820). fixtures: only the sample-state pictures of the screens run (ADR-821), about 30 minutes. None of the last three is enough for a merge."
         type: choice
-        options: [all, island]
+        options: [all, island, screens, fixtures]
         default: all
 
 concurrency:
@@ -35,7 +35,7 @@ concurrency:
   # commit is in the group, so each one gets its own run that is never cancelled, and never replaced
   # while it waits (GitHub drops a pending run when a newer one joins the same group). Before this, a
   # docs merge right after an app merge cancelled the app merge's run (7 Nov 2026, run 42376928312).
-  # The quick island run (ADR-618) has its own group, so it doesn't cancel a full run of the same branch.
+  # The quick island run (ADR-618) and the screens run (ADR-820) have their own groups, so they don't cancel a full run of the same branch.
   group: ios-${{ github.event_name == 'push' && github.sha || github.ref }}-${{ inputs.only || 'all' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
@@ -99,7 +99,7 @@ jobs:
   ios-build:
     name: ios-build
     needs: [changes]
-    if: needs.changes.outputs.mac == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: macos-26
     timeout-minutes: 75
     steps:
@@ -171,7 +171,7 @@ jobs:
 
   # Python generators and guards, the agent specs, the pack check: seconds, always run.
   checks:
-    if: inputs.only != 'island'
+    if: inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -185,7 +185,7 @@ jobs:
   # toolchain the Linux checks were run with (Swift 6.1).
   swift:
     needs: [changes]
-    if: needs.changes.outputs.swift == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.swift == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     container: swift:6.1-noble
     timeout-minutes: 30
@@ -216,7 +216,7 @@ jobs:
   # The backend's type-check and tests: the longest Linux group (about 7 minutes), so it has a job to itself.
   backend:
     needs: [changes]
-    if: needs.changes.outputs.backend == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.backend == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -232,7 +232,7 @@ jobs:
   # Gateway, web app, site functions, voice token server, the secrets tool.
   node:
     needs: [changes]
-    if: needs.changes.outputs.node == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.node == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -259,7 +259,7 @@ jobs:
   # The messaging server (server/messaging, ADR-139), with a disposable Postgres for its tests.
   messaging:
     needs: [changes]
-    if: needs.changes.outputs.messaging == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.messaging == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
@@ -293,7 +293,7 @@ jobs:
   # fine, a failed or cancelled one does not.
   core:
     needs: [changes, checks, swift, backend, node, messaging]
-    if: always() && inputs.only != 'island'
+    if: always() && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -345,3 +345,46 @@ jobs:
           path: build/island-screenshots/
           if-no-files-found: ignore
           retention-days: 14
+
+  # The screens run (ADR-820), by hand with only=screens: one build, then only
+  # DoddyUITests/ScreenAtlasTests, which keeps a picture of each screen it reaches. Pictures only:
+  # it verifies nothing about the app's behaviour and is no substitute for the full run.
+  screens:
+    if: github.event_name == 'workflow_dispatch' && (inputs.only == 'screens' || inputs.only == 'fixtures')
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Select Xcode 26.6 (pinned with the image, ADR-811)
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+        with:
+          xcode-version: "26.6"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: scripts/ci_screens.sh
+        env:
+          SCREENS_ONLY: ${{ inputs.only }}
+        run: scripts/ci_screens.sh
+
+      - name: Keep the screen pictures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: screen-atlas
+          path: |
+            build/screen-atlas/
+            build/screen-atlas-attachments/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: xcode-test-results
+          path: build/screen-atlas.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
