@@ -106,8 +106,8 @@ final class ConnectionApprovalTests: XCTestCase {
         XCTAssertTrue(allowed.contains("try it once more now"))
         XCTAssertFalse(allowed.hasPrefix("(app)"), "the controller adds the prefix, as for its other app messages")
 
-        let declined = ConnectionApproval.declinedContext(.blik)
-        XCTAssertTrue(declined.hasPrefix("The user chose not to allow BLIK transfers"))
+        let declined = ConnectionApproval.declinedContext(.maps)
+        XCTAssertTrue(declined.hasPrefix("The user chose not to allow Maps"))
         XCTAssertTrue(declined.contains("nothing was looked up or changed"))
         XCTAssertTrue(declined.contains("Don't try it again"))
     }

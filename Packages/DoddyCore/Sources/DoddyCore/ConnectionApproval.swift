@@ -12,7 +12,7 @@ import Foundation
 /// tested here, on any OS. Nothing here turns a switch on; only the user's tap on the card does,
 /// and the action itself still asks for its own yes (ASK-01) when the agent tries again.
 public enum ConnectionApproval {
-    /// What iOS says about the permission a connection needs. Maps, Shortcuts, Messages and BLIK
+    /// What iOS says about the permission a connection needs. Maps, Shortcuts and Messages
     /// need none of their own and are always `.granted`.
     public enum SystemPermission: Equatable, Sendable {
         case granted

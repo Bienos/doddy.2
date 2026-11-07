@@ -78,17 +78,6 @@
         }
       }
     },
-    "A transfer to check": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przelew do sprawdzenia"
-          }
-        }
-      }
-    },
     "ACCESS": {
       "extractionState": "manual",
       "localizations": {
@@ -5474,17 +5463,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在处理…"
-          }
-        }
-      }
-    },
-    "You send it in your bank app": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wysyłasz go Ty, w aplikacji banku"
           }
         }
       }

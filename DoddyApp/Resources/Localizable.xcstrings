@@ -756,17 +756,6 @@
         }
       }
     },
-    "A BLIK transfer for you to send": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przelew BLIK do wysłania przez Ciebie"
-          }
-        }
-      }
-    },
     "A PESEL can only be sent as a fact marked PESEL.": {
       "extractionState": "manual",
       "localizations": {
@@ -3153,17 +3142,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zaznaczona informacja wygląda na PESEL albo adres. Oznacz ją tak albo odznacz."
-          }
-        }
-      }
-    },
-    "A transfer to check": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przelew do sprawdzenia"
           }
         }
       }
@@ -13770,17 +13748,6 @@
         }
       }
     },
-    "Copied": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skopiowano"
-          }
-        }
-      }
-    },
     "Copied to the server": {
       "extractionState": "manual",
       "localizations": {
@@ -13847,17 +13814,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kopiuj"
-          }
-        }
-      }
-    },
-    "Copy phone number": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kopiuj numer telefonu"
           }
         }
       }
@@ -13939,17 +13895,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skopiuj klucz w inFakt i wróć: przycisk wklejania pojawi się, gdy w schowku będzie tekst."
-          }
-        }
-      }
-    },
-    "Copy title": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kopiuj tytuł"
           }
         }
       }
@@ -19825,17 +19770,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie czyta jeszcze gazetki tej sieci."
-          }
-        }
-      }
-    },
-    "Doddy doesn't send money and can't see your bank. Check the person and the amount in your bank app before you confirm there. They need BLIK phone transfers turned on in their own bank app.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy nie wysyła pieniędzy i nie widzi Twojego banku. Sprawdź osobę i kwotę w aplikacji banku, zanim tam potwierdzisz. Odbiorca musi mieć włączone przelewy na telefon BLIK w swojej aplikacji banku."
           }
         }
       }
@@ -31045,17 +30979,6 @@
         }
       }
     },
-    "I'll send it myself": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wyślę w aplikacji banku"
-          }
-        }
-      }
-    },
     "I'll tell you when the price I read is at or below this. Suggested: 5 percent below the price, rounded down to whole złoty. Type another if you like.": {
       "extractionState": "manual",
       "localizations": {
@@ -40599,17 +40522,6 @@
         }
       }
     },
-    "Money": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pieniądze"
-          }
-        }
-      }
-    },
     "Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set.": {
       "extractionState": "manual",
       "localizations": {
@@ -43860,17 +43772,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na razie brak przesyłek."
-          }
-        }
-      }
-    },
-    "No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brak numeru telefonu w Kontaktach. Wybierz tę osobę w przelewie na telefon BLIK w aplikacji banku."
           }
         }
       }
@@ -55673,17 +55574,6 @@
         }
       }
     },
-    "Pick them in your bank app's BLIK phone transfer.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wybierz tę osobę w przelewie na telefon BLIK w aplikacji banku."
-          }
-        }
-      }
-    },
     "Pick up where you left off": {
       "extractionState": "manual",
       "localizations": {
@@ -66550,17 +66440,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送方式"
-          }
-        }
-      }
-    },
-    "Send it in your bank app": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wyślij przelew w aplikacji banku"
           }
         }
       }
@@ -96279,17 +96158,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "You send it in your bank app": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wysyłasz go Ty, w aplikacji banku"
           }
         }
       }
