@@ -1,6 +1,6 @@
 import Foundation
 
-// The first-run "Allow access" step (ADR-733): one screen after "Before we start" that asks iOS for the
+// The first-run "Allow access" step (ADR-814): one screen after "Before we start" that asks iOS for the
 // permissions Doddy uses, so the person is not interrupted by them later. Pure rules only (no UI, no
 // strings, no iOS calls), so they are tested on Linux. The screen is `DoddyApp/Features/Onboarding`.
 //

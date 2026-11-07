@@ -41,7 +41,7 @@ enum UITestLaunch {
         // The first-launch welcome (ADR-598) would cover every fresh-install test; a test that is
         // about it asks for it (`welcome: true`).
         arguments += ["-welcome", welcome ? "YES" : "NO"]
-        // The first-run "Allow access" step (ADR-733) would sit between the Terms and the introduction in
+        // The first-run "Allow access" step (ADR-814) would sit between the Terms and the introduction in
         // every fresh-install test, and a real iOS question would block them. `FirstRunAccessUITests` asks for it.
         arguments += ["-firstRunAccess", firstRunAccess ? "YES" : "NO"]
         // The opening's whole timeline is 2.4 s, and on CI the launch and the first idle wait can

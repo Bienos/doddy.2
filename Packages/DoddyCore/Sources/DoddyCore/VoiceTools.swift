@@ -70,8 +70,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     /// blocked and never asks; turning it on in Settings is what makes iOS ask.
     public var startsOn: Bool {
         switch self {
-        case .maps, .shortcuts, .messages, .blik, .presentations: true
-        case .calendar, .reminders, .contacts, .timers, .steps, .photos, .camera: false
+        case .maps, .shortcuts, .messages, .presentations: true
+        case .calendar, .reminders, .contacts, .timers, .steps, .photos, .camera, .home: false
         }
     }
 

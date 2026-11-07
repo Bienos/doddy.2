@@ -389,7 +389,7 @@ final class VoiceToolsTests: XCTestCase {
 
     func testOnlyConnectionsWithoutAnIOSPermissionStartOn() {
         let on = Set(VoiceConnection.allCases.filter(\.startsOn))
-        XCTAssertEqual(on, [.maps, .shortcuts, .messages, .blik, .presentations])
+        XCTAssertEqual(on, [.maps, .shortcuts, .messages, .presentations])
         XCTAssertEqual(Set(VoiceConnection.registeredDefaults.keys), Set(on.map(\.preferenceKey)))
         XCTAssertTrue(VoiceConnection.registeredDefaults.values.allSatisfy { $0 })
     }

@@ -1,6 +1,6 @@
 import XCTest
 
-/// "Allow access" (ADR-733): on a new installation it comes after the Terms and before the introduction,
+/// "Allow access" (ADR-814): on a new installation it comes after the Terms and before the introduction,
 /// lists every item ticked, and "Not now" asks iOS nothing and moves on. It never taps Allow: that would
 /// raise real iOS questions. NOT RUN where this was written (no Xcode); hosted CI runs it.
 final class FirstRunAccessUITests: XCTestCase {
