@@ -41,6 +41,7 @@ expect true "no files listed at all"
 
 # Changes that can't reach the app: the Mac is skipped.
 expect false "docs only" docs/implementation/VOICE_SESSION_STARTS.md
+expect false "a change note and a decision file" changes/ui-smoke.md docs/decisions/2026-11-07-x.md
 expect false "top-level notes" STATUS.md DECISIONS.md README.md BUILD_AND_TEST.md
 expect false "agent notes in app folders" DoddyApp/CLAUDE.md Packages/DoddyCore/CLAUDE.md
 expect false "servers and site" server/messaging/src/index.ts backend/src/a.ts gateway/api/b.js site/index.html

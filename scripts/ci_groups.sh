@@ -18,7 +18,8 @@ groups_for() {
     docs/* | design/*) echo swift; return ;;
     # Notes, text sources, archives, agent tooling: no heavy suite reads them (the generators and
     # the pack check, which do, are in the `checks` group that always runs).
-    prompts/* | reference/* | blog/* | l10n/* | VISUAL_REVIEW/* \
+    # changes/: per-pull-request notes (decision 2026-11-07-agent-rules-and-records).
+    changes/* | prompts/* | reference/* | blog/* | l10n/* | VISUAL_REVIEW/* \
       | .agents/* | .claude/* | */CLAUDE.md | */AGENTS.md) echo none; return ;;
     # Paused Watch and Mac apps (ADR-572): in no target of project.yml, in no suite.
     DoddyWatch/* | DoddyWatchWidgets/* | DoddyMac/* | DoddyMacWidgets/* \
