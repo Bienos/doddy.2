@@ -23,13 +23,19 @@ public struct CallSettings: Equatable, Sendable, Decodable {
     public let pinLocked: Bool
     public let outboundConsent: Bool
     public let memoryCopy: MemoryCopy
+    /// When booked calls don't ring, on the user's clock (ADR-754); nil from servers before U4.
+    public let quietHours: CallQuietHours?
+    /// The zone the server last heard from this iPhone; nil until it has heard one.
+    public let timeZone: String?
 }
 
 public struct CallNote: Equatable, Sendable, Decodable, Identifiable {
     public let id: UUID
     public let text: String
-    /// When it was said on the call (ISO 8601 from the server).
+    /// When it was said on the call, or the text arrived (ISO 8601 from the server).
     public let createdAt: String
+    /// "call" or "text" (ADR-753); nil from servers before texts to Doddy.
+    public var source: String? = nil
 
     public var createdDate: Date? { ServerDates.parse(createdAt) }
 }
@@ -70,8 +76,10 @@ public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
 public struct CallRequest: Equatable, Sendable, Decodable {
     /// Nil when the server's answer never reached the phone.
     public let callId: UUID?
-    /// `requested` (ElevenLabs accepted it) or `unknown` (no answer from ElevenLabs, or the
+    /// `requested` (Twilio accepted it, ADR-750) or `unknown` (no answer from Twilio, or the
     /// server's answer was lost on the way back; the phone may already be ringing; not redialled).
+    /// How the call then went arrives later in `CallRecord.status`: ringing, answered, completed,
+    /// busy, no_answer, canceled or failed.
     public let status: String
 }
 

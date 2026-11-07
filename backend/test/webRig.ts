@@ -4,7 +4,8 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DevSessionVerifier, type SessionVerifier } from "../src/auth.js";
+import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier } from "../src/auth.js";
+import { DeviceSessionIssuer } from "../src/deviceSession.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { testLimits } from "../src/config.js";
 import { DocumentLinks } from "../src/documents.js";
@@ -23,6 +24,9 @@ import { AccountContext } from "../src/web/chatContext.js";
 import { WebRoutes } from "../src/web/routes.js";
 import { ThreadService } from "../src/messages/service.js";
 import { type RedeemLimits, WebAuth } from "../src/web/sessions.js";
+import { type DeleteCall, type PostJson, SocialSignIn, SupabaseUserRemover } from "../src/web/social.js";
+import { AccountEraser } from "../src/account.js";
+import type { FetchJson } from "../src/auth.js";
 import { WebStatic } from "../src/web/static.js";
 import { Clock, USER_A } from "./helpers.js";
 
@@ -75,6 +79,19 @@ export async function startWeb(
     trustProxy?: boolean;
     limits?: RedeemLimits;
     verifier?: SessionVerifier;
+    /** Apple and Google sign-in (ADR-818) against a fake Supabase. Absent: off. */
+    social?: {
+      projectUrl: string;
+      providers?: ("google" | "apple")[];
+      postJson: PostJson;
+      fetchJson: FetchJson;
+      /** A Google or Apple account with no Doddy account may make one (default off here; on in production). */
+      signup?: boolean;
+      /** Supabase's admin API, for deleting a person's sign-in with their account. Absent: no secret key. */
+      deleteUser?: DeleteCall;
+    };
+    /** Real device sign-in (`POST /v1/session/device`, ADR-563) with this key, `open` sign-up: the first device owns the server. */
+    devices?: Buffer;
   } = {},
 ): Promise<WebRig> {
   const store = await Store.memory();
@@ -93,7 +110,8 @@ export async function startWeb(
     log: (line) => logs.push(JSON.stringify(line)),
   });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
-  const verifier = o.verifier ?? new DevSessionVerifier();
+  const verifier = o.verifier ?? (o.devices ? new AnyOfSessionVerifier([new DevSessionVerifier(), new SignedSessionVerifier(o.devices)]) : new DevSessionVerifier());
+  const deviceSessions = o.devices ? new DeviceSessionIssuer(o.devices, { signup: "open", inviteCodes: [], store }) : null;
 
   const distDir = mkdtempSync(join(tmpdir(), "doddy-web-dist-"));
   if (o.withDist !== false) {
@@ -125,12 +143,34 @@ export async function startWeb(
     log: (line) => logs.push(JSON.stringify(line)),
   });
   const auth = new WebAuth(store, origin, o.trustProxy ?? false, o.limits);
+  const social = o.social
+    ? new SocialSignIn(
+        store,
+        auth,
+        {
+          projectUrl: o.social.projectUrl,
+          publishableKey: "sb_publishable_test_key_123",
+          providers: o.social.providers ?? ["google", "apple"],
+          signup: o.social.signup ?? false,
+          secretKey: o.social.deleteUser ? "sb_secret_test_key_456" : null,
+        },
+        { appScheme: "doddy-dev", trustProxy: o.trustProxy ?? false, postJson: o.social.postJson, fetchJson: o.social.fetchJson, log: (line) => logs.push(JSON.stringify(line)) },
+      )
+    : null;
+  const account = new AccountEraser({
+    store,
+    removers: o.social?.deleteUser ? [new SupabaseUserRemover(o.social.projectUrl, "sb_secret_test_key_456", o.social.deleteUser)] : [],
+    timeoutMs: 2_000,
+    now: clock.now,
+    log: (line) => logs.push(JSON.stringify(line)),
+  });
   const handler = createHandler({
     service,
     tools,
     verifier,
-    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
+    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread, social, account, deviceSessions), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
     documents: { links: documentLinks, store },
+    deviceSessions,
     appReturnUrl: common.appReturnUrl,
     maxBodyBytes: 8 * 1024,
     now: () => new Date(clock.ms),
@@ -163,7 +203,7 @@ export async function startWeb(
         headers["content-type"] = "application/json";
         body = JSON.stringify(c.body);
       }
-      const res = await fetch(`${base}${path}`, { method, headers, ...(body !== undefined ? { body } : {}) });
+      const res = await fetch(`${base}${path}`, { method, headers, redirect: "manual", ...(body !== undefined ? { body } : {}) });
       const text = await res.text();
       let parsed: unknown = null;
       try {

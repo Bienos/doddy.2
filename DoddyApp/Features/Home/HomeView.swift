@@ -326,6 +326,8 @@ struct HomeView: View {
     private var notices: some View {
         VStack(spacing: 12) {
             DueRemindersView()
+            // A payment that was sent and never confirmed (ADR-736): hidden unless payments were once switched on.
+            UnconfirmedPaymentsBanner()
             if let problem = store.environment.storageProblem {
                 ProblemView(message: problem, showsDoddy: true, onDoddysScreen: true)
             }

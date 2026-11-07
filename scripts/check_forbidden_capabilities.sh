@@ -60,7 +60,12 @@
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
 #    ADR-303), no proxy execution,
 #    and Monid only in the web search module, with fixed endpoints (web search, news, places; ADR-489; no discover/inspect: the model
-#    can never pick another paid endpoint).
+#    can never pick another paid endpoint),
+#  - the messaging server's background workers declare only their pinned tools: errands Anthropic's web
+#    search and web fetch (ADR-570), Studio those two and code execution (ADR-740),
+#  - payments (x402): Coinbase's API only in backend/src/payments/coinbase.ts, the HTTPS client for sellers
+#    only in backend/src/payments/net.ts, wallet signing called only from the payments service (after an
+#    approval bound to the exact terms), and no wallet, key or payment-signing code anywhere in the app.
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -82,6 +87,8 @@ rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 off_client=DoddyApp/Infrastructure/Network/OpenFoodFactsClient.swift
 # A parcel number, one address built by DoddyCore (ADR-641).
 inpost_client=DoddyApp/Infrastructure/Network/InPostTrackingClient.swift
+# A buyer's NIP, one address built by DoddyCore: the Ministry of Finance's VAT register (ADR-685).
+vat_register_client=DoddyApp/Infrastructure/Network/VatRegisterClient.swift
 # The Keychain: the files that hold a token or key. AccountKeyStore (ADR-640) holds keys the person pasted in.
 keychain_only='import Security|SecItem(Add|Update|Delete|CopyMatching)|kSecClass'
 keychain_files='^(DoddyApp/Infrastructure/(Network/KeychainCredentialStore|Server/ServerKeychainStore|DeviceSession|KeychainSessionStore|AccountKeyStore)|DoddyApp/Features/Voice/VoiceAuthSession)\.swift:'
@@ -138,7 +145,7 @@ home_never='HMEventTrigger|HMTimerTrigger|HMCameraProfile|HMCameraStream|HMAcces
 camera_and_library_never='AVCaptureSession|AVCapturePhotoOutput|AVCaptureVideoDataOutput|AVCaptureMovieFileOutput|PHAssetChangeRequest|PHAssetCreationRequest|UIImageWriteToSavedPhotosAlbum|NSPhotoLibraryAddUsageDescription|performChanges'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
-secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
+secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY|CDP_(API_KEY|WALLET)_SECRET[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9+/=]{20,})'
 allowed_permissions='NSHomeKitUsageDescription|NSHealthShareUsageDescription|NSHealthUpdateUsageDescription|NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
@@ -150,6 +157,12 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# Payments (x402): the Coinbase wallet adapter, the seller HTTPS client, and the one service that may sign.
+payments_wallet=backend/src/payments/coinbase.ts
+payments_net=backend/src/payments/net.ts
+payments_service=backend/src/payments/service.ts
+# Nothing that signs or names a payment belongs in the iPhone app: keys and signing stay on the server.
+payments_in_app='x402|PAYMENT-SIGNATURE|PAYMENT-REQUIRED|transferWithAuthorization|TransferWithAuthorization|eip155|secp256k1|CDP_API_KEY|CDP_WALLET_SECRET'
 # The wake-word engine (Picovoice Porcupine, ADR-254) was removed in ADR-549: no file may import it again.
 wake_only='import Porcupine|PorcupineManager|Porcupine\(|import ios_voice_processor|VoiceProcessor\.instance'
 
@@ -157,8 +170,8 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$voice_auth:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client, $off_client and $inpost_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$vat_register_client:" -e "^$voice_auth:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client, $off_client, $inpost_client and $vat_register_client." >&2; status=1
 fi
 # The Keychain only where a token or key already lives (ADR-640).
 if grep -RInE --include='*.swift' "$keychain_only" "${dirs[@]}" | code_only | grep -vE "$keychain_files"; then
@@ -192,6 +205,10 @@ fi
 # The Open Food Facts client may only ask OpenFoodFacts.productURL(for:) (ADR-631), never an address it builds.
 if [ -f "$off_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ O]' "$off_client" | code_only; then
   echo "FAIL: $off_client may only ask OpenFoodFacts.productURL(for:)." >&2; status=1
+fi
+# The VAT register client may only ask VatRegister.url(for:on:) (ADR-685), never an address it builds.
+if [ -f "$vat_register_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ V]' "$vat_register_client" | code_only; then
+  echo "FAIL: $vat_register_client may only ask VatRegister.url(for:on:)." >&2; status=1
 fi
 # The InPost client may only ask InPostTracking.url(for:) (ADR-641), never an address it builds.
 if [ -f "$inpost_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ I]' "$inpost_client" | code_only; then
@@ -401,6 +418,23 @@ PY
   if grep -RInE '/v1/(discover|inspect)|monid_(discover|inspect|run)' --include='*.ts' "$backend_src"; then
     echo "FAIL: Monid endpoint discovery in the backend; web search must stay one fixed endpoint." >&2; status=1
   fi
+  # Payments (x402). Coinbase is reached from one file; sellers from one file; and only the payments
+  # service may ask a wallet to sign (it does so after a single-use approval bound to the exact terms).
+  if grep -RInE 'cdp\.coinbase\.com|api\.coinbase\.com|sign/typed-data' --include='*.ts' "$backend_src" | code_only | grep -v "^$payments_wallet:"; then
+    echo "FAIL: Coinbase called outside $payments_wallet." >&2; status=1
+  fi
+  if grep -RInE 'from "(node:)?https"' --include='*.ts' "$backend_src" | code_only | grep -v "^$payments_net:"; then
+    echo "FAIL: an HTTPS client outside $payments_net; sellers are only reached through its address checks." >&2; status=1
+  fi
+  if grep -RInE '\.signTransferAuthorization\(' --include='*.ts' "$backend_src" | code_only | grep -v "^$payments_service:"; then
+    echo "FAIL: wallet signing called outside $payments_service." >&2; status=1
+  fi
+  if grep -RInE 'fetch\(' --include='*.ts' backend/src/payments | code_only | grep -v "^$payments_wallet:"; then
+    echo "FAIL: payments code makes a request outside the wallet adapter and the seller client." >&2; status=1
+  fi
+fi
+if grep -RInE --include='*.swift' "$payments_in_app" "${dirs[@]}" | code_only; then
+  echo "FAIL: payment, wallet or signing code in the app. Payments are signed on the server only (docs/integrations/PAYMENTS_X402.md)." >&2; status=1
 fi
 secret_paths=("${dirs[@]}" project.yml scripts)
 for extra in backend/src backend/test contracts .env.example backend/.env.example; do [ -e "$extra" ] && secret_paths+=("$extra"); done
@@ -437,5 +471,25 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare DoddyNotificationContent Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), HomeKit, camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client and the InPost client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, HomeKit only in HomeKitClient (lights, outlets, fans and scenes of those; no triggers, cameras, locks, garage doors or alarms), photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+# Background workers' tools (ADR-570, ADR-584). ASK-01's two exceptions rest on these lists: one
+# yes on a handed-over task covers only Anthropic's web search and web fetch; one yes on a Studio job
+# covers those two and code execution with Doddy's skills (its files), nothing else. A tool type is
+# a quoted literal such as "web_search_20260209"; beta header names use hyphens and don't match.
+worker_tools() { grep -RhoE "['\"][a-z_]+_20[0-9]{6}['\"]" "$1" --include='*.ts' 2>/dev/null | tr -d "'\"" | sort -u; }
+if [ -d server/messaging/src/errands ]; then
+  extra=$(worker_tools server/messaging/src/errands | grep -vxE 'web_search_20260209|web_fetch_20260209' || true)
+  if [ -n "$extra" ]; then
+    echo "FAIL: the errands worker declares a tool beyond web search and web fetch (ADR-570): $extra" >&2; status=1
+  fi
+  if grep -RInE 'code_execution|container' server/messaging/src/errands --include='*.ts'; then
+    echo "FAIL: code execution or a container in the errands worker; its one yes covers only web search and web fetch (ADR-570)." >&2; status=1
+  fi
+fi
+if [ -d server/messaging/src/studio ]; then
+  extra=$(worker_tools server/messaging/src/studio | grep -vxE 'web_search_20260209|web_fetch_20260209|code_execution_20250825' || true)
+  if [ -n "$extra" ]; then
+    echo "FAIL: the Studio worker declares a tool beyond web search, web fetch and code execution (ADR-740): $extra" >&2; status=1
+  fi
+fi
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client, the InPost client and the VAT register client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, HomeKit only in HomeKitClient (lights, outlets, fans and scenes of those; no triggers, cameras, locks, garage doors or alarms), photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution; the errands worker declares only web search and web fetch and the Studio worker only those and code execution; payments (x402): Coinbase only in the wallet adapter, seller HTTPS only in the address-checking client, wallet signing only from the payments service, and no wallet or signing code in the app."
 exit "$status"

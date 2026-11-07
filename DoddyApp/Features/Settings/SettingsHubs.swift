@@ -114,6 +114,13 @@ struct ConnectionsSettingsView: View {
                     Text("Invoices (inFakt)")
                 }
                 .accessibilityIdentifier("settings.invoices")
+                // ADR-735: USDC for pages that ask for payment. Off until the server has a wallet and the person turns it on.
+                NavigationLink {
+                    PaymentsScreen()
+                } label: {
+                    Text("Payments")
+                }
+                .accessibilityIdentifier("settings.payments")
                 // ADR-600: sign in to Doddy on the web with a code from this iPhone.
                 NavigationLink {
                     WebSignInScreen()

@@ -172,7 +172,7 @@ test("web lookups start on; the user's own off still wins; every search still as
   assert.equal((await run(rig, "web_search", { query: "again" })).body.error.code, "capability_disabled");
 });
 
-// ------------------------------------------------------------------ connect turns tools on (ADR-563)
+// ------------------------------------------------------------------ connect leaves tools off (ADR-816, was ADR-563)
 
 test("an account that isn't connected answers not_connected (so the app can offer Connect), even with its switch off", async () => {
   rig = await start();
@@ -182,13 +182,18 @@ test("an account that isn't connected answers not_connected (so the app can offe
   assert.match(res.body.error.message, /Gmail isn't connected/);
 });
 
-test("connecting Gmail turns its tools on; reads still ask, sends still need the tap on their card", async () => {
+test("connecting Gmail leaves its tools off until the user chooses (ADR-816); then reads still ask, sends still need the tap on their card", async () => {
   rig = await start();
-  const done = await connect(rig, "gmail");
+  const done = await connect(rig, "gmail", undefined, undefined, "unset");
   assert.equal(done.status, 200, done.text);
-  assert.match(done.body.receipt.summary, /Gmail connected\. Doddy can use it now/);
+  assert.match(done.body.receipt.summary, /Gmail connected\. Doddy won't use it until you choose/);
+  const fresh = (await rig.call("GET", "/v1/tools")).body.toolkits.find((t: any) => t.id === "gmail");
+  assert.ok(fresh.tools.length > 0);
+  for (const tool of fresh.tools) assert.equal(tool.enabled, false, tool.name);
+  assert.equal((await run(rig, "check_email", { query: "from:ania" })).status, 403);
+
+  assert.equal((await rig.call("PUT", "/v1/tools/access", { body: { app: "gmail", mode: "act" } })).status, 200);
   const gmail = (await rig.call("GET", "/v1/tools")).body.toolkits.find((t: any) => t.id === "gmail");
-  assert.ok(gmail.tools.length > 0);
   for (const tool of gmail.tools) assert.equal(tool.enabled, true, tool.name);
 
   assert.equal((await runRaw(rig, "check_email", { query: "from:ania" })).body.error.receipt.errorCode, "ask_first_required");

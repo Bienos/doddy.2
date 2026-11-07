@@ -1,0 +1,65 @@
+{
+  "title": "Four-day work week trials: what the evidence says",
+  "answer": "Sample test data: in the trials summarised here, most companies kept the shorter week after the trial, and staff reported less burnout. Revenue held roughly steady, but the trials were voluntary, so the companies that joined may not be typical.",
+  "sections": [
+    {
+      "heading": "Did companies keep the four-day week?",
+      "points": [
+        { "text": "In the sample trial, 56 of 61 companies continued the shorter week after six months, and 18 made it permanent.", "claims": ["c1"] },
+        { "text": "Companies that dropped it most often cited customer-facing schedules that were hard to cover.", "claims": ["c2"] }
+      ]
+    },
+    {
+      "heading": "What happened to staff and revenue?",
+      "points": [
+        { "text": "71% of staff reported lower burnout at the end of the trial.", "claims": ["c3"] },
+        { "text": "Revenue rose 1.4% on average over the trial period, which the authors call roughly flat.", "claims": ["c4"] }
+      ]
+    }
+  ],
+  "disagreements": [
+    { "text": "One review argues the results can't be generalised because companies chose to take part; the trial's organisers say the sample covered many sectors.", "claims": ["c5", "c6"] }
+  ],
+  "confidence": "medium",
+  "gaps": [
+    "No long-term data beyond two years yet.",
+    "Few trials in manufacturing or healthcare."
+  ],
+  "infographic": {
+    "headline": { "text": "56 of 61 companies kept the four-day week after the trial", "claims": ["c1"] },
+    "facts": [
+      { "text": "18 companies made the four-day week permanent.", "claims": ["c1"] },
+      { "text": "71% of staff reported lower burnout.", "claims": ["c3"] },
+      { "text": "Revenue rose 1.4% on average: roughly flat.", "claims": ["c4"] },
+      { "text": "Companies volunteered, so they may not be typical.", "claims": ["c5"] }
+    ],
+    "numbered": false,
+    "chart": {
+      "kind": "column",
+      "title": "What companies did after the trial",
+      "unit": "companies",
+      "data": [
+        { "label": "Kept it", "value": 38 },
+        { "label": "Made it permanent", "value": 18 },
+        { "label": "Paused", "value": 2 },
+        { "label": "Stopped", "value": 3 }
+      ],
+      "claims": ["c1"]
+    },
+    "sourceLine": "Sources: sample test data (example.org), fetched 22 Oct 2026. All sources are listed in the PDF brief.",
+    "altText": "Infographic: 56 of 61 companies kept the four-day week after the trial. A column chart shows what companies did afterwards: 38 kept it, 18 made it permanent, 2 paused and 3 stopped."
+  },
+  "language": "en",
+  "sources": [
+    { "id": "s1", "title": "Sample source A: trial results (test data)", "url": "https://example.org/trial-results", "fetchedAt": "2026-10-22T08:40:00Z" },
+    { "id": "s2", "title": "Sample source B: an independent review (test data)", "url": "https://example.org/review", "fetchedAt": "2026-10-22T08:42:10Z" }
+  ],
+  "claims": [
+    { "id": "c1", "text": "56 of 61 companies continued; 18 made it permanent.", "quote": "56 of the 61 companies", "source": "s1" },
+    { "id": "c2", "text": "Customer-facing schedules were the main reason to stop.", "quote": "customer-facing schedules", "source": "s1" },
+    { "id": "c3", "text": "71% reported lower burnout.", "quote": "71% of employees", "source": "s1" },
+    { "id": "c4", "text": "Revenue rose 1.4% on average.", "quote": "1.4%", "source": "s1" },
+    { "id": "c5", "text": "Self-selection limits generalisation.", "quote": "self-selected", "source": "s2" },
+    { "id": "c6", "text": "The sample covered many sectors.", "quote": "a wide range of sectors", "source": "s1" }
+  ]
+}
