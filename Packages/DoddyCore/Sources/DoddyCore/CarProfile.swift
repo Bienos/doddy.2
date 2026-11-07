@@ -33,9 +33,9 @@ public enum CarProfile {
             // Reading what a task found, and this week's leaflets (SHOPPING.md), change nothing: the
             // ask is answered by voice like any other look-up.
             return .run
-        case .handOverErrand:
+        case .handOverErrand, .makeSomething:
             // Web research on Doddy's server changes nothing (ADR-570), but starting it takes a tap on
-            // its card, not a spoken yes (ADR-716), so it waits until the user isn't driving.
+            // its card, not a spoken yes (ADR-716; a Studio job too, ADR-742), so it waits until the user isn't driving.
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         case .parkingSpot(let action):
             // Finding the car is a look-up; saving or clearing the spot waits until parked.

@@ -140,6 +140,8 @@ files=(
   DoddyApp/DesignSystem/Motion/DoddyDirector.swift
   # Calls Doddy places for the user (ADR-500): the screens' state, without the views.
   DoddyApp/Features/CallCases/CallCasesModel.swift
+  # Studio (ADR-740): the list, files and delete-with-read-back, without the views.
+  DoddyApp/Features/Studio/StudioModel.swift
   # This week's leaflets (SHOPPING.md 2): the screen's state and the voice tool's answer, without the views.
   DoddyApp/Features/Shopping/DealsModel.swift
   # Price watch (SHOPPING_WATCH.md): the card's flow and the list's state, without the views.

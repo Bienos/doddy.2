@@ -176,8 +176,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # reportlab and matplotlib: Doddy Studio's two renderers, run on the samples by the checks group (ADR-740).
       - name: Python for the checks
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-yaml
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-yaml python3-reportlab python3-matplotlib
       - name: scripts/ci.sh --only checks
         run: scripts/ci.sh --only checks
 
@@ -285,6 +286,10 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: server/messaging/package-lock.json
+      # Python with reportlab and matplotlib: scripts/ci.sh --only messaging also runs Studio's server checks on files
+      # the real renderers make from the skills' samples (scripts/check_studio_crosscheck.sh, ADR-740).
+      - name: Python for the Studio cross-check
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3 python3-reportlab python3-matplotlib
       - name: scripts/ci.sh --only messaging
         run: scripts/ci.sh --only messaging
 

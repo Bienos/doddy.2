@@ -5,6 +5,10 @@ import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "./serverUsa
 import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
 import { parseSearchShops, type SearchShop } from "./deals/further.js";
 import { z } from "zod";
+import type { StudioSettings } from "./studio/context.js";
+import { PLAN_TIER_NAMES, stepModelsFrom, type PlanTier } from "./studio/models.js";
+
+const MODEL_ID = /^[a-z0-9][a-z0-9.\-]{1,63}$/;
 
 // Every provider block is optional: a missing block switches that feature off and the API
 // answers 503 "not_configured". Nothing is faked.
@@ -127,8 +131,8 @@ const schema = z.object({
   TASK_CALL_SAY_VOICE: z.string().regex(/^[A-Za-z0-9.\-]{1,40}$/).default("Polly.Ewa"),
 
   // Errands (ADR-570, docs/implementation/ERRANDS.md): Doddy researches a task in the background.
-  // On by default, but only runs when ANTHROPIC_API_KEY and MEMORY_ENCRYPTION_KEY are set too;
-  // "0" refuses new errands and starts no queued one.
+  // Off by default ("0" refuses new errands and starts no queued one); "1" runs them when
+  // ANTHROPIC_API_KEY and MEMORY_ENCRYPTION_KEY are set too.
   ERRANDS_ENABLED: z.enum(["0", "1"]).default("0"),
   ERRANDS_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-opus-5-5"),
   ERRANDS_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("high"),
@@ -209,6 +213,42 @@ const schema = z.object({
   ASSISTANT_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
   // Of the server's requests, what accounts still new may use together (ADR-702).
   ASSISTANT_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(100000).default(DEFAULT_NEW_ACCOUNT_POOL.assistant),
+
+  // Studio (ADR-740, docs/implementation/STUDIO.md): research a topic, then make files from it. Off by
+  // default; "1" also needs ANTHROPIC_API_KEY, MEMORY_ENCRYPTION_KEY and STUDIO_SKILLS.
+  STUDIO_ENABLED: z.enum(["0", "1"]).default("0"),
+  // Models per step (owner, 22 Oct: the all-Opus plan cost too much). Defaults: Haiku 5.5 plans, extracts
+  // claims and renders; Sonnet 5.5 researches and writes. STUDIO_MODEL, when set, is the starting point for
+  // every step; a STUDIO_MODEL_<STEP> then overrides that step.
+  STUDIO_TIER: z.enum(PLAN_TIER_NAMES as [PlanTier, ...PlanTier[]]).optional(),
+  STUDIO_MODEL: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_PLAN: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_RESEARCH: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_PACK: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_WRITE: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_MAKE: z.string().regex(MODEL_ID).optional(),
+  // Doddy's custom skills: comma-separated skill ids, each optionally @version (scripts/studio_skills.sh upload).
+  STUDIO_SKILLS: z.string().regex(/^[A-Za-z0-9_]+(@[A-Za-z0-9_.-]+)?(,[A-Za-z0-9_]+(@[A-Za-z0-9_.-]+)?)*$/).optional(),
+  STUDIO_MAX_SEARCHES: z.coerce.number().int().min(1).max(50).default(15),
+  STUDIO_MAX_FETCHES: z.coerce.number().int().min(1).max(50).default(15),
+  // Comma-separated hostnames for web search and fetch to skip (content farms; owner decision).
+  STUDIO_BLOCKED_DOMAINS: z.string().regex(/^[a-z0-9.-]+(,[a-z0-9.-]+)*$/).optional(),
+  STUDIO_TASK_BUDGET_TOKENS: z.coerce.number().int().min(20_000).max(1_000_000).default(150_000),
+  STUDIO_JOB_LIMIT_USD: z.coerce.number().positive().max(50).default(2),
+  STUDIO_DAILY_CAP_USD: z.coerce.number().positive().max(500).default(3),
+  STUDIO_TIME_LIMIT_MINUTES: z.coerce.number().int().min(5).max(60).default(20),
+  STUDIO_MAX_OPEN: z.coerce.number().int().min(1).max(10).default(3),
+  // The whole server's limits per UTC day, counted where deleting an item or an account can't give them back (ADR-742,
+  // like ADR-673): approvals per account, approvals for the server, the share of those that accounts still new may use
+  // (0, the default: new accounts can't start a Studio job, ADR-702), and the dollars the server may commit.
+  // Each approval commits STUDIO_JOB_LIMIT_USD of STUDIO_DAILY_SERVER_CAP_USD until the job ends and its real cost is known.
+  STUDIO_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(100).default(3),
+  STUDIO_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(1000).default(10),
+  STUDIO_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(1000).default(DEFAULT_NEW_ACCOUNT_POOL.studio),
+  STUDIO_DAILY_SERVER_CAP_USD: z.coerce.number().positive().max(5000).default(10),
+  // The hard ceiling for a whole UTC calendar month, the most the server can ever commit to Studio (ADR-742). The owner
+  // said "100usd cap" with no period; the safest reading is the month and all accounts together.
+  STUDIO_MONTHLY_SERVER_CAP_USD: z.coerce.number().positive().max(100000).default(100),
 });
 
 export interface ApnsConfig { teamId: string; keyId: string; privateKey: string; bundleId: string }
@@ -324,6 +364,7 @@ export interface Config {
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
   assistantSettings: AssistantSettings;
+  studioSettings: StudioSettings;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -434,6 +475,28 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       dailyPerServer: e.ASSISTANT_DAILY_PER_SERVER,
       dailyForNewAccounts: e.ASSISTANT_DAILY_NEW_ACCOUNTS,
       newAccountHours: e.NEW_ACCOUNT_HOURS,
+    },
+    studioSettings: {
+      enabled: e.STUDIO_ENABLED === "1",
+      models: stepModelsFrom({
+        plan: e.STUDIO_MODEL_PLAN, research: e.STUDIO_MODEL_RESEARCH, pack: e.STUDIO_MODEL_PACK,
+        write: e.STUDIO_MODEL_WRITE, make: e.STUDIO_MODEL_MAKE,
+      }, e.STUDIO_MODEL, e.STUDIO_TIER),
+      skills: e.STUDIO_SKILLS ?? "",
+      maxSearches: e.STUDIO_MAX_SEARCHES,
+      maxFetches: e.STUDIO_MAX_FETCHES,
+      blockedDomains: e.STUDIO_BLOCKED_DOMAINS ? e.STUDIO_BLOCKED_DOMAINS.split(",") : [],
+      taskBudgetTokens: e.STUDIO_TASK_BUDGET_TOKENS,
+      jobLimitUsd: e.STUDIO_JOB_LIMIT_USD,
+      dailyCapUsd: e.STUDIO_DAILY_CAP_USD,
+      timeLimitMinutes: e.STUDIO_TIME_LIMIT_MINUTES,
+      maxOpen: e.STUDIO_MAX_OPEN,
+      dailyPerAccount: e.STUDIO_DAILY_PER_ACCOUNT,
+      dailyPerServer: e.STUDIO_DAILY_PER_SERVER,
+      dailyForNewAccounts: e.STUDIO_DAILY_NEW_ACCOUNTS,
+      newAccountHours: e.NEW_ACCOUNT_HOURS,
+      dailyServerCapUsd: e.STUDIO_DAILY_SERVER_CAP_USD,
+      monthlyServerCapUsd: e.STUDIO_MONTHLY_SERVER_CAP_USD,
     },
   };
 }

@@ -233,6 +233,12 @@ services:
         sync: false
       - key: DEALS_ENABLED # Leaflets (ADR-609): "0" (the default) answers 503 deals_disabled; "1" reads the four chains' leaflets on request
         value: "0"
+      # Studio (ADR-740): "1" also needs STUDIO_SKILLS (ids from scripts/studio_skills.sh upload). Limits
+      # and caps have defaults (server/messaging/.env.example).
+      - key: STUDIO_ENABLED
+        value: "0"
+      - key: STUDIO_SKILLS
+        sync: false
       - key: CEIDG_API_TOKEN # Company registers (ADR-685): CEIDG's JWT from biznes.gov.pl (e-service 00_9999_00); empty means GET /v1/registry/ceidg answers 503 registry_disabled
         sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
@@ -323,6 +329,12 @@ services:
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"
       - key: SERPER_API_KEY # Shopping errands (ADR-607): Google Shopping offers for Poland; empty means find_offers answers "not set up"
+        sync: false
+      # Studio (ADR-740): "1" also needs STUDIO_SKILLS (ids from scripts/studio_skills.sh upload). Limits
+      # and caps have defaults (server/messaging/.env.example).
+      - key: STUDIO_ENABLED
+        value: "0"
+      - key: STUDIO_SKILLS
         sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false

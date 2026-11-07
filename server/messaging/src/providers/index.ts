@@ -10,6 +10,9 @@ import type { TaskCallDeps } from "../taskCalls/context.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
 import type { ErrandDeps } from "../errands/context.js";
 import { ClaudeErrandResearcher } from "../errands/researcher.js";
+import type { StudioDeps } from "../studio/context.js";
+import { AnthropicStudioApi, parseSkills } from "../studio/model.js";
+import { modelLabel } from "../studio/models.js";
 import type { AssistantDeps } from "../assistant/deps.js";
 import { ClaudeAssistantResponder } from "../assistant/responder.js";
 import { PoliteFetcher } from "../deals/fetcher.js";
@@ -109,6 +112,19 @@ export function providersFrom(config: Config) {
       ? new ClaudeAssistantResponder(config.anthropicApiKey, { model: as.model, effort: as.effort })
       : undefined,
   };
+  // Studio (ADR-740): the model API only with an Anthropic key, the switch on (STUDIO_ENABLED, default 0) and Doddy's
+  // skills. The key is read from the server's environment only (rule 6): nothing here or in the app holds one.
+  const sts = config.studioSettings;
+  const skills = parseSkills(sts.skills);
+  const studio: StudioDeps = {
+    settings: sts,
+    api: sts.enabled && config.anthropicApiKey && skills.length
+      ? new AnthropicStudioApi(config.anthropicApiKey, {
+        models: sts.models, modelLabel: modelLabel(sts.models), skills, maxSearches: sts.maxSearches, maxFetches: sts.maxFetches,
+        blockedDomains: sts.blockedDomains, taskBudgetTokens: sts.taskBudgetTokens,
+      })
+      : undefined,
+  };
   return {
     push,
     sms: twilio,
@@ -117,6 +133,7 @@ export function providersFrom(config: Config) {
     cipher,
     taskCalls,
     errands,
+    studio,
     assistant,
     deals,
     // ADR-685: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.

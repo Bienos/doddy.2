@@ -24,8 +24,8 @@ public enum ConnectionPause {
         case .lostWallet:
             // Doddy's own checklist (ADR-692); a page or a call opens only on the person's tap, like any link.
             false
-        case .handOverErrand:
-            // Doddy's server searches and reads the web for it (ADR-570).
+        case .handOverErrand, .makeSomething:
+            // Doddy's server searches and reads the web for it (ADR-570, ADR-740).
             true
         case .findDeals:
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).

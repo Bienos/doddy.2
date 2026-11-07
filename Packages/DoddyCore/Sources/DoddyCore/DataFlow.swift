@@ -289,6 +289,15 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "The server keeps the words and the result, encrypted, until the result is saved on this iPhone, then deletes them; a result never fetched is deleted after 30 days. The notification has no words from the task."
                     : "No messaging server is set, so tasks can't be handed over."),
+            // ADR-740: Studio, a research brief and an infographic made in the background.
+            DataFlowRow(
+                id: "studio", destination: "Your Doddy messaging server and Anthropic (Studio)",
+                what: "The topic you ask Doddy to research, your own words about it, who it's for, its length, style and language, and any pages you picked. Anthropic's Claude searches the web and reads pages for it, so search words made from your topic go to Anthropic's search provider, then makes the files in Anthropic's container. Never your saved notes, lists, profile or earlier conversations.",
+                when: "Only when you tap Allow on a Studio job's card.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "Web research and code execution at Anthropic aren't zero-retention, so Anthropic keeps that work under its normal retention. The server keeps the job and the files, encrypted, until you delete them in Studio. The notification has no words from the job."
+                    : "No messaging server is set, so Studio can't make anything."),
             // ADR-500..507 (docs/decisions/calls.md): a call Doddy places for the user, from Settings › Notifications ›
             // Phone calls › Calls for you. Read from CallBriefDraft.requestBody, CallCasesModel and server/messaging/src/
             // taskCalls (payload, twiml, worker, cases, writer), review of 4 Nov 2026.
@@ -368,6 +377,8 @@ public enum DataFlow {
         }
         // ADR-570: Claude researches the tasks you hand over.
         if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
+        // ADR-740: Claude researches and makes what you ask Studio for.
+        if active.contains("studio") { parts.append("Anthropic (Studio)") }
         // ADR-504: Claude reads a call's transcript to write its answer card.
         if active.contains("callCases") { parts.append("Anthropic (the answer card of calls Doddy places for you)") }
         // SHOPPING.md: item names and leaflet pages, for leaflets that are only pictures.
@@ -393,6 +404,7 @@ public enum DataFlow {
         "doddyServer": "your Doddy server (web search, online accounts and the web)",
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
+        "studio": "Anthropic (Studio, through your messaging server)",
         "callCases": "Twilio, ElevenLabs and Anthropic (calls Doddy places for you, through your messaging server)",
         "updates": "Apple and Twilio (notifications and texts from Doddy, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",
