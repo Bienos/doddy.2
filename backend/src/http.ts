@@ -165,7 +165,7 @@ export function createHandler(deps: HttpDeps) {
         const match = web.routes.match(req.method ?? "GET", url.pathname);
         if (match) {
           route = match.route.template;
-          status = await web.routes.serve(match, req, res, now());
+          status = await web.routes.serve(match, req, res, now(), url.searchParams);
           return;
         }
         if ((req.method === "GET" || req.method === "HEAD") && !url.pathname.startsWith("/v1/")) {

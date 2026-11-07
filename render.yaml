@@ -45,6 +45,13 @@ services:
         value: signed
       - key: SUPABASE_URL
         sync: false
+      # Google and Apple on Doddy Web (ADR-818), separate from DODDY_AUTH_MODE: the project's
+      # publishable key (sb_publishable_…, public by design; a sb_secret_ key is refused). Empty: off.
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      # Optional: deletes a person's Supabase sign-in with their Doddy account (ADR-818). Server only.
+      - key: SUPABASE_SECRET_KEY
+        sync: false
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
       # Hosted Postgres (ADR-525): postgres://… URL, and the CA's PEM when it isn't a public one

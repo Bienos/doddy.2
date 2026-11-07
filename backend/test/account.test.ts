@@ -61,6 +61,20 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
      VALUES ($1, $2, $3, 'Safari', 'macOS', 1, 1, 9999999999999)`,
     [`ws-${tag}`, userId, `th-${tag}`],
   );
+  // ADR-818: a linked Google sign-in, and an iPhone's link ticket not yet opened.
+  await q("INSERT INTO web_identities (identity_id, user_id, provider, created_at) VALUES ($1, $2, 'google', 1)", [uuid(3), userId]);
+  await q(
+    `INSERT INTO web_oauth_states (state_hash, user_id, provider, intent, return_to, verifier, created_at, expires_at)
+     VALUES ($1, $2, 'google', 'link', 'app', 'v', 1, 9999999999999)`,
+    [`os-${tag}`, userId],
+  );
+  await q("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, 'google', 1)", [userId]);
+  // ADR-819: another iPhone signed in to this account.
+  await q("INSERT INTO device_joins (device_user_id, user_id, provider, created_at) VALUES ($1, $2, 'google', 1)", [uuid(5), userId]);
+  await q(
+    `INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, 'google', 1, 9999999999999)`,
+    [`lp-${tag}`, userId, uuid(4)],
+  );
   await q("INSERT INTO logbook_state (user_id, enabled, changed_at) VALUES ($1, true, 1)", [userId]);
   await q("INSERT INTO logbook_days (user_id, day, summary, received_at) VALUES ($1, '2026-10-09', '{}', 1)", [userId]);
   await q("INSERT INTO memory_state (user_id, notes, conversations, changed_at) VALUES ($1, true, true, 1)", [userId]);
@@ -98,12 +112,13 @@ test("eraseUser deletes every row of one person, queues every grant for removal,
     for (const table of ERASED_TABLES) assert.ok(erased.deleted[table] >= 1, `${table} had a row of A`);
     const after = await rows(store, ID_A);
     for (const table of ERASED_TABLES) assert.equal(after[table], 0, `${table} still holds A`);
-    // The open sign-in's grant and both connections are owed a removal at the provider.
+    // The open sign-in's grant, both connections and the linked Google sign-in (ADR-818, at
+    // Supabase) are owed a removal at the provider.
     assert.deepEqual(
       erased.cleanups.map((c) => `${c.provider}:${c.connectionId}`).sort(),
-      [`${CALENDAR_PROVIDER}:conn-cal-aaaa`, "gmail:pending-aaaa", "notion:conn-notion-aaaa"].sort(),
+      [`${CALENDAR_PROVIDER}:conn-cal-aaaa`, "gmail:pending-aaaa", "notion:conn-notion-aaaa", "supabase_auth:aaaa0000-0000-4000-8000-000000000003"].sort(),
     );
-    assert.equal(after.cleanups, 3);
+    assert.equal(after.cleanups, 4);
     // The erasure itself cut off A's earlier sign-ins (ADR-709), and that cut-off is kept (KEPT_ON_ERASE).
     assert.equal(after.token_floor, 1);
     assert.equal(erased.tokensValidAfter, 1, "the second after the erasure's clock (5 ms)");
