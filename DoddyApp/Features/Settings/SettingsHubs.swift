@@ -28,10 +28,7 @@ struct DoddyMemorySettingsView: View {
                     StatusRow(title: NSLocalizedString("Lists", comment: ""), value: "\(store.lists.count)")
                 }
                 .accessibilityIdentifier("settings.memory.lists")
-                Button { openMemories(.find) } label: {
-                    Label("Find something", systemImage: "magnifyingglass")
-                }
-                .accessibilityIdentifier("settings.memory.find")
+                // "Find something" was a third row; Find is on the notes screen itself (7 Nov 2026).
             } footer: {
                 Text("Only what you chose to save. Kept on this iPhone.")
             }
