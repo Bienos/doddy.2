@@ -27,8 +27,8 @@ public enum VoiceToolName {
     public static let findDeals = "find_deals"
 }
 
-/// The functions a user turns on in Settings, Connections. All start off, and each one may also
-/// need an iOS permission of its own.
+/// The functions a user turns on or off in Settings, Connections. The ones that need no iOS permission
+/// start on (`startsOn`); the rest start off, and each of those needs an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
     /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
@@ -65,6 +65,24 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
 
     /// Per-device preference key for @AppStorage.
     public var preferenceKey: String { "voiceConnection.\(rawValue)" }
+
+    /// Whether the switch is on until the person turns it off. Only the connections that need no iOS
+    /// permission start on: Doddy only prepares a draft, a card or a file, and the person still taps
+    /// Send, Open or Save. A connection that needs iOS permission (calendar, reminders, contacts, timers,
+    /// steps, photos, camera) stays off, because a switch that is on without the permission is shown as
+    /// blocked and never asks; turning it on in Settings is what makes iOS ask.
+    public var startsOn: Bool {
+        switch self {
+        case .maps, .shortcuts, .messages, .blik, .presentations: true
+        case .calendar, .reminders, .contacts, .timers, .steps, .photos, .camera: false
+        }
+    }
+
+    /// The stored value for each connection that starts on, to register as the app's defaults. A value
+    /// the person stored (on or off) always wins over it.
+    public static var registeredDefaults: [String: Bool] {
+        Dictionary(uniqueKeysWithValues: allCases.filter(\.startsOn).map { ($0.preferenceKey, true) })
+    }
 
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {

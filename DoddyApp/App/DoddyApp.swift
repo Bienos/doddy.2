@@ -21,6 +21,9 @@ struct DoddyApp: App {
         // Back Tap's old "Small island" becomes Settings › "Expand when Doddy speaks" (ADR-579),
         // before anything reads either preference.
         Self.migrateLaunchPreferences()
+        // Connections that need no iOS permission (Messages and email, Maps, Shortcuts, BLIK, Presentations)
+        // start on until the person turns them off. A stored on or off always wins; this only fills the gap.
+        UserDefaults.standard.register(defaults: VoiceConnection.registeredDefaults)
         // A shipped build ignores the server address typed in Settings; one saved by an earlier build is
         // removed, before anything can read it (ADR-720).
         DeviceSession.removeSavedServerOverride()
@@ -31,6 +34,10 @@ struct DoddyApp: App {
         // UI tests of "Before we start" (ADR-581) start without an acceptance from an earlier test.
         if ProcessInfo.processInfo.arguments.contains("-resetLegalAcceptanceForUITests") {
             UserDefaults.standard.removeObject(forKey: LegalAcceptance.preferenceKey)
+        }
+        // UI tests of "Allow access" (ADR-733) start with it not yet answered.
+        if ProcessInfo.processInfo.arguments.contains("-resetFirstRunAccessForUITests") {
+            UserDefaults.standard.removeObject(forKey: PreferenceKey.firstRunAccessSeen)
         }
         #endif
         VoiceSessionKeychain.removeLegacySetup()
