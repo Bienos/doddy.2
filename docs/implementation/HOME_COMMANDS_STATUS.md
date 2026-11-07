@@ -27,5 +27,7 @@ Owner, 28 Oct 2026: "connection to Apple HomeKit so someone can set up Doddy by 
 ## Checked
 Ran: `voice_agent_spec.py check`, the forbidden-capability guard (with its new HomeKit rules), the platform specs and the string-catalog check (all pass). **Not run:** `make test-core`, the app type-check (no Swift in this session), the Xcode build, a device. Every Swift edit, `HomeKitClient.swift` included, was made without a compiler or the HomeKit SDK.
 
+**Since then:** the hosted Mac job compiled it and the tests passed, first on PR #149 (run 40873709023 on `3d996e6b`, 29 Oct), then on #195 (run 42004675828 on `27e8ada`, 5 Nov). **On the default branch since 7 Nov 2026 (#195);** its HomeKit files are the same as #149's, so #149 is superseded. Not run on a device.
+
 ## Next step
-Run `make test-core` and the hosted Mac job, fix what the compiler finds in `HomeKitClient.swift`, then a device run.
+Build with a paid team (the HomeKit entitlement) from the default branch, then the device checks above.
