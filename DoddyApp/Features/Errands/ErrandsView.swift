@@ -13,6 +13,16 @@ struct ErrandsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // Everything Doddy holds for the user in one list (ADR-756). Here, not in Home's menu: that menu
+                // fits eleven rows and a twelfth pushed two rows out of reach (the hosted UI tests caught it).
+                Section {
+                    NavigationLink {
+                        OpenLoopsView()
+                    } label: {
+                        Label(OpenLoopsText.screenTitle(NotificationLanguage.preferred(Bundle.main.preferredLocalizations)), systemImage: "scope")
+                    }
+                    .accessibilityIdentifier("errands.openLoops")
+                }
                 Section {
                     Text("Hand Doddy a task in a conversation, like \"compare flights to Rome next month under 2000 zł\". One yes lets Doddy search the web and read pages as often as the task needs, in the background. The result waits here when it's done. Nothing is booked, bought or sent.")
                         .font(.footnote)
