@@ -31,9 +31,9 @@ What it does **not** do: it stores nothing, schedules nothing, sends nothing, cr
 |---|---|---|
 | `OpenLoops/OpenLoopsText.swift` (DoddyCore) | The page's words in Polish and English: section titles, a sentence per status, "can't read right now" per source, the empty line. No exclamation marks; `cannotConfirm` never reads as done or active. Other languages show English until the catalogs have them | tested on Linux (5 tests) |
 | `Features/OpenLoops/OpenLoopsModel.swift` | The page's state: progress until the first read, then the agenda; one read at a time (a call during a read is folded into one more read after it) | tested on Linux (6 tests) and type-checked in Swift 6 |
-| `Features/OpenLoops/OpenLoopsSources.swift` | The only code that reads the stores. Private notes' words are `.hidden` unless Face ID unlocked them (the rule of Home's "Due now"); a source the person turned on but the app can't read (permission revoked, Pause all, store failed) goes in `unavailable`; a source never turned on is not asked | **NOT COMPILED** |
-| `Features/OpenLoops/OpenLoopsView.swift` | The list: sections, rows, a warning line per unreadable source, pull to refresh. A note's row opens the note and a task's row opens the task; the other rows are read-only | **NOT COMPILED** |
-| `Features/Errands/ErrandsView.swift` | A row "Na oku" at the top of the Tasks screen opens the page | **NOT COMPILED** |
+| `Features/OpenLoops/OpenLoopsSources.swift` | The only code that reads the stores. Private notes' words are `.hidden` unless Face ID unlocked them (the rule of Home's "Due now"); a source the person turned on but the app can't read (permission revoked, Pause all, store failed) goes in `unavailable`; a source never turned on is not asked | compiled by the hosted Mac job; not seen on a device |
+| `Features/OpenLoops/OpenLoopsView.swift` | The list: sections, rows, a warning line per unreadable source, pull to refresh. A note's row opens the note and a task's row opens the task; the other rows are read-only | compiled by the hosted Mac job; not seen on a device |
+| `Features/Errands/ErrandsView.swift` | A row "Na oku" at the top of the Tasks screen opens the page | compiled by the hosted Mac job; not seen on a device |
 | `scripts/test_open_loops_model.sh`, `scripts/ci.sh`, `scripts/typecheck_app_logic.sh` | The new checks, added to the Linux CI steps | ran here |
 
 Choices I made for the owner, to confirm or change:
@@ -64,12 +64,13 @@ Choices I made for the owner, to confirm or change:
 | `scripts/typecheck_app_logic.sh` | PASS, 35 app files in Swift 6 including `OpenLoopsModel.swift` |
 | `tools/build_strings_catalog.py --check` | PASS (the page adds no catalog string) |
 | Full DoddyCore suite (`swift test`, same flags) | 2,394 tests, 0 failures |
+| Hosted CI on PR #197, head `6708be3` (run 42362625596, 7 Nov) | `ci` (the Mac job: `scripts/ci.sh --app-only`, build, unit and UI tests), `swift`, `core`, `backend`, `node`, `messaging` and `checks` all succeeded; `island` was skipped. The three `Vercel –` statuses are red ("Account is blocked.") as on every pull request, not from this change |
 
 Not run here: the other `scripts/ci.sh --core-only` steps (backend, messaging server, web, site, string catalogs, app-logic type-check). This change touches none of them.
 
 ## Not done, and why
 
-- **The SwiftUI page, the collector and the Tasks row are written but NOT COMPILED.** This session has Swift for Linux but no Xcode or iOS SDK, so SwiftUI, EventKit and the app's own stores can't be built here. The type-check covers the model only. The hosted Mac job (a pull request's CI) is the first build; I did not open one because nobody asked for it. If it fails to compile or a UI test about the Tasks screen breaks, that is expected work for the next session, not a surprise to hide.
+- **The SwiftUI page, the collector and the Tasks row were written without Xcode, then built by the hosted Mac job (run 42362625596 on `6708be3`), and the app's unit and UI tests passed there.** Not seen on a device. (Original note: this session has Swift for Linux but no Xcode or iOS SDK.) This session has Swift for Linux but no Xcode or iOS SDK, so SwiftUI, EventKit and the app's own stores can't be built here. The type-check covers the model only. The hosted Mac job (a pull request's CI) is the first build; I did not open one because nobody asked for it. If it fails to compile or a UI test about the Tasks screen breaks, that is expected work for the next session, not a surprise to hide.
 - **Nothing on a device.** No row has been seen on a phone; the Face ID and Pause all paths are untested.
 - **Home's "Teraz" card, the importance and loudness choices, triggers, the budget and the Doddy card in Messages (L1 to L4)** are not started. They wait for the design's decisions.
 
@@ -79,11 +80,11 @@ Not run here: the other `scripts/ci.sh --core-only` steps (backend, messaging se
 |---|---|---|---|
 | DOD-08 verified status; unknown is never success | `errand` and `watch` map `unknown` to `cannotConfirm`; a parcel is closed only by the carrier's status | `testTasksRunning…UnknownIsNeverSuccess`, `testWatchesActive…`, `testParcels…` | The builder trusts the state the source gives it |
 | DOD-06 nothing invented | Every row is one source record; no model, no inference | all | - |
-| ADR-310 / ADR-723 private words | `OpenLoopTitle.hidden`; `OpenLoopsSources` passes it for a private note unless Face ID unlocked private notes | `testAPrivateNoteKeepsItsWordsHidden` | The collector is not compiled or run |
+| ADR-310 / ADR-723 private words | `OpenLoopTitle.hidden`; `OpenLoopsSources` passes it for a private note unless Face ID unlocked private notes | `testAPrivateNoteKeepsItsWordsHidden` | The collector compiled in the hosted Mac job; it was not run on a device |
 | DOD-11 observable privacy | No new data flow: tasks and parcels are read locally, a watch re-read is the request the Tasks screen already makes | the capability guard | "What leaves this iPhone" is unchanged and still correct; the page itself is not seen on a device |
 | DOD-03 / DOD-10 no pressure | No notification or message is created | - | Applies to L1 and later, not here |
 
-Claims to limit: do not say "Doddy keeps track of everything" or "reminds you" about L0. It is a read-only list; the rules behind it are tested, the screen is not compiled or seen yet.
+Claims to limit: do not say "Doddy keeps track of everything" or "reminds you" about L0. It is a read-only list; the rules behind it are tested, the screen compiled in the hosted Mac job but was not seen on a device.
 
 ## Next step and decisions needed
 
