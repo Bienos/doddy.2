@@ -3,7 +3,7 @@
   "ignoreCommand": "p=$VERCEL_GIT_PREVIOUS_SHA; [ \"$p\" = \"$(git rev-parse HEAD)\" ] && exit 1; git cat-file -e \"$p^{commit}\" 2>/dev/null || p=HEAD^; git cat-file -e \"$p^{commit}\" 2>/dev/null && git diff --quiet \"$p\" HEAD -- .",
   "git": {
     "deploymentEnabled": {
-      "claude/!(loving-dirac-uuxoux)": false
+      "claude/*": false
     }
   }
 }
