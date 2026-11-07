@@ -1,5 +1,7 @@
 # BLIK transfers by voice: status (ADR-510)
 
+> **REMOVED, 5 Nov 2026 (ADR-810).** The BLIK transfer draft described below (the `draft_blik_transfer` tool, its card, the Connections switch and the Activity rows) was taken out of the repository on the owner's decision: BLIK payments are to go through Stripe later (not built). This page is history. The live ElevenLabs agent still has the tool until the owner separately says to sync it.
+
 Last updated 2026-10-18. Branch `claude/dreamy-cannon-gc33dj` (PR #85). Numbered ADR-510; ADR-483 is ASK-01.
 
 ## What it is
