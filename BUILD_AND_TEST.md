@@ -78,6 +78,10 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   tests → Run workflow) and it always runs.
 - Pushes to `main` (ADR-811) run every job, each commit in its own run that nothing cancels; pull requests
   keep the path selection above, and a newer push to a pull request cancels its older run.
+- UI tests on pull requests are the smoke classes only (`DODDY_UI_TESTS=smoke`: `LaunchSmokeTests`,
+  `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
+  7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
+  test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
   is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths) and
   doesn't carry the owner's `owner-approved` label. Adding the label reruns it.

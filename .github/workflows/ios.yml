@@ -125,6 +125,11 @@ jobs:
           xcodegen --version
 
       - name: scripts/ci.sh --app-only
+        env:
+          # Pull requests run the UI smoke classes, about 8 of the suite's 27 minutes (ADR-811);
+          # pushes to main and runs by hand run every UI test. A pull request labelled
+          # `full-ui-tests` runs them all too (the label is read when the run starts).
+          DODDY_UI_TESTS: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ui-tests')) && 'all' || 'smoke' }}
         run: scripts/ci.sh --app-only
 
       - name: Keep the test results
