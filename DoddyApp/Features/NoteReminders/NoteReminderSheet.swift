@@ -61,14 +61,17 @@ struct NoteReminderSheet: View {
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
 
-                Picker("Remind me", selection: $atPlace) {
-                    Text("At a time").tag(false)
-                    Text("At a place").tag(true)
+                // Place reminders are hidden in the beta (ADR-732): no picker, and "At a time" only.
+                if ReleaseScopeStore.current.shows(.placeReminders) {
+                    Picker("Remind me", selection: $atPlace) {
+                        Text("At a time").tag(false)
+                        Text("At a place").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("reminder.mode")
                 }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("reminder.mode")
 
-                if atPlace {
+                if atPlace, ReleaseScopeStore.current.shows(.placeReminders) {
                     NotePlacePicker(memoryID: memoryID) { dismiss() }
                 } else {
                     timeChoices

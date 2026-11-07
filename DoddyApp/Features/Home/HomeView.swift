@@ -223,15 +223,20 @@ struct HomeView: View {
                 // first screen at the largest text size, whatever tools are added below it.
                 Button { selectedTab = .settings } label: { Label("Settings", systemImage: "slider.horizontal.3") }
                     .accessibilityIdentifier("home.menu.settings")
-                Button { showTranslator = true } label: { Label("Translate", systemImage: "character.bubble") }
-                    .disabled(!canTalk)
-                    .accessibilityHint("Doddy translates between you and someone who speaks another language.")
-                    .accessibilityIdentifier("home.translate")
+                // Each item below is a feature's way in; the build's scope decides which exist (ADR-732).
+                if scope.shows(.translator) {
+                    Button { showTranslator = true } label: { Label("Translate", systemImage: "character.bubble") }
+                        .disabled(!canTalk)
+                        .accessibilityHint("Doddy translates between you and someone who speaks another language.")
+                        .accessibilityIdentifier("home.translate")
+                }
                 Button { selectedTab = .memories; showFind = true } label: { Label("Find something", systemImage: "magnifyingglass") }
                     .accessibilityIdentifier("home.find")
                 // Tasks handed to Doddy's background worker (ADR-570).
-                Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
-                    .accessibilityIdentifier("home.tasks")
+                if scope.shows(.errands) {
+                    Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
+                        .accessibilityIdentifier("home.tasks")
+                }
                 // Focus counts down, the stopwatch counts up (ADR-652). One row for both: the menu
                 // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
                 // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
@@ -262,7 +267,7 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.today")
                 }
                 // Who runs the voice (ADR-442), once there has been a first conversation (ADR-443).
-                if hadFirstConversation {
+                if hadFirstConversation, scope.shows(.voiceProviderPicker) {
                     Button { showVoicePicker = true } label: { Label("Voice", systemImage: "waveform") }
                         .accessibilityIdentifier("home.voice")
                 }
@@ -273,11 +278,15 @@ struct HomeView: View {
                 // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
                 // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
                 // MemoryJourneyTests). Settings, which leads to Doddy's memory too (ADR-633), heads the menu.
-                Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
-                    .accessibilityIdentifier("home.deals")
+                if scope.shows(.deals) {
+                    Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
+                        .accessibilityIdentifier("home.deals")
+                }
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
-                Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
-                    .accessibilityIdentifier("home.following")
+                if scope.shows(.following) {
+                    Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                        .accessibilityIdentifier("home.following")
+                }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
@@ -307,11 +316,11 @@ struct HomeView: View {
                 UnfinishedNoteCard(note: draft, more: UnfinishedNoteStore.shared.book.notes.count - 1) { modal = .capture }
             }
             // A task Doddy finished in the background since the user last looked (ADR-570).
-            if let finished = ErrandsModel.shared.newestUnseen {
+            if scope.shows(.errands), let finished = ErrandsModel.shared.newestUnseen {
                 errandFinishedCard(finished)
             }
             // Leaflets looked up by voice (ADR-666): the list waits on its screen, one tap away.
-            if DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {
+            if scope.shows(.deals), DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {
                 dealsCard(result)
             }
             if profiles.shouldOfferIntroduction {
@@ -590,15 +599,18 @@ struct HomeView: View {
             .buttonStyle(DoddyPressStyle())
             .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
             .accessibilityIdentifier("home.ask")
-            Rectangle().fill(Theme.separator).frame(width: 1, height: 24)
-            Button { showFiles = true } label: {
-                Label("Files", systemImage: "folder")
-                    .padding(.horizontal, 16)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
+            // Files Doddy made on his server (ADR-633): with the feature (ADR-732), the pill is Messages alone.
+            if scope.shows(.files) {
+                Rectangle().fill(Theme.separator).frame(width: 1, height: 24)
+                Button { showFiles = true } label: {
+                    Label("Files", systemImage: "folder")
+                        .padding(.horizontal, 16)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(DoddyPressStyle())
+                .accessibilityIdentifier("home.files")
             }
-            .buttonStyle(DoddyPressStyle())
-            .accessibilityIdentifier("home.files")
         }
         .font(.body.weight(.medium))
         .lineLimit(1)
@@ -610,6 +622,9 @@ struct HomeView: View {
     // MARK: Actions
 
     private var canTalk: Bool { store.environment.capabilities.isAvailable(.voiceInput) }
+
+    /// Which features this build shows (ADR-732). Read each time, so the Debug toggle shows on the next draw.
+    private var scope: ReleaseScope { ReleaseScopeStore.current }
 
     /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under
     /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.

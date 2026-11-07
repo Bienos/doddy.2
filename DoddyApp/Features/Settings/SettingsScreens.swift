@@ -136,7 +136,10 @@ struct VoiceSettingsView: View {
                 PersonalityLinkRow()
             }
             Section {
-                VoiceProviderPicker(idPrefix: "settings")
+                // One voice provider in the beta (ADR-732, V1 decision 5): the picker is hidden with the feature.
+                if ReleaseScopeStore.current.shows(.voiceProviderPicker) {
+                    VoiceProviderPicker(idPrefix: "settings")
+                }
                 Toggle(isOn: $listenOnOpen) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Auto-start voice")
@@ -339,7 +342,10 @@ struct MemoriesSettingsView: View {
 
             BackupSettingsSection()
 
-            NoteImportSettingsSection()
+            // Hidden in the beta until one real Takeout export has been tried (ADR-732).
+            if ReleaseScopeStore.current.shows(.noteImport) {
+                NoteImportSettingsSection()
+            }
         }
         .settingsPage()
         .navigationTitle("Memories")
@@ -542,8 +548,10 @@ struct PrivacySettingsView: View {
             Section {
                 // ADR-310: Face ID when Doddy opens, and after a minute away.
                 AppLockToggle()
-                // iPhone search (ADR-330), off until switched on.
-                SpotlightToggle()
+                // iPhone search (ADR-330), off until switched on; no row at all when the build hides it (ADR-732).
+                if ReleaseScopeStore.current.shows(.spotlight) {
+                    SpotlightToggle()
+                }
                 NavigationLink {
                     DataFlowView()
                 } label: {
@@ -688,10 +696,11 @@ struct RoutinesSettingsView: View {
                     .foregroundStyle(Theme.secondaryText)
             }
             MorningCheckInSettingsSection()
-            EveningWrapUpSettingsSection()
-            WeeklyPlanSettingsSection()
-            WeeklyLookBackSettingsSection()
-            TidyUpSettingsSection()
+            // Each routine the build hides (ADR-732) loses its section; the morning check-in stays, off by default.
+            if ReleaseScopeStore.current.shows(.eveningWrapUp) { EveningWrapUpSettingsSection() }
+            if ReleaseScopeStore.current.shows(.weeklyPlan) { WeeklyPlanSettingsSection() }
+            if ReleaseScopeStore.current.shows(.weeklyLookBack) { WeeklyLookBackSettingsSection() }
+            if ReleaseScopeStore.current.shows(.tidyUp) { TidyUpSettingsSection() }
             if store.environment.capabilities.isAvailable(.noteReminders) {
                 NoteReminderSettingsSection()
             }
@@ -711,6 +720,8 @@ struct AdvancedSettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     #if DEBUG
+    /// Shows every feature on the owner's phone (ADR-732). Only a Debug build has the toggle or reads the key.
+    @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = false
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
@@ -752,6 +763,7 @@ struct AdvancedSettingsView: View {
             }
             .accessibilityIdentifier("settings.capabilities")
             #if DEBUG
+            releaseScope
             developerServer
             #endif
         }
@@ -760,6 +772,19 @@ struct AdvancedSettingsView: View {
     }
 
     #if DEBUG
+    /// The release scope (ADR-732): what this build hides, and the switch to see it all. Debug only.
+    private var releaseScope: some View {
+        Section {
+            Toggle("Developer: show every feature", isOn: $previewEverything)
+                .accessibilityIdentifier("settings.previewEverything")
+            StatusRow(title: "Hidden features",
+                      value: previewEverything ? "0" : "\(ReleaseScope.shipping.hidden.count) of \(Feature.allCases.count)")
+            StatusRow(title: "Voice tools kept", value: "\(ReleaseScopeStore.current.hiddenTools.isEmpty ? ToolCatalog.all.count : ToolCatalog.all.count - ReleaseScope.shipping.hiddenTools.count) of \(ToolCatalog.all.count)")
+        } footer: {
+            Text("Off: this build shows what the beta ships (docs/implementation/RELEASE_SCOPE.md). On: every feature, as before. A hidden feature's data stays; only its ways in go. Takes effect on the next screen and the next conversation.")
+        }
+    }
+
     private var developerServer: some View {
         Section {
             TextField("Server address (https://…)", text: $connectedAppsServerURL)

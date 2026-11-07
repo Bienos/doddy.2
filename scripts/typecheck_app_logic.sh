@@ -104,6 +104,8 @@ struct IslandRect: Equatable, Sendable {
 SWIFT
 
 files=(
+  # The release scope this build shows (ADR-732); ShortcutRouter and QuickActions read it.
+  DoddyApp/Infrastructure/ReleaseScopeStore.swift
   DoddyApp/Infrastructure/PersonalityPreferences.swift
   DoddyApp/Infrastructure/PinnedNotesStorage.swift
   DoddyApp/Infrastructure/ConversationLogStore.swift
