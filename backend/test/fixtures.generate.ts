@@ -56,7 +56,7 @@ const connected = await t.call("POST", "/v1/tools/gmail/complete", {
   body: { attemptId: begin.body.attemptId, nonce: begin.body.nonce, result: { kind: "mock", outcome: "approve" } },
 });
 writeTool("toolkit-result-connected", connected.body);
-// Connecting turns the tools on (ADR-563); the user's own off is what "tool disabled" is now.
+// A fresh connection leaves every tool off (ADR-816), so the connected fixture shows them off; the next lines switch check_email on and off the way the app does.
 await switchOff(t, "check_email");
 writeTool("error-tool-disabled", (await runTool(t, "check_email", {})).body);
 writeTool("switch-result-on", (await on(t, "check_email")).body);

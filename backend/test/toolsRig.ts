@@ -98,17 +98,28 @@ export async function start(
   };
 }
 
-export async function connect(r: Rig, toolkit: string, token = USER_A, scenario?: ToolsMockScenario) {
+/**
+ * Connects an account like the app does, then makes the user's choice for it (ADR-816: a connection
+ * starts with every tool off). The default choice is "act", so tests that are not about the choice see
+ * the account usable as before; pass "unset" to leave a fresh connection as the server leaves it.
+ * The returned response is the connection's, with its `toolkit` view refreshed after the choice.
+ */
+export async function connect(r: Rig, toolkit: string, token = USER_A, scenario?: ToolsMockScenario, choice: "off" | "read" | "act" | "unset" = "act") {
   const begin = await r.call("POST", `/v1/tools/${toolkit}/connect`, { token, body: {}, ...(scenario ? { scenario } : {}) });
   assert.equal(begin.status, 200, begin.text);
-  return r.call("POST", `/v1/tools/${toolkit}/complete`, {
+  const done = await r.call("POST", `/v1/tools/${toolkit}/complete`, {
     token,
     body: { attemptId: begin.body.attemptId, nonce: begin.body.nonce, result: { kind: "mock", outcome: "approve" } },
   });
+  if (choice !== "unset" && done.status === 200 && done.body?.toolkit?.status === "connected") {
+    const set = await r.call("PUT", "/v1/tools/access", { token, body: { app: toolkit, mode: choice } });
+    if (set.status === 200) done.body = { ...done.body, toolkit: set.body.toolkit };
+  }
+  return done;
 }
 
 export const on = (r: Rig, tool: string, token = USER_A) => r.call("PUT", "/v1/tools/switch", { token, body: { tool, enabled: true } });
-/** The user's own off (ADR-563: tools come on with the connection or by default; off always wins). */
+/** The user's own off (the user's off always wins). */
 export const off = (r: Rig, tool: string, token = USER_A) => r.call("PUT", "/v1/tools/switch", { token, body: { tool, enabled: false } });
 /** A run exactly as sent: no approval unless `extra` has one. ASK-01 tests use this. */
 export const runRaw = (r: Rig, tool: string, args: Record<string, unknown>, extra: Record<string, unknown> = {}, token = USER_A) =>

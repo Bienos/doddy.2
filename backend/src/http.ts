@@ -82,6 +82,7 @@ export function createHandler(deps: HttpDeps) {
         "GET /v1/tools": (userId) => tools.catalog(userId),
         "GET /v1/tools/receipts": async (userId) => ({ receipts: await tools.receipts(userId) }),
         "PUT /v1/tools/switch": (userId, body) => tools.setSwitch(userId, body),
+        "PUT /v1/tools/access": (userId, body) => tools.setAppAccess(userId, body),
         "POST /v1/tools/prepare": (userId, body) => tools.prepare(userId, body),
         "POST /v1/tools/run": (userId, body) => tools.run(userId, body),
       }
