@@ -135,7 +135,7 @@ cp .env.example .env            # fill what you have; empty blocks stay off
 npm ci && npm run build
 DATABASE_URL=... npm start      # applies migrations, then serves on $PORT
 DATABASE_URL=... npm run worker # sends due updates every 2 s
-TEST_DATABASE_URL=postgres://…/doddy_test npm test   # WARNING: drops that DB's public schema
+TEST_DATABASE_URL=postgres://…/doddy_test npm test   # WARNING: drops that DB's public schema; refused unless its name ends in _test
 ```
 With 1Password (ADR-493): `npm run start:op` takes the secrets from the `doddy-dev` vault through `.env.op` (references only) and the rest from `.env`. See `docs/security/SECRETS_1PASSWORD.md`.
 

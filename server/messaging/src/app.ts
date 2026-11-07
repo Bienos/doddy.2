@@ -83,6 +83,21 @@ export interface Deps {
   onSmsChat?: (done: Promise<import("./smsChat.js").SmsChatOutcome>) => void;
 }
 
+/**
+ * What the request log line says about a request (engineering audit, 7 Nov 2026): its method, its path
+ * without the query string, and Fastify's request id. Fastify's default also logs the client's address,
+ * host and port, and the full URL. The database keeps addresses only as keyed hashes (ADR-702), and
+ * a query string can carry a capability: the call takeover page's `?t=`.
+ */
+export function requestLogFields(request: { method: string; url: string; id?: string }): Record<string, string> {
+  const query = request.url.indexOf("?");
+  return {
+    method: request.method,
+    url: query >= 0 ? request.url.slice(0, query) : request.url,
+    ...(request.id ? { id: request.id } : {}),
+  };
+}
+
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
     // Render terminates TLS and appends to X-Forwarded-For. Trusting a fixed number of hops reads
@@ -94,6 +109,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
       // Never log bearer tokens or signatures. Request bodies are not logged at all.
       redact: ["req.headers.authorization", 'req.headers["x-twilio-signature"]',
         'req.headers["x-doddy-tool-secret"]', 'req.headers["x-doddy-session"]', 'req.headers["elevenlabs-signature"]'],
+      serializers: { req: requestLogFields },
     },
   });
   await app.register(formbody);
