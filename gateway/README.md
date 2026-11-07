@@ -1,9 +1,9 @@
 # Doddy gateway (M2)
 
-> **Not used by the app since ADR-587 (22 Oct 2026).** Typed questions go to Doddy's own server (`backend/`, `POST /v1/assist`, Claude). This gateway stays as written until the owner decides to delete it.
+> **Not used by the app since 22 Oct 2026 (ADR-586, ADR-587).** The app's Messages screen asks the messaging server instead (`server/messaging/`, `POST /v1/assistant/ask`, Claude). `backend/` also has `POST /v1/assist` (ADR-587); the app doesn't call it. This gateway stays as written until the owner decides to delete it.
 
-A small server the iPhone app talks to for typed questions. It exists so that **no AI key is ever on the phone**.
-It is written, tested and **not deployed**. Nothing here has been run against the real OpenAI API.
+A small server the iPhone app used to talk to for typed questions. It exists so that **no AI key is ever on the phone**.
+It is written and tested. Vercel builds it as the project `doddy-gateway`, and an old copy sits on Render (`STATUS.md`), but neither host has its environment variables (ADR-587), so it answers `503 notConfigured`. Nothing here has been run against the real OpenAI API.
 
 ```
 iPhone ──HTTPS──▶ POST /api/register   invite code + random device id  ─▶ 24 h bearer token
@@ -20,7 +20,7 @@ Shared wire fixtures (read by both these tests and the Swift tests): [`schemas/f
 ```sh
 cd gateway
 npm install           # dev tools only (TypeScript types); the gateway has no runtime dependencies
-npm test              # 63 tests, Node >= 22, no network, no keys (the shared store is faked in-process)
+npm test              # 76 tests, Node >= 22, no network, no keys (the shared store is faked in-process)
 npm run typecheck     # tsc over api/ and src/ (JSDoc types)
 ```
 
@@ -59,7 +59,7 @@ If a required variable is missing, or a limit/budget/store variable is set but i
 - **No store configured.** The gateway refuses to serve (`503 notConfigured`, the missing setting names in the log only) on every host (ADR-713; before that only Vercel production did, so a copy on Render ran with per-instance budgets). Per-instance memory adapters are used only where that is allowed on purpose: `NODE_ENV` is `test` or `development`, or `GATEWAY_ALLOW_MEMORY_LIMITS=1`; a `limitsPerInstance` warning is logged once per instance. `REQUIRE_SHARED_LIMITS=1` and `VERCEL_ENV=production` override the opt-in.
 - **What it is not.** Estimates and prices are only as good as the configured prices; cached-input discounts are ignored (over-counts). The OpenAI project's own hard limit stays the backstop.
 
-## Owner checklist before the first real call (none of this has been done)
+## Owner checklist before the first real call (only the Vercel project in step 3 exists, with no variables)
 
 1. **Provider budget.** Create a dedicated OpenAI project with a hard monthly spend limit (OpenAI dashboard → project → Limits). This is the second line of defence behind `DAILY_BUDGET_USD`, and the only one that does not depend on prices you typed in.
 2. **Pick the model** and set `OPENAI_MODEL`. Confirm it supports Responses-API Structured Outputs; the first real call will tell, and a wrong id fails with `503 providerUnavailable`.
@@ -67,7 +67,7 @@ If a required variable is missing, or a limit/budget/store variable is set but i
 4. **Shared limits store (built, not yet created).** Create one Redis store: either Vercel dashboard → Storage / Marketplace → Upstash Redis, connected to the gateway project (it adds `KV_REST_API_URL` / `KV_REST_API_TOKEN`), or an Upstash Redis database whose REST URL and token you add as `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`. Pick a region near the Vercel function region. Then set `REQUIRE_SHARED_LIMITS=1`, `DAILY_BUDGET_USD` (and optionally `DAILY_BUDGET_PER_INSTALL_USD`), and both `OPENAI_PRICE_*_PER_MTOK_USD` for your model. Creating the store may add a cost or plan; it needs your approval. Never commit the token.
 5. **Logging and retention.** In Vercel project settings review log retention and any log drains. The code logs no text (`src/logging.js` allow-list, covered by tests), but platform request logs (IP, path, status) are Vercel's.
 6. **Legal and privacy.** OpenAI data-processing terms, region/transfer, retention, and the App Store privacy label are owner/legal decisions (`docs/security/PRIVACY_GDPR_AI_ACT.md`). Nothing here is a compliance claim.
-7. Put the deployed `https://…` address into the app: Settings → Ask Doddy → Gateway address, then give each tester an invite code.
+7. The app no longer has a gateway address or invite code field (removed with ADR-586), so using this gateway again would need app code first.
 
 ## Known limitations (also in `docs/implementation/M2_STATUS.md`)
 

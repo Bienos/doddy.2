@@ -5,25 +5,28 @@ Each platform builds from its own XcodeGen spec into its own Xcode project. Gene
 | Command | Spec | Project | Contains |
 |---|---|---|---|
 | `make project` | `project.yml` | `Doddy.xcodeproj` | iPhone/iPad app, widgets, share extension and tests. **This is what ships and what CI builds.** Scheme: `Doddy`. |
-| `make project-iphone` | `project-iphone.yml` | `DoddyiPhone.xcodeproj` | The same iPhone/iPad app with no entitlements, so a free Apple team can sign it. Scheme: `Doddy`. |
+| `make project-iphone` | `project-iphone.yml` | `DoddyiPhone.xcodeproj` | The iPhone/iPad app alone, with no entitlements, so a free Apple team can sign it. No widgets and no share extension (they need the App Group), no push, no HealthKit. Scheme: `Doddy`. |
 | `make project-watch ENABLE_WATCH=1` | `project-watch.yml` | `DoddyWithWatch.xcodeproj` | **PAUSED (ADR-572).** `project.yml` plus the Apple Watch app and its complications embedded in the app. Schemes: `Doddy`, `DoddyWatch`. |
 | `make project-mac ENABLE_MAC=1` | `project-mac.yml` | `DoddyMac.xcodeproj` | **PAUSED (ADR-572).** Mac menu bar app and desktop widget **only**. Nothing from the iPhone app. Scheme: `DoddyMac`. |
 
 **Apple Watch and Mac development are paused (ADR-572, 21 Oct 2026).** Their source stays in the repo, untouched; only the build wiring is parked. No target in `project.yml`, no CI job and no step of `scripts/ci.sh` builds or tests them, and `make` refuses to generate their projects unless you set `ENABLE_WATCH=1` / `ENABLE_MAC=1`. How to turn them back on: "Re-enabling" in `watch.md` and `mac.md`.
 
-`project-iphone.yml` includes `project.yml` and repeats the app's dependency list. `scripts/check_platform_specs.py`, which runs in `scripts/ci.sh`, fails if the lists drift, if a Watch or Mac target is back in `project.yml`, if the dormant specs drift from it, or if a target sits in the wrong spec.
+`make project` and `make project-iphone` also copy `Config/Package.resolved`, the app's locked package versions, into the new project (`scripts/install_package_resolved.sh`). That file is not committed yet (7 Nov 2026), so for now they print "No Config/Package.resolved yet" and Xcode resolves from the exact versions in `project.yml`. `make update-packages` (Mac) resolves the packages afresh and writes the file.
+
+`project-iphone.yml` includes `project.yml` and repeats the app's dependency list, less the widget and share extensions. `scripts/check_platform_specs.py`, which runs in `scripts/ci.sh`, fails if the lists drift, if a Watch or Mac target is back in `project.yml`, if the dormant specs drift from it, or if a target sits in the wrong spec.
 
 ## Who uses which folder
 
 | Folder | iPhone/iPad | Watch | Mac |
 |---|---|---|---|
 | `DoddyApp/` app code | ✔ | | |
-| `Shared/` (Live Activity attributes, widget snapshot, intents shared with extensions) | ✔ | one file (`Shared/Widgets/WidgetSnapshotFile.swift`) | |
+| `Shared/` (Live Activity attributes, Dynamic Island art, widget snapshot, Shortcuts and other intents shared with extensions) | ✔ | one file (`Shared/Widgets/WidgetSnapshotFile.swift`) | |
 | `DoddyWidgets/`, `DoddyShare/` | ✔ | | |
 | `DoddyWatch/`, `DoddyWatchWidgets/` (paused) | | ✔ | |
 | `DoddyMac/`, `DoddyMacWidgets/` (paused) | | | ✔ |
 | `Packages/DoddyCore` → `DoddyCore` (rules, no UI) | ✔ | ✔ | ✔ |
 | `Packages/DoddyCore` → `DoddyPersistence` (SQLite) | ✔ | | ✔ (its own database on that Mac) |
+| `Packages/DoddyCore` → `DoddyDesignTokens` (colour tokens, no SwiftUI) | ✔ (app only) | | |
 | `voice-agent/`, `server/voice-token/` | ✔ (voice) | | |
 | `backend/`, `gateway/`, `server/messaging/`, `site/` | servers and site, not apps | | |
 | `web/` (Doddy Web, ADR-600/601; served by `backend/`) | browser app, not an Apple target: `docs/platforms/web.md` | | |
