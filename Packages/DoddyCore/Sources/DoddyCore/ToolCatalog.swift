@@ -143,6 +143,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
         .init(VoiceToolName.openCamera, .handoff, .card),
+        // "I lost my wallet" (ADR-692): the official steps on a card; each page or number opens only on a tap.
+        .init(VoiceToolName.lostWallet, .handoff, .card),
         // A light, outlet, fan or scene in HomeKit, after a card naming the exact accessory.
         .init(VoiceToolName.controlHome, .localChange, .card),
         // A task handed over (ADR-570): web research on Doddy's server that changes nothing on the

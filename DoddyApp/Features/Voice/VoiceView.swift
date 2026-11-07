@@ -245,6 +245,15 @@ struct VoiceView: View {
                                 .id("changeReceipt")
                         }
 
+                        if let card = controller.lostWalletCard {
+                            LostWalletCardView(
+                                card: card,
+                                onOpen: { controller.openLostWalletStep($0) },
+                                onToggle: { controller.toggleLostWalletStep($0) },
+                                onClose: { controller.dismissLostWalletCard() })
+                                .id("lostWalletCard")
+                        }
+
                         if let ready = controller.presentationReady {
                             PresentationReadyCard(ready: ready, onShare: { sharingPresentation = ready }, onClose: { controller.dismissPresentationReady() })
                                 .id("presentationReady")
@@ -319,6 +328,9 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.listReceipt) { _, receipt in
                     if receipt != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("listReceipt", anchor: .bottom) } }
+                }
+                .onChange(of: controller.lostWalletCard?.steps) { _, steps in
+                    if steps != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("lostWalletCard", anchor: .top) } }
                 }
                 .onChange(of: controller.noteReminderStatus) { _, status in
                     if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }

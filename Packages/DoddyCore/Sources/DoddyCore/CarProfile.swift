@@ -25,6 +25,10 @@ public enum CarProfile {
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
             return .run
+        case .lostWallet:
+            // A guide (ADR-692): spoken aloud and shown on a card; nothing changes and nothing leaves
+            // the iPhone. Its buttons open a page or dial a number only on the person's own tap.
+            return .run
         case .checkErrands, .findDeals:
             // Reading what a task found, and this week's leaflets (SHOPPING.md), change nothing: the
             // ask is answered by voice like any other look-up.

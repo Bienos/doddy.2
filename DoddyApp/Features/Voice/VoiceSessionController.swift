@@ -160,6 +160,14 @@ final class VoiceSessionController {
         let slideCount: Int
     }
 
+    /// "I lost my wallet" (ADR-692): the official steps, as shown. `done` holds only the steps the
+    /// person ticked themselves; Doddy never ticks one and can't see whether a step was done.
+    struct LostWalletCard: Equatable {
+        let situation: LostWalletSituation
+        let steps: [LostWalletStep]
+        var done: Set<LostWalletStepID> = []
+    }
+
     /// Contacts found by a lookup. Shown on screen only; the agent receives names.
     struct ContactCard: Equatable {
         let query: String
@@ -333,6 +341,10 @@ final class VoiceSessionController {
     private(set) var listReceipt: ListReceipt?
     /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
     private(set) var changeReceipt: ChangeReceipt?
+    /// The lost-wallet checklist (ADR-692). It stays on screen until dismissed or the next
+    /// conversation, so the steps are there while the person uses mObywatel or their bank. In
+    /// memory only: what was lost and the ticks are never saved or sent.
+    private(set) var lostWalletCard: LostWalletCard?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession? {
@@ -596,6 +608,7 @@ final class VoiceSessionController {
         translator = nil
         listReceipt = nil
         changeReceipt = nil
+        lostWalletCard = nil
         translatorSummary = nil
         translatorFactsSaved = nil
         holdToTalk = false
@@ -2010,6 +2023,23 @@ final class VoiceSessionController {
         listReceipt = nil
     }
 
+    func dismissLostWalletCard() {
+        lostWalletCard = nil
+    }
+
+    /// The person's own tick (ADR-692): it records only that they said they did the step.
+    func toggleLostWalletStep(_ id: LostWalletStepID) {
+        guard var card = lostWalletCard, card.steps.contains(where: { $0.id == id }) else { return }
+        if card.done.contains(id) { card.done.remove(id) } else { card.done.insert(id) }
+        lostWalletCard = card
+    }
+
+    /// The step's official page or number, on the person's tap. Only what DoddyCore allows opens.
+    func openLostWalletStep(_ step: LostWalletStep) {
+        guard let action = step.action, LostWalletPlan.isAllowed(action), let url = action.url else { return }
+        Task { _ = await open(url) }
+    }
+
     /// The user fixed the name on the "Start a new list?" card.
     func changeNewListName(_ name: String) {
         guard case .createList(let id, _, let items) = pendingAction else { return }
@@ -3038,6 +3068,13 @@ final class VoiceSessionController {
             // SHOPPING.md 2: after the ask card's yes, one request to Doddy's server, which reads the
             // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.
             await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
+        case .lostWallet(let situation):
+            // ADR-692: the checklist is its own card and changes nothing. Its steps and links come
+            // from DoddyCore's table; a page opens or a number is dialled only on the person's tap.
+            if isCurrent(call.toolCallId) {
+                lostWalletCard = LostWalletCard(situation: situation, steps: LostWalletPlan.steps(for: situation, polish: Self.cardsInPolish))
+            }
+            await reply(call.toolCallId, VoiceToolReply.lostWalletShown(situation))
         case .noteCapabilityGap(let category):
             // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
             // "Written down" only after the write (ADR-672); no store or a failed write says so.
