@@ -1,9 +1,9 @@
 # Doddy voice agent — spec in OpenAI Realtime shape
 
-**In short:** this folder holds what Doddy's voice agents are told and which tools they have. There are three ElevenLabs agents: the main agent the app talks to (the files in this folder, 102 tools), the phone agent for Doddy's phone number (`phone/`, 3 tools) and the agent that calls a business for the user (`task-call/`, no tools). The last two are not created yet.
+**In short:** this folder holds what Doddy's voice agents are told and which tools they have. There are three ElevenLabs agents: the main agent the app talks to (the files in this folder, 101 tools), the phone agent for Doddy's phone number (`phone/`, 3 tools) and the agent that calls a business for the user (`task-call/`, no tools). The last two are not created yet.
 Check all three with `python3 -I scripts/voice_agent_spec.py check`, adding `--agent phone` or `--agent task-call`; `scripts/ci.sh --only checks` runs all three.
 Editing these files doesn't change a live agent. The live agents are changed only by the owner, or on the owner's separate instruction. Most of this page is a dated log of what was applied to the live main agent, mostly newest first.
-**Newest recorded read of the live main agent:** 1 Nov 2026, about 19:00 UTC, `agtvrsn_7901m6bqz362eah8t83pghsbdj3e`, 103 tools: the 102 here plus `draft_invoice` from unmerged PR #161 (`docs/archive/STATUS-log-2026-10-08-to-2026-11-07.md`). `hand_over_errand` and `check_errands` are live (27 Oct entry below) but still say `not_synced` in `tools.json`.
+**Newest recorded read of the live main agent:** 1 Nov 2026, about 19:00 UTC, `agtvrsn_7901m6bqz362eah8t83pghsbdj3e`, 103 tools: the 101 here, plus `draft_blik_transfer` (removed from the spec on 5 Nov, below) and `draft_invoice` from unmerged PR #161 (`docs/archive/STATUS-log-2026-10-08-to-2026-11-07.md`). `hand_over_errand` and `check_errands` are live (27 Oct entry below) but still say `not_synced` in `tools.json`.
 
 Owner decision 2026-10-09 (ADR-058): Doddy runs on **ElevenLabs Agents**, but everything that
 defines Doddy is kept here in **OpenAI Realtime** form, so moving to OpenAI Realtime later means
@@ -12,8 +12,10 @@ adding one adapter, not rewriting the app or the agent.
 | File | What it is | ElevenLabs today | OpenAI Realtime later |
 |---|---|---|---|
 | `instructions.md` | Doddy's system prompt with `{{placeholders}}` | Agent prompt; placeholders are dynamic variables the app passes at `startConversation` | `session.instructions`, rendered on the phone by `RealtimeInstructions.render` |
-| `tools.json` | 102 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy`: 98 the app answers (`runs_on: phone`), 4 weather and Wikipedia lookups (`runs_on: web`) | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
+| `tools.json` | 101 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy`: 97 the app answers (`runs_on: phone`), 4 weather and Wikipedia lookups (`runs_on: web`) | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
+
+**`draft_blik_transfer` removed from the spec, 5 Nov 2026 (ADR-810, owner: BLIK payments go through Stripe later).** It is gone from `tools.json` and `instructions.md`, so the OpenAI voice and any app built from this tree no longer offer it, and an app answers it as unsupported. **The live ElevenLabs agent was not changed:** it still has client tool `tool_5701m57c1717fmebcs14kbrjqmdq` and a "## BLIK transfers" section in its prompt (see "Applied to the live agent 2026-10-18" below) until the owner says "sync it to ElevenLabs"; that sync removes the tool and the section.
 
 **OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
 
@@ -25,7 +27,7 @@ Every tool asks first (ASK-01, `x_doddy.ask`): a read, or a request to Claude, w
 |---|---|---|
 | Notes | `search_memories`, `save_memory`, `remind_me_about_note`, `note_capability_gap` | The app, on the iPhone |
 | iPhone Calendar and Reminders | `read_calendar`, `find_free_time`, `create_calendar_event`, `change_calendar_event`, `delete_calendar_event`, `delete_calendar_events`, `create_reminder`, `change_reminder`, `delete_reminder`, `move_reminders`, `undo_last`, `remind_when_to_leave`; `propose_plan` puts several changes on one card | The app |
-| Contacts, messages, BLIK | `lookup_contact`, `upcoming_birthdays`, `draft_message`, `draft_blik_transfer` (the user sends it in their bank app; Doddy never sends money) | The app |
+| Contacts and messages | `lookup_contact`, `upcoming_birthdays`, `draft_message` (the user sends it). `draft_blik_transfer` was removed on 5 Nov (ADR-810, above) | The app |
 | Sums and conversions | `calculate`, `convert_units`, `convert_currency` | The app |
 | Timers, alarms, stopwatch | `set_timer`, `set_alarm`, `list_alarms`, `cancel_alarm`, `start_stopwatch`, `stop_stopwatch`, `check_stopwatch` | The app |
 | Lists | `add_to_list`, `add_ingredients`, `read_list`, `check_off`, `remove_from_list`, `create_list` | The app |

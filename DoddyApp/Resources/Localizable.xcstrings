@@ -598,6 +598,17 @@
         }
       }
     },
+    "%lld saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane: %lld"
+          }
+        }
+      }
+    },
     "%lld steps": {
       "extractionState": "manual",
       "localizations": {
@@ -605,6 +616,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kroki: %lld"
+          }
+        }
+      }
+    },
+    "%lld this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tym tygodniu: %lld"
           }
         }
       }
@@ -752,17 +774,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "średnia z 7 dni %@"
-          }
-        }
-      }
-    },
-    "A BLIK transfer for you to send": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przelew BLIK do wysłania przez Ciebie"
           }
         }
       }
@@ -3087,6 +3098,17 @@
         }
       }
     },
+    "A thought to review": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Myśl do powtórki"
+          }
+        }
+      }
+    },
     "A thought, a recommendation, where you put the spare keys.": {
       "extractionState": "manual",
       "localizations": {
@@ -3153,17 +3175,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zaznaczona informacja wygląda na PESEL albo adres. Oznacz ją tak albo odznacz."
-          }
-        }
-      }
-    },
-    "A transfer to check": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przelew do sprawdzenia"
           }
         }
       }
@@ -5143,6 +5154,17 @@
         }
       }
     },
+    "After you save a note, the island shows “Note saved” for a few seconds, never the note's words. Needs Live Activities on for Doddy in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po zapisaniu notatki wyspa pokazuje przez kilka sekund „Notatka zapisana”, nigdy treść notatki. Wymaga włączonych aktywności na żywo dla Doddy w Ustawieniach iOS."
+          }
+        }
+      }
+    },
     "Agree to anything, book, order or confirm": {
       "extractionState": "manual",
       "localizations": {
@@ -5685,6 +5707,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "允许通知"
+          }
+        }
+      }
+    },
+    "Allow selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwól na zaznaczone"
           }
         }
       }
@@ -8044,6 +8077,17 @@
         }
       }
     },
+    "Asking…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytam…"
+          }
+        }
+      }
+    },
     "Asks first. Puts back only what Doddy did, if it hasn't changed since.": {
       "extractionState": "manual",
       "localizations": {
@@ -9345,6 +9389,17 @@
         }
       }
     },
+    "Bring back a saved thought": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypominaj zapisaną myśl"
+          }
+        }
+      }
+    },
     "Budget: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -9499,6 +9554,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "意思相近"
+          }
+        }
+      }
+    },
+    "Calendar": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz"
           }
         }
       }
@@ -9992,6 +10058,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "平静"
+          }
+        }
+      }
+    },
+    "Camera": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparat"
           }
         }
       }
@@ -11109,6 +11186,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Doddy 开始保留每个版本之前所做的更改没有存储，因此只显示原文和当前内容。"
+          }
+        }
+      }
+    },
+    "Character artwork is hidden in Settings, so the wallpaper is paper only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grafika postaci jest ukryta w Ustawieniach, więc tapeta to sam papier."
           }
         }
       }
@@ -13376,6 +13464,17 @@
         }
       }
     },
+    "Contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontakty"
+          }
+        }
+      }
+    },
     "Continue": {
       "extractionState": "manual",
       "localizations": {
@@ -13770,17 +13869,6 @@
         }
       }
     },
-    "Copied": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skopiowano"
-          }
-        }
-      }
-    },
     "Copied to the server": {
       "extractionState": "manual",
       "localizations": {
@@ -13847,17 +13935,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kopiuj"
-          }
-        }
-      }
-    },
-    "Copy phone number": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kopiuj numer telefonu"
           }
         }
       }
@@ -13939,17 +14016,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skopiuj klucz w inFakt i wróć: przycisk wklejania pojawi się, gdy w schowku będzie tekst."
-          }
-        }
-      }
-    },
-    "Copy title": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kopiuj tytuł"
           }
         }
       }
@@ -14890,6 +14956,17 @@
         }
       }
     },
+    "Counting down": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odliczanie"
+          }
+        }
+      }
+    },
     "Counting up": {
       "extractionState": "manual",
       "localizations": {
@@ -15295,6 +15372,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每日新闻需要一台 Doddy 消息服务器，而此版本尚未连接任何服务器。"
+          }
+        }
+      }
+    },
+    "Dark paper": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciemny papier"
           }
         }
       }
@@ -18343,6 +18431,17 @@
         }
       }
     },
+    "Doddy can ask your iPhone for these now, so nothing interrupts you later. Your iPhone asks each question itself, and you can say no to any of them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może teraz poprosić Twój iPhone o te zgody, żeby nic Ci później nie przeszkadzało. iPhone sam zadaje każde pytanie i na każde możesz odpowiedzieć „nie”."
+          }
+        }
+      }
+    },
     "Doddy can make a file": {
       "extractionState": "manual",
       "localizations": {
@@ -18708,6 +18807,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie widzi Ustawień, nie ustawi za Ciebie stuknięcia w tył i nie sprawdzi, co pokazuje Twój iPhone."
+          }
+        }
+      }
+    },
+    "Doddy can't set your wallpaper: iOS doesn't let apps do that. In the share sheet choose Save Image, then in iOS Settings › Wallpaper › Add New Wallpaper pick it from Photos. The time and widgets sit in the clear space at the top.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie może ustawić tapety: iOS nie pozwala na to aplikacjom. W arkuszu udostępniania wybierz Zachowaj obrazek, a potem w Ustawieniach iOS › Tapeta › Dodaj nową tapetę wybierz go ze Zdjęć. Godzina i widżety mieszczą się w wolnym miejscu u góry."
           }
         }
       }
@@ -19825,17 +19935,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie czyta jeszcze gazetki tej sieci."
-          }
-        }
-      }
-    },
-    "Doddy doesn't send money and can't see your bank. Check the person and the amount in your bank app before you confirm there. They need BLIK phone transfers turned on in their own bank app.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy nie wysyła pieniędzy i nie widzi Twojego banku. Sprawdź osobę i kwotę w aplikacji banku, zanim tam potwierdzisz. Odbiorca musi mieć włączone przelewy na telefon BLIK w swojej aplikacji banku."
           }
         }
       }
@@ -22501,6 +22600,17 @@
         }
       }
     },
+    "Doddy uses each one only when you ask. You can change any of them later in iPhone Settings or in Doddy › Settings › Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy używa każdej z nich tylko wtedy, gdy o to poprosisz. Zmienisz je później w Ustawieniach iPhone’a albo w Doddy › Ustawienia › Połączenia."
+          }
+        }
+      }
+    },
     "Doddy was asked to": {
       "extractionState": "manual",
       "localizations": {
@@ -22983,6 +23093,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 的开场。Doddy 投进一球。"
+          }
+        }
+      }
+    },
+    "Doddy's paper,\non your Lock Screen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papier Doddy\\nna Twoim ekranie blokady"
           }
         }
       }
@@ -24771,6 +24892,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "已由 Doddy 完成，并已核对"
+          }
+        }
+      }
+    },
+    "Done. A few were refused. You can change those in iPhone Settings › Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe. Na kilka rzeczy nie zezwolono. Możesz to zmienić w Ustawieniach iPhone’a › Doddy."
+          }
+        }
+      }
+    },
+    "Done. You won't be asked for these again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe. Nie zapytamy o to ponownie."
           }
         }
       }
@@ -28230,17 +28373,6 @@
         }
       }
     },
-    "Focus and stopwatch": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skupienie i stoper"
-          }
-        }
-      }
-    },
     "Focus finished": {
       "extractionState": "manual",
       "localizations": {
@@ -28366,6 +28498,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "专注 · 进行中"
+          }
+        }
+      }
+    },
+    "Focus, timers and stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skupienie, minutniki i stoper"
           }
         }
       }
@@ -28587,6 +28730,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "用于导游讲解、演讲或广播。Doddy 会翻译成你的语言，绝不会对你周围的人说话。不要用于别人的私人对话。"
+          }
+        }
+      }
+    },
+    "For a photo note, only when you tap Take a photo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do notatki ze zdjęciem, tylko gdy stukniesz Zrób zdjęcie."
+          }
+        }
+      }
+    },
+    "For reminders at a place, when you tap “Use where I am”. Never in the background.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dla przypomnień w miejscu, gdy stukniesz „Użyj miejsca, w którym jestem”. Nigdy w tle."
+          }
+        }
+      }
+    },
+    "For reminders, timers and alarms when Doddy isn't open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dla przypomnień, minutników i budzików, gdy Doddy nie jest otwarty."
           }
         }
       }
@@ -31041,17 +31217,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzwonię sam"
-          }
-        }
-      }
-    },
-    "I'll send it myself": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wyślę w aplikacji banku"
           }
         }
       }
@@ -36959,6 +37124,17 @@
         }
       }
     },
+    "Let Doddy get ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotuj Doddy’ego"
+          }
+        }
+      }
+    },
     "Let Doddy use my memories on calls": {
       "extractionState": "manual",
       "localizations": {
@@ -37165,6 +37341,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przejdźmy się."
+          }
+        }
+      }
+    },
+    "Light paper": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jasny papier"
           }
         }
       }
@@ -38652,6 +38839,17 @@
         }
       }
     },
+    "Location, while using Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokalizacja, gdy używasz Doddy’ego"
+          }
+        }
+      }
+    },
     "Lock Doddy with Face ID": {
       "extractionState": "manual",
       "localizations": {
@@ -38707,6 +38905,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "用面容 ID 锁定 Doddy"
+          }
+        }
+      }
+    },
+    "Lock Screen wallpaper": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tapeta ekranu blokady"
           }
         }
       }
@@ -39670,6 +39879,17 @@
         }
       }
     },
+    "Make the picture": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utwórz obrazek"
+          }
+        }
+      }
+    },
     "Make the plan": {
       "extractionState": "manual",
       "localizations": {
@@ -40599,17 +40819,6 @@
         }
       }
     },
-    "Money": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pieniądze"
-          }
-        }
-      }
-    },
     "Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set.": {
       "extractionState": "manual",
       "localizations": {
@@ -41052,6 +41261,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Większość biegania spokojnie i nigdy dwa mocne dni pod rząd"
+          }
+        }
+      }
+    },
+    "Motion & Fitness": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruch i fitness"
           }
         }
       }
@@ -43864,17 +44084,6 @@
         }
       }
     },
-    "No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brak numeru telefonu w Kontaktach. Wybierz tę osobę w przelewie na telefon BLIK w aplikacji banku."
-          }
-        }
-      }
-    },
     "No product barcode was found in the photo. Try again with the barcode filling more of the picture, or type the item.": {
       "extractionState": "manual",
       "localizations": {
@@ -44524,6 +44733,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天没有设置。"
+          }
+        }
+      }
+    },
+    "None this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic w tym tygodniu"
           }
         }
       }
@@ -45460,6 +45680,17 @@
         }
       }
     },
+    "Not now, ask me when Doddy needs one": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie teraz, Doddy zapyta, gdy coś będzie mu potrzebne"
+          }
+        }
+      }
+    },
     "Not now, keep it inside Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -45983,6 +46214,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "笔记"
+          }
+        }
+      }
+    },
+    "Note reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie o notatce"
           }
         }
       }
@@ -47971,6 +48213,17 @@
         }
       }
     },
+    "Nothing was asked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O nic nie zapytano."
+          }
+        }
+      }
+    },
     "Nothing was kept, so nothing was deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -48727,6 +48980,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiadomienia Doddy’ego są wyłączone, więc nie ustawiłem przypomnienia. Możesz je włączyć w Ustawieniach."
+          }
+        }
+      }
+    },
+    "Notifications are off for Doddy, so no thought can come back. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia dla Doddy są wyłączone, więc żadna myśl nie może wrócić. Włącz je w Ustawieniach iOS."
           }
         }
       }
@@ -49919,6 +50183,17 @@
         }
       }
     },
+    "On. Nothing is due yet: a note comes back about a week after you save it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włączone. Nic jeszcze nie czeka: notatka wraca mniej więcej tydzień po zapisaniu."
+          }
+        }
+      }
+    },
     "On: these answers go to ElevenLabs, or OpenAI if you chose it, at the start of each conversation. Off: they stay on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -49956,6 +50231,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Once a day, at most, a quiet notification waits in Notification Center: \"A thought is ready for review\". It names no note. Tap it to read one note you saved about a week ago, or one you haven't looked at in a month. Lists and private notes stay out. Nothing is scored and nothing is sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najwyżej raz dziennie ciche powiadomienie czeka w centrum powiadomień: „Jedna myśl czeka na powtórkę”. Nie wymienia żadnej notatki. Stuknij, żeby przeczytać jedną notatkę zapisaną mniej więcej tydzień temu albo taką, do której nie zaglądasz od miesiąca. Listy i notatki prywatne zostają poza tym. Nic nie jest punktowane i nic nigdzie nie jest wysyłane."
           }
         }
       }
@@ -51690,6 +51976,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在你的 iPhone 上打开 Doddy。"
+          }
+        }
+      }
+    },
+    "Open Doddy once": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz raz Doddy"
           }
         }
       }
@@ -54114,6 +54411,17 @@
         }
       }
     },
+    "Paper": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papier"
+          }
+        }
+      }
+    },
     "Parcel list": {
       "extractionState": "manual",
       "localizations": {
@@ -54939,6 +55247,17 @@
         }
       }
     },
+    "Phone down when it ends": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefon odłożony, gdy minie"
+          }
+        }
+      }
+    },
     "Phone line (Twilio)": {
       "extractionState": "manual",
       "localizations": {
@@ -55145,6 +55464,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "照片会随你的下一条消息发送"
+          }
+        }
+      }
+    },
+    "Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia"
           }
         }
       }
@@ -55669,17 +55999,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "Pick them in your bank app's BLIK phone transfer.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wybierz tę osobę w przelewie na telefon BLIK w aplikacji banku."
           }
         }
       }
@@ -61410,6 +61729,17 @@
         }
       }
     },
+    "Repeating reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie cykliczne"
+          }
+        }
+      }
+    },
     "Repeats every day": {
       "extractionState": "manual",
       "localizations": {
@@ -66554,17 +66884,6 @@
         }
       }
     },
-    "Send it in your bank app": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wyślij przelew w aplikacji banku"
-          }
-        }
-      }
-    },
     "Send me daily news": {
       "extractionState": "manual",
       "localizations": {
@@ -67586,6 +67905,17 @@
         }
       }
     },
+    "Set. The next one comes %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione. Następna przyjdzie %@."
+          }
+        }
+      }
+    },
     "Set. The plan comes once a week.": {
       "extractionState": "manual",
       "localizations": {
@@ -68028,6 +68358,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "共享为文本"
+          }
+        }
+      }
+    },
+    "Share or save the picture": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij lub zachowaj obrazek"
           }
         }
       }
@@ -70204,6 +70545,17 @@
         }
       }
     },
+    "So he can hear you when you talk to him.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby mógł Cię słyszeć, gdy z nim rozmawiasz."
+          }
+        }
+      }
+    },
     "Some of the Buy buttons use partner links: Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": {
       "extractionState": "manual",
       "localizations": {
@@ -72161,6 +72513,17 @@
         }
       }
     },
+    "Steps, distance and floors for a day you ask about.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kroki, dystans i piętra z dnia, o który pytasz."
+          }
+        }
+      }
+    },
     "Still open from today or earlier. Tick the ones to move; each keeps its time.": {
       "extractionState": "manual",
       "localizations": {
@@ -73435,6 +73798,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "设备间同步"
+          }
+        }
+      }
+    },
+    "TIMER": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MINUTNIK"
           }
         }
       }
@@ -79934,6 +80308,17 @@
         }
       }
     },
+    "The picture couldn't be made. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się utworzyć obrazka. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "The plan and its answers are removed from this iPhone. This can't be undone.": {
       "extractionState": "manual",
       "localizations": {
@@ -80467,6 +80852,17 @@
         }
       }
     },
+    "The review couldn't be set. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić powtórki. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "The same fact is ticked twice.": {
       "extractionState": "manual",
       "localizations": {
@@ -80917,6 +81313,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置每周整理。请重试。"
+          }
+        }
+      }
+    },
+    "The time left shows on your Lock Screen, in the Dynamic Island and in StandBy, with nothing else. When it ends, a notification says it's time to put the phone down. Doddy doesn't check whether you did.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozostały czas widać na ekranie blokady, na Dynamic Island i w StandBy, bez niczego więcej. Gdy minie, powiadomienie mówi, że pora odłożyć telefon. Doddy nie sprawdza, czy tak się stało."
           }
         }
       }
@@ -85700,6 +86107,17 @@
         }
       }
     },
+    "Time to put the phone down": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pora odłożyć telefon"
+          }
+        }
+      }
+    },
     "Time's up": {
       "extractionState": "manual",
       "localizations": {
@@ -85873,6 +86291,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "计时器"
+          }
+        }
+      }
+    },
+    "Timer finished": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutnik się skończył"
+          }
+        }
+      }
+    },
+    "Timer · on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutnik · włączony"
           }
         }
       }
@@ -86154,6 +86594,28 @@
         }
       }
     },
+    "To add or change a reminder, only after you tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby dodać lub zmienić przypomnienie, tylko po Twoim stuknięciu."
+          }
+        }
+      }
+    },
+    "To count the photos you took on a day you ask about.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby policzyć zdjęcia zrobione w dzień, o który pytasz."
+          }
+        }
+      }
+    },
     "To do": {
       "extractionState": "manual",
       "localizations": {
@@ -86209,6 +86671,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "待办"
+          }
+        }
+      }
+    },
+    "To find a number or email when you say “text Ania”, and for birthdays.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby znaleźć numer lub e-mail, gdy mówisz „napisz do Ani”, i dla urodzin."
+          }
+        }
+      }
+    },
+    "To read your day. An event is added or changed only after you tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby czytać Twój dzień. Wydarzenie jest dodawane lub zmieniane dopiero po Twoim stuknięciu."
           }
         }
       }
@@ -90952,6 +91436,17 @@
         }
       }
     },
+    "WIND DOWN": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ODPRĘŻENIE"
+          }
+        }
+      }
+    },
     "Waiting": {
       "extractionState": "manual",
       "localizations": {
@@ -91202,6 +91697,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Spacer"
+          }
+        }
+      }
+    },
+    "Wallpaper": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tapeta"
+          }
+        }
+      }
+    },
+    "Wallpaper preview": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podgląd tapety"
           }
         }
       }
@@ -94391,6 +94908,28 @@
         }
       }
     },
+    "Wind down": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciszenie przed snem"
+          }
+        }
+      }
+    },
+    "Wind down · on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciszenie · włączone"
+          }
+        }
+      }
+    },
     "With Memory on calls on, a copy of your notes is also on your Doddy messaging server.": {
       "extractionState": "manual",
       "localizations": {
@@ -96279,17 +96818,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "You send it in your bank app": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wysyłasz go Ty, w aplikacji banku"
           }
         }
       }
@@ -99918,6 +100446,17 @@
         }
       }
     },
+    "saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zapisane"
+          }
+        }
+      }
+    },
     "shops are closed on its last day: buy by %@": {
       "extractionState": "manual",
       "localizations": {
@@ -101035,6 +101574,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "„Hej Siri, otwórz Doddy” też działa."
+          }
+        }
+      }
+    },
+    "“Note saved” in the Dynamic Island": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Notatka zapisana” na Dynamic Island"
           }
         }
       }

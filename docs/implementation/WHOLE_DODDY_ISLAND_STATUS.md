@@ -25,7 +25,7 @@ is a private Artifact in the owner's account.
 | A plan waiting or running | Tiptoe |
 | Translating | Language Bridge, as in every style |
 
-- Compact and minimal show a round face cropped from the same pictures: listening while live, shush when muted,
+- Compact and minimal show a round face, its own small picture (`WholeDoddy_face_<pose>`, cut from the same pictures; see "Left compact side" below): listening while live, shush when muted,
   eyes closed (from the stretch) while Hey Doddy waits or is paused, otherwise the cross-legged smile.
 - The island stays black: iOS draws it and apps can't change it. The black outlines get a 1 pt cream edge; there is
   no panel. Orange still means "Doddy can hear you" (LIVE, the bars, the keyline).
@@ -49,9 +49,17 @@ is a private Artifact in the owner's account.
 - `scripts/ci.sh --core-only`: see the commit message for the run.
 - Every changed Swift file parses.
 
+## Left compact side (2026-10-11)
+Owner report: on the Dynamic Island the right compact side shows, but the left is a grey circle with nothing in
+it. The left side is the only compact side with a picture (the right is a timer, bars or dots). The face used to
+be cropped from a whole pose at draw time: a 52 × 79 pt picture, offset and clipped to 24 pt. The new faces are
+cut once by `tools/whole_doddy/cut_faces.py` and drawn as they are (`IslandPoseFaceView`, `IslandPose.faceAssetName`).
+**Cause not confirmed.** The old crop reproduced correctly in a Linux render, so the evidence points at how iOS
+renders the oversized, offset picture in the island, but that was not observed. Checklist W3 now covers it.
+
 ## Not verified (needs a Mac and an iPhone)
 Checklist W1–W6: that it compiles (SwiftUI `Image` from the widget's catalog, the shadows), how the poses read at
-island size, the cream edge, the face crops, and memory use in the widget extension.
+island size, the cream edge, the round faces (W3: the left compact side must show the face, not a grey circle), and memory use in the widget extension.
 
 ## Decisions for the owner
 - ~~Whether Whole Doddy should become the default style~~: yes (owner, 2026-10-11, ADR-267).

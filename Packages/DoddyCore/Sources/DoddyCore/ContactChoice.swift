@@ -1,10 +1,10 @@
 import Foundation
 
-// Contacts for a drafted text, email or BLIK transfer (ADR-717). The agent asks for these with a
-// name and no yes first (the card comes after the search), so the search is held to what the
-// card needs and no more:
+// Contacts for a drafted text or email (ADR-717). The agent asks for these with a name and no
+// yes first (the card comes after the search), so the search is held to what the card needs and
+// no more:
 //  - it runs only with Doddy's own Contacts switch on, as `lookup_contact` does, and iOS's
-//    permission; with the switch off a BLIK card still works from the name as typed (no number),
+//    permission; with the switch off a text or email card still works from the name as typed,
 //  - at most three such searches in a conversation, so a run of one-letter names can't walk
 //    through the address book,
 //  - several matches are never guessed between and never listed in full: the agent hears how many

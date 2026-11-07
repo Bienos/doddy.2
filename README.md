@@ -32,7 +32,7 @@ This is what the code on `main` does (7 Nov 2026). It builds and passes its test
 **Not done yet:**
 - On the welcome screen only Sign in with Apple works; the other sign-in buttons aren't connected.
 - Calling Doddy's phone number, and Doddy phoning a business for you, are written but not live: their voice agents haven't been created.
-- Invoices can't be sent to inFakt. The BLIK card only shows the payment details: Doddy never sends money.
+- Invoices can't be sent to inFakt, and Doddy can't pay for anything (the BLIK transfer card was removed on 5 Nov, ADR-810).
 - The app isn't on TestFlight yet. The Apple Watch and Mac apps are paused.
 
 ## How the parts fit together
@@ -58,7 +58,7 @@ flowchart LR
 |---|---|
 | [`DoddyApp/`](DoddyApp/) | The iPhone and iPad app (SwiftUI). One folder per feature in `DoddyApp/Features/`. |
 | [`Packages/DoddyCore/`](Packages/DoddyCore/) | The app's rules and memory database, with no screens, so they can be tested on any computer. |
-| `Shared/`, `DoddyWidgets/`, `DoddyShare/` | Code shared with the Home Screen widgets, the widgets themselves, and "Save to Doddy" in the Share menu. |
+| `Shared/`, `DoddyWidgets/`, `DoddyShare/`, `DoddyNotificationContent/` | Code shared with the app's extensions, then the extensions: Home Screen widgets, "Save to Doddy" in the Share menu, and the expanded view of a reminder notification. |
 | `DoddyTests/`, `DoddyUITests/` | The app's tests. UI tests drive the app in the iPhone simulator. |
 | [`voice-agent/`](voice-agent/README.md) | What the voice agents are told and which tools they have: the main agent, the phone agent and the task-call agent. |
 | `backend/` | The main server (`doddy` on Render): accounts, connected apps, documents Doddy makes, and Doddy Web. |

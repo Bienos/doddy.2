@@ -135,11 +135,12 @@ Mac build.
 ## Layout
 
 ```
-DoddyApp/                    the iPhone and iPad app (SwiftUI): App/, Features/ (one folder per feature, 55 of them;
+DoddyApp/                    the iPhone and iPad app (SwiftUI): App/, Features/ (one folder per feature, 57 of them;
                              the map is docs/platforms/iphone.md), DesignSystem/, Infrastructure/, Intents/, Resources/
                              (string catalogs generated from l10n/, asset catalog, PrivacyInfo.xcprivacy)
 Shared/                      code built into the app and its extensions: Live Activity, island art, widget snapshot, intents
 DoddyWidgets/ DoddyShare/    Home and Lock Screen widgets, controls and Live Activities; "Save to Doddy" in the Share Sheet
+DoddyNotificationContent/    the expanded view of a long-pressed note reminder notification (ADR-786)
 DoddyTests/ DoddyUITests/    the app's unit tests and UI tests (run by the hosted Mac job)
 Packages/DoddyCore/          the shared Swift package, no UI, tested on Linux and macOS
   Sources/DoddyCore/           the app's rules: voice tools, memory, lists, plans, shopping, privacy, motion and more
@@ -185,7 +186,8 @@ yet (`docs/OWNER_QUEUE.md`, item 21).
 **App Group (on since 2026-10-11, owner has a paid Apple Developer account).** The widgets (ADR-219), "Save to
 Doddy" in the Share Sheet (ADR-311) and the parking widget (ADR-315) share a folder, the App Group
 `group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default). `project.yml` signs the app, the widget
-extension and the share extension with it (the paused Watch targets, ADR-572, are in `project-watch.yml`). Choose
+extension and the share extension with it (the paused Watch targets, ADR-572, are in `project-watch.yml`; the
+notification content extension, ADR-786, has no entitlements and needs only a team). Choose
 your team in Xcode for each target; automatic signing adds the App Groups capability and registers the group.
 If you also use push, set `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements`. For a free Apple
 team, use `make project-iphone`: it sets `DODDY_APP_ENTITLEMENTS`, `DODDY_WIDGET_ENTITLEMENTS` and

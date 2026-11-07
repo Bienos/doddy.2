@@ -25,8 +25,8 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 
 | Folder | What it is | ADR | Status doc |
 |---|---|---|---|
-| Voice | Voice conversation, plan cards, the island (Whole Doddy only, ADR-653), the BLIK, email and errand cards; the wake word was removed (ADR-549) | 254, 265 | V1_VOICE_STATUS, VOICE_PROVIDER_TEST_STATUS |
-| Voice (BLIK card), Connections › Money | BLIK phone transfer shown for the user to send in their bank app; Doddy never sends money | 483 | BLIK_TRANSFER_STATUS |
+| Voice | Voice conversation, plan cards, the island (Whole Doddy only, ADR-653), the email and errand cards; the wake word was removed (ADR-549) | 254, 265 | V1_VOICE_STATUS, VOICE_PROVIDER_TEST_STATUS |
+| ~~Voice (BLIK card), Connections › Money~~ | Removed from the repo (ADR-810). It showed a BLIK phone transfer for the user to send in their bank app; BLIK is to go through Stripe later (not built) | 510, 810 | BLIK_TRANSFER_STATUS (history) |
 | Opening | Animated intro, listen on open | 225 | OPENING_SCENE_STATUS |
 | DesignSystem/Motion (on the default branch since 20 Oct, #111; his eyes, ADR-560, #114) | One persistent Doddy: director, drawing, clock; the engine is in DoddyCore `Motion/` | 554, 555 | MOTION_V2_PLAN (in `docs/design/`), MOTION_V2_DEVICE_CHECKLIST, MOTION_V2_ART_REQUESTS |
 | Onboarding | Introduction, storybook welcome | 299, 380 | ONBOARDING_STATUS |
@@ -70,6 +70,8 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Watch | iPhone side of the Watch app (`PhoneWatchLink`); the Watch app itself is paused (ADR-572) | 232 | APPLE_WATCH_STATUS |
 | Widgets | Keeps the widget snapshot current | 219, 331 | WIDGETS_STATUS |
 | Recordings (DODDY Capture) | Record a meeting or conversation (button, Siri, the Action Button's control, the island), on-device words, search, "Remember this". Logic in `DoddyCore/Capture/`, rows in `v16_recordings`. The app layer compiles in the hosted Mac job; **not run on a device** | 588–592 (579–583 on its branch) | CAPTURE_STATUS, CAPTURE_AUDIT |
+| Review | "A thought is ready for review": off by default; one passive notification for a note `ThoughtReview` picks, never carrying its words (`ThoughtReviewViews.swift`) | 785 | - |
+| Wallpaper | Settings › Appearance › Lock Screen wallpaper: Doddy's paper with a pose from the owner's pack, sized for this iPhone, saved through the share sheet (iOS lets no app set it) | 784 | - |
 
 **Other app folders:**
 - `DoddyApp/App`: entry, `RootView`, iPad sidebar.
@@ -82,6 +84,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 **Extensions:**
 - `DoddyWidgets/`: Home and Lock Screen widgets, controls, Live Activities.
 - `DoddyShare/`: "Save to Doddy" in the Share Sheet.
+- `DoddyNotificationContent/`: the expanded view of a long-pressed note reminder or "thought to review" notification, drawn from the notification's own words (ADR-786). No App Group, network or database.
 
 ## Checks that run without a Mac
 `scripts/ci.sh --core-only`: DoddyCore tests, the capability guard, the strings catalog, the voice agent spec and the platform specs, and on Linux a type-check of the app files that use no Apple UI framework (`scripts/typecheck_app_logic.sh`). `make test-core` runs the DoddyCore tests alone. SwiftUI code compiles only in Xcode.

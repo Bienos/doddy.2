@@ -81,7 +81,7 @@ No third-party app can do these on iPhone; Doddy says so rather than pretending.
 - **Phone:** no call history and no silent calls; Doddy can only open the dialer for you.
 - **Safari, Settings switches (Wi-Fi, Bluetooth, brightness), other apps' screens:** no API; some can be done through your Shortcuts.
 - **The Clock app's own alarms:** not readable; Doddy has its own alarms (AlarmKit).
-- **Apple Pay, Wallet passes, Find My:** no way to pay, read others' passes or locate devices. Money is shown on a card for you to send (BLIK, ADR-510).
+- **Apple Pay, Wallet passes, Find My:** no way to pay, read others' passes or locate devices. Doddy does not move money, and the BLIK transfer card (ADR-510) was removed in ADR-810.
 - **Siri itself:** Doddy can be opened by Siri, not control it.
 
 ## What was checked, and what wasn't

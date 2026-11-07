@@ -4,8 +4,8 @@ Each platform builds from its own XcodeGen spec into its own Xcode project. Gene
 
 | Command | Spec | Project | Contains |
 |---|---|---|---|
-| `make project` | `project.yml` | `Doddy.xcodeproj` | iPhone/iPad app, widgets, share extension and tests. **This is what ships and what CI builds.** Scheme: `Doddy`. |
-| `make project-iphone` | `project-iphone.yml` | `DoddyiPhone.xcodeproj` | The iPhone/iPad app alone, with no entitlements, so a free Apple team can sign it. No widgets and no share extension (they need the App Group), no push, no HealthKit. Scheme: `Doddy`. |
+| `make project` | `project.yml` | `Doddy.xcodeproj` | iPhone/iPad app, widgets, share extension, notification content extension and tests. **This is what ships and what CI builds.** Scheme: `Doddy`. |
+| `make project-iphone` | `project-iphone.yml` | `DoddyiPhone.xcodeproj` | The iPhone/iPad app with no entitlements, so a free Apple team can sign it. No widgets and no share extension (they need the App Group), no push, no HealthKit; the notification content extension stays (it needs no entitlements). Scheme: `Doddy`. |
 | `make project-watch ENABLE_WATCH=1` | `project-watch.yml` | `DoddyWithWatch.xcodeproj` | **PAUSED (ADR-572).** `project.yml` plus the Apple Watch app and its complications embedded in the app. Schemes: `Doddy`, `DoddyWatch`. |
 | `make project-mac ENABLE_MAC=1` | `project-mac.yml` | `DoddyMac.xcodeproj` | **PAUSED (ADR-572).** Mac menu bar app and desktop widget **only**. Nothing from the iPhone app. Scheme: `DoddyMac`. |
 
@@ -21,7 +21,7 @@ Each platform builds from its own XcodeGen spec into its own Xcode project. Gene
 |---|---|---|---|
 | `DoddyApp/` app code | ✔ | | |
 | `Shared/` (Live Activity attributes, Dynamic Island art, widget snapshot, Shortcuts and other intents shared with extensions) | ✔ | one file (`Shared/Widgets/WidgetSnapshotFile.swift`) | |
-| `DoddyWidgets/`, `DoddyShare/` | ✔ | | |
+| `DoddyWidgets/`, `DoddyShare/`, `DoddyNotificationContent/` | ✔ | | |
 | `DoddyWatch/`, `DoddyWatchWidgets/` (paused) | | ✔ | |
 | `DoddyMac/`, `DoddyMacWidgets/` (paused) | | | ✔ |
 | `Packages/DoddyCore` → `DoddyCore` (rules, no UI) | ✔ | ✔ | ✔ |

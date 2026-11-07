@@ -22,13 +22,13 @@ Last checked: **7 Nov 2026, 19:30 UTC** (GitHub, and Render read-only through it
 | `doddy-messaging` (Render): Messages, errands, leaflets, texts and calls, push | `174ba21` (#198), deployed 7 Nov 13:58 UTC (owner queue 19) | Branch `main`, auto-deploy off. Free plan, with the worker inside the web process. |
 | `doddy-messaging-db` (Render Postgres) | Free plan | **Expires 10 Nov 2026, 10:11 UTC**, read 7 Nov 19:30 UTC. Not upgraded. Everything the messaging server keeps is in it (owner queue 1). |
 | Vercel `doddy-voice-token`, `doddy` (www.doddy.lol), `doddy-gateway` | Production builds of the default branch | After the rename, the Production Branch setting must say `main` (owner queue 20). Pull requests' Vercel statuses say "Account is blocked." The gateway is unused by the app (ADR-586, ADR-587) and has no variables, so it answers 503. |
-| ElevenLabs agent (main) | One agent for Debug, TestFlight and future App Store builds | Authentication off (owner queue 4). 103 tools when last read (1 Nov): the 102 in `voice-agent/tools.json` plus `draft_invoice` from unmerged work. `tools.json` still lacks the live ids of `hand_over_errand` and `check_errands`. The phone and task-call agents aren't created yet. |
+| ElevenLabs agent (main) | One agent for Debug, TestFlight and future App Store builds | Authentication off (owner queue 4). 103 tools when last read (1 Nov): the 101 now in `voice-agent/tools.json`, plus `draft_blik_transfer` (removed from the spec on 5 Nov, ADR-810, still on the live agent until the owner asks for a sync) and `draft_invoice` from unmerged work. `tools.json` still lacks the live ids of `hand_over_errand` and `check_errands`. The phone and task-call agents aren't created yet. |
 | Old Render copies `doddy-gateway`, `doddy-voice-token` | Old branch, free plan | Not used. Delete them. |
 
 ## Platforms
 | Platform | Code | Project | State | Page |
 |---|---|---|---|---|
-| iPhone and iPad | `DoddyApp/`, `Shared/`, `DoddyWidgets/`, `DoddyShare/` | `project.yml`; `project-iphone.yml` (free team, no entitlements) | Built and tested by the hosted Mac job on every push to `main` (all UI tests) and on pull requests that can reach the app (smoke UI tests) | `docs/platforms/iphone.md` |
+| iPhone and iPad | `DoddyApp/`, `Shared/`, `DoddyWidgets/`, `DoddyShare/`, `DoddyNotificationContent/` | `project.yml`; `project-iphone.yml` (free team, no entitlements) | Built and tested by the hosted Mac job on every push to `main` (all UI tests) and on pull requests that can reach the app (smoke UI tests) | `docs/platforms/iphone.md` |
 | Web | `web/`, `backend/src/web/` | Vite, served by `doddy` | Live | `docs/platforms/web.md` |
 | Shared core | `Packages/DoddyCore/` | Swift package | Tests on Linux and macOS in CI | `docs/platforms/README.md` |
 | Apple Watch | `DoddyWatch/`, `DoddyWatchWidgets/` | `project-watch.yml` | **Paused** (ADR-572) | `docs/platforms/watch.md` |
