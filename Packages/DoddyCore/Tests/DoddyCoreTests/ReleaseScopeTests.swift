@@ -145,6 +145,14 @@ final class ReleaseScopeTests: XCTestCase {
         XCTAssertFalse(catalog.isAvailable(.textAssistant))
     }
 
+    // MARK: The Debug preview
+
+    func testPreviewKeyIsTheOneTheUITestsPass() {
+        // `DoddyUITests/UITestLaunch.swift` passes this key as a literal (the UI test target doesn't
+        // link DoddyCore). Change both together, or the UI tests stop seeing hidden screens.
+        XCTAssertEqual(ReleaseScope.previewEverythingKey, "releaseScope.previewEverything")
+    }
+
     // MARK: Quick actions
 
     func testParkingQuickActionGoesWithTheFeature() {

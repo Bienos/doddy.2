@@ -134,7 +134,8 @@ struct ConnectionsSettingsView: View {
                     }
                     .accessibilityIdentifier("settings.web")
                 }
-                if scope.shows(.messages) {
+                // `Feature.` spelled out: `.messages` is also a `VoiceConnection`, so `shows(.messages)` is ambiguous.
+                if scope.shows(Feature.messages) {
                     NavigationLink {
                         AskDoddySettingsView()
                     } label: {
