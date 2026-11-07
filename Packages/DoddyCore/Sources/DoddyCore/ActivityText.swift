@@ -26,8 +26,10 @@ extension ActivityApp {
         case .steps: return "Kroki"
         case .photos: return "Zdjęcia"
         case .camera: return "Aparat"
+        case .home: return "Dom"
         case .health: return "Zdrowie"
         case .training: return "Plan treningowy"
+        case .news: return "Śledzone"
         }
     }
 }
@@ -72,6 +74,7 @@ public enum ActivityText {
         "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
         "Looked through photos": "Przejrzano zdjęcia",
         "Open the camera": "Otwórz aparat",
+        "Control the home": "Steruj domem",
         "Open the training plan": "Otwórz plan treningowy",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.
@@ -102,6 +105,7 @@ public enum ActivityText {
         // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
         "Read alarms": "Odczytano budziki",
         "Turn off alarm": "Wyłącz budzik",
+        "Follow in Following": "Śledź w Śledzonych",
         "Start stopwatch": "Włącz stoper",
         "Stop stopwatch": "Zatrzymaj stoper",
         "Read stopwatch": "Odczytano stoper",
@@ -213,6 +217,7 @@ public enum ActivityText {
         case .steps: "Kroki"
         case .photos: "Zdjęcia"
         case .camera: "Aparat"
+        case .home: "Dom"
         }
     }
 

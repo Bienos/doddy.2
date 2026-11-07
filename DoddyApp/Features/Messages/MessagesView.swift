@@ -30,6 +30,11 @@ struct MessagesView: View {
     @State private var preview: URL?
     /// A finished task opened from its card.
     @State private var openedTask: OpenedTask?
+    /// Calls Doddy made (ADR-730), read from this iPhone's own copy of them. Shown under the thread; never part of it.
+    @Environment(\.appEnvironment) private var environment
+    @State private var calls: [StoredCallCase] = []
+    /// A finished call opened from its card: its page in Settings, where the recap is.
+    @State private var openedCall: OpenedCall?
 
     /// - Parameter draft: text already in the box, for the person to read, change and send
     ///   themselves (the Apple Health week summary, ADR-622). Nothing is sent without their tap.
@@ -121,8 +126,18 @@ struct MessagesView: View {
         .task(id: consent) { if consent { await files.refresh() } }
         .quickLookPreview($preview)
         .task { await ErrandsModel.shared.load() }
+        // A failed read shows no cards here; the calls themselves are in Settings › Phone calls.
+        .task { calls = (try? await environment.callCaseRepository.list()) ?? [] }
         .sheet(item: $openedTask) { opened in
             NavigationStack { ErrandDetailView(id: opened.id) }
+        }
+        .sheet(item: $openedCall) { opened in
+            NavigationStack {
+                CallCasesView(openCase: opened.id)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { Button("Close") { openedCall = nil } }
+                    }
+            }
         }
         // Motion v2 (MV4, Q2): he comes up with this cover, on its composer, and is back on
         // Home's stage as it goes.
@@ -165,6 +180,7 @@ struct MessagesView: View {
                             .id(message.id)
                     }
                     taskResults
+                    callResults
                     attachments
                     if model.isSending {
                         TypingBubble()
@@ -243,6 +259,50 @@ struct MessagesView: View {
                     .buttonStyle(.plain)
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("messages.taskResult")
+                }
+            }
+            .padding(.top, 14)
+            .padding(.trailing, 40)
+        }
+    }
+
+    /// Calls Doddy made for the person this week (ADR-730): "Doddy called Anna", and a tap opens that call's page in
+    /// Settings, where the recap is (and, for the owner's account only, the words). Read from this iPhone's own copy;
+    /// nothing is added to the saved thread, so nothing about a call is copied to Doddy Web or sent to the model.
+    @ViewBuilder
+    private var callResults: some View {
+        let shown = ThreadCallResults.shown(calls, now: Date())
+        if !shown.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Calls Doddy made")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(shown) { record in
+                    Button { openedCall = OpenedCall(id: record.id) } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "phone.fill")
+                                .font(.title3)
+                                .foregroundStyle(Theme.accentText)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: String(format: NSLocalizedString("Doddy called %@.", comment: "Messages: a call Doddy made; the name of the person he called"), record.brief.calleeName))
+                                    .font(.body.bold())
+                                    .multilineTextAlignment(.leading)
+                                Text("See the recap.")
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(Theme.ink)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("messages.callResult")
                 }
             }
             .padding(.top, 14)
@@ -681,6 +741,11 @@ struct MessagesView: View {
 
 /// A finished task opened from Messages, for `.sheet(item:)`.
 private struct OpenedTask: Identifiable {
+    let id: UUID
+}
+
+/// A finished call opened from Messages, for `.sheet(item:)` (the call case's id).
+private struct OpenedCall: Identifiable {
     let id: UUID
 }
 

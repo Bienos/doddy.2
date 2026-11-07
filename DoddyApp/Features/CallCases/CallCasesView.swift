@@ -13,6 +13,13 @@ struct CallCasesView: View {
     @State private var preparedCase: StoredCallCase?
     @State private var opened: OpenedCase?
     @State private var exportText: String?
+    /// A call to open at once (from Messages, ADR-730): its page, with the recap. Opened once, not again after a Back.
+    private let openCase: UUID?
+    @State private var didOpenRequested = false
+
+    init(openCase: UUID? = nil) {
+        self.openCase = openCase
+    }
 
     var body: some View {
         Group {
@@ -56,6 +63,10 @@ struct CallCasesView: View {
                                        describe: { UpdatesModel.text(for: $0) })
             }
             await model?.load()
+            if let openCase, !didOpenRequested, let model, let record = model.cases.first(where: { $0.id == openCase }) {
+                didOpenRequested = true
+                opened = OpenedCase(open: record, in: model)
+            }
         }
     }
 
@@ -162,7 +173,9 @@ struct OpenedCase: Identifiable, Hashable {
     @MainActor
     init(open record: StoredCallCase, in list: CallCasesModel) {
         id = record.id
-        model = list.caseModel(for: record, activity: CallLiveActivity.shared)
+        // No Lock Screen Live Activity (owner, 2026-11-05: calls are invisible; one small mark on Home,
+        // then the recap). The call's own screen, Przejmij and Zakończ are one tap from that mark.
+        model = list.caseModel(for: record, activity: nil)
     }
 
     static func == (a: OpenedCase, b: OpenedCase) -> Bool { a.id == b.id && a.model === b.model }

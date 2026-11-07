@@ -6,7 +6,7 @@ import { sha256, type TextCipher } from "./crypto.js";
 import { log } from "./log.js";
 import type { Db } from "./db.js";
 import { isAllowedNumber } from "./phoneCountries.js";
-import type { PushSender, SendOutcome, SmsSender } from "./providers/types.js";
+import type { PushData, PushSender, SendOutcome, SmsSender } from "./providers/types.js";
 import { returnServerSlot, takeServerSlot } from "./serverUsage.js";
 
 export type Channel = "push" | "sms";
@@ -148,7 +148,7 @@ export async function cancelQueuedSms(db: Queryable, accountId: string): Promise
     [accountId]);
 }
 
-interface Claimed { id: string; account_id: string; channel: Channel; body: string; attempts: number }
+interface Claimed { id: string; account_id: string; channel: Channel; body: string; attempts: number; idempotency_key?: string }
 interface ClaimedRow extends Omit<Claimed, "body"> { body: string | null; body_ciphertext: Buffer | null }
 
 export interface Senders {
@@ -177,7 +177,7 @@ export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise
      UPDATE outbound_messages m
      SET state = 'sending', attempts = m.attempts + 1, updated_at = now()
      FROM due WHERE m.id = due.id
-     RETURNING m.id, m.account_id, m.channel, m.body, m.body_ciphertext, m.attempts`,
+     RETURNING m.id, m.account_id, m.channel, m.body, m.body_ciphertext, m.attempts, m.idempotency_key`,
     [batch]);
   for (const row of rows) {
     // Claimed rows wait their turn in this batch. Refresh the claim just before sending so the
@@ -214,6 +214,14 @@ function openBody(cipher: TextCipher | undefined, row: ClaimedRow): string | und
   }
 }
 
+/**
+ * What a tap on this push should open, from the key it was queued under (the call worker queues
+ * `call-result:<attempt>`). A kind only: the attempt, the case and the words stay on the server and in the app.
+ */
+export function pushData(idempotencyKey: string | undefined): PushData | undefined {
+  return idempotencyKey?.startsWith("call-result:") ? { kind: "call-result" } : undefined;
+}
+
 async function sendPush(db: Db, sender: PushSender | undefined, msg: Claimed): Promise<SendOutcome | { kind: "cancelled"; code: string }> {
   if (!sender) return { kind: "transient", code: "push_not_configured" };
   const { rows: devices } = await db.query<{ id: string; apns_token: string; apns_environment: "sandbox" | "production" }>(
@@ -226,7 +234,7 @@ async function sendPush(db: Db, sender: PushSender | undefined, msg: Claimed): P
   for (const d of devices) {
     const r = await sender.send(
       { deviceToken: d.apns_token, environment: d.apns_environment },
-      { title: "Doddy", body: msg.body }, msg.id);
+      { title: "Doddy", body: msg.body }, msg.id, pushData(msg.idempotency_key));
     if (r.kind === "rejected" && r.deviceGone) {
       await db.query("UPDATE devices SET apns_token_invalid_at = now() WHERE id = $1", [d.id]);
     }

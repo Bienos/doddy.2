@@ -121,6 +121,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
+        // Follow something in Following (ADR-657): Doddy's own feature on this iPhone.
+        .init(VoiceToolName.followNews, .localChange, .card),
         // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
         .init(VoiceToolName.startStopwatch, .localChange, .card),
         .init(VoiceToolName.stopStopwatch, .localChange, .card),
@@ -143,6 +145,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
         .init(VoiceToolName.openCamera, .handoff, .card),
+        // A light, outlet, fan or scene in HomeKit, after a card naming the exact accessory.
+        .init(VoiceToolName.controlHome, .localChange, .card),
         // A task handed over (ADR-570): web research on Doddy's server that changes nothing on the
         // iPhone; one tap covers every look-up of that task. A tap and not a spoken yes (ADR-716):
         // its text goes to a server that opens what it names. Checking what it found is a read.
