@@ -21,7 +21,7 @@ extension ActivityApp {
         case .gmail, .drive, .notion, .todoist, .outlook: return title
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
-        case .blik: return "Przelewy BLIK"  // only on rows saved before ADR-810
+        case .blik: return "Przelewy BLIK"
         case .presentations: return "Prezentacje"
         case .steps: return "Kroki"
         case .photos: return "Zdjęcia"
@@ -68,7 +68,6 @@ public enum ActivityText {
         "Open in Maps": "Otwórz w Mapach",
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
-        // Rows saved before ADR-810 removed the BLIK draft still read in Polish.
         "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
         "Make a presentation": "Przygotuj prezentację",
         "Read steps": "Odczytano kroki",
@@ -213,6 +212,7 @@ public enum ActivityText {
         case .maps: "Mapy"
         case .shortcuts: "Skróty"
         case .messages: "Wiadomości i e-mail"
+        case .blik: "Przelewy BLIK"
         case .presentations: "Prezentacje"
         case .steps: "Kroki"
         case .photos: "Zdjęcia"

@@ -11,9 +11,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case web
     /// The ECB's public rates file (ADR-300).
     case exchangeRates
-    /// Kept only so rows saved by earlier builds still load (the BLIK draft flow was removed,
-    /// ADR-810): a case missing here would make the whole 30-day log fail to decode. Nothing
-    /// writes it any more.
+    /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
     case blik
     /// A presentation file made on the iPhone (ADR-567).
     case presentations
@@ -75,8 +73,8 @@ public enum ActivityOutcome: String, Codable, Sendable {
     case declined
     /// Written before a change runs. If Doddy closes before the result, it becomes `notSure`.
     case inProgress
-    /// Kept only so rows saved by earlier builds still load (BLIK transfer cards, removed in
-    /// ADR-810). Nothing writes it any more.
+    /// Shown on a card for the user to do themselves, as a BLIK transfer in their bank app
+    /// (ADR-510). Doddy did nothing and can't see whether the user did.
     case shown
 
     public var text: String {
@@ -236,6 +234,11 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
+        case .draftBlikTransfer(let draft):
+            // The amount and title are on the card; the 30-day log keeps only who it was for.
+            return ActivityRequest(
+                app: .blik, title: "Prepare a BLIK transfer", detail: "\(draft.amount.agentText) to \(draft.recipientName)",
+                logDetail: "to \(draft.recipientName)", isLookup: false)
         case .makePresentation(let draft):
             return ActivityRequest(
                 app: .presentations, title: "Make a presentation", detail: "“\(draft.title)” · \(draft.slideCount) slides",
@@ -584,6 +587,8 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if starts(["added:", "saved:"]), alreadyThereTails.contains(where: withoutCheckedFirst(text).hasSuffix) { return (.alreadyThere, nil) }
         if starts(VoiceToolReply.donePrefixes) || starts(VoiceToolReply.listDonePrefixes) { return (.done, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
+        // A BLIK transfer card (ADR-510): the user sends it in their bank app; Doddy can't see it.
+        if text.hasPrefix("shown:") { return (.shown, "Doddy didn't send any money. You send it in your bank app.") }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
     }

@@ -150,7 +150,7 @@ public enum AskFirst {
             // place Maps found and the leave time follows (ADR-718).
             return .tapFirst(LeaveByAsk.card(request, calendar: calendar))
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
-             .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
+             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save):
             return .ownPayloadCard
         case .cloudTool(let call):

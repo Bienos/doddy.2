@@ -31,6 +31,8 @@ public enum VoiceToolName {
 /// start on (`startsOn`); the rest start off, and each of those needs an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
+    /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
+    case blik
     /// Presentations made on the iPhone as a file Keynote opens (ADR-567). No iOS permission.
     case presentations
     /// Step count, walking distance and floors from Motion & Fitness (ADR-568).
@@ -52,6 +54,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .maps: "Maps"
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
+        case .blik: "BLIK transfers"
         case .presentations: "Presentations"
         case .steps: "Steps"
         case .photos: "Photos"
@@ -70,7 +73,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     /// blocked and never asks; turning it on in Settings is what makes iOS ask.
     public var startsOn: Bool {
         switch self {
-        case .maps, .shortcuts, .messages, .presentations: true
+        case .maps, .shortcuts, .messages, .blik, .presentations: true
         case .calendar, .reminders, .contacts, .timers, .steps, .photos, .camera, .home: false
         }
     }
@@ -93,6 +96,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
+        case VoiceToolName.draftBlikTransfer: .blik
         case VoiceToolName.makePresentation: .presentations
         case VoiceToolName.readSteps: .steps
         case VoiceToolName.findPhotos: .photos
@@ -243,6 +247,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
+    /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
+    /// never sends money.
+    case draftBlikTransfer(BlikTransferDraft)
     /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-568).
@@ -382,6 +389,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.draftBlikTransfer:
+            return parseBlikTransfer(args, name: name)
         case VoiceToolName.makePresentation:
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:

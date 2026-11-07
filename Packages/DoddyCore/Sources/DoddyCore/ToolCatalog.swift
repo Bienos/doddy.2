@@ -139,6 +139,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.openMap, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
+        // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
+        .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).

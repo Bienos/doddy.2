@@ -25,8 +25,8 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 
 | Folder | What it is | ADR | Status doc |
 |---|---|---|---|
-| Voice | Voice conversation, plan cards, the island (Whole Doddy only, ADR-653), the email and errand cards; the wake word was removed (ADR-549) | 254, 265 | V1_VOICE_STATUS, VOICE_PROVIDER_TEST_STATUS |
-| ~~Voice (BLIK card), Connections › Money~~ | Removed from the repo (ADR-810). It showed a BLIK phone transfer for the user to send in their bank app; BLIK is to go through Stripe later (not built) | 510, 810 | BLIK_TRANSFER_STATUS (history) |
+| Voice | Voice conversation, plan cards, the island (Whole Doddy only, ADR-653), the BLIK, email and errand cards; the wake word was removed (ADR-549) | 254, 265 | V1_VOICE_STATUS, VOICE_PROVIDER_TEST_STATUS |
+| Voice (BLIK card), Connections › Money | BLIK phone transfer shown for the user to send in their bank app; Doddy never sends money | 483, 510, 541; restored 7 Nov 2026 (`docs/decisions/2026-11-07-restore-blik-transfer-draft.md`) | BLIK_TRANSFER_STATUS |
 | Opening | Animated intro, listen on open | 225 | OPENING_SCENE_STATUS |
 | DesignSystem/Motion (on the default branch since 20 Oct, #111; his eyes, ADR-560, #114) | One persistent Doddy: director, drawing, clock; the engine is in DoddyCore `Motion/` | 554, 555 | MOTION_V2_PLAN (in `docs/design/`), MOTION_V2_DEVICE_CHECKLIST, MOTION_V2_ART_REQUESTS |
 | Onboarding | Introduction, storybook welcome | 299, 380 | ONBOARDING_STATUS |
