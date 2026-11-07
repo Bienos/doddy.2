@@ -53,6 +53,15 @@ if [ -z "${DODDY_SKIP_XCODEGEN:-}" ]; then
 fi
 [ -f "$pbx" ] || { echo "ci_post_clone: $pbx wasn't generated" >&2; exit 1; }
 
+# 1b. The app's pinned package versions (Config/Package.resolved, 7 Nov 2026 audit), as `make project`
+# and scripts/ci.sh install them, so TestFlight gets exactly the versions GitHub's CI built and
+# tested. Before step 6, so resolution there only confirms them.
+if [ -f Config/Package.resolved ]; then
+  mkdir -p Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+  cp Config/Package.resolved Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  echo "ci_post_clone: pinned package versions installed"
+fi
+
 # 2. One build number for the app, the widgets and the share extension: Xcode Cloud's.
 if [ -n "${CI_BUILD_NUMBER:-}" ]; then
   case $CI_BUILD_NUMBER in
