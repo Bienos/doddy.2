@@ -146,6 +146,8 @@ files=(
   DoddyApp/Features/Shopping/WatchModel.swift
   # The parcel list (ADR-641): its state and the look-up flow, without the views or the InPost client.
   DoddyApp/Features/Parcels/ParcelsModel.swift
+  # The "Na oku" page's state (ADR-756), without the view or the collector that reads the stores.
+  DoddyApp/Features/OpenLoops/OpenLoopsModel.swift
   # The kept training plan (ADR-625), without the screens.
   DoddyApp/Features/Sport/TrainingPlanStore.swift
   DoddyApp/Features/Sport/PlanText.swift
