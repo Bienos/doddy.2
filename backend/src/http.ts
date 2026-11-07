@@ -40,12 +40,38 @@ export interface HttpDeps {
   assist?: AssistService | null;
   /** Deleting the account on this server (ADR-674). Absent: `DELETE /v1/account` is not found. */
   account?: AccountEraser | null;
+  /**
+   * What `GET /v1/health` checks and reports (engineering audit, 7 Nov 2026): a database round trip,
+   * so a server whose database is gone answers 503 instead of a static "ok", and the commit that is
+   * running (Render's RENDER_GIT_COMMIT), so "what is live" is one request. Absent: health is static.
+   */
+  health?: { ping(): Promise<void>; commit?: string | null } | null;
   appReturnUrl: string;
   maxBodyBytes: number;
   /** Behind one proxy that appends the client to X-Forwarded-For (Render). For per-client limits. */
   trustProxy?: boolean;
   now?: () => Date;
   log?: (line: Record<string, unknown>) => void;
+}
+
+/** A database that takes longer than this to answer counts as down for health (the request limit is 20 s). */
+const HEALTH_DATABASE_TIMEOUT_MS = 3_000;
+
+async function databaseAnswers(ping: () => Promise<void>): Promise<"ok" | "unavailable"> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      ping(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("timeout")), HEALTH_DATABASE_TIMEOUT_MS);
+      }),
+    ]);
+    return "ok";
+  } catch {
+    return "unavailable";
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 const PLANNED = ["apple_calendar", "apple_reminders", "todoist", "notion"] as const;
@@ -126,8 +152,16 @@ export function createHandler(deps: HttpDeps) {
 
       if (key === "GET /v1/health") {
         route = key;
-        status = 200;
-        return send(res, 200, { status: "ok", mode: service.mode, api: "v1", capabilities: ["calendar.listEvents"] });
+        const database = deps.health ? await databaseAnswers(deps.health.ping) : undefined;
+        status = database === "unavailable" ? 503 : 200;
+        return send(res, status, {
+          status: database === "unavailable" ? "unavailable" : "ok",
+          mode: service.mode,
+          api: "v1",
+          capabilities: ["calendar.listEvents"],
+          ...(database ? { database } : {}),
+          ...(deps.health?.commit ? { commit: deps.health.commit } : {}),
+        });
       }
       if (key === "GET /v1/oauth/return" || key === "GET /v1/oauth/verify") {
         route = key;
