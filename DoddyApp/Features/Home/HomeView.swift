@@ -140,6 +140,9 @@ struct HomeView: View {
                 switch tool {
                 case .focus: FocusView()
                 case .stopwatch: StopwatchView()
+                // The kitchen timer and the wind-down (ADR-780).
+                case .timer: CountdownView(purpose: .timer)
+                case .windDown: CountdownView(purpose: .windDown)
                 }
             }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
@@ -259,8 +262,25 @@ struct HomeView: View {
                         }
                     }
                     .accessibilityIdentifier("home.stopwatch")
+                    // A kitchen timer and a wind-down countdown, on the island and in StandBy (ADR-780).
+                    Button { tool = .timer } label: {
+                        if CountdownController.shared.session(.timer).map({ !$0.isOver }) ?? false {
+                            Label("Timer · on", systemImage: "timer.circle")
+                        } else {
+                            Label("Timer", systemImage: "timer.circle")
+                        }
+                    }
+                    .accessibilityIdentifier("home.timer")
+                    Button { tool = .windDown } label: {
+                        if CountdownController.shared.session(.windDown).map({ !$0.isOver }) ?? false {
+                            Label("Wind down · on", systemImage: "moon")
+                        } else {
+                            Label("Wind down", systemImage: "moon")
+                        }
+                    }
+                    .accessibilityIdentifier("home.windDown")
                 } label: {
-                    Label("Focus and stopwatch", systemImage: "timer")
+                    Label("Focus, timers and stopwatch", systemImage: "timer")
                 }
                 .accessibilityIdentifier("home.timers")
                 // Today only points to Settings until something is connected (ADR-326).
@@ -1024,7 +1044,7 @@ private struct SlideIn: ViewModifier {
 }
 
 private enum HomeTool: String, Identifiable {
-    case focus, stopwatch
+    case focus, stopwatch, timer, windDown
     var id: String { rawValue }
 }
 

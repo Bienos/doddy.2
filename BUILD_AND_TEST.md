@@ -151,7 +151,8 @@ manager — `backend/.env.example` lists names with empty values.
 **App Group (on since 2026-10-11, owner has a paid Apple Developer account).** The widgets (ADR-219), the
 watch complications (ADR-262), "Save to Doddy" in the Share Sheet (ADR-311) and the parking widget (ADR-315)
 share a folder, the App Group `group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default).
-`project.yml` signs the app, the widget extension and the share extension with it (the watch targets, paused, are in `project-watch.yml`). Choose
+`project.yml` signs the app, the widget extension and the share extension with it (the watch targets, paused, are in `project-watch.yml`; the
+notification content extension, ADR-786, has no entitlements and needs only a team). Choose
 your team in Xcode for each target; automatic signing adds the App Groups capability and registers the group.
 If you also use push, set `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements`. To build without it
 (a free Apple ID, whose support for App Groups isn't verified here), set `DODDY_APP_ENTITLEMENTS`,
