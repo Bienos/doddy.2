@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { DEV_IDENTITIES } from "../src/auth.js";
+import { AppError } from "../src/errors.js";
+import { MemoryCipher } from "../src/memory/crypto.js";
 import { THREAD_MAX_MESSAGES } from "../src/messages/contract.js";
+import { ThreadService } from "../src/messages/service.js";
 import { USER_A, USER_B } from "./helpers.js";
 import { startWeb, type WebRig } from "./webRig.js";
 
@@ -105,6 +108,23 @@ test("anything outside the shape is refused and nothing is stored", async () => 
     assert.ok(res.status === 400 || res.status === 413, `${JSON.stringify(body).slice(0, 80)}: ${res.status}`);
   }
   assert.equal(await rig.store.messageThread(ID_A), null);
+});
+
+test("a thread over the most is refused before any message in it is read; one at the most is stored", async () => {
+  rig = await startWeb();
+  let touched = 0;
+  const trap = new Proxy({}, { get: () => { touched += 1; return undefined; } });
+  const service = new ThreadService({ store: rig.store, cipher: new MemoryCipher(Buffer.alloc(32, 5)) });
+  await assert.rejects(service.replace(ID_A, { messages: Array.from({ length: THREAD_MAX_MESSAGES + 1 }, () => trap) }), (e: unknown) => e instanceof AppError && e.code === "invalid_request");
+  assert.equal(touched, 0, "no message was looked at");
+
+  const over = await put(rig, { messages: Array.from({ length: THREAD_MAX_MESSAGES + 1 }, (_, i) => msg(i, "user", "x")) });
+  assert.equal(over.status, 400, over.text.slice(0, 200));
+  assert.equal(over.body.error.code, "invalid_request");
+  assert.equal(over.body.error.message, "That wasn't valid (messages). Nothing was stored.");
+  const atMost = await put(rig, { messages: Array.from({ length: THREAD_MAX_MESSAGES }, (_, i) => msg(i, "user", "x")) });
+  assert.equal(atMost.status, 200, atMost.text.slice(0, 200));
+  assert.equal((await rig.call("GET", "/v1/web/messages", { token: USER_A })).body.messages.length, THREAD_MAX_MESSAGES);
 });
 
 test("without the key the routes say it isn't set up and store nothing", async () => {

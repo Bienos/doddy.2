@@ -1,8 +1,8 @@
 import { AppError } from "../errors.js";
-import { refuse } from "../memory/contract.js";
+import { refuse, refuseLongList } from "../memory/contract.js";
 import type { MemoryCipher } from "../memory/crypto.js";
 import type { Store } from "../store.js";
-import { type ThreadMessageItem, ThreadSnapshot, type ThreadView } from "./contract.js";
+import { THREAD_MAX_MESSAGES, type ThreadMessageItem, ThreadSnapshot, type ThreadView } from "./contract.js";
 
 /**
  * The Messages copy for Doddy Web: encrypted on the way in with the same key and cipher as kept memory (ADR-603,
@@ -30,6 +30,7 @@ export class ThreadService {
 
   /** Replaces the kept copy with this snapshot, oldest first. An empty snapshot deletes it. */
   async replace(userId: string, body: unknown): Promise<{ stored: true; count: number }> {
+    refuseLongList(body, "messages", THREAD_MAX_MESSAGES);
     const parsed = ThreadSnapshot.safeParse(body);
     if (!parsed.success) refuse(parsed.error);
     const cipher = this.cipher();
