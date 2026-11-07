@@ -1,5 +1,7 @@
 # DECISIONS.md — DODDY V2 decision log with status
 
+> **No new rows here (owner, 7 Nov 2026).** This file keeps ADR-001 to ADR-812; search it by number and never read it whole. New decisions are one file each in `docs/decisions/`, named `YYYY-MM-DD-short-slug.md` (`docs/decisions/README.md`).
+
 Companion to the pack's proposal table `docs/architecture/DECISIONS.md` (left unmodified).
 Status values: **Applied in M0 — owner approval pending**, **Not exercised in M0**, **Open**. Nothing here is
 owner-approved; the owner marks each `accepted / rejected / needs investigation`. Dates are 2026-10-08.

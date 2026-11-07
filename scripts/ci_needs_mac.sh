@@ -18,7 +18,7 @@ no_mac() {  # 0 when the path can't affect the macOS job
     voice-agent/*) return 0 ;;
     # Text, design sources and the web/server code: none of it is in an Xcode target. Generated
     # app files (string catalogs, island art) live in the app folders, so they still run the Mac.
-    docs/* | prompts/* | reference/* | blog/* | site/* | design/* | assets/* | VISUAL_REVIEW/* \
+    docs/* | changes/* | prompts/* | reference/* | blog/* | site/* | design/* | assets/* | VISUAL_REVIEW/* \
       | l10n/* | contracts/* | schemas/* | server/* | backend/* | gateway/* | web/* | secrets/* \
       | .agents/* | .claude/*) return 0 ;;
     # Agent notes, excluded from every target's sources.
