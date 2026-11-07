@@ -52,9 +52,12 @@ public struct AssistantService: Sendable {
         history: [ConversationTurn] = [],
         locale: String = "en",
         image: AssistantImage? = nil,
+        file: AssistantFile? = nil,
         policy: AssistantPolicy
     ) async throws(AssistantError) -> AssistantAnswer {
         guard policy.consentGranted else { throw .consentRequired }
+        // One attachment a message, as the server checks.
+        guard image == nil || file == nil else { throw .invalidRequest }
         guard !question.allSatisfy(\.isWhitespace),
               question.unicodeScalars.count <= AssistantLimits.maxQuestionLength
         else { throw .invalidRequest }
@@ -80,7 +83,8 @@ public struct AssistantService: Sendable {
             groundingMemories: selected,
             recentTurns: Self.prepare(history),
             locale: Self.safeLocale(locale),
-            image: image)
+            image: image,
+            file: file)
 
         let reply = try await send(request)
         let verified = try CitationVerifier.verify(reply, for: request)

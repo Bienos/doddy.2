@@ -3,7 +3,7 @@
 // tests drive the route with a fake. Logs carry counts and codes only, never words.
 import Anthropic from "@anthropic-ai/sdk";
 import { answerJsonSchema, answerSchema, buildInput, buildInstructions, readPlanOffer, readProposal, type PlanOffer, type Proposal } from "./prompt.js";
-import type { AssistRequest } from "./request.js";
+import { fileText, type AssistRequest } from "./request.js";
 
 export interface AssistUsage { inputTokens: number; outputTokens: number }
 
@@ -22,6 +22,20 @@ export interface AssistantResponder {
 }
 
 export const MAX_OUTPUT_TOKENS = 1500;
+
+type AttachmentBlock = Anthropic.ImageBlockParam | Anthropic.DocumentBlockParam;
+
+/** The photo or file sent with this question, as the API's own blocks. The request schema has already checked it. */
+export function attachmentBlocks(req: AssistRequest): AttachmentBlock[] {
+  if (req.image) return [{ type: "image", source: { type: "base64", media_type: req.image.mediaType, data: req.image.data } }];
+  if (req.file?.mediaType === "application/pdf") {
+    return [{ type: "document", title: req.file.name, source: { type: "base64", media_type: "application/pdf", data: req.file.data } }];
+  }
+  if (req.file?.mediaType === "text/plain") {
+    return [{ type: "document", title: req.file.name, source: { type: "text", media_type: "text/plain", data: fileText(req.file.data) ?? "" } }];
+  }
+  return [];
+}
 
 export class ClaudeAssistantResponder implements AssistantResponder {
   readonly provider = "anthropic" as const;
@@ -42,9 +56,9 @@ export class ClaudeAssistantResponder implements AssistantResponder {
       max_tokens: MAX_OUTPUT_TOKENS,
       output_config: { effort: this.effort, format: { type: "json_schema", schema: answerJsonSchema(aliasToId.size > 0) } },
       system: buildInstructions(req.locale),
-      messages: [{ role: "user", content: req.image
-        // The photo first, then the text that says what it is for; it goes to this call only.
-        ? [{ type: "image", source: { type: "base64", media_type: req.image.mediaType, data: req.image.data } }, { type: "text", text: input }]
+      messages: [{ role: "user", content: attachmentBlocks(req).length > 0
+        // The photo or file first, then the text that says what it is for; it goes to this call only.
+        ? [...attachmentBlocks(req), { type: "text", text: input }]
         : input }],
     }, { signal });
     const usage: AssistUsage = {
