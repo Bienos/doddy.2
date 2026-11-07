@@ -190,7 +190,7 @@ test("Outlook reply: the card's To line is the whole address the reply goes to, 
   assert.match(reply.done.body.text, /reply to marta@demo\.example/);
 });
 
-test("Outlook reply: a Reply-To other than the sender is refused, naming both, and nothing is sent", async () => {
+test("Outlook reply: a Reply-To other than the sender is refused with the one fixed answer, and nothing is sent", async () => {
   rig = await start();
   await ready(rig, "outlook");
   const change = editOm2(rig);
@@ -199,8 +199,9 @@ test("Outlook reply: a Reply-To other than the sender is refused, naming both, a
   change.replyTo = [{ emailAddress: { name: "Marta Demo", address: "other@elsewhere.example" } }];
   const refused = await prepare(rig, "reply_outlook_email", args);
   assert.equal(refused.status, 404, refused.text);
-  assert.match(refused.body.error.message, /from marta@demo\.example but asks for replies to go to other@elsewhere\.example/);
-  assert.match(refused.body.error.message, /Nothing was sent\.$/);
+  // A write's lookup miss is one answer for every cause (ADR-708), so the message names neither address.
+  assert.equal(refused.body.error.message, LOOKUP_FAILED);
+  assert.doesNotMatch(refused.body.error.message, /marta@demo|other@elsewhere/);
   assert.ok((rig.provider.executed.at(-1)!.arguments.select as string[]).includes("replyTo"), "the reply lookup asks for Reply-To");
   // Even a run with no card stops at the lookup.
   assert.notEqual((await runRaw(rig, "reply_outlook_email", args)).status, 200);
@@ -208,7 +209,7 @@ test("Outlook reply: a Reply-To other than the sender is refused, naming both, a
   change.replyTo = [{ emailAddress: { address: "not an address" } }];
   const unreadable = await prepare(rig, "reply_outlook_email", args);
   assert.equal(unreadable.status, 404);
-  assert.match(unreadable.body.error.message, /an address Doddy can't read/);
+  assert.equal(unreadable.body.error.message, LOOKUP_FAILED);
   assert.deepEqual(writes(rig), [], "no reply was sent");
 
   // The sender's own address as Reply-To (in any case) is the same recipient.
