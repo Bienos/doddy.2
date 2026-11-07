@@ -82,6 +82,13 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
   7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
   test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
+- Package versions are pinned: `Config/Package.resolved` holds every Swift package the app resolves
+  (LiveKit is also `exactVersion` in `project.yml`). `make project`, `scripts/ci.sh` and Xcode Cloud's
+  `ci_post_clone.sh` install it into the generated project; CI fails if resolution changes it, and keeps
+  what it resolved as the `app-package-resolved` artifact. To move versions: `make update-packages` on a
+  Mac, then commit `Config/Package.resolved` (decision `docs/decisions/2026-11-07-reproducible-app-builds.md`).
+- Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
+  Release-only error shows up before Xcode Cloud archives.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
   is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths) and
   doesn't carry the owner's `owner-approved` label. Adding the label reruns it.

@@ -89,5 +89,13 @@ grep -q "couldn't set build number" "$work/out" || fail "and say what it couldn'
 rm -rf "$work/repo"; mkdir -p "$work/repo"; run
 [ $? -ne 0 ] || fail "with no Doddy.xcodeproj the build must stop"
 
+# The committed package pins reach the generated project; without them nothing is created.
+pins="$work/repo/Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+fresh; run
+[ ! -e "$pins" ] || fail "with no Config/Package.resolved no resolved file should appear in the project"
+fresh; printf '{ "pins" : [], "version" : 3 }\n' > "$work/repo/Config/Package.resolved"; run
+[ $? -eq 0 ] || fail "installing the pins should succeed: $(cat "$work/out")"
+cmp -s "$work/repo/Config/Package.resolved" "$pins" || fail "Config/Package.resolved should be copied into the project unchanged"
+
 if [ "$failures" -ne 0 ]; then echo "FAIL: $failures check(s)"; exit 1; fi
 echo "PASS: ci_post_clone.sh sets the build number, team, bundle ID and push entitlements and refuses bad values"

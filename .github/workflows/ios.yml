@@ -130,7 +130,21 @@ jobs:
           # pushes to main and runs by hand run every UI test. A pull request labelled
           # `full-ui-tests` runs them all too (the label is read when the run starts).
           DODDY_UI_TESTS: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ui-tests')) && 'all' || 'smoke' }}
+          # Pushes to main and runs by hand also compile Release for devices, unsigned, so a
+          # Release-only error fails here instead of in Xcode Cloud's archive.
+          DODDY_RELEASE_BUILD: ${{ github.event_name != 'pull_request' && '1' || '0' }}
         run: scripts/ci.sh --app-only
+
+      # What this run resolved for the app's packages: the file to commit as Config/Package.resolved
+      # when pinning or moving versions (`make update-packages` does the same on a Mac).
+      - name: Keep the resolved package versions
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: app-package-resolved
+          path: build/Package.resolved
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Keep the test results
         if: always()

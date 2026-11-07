@@ -105,6 +105,7 @@ run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_b
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
+run_step "Privacy manifest declares every required-reason API (7 Nov audit)" scripts/test_check_privacy_manifest.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -230,6 +231,10 @@ elif ! command -v xcodegen >/dev/null 2>&1; then
   not_run "iOS app build + tests" "xcodegen not found (brew install xcodegen)"
 else
   run_step "Generate Xcode project" xcodegen generate --spec project.yml
+  # The app's pinned package versions (Config/Package.resolved, 7 Nov 2026 audit): installed into the
+  # generated project before anything resolves, and checked after `xcodebuild -list` resolves.
+  resolved_in_project=Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  run_step "Install the pinned package versions" scripts/install_package_resolved.sh Doddy.xcodeproj
   # Default: first available iPhone simulator; override with DODDY_DESTINATION.
   if [ -n "${DODDY_DESTINATION:-}" ]; then
     dest=$DODDY_DESTINATION
@@ -242,6 +247,26 @@ else
   else
     echo "Destination: $dest"
     run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
+    # `-list` resolved the packages. A copy of what it resolved always goes to build/Package.resolved
+    # (hosted CI keeps it), so pinning or moving versions is one download. With pins committed, any
+    # difference fails: the build would not be the one TestFlight gets.
+    mkdir -p build
+    if [ ! -f "$resolved_in_project" ]; then
+      not_run "App package versions match Config/Package.resolved" "xcodebuild wrote no $resolved_in_project"
+    else
+      cp "$resolved_in_project" build/Package.resolved
+      if [ ! -f Config/Package.resolved ]; then
+        record "App package versions match Config/Package.resolved" "SKIPPED" \
+          "no pins committed yet: commit build/Package.resolved from this run as Config/Package.resolved"
+      elif cmp -s Config/Package.resolved "$resolved_in_project"; then
+        record "App package versions match Config/Package.resolved" PASS ""
+      else
+        diff -u Config/Package.resolved "$resolved_in_project" || true
+        record "App package versions match Config/Package.resolved" FAIL \
+          "resolution changed the pins; if that was meant, run make update-packages on a Mac and commit it"
+        failed=1
+      fi
+    fi
     # Build once, then run the unit tests and the UI tests as two passes, with the simulator
     # restarted in between (ADR-561). The unit tests run inside the app on the simulator; right
     # after them its first launches are slow, and on 20 Oct (run 39496321722) XCTest could not take
@@ -310,6 +335,14 @@ else
       fi
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
+    fi
+    # DODDY_RELEASE_BUILD=1 (hosted CI on pushes to main): compile the Release configuration for
+    # devices, unsigned. Everything above is a Debug simulator build; without this, Xcode Cloud's
+    # archive was the first Release compile, where a failure costs build hours and a TestFlight build.
+    if [ "${DODDY_RELEASE_BUILD:-0}" = "1" ]; then
+      run_step "xcodebuild build: Release, generic iOS device, unsigned" xcodebuild build -project Doddy.xcodeproj \
+        -scheme Doddy -configuration Release -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO \
+        -IDEBuildingContinueBuildingAfterErrors=YES
     fi
   fi
 fi
