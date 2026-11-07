@@ -5711,6 +5711,17 @@
         }
       }
     },
+    "Allow selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwól na zaznaczone"
+          }
+        }
+      }
+    },
     "Allowed": {
       "extractionState": "manual",
       "localizations": {
@@ -8066,6 +8077,17 @@
         }
       }
     },
+    "Asking…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytam…"
+          }
+        }
+      }
+    },
     "Asks first. Puts back only what Doddy did, if it hasn't changed since.": {
       "extractionState": "manual",
       "localizations": {
@@ -9536,6 +9558,17 @@
         }
       }
     },
+    "Calendar": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz"
+          }
+        }
+      }
+    },
     "Calendar is off in Connections, so events aren't shown.": {
       "extractionState": "manual",
       "localizations": {
@@ -10025,6 +10058,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "平静"
+          }
+        }
+      }
+    },
+    "Camera": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparat"
           }
         }
       }
@@ -13416,6 +13460,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontakt"
+          }
+        }
+      }
+    },
+    "Contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontakty"
           }
         }
       }
@@ -18376,6 +18431,17 @@
         }
       }
     },
+    "Doddy can ask your iPhone for these now, so nothing interrupts you later. Your iPhone asks each question itself, and you can say no to any of them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może teraz poprosić Twój iPhone o te zgody, żeby nic Ci później nie przeszkadzało. iPhone sam zadaje każde pytanie i na każde możesz odpowiedzieć „nie”."
+          }
+        }
+      }
+    },
     "Doddy can make a file": {
       "extractionState": "manual",
       "localizations": {
@@ -22534,6 +22600,17 @@
         }
       }
     },
+    "Doddy uses each one only when you ask. You can change any of them later in iPhone Settings or in Doddy › Settings › Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy używa każdej z nich tylko wtedy, gdy o to poprosisz. Zmienisz je później w Ustawieniach iPhone’a albo w Doddy › Ustawienia › Połączenia."
+          }
+        }
+      }
+    },
     "Doddy was asked to": {
       "extractionState": "manual",
       "localizations": {
@@ -24815,6 +24892,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "已由 Doddy 完成，并已核对"
+          }
+        }
+      }
+    },
+    "Done. A few were refused. You can change those in iPhone Settings › Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe. Na kilka rzeczy nie zezwolono. Możesz to zmienić w Ustawieniach iPhone’a › Doddy."
+          }
+        }
+      }
+    },
+    "Done. You won't be asked for these again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe. Nie zapytamy o to ponownie."
           }
         }
       }
@@ -28631,6 +28730,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "用于导游讲解、演讲或广播。Doddy 会翻译成你的语言，绝不会对你周围的人说话。不要用于别人的私人对话。"
+          }
+        }
+      }
+    },
+    "For a photo note, only when you tap Take a photo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do notatki ze zdjęciem, tylko gdy stukniesz Zrób zdjęcie."
+          }
+        }
+      }
+    },
+    "For reminders at a place, when you tap “Use where I am”. Never in the background.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dla przypomnień w miejscu, gdy stukniesz „Użyj miejsca, w którym jestem”. Nigdy w tle."
+          }
+        }
+      }
+    },
+    "For reminders, timers and alarms when Doddy isn't open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dla przypomnień, minutników i budzików, gdy Doddy nie jest otwarty."
           }
         }
       }
@@ -36992,6 +37124,17 @@
         }
       }
     },
+    "Let Doddy get ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotuj Doddy’ego"
+          }
+        }
+      }
+    },
     "Let Doddy use my memories on calls": {
       "extractionState": "manual",
       "localizations": {
@@ -38692,6 +38835,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lokalizacja jest wyłączona dla Doddy’ego. Wpisz miasto lub ulicę."
+          }
+        }
+      }
+    },
+    "Location, while using Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokalizacja, gdy używasz Doddy’ego"
           }
         }
       }
@@ -41107,6 +41261,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Większość biegania spokojnie i nigdy dwa mocne dni pod rząd"
+          }
+        }
+      }
+    },
+    "Motion & Fitness": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruch i fitness"
           }
         }
       }
@@ -45515,6 +45680,17 @@
         }
       }
     },
+    "Not now, ask me when Doddy needs one": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie teraz, Doddy zapyta, gdy coś będzie mu potrzebne"
+          }
+        }
+      }
+    },
     "Not now, keep it inside Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -48033,6 +48209,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic nie zostało dodane."
+          }
+        }
+      }
+    },
+    "Nothing was asked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O nic nie zapytano."
           }
         }
       }
@@ -55277,6 +55464,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "照片会随你的下一条消息发送"
+          }
+        }
+      }
+    },
+    "Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia"
           }
         }
       }
@@ -70347,6 +70545,17 @@
         }
       }
     },
+    "So he can hear you when you talk to him.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby mógł Cię słyszeć, gdy z nim rozmawiasz."
+          }
+        }
+      }
+    },
     "Some of the Buy buttons use partner links: Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": {
       "extractionState": "manual",
       "localizations": {
@@ -72300,6 +72509,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Krok %lld z %lld"
+          }
+        }
+      }
+    },
+    "Steps, distance and floors for a day you ask about.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kroki, dystans i piętra z dnia, o który pytasz."
           }
         }
       }
@@ -86374,6 +86594,28 @@
         }
       }
     },
+    "To add or change a reminder, only after you tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby dodać lub zmienić przypomnienie, tylko po Twoim stuknięciu."
+          }
+        }
+      }
+    },
+    "To count the photos you took on a day you ask about.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby policzyć zdjęcia zrobione w dzień, o który pytasz."
+          }
+        }
+      }
+    },
     "To do": {
       "extractionState": "manual",
       "localizations": {
@@ -86429,6 +86671,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "待办"
+          }
+        }
+      }
+    },
+    "To find a number or email when you say “text Ania”, and for birthdays.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby znaleźć numer lub e-mail, gdy mówisz „napisz do Ani”, i dla urodzin."
+          }
+        }
+      }
+    },
+    "To read your day. An event is added or changed only after you tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby czytać Twój dzień. Wydarzenie jest dodawane lub zmieniane dopiero po Twoim stuknięciu."
           }
         }
       }

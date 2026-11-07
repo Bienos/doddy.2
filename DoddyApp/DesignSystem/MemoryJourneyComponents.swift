@@ -53,7 +53,6 @@ struct JourneyHeading: View {
 }
 
 /// Byte-identical drawings from the owner's numbered ZIP. No invented animation.
-/// Light paper backing preserves the supplied cream/black illustration in dark appearance.
 struct UploadedCharacterView: View {
     let assetName: String
     var height: CGFloat = 180
@@ -178,9 +177,10 @@ struct SceneryBackdrop: View {
     }
 }
 
-/// The picture itself at an exact height, with the paper backing in dark appearance. Shared by
-/// `UploadedCharacterView` and the opening's hand-over (ADR-225), so the opening's last frame
-/// and Home's picture are drawn the same way, pixel for pixel.
+/// The picture itself at an exact height. Shared by `UploadedCharacterView` and the opening's hand-over
+/// (ADR-225), so the opening's last frame and Home's picture are drawn the same way, pixel for pixel.
+/// Drawn the same in light and dark: no card behind it. In dark appearance it gets a thin white outline
+/// (`DarkOutline`), so his black outline and limbs don't vanish into the canvas.
 struct CharacterArtImage: View {
     let assetName: String
     let height: CGFloat

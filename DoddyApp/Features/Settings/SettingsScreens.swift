@@ -97,7 +97,7 @@ struct AboutYouSettingsView: View {
 
 /// Settings › Appearance.
 struct AppearanceSettingsView: View {
-    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.light.rawValue
+    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.default.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.savedIsland) private var savedIslandOn = true
 
