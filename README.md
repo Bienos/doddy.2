@@ -10,13 +10,30 @@ This repository holds everything: the iPhone app, the servers behind it, Doddy W
 
 ## How Doddy works
 
-Three promises shape the whole app. They are written down in [docs/trust/](docs/trust/README_START_HERE.md) (the "constitution"), and the code enforces them, not just the AI's instructions:
+Three promises shape the whole app. They are written down in [docs/trust/](docs/trust/README_START_HERE.md) (the "constitution"). The rule is that code enforces them, not only the AI's instructions; [docs/trust/REPO_ALIGNMENT.md](docs/trust/REPO_ALIGNMENT.md) says where the code does and where it doesn't yet.
 
-1. **Asks first.** Anything that changes something outside the app (an event, a message, a list someone else sees) is shown as a card with the exact details. Doddy acts only after you tap, and only on what the card showed. If anything changes, he asks again.
-2. **Never pretends.** Doddy says something is done only after the other service confirms it. He says he saved or forgot something only after the phone's database really did it. If he doesn't know, he says so.
-3. **Your notes stay on your iPhone.** Memory lives in a database on the phone. Settings › Privacy › "What leaves this iPhone" lists what is sent where, and when.
+1. **Asks first.** Anything that changes something outside the app (an event, a message, a list someone else sees) is shown as a card with the details. Doddy acts only after you tap. If he can't tell whether it worked, he says so instead of trying again.
+2. **Never pretends.** Doddy says something is done only after the other service confirms it, and that he saved or forgot something only after the phone's database has done it. If he doesn't know, he says so. He says he is an AI, not a person.
+3. **Your notes are kept on your iPhone.** Memory lives in a database on the phone, not on a server. During a conversation, the voice company gets the notes and lists Doddy needs for it. A copy on Doddy's server exists only if you turn that on. Settings › Privacy › "What leaves this iPhone" lists what goes where, and when.
 
-<!-- WHAT-WORKS -->
+## What Doddy can do today
+
+This is what the code on `main` does (7 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
+
+- **Talk.** Tap Doddy on Home and talk. He listens only after a tap ("Start listening when I open Doddy" stays off unless you turn it on). The voice runs on ElevenLabs, or on OpenAI if you choose it in Settings › Voice; while you talk, your voice goes to that company.
+- **Remember.** Notes and lists live in a database on the phone. Doddy asks before keeping anything. You can find notes by their words or their meaning, correct them, delete them, export them, and back them up to an encrypted file.
+- **Your day.** With iOS's permission he reads and changes your calendar and reminders (several changes on one card, with undo), looks up contacts and birthdays, drafts texts and emails for you to send, sets timers and alarms (alarms need iOS 26), remembers where you parked and tells you when to leave. There are also shopping lists, a translator, meeting recordings written out on the phone, steps and Apple Health, and morning and evening check-ins.
+- **With help from the servers.** Web, news and place searches; a typed chat in Messages answered by Claude; Gmail, Outlook, Google Calendar, Drive, Notion and Todoist once you connect them; documents and slide decks; this week's shop leaflets; longer tasks that run in the background. Some of these are off on the server until they are switched on.
+- **Around the phone.** Home Screen and Lock Screen widgets, Doddy in the Dynamic Island while he talks, Siri and Shortcuts, the Action Button, and "Save to Doddy" in the Share menu.
+- **Languages.** The app's screens are in Polish by default, with English and eight more languages to choose from. The eight are machine translations no native speaker has checked yet.
+- **Doddy Web.** In a browser, sign in with a code from your iPhone to see the documents Doddy made, your connected apps, his activity and a chat. Logbook, Memory and Messages are ready on the server, but the iPhone doesn't send them yet.
+- **The website** [www.doddy.lol](https://www.doddy.lol) explains Doddy in ten languages and has an early-access list.
+
+**Not done yet:**
+- On the welcome screen only Sign in with Apple works; the other sign-in buttons aren't connected.
+- Calling Doddy's phone number, and Doddy phoning a business for you, are written but not live: their voice agents haven't been created.
+- Invoices can't be sent to inFakt. The BLIK card only shows the payment details: Doddy never sends money.
+- The app isn't on TestFlight yet. The Apple Watch and Mac apps are paused.
 
 ## How the parts fit together
 
