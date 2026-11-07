@@ -10,7 +10,7 @@ import Foundation
 /// leaves it unknown whether the file exists: the card says it could not confirm, and the next tap asks for a new
 /// approval rather than replaying the old one.
 ///
-/// NOT COMPILED here (needs the app target); the rules it relies on are tested in DoddyCore.
+/// Compiled in hosted CI (#195), NOT RUN on a device; the rules it relies on are tested in DoddyCore.
 struct ServerThreadDocumentMaker: ThreadDocumentMaker {
     func make(_ proposal: AssistantProposal) async throws -> ThreadDocument {
         guard let client = await OnlineAccountsClientFactory.ready() else { throw ThreadDocumentError.notConfigured }
