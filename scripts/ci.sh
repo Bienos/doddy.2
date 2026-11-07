@@ -63,6 +63,26 @@ restart_simulator() {
   xcrun simctl shutdown "$1" 2>/dev/null || true  # fails harmlessly if it is already shut down
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
+# Runs a command and stops it if it is still running after $1 seconds (ADR-764). For a simulator
+# whose drawing has frozen: xcodebuild then waits for ever on an app launch that never returns.
+with_watchdog() {  # seconds, command...
+  local limit=$1; shift
+  "$@" &
+  local pid=$! waited=0
+  while kill -0 "$pid" 2>/dev/null; do
+    if [ "$waited" -ge "$limit" ]; then
+      echo "WATCHDOG: still running after ${limit} s, stopping it (the simulator has most likely frozen, ADR-764)"
+      kill -TERM "$pid" 2>/dev/null || true
+      sleep 15
+      kill -KILL "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+      return 124
+    fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+  wait "$pid"
+}
 
 if [ "$app_only" -eq 1 ]; then
   record "Pack, guard, agent spec, page and catalog checks" "SKIPPED" "--app-only: Linux core runs them"
@@ -240,6 +260,12 @@ else
       if [ -n "${sim_id:-}" ]; then
         run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
       fi
+      # The native island test runs on its own, last (ADR-764). Twice (2 Nov, run 41368047283; 7 Nov,
+      # run 42381695855) the hosted simulator's drawing froze right after it tapped a button on the
+      # system's island: backboardd waited on a GPU command that never finished, SpringBoard waited
+      # on backboardd, the tap never reached the app, and every later test failed to launch the app
+      # until the job's 75 minutes ran out. On its own, a freeze costs only this test.
+      island_test="DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd"
       # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
       # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
       # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
@@ -248,12 +274,22 @@ else
         # shellcheck disable=SC2086
         run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \
           -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyUITests \
+          -skip-testing:"$island_test" \
           -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
       else
         # shellcheck disable=SC2086
         run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-          -destination "$dest" -only-testing:DoddyUITests $test_limits
+          -destination "$dest" -only-testing:DoddyUITests -skip-testing:"$island_test" $test_limits
       fi
+      if [ -n "${sim_id:-}" ]; then
+        run_step "Restart the simulator before the native island test" restart_simulator "$sim_id"
+      fi
+      # The test takes under a minute; 3 minutes ends it if it hangs. The watchdog ends the whole
+      # pass after 8 (runner start about 70 s, the test, and the spindump XCTest takes on a hang),
+      # where a frozen simulator would otherwise hold xcodebuild until the job's limit.
+      run_step "xcodebuild test: native island test (alone, 8-minute watchdog)" with_watchdog 480 \
+        xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
+        -only-testing:"$island_test" -test-timeouts-enabled YES -default-test-execution-time-allowance 180
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
     fi
