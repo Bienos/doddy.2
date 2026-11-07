@@ -10,7 +10,7 @@ import SwiftUI
 /// The file goes to this app's temporary folder with complete file protection, and the folder is
 /// emptied each time the sheet loads, like the files Doddy made (`MadeDocumentsModel`).
 ///
-/// NOT COMPILED here (no Xcode in the session that wrote it); the text and file name rules are
+/// Compiled in hosted CI (#195), NOT RUN on a device; the text and file name rules are
 /// `CallRecap` in DoddyCore.
 struct CallRecapSection: View {
     @Environment(\.appEnvironment) private var environment

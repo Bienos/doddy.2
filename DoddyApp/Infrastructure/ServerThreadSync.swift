@@ -5,7 +5,7 @@ import Foundation
 /// Files list. With no session for that server (this iPhone has never signed in to it) nothing is sent and no
 /// sign-in is started just to send: there is no web account to show it to. A refused session is renewed once.
 ///
-/// NOT COMPILED here (needs the app target); the client and the snapshot are tested in DoddyCore.
+/// Compiled in hosted CI (#195), NOT RUN on a device; the client and the snapshot are tested in DoddyCore.
 struct ServerThreadSync: ThreadSyncClient {
     func send(_ snapshot: ThreadSync.Snapshot) async throws(WebLinkError) {
         try await withClient { client throws(WebLinkError) in try await client.send(snapshot) }
