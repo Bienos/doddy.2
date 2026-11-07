@@ -64,7 +64,7 @@ Choices I made for the owner, to confirm or change:
 | `scripts/typecheck_app_logic.sh` | PASS, 35 app files in Swift 6 including `OpenLoopsModel.swift` |
 | `tools/build_strings_catalog.py --check` | PASS (the page adds no catalog string) |
 | Full DoddyCore suite (`swift test`, same flags) | 2,394 tests, 0 failures |
-| Hosted CI on PR #197, head `6708be3` (run 42362625596, 7 Nov) | `ci` (the Mac job: `scripts/ci.sh --app-only`, build, unit and UI tests), `swift`, `core`, `backend`, `node`, `messaging` and `checks` all succeeded; `island` was skipped. The three `Vercel –` statuses are red ("Account is blocked.") as on every pull request, not from this change |
+| Hosted CI on PR #197, head `6708be3` (run 42362625596, 7 Nov) | `ci` (the Mac job: `scripts/ci.sh --app-only`, build, unit and UI tests), `swift`, `core`, `backend`, `node`, `messaging` and `checks` all succeeded; `island` was skipped. The three `Vercel –` statuses are red ("Account is blocked.") as on every pull request. Not from this change, and not from team `doddyyyy`: it is not blocked (checked 7 Nov) and a pull request's branch has no deployment there by design (ADR-498) |
 
 Not run here: the other `scripts/ci.sh --core-only` steps (backend, messaging server, web, site, string catalogs, app-logic type-check). This change touches none of them.
 
