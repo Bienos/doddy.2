@@ -20,6 +20,8 @@ enum PreferenceKey {
     /// The Apple Watch app shows pinned notes, reminders and lists (ADR-232); on unless turned off.
     static let watchShowContent = "watchShowContent"
     static let hideCharacterArt = "hideCharacterArt"
+    /// "Note saved" in the Dynamic Island for a few seconds after a save (ADR-781). On unless turned off.
+    static let savedIsland = "savedIsland"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
     /// The one-time basketball introduction has been shown or skipped on this installation.
@@ -256,6 +258,9 @@ struct RootView: View {
                 Task { await ErrandsModel.shared.refresh() }
                 FocusController.shared.refresh()
                 StopwatchController.shared.refresh()
+                CountdownController.shared.refresh()
+                // "A thought is ready for review" (ADR-785): the next one, from the notes as they are now.
+                Task { _ = await ThoughtReviewScheduler.refresh(store: store) }
                 // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                 // A cold launch also syncs (LaunchWork), so one that just ran is not repeated (ADR-547).
                 Task { await SharedListsController.shared.syncAllUnlessRecent() }

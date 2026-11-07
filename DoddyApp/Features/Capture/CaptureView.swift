@@ -302,6 +302,8 @@ struct CaptureView: View {
         // A note now: the draft goes (ADR-362).
         drafts.remove(id: draftID)
         saved = record
+        // "Note saved" in the island (ADR-781): after the save, never before; never its words.
+        SavedNoteIsland.flash()
     }
 }
 

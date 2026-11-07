@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%lld saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane: %lld"
+          }
+        }
+      }
+    },
     "%lld steps": {
       "extractionState": "manual",
       "localizations": {
@@ -8,6 +19,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kroki: %lld"
+          }
+        }
+      }
+    },
+    "%lld this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tym tygodniu: %lld"
           }
         }
       }
@@ -781,6 +803,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa przerwana"
+          }
+        }
+      }
+    },
+    "Counting down": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odliczanie"
           }
         }
       }
@@ -2392,6 +2425,17 @@
         }
       }
     },
+    "None this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic w tym tygodniu"
+          }
+        }
+      }
+    },
     "Not listening right now": {
       "extractionState": "manual",
       "localizations": {
@@ -2756,6 +2800,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy"
+          }
+        }
+      }
+    },
+    "Open Doddy once": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz raz Doddy"
           }
         }
       }
@@ -3526,6 +3581,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wstrzymuje nagrywanie. Mikrofon jest wyłączony, dopóki nie wznowisz."
+          }
+        }
+      }
+    },
+    "Phone down when it ends": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefon odłożony, gdy minie"
           }
         }
       }
@@ -4826,6 +4892,17 @@
         }
       }
     },
+    "TIMER": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MINUTNIK"
+          }
+        }
+      }
+    },
     "TRANSLATE": {
       "extractionState": "manual",
       "localizations": {
@@ -5102,6 +5179,17 @@
         }
       }
     },
+    "Time to put the phone down": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pora odłożyć telefon"
+          }
+        }
+      }
+    },
     "Time's up": {
       "extractionState": "manual",
       "localizations": {
@@ -5216,6 +5304,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "计时器"
+          }
+        }
+      }
+    },
+    "Timer finished": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutnik się skończył"
           }
         }
       }
@@ -5356,6 +5455,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "GŁOS"
+          }
+        }
+      }
+    },
+    "WIND DOWN": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ODPRĘŻENIE"
           }
         }
       }
@@ -5588,6 +5698,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Slajdy gotowe"
+          }
+        }
+      }
+    },
+    "saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zapisane"
           }
         }
       }
