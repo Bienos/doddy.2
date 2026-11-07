@@ -4,9 +4,9 @@
 import type pg from "pg";
 
 /** Features with a server-wide cap. `accounts`, `sms` and `outbound_calls` are the abuse caps of ADR-702 and ADR-704. */
-export type CappedFeature = "assistant" | "deals" | "errands" | "accounts" | "sms" | "outbound_calls";
+export type CappedFeature = "assistant" | "deals" | "errands" | "studio" | "accounts" | "sms" | "outbound_calls";
 /** The part of a paid feature's cap that accounts still "new" share (ADR-702). Counted inside the feature's own total. */
-export type NewAccountPool = "assistant_new" | "deals_new" | "errands_new";
+export type NewAccountPool = "assistant_new" | "deals_new" | "errands_new" | "studio_new";
 type Q = Pick<pg.PoolClient, "query"> | pg.Pool;
 
 /** Today in UTC as the database counts it, or the day in parameter `n` (YYYY-MM-DD, for a fixed clock). */
@@ -41,7 +41,8 @@ export async function returnServerSlot(c: Q, feature: CappedFeature | NewAccount
 /** Accounts cost nothing to make, so mass-made ones must not be able to use up a paid feature's whole day. */
 export const DEFAULT_NEW_ACCOUNT_HOURS = 24;
 /** Per UTC day, for all new accounts together, inside the feature's server-wide cap. */
-export const DEFAULT_NEW_ACCOUNT_POOL = { assistant: 200, deals: 200, errands: 10 } as const;
+// Studio (ADR-740) pays for a model, web searches and a code container for every job, so its pool is closed: 0.
+export const DEFAULT_NEW_ACCOUNT_POOL = { assistant: 200, deals: 200, errands: 10, studio: 0 } as const;
 
 type PoolFeature = keyof typeof DEFAULT_NEW_ACCOUNT_POOL;
 

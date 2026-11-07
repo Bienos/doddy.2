@@ -511,10 +511,11 @@ test("config: the web app is off unless DODDY_WEB_ORIGIN is a valid origin", () 
     distDir: "../web/dist",
     trustProxy: false,
     signInTriesPerClient: 10,
+    social: null,
   });
   assert.deepEqual(
     loadConfig({ DODDY_WEB_ORIGIN: "https://app.doddy.lol/", DODDY_WEB_DIST: "/srv/web", DODDY_TRUST_PROXY: "1", DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: "40" }).web,
-    { origin: "https://app.doddy.lol", distDir: "/srv/web", trustProxy: true, signInTriesPerClient: 40 },
+    { origin: "https://app.doddy.lol", distDir: "/srv/web", trustProxy: true, signInTriesPerClient: 40, social: null },
   );
   assert.throws(() => loadConfig({ DODDY_WEB_ORIGIN: "https://app.doddy.lol", DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: "0" }), /DODDY_WEB_SIGNIN_TRIES_PER_CLIENT/);
   for (const bad of ["http://app.doddy.lol", "https://app.doddy.lol/app", "https://app.doddy.lol?x=1", "not a url", "https://user:pw@app.doddy.lol"]) {

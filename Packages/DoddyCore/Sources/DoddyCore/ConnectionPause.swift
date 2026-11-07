@@ -21,18 +21,25 @@ public enum ConnectionPause {
         case .checkErrands:
             // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
             false
-        case .handOverErrand:
-            // Doddy's server searches and reads the web for it (ADR-570).
+        case .lostWallet:
+            // Doddy's own checklist (ADR-692); a page or a call opens only on the person's tap, like any link.
+            false
+        case .handOverErrand, .makeSomething:
+            // Doddy's server searches and reads the web for it (ADR-570, ADR-740).
             true
         case .findDeals:
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
             true
+        case .draftInvoice:
+            // A draft on this iPhone's screen (ADR-677); no other app or account is used.
+            false
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
-             .convertCurrency:
-            // Currency rates come from the ECB's public file, another service (ADR-300).
+             .convertCurrency, .textMe, .callMeLater:
+            // Currency rates come from the ECB's public file, another service (ADR-300). A text,
+            // or a call booked for later, goes through Doddy's server and Twilio (ADR-750).
             true
         case .remindAboutNote(let draft):
             // A time stays inside Doddy; a place is looked up in Apple Maps, another service.

@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "Type the amount (0.05 USDC) to confirm this payment. Nothing was paid.",
+    "correlationId": "568ec197-ae5a-467d-81ea-a41cf8725ce1",
+    "receipt": {
+      "operationId": "7f2f1218-29ea-4a43-b9ad-ea11973dbce3",
+      "operation": "pay",
+      "timestamp": "2026-10-12T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: Type the amount (0.05 USDC) to confirm this payment. Nothing was paid.",
+      "errorCode": "amount_confirmation_required",
+      "host": "demo-shop.example",
+      "amount": "0.05",
+      "transaction": null
+    }
+  }
+}

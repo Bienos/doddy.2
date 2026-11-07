@@ -24,7 +24,7 @@ Before you start, read `CLAUDE.md`, `STATUS.md`, `site/README.md`, `l10n/README.
 - **Content Security Policy** in `site/vercel.json`: `script-src 'self'` plus the SHA-256 hashes of exactly two inline scripts (the `js` class line and the Vercel analytics queue), `form-action 'none'`. An inline script that is not byte-identical, or a new inline script, is blocked. External scripts from the same origin are allowed.
 - **Signup consent is versioned.** `main.js` sends `CONSENT_VERSION = "waitlist-note-v1"`; `site/api/waitlist.js` stores it (cut to 40 characters) with the email; the privacy policy draft describes it. The note under the email field is the wording that version names.
 - **Brand and design rules:** the site is light-only; Bricolage Grotesque for headings and Caveat for Doddy's own voice load from Google Fonts; **no font binaries may be added to the repository**; character art comes only from the files already in `site/assets/poses/`; the tagline "Your mate in your pocket." is not translated.
-- **Hosting:** Vercel, but the account is blocked and recent builds are cancelled. You cannot see it live. Test with a local server.
+- **Hosting:** Vercel (team `doddyyyy`, not blocked). Pull-request branches don't deploy, so you cannot see your change live. Test with a local server.
 
 ## Decisions already made by the owner
 

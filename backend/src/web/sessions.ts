@@ -11,15 +11,16 @@ export { clientKey };
 /**
  * Doddy Web sign-in (ADR-600).
  *
- * The browser has no Apple or Google sign-in of its own yet, and the iPhone's account is a device
- * session (ADR-563). So the iPhone vouches for the browser:
+ * The iPhone's account is a device session (ADR-563), so the iPhone vouches for the browser (Apple
+ * and Google sign-in, once linked to the account, are the other way in: `social.ts`, ADR-818):
  *  1. In Settings the iPhone asks for a code (`POST /v1/web/link-codes`, with its own session).
  *  2. The person types the code at the web address the phone shows. It lasts five minutes, works
  *     once, and only the newest code of a user works.
  *  3. The browser gets a session for the same user: a random token in an HttpOnly, SameSite=Strict
  *     cookie that the page's scripts can't read. The server keeps only its SHA-256.
  * A browser session can read the workspace and sign browsers out; it can't run tools, change
- * accounts or make more codes (`COOKIE_READABLE` and the web routes decide). The iPhone lists and
+ * accounts or make more codes (`COOKIE_READABLE` and the web routes decide). It can link or unlink
+ * Apple and Google only within 15 minutes of signing in (`social.ts`, ADR-818). The iPhone lists and
  * signs out browsers too.
  */
 
@@ -53,6 +54,8 @@ export const COOKIE_READABLE: ReadonlySet<string> = new Set(["GET /v1/tools", "G
 export interface WebSessionContext {
   sessionId: string;
   userId: string;
+  /** When this browser signed in (ms). Linking Apple or Google from a browser needs a recent sign-in (ADR-818). */
+  createdAt: number;
 }
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -193,7 +196,7 @@ export class WebAuth {
     const row = await this.store.webSessionByToken(tokenHash(token), now.getTime(), SESSION_IDLE_MS);
     if (!row) return null;
     if (now.getTime() - row.last_seen_at >= TOUCH_EVERY_MS) await this.store.touchWebSession(row.session_id, now.getTime());
-    return { sessionId: row.session_id, userId: row.user_id };
+    return { sessionId: row.session_id, userId: row.user_id, createdAt: row.created_at };
   }
 
   /** True when the request carries this server's session cookie at all (valid or not). */
@@ -232,6 +235,25 @@ export class WebAuth {
   /** Set-Cookie that removes the session cookie. */
   clearCookie(): string {
     return this.cookie("", 0);
+  }
+
+  /**
+   * Opens a browser session for `userId` without a code: Apple or Google sign-in, or a new account
+   * made with one (ADR-818). The same session as a code's, with the same limits.
+   */
+  async openFor(userId: string, req: IncomingMessage, now: Date): Promise<{ view: WebSessionView; setCookie: string }> {
+    const token = randomBytes(32).toString("base64url");
+    const agent = describeAgent(header(req, "user-agent"));
+    const sessionId = randomUUID();
+    const expiresAt = now.getTime() + SESSION_TTL_MS;
+    await this.store.openWebSession(userId, {
+      session: { sessionId, tokenHash: tokenHash(token), browser: agent.browser, os: agent.os, expiresAt },
+      now: now.getTime(),
+      idleMs: SESSION_IDLE_MS,
+      maxSessions: MAX_SESSIONS_PER_USER,
+    });
+    const row: WebSessionRow = { session_id: sessionId, user_id: userId, browser: agent.browser, os: agent.os, created_at: now.getTime(), last_seen_at: now.getTime(), expires_at: expiresAt };
+    return { view: view(row, sessionId), setCookie: this.cookie(token, SESSION_TTL_MS / 1000) };
   }
 
   private cookie(value: string, maxAgeSeconds: number): string {

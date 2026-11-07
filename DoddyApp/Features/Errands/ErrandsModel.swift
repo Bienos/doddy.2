@@ -58,6 +58,14 @@ final class ErrandsModel {
 
     func errand(_ id: UUID) -> StoredErrand? { errands.first { $0.id == id } }
 
+    #if DEBUG
+    /// Test seam only (ADR-821, the screens run): tasks finished since the user last looked, in
+    /// memory only, so Home shows its "Done" card.
+    func seedUnseenForTesting(_ ids: [UUID]) {
+        unseenFinished = ids
+    }
+    #endif
+
     /// The newest finished task the user hasn't opened yet, for Home.
     var newestUnseen: StoredErrand? {
         errands.first { unseenFinished.contains($0.id) && $0.state.isFinished }

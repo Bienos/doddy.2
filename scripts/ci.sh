@@ -99,6 +99,15 @@ run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
 run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py --check
 run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --check
+# Doddy Studio's skills (STUDIO.md): frontmatter limits and no unlisted font or image files (plain
+# Python), then both renderers on the samples with every output checked the way the server checks it.
+run_step "Studio skills: frontmatter and files" scripts/studio_skills.sh check-files
+if python3 -I -c "import reportlab, matplotlib" 2>/dev/null; then
+  run_step "Studio skills: renderers on samples" scripts/studio_skills.sh check
+else
+  not_run "Studio skills: renderers on samples" "python3 needs reportlab and matplotlib (apt python3-reportlab python3-matplotlib, or pip)"
+fi
+run_step "Screen fixture data up to date (ADR-821)" python3 -I scripts/gen_screen_fixture_data.py --check
 run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I tools/gen_web_assets.py --check
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
@@ -131,6 +140,8 @@ elif command -v swift >/dev/null 2>&1; then
     run_step "Messages screen's state tests" scripts/test_messages_model.sh
     # The price watch's state, run with a fake for Doddy's server (SHOPPING_WATCH.md).
     run_step "Price watch state tests" scripts/test_watch_model.sh
+    # The "Na oku" page's state, run with a fake provider (ADR-756).
+    run_step "Open loops page state tests" scripts/test_open_loops_model.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
     # The kept training plan (ADR-625): read back, edited and unreadable files, delete.
     run_step "Training plan on real files" scripts/check_training_plan_store.sh
@@ -198,6 +209,12 @@ if ! want messaging; then :
 elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d server/messaging/node_modules ]; then run_step "Messaging server install (npm ci)" npm ci --prefix server/messaging --no-audit --no-fund; fi
   run_step "Messaging server typecheck + tests" npm test --prefix server/messaging
+  # Studio (ADR-740): the server's checks on files the real renderers make (needs the build above).
+  if python3 -I -c "import reportlab, matplotlib" 2>/dev/null; then
+    run_step "Studio: server checks on rendered samples" scripts/check_studio_crosscheck.sh
+  else
+    not_run "Studio: server checks on rendered samples" "python3 needs reportlab and matplotlib"
+  fi
   [ -z "${TEST_DATABASE_URL:-}" ] && record "Messaging server database tests" "SKIPPED" "TEST_DATABASE_URL not set"
 else
   not_run "Messaging server tests" "node/npm not found on PATH"

@@ -13,12 +13,17 @@ import { MemoryCipher } from "./memory/crypto.js";
 import { MEMORY_KEPT_DAYS } from "./memory/contract.js";
 import { MemoryService } from "./memory/service.js";
 import { ThreadService } from "./messages/service.js";
+import { CoinbaseCdpWallet } from "./payments/coinbase.js";
+import { MockPaymentSeller } from "./payments/mockSeller.js";
+import { PublicHttps, type SellerHttp } from "./payments/net.js";
+import { PaymentsService } from "./payments/service.js";
+import { MockPaymentWallet, type PaymentWallet } from "./payments/wallet.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
-import { Store } from "./store.js";
+import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
 import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
@@ -29,6 +34,7 @@ import { AccountContext } from "./web/chatContext.js";
 import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
+import { SocialSignIn, SupabaseUserRemover } from "./web/social.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -43,6 +49,8 @@ export async function buildApp(
     chatClaude?: ClaudeProvider | null;
     store?: Store;
     verifier?: SessionVerifier;
+    paymentWallet?: PaymentWallet | null;
+    sellerHttp?: SellerHttp;
   } = {},
 ) {
   const store =
@@ -130,30 +138,64 @@ export async function buildApp(
   const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, account, log });
   // The Messages copy for the web, with the same key; without it the routes answer "not set up".
   const thread = new ThreadService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
-  const web =
-    config.web && webAuth
-      ? {
-          auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread),
-          pages: new WebStatic(config.web.distDir, config.web.origin),
-        }
-      : null;
-  // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
-  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
-  // Deleting the account (ADR-674): each connection is removed by the provider that made it.
+  // Deleting the account (ADR-674): each connection is removed by the provider that made it, and
+  // each linked Google or Apple sign-in at Supabase, with the secret key (ADR-818).
+  const supabaseUsers = config.web?.social?.secretKey ? new SupabaseUserRemover(config.web.social.projectUrl, config.web.social.secretKey) : null;
   const accountEraser = new AccountEraser({
     store,
     removers: [
       { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
       { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
+      ...(supabaseUsers ? [supabaseUsers] : []),
     ],
     timeoutMs: config.limits.providerTimeoutMs,
     floors,
     log,
   });
+  // Payments. Live: a wallet exists only when the owner chose and configured one (default: none, so
+  // every payment route says "not set up"). Mock mode uses the demo wallet and the offline demo seller.
+  const paymentWallet: PaymentWallet | null =
+    overrides.paymentWallet !== undefined
+      ? overrides.paymentWallet
+      : config.mode === "mock"
+        ? new MockPaymentWallet()
+        : config.payments.wallet === "coinbase_cdp" && config.payments.cdp
+          ? new CoinbaseCdpWallet(config.payments.cdp)
+          : null;
+  const payments = new PaymentsService({
+    store,
+    mode: config.mode,
+    wallet: paymentWallet,
+    http: overrides.sellerHttp ?? (config.mode === "mock" ? new MockPaymentSeller(config.payments.network) : new PublicHttps()),
+    policy: {
+      network: config.payments.network,
+      maxPerPayment: config.payments.maxPerPayment,
+      confirmAmount: config.payments.confirmAmount,
+      userDaily: config.payments.userDaily,
+      serviceDaily: config.payments.serviceDaily,
+      allowedHosts: config.payments.allowedHosts,
+    },
+    limits: config.limits,
+  });
+  // Apple and Google on the web (ADR-818): only with the Supabase project's URL and publishable key.
+  const social =
+    config.web?.social && webAuth
+      ? new SocialSignIn(store, webAuth, config.web.social, { appScheme: appScheme(config.appReturnUrl), trustProxy: config.web.trustProxy, log })
+      : null;
+  const web =
+    config.web && webAuth
+      ? {
+          auth: webAuth,
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions),
+          pages: new WebStatic(config.web.distDir, config.web.origin),
+        }
+      : null;
+  // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
+  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
+    payments,
     verifier,
     deviceSessions,
     web,
@@ -175,7 +217,12 @@ export async function buildApp(
   // Retention and abandoned sign-ins: once at start, then hourly while the server runs. The sweep
   // runs first so an expired attempt's connection is queued for removal before prune drops the attempt.
   const housekeeping = () => {
-    void Promise.allSettled([service.sweepAbandoned(), tools.sweepAbandoned()])
+    void Promise.allSettled([
+      service.sweepAbandoned(),
+      tools.sweepAbandoned(),
+      // ADR-818: a deleted person's Supabase sign-in, when the first try failed.
+      ...(supabaseUsers ? [accountEraser.sweep([SUPABASE_AUTH_CLEANUP])] : []),
+    ])
       .then(() => store.prune(Date.now()))
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
@@ -197,7 +244,7 @@ export async function buildApp(
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, provider, assist };
+  return { server, store, service, tools, payments, provider, assist };
 }
 
 /** Which sign-ins this server accepts (ADR-526). */
@@ -207,4 +254,10 @@ export function sessionVerifier(config: Config): SessionVerifier {
   const supabase = new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
   // Development only (config enforces it): the owner's minted token still works next to Supabase.
   return config.sessionSigningKey ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.sessionSigningKey), supabase]) : supabase;
+}
+
+/** The iPhone's own URL scheme, where its Apple or Google sign-in sheet ends (ADR-818): DODDY_APP_RETURN_URL's when it is a doddy scheme. */
+export function appScheme(appReturnUrl: string): string {
+  const scheme = new URL(appReturnUrl).protocol.slice(0, -1);
+  return /^doddy(-[a-z]+)?$/.test(scheme) ? scheme : "doddy";
 }

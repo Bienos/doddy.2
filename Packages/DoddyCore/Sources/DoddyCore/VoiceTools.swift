@@ -19,10 +19,14 @@ public enum VoiceToolName {
     public static let proposePlan = "propose_plan"
     /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
     public static let noteCapabilityGap = "note_capability_gap"
+    /// A text from Doddy's own number to the user's verified number, after a card (ADR-750 U2).
+    public static let textMe = "text_me"
     /// Hand a task over: Doddy's server researches it in the background (ADR-570, Errand.swift).
     public static let handOverErrand = "hand_over_errand"
     /// What Doddy found for the tasks handed over, as saved on this iPhone.
     public static let checkErrands = "check_errands"
+    /// "Research X": a research brief and an infographic made in the background (ADR-740, Studio.swift).
+    public static let makeSomething = "make_something"
     /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
     public static let findDeals = "find_deals"
 }
@@ -250,6 +254,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
     /// never sends money.
     case draftBlikTransfer(BlikTransferDraft)
+    /// A text from Doddy's number to the user's own verified number (ADR-750 U2). Shown on a card
+    /// with the exact text; sent only on the user's tap, bound to that text by `ApprovalHash`.
+    case textMe(body: String)
+    /// A call from Doddy's number to the user's verified number at a later time (ADR-754). Shown
+    /// on a card with the time and the exact reason; booked only on the user's tap.
+    case callMeLater(CallLaterDraft)
     /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-568).
@@ -301,9 +311,17 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case handOverErrand(ErrandDraft)
     /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
     case checkErrands(about: String?)
+    /// A Studio job (ADR-740): one yes covers its web look-ups (capped on the server) and making its
+    /// files in Anthropic's container, nothing else; nothing is published or sent.
+    case makeSomething(StudioJob)
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
+    /// Builds or changes the invoice draft on screen (ADR-677, InvoiceVoice.swift). Nothing is sent.
+    case draftInvoice(InvoiceVoiceUpdate)
+    /// "I lost my wallet" (ADR-692): a checklist of official steps on a card. Doddy does none of them;
+    /// a step's page opens or its number is dialled only on the person's tap.
+    case lostWallet(LostWalletSituation)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -391,6 +409,21 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseMessage(args, name: name)
         case VoiceToolName.draftBlikTransfer:
             return parseBlikTransfer(args, name: name)
+        case VoiceToolName.textMe:
+            // Exactly as the agent wrote it: the card shows it and the approval covers it, so
+            // nothing is trimmed. Too long is refused, never cut (review C11).
+            guard let body = args.text("body") else { return .invalid(name: name, reason: "missing body") }
+            guard body.utf16.count <= ApprovedTextLimits.maxLength else {
+                return .invalid(name: name, reason: "body is longer than \(ApprovedTextLimits.maxLength) characters")
+            }
+            // The user approves what they see; a hidden character would be sent unseen.
+            if let hidden = ApprovedTextLimits.hiddenCharacter(in: body) {
+                let code = String(hidden.value, radix: 16, uppercase: true)
+                return .invalid(name: name, reason: "body has a hidden character (U+\(code)); write the text without it")
+            }
+            return .textMe(body: body)
+        case VoiceToolName.callMeLater:
+            return parseCallMeLater(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.makePresentation:
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:
@@ -419,8 +452,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseHandOverErrand(args, name: name)
         case VoiceToolName.checkErrands:
             return parseCheckErrands(args)
+        case VoiceToolName.makeSomething:
+            return parseMakeSomething(args, name: name)
         case VoiceToolName.findDeals:
             return parseFindDeals(args, name: name)
+        case VoiceToolName.draftInvoice:
+            return parseDraftInvoice(args, name: name)
+        case VoiceToolName.lostWallet:
+            return parseLostWallet(args, name: name)
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }
@@ -654,6 +693,9 @@ public enum VoiceTextLimits {
         // A task handed over (ADR-570): the user's words and Doddy's brief, as the server allows.
         case "words": ErrandDraft.maxWords
         case "brief": ErrandDraft.maxBrief
+        // A Studio job (ADR-740): the topic and the user's own words, as the server allows.
+        case "topic": StudioJob.maxTopic
+        case "details": StudioJob.maxDetails
         case "query", "place": search
         case "slides": PresentationLimits.slidesJSON
         default: line
@@ -743,9 +785,15 @@ public enum VoiceToolReply {
     /// plan summary both read these, so a new result verb must be added here (review C1, D3).
     public static let donePrefixes = [
         "added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:",
+        // A payment the server confirmed (ADR-736); anything unclear is "unknown:", never this.
+        "paid:",
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
         "moved:", "turned off:", "cleared:",
+        // ADR-750 U2: a text the carrier reported as delivered. "sent:" and "queued:" are not done.
+        "delivered:",
+        // ADR-754: Doddy's server booked the call for later (it said so). The call itself is later.
+        "booked:",
         // ADR-570: Doddy's server said it has the task handed over (`errandStarted`).
         "started:",
     ]

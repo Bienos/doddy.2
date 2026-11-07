@@ -7,6 +7,8 @@ import SwiftUI
 /// settled how inFakt takes an invoice (`InFaktAPI.createVerified`). Not seen on a device in this build.
 struct InvoiceCardView: View {
     let card: InvoiceCard
+    /// Confirms a value only the model suggested (ADR-677). Nil on the example card, which has no Confirm.
+    var onConfirm: ((InvoiceField) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -24,6 +26,14 @@ struct InvoiceCardView: View {
 
             block(NSLocalizedString("Buyer", comment: ""), rows: card.buyer)
 
+            // ADR-685: where the buyer's official name and address came from.
+            if let line = card.registerLine {
+                Label { Text(verbatim: line) } icon: { Image(systemName: "building.columns") }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("invoice.register")
+            }
+
             VStack(alignment: .leading, spacing: 8) {
                 Text("Lines").font(.subheadline.weight(.semibold))
                 ForEach(Array(card.lines.enumerated()), id: \.offset) { _, line in
@@ -35,12 +45,28 @@ struct InvoiceCardView: View {
                             Text(verbatim: line.net).font(.body.monospacedDigit())
                         }
                         Text(verbatim: line.detail).font(.footnote).foregroundStyle(Theme.secondaryText)
+                        if let field = line.confirmField { confirmButton(field) }
                     }
                 }
             }
 
             block(NSLocalizedString("Details", comment: ""), rows: card.facts)
             block(NSLocalizedString("Totals", comment: ""), rows: card.totals)
+
+            // ADR-679: once KSeF accepted it. Selectable, because from 2027 it goes in a B2B transfer's title.
+            if let number = card.ksefNumber {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("KSeF number").font(.subheadline.weight(.semibold))
+                    Text(verbatim: number).font(.footnote.monospaced()).textSelection(.enabled)
+                }
+                .accessibilityIdentifier("invoice.ksefNumber")
+            }
+
+            if let warning = card.ksefWarning {
+                Label { Text(verbatim: warning) } icon: { Image(systemName: "exclamationmark.shield") }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
 
             if let note = card.sendingNote {
                 Label { Text(verbatim: note) } icon: { Image(systemName: "info.circle") }
@@ -63,11 +89,29 @@ struct InvoiceCardView: View {
                         Spacer(minLength: 12)
                         Text(verbatim: row.value).multilineTextAlignment(.trailing)
                         if row.proposed { suggestedMark }
+                        if row.fromRegister {
+                            Image(systemName: "building.columns").foregroundStyle(Theme.secondaryText)
+                                .accessibilityLabel("From the register")
+                        }
                     }
                     .font(.subheadline)
                     .accessibilityElement(children: .combine)
+                    if let field = row.confirmField { confirmButton(field) }
                 }
             }
+        }
+    }
+
+    /// "That's right" for one suggested value, exactly as shown above it.
+    @ViewBuilder
+    private func confirmButton(_ field: InvoiceField) -> some View {
+        if let onConfirm {
+            Button { onConfirm(field) } label: {
+                Text(verbatim: InvoiceCard.confirmLabel(field, polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish))
+            }
+            .font(.footnote.weight(.semibold))
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("invoice.confirm.\(field.key)")
         }
     }
 

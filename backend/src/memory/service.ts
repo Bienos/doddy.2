@@ -8,12 +8,14 @@ import {
   MEMORY_KEPT_DAYS,
   MEMORY_MAX_CONVERSATION_BYTES,
   MEMORY_MAX_CONVERSATIONS,
+  MEMORY_MAX_NOTES,
   type MemoryOverview,
   MemoryStateBody,
   type NoteView,
   NotesSnapshot,
   ONE_DAY_MS,
   refuse,
+  refuseLongList,
   type Turn,
 } from "./contract.js";
 import type { MemoryCipher } from "./crypto.js";
@@ -144,6 +146,7 @@ export class MemoryService {
 
   async replaceNotes(userId: string, body: unknown): Promise<{ count: number }> {
     const cipher = this.cipher();
+    refuseLongList(body, "items", MEMORY_MAX_NOTES);
     const parsed = NotesSnapshot.safeParse(body);
     if (!parsed.success) return refuse(parsed.error);
     const rows: MemoryNoteRow[] = parsed.data.items.map((item) => {

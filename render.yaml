@@ -45,6 +45,13 @@ services:
         value: signed
       - key: SUPABASE_URL
         sync: false
+      # Google and Apple on Doddy Web (ADR-818), separate from DODDY_AUTH_MODE: the project's
+      # publishable key (sb_publishable_…, public by design; a sb_secret_ key is refused). Empty: off.
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      # Optional: deletes a person's Supabase sign-in with their Doddy account (ADR-818). Server only.
+      - key: SUPABASE_SECRET_KEY
+        sync: false
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
       # Hosted Postgres (ADR-525): postgres://… URL, and the CA's PEM when it isn't a public one
@@ -181,8 +188,6 @@ services:
         sync: false
       - key: ELEVENLABS_PHONE_AGENT_ID
         sync: false
-      - key: ELEVENLABS_PHONE_NUMBER_ID
-        sync: false
       - key: DODDY_PHONE_NUMBER
         sync: false
       # Calls Doddy makes for the user (ADR-500, docs/decisions/calls.md). Use a Poland-only
@@ -226,6 +231,14 @@ services:
         sync: false
       - key: DEALS_ENABLED # Leaflets (ADR-609): "0" (the default) answers 503 deals_disabled; "1" reads the four chains' leaflets on request
         value: "0"
+      # Studio (ADR-740): "1" also needs STUDIO_SKILLS (ids from scripts/studio_skills.sh upload). Limits
+      # and caps have defaults (server/messaging/.env.example).
+      - key: STUDIO_ENABLED
+        value: "0"
+      - key: STUDIO_SKILLS
+        sync: false
+      - key: CEIDG_API_TOKEN # Company registers (ADR-685): CEIDG's JWT from biznes.gov.pl (e-service 00_9999_00); empty means GET /v1/registry/ceidg answers 503 registry_disabled
+        sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false
       - key: GNEWS_API_KEY
@@ -277,8 +290,6 @@ services:
         sync: false
       - key: ELEVENLABS_PHONE_AGENT_ID
         sync: false
-      - key: ELEVENLABS_PHONE_NUMBER_ID
-        sync: false
       - key: DODDY_PHONE_NUMBER
         sync: false
       # Calls Doddy makes for the user (ADR-500, docs/decisions/calls.md). Use a Poland-only
@@ -314,6 +325,12 @@ services:
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"
       - key: SERPER_API_KEY # Shopping errands (ADR-607): Google Shopping offers for Poland; empty means find_offers answers "not set up"
+        sync: false
+      # Studio (ADR-740): "1" also needs STUDIO_SKILLS (ids from scripts/studio_skills.sh upload). Limits
+      # and caps have defaults (server/messaging/.env.example).
+      - key: STUDIO_ENABLED
+        value: "0"
+      - key: STUDIO_SKILLS
         sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false

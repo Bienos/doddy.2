@@ -1,8 +1,9 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → Phone calls: call Doddy's number, let Doddy call you, PIN, memory on calls,
-/// and notes Doddy took on calls (waiting for your confirmation).
+/// Settings → Phone calls: call Doddy's number, let Doddy call you, PIN, memory on calls, texts
+/// to Doddy (ADR-753), notes from calls and texts (waiting for your confirmation), and the export
+/// of your phone and text history.
 struct CallsSettingsView: View {
     @Environment(MemoryStore.self) private var store
     @State private var model = CallsModel()
@@ -34,13 +35,14 @@ struct CallsSettingsView: View {
         .disabled(model.isWorking)
         .overlay { if model.isWorking { ProgressView() } }
         .task { await model.refresh() }
+        .onDisappear { model.clearExport() }
     }
 
     @ViewBuilder
     private func content(_ s: CallSettings) -> some View {
         if !s.available.inbound {
             Section {
-                Text("Doddy's phone line isn't set up on the server yet. Everything below starts working once it is.")
+                Text("Doddy's phone line isn't set up on the server yet. Calls start working once it is.")
             }
         }
 
@@ -52,7 +54,7 @@ struct CallsSettingsView: View {
         }
 
         if !model.notes.isEmpty || !model.unreadableNotes.isEmpty || model.notesProblem != nil {
-            Section("Notes from your calls") {
+            Section("Notes waiting for you") {
                 if let problem = model.notesProblem {
                     Label(problem, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(Theme.error)
@@ -61,7 +63,7 @@ struct CallsSettingsView: View {
                 ForEach(model.notes) { note in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(note.text)
-                        Text("Said on a call · \(DateText.full(note.createdDate))")
+                        Text(noteOrigin(note))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         HStack {
@@ -80,14 +82,14 @@ struct CallsSettingsView: View {
                 ForEach(model.unreadableNotes) { note in
                     VStack(alignment: .leading, spacing: 8) {
                         Text("This note can't be read any more, so it can't be saved.")
-                        Text("Said on a call · \(DateText.full(note.createdDate))")
+                        Text(String(format: NSLocalizedString("Waiting since %@", comment: ""), DateText.full(note.createdDate)))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         Button("Discard", role: .destructive) { Task { await model.discard(note.id) } }
                             .buttonStyle(.borderless)
                     }
                 }
-                Text("Doddy wrote these down during calls. They become memories only when you save them.")
+                Text("Doddy wrote these down during calls, or kept them from your texts. They become memories only when you save them.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -169,14 +171,154 @@ struct CallsSettingsView: View {
             }
         }
 
+        if s.available.outbound {
+            scheduledSection(s)
+        }
+
+        textsSection(s)
+
         if !model.recent.isEmpty {
             Section("Recent calls") {
                 ForEach(model.recent) { call in
                     StatusRow(
                         title: call.direction == "inbound" ? "You called Doddy" : "Doddy called you",
-                        value: "\(DateText.full(call.createdDate))\(call.status == "failed" ? " · failed" : call.status == "unknown" ? " · not confirmed" : "")")
+                        value: DateText.full(call.createdDate) + outcomeNote(call))
                 }
             }
         }
+    }
+
+    /// Calls booked for later by voice (ADR-754): when, what Doddy will say, and Cancel while waiting.
+    @ViewBuilder
+    private func scheduledSection(_ s: CallSettings) -> some View {
+        let quiet = s.quietHours ?? .standard
+        Section("Calls you booked") {
+            if let problem = model.scheduledProblem {
+                Text(problem)
+                    .foregroundStyle(Theme.secondaryText)
+            } else if model.scheduled.isEmpty {
+                Text("None. Ask Doddy, for example “Call me at six about the cake.”")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            ForEach(model.scheduled) { call in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(DateText.full(call.atDate))
+                        .font(.body)
+                    if let reason = call.reason {
+                        Text(verbatim: "“\(reason)”")
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    Text(Self.scheduledState(call))
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    if call.canCancel {
+                        Button("Cancel this call", role: .destructive) { Task { await model.cancel(call) } }
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("calls.scheduled.cancel")
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            Text(String(format: NSLocalizedString("Doddy doesn't call in quiet hours (%@–%@ in your iPhone's time zone) unless you allowed it on the call's card. Turning off \"Doddy may call me\" cancels the calls still waiting.", comment: ""), quiet.start, quiet.end))
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+    }
+
+    /// What happened to a booked call, from the server's state only.
+    static func scheduledState(_ call: ScheduledCall) -> String {
+        switch call.state {
+        case "scheduled": NSLocalizedString("Waiting. Doddy's server will call you then.", comment: "")
+        case "placing": NSLocalizedString("Doddy's server is placing this call.", comment: "")
+        case "placed": NSLocalizedString("Placed: Twilio accepted the call.", comment: "")
+        case "cancelled" where call.errorCode == "cancelled_by_user": NSLocalizedString("You cancelled it.", comment: "")
+        case "cancelled": NSLocalizedString("Cancelled: your number or your consent to calls changed.", comment: "")
+        case "skipped_quiet_hours": NSLocalizedString("Not called: it was quiet hours in your iPhone's time zone.", comment: "")
+        case "missed": NSLocalizedString("Not called: Doddy's server couldn't place it in time.", comment: "")
+        case "limit": NSLocalizedString("Not called: Doddy had already tried to call as many times as it may.", comment: "")
+        case "failed" where call.errorCode == "not_configured":
+            NSLocalizedString("Not called: Doddy's phone line wasn't set up on its server.", comment: "")
+        case "failed" where call.errorCode == "reason_unreadable":
+            NSLocalizedString("Not called: Doddy's server couldn't read what the call was about.", comment: "")
+        case "failed": NSLocalizedString("Not called: the phone service turned it down.", comment: "")
+        case "unknown": NSLocalizedString("Not sure: Doddy couldn't confirm whether the call was placed. It won't try again.", comment: "")
+        default: NSLocalizedString("Doddy couldn't tell what happened to this call.", comment: "")
+        }
+    }
+
+    /// Texts to Doddy (ADR-753): the switch is shown as on only once the server says so.
+    @ViewBuilder
+    private func textsSection(_ calls: CallSettings) -> some View {
+        let t = model.textSettings ?? .off
+        Section("Texts to Doddy") {
+            if let number = t.doddyNumber ?? calls.doddyNumber {
+                StatusRow(title: "Doddy's number", value: number)
+            }
+            if model.textSettings == nil, let problem = model.textsProblem {
+                Label(problem, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(Theme.error)
+                Button("Try again") { Task { await model.refresh() } }
+            }
+            ForEach(t.pauses, id: \.self) { pause in
+                Label(pause.localized, systemImage: "pause.circle")
+                    .font(.footnote)
+            }
+            Toggle("Accept texts from my number", isOn: Binding(
+                get: { t.inboundEnabled },
+                set: { on in Task { await model.setTextsToDoddy(on) } }))
+                .disabled(model.textSettings == nil || (!t.inboundEnabled && t.inboundBlocker != nil))
+                .accessibilityIdentifier("texts.inbound")
+            Text(TextsToDoddyConsent.text)
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            if model.textSettings != nil, let blocker = nextBlocker(t) {
+                Label(blocker.localized, systemImage: "info.circle")
+                    .font(.footnote)
+            }
+            Text("Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Each text waits here as a note, while there's room for 20 notes and up to 30 texts an hour. Doddy does not answer them, and no AI reads them. Texts aren't encrypted between phone networks.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+
+        Section("Your phone and text history") {
+            Button("Export phone and text history") { Task { await model.exportHistory() } }
+                .accessibilityIdentifier("texts.export")
+            if let file = model.historyFile {
+                ShareLink(item: file) { Label("Share the export", systemImage: "square.and.arrow.up") }
+            }
+            Text("A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also asks Twilio to delete its records of each call and text, a day later unless the server is set up otherwise. The file is removed from this iPhone when you leave this screen.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+    }
+
+    /// Where a waiting note came from: a call, or your text word for word (ADR-753).
+    private func noteOrigin(_ note: CallNote) -> String {
+        let when = DateText.full(note.createdDate)
+        if note.fromText { return String(format: NSLocalizedString("From your text · %@", comment: ""), when) }
+        return String(format: NSLocalizedString("Said on a call · %@", comment: ""), when)
+    }
+
+    /// Why the switch is off and can't be turned on yet; nil when nothing is in the way.
+    private func nextBlocker(_ t: TextSettings) -> TextsBlocker? {
+        t.inboundEnabled ? nil : t.inboundBlocker
+    }
+
+    /// How a call went, as Twilio reported it to Doddy's server (ADR-750). Nothing is added while
+    /// there is nothing to say, such as a call that is still being placed.
+    private func outcomeNote(_ call: CallRecord) -> String {
+        let word: String?
+        switch (call.direction, call.status) {
+        case (_, "failed"): word = NSLocalizedString("failed", comment: "Recent calls: the call didn't go through")
+        case (_, "unknown"): word = NSLocalizedString("not confirmed", comment: "Recent calls: unclear whether the call was placed")
+        case ("outbound", "ringing"): word = NSLocalizedString("ringing", comment: "Recent calls: Doddy's call is ringing")
+        case ("outbound", "answered"), ("outbound", "completed"):
+            word = NSLocalizedString("answered", comment: "Recent calls: you picked up Doddy's call")
+        case ("outbound", "no_answer"): word = NSLocalizedString("no answer", comment: "Recent calls: nobody picked up Doddy's call")
+        case ("outbound", "busy"): word = NSLocalizedString("busy", comment: "Recent calls: your line was busy")
+        case ("outbound", "canceled"): word = NSLocalizedString("cancelled", comment: "Recent calls: the call was cancelled before it rang through")
+        default: word = nil
+        }
+        return word.map { " · \($0)" } ?? ""
     }
 }

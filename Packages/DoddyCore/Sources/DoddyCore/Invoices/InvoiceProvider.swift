@@ -28,6 +28,71 @@ public protocol InvoiceProvider: Sendable {
     func findInvoice(operationId: UUID) async throws -> InvoiceReceipt?
 }
 
+/// Where a created invoice goes to KSeF (ADR-678): inFakt sends it on request and answers with
+/// its KSeF status. Tests use a fake; the real one waits for the inFakt client.
+public protocol KsefProvider: Sendable {
+    /// Asks inFakt to send the invoice to KSeF; returns the status in its answer.
+    func sendToKsef(invoiceId: String) async throws -> KsefStatus
+    /// Reads where the invoice stands in KSeF. Never sends anything.
+    func ksefStatus(invoiceId: String) async throws -> KsefStatus
+}
+
+/// Before Send to KSeF is offered (ADR-678): the invoice inFakt made must have exactly the sums the
+/// person confirmed. KSeF does no arithmetic and an accepted invoice can only be corrected, so a
+/// difference (inFakt may round per line) stops it here, not after.
+public enum KsefSendGate {
+    public enum Block: Equatable, Sendable {
+        case totalsDiffer(confirmedGrossMinor: Int, inFaktGrossMinor: Int)
+        case otherInvoice
+    }
+
+    public static func check(_ operation: InvoiceOperation, against invoice: InFaktWire.Invoice) -> Block? {
+        guard invoice.uuid == operation.receipt?.externalId else { return .otherInvoice }
+        guard let totals = operation.draft.totals else { return .otherInvoice }
+        if totals.netMinor != invoice.netMinor || totals.vatMinor != invoice.taxMinor || totals.grossMinor != invoice.grossMinor {
+            return .totalsDiffer(confirmedGrossMinor: totals.grossMinor, inFaktGrossMinor: invoice.grossMinor)
+        }
+        return nil
+    }
+}
+
+/// Sends an invoice to KSeF once, after its own yes, saving first; never twice by itself.
+public enum KsefSender {
+    public static func send(
+        _ operation: inout InvoiceOperation, using provider: any KsefProvider,
+        persist: (InvoiceOperation) async -> Void = { _ in }
+    ) async {
+        let id: String
+        do { id = try operation.beginKsefSend() } catch { return }
+        await persist(operation)
+        do {
+            operation.recordKsef(try await provider.sendToKsef(invoiceId: id))
+        } catch let error as InvoiceProviderError {
+            switch error {
+            case .notConfigured: operation.recordKsefNotSent("No inFakt key is saved, so nothing was sent to KSeF.")
+            case .notVerified: operation.recordKsefNotSent("Sending to KSeF isn't switched on yet, so nothing was sent.")
+            case .rejected(let reason): operation.recordKsef(.rejected(reason))
+            case .outcomeUnknown: operation.recordKsef(.unknown)
+            }
+        } catch {
+            operation.recordKsef(.unknown)
+        }
+        await persist(operation)
+    }
+
+    /// While on its way or unknown: asks inFakt where it stands. Sends nothing; if inFakt can't tell,
+    /// nothing changes.
+    public static func checkStatus(
+        _ operation: inout InvoiceOperation, using provider: any KsefProvider,
+        persist: (InvoiceOperation) async -> Void = { _ in }
+    ) async {
+        guard operation.ksef == .pending || operation.ksef == .unknown, let id = operation.receipt?.externalId else { return }
+        guard let status = try? await provider.ksefStatus(invoiceId: id) else { return }
+        operation.recordKsef(status)
+        await persist(operation)
+    }
+}
+
 /// Sends a confirmed invoice once, saving first, and never twice by itself.
 public enum InvoiceSender {
     /// `persist` is called with the operation in `pendingExternalWrite` BEFORE the provider is
@@ -72,9 +137,10 @@ public enum InvoiceSender {
 }
 
 /// What is confirmed about inFakt's API, from inFakt's own documentation on 24 Oct 2026
-/// (docs/implementation/INFAKT_STATUS.md). The request format for creating an invoice is NOT
-/// confirmed (the unit of the price fields, the date fields, the answer of the asynchronous create),
-/// so `createVerified` is false and the provider below refuses to run.
+/// (docs/implementation/INFAKT_STATUS.md). Since 30 Oct 2026 its field tables also say prices are
+/// grosze and the create dates are `invoice_date`, `sale_date` and `payment_date`
+/// (docs/research/2026-10-30/ksef_infakt_research.md, C1 and C2), but no real answer has been seen:
+/// `createVerified` stays false until one create call in the sandbox, and the provider below refuses to run.
 public enum InFaktAPI {
     public static let productionBase = "https://api.infakt.pl/api/v3"
     public static let sandboxBase = "https://api.sandbox-infakt.pl/api/v3"
@@ -91,7 +157,7 @@ public enum InFaktAPI {
 }
 
 /// The inFakt provider while its request format is unconfirmed: it makes no request and says so.
-public struct UnverifiedInFaktProvider: InvoiceProvider {
+public struct UnverifiedInFaktProvider: InvoiceProvider, KsefProvider {
     public init() {}
 
     public func createInvoice(_ invoice: ConfirmedInvoice) async throws -> InvoiceReceipt {
@@ -99,6 +165,14 @@ public struct UnverifiedInFaktProvider: InvoiceProvider {
     }
 
     public func findInvoice(operationId: UUID) async throws -> InvoiceReceipt? {
+        throw InvoiceProviderError.notVerified
+    }
+
+    public func sendToKsef(invoiceId: String) async throws -> KsefStatus {
+        throw InvoiceProviderError.notVerified
+    }
+
+    public func ksefStatus(invoiceId: String) async throws -> KsefStatus {
         throw InvoiceProviderError.notVerified
     }
 }

@@ -61,6 +61,131 @@ public protocol WebLinkClient: Sendable {
     func newCode() async throws(WebLinkError) -> WebLinkCode
     func browsers() async throws(WebLinkError) -> [WebBrowserSession]
     func signOut(browser id: UUID) async throws(WebLinkError)
+    /// ADR-818: which of Apple and Google the server offers for the web. Empty: the code only.
+    func signInProviders() async throws(WebLinkError) -> [WebSignInProvider]
+    /// Apple and Google sign-ins linked to this account.
+    func linkedSignIns() async throws(WebLinkError) -> [WebLinkedSignIn]
+    /// A one-time address to open in the system sign-in sheet, which links `provider` to this account.
+    func linkTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket
+    /// Links what the sheet signed in with. Only this iPhone's session can, with the code its sheet ended with.
+    func completeLink(code: String) async throws(WebLinkError) -> WebLinkOutcome
+    func unlink(signIn id: UUID) async throws(WebLinkError)
+    /// ADR-819: a one-time address to sign this iPhone in to the account of a Google or Apple sign-in.
+    func joinTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket
+    /// From now on this iPhone signs in to that account (after a renewal of its session).
+    func join(code: String, deviceID: String) async throws(WebLinkError) -> WebJoinOutcome
+    /// Which account this iPhone uses: its own (nil), or one it joined.
+    func deviceAccount(deviceID: String) async throws(WebLinkError) -> WebJoinedAccount?
+    /// Back to this iPhone's own account.
+    func leaveJoinedAccount(deviceID: String) async throws(WebLinkError)
+}
+
+/// ADR-818: before a server knew Apple and Google, it offered neither.
+public extension WebLinkClient {
+    func signInProviders() async throws(WebLinkError) -> [WebSignInProvider] { [] }
+    func linkedSignIns() async throws(WebLinkError) -> [WebLinkedSignIn] { [] }
+    func linkTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket { throw .notConfigured }
+    func completeLink(code: String) async throws(WebLinkError) -> WebLinkOutcome { throw .notConfigured }
+    func unlink(signIn id: UUID) async throws(WebLinkError) { throw .notConfigured }
+    func joinTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket { throw .notConfigured }
+    func join(code: String, deviceID: String) async throws(WebLinkError) -> WebJoinOutcome { throw .notConfigured }
+    func deviceAccount(deviceID: String) async throws(WebLinkError) -> WebJoinedAccount? { nil }
+    func leaveJoinedAccount(deviceID: String) async throws(WebLinkError) { throw .notConfigured }
+}
+
+/// ADR-819: this iPhone uses the account of a Google or Apple sign-in instead of its own.
+public struct WebJoinedAccount: Equatable, Sendable {
+    public let provider: WebSignInProvider
+    public let since: Date
+
+    public init(provider: WebSignInProvider, since: Date) {
+        self.provider = provider
+        self.since = since
+    }
+}
+
+public enum WebJoinOutcome: Equatable, Sendable {
+    /// This iPhone now uses that account.
+    case joined(WebSignInProvider)
+    /// That sign-in was this iPhone's own account: nothing changed.
+    case own(WebSignInProvider)
+}
+
+/// ADR-818: Apple or Google, as a second way into this same account on the web.
+public enum WebSignInProvider: String, Sendable, CaseIterable, Equatable {
+    case google, apple
+}
+
+public struct WebLinkedSignIn: Equatable, Sendable, Identifiable {
+    /// The Supabase Auth user behind it (what the server unlinks by).
+    public let id: UUID
+    public let provider: WebSignInProvider
+    public let linkedAt: Date
+
+    public init(id: UUID, provider: WebSignInProvider, linkedAt: Date) {
+        self.id = id
+        self.provider = provider
+        self.linkedAt = linkedAt
+    }
+}
+
+/// Where the iPhone's sign-in sheet starts, and the scheme it ends at.
+public struct WebLinkTicket: Equatable, Sendable {
+    public let url: URL
+    public let callbackScheme: String
+
+    public init(url: URL, callbackScheme: String) {
+        self.url = url
+        self.callbackScheme = callbackScheme
+    }
+
+    /// How the sheet ended, read from the address it ended at (`<scheme>://web-sign-in/return?result=…`).
+    /// `confirm` carries the code this iPhone redeems with its own session; nothing is linked before
+    /// that. Anything else, including an address of another scheme or path, reads as `failed`.
+    public func end(of callback: URL) -> WebSheetEnd {
+        guard callback.scheme == callbackScheme, callback.host == "web-sign-in", callback.path == "/return",
+              let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems
+        else { return .done(.failed) }
+        switch items.first(where: { $0.name == "result" })?.value {
+        case "confirm":
+            guard let code = items.first(where: { $0.name == "code" })?.value,
+                  code.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) != nil
+            else { return .done(.failed) }
+            return .confirm(code: code)
+        case "join":
+            guard let code = items.first(where: { $0.name == "code" })?.value,
+                  code.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) != nil
+            else { return .done(.failed) }
+            return .joinConfirm(code: code)
+        case "not_linked": return .done(.notLinked)
+        case "canceled": return .done(.canceled)
+        case "busy": return .done(.busy)
+        default: return .done(.failed)
+        }
+    }
+}
+
+/// Where the sign-in sheet left things (ADR-818).
+public enum WebSheetEnd: Equatable, Sendable {
+    /// Signed in at Apple or Google; this iPhone confirms with this code to link it.
+    case confirm(code: String)
+    /// ADR-819: signed in to an account that exists; this iPhone confirms with this code to use it.
+    case joinConfirm(code: String)
+    /// Nothing to confirm: how it ended.
+    case done(WebLinkOutcome)
+}
+
+/// What linking Apple or Google did, as the server said it. Only `linked` and `already` mean linked.
+public enum WebLinkOutcome: Equatable, Sendable {
+    case linked(WebSignInProvider)
+    case already(WebSignInProvider)
+    /// That Apple or Google account belongs to another Doddy account; nothing was changed or merged.
+    case taken(WebSignInProvider)
+    case canceled
+    case busy
+    case failed
+    /// ADR-819: that Google or Apple account has no Doddy account to sign in to.
+    case notLinked
 }
 
 public struct BackendWebLinkClient: WebLinkClient {
@@ -112,7 +237,150 @@ public struct BackendWebLinkClient: WebLinkClient {
         let _: SignedOutReply = try await call("DELETE", "v1/web/sessions/\(id.uuidString.lowercased())", body: nil)
     }
 
+    public func signInProviders() async throws(WebLinkError) -> [WebSignInProvider] {
+        do throws(WebLinkError) {
+            let reply: ProvidersReply = try await call("GET", "v1/web/sign-in-options", body: nil)
+            return reply.providers.compactMap(WebSignInProvider.init(rawValue:))
+        } catch {
+            // A server from before ADR-818, or without the web on: neither is offered.
+            if error == .notFound { return [] }
+            throw error
+        }
+    }
+
+    public func linkedSignIns() async throws(WebLinkError) -> [WebLinkedSignIn] {
+        let reply: IdentitiesReply = try await call("GET", "v1/web/identities", body: nil)
+        var list: [WebLinkedSignIn] = []
+        for item in reply.identities {
+            guard let id = UUID(uuidString: item.id), let linkedAt = DeviceSessionClient.parseDate(item.linkedAt) else { throw .unreadable }
+            // A provider this app doesn't know is left out rather than shown wrongly.
+            guard let provider = WebSignInProvider(rawValue: item.provider) else { continue }
+            list.append(WebLinkedSignIn(id: id, provider: provider, linkedAt: linkedAt))
+        }
+        return list
+    }
+
+    public func linkTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket {
+        let body = Data(#"{"provider":"\#(provider.rawValue)"}"#.utf8)
+        let reply: TicketReply = try await call("POST", "v1/web/oauth/tickets", body: body)
+        guard let url = URL(string: reply.url), Self.isTicketURL(url), Self.isAppScheme(reply.callbackScheme) else { throw .unreadable }
+        return WebLinkTicket(url: url, callbackScheme: reply.callbackScheme)
+    }
+
+    public func completeLink(code: String) async throws(WebLinkError) -> WebLinkOutcome {
+        guard code.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) != nil else { throw .unreadable }
+        let reply: CompleteReply = try await call("POST", "v1/web/oauth/complete", body: Data(#"{"code":"\#(code)"}"#.utf8))
+        guard let provider = WebSignInProvider(rawValue: reply.provider) else { throw .unreadable }
+        switch reply.result {
+        case "linked": return .linked(provider)
+        case "already": return .already(provider)
+        case "taken": return .taken(provider)
+        default: throw .unreadable
+        }
+    }
+
+    public func joinTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket {
+        let body = Data(#"{"provider":"\#(provider.rawValue)"}"#.utf8)
+        let reply: TicketReply = try await call("POST", "v1/web/oauth/join-tickets", body: body)
+        guard let url = URL(string: reply.url), Self.isTicketURL(url), Self.isAppScheme(reply.callbackScheme) else { throw .unreadable }
+        return WebLinkTicket(url: url, callbackScheme: reply.callbackScheme)
+    }
+
+    public func join(code: String, deviceID: String) async throws(WebLinkError) -> WebJoinOutcome {
+        guard code.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) != nil, UUID(uuidString: deviceID) != nil else { throw .unreadable }
+        let body = Data(#"{"code":"\#(code)","deviceId":"\#(deviceID.lowercased())"}"#.utf8)
+        let reply: JoinReply = try await call("POST", "v1/web/oauth/join", body: body)
+        guard let provider = WebSignInProvider(rawValue: reply.provider) else { throw .unreadable }
+        switch reply.result {
+        case "joined": return .joined(provider)
+        case "own": return .own(provider)
+        default: throw .unreadable
+        }
+    }
+
+    public func deviceAccount(deviceID: String) async throws(WebLinkError) -> WebJoinedAccount? {
+        guard UUID(uuidString: deviceID) != nil else { throw .unreadable }
+        do throws(WebLinkError) {
+            let reply: DeviceAccountReply = try await call("POST", "v1/web/device-account", body: Data(#"{"deviceId":"\#(deviceID.lowercased())"}"#.utf8))
+            guard let joined = reply.joined else { return nil }
+            guard let provider = WebSignInProvider(rawValue: joined.provider), let since = DeviceSessionClient.parseDate(joined.since) else { throw .unreadable }
+            return WebJoinedAccount(provider: provider, since: since)
+        } catch {
+            // A server from before ADR-819: this iPhone can only use its own account.
+            if error == .notFound { return nil }
+            throw error
+        }
+    }
+
+    public func leaveJoinedAccount(deviceID: String) async throws(WebLinkError) {
+        guard UUID(uuidString: deviceID) != nil else { throw .unreadable }
+        let _: LeftReply = try await call("POST", "v1/web/device-account/leave", body: Data(#"{"deviceId":"\#(deviceID.lowercased())"}"#.utf8))
+    }
+
+    public func unlink(signIn id: UUID) async throws(WebLinkError) {
+        let _: UnlinkedReply = try await call("DELETE", "v1/web/identities/\(id.uuidString.lowercased())", body: nil)
+    }
+
     // MARK: - contract
+
+    struct ProvidersReply: Decodable {
+        let providers: [String]
+    }
+
+    struct IdentitiesReply: Decodable {
+        struct Item: Decodable {
+            let id: String
+            let provider: String
+            let linkedAt: String
+        }
+        let identities: [Item]
+    }
+
+    struct TicketReply: Decodable {
+        let url: String
+        let callbackScheme: String
+    }
+
+    struct CompleteReply: Decodable {
+        let result: String
+        let provider: String
+    }
+
+    struct JoinReply: Decodable {
+        let result: String
+        let provider: String
+    }
+
+    struct DeviceAccountReply: Decodable {
+        struct Joined: Decodable {
+            let provider: String
+            let since: String
+        }
+        let joined: Joined?
+    }
+
+    struct LeftReply: Decodable {
+        let left: Bool
+    }
+
+    struct UnlinkedReply: Decodable {
+        let unlinked: Bool
+    }
+
+    /// The sheet opens only Doddy's own start address, on an https origin (http only on this device).
+    static func isTicketURL(_ url: URL) -> Bool {
+        guard let host = url.host, !host.isEmpty, url.user == nil, url.password == nil, url.fragment == nil,
+              url.path == "/v1/web/oauth/start",
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              items.count == 1, items[0].name == "ticket", items[0].value?.isEmpty == false
+        else { return false }
+        return url.scheme == "https" || (url.scheme == "http" && ["127.0.0.1", "localhost", "::1"].contains(host))
+    }
+
+    /// The sheet may only end at Doddy's own scheme.
+    static func isAppScheme(_ scheme: String) -> Bool {
+        scheme.range(of: "^doddy(-[a-z]+)?$", options: .regularExpression) != nil
+    }
 
     struct CodeReply: Decodable {
         let code: String

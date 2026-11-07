@@ -3,12 +3,14 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { newDeviceToken, principal, requireDevice } from "../auth.js";
+import { queuePhoneAgentDeletions } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { clientBucket, counterKey, pruneCounters, returnCounter, takeCounter } from "../dailyCounters.js";
 import { inTransaction } from "../db.js";
 import { takeServerSlot } from "../serverUsage.js";
 import type { TaskCallContext } from "../taskCalls/context.js";
 import { beforeAccountDeleted } from "../taskCalls/worker.js";
+import { beforeAccountDeleted as studioBeforeAccountDeleted } from "../studio/service.js";
 
 const pushToken = z.object({
   token: z.string().regex(/^[0-9a-f]{64,200}$/),
@@ -55,7 +57,14 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
     // Calls Doddy is making for this account end first; their ElevenLabs copies are deleted
     // promptly by jobs that outlive the account (call cases, ADR-506).
     if (taskCtx) await beforeAccountDeleted(taskCtx, principal(req).accountId);
-    await db.query("DELETE FROM accounts WHERE id = $1", [principal(req).accountId]);
+    // Studio's copies at Anthropic not yet confirmed deleted outlive the account until they are (ADR-740).
+    await studioBeforeAccountDeleted(db, principal(req).accountId, new Date());
+    // Phone-agent conversations (incoming calls, "call me now") are queued for deletion at ElevenLabs
+    // whether or not task calls are on; the delete cascade removes the rows that hold their ids.
+    await inTransaction(db, async (c) => {
+      await queuePhoneAgentDeletions(c, principal(req).accountId, new Date());
+      await c.query("DELETE FROM accounts WHERE id = $1", [principal(req).accountId]);
+    });
     return reply.code(204).send();
   });
 
