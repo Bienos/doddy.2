@@ -16,7 +16,7 @@ import os
 /// only after the recorder has delivered audio and, for a start from a shortcut or control, the Live
 /// Activity is up.
 ///
-/// NOT COMPILED OR RUN: written without Xcode. The first compile is the pull request's hosted run;
+/// Compiled in hosted CI (#195, run 42004675828); NOT RUN on a device:
 /// the first real behaviour needs an iPhone (docs/implementation/CAPTURE_STATUS.md).
 @MainActor
 @Observable
