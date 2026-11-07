@@ -26,6 +26,8 @@ targets:
       - target: DoddyWidgets
       # "Save to Doddy" in the Share Sheet (ADR-311).
       - target: DoddyShare
+      # The expanded paper notification (ADR-786).
+      - target: DoddyNotificationContent
       # The Apple Watch app (ADR-232), embedded in the iPhone app.
       - target: DoddyWatch
       - package: DoddyCore

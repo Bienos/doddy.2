@@ -77,7 +77,9 @@ struct DoddyApp: App {
         FocusController.shared.refresh()
         // The stopwatch (ADR-652) is saved too, and its island's buttons must work the same way.
         StopwatchController.shared.refresh()
-        ToolLiveActivity.endLeftovers(keeping: [.focus, .stopwatch])
+        // Countdown timers (ADR-780) survive a relaunch the same way.
+        CountdownController.shared.refresh()
+        ToolLiveActivity.endLeftovers(keeping: [.focus, .stopwatch, .timer, .windDown])
         // A call Doddy makes for the user runs on the server, so its island may outlive a
         // relaunch; its Take over and End buttons reach the server from here (ADR-504).
         CallLiveActivity.shared.registerActions()
@@ -111,7 +113,7 @@ struct DoddyApp: App {
                     guard profiles.hasLoaded else { return }
                     LaunchWork.firstScreenShown()
                     await LaunchWork.afterFirstScreen(store: store)
-                    await LaunchWork.later()
+                    await LaunchWork.later(store: store)
                 }
         }
     }
