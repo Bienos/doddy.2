@@ -104,6 +104,7 @@ run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_ne
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
+run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -266,30 +267,47 @@ else
       # on backboardd, the tap never reached the app, and every later test failed to launch the app
       # until the job's 75 minutes ran out. On its own, a freeze costs only this test.
       island_test="DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd"
+      # DODDY_UI_TESTS=smoke (ADR-811; hosted CI sets it on pull requests): only the smoke classes,
+      # about 8 of the full suite's 27 minutes on 7 Nov 2026 (run 42370455942: the motion, art and
+      # memory-journey classes took about 20). Every push to main runs the whole suite and the native
+      # island test, so a pull request learns of those a merge later. Anything else, or unset: all.
+      if [ "${DODDY_UI_TESTS:-all}" = "smoke" ]; then
+        ui_scope="smoke"
+        ui_tests="-only-testing:DoddyUITests/LaunchSmokeTests -only-testing:DoddyUITests/WelcomeUITests"
+        ui_tests="$ui_tests -only-testing:DoddyUITests/LegalAcceptanceUITests -only-testing:DoddyUITests/PolishSmokeTests"
+        ui_label="UI smoke tests"
+      else
+        ui_scope="all"
+        ui_tests="-only-testing:DoddyUITests -skip-testing:$island_test"
+        ui_label="UI tests"
+      fi
       # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
       # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
       # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
       ui_workers=${DODDY_UI_TEST_WORKERS:-1}
       if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
         # shellcheck disable=SC2086
-        run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \
-          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyUITests \
-          -skip-testing:"$island_test" \
+        run_step "xcodebuild test: $ui_label ($ui_workers simulators)" xcodebuild test-without-building \
+          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" $ui_tests \
           -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
       else
         # shellcheck disable=SC2086
-        run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-          -destination "$dest" -only-testing:DoddyUITests -skip-testing:"$island_test" $test_limits
+        run_step "xcodebuild test: $ui_label" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+          -destination "$dest" $ui_tests $test_limits
       fi
-      if [ -n "${sim_id:-}" ]; then
-        run_step "Restart the simulator before the native island test" restart_simulator "$sim_id"
+      if [ "$ui_scope" = "smoke" ]; then
+        record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); every push to main runs it"
+      else
+        if [ -n "${sim_id:-}" ]; then
+          run_step "Restart the simulator before the native island test" restart_simulator "$sim_id"
+        fi
+        # The test takes under a minute; 3 minutes ends it if it hangs. The watchdog ends the whole
+        # pass after 8 (runner start about 70 s, the test, and the spindump XCTest takes on a hang),
+        # where a frozen simulator would otherwise hold xcodebuild until the job's limit.
+        run_step "xcodebuild test: native island test (alone, 8-minute watchdog)" with_watchdog 480 \
+          xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
+          -only-testing:"$island_test" -test-timeouts-enabled YES -default-test-execution-time-allowance 180
       fi
-      # The test takes under a minute; 3 minutes ends it if it hangs. The watchdog ends the whole
-      # pass after 8 (runner start about 70 s, the test, and the spindump XCTest takes on a hang),
-      # where a frozen simulator would otherwise hold xcodebuild until the job's limit.
-      run_step "xcodebuild test: native island test (alone, 8-minute watchdog)" with_watchdog 480 \
-        xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
-        -only-testing:"$island_test" -test-timeouts-enabled YES -default-test-execution-time-allowance 180
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
     fi

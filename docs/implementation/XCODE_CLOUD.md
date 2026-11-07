@@ -56,6 +56,8 @@ Linux, and `scripts/ci.sh` runs that test.
    Install the "Xcode Cloud" GitHub app for `Bienos/doddy.2` only.
 4. **The app record.** Pick the App Store Connect app you uploaded to by hand. Its bundle ID must
    be the one the build uses: `com.bienos.doddy2.dev` unless you set `DODDY_BUNDLE_ID` (step 5).
+   That record is **Doddy Beta** (ADR-812); the production app "Doddy" gets its own ID and record
+   later, with its own workflow.
 5. **Edit the workflow:**
    - **General:** name it "TestFlight on merge".
    - **Start condition:** Branch Changes, branch `main` (a workflow set up before 7 Nov 2026 names `claude/loving-dirac-uuxoux`: change it). Delete any "Pull
