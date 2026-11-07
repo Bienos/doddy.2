@@ -11,7 +11,7 @@ enum MicrophoneAccess {
 }
 
 extension MicrophoneAccess {
-    /// The first-run "Allow access" step (ADR-728): shows iOS's question only if it was never answered
+    /// The first-run "Allow access" step (ADR-733): shows iOS's question only if it was never answered
     /// and returns whether the microphone is allowed afterwards. Here, not in the step, because audio
     /// code may only live under Features/Voice.
     static func request() async -> Bool {

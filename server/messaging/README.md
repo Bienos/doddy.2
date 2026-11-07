@@ -18,7 +18,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Notes from calls | `GET /v1/call-notes` · `DELETE /v1/call-notes/:id` (after the user confirms or discards) |
 | ElevenLabs (S2) | `POST /webhooks/elevenlabs/call-start` · `POST /webhooks/elevenlabs/tools/{verify-pin,search-memories,save-note}`; all need `X-Doddy-Tool-Secret`, tools also `X-Doddy-Session` |
 | Errands (ADR-570) | `POST /v1/errands` · `POST /v1/errands/:id/{approve,cancel,ack}` · `GET /v1/errands` · `GET/DELETE /v1/errands/:id` (below) |
-| News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` |
+| News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` · `POST /v1/news/feed` (the stories behind the follows sent with the request, as cards, nothing stored; ADR-656) |
 | Health | `GET /healthz` |
 
 All `/v1` routes except account creation need `Authorization: Bearer <deviceToken>`.

@@ -41,7 +41,7 @@ enum UITestLaunch {
         // The first-launch welcome (ADR-598) would cover every fresh-install test; a test that is
         // about it asks for it (`welcome: true`).
         arguments += ["-welcome", welcome ? "YES" : "NO"]
-        // The first-run "Allow access" step (ADR-728) would sit between the Terms and the introduction in
+        // The first-run "Allow access" step (ADR-733) would sit between the Terms and the introduction in
         // every fresh-install test, and a real iOS question would block them. `FirstRunAccessUITests` asks for it.
         arguments += ["-firstRunAccess", firstRunAccess ? "YES" : "NO"]
         // The opening's whole timeline is 2.4 s, and on CI the launch and the first idle wait can
@@ -158,6 +158,17 @@ extension XCUIApplication {
         let item = buttons[identifier]
         _ = item.waitForExistence(timeout: 5)
         item.tap()
+    }
+
+    /// Home's + is a menu since 5 Nov 2026 (Take a photo, Choose a photo, New note): opens the new-note screen.
+    @MainActor
+    func openNewNote() {
+        let plus = buttons["home.save"]
+        _ = plus.waitForExistence(timeout: 5)
+        plus.tap()
+        let note = buttons["home.save.note"]
+        _ = note.waitForExistence(timeout: 5)
+        note.tap()
     }
 
     /// Settings (ADR-580): scrolls to a group's row and opens its page.

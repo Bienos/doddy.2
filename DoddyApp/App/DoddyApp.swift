@@ -35,7 +35,7 @@ struct DoddyApp: App {
         if ProcessInfo.processInfo.arguments.contains("-resetLegalAcceptanceForUITests") {
             UserDefaults.standard.removeObject(forKey: LegalAcceptance.preferenceKey)
         }
-        // UI tests of "Allow access" (ADR-728) start with it not yet answered.
+        // UI tests of "Allow access" (ADR-733) start with it not yet answered.
         if ProcessInfo.processInfo.arguments.contains("-resetFirstRunAccessForUITests") {
             UserDefaults.standard.removeObject(forKey: PreferenceKey.firstRunAccessSeen)
         }

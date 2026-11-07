@@ -16,8 +16,14 @@ export type SendOutcome =
 export interface PushTarget { deviceToken: string; environment: "sandbox" | "production" }
 
 export interface PushSender {
-  send(target: PushTarget, alert: { title: string; body: string }, messageId: string): Promise<SendOutcome>;
+  /**
+   * `data` rides next to `aps` under the key `doddy`. It is a routing hint for a tap and never
+   * content: the Lock Screen shows the alert, and anyone can read a notification's payload there.
+   */
+  send(target: PushTarget, alert: { title: string; body: string }, messageId: string, data?: PushData): Promise<SendOutcome>;
 }
+
+export interface PushData { kind: "call-result" }
 
 export interface SmsSender {
   send(toE164: string, body: string): Promise<SendOutcome>;

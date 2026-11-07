@@ -170,6 +170,14 @@ extension TimerBanners {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let action = response.actionIdentifier
         let requestID = response.notification.request.identifier
+        // A call Doddy made for the person has its answer ready (ADR-730): the tap opens Files › Calls,
+        // where the recap is. The push says only that (the server sends a kind, never words or ids).
+        if ServerPushKind.parse(response.notification.request.content.userInfo) == .callResult {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.callRecapsOpened() }
+            }
+            return
+        }
         // The weekly tidy-up (ADR-228) opens its screen; nothing changes until the user taps.
         if TidyUp.isTidyUp(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

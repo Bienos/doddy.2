@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// "Allow access" (ADR-728): one step after "Before we start" that asks iOS for the permissions Doddy
+/// "Allow access" (ADR-733): one step after "Before we start" that asks iOS for the permissions Doddy
 /// uses, so the person isn't interrupted by them later. Nothing is asked until they tap Allow, they can
 /// untick any item, and "Not now" asks nothing: each feature still asks when it is first used.
 ///

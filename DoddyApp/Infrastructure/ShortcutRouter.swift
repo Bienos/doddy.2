@@ -110,6 +110,7 @@ final class ShortcutRouter {
         isLookBackPresented = false
         isWeeklyPlanPresented = false
         isRecordingsPresented = false
+        isCallRecapsPresented = false
         translatorPreset = nil
         talkToDoddyOpened = false
         checkInBriefing = nil
@@ -142,8 +143,8 @@ final class ShortcutRouter {
         }
     }
 
-    /// The "Talk to Doddy" control brought Doddy forward (Settings › Action Button › Open App,
-    /// Automatic's fallback, or pressed with Doddy on screen; ADR-579). Opens the conversation
+    /// The "Talk to Doddy" control brought Doddy forward (after iOS's "Open Doddy?" when the island
+    /// start needed the app, or pressed with Doddy on screen; ADR-579, ADR-632). Opens the conversation
     /// with the shortcut greeting. Unlike `talkToDoddyInvoked` it isn't a Back Tap test receipt
     /// and ignores Back Tap's "Only open Doddy": the user chose to talk. Never over a shared
     /// draft's sheet; the "Before we start" step (ADR-581) covers the app until it is done.
@@ -249,6 +250,17 @@ final class ShortcutRouter {
 
     func checkInSheetDismissed() {
         if checkInBriefing != nil, !isVoicePresented, !AppLockGate.isLocked() { isVoicePresented = true } else { showWaitingDraft() }
+    }
+
+    /// A finished call's push was tapped (ADR-730): Files opens on Home, where Calls lists the recaps.
+    /// Navigation only: it starts nothing and sends nothing.
+    var isCallRecapsPresented = false
+
+    func callRecapsOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in callRecapsOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isCallRecapsPresented = true
     }
 
     /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and

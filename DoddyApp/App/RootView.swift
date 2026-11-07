@@ -99,7 +99,7 @@ enum PreferenceKey {
     static let welcomeSeen = "welcomeSeen"
     /// Settings › "Show the welcome again": the welcome shows once more, then clears this.
     static let welcomeReplay = "welcomeReplay"
-    /// The first-run "Allow access" step (ADR-728) has been answered or skipped on this installation.
+    /// The first-run "Allow access" step (ADR-733) has been answered or skipped on this installation.
     static let firstRunAccessSeen = "firstRunAccessSeen"
     /// Cheapest this week › My loyalty apps (ADR-661): the programs the user said they don't use
     /// (`DealsPrograms.stored`). Empty means every leaflet price counts. Stays on this iPhone.
@@ -171,7 +171,7 @@ struct RootView: View {
 
     /// The Terms acceptance (ADR-581); the "Before we start" step shows until it is stored.
     @AppStorage(PreferenceKey.legalAcceptance) private var legalRecordData: Data?
-    /// The "Allow access" step (ADR-728) was answered or skipped; it sets this itself.
+    /// The "Allow access" step (ADR-733) was answered or skipped; it sets this itself.
     @AppStorage(PreferenceKey.firstRunAccessSeen) private var accessSeen = false
 
     private var colorScheme: ColorScheme? {
@@ -479,7 +479,7 @@ struct RootView: View {
         LegalAcceptanceStore.isNeeded(legalRecordData) && !AppLock.shared.isLocked
     }
 
-    /// "Allow access" is due (ADR-728): after the Terms, before the introduction, on a new installation only.
+    /// "Allow access" is due (ADR-733): after the Terms, before the introduction, on a new installation only.
     /// Not over the Face ID lock, and not while the Terms step is up.
     private var accessStepUp: Bool {
         !legalGateUp && !AppLock.shared.isLocked
