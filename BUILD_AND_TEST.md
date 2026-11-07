@@ -30,6 +30,17 @@ scripts/check_forbidden_capabilities.sh
 swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined   # both flags on Linux only
 ```
 
+### Generated files (string catalogs, site pages, blog, web assets, tokens)
+
+```sh
+scripts/regen.sh                 # rewrites every generated file; after a merge conflict, instead of merging by hand
+scripts/ci.sh --only checks      # each generator's --check, and scripts/test_regen.sh
+```
+One `regen.sh` run is enough: `tools/build_site_i18n.py` runs last, because it translates the English
+pages that `build_blog.py` and `build_day.py` write. `scripts/test_regen.sh` checks that on a copy of the
+checkout (stale English pages, one regen.sh run, every --check), and that `regen.sh` and the `checks`
+group list the same generators.
+
 ### Gateway (Node, no Xcode, no network, no keys)
 
 ```sh
