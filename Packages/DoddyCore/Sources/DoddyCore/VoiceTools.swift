@@ -27,12 +27,10 @@ public enum VoiceToolName {
     public static let findDeals = "find_deals"
 }
 
-/// The functions a user turns on in Settings, Connections. All start off, and each one may also
-/// need an iOS permission of its own.
+/// The functions a user turns on or off in Settings, Connections. The ones that need no iOS permission
+/// start on (`startsOn`); the rest start off, and each of those needs an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
-    /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
-    case blik
     /// Presentations made on the iPhone as a file Keynote opens (ADR-567). No iOS permission.
     case presentations
     /// Step count, walking distance and floors from Motion & Fitness (ADR-568).
@@ -54,7 +52,6 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .maps: "Maps"
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
-        case .blik: "BLIK transfers"
         case .presentations: "Presentations"
         case .steps: "Steps"
         case .photos: "Photos"
@@ -65,6 +62,24 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
 
     /// Per-device preference key for @AppStorage.
     public var preferenceKey: String { "voiceConnection.\(rawValue)" }
+
+    /// Whether the switch is on until the person turns it off. Only the connections that need no iOS
+    /// permission start on: Doddy only prepares a draft, a card or a file, and the person still taps
+    /// Send, Open or Save. A connection that needs iOS permission (calendar, reminders, contacts, timers,
+    /// steps, photos, camera) stays off, because a switch that is on without the permission is shown as
+    /// blocked and never asks; turning it on in Settings is what makes iOS ask.
+    public var startsOn: Bool {
+        switch self {
+        case .maps, .shortcuts, .messages, .presentations: true
+        case .calendar, .reminders, .contacts, .timers, .steps, .photos, .camera, .home: false
+        }
+    }
+
+    /// The stored value for each connection that starts on, to register as the app's defaults. A value
+    /// the person stored (on or off) always wins over it.
+    public static var registeredDefaults: [String: Bool] {
+        Dictionary(uniqueKeysWithValues: allCases.filter(\.startsOn).map { ($0.preferenceKey, true) })
+    }
 
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {
@@ -78,7 +93,6 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
-        case VoiceToolName.draftBlikTransfer: .blik
         case VoiceToolName.makePresentation: .presentations
         case VoiceToolName.readSteps: .steps
         case VoiceToolName.findPhotos: .photos
@@ -229,9 +243,6 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
-    /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
-    /// never sends money.
-    case draftBlikTransfer(BlikTransferDraft)
     /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-568).
@@ -371,8 +382,6 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
-        case VoiceToolName.draftBlikTransfer:
-            return parseBlikTransfer(args, name: name)
         case VoiceToolName.makePresentation:
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:
@@ -804,7 +813,7 @@ public enum VoiceToolReply {
             + ToolData.block([quoted("Tool", name)])
     }
 
-    /// A tool of a feature this build hides (ADR-813). Nothing was looked up, saved or changed, and
+    /// A tool of a feature this build hides (decision 2026-11-07-release-scope). Nothing was looked up, saved or changed, and
     /// the call isn't logged. The agent says so in one line and carries on with what the app has.
     public static func hidden(_ name: String) -> String {
         "not available: this version of the Doddy app doesn't include the tool below, so nothing was looked up, saved or changed. Tell the user in one short sentence that this isn't in the app yet, and go on with what you can do.\n"

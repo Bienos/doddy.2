@@ -41,7 +41,7 @@ final class ToolGateTests: XCTestCase {
         }
     }
 
-    // MARK: The release scope (ADR-813)
+    // MARK: The release scope (decision 2026-11-07-release-scope)
 
     func testHiddenToolIsRefusedBeforeEverything() {
         // A hidden tool is hidden whatever else is on: translator, Pause all, a switch.
@@ -56,7 +56,7 @@ final class ToolGateTests: XCTestCase {
         XCTAssertEqual(decide(VoiceToolName.stopTranslator, "{}", translator: true), .hidden(.translator))
         XCTAssertEqual(decide(VoiceToolName.proposePlan, "{}"), .hidden(.planCard), "the plan card is hidden before .plan")
         XCTAssertEqual(decide(CloudToolName.draftEmail, Self.draft), .hidden(.onlineAccounts))
-        XCTAssertEqual(decide(VoiceToolName.draftBlikTransfer, "{}", on: false), .hidden(.blik), "hidden before its switch")
+        XCTAssertEqual(decide(VoiceToolName.controlHome, #"{"action":"off","name":"Lamp"}"#, on: false), .hidden(.homeKit), "hidden before its switch")
         // Core tools go on to the other checks as before.
         XCTAssertEqual(decide(VoiceToolName.setTimer, timer), .run)
         XCTAssertEqual(decide(VoiceToolName.setTimer, timer, on: false), .notConnected(.timers))
@@ -173,7 +173,7 @@ final class ToolGateTests: XCTestCase {
         VoiceToolName.changeCalendarEvent, VoiceToolName.changeReminder, VoiceToolName.deleteCalendarEvent,
         VoiceToolName.deleteReminder, VoiceToolName.deleteCalendarEvents, VoiceToolName.moveReminders,
         VoiceToolName.upcomingBirthdays, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm,
-        VoiceToolName.remindWhenToLeave, VoiceToolName.draftBlikTransfer, VoiceToolName.makePresentation,
+        VoiceToolName.remindWhenToLeave, VoiceToolName.makePresentation,
         VoiceToolName.readSteps, VoiceToolName.findPhotos, VoiceToolName.openCamera, VoiceToolName.controlHome,
     ]
 }

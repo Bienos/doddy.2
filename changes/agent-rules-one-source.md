@@ -1,0 +1,2 @@
+Agents work from one current rule set (last section of AGENTS.md, imported by CLAUDE.md); STATUS.md is one page (log archived in docs/archive/); new decisions go in docs/decisions/, change notes in changes/; scripts/regen.sh rebuilds generated files; the audit plan is in docs/engineering/AUDIT_2026-11-07.md. Decision: docs/decisions/2026-11-07-agent-rules-and-records.md.
+Ran: scripts/ci.sh --only checks; verify_imported_pack.py; regen.sh left a clean checkout unchanged. Not run: nothing else applies (docs and scripts only).

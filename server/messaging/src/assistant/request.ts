@@ -5,10 +5,16 @@
 import { z } from "zod";
 
 export const LIMITS = Object.freeze({
-  /** Above the worst case the scalar limits allow, so a request within every field limit is never refused as too large. */
-  bodyBytes: 128 * 1024 + 1_400_000,
+  /** Above the worst case the scalar limits allow, so a request within every field limit is never refused as too large.
+   * A message carries a photo or a file, never both, so the larger of the two counts. */
+  bodyBytes: 128 * 1024 + 4_100_000,
   /** One photo's base64, from a JPEG of at most 1,000,000 bytes (the app's `AssistantImage.maxBytes`). */
   imageBase64: 1_340_000,
+  /** One attached file's base64, from at most 3,000,000 bytes (the app's `AssistantFile.maxBytes`). */
+  fileBase64: 4_000_000,
+  /** A text file's words, in Unicode scalars, after decoding (the app's `AssistantFile.maxTextScalars`). */
+  fileText: 60_000,
+  fileName: 120,
   userText: 2_000,
   turns: 6,
   turnText: 2_000,
@@ -19,6 +25,7 @@ export const LIMITS = Object.freeze({
 
 const scalars = (s: string) => [...s].length;
 const text = (max: number) => z.string().refine((v) => !/^\s*$/.test(v) && scalars(v) <= max);
+const base64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const uuid = z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/);
 
 const memory = z.strictObject({
@@ -42,7 +49,25 @@ export const AssistRequest = z.strictObject({
     data: z.string().max(LIMITS.imageBase64).regex(/^[A-Za-z0-9+/]+={0,2}$/)
       .refine((d) => d.length % 4 === 0 && d.startsWith("/9j/"), "not a JPEG in base64"),
   }).optional(),
+  /** A file sent with this question only (Messages, 7 Nov 2026): a PDF, or a text file as UTF-8. Passed to the model
+   * and never stored or logged; its name is data the model sees, bounded and without control characters. */
+  file: z.strictObject({
+    name: z.string().refine((v) => !/^\s*$/.test(v) && scalars(v) <= LIMITS.fileName && !/[\u0000-\u001f\u007f]/.test(v)),
+    mediaType: z.enum(["application/pdf", "text/plain"]),
+    data: z.string().max(LIMITS.fileBase64).regex(base64).refine((d) => d.length % 4 === 0, "not base64"),
+  }).optional(),
 }).superRefine((req, ctx) => {
+  // One attachment a message: a photo or a file.
+  if (req.image && req.file) ctx.addIssue({ code: "custom", path: ["file"], message: "one attachment" });
+  if (req.file?.mediaType === "application/pdf" && !req.file.data.startsWith("JVBERi0")) {
+    ctx.addIssue({ code: "custom", path: ["file", "data"], message: "not a PDF" });
+  }
+  if (req.file?.mediaType === "text/plain") {
+    const words = fileText(req.file.data);
+    if (words === undefined || /^\s*$/.test(words) || scalars(words) > LIMITS.fileText) {
+      ctx.addIssue({ code: "custom", path: ["file", "data"], message: "not text within the limit" });
+    }
+  }
   // A note may be sent once, and all notes together stay under the total.
   const ids = new Set<string>();
   let total = 0;
@@ -55,6 +80,15 @@ export const AssistRequest = z.strictObject({
   if (total > LIMITS.memoryTotal) ctx.addIssue({ code: "custom", path: ["memories"], message: "total" });
 });
 export type AssistRequest = z.infer<typeof AssistRequest>;
+
+/** A text file's words: its base64 decoded as strict UTF-8, or undefined when it isn't UTF-8. */
+export function fileText(data: string): string | undefined {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(Buffer.from(data, "base64"));
+  } catch {
+    return undefined;
+  }
+}
 
 /** The error body, in the app's taxonomy (AssistantError.init(wireCode:)). Content-free messages. */
 export const WIRE_STATUS = {

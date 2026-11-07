@@ -1,0 +1,47 @@
+# The owner's label gate (ADR-811). A pull request that changes how Doddy is signed, configured,
+# deployed or governed (entitlements, Info.plist, Xcode specs, Xcode Cloud scripts, deploy configs,
+# secrets manifest, voice agent specs, migrations, CI and agent rules: scripts/check_sensitive_paths.sh)
+# needs the `owner-approved` label before the `sensitive-paths` check passes. Adding or removing the
+# label reruns only this small workflow, not the hour-long build in ios.yml.
+# Reads the pull request's own files and labels; no secrets, nothing written.
+# Actions are pinned to full commit SHAs as in ios.yml (ADR-715).
+name: PR guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+concurrency:
+  group: pr-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sensitive-paths:
+    name: sensitive-paths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # The pull request is checked out as its test merge commit; HEAD^1..HEAD is what it changes.
+          fetch-depth: 2
+
+      - name: Which files does this pull request change?
+        run: |
+          set -eu
+          # Unlike ios.yml, an unreadable list is an error here: "no files" would pass the gate.
+          if ! git rev-parse --verify -q 'HEAD^2' >/dev/null; then
+            echo "The checkout isn't the pull request's test merge commit, so its files can't be listed." >&2
+            exit 1
+          fi
+          # --no-renames: a moved file is listed under both paths, so moving a sensitive file counts.
+          git diff --name-only --no-renames 'HEAD^1' HEAD > "$RUNNER_TEMP/changed.txt"
+          echo "$(wc -l < "$RUNNER_TEMP/changed.txt") changed file(s)."
+
+      - name: Sensitive paths need the owner-approved label
+        env:
+          OWNER_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'owner-approved') }}
+        run: scripts/check_sensitive_paths.sh < "$RUNNER_TEMP/changed.txt"

@@ -5,7 +5,7 @@ import Foundation
 /// so the order and the stale-conversation rule are tested here, on any OS.
 public enum ToolGate {
     public enum Decision: Equatable, Sendable {
-        /// The tool belongs to a feature this build hides (ADR-813, `ReleaseScope`): nothing runs and
+        /// The tool belongs to a feature this build hides (decision 2026-11-07-release-scope, `ReleaseScope`): nothing runs and
         /// nothing is logged; the agent is told the feature isn't in the app. Checked first, before
         /// the translator: a hidden tool is hidden in every mode.
         case hidden(Feature)

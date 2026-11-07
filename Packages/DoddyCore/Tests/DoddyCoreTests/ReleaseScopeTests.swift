@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// The release scope (ADR-813): one list that hides a feature's every way in, and the tools the
+/// The release scope (decision 2026-11-07-release-scope): one list that hides a feature's every way in, and the tools the
 /// live agent loses with it. Checked against `voice-agent/tools.json`, so a tool that belongs to no
 /// feature and isn't core fails here before it can slip into a build unplaced.
 final class ReleaseScopeTests: XCTestCase {
@@ -80,7 +80,6 @@ final class ReleaseScopeTests: XCTestCase {
     func testShippingConnectionsFollowTheirFeature() {
         let scope = ReleaseScope.shipping
         // Each hidden feature with a switch takes its switch with it; the product's switches stay.
-        XCTAssertFalse(scope.shows(VoiceConnection.blik))
         XCTAssertFalse(scope.shows(VoiceConnection.home))
         XCTAssertFalse(scope.shows(VoiceConnection.steps))
         XCTAssertFalse(scope.shows(VoiceConnection.presentations))

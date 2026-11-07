@@ -61,7 +61,7 @@ struct NoteReminderSheet: View {
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
 
-                // Place reminders are hidden in the beta (ADR-813): no picker, and "At a time" only.
+                // Place reminders are hidden in the beta (decision 2026-11-07-release-scope): no picker, and "At a time" only.
                 if ReleaseScopeStore.current.shows(.placeReminders) {
                     Picker("Remind me", selection: $atPlace) {
                         Text("At a time").tag(false)

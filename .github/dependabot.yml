@@ -1,0 +1,40 @@
+# Dependency update pull requests (ADR-811). Every one of them is a normal pull request: CI runs, and
+# the ones that touch workflows or the Swift package manifest need the owner-approved label
+# (scripts/check_sensitive_paths.sh). Nothing merges by itself.
+version: 2
+updates:
+  # The SHA pins in .github/workflows (ADR-715): Dependabot moves the SHA and its version comment
+  # together. The runner already warns that the pinned checkout/setup-node target Node 20.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Node services: security fixes only (grouped per folder). Version bumps stay a deliberate choice,
+  # e.g. zod 3 → 4 in backend/ (OWNER_QUEUE). Security update PRs also need "Dependabot security
+  # updates" turned on in the repository settings.
+  - package-ecosystem: npm
+    directories:
+      - /backend
+      - /server/messaging
+      - /server/voice-token
+      - /gateway
+      - /web
+      - /site
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  # DoddyCore's exact pins (GRDB, swift-crypto). Monthly, at most two open.
+  - package-ecosystem: swift
+    directory: /Packages/DoddyCore
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2

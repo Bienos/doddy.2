@@ -98,8 +98,6 @@ enum IslandAction: String, Codable, Hashable, Sendable, CaseIterable {
     case text
     /// An email: a draft for Mail, or Gmail or Outlook through Doddy's server.
     case email
-    /// A BLIK transfer the user sends in their bank app.
-    case transfer
     case calendar
     /// A change to a reminder that exists (adding one has its own Reminder Knot moment).
     case reminder
@@ -227,7 +225,7 @@ extension DoddyVoiceAttributes.ContentState {
             case 1: return islandWord("Doddy isn't listening · 1 note saved")
             default: return "Doddy isn't listening · \(savedCount) notes saved"
             }
-        // Every card, not only a note's (ADR-616: a text or a transfer said "Save or Don't save").
+        // Every card, not only a note's (ADR-616: a text or an email said "Save or Don't save").
         case .needsConfirmation: return islandWord("Open Doddy to see it and decide")
         case .wakeListening: return islandWord("Listening on this iPhone for “Hey Doddy” only")
         case .wakePaused: return islandWord("Not listening right now")

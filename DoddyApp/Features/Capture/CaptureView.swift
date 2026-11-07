@@ -110,7 +110,7 @@ struct CaptureView: View {
                             ProblemView(message: takenPhotoProblem).accessibilityIdentifier("capture.takenPhotoProblem")
                         }
                         CapturePhotoPicker(text: $text, prepared: $photo, isDisabled: isSaving)
-                        // A second microphone path; hidden in the beta (ADR-813).
+                        // A second microphone path; hidden in the beta (decision 2026-11-07-release-scope).
                         if ReleaseScopeStore.current.shows(.voiceMemos) {
                             CaptureVoiceMemo(text: $text, draft: $memo, isDisabled: isSaving)
                         }
@@ -305,6 +305,8 @@ struct CaptureView: View {
         // A note now: the draft goes (ADR-362).
         drafts.remove(id: draftID)
         saved = record
+        // "Note saved" in the island (ADR-781): after the save, never before; never its words.
+        SavedNoteIsland.flash()
     }
 }
 

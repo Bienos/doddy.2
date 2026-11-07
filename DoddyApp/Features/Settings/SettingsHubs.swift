@@ -28,10 +28,7 @@ struct DoddyMemorySettingsView: View {
                     StatusRow(title: NSLocalizedString("Lists", comment: ""), value: "\(store.lists.count)")
                 }
                 .accessibilityIdentifier("settings.memory.lists")
-                Button { openMemories(.find) } label: {
-                    Label("Find something", systemImage: "magnifyingglass")
-                }
-                .accessibilityIdentifier("settings.memory.find")
+                // "Find something" was a third row; Find is on the notes screen itself (7 Nov 2026).
             } footer: {
                 Text("Only what you chose to save. Kept on this iPhone.")
             }
@@ -45,7 +42,7 @@ struct DoddyMemorySettingsView: View {
                                   : (profiles.profile.value(.name) ?? NSLocalizedString("Saved", comment: "")))
                 }
                 .accessibilityIdentifier("settings.profile")
-                // The learning loop waits for the beta's result (ADR-813, M6): hidden with its row.
+                // The learning loop waits for the beta's result (decision 2026-11-07-release-scope, M6): hidden with its row.
                 if ReleaseScopeStore.current.shows(.learning) {
                     NavigationLink {
                         KnowledgeSettingsView()
@@ -76,7 +73,7 @@ struct ConnectionsSettingsView: View {
     @State private var connections = ConnectionController()
 
     private var activityLog: ActivityLogStore { .shared }
-    /// Each row below is a feature's way in; a hidden one has no row (ADR-813).
+    /// Each row below is a feature's way in; a hidden one has no row (decision 2026-11-07-release-scope).
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 
     var body: some View {
@@ -210,7 +207,7 @@ struct ConnectionsSettingsView: View {
 }
 
 /// Settings › Notifications (ADR-633): everything that can reach the user without opening Doddy.
-/// A row whose feature the build hides is left out (ADR-813).
+/// A row whose feature the build hides is left out (decision 2026-11-07-release-scope).
 struct NotificationsSettingsView: View {
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 

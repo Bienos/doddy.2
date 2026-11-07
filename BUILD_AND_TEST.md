@@ -69,10 +69,29 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
-- `ci` (macOS): `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
-  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561). It no longer
+- `ios-build` (macOS; named `ci` until ADR-811; runner image `macos-26` and Xcode 26.6 pinned):
+  `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
+  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; then the
+  simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
+  simulator sometimes freezes during it: ADR-764). It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
+- Pushes to `main` (ADR-811) run every job, each commit in its own run that nothing cancels; pull requests
+  keep the path selection above, and a newer push to a pull request cancels its older run.
+- UI tests on pull requests are the smoke classes only (`DODDY_UI_TESTS=smoke`: `LaunchSmokeTests`,
+  `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
+  7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
+  test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
+- Package versions are pinned: `Config/Package.resolved` holds every Swift package the app resolves
+  (LiveKit is also `exactVersion` in `project.yml`). `make project`, `scripts/ci.sh` and Xcode Cloud's
+  `ci_post_clone.sh` install it into the generated project; CI fails if resolution changes it, and keeps
+  what it resolved as the `app-package-resolved` artifact. To move versions: `make update-packages` on a
+  Mac, then commit `Config/Package.resolved` (decision `docs/decisions/2026-11-07-reproducible-app-builds.md`).
+- Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
+  Release-only error shows up before Xcode Cloud archives.
+- `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
+  is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths) and
+  doesn't carry the owner's `owner-approved` label. Adding the label reruns it.
 
 Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs.
 
@@ -151,7 +170,8 @@ manager — `backend/.env.example` lists names with empty values.
 **App Group (on since 2026-10-11, owner has a paid Apple Developer account).** The widgets (ADR-219), the
 watch complications (ADR-262), "Save to Doddy" in the Share Sheet (ADR-311) and the parking widget (ADR-315)
 share a folder, the App Group `group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default).
-`project.yml` signs the app, the widget extension and the share extension with it (the watch targets, paused, are in `project-watch.yml`). Choose
+`project.yml` signs the app, the widget extension and the share extension with it (the watch targets, paused, are in `project-watch.yml`; the
+notification content extension, ADR-786, has no entitlements and needs only a team). Choose
 your team in Xcode for each target; automatic signing adds the App Groups capability and registers the group.
 If you also use push, set `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements`. To build without it
 (a free Apple ID, whose support for App Groups isn't verified here), set `DODDY_APP_ENTITLEMENTS`,

@@ -16,7 +16,7 @@ import os
 /// only after the recorder has delivered audio and, for a start from a shortcut or control, the Live
 /// Activity is up.
 ///
-/// NOT COMPILED OR RUN: written without Xcode. The first compile is the pull request's hosted run;
+/// Compiled in hosted CI (#195, run 42004675828); NOT RUN on a device:
 /// the first real behaviour needs an iPhone (docs/implementation/CAPTURE_STATUS.md).
 @MainActor
 @Observable
@@ -110,7 +110,7 @@ final class RecordingCoordinator {
     /// Starts a recording and returns once the recorder has delivered audio, or has failed. A second
     /// call while one is going is rejected, never queued.
     func start(origin: CaptureOrigin) async -> StartOutcome {
-        // Hidden in this build (ADR-813): Siri, the control and the Action Button still reach here, and
+        // Hidden in this build (decision 2026-11-07-release-scope): Siri, the control and the Action Button still reach here, and
         // are told why nothing started. Nothing is installed or set up for a hidden feature.
         guard ReleaseScopeStore.current.shows(.recordings) else { return .rejected(.notInThisVersion) }
         install()

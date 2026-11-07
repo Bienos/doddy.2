@@ -1,8 +1,16 @@
-.PHONY: project project-iphone project-watch project-mac test-core ci ci-core
+.PHONY: project project-iphone project-watch project-mac update-packages test-core ci ci-core
 project:        ## generate Doddy.xcodeproj from project.yml: iPhone/iPad app (macOS, needs xcodegen)
 	xcodegen generate --spec project.yml
+	@scripts/install_package_resolved.sh Doddy.xcodeproj
 project-iphone: ## generate DoddyiPhone.xcodeproj: iPhone/iPad app with no entitlements (free Apple team)
 	xcodegen generate --spec project-iphone.yml
+	@scripts/install_package_resolved.sh DoddyiPhone.xcodeproj
+update-packages: ## Mac: resolve the app's Swift packages afresh and save the pins in Config/Package.resolved
+	xcodegen generate --spec project.yml
+	rm -f Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+	xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
+	cp Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved Config/Package.resolved
+	@echo "Config/Package.resolved updated: commit it with the project.yml change that needed it."
 # Apple Watch and Mac development are paused (ADR-572). Their targets still build when asked for
 # on purpose: set ENABLE_WATCH=1 / ENABLE_MAC=1. Nothing else (CI, project.yml) builds them.
 project-watch:  ## PAUSED: generate DoddyWithWatch.xcodeproj (iPhone app + Watch app); needs ENABLE_WATCH=1

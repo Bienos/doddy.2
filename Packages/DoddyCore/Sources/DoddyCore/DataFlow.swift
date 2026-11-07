@@ -124,8 +124,8 @@ public enum DataFlow {
         if state.webNotesKept { webKept.append("a copy of your saved notes (not private ones), as text") }
         if state.webConversationsKept { webKept.append("the text of your conversations (not private ones), never audio") }
 
-        var ask = "Typed questions"
-        if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
+        var ask = "Typed questions, with a photo or file you attach to one (not kept)"
+        if state.askDoddyUsesNotes { ask += ", and the saved notes that match them" }
 
         let openAIVoice = state.voiceProvider == .openAIRealtime
         return [

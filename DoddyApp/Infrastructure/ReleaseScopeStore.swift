@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// Which features this build shows (ADR-813): `ReleaseScope.shipping`, always. A Debug build can
+/// Which features this build shows (decision 2026-11-07-release-scope): `ReleaseScope.shipping`, always. A Debug build can
 /// show everything through Settings › About › Advanced › "Show every feature", so the owner can try a
 /// hidden feature on their own phone; a Release or TestFlight build never reads that key, so what a
 /// tester gets is the shipping scope and nothing else. Read at each use, not cached: the toggle

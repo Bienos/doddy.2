@@ -1,0 +1,3 @@
+The release scope: one list in DoddyCore (`ReleaseScope.shipping`) hides a feature's every way in for the beta: its voice tool, Home, Settings, Connections, quick actions, languages and "What I can do". 40 of 42 features and 60 of 101 voice tools are hidden; a Debug build can show everything (decision `2026-11-07-release-scope`).
+Owner step: take the 60 hidden tools off the agent the beta talks to (owner queue 22).
+Ran: `scripts/ci.sh --only checks`; a static check of the tool placement. Not run here: Swift (no toolchain); the hosted Mac job of the pull request is the first compile of the app's edits. Features merged after the list was written (e.g. ADR-785's thought review) are shown until placed.

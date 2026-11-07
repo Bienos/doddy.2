@@ -97,8 +97,9 @@ struct AboutYouSettingsView: View {
 
 /// Settings › Appearance.
 struct AppearanceSettingsView: View {
-    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.light.rawValue
+    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.default.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    @AppStorage(PreferenceKey.savedIsland) private var savedIslandOn = true
 
     var body: some View {
         Form {
@@ -111,6 +112,20 @@ struct AppearanceSettingsView: View {
                 Toggle("Hide character artwork", isOn: $hideCharacterArt)
             } footer: {
                 Text("Text size follows your iPhone's settings. With Reduce Motion on, Doddy stays still.")
+            }
+            Section {
+                // "Note saved" in the Dynamic Island for a few seconds after a save (ADR-781).
+                Toggle("\u{201C}Note saved\u{201D} in the Dynamic Island", isOn: $savedIslandOn)
+                    .accessibilityIdentifier("settings.savedIsland")
+                // A still paper wallpaper for the Lock Screen (ADR-784).
+                NavigationLink {
+                    WallpaperView()
+                } label: {
+                    Label("Lock Screen wallpaper", systemImage: "photo")
+                }
+                .accessibilityIdentifier("settings.wallpaper")
+            } footer: {
+                Text("After you save a note, the island shows \u{201C}Note saved\u{201D} for a few seconds, never the note's words. Needs Live Activities on for Doddy in iOS Settings.")
             }
         }
         .settingsPage()
@@ -136,7 +151,7 @@ struct VoiceSettingsView: View {
                 PersonalityLinkRow()
             }
             Section {
-                // One voice provider in the beta (ADR-813, V1 decision 5): the picker is hidden with the feature.
+                // One voice provider in the beta (decision 2026-11-07-release-scope, V1 decision 5): the picker is hidden with the feature.
                 if ReleaseScopeStore.current.shows(.voiceProviderPicker) {
                     VoiceProviderPicker(idPrefix: "settings")
                 }
@@ -342,7 +357,7 @@ struct MemoriesSettingsView: View {
 
             BackupSettingsSection()
 
-            // Hidden in the beta until one real Takeout export has been tried (ADR-813).
+            // Hidden in the beta until one real Takeout export has been tried (decision 2026-11-07-release-scope).
             if ReleaseScopeStore.current.shows(.noteImport) {
                 NoteImportSettingsSection()
             }
@@ -548,7 +563,7 @@ struct PrivacySettingsView: View {
             Section {
                 // ADR-310: Face ID when Doddy opens, and after a minute away.
                 AppLockToggle()
-                // iPhone search (ADR-330), off until switched on; no row at all when the build hides it (ADR-813).
+                // iPhone search (ADR-330), off until switched on; no row at all when the build hides it (decision 2026-11-07-release-scope).
                 if ReleaseScopeStore.current.shows(.spotlight) {
                     SpotlightToggle()
                 }
@@ -696,10 +711,12 @@ struct RoutinesSettingsView: View {
                     .foregroundStyle(Theme.secondaryText)
             }
             MorningCheckInSettingsSection()
-            // Each routine the build hides (ADR-813) loses its section; the morning check-in stays, off by default.
+            // Each routine the build hides (decision 2026-11-07-release-scope) loses its section; the morning check-in stays, off by default.
             if ReleaseScopeStore.current.shows(.eveningWrapUp) { EveningWrapUpSettingsSection() }
             if ReleaseScopeStore.current.shows(.weeklyPlan) { WeeklyPlanSettingsSection() }
             if ReleaseScopeStore.current.shows(.weeklyLookBack) { WeeklyLookBackSettingsSection() }
+            // "A thought is ready for review" (ADR-785). Not in the release scope's list yet, so every build shows it.
+            ThoughtReviewSettingsSection()
             if ReleaseScopeStore.current.shows(.tidyUp) { TidyUpSettingsSection() }
             if store.environment.capabilities.isAvailable(.noteReminders) {
                 NoteReminderSettingsSection()
@@ -720,7 +737,7 @@ struct AdvancedSettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     #if DEBUG
-    /// Shows every feature on the owner's phone (ADR-813). Only a Debug build has the toggle or reads the key.
+    /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope). Only a Debug build has the toggle or reads the key.
     @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = false
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
@@ -772,7 +789,7 @@ struct AdvancedSettingsView: View {
     }
 
     #if DEBUG
-    /// The release scope (ADR-813): what this build hides, and the switch to see it all. Debug only.
+    /// The release scope (decision 2026-11-07-release-scope): what this build hides, and the switch to see it all. Debug only.
     private var releaseScope: some View {
         Section {
             Toggle("Developer: show every feature", isOn: $previewEverything)

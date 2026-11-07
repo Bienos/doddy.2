@@ -11,7 +11,7 @@ import SwiftUI
 /// looks again every few seconds while Home is on screen. A call the server still holds but this
 /// iPhone has not heard about yet shows when the list next syncs (Settings › Phone calls).
 ///
-/// NOT COMPILED here (no Xcode in the session that wrote it).
+/// Compiled in hosted CI (#195, run 42004675828); NOT RUN on a device.
 struct ActiveCallBadge: View {
     @Environment(\.appEnvironment) private var environment
     @State private var active = false

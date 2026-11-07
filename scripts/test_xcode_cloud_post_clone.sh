@@ -20,7 +20,7 @@ fresh() {
   local block='				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				DODDY_APP_BUNDLE_IDENTIFIER = com.bienos.doddy2.dev;
-				DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements;
+				DODDY_APP_ENTITLEMENTS = "Config/Doddy-AppGroup.entitlements";
 				MARKETING_VERSION = 0.0.1;'
   printf '%s\n%s\n%s\n' "$block" "$block" "$block" > "$work/repo/Doddy.xcodeproj/project.pbxproj"
 }
@@ -51,19 +51,31 @@ fresh; run CI_BUILD_NUMBER=7 DODDY_TEAM_ID=ABCDE12345 DODDY_BUNDLE_ID=com.bienos
 
 # Push notifications (ADR-701): on unless the workflow says DODDY_PUSH=0.
 fresh; run
-[ "$(count 'DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements;')" = 3 ] || fail "by default every target gets the push entitlements"
+[ "$(count 'DODDY_APP_ENTITLEMENTS = "Config/Doddy-Push-AppGroup.entitlements";')" = 3 ] || fail "by default every target gets the push entitlements, quotes kept (XcodeGen quotes a path with a slash)"
 [ "$(count 'Doddy-AppGroup.entitlements')" = 0 ] || fail "and none keeps the entitlements without push"
 fresh; run DODDY_PUSH=1
 [ "$(count 'Doddy-Push-AppGroup.entitlements')" = 3 ] || fail "DODDY_PUSH=1 is the same as the default"
 fresh; run DODDY_PUSH=0
 [ $? -eq 0 ] || fail "DODDY_PUSH=0 should succeed: $(cat "$work/out")"
-[ "$(count 'DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements;')" = 3 ] || fail "DODDY_PUSH=0 keeps the entitlements without push"
+[ "$(count 'DODDY_APP_ENTITLEMENTS = "Config/Doddy-AppGroup.entitlements";')" = 3 ] || fail "DODDY_PUSH=0 keeps the entitlements without push"
+# The same when a future XcodeGen writes the path without quotes.
+fresh; sed 's|"Config/Doddy-AppGroup.entitlements"|Config/Doddy-AppGroup.entitlements|' "$work/repo/Doddy.xcodeproj/project.pbxproj" > "$work/p" \
+  && mv "$work/p" "$work/repo/Doddy.xcodeproj/project.pbxproj"
+run
+[ $? -eq 0 ] || fail "an unquoted entitlements path should work too: $(cat "$work/out")"
+[ "$(count 'DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements;')" = 3 ] || fail "and be replaced without adding quotes"
+# And a quoted bundle ID.
+fresh; sed 's|= com.bienos.doddy2.dev;|= "com.bienos.doddy2.dev";|' "$work/repo/Doddy.xcodeproj/project.pbxproj" > "$work/p" \
+  && mv "$work/p" "$work/repo/Doddy.xcodeproj/project.pbxproj"
+run DODDY_BUNDLE_ID=com.bienos.doddy
+[ $? -eq 0 ] || fail "a quoted bundle ID should work too: $(cat "$work/out")"
+[ "$(count 'DODDY_APP_BUNDLE_IDENTIFIER = "com.bienos.doddy";')" = 3 ] || fail "and keep its quotes"
 fresh; run DODDY_PUSH=no
 [ "$(count 'Doddy-Push-AppGroup.entitlements')" = 3 ] || fail "only the exact value 0 turns push off, so a typo can't ship a build without it"
 fresh; rm "$work/repo/Config/Doddy-Push-AppGroup.entitlements"; run
 [ $? -ne 0 ] || fail "with the push entitlements file missing the build must stop"
 grep -q "Doddy-Push-AppGroup.entitlements is missing" "$work/out" || fail "and say which file"
-fresh; sed 's|DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements;|DODDY_APP_ENTITLEMENTS = "";|' "$work/repo/Doddy.xcodeproj/project.pbxproj" > "$work/p" \
+fresh; sed 's|DODDY_APP_ENTITLEMENTS = "Config/Doddy-AppGroup.entitlements";|DODDY_APP_ENTITLEMENTS = "";|' "$work/repo/Doddy.xcodeproj/project.pbxproj" > "$work/p" \
   && mv "$work/p" "$work/repo/Doddy.xcodeproj/project.pbxproj"
 run
 [ $? -ne 0 ] || fail "when the entitlements line isn't found the build must stop, not ship without push"
@@ -88,6 +100,14 @@ grep -q "couldn't set build number" "$work/out" || fail "and say what it couldn'
 # No generated project at all.
 rm -rf "$work/repo"; mkdir -p "$work/repo"; run
 [ $? -ne 0 ] || fail "with no Doddy.xcodeproj the build must stop"
+
+# The committed package pins reach the generated project; without them nothing is created.
+pins="$work/repo/Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+fresh; run
+[ ! -e "$pins" ] || fail "with no Config/Package.resolved no resolved file should appear in the project"
+fresh; printf '{ "pins" : [], "version" : 3 }\n' > "$work/repo/Config/Package.resolved"; run
+[ $? -eq 0 ] || fail "installing the pins should succeed: $(cat "$work/out")"
+cmp -s "$work/repo/Config/Package.resolved" "$pins" || fail "Config/Package.resolved should be copied into the project unchanged"
 
 if [ "$failures" -ne 0 ]; then echo "FAIL: $failures check(s)"; exit 1; fi
 echo "PASS: ci_post_clone.sh sets the build number, team, bundle ID and push entitlements and refuses bad values"

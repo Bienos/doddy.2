@@ -1,6 +1,6 @@
 # Following: the stories behind what you follow, as a feed (ADR-656)
 
-Owner, 28 Oct 2026 (in Polish): a news "plugin" where you follow what you want, shown like an Instagram feed, built on keywords, and by default "what's happening in Poland". Branch `claude/message-tracking-plugin-rd0cbn`. **Status of each part is at the end. Nothing here has been compiled with Xcode or seen on a device.**
+Owner, 28 Oct 2026 (in Polish): a news "plugin" where you follow what you want, shown like an Instagram feed, built on keywords, and by default "what's happening in Poland". Branch `claude/message-tracking-plugin-rd0cbn`. **On the default branch since 7 Nov 2026 (#195, through `claude/magical-cray-4299gg`); compiled and tested in #195's hosted Mac job (run 42004675828, 5 Nov); not seen on a device. `doddy-messaging` serves `POST /v1/news/feed` since its 7 Nov deploy of `174ba21`.** Status of each part is at the end; the "Not run" list there is from 28 Oct.
 
 ## What it is
 
@@ -65,7 +65,7 @@ iPhone: NewsFeedSections.group (Today / Yesterday / Earlier) ─▶ FollowingVie
 
 ## Not run
 
-- **The SwiftUI (`FollowingView`, `FollowingModel`) and the Home change are NOT COMPILED.** No Xcode here. They need the hosted Mac build and a run on a device, in Polish and English, light and dark, at the largest text size (the ••• menu gained a row in its second section; the first section is unchanged, which the hosted UI tests check).
+- **The SwiftUI (`FollowingView`, `FollowingModel`) and the Home change were not compiled here** (no Xcode); they compiled later in #195's hosted Mac job (7 Nov note above). They still need a run on a device, in Polish and English, light and dark, at the largest text size (the ••• menu gained a row in its second section; the first section is unchanged, which the hosted UI tests check).
 - **No live feed was fetched.** The server tests use fake feeds. Which publishers put pictures in their feeds (and how many cards therefore show one) is unknown until the server runs against the real catalog.
 - **No real GNews call.**
 
@@ -103,7 +103,7 @@ An HTML mock-up of the three screens (Following, the "śledź CPK" card, the Fol
 
 Also: What Doddy did gets a row ("Follow in Following" / "Śledź w Śledzonych", app "Following" / "Śledzone"); it stays outside Pause all, like the stopwatch; in the car it is refused (it needs a tap); Doddy Web's logbook knows the tool.
 
-**On the live ElevenLabs agent since 28 Oct 2026** (owner: "Dodaj"): `tool_5201m626991zfjgrw2b4mhsyqzcb`, saved as `agtvrsn_7301m626bt8mfm1bw7qav8gtqyzx`, rollback `agtvrsn_4401m5y51ygzfbdbapvpnfb6vfnh`; the record is in `voice-agent/README.md`. The prompt was not changed. **Until an app build with this branch is on the iPhone, the voice may offer it and the app answers that it isn't supported.**
+**On the live ElevenLabs agent since 28 Oct 2026** (owner: "Dodaj"): `tool_5201m626991zfjgrw2b4mhsyqzcb`, saved as `agtvrsn_7301m626bt8mfm1bw7qav8gtqyzx`, rollback `agtvrsn_4401m5y51ygzfbdbapvpnfb6vfnh`; the record is in `voice-agent/README.md`. The prompt was not changed. **Until an app built from the default branch after 7 Nov (#195) is on the iPhone, the voice may offer it and the app answers that it isn't supported.**
 
 The ask card is in English only, like every other ask card (the cards' words are not in the string catalogs yet).
 

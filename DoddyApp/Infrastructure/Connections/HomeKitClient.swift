@@ -18,7 +18,7 @@ protocol HomeControlling {
 /// the home and writes one characteristic or runs one scene, after the person's tap.
 ///
 /// Needs the HomeKit entitlement (a paid Apple team); the free-team build has none, so iOS
-/// reports no access there. NOT COMPILED OR RUN: written without Xcode (HOME_COMMANDS_STATUS.md).
+/// reports no access there. Compiled in hosted CI (#149, #195); NOT RUN on a device (HOME_COMMANDS_STATUS.md).
 @MainActor
 final class HomeKitClient: NSObject, HomeControlling, HMHomeManagerDelegate {
     static let shared = HomeKitClient()

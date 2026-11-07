@@ -75,7 +75,7 @@ final class DataFlowTests: XCTestCase {
         state.askDoddyOn = true
         XCTAssertTrue(row("askDoddy", state).what.contains("saved notes"))
         state.askDoddyUsesNotes = false
-        XCTAssertEqual(row("askDoddy", state).what, "Typed questions.")
+        XCTAssertEqual(row("askDoddy", state).what, "Typed questions, with a photo or file you attach to one (not kept).")
     }
 
     /// ADR-570: handed-over tasks go to the messaging server and Anthropic, only with a server set.

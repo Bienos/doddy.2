@@ -1,6 +1,6 @@
 import Foundation
 
-/// A feature the release scope can hide (ADR-813). Hiding is "no way in": the row in Settings, the
+/// A feature the release scope can hide (decision 2026-11-07-release-scope). Hiding is "no way in": the row in Settings, the
 /// card or menu item on Home, the icon's quick action and the voice tool all go; the code and the
 /// person's data stay. Nothing here deletes or changes what the person saved.
 ///
@@ -96,8 +96,6 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case trainingPlan
     /// Lights, outlets, fans and scenes (HomeCommand.swift).
     case homeKit
-    /// A BLIK transfer on a card, sent by the person in their bank app (ADR-510).
-    case blik
     /// A Keynote file made on the iPhone (ADR-567).
     case presentations
     /// inFakt invoices (ADR-640). Nothing is sent to inFakt in any build.
@@ -127,7 +125,6 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .health: [VoiceToolName.readHealthWeek]
         case .trainingPlan: [VoiceToolName.openTrainingPlan]
         case .homeKit: [VoiceToolName.controlHome]
-        case .blik: [VoiceToolName.draftBlikTransfer]
         case .presentations: [VoiceToolName.makePresentation]
         case .photosAndCamera: [VoiceToolName.findPhotos, VoiceToolName.openCamera]
         case .voiceProviderPicker, .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
@@ -145,7 +142,6 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         switch self {
         case .steps: .steps
         case .homeKit: .home
-        case .blik: .blik
         case .presentations: .presentations
         default: nil
         }
@@ -167,7 +163,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     }
 }
 
-/// Which features a build shows (ADR-813; `docs/implementation/RELEASE_SCOPE.md`). One list, read
+/// Which features a build shows (decision 2026-11-07-release-scope; `docs/implementation/RELEASE_SCOPE.md`). One list, read
 /// by every way in: the voice tool gate, Home's menu and bottom bar, the Settings rows, the icon's
 /// quick actions, the language picker and the capability catalog. There was no switch for "Hide"
 /// before this (`GO_LIVE_CHECKLIST.md` B2): a feature could only be shipped or deleted.
@@ -183,7 +179,7 @@ public struct ReleaseScope: Equatable, Sendable {
         self.hidden = hidden
     }
 
-    /// Every feature, as the code was built until ADR-813.
+    /// Every feature, as the code was built until decision 2026-11-07-release-scope.
     public static let everything = ReleaseScope(hidden: [])
 
     /// The v1 beta (`docs/product/V1_SCOPE.md`, `PRZEGLAD_FUNKCJI_2026-11-07.md` §6): the
@@ -199,7 +195,7 @@ public struct ReleaseScope: Equatable, Sendable {
         .leaveBy, .parking, .birthdays, .eveningWrapUp, .weeklyLookBack, .weeklyPlan, .steps,
         .files, .doddyWeb, .cloudMemory, .onlineAccounts, .webSearch, .claudeDocuments, .deals, .errands, .priceWatch,
         .following, .dailyNews, .updates, .phoneCalls, .callCases,
-        .health, .trainingPlan, .homeKit, .blik, .presentations, .invoices, .parcels,
+        .health, .trainingPlan, .homeKit, .presentations, .invoices, .parcels,
     ])
 
     /// The Debug-only preference that shows everything on the owner's phone. A Release build never reads it.

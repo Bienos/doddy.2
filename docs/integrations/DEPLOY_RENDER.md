@@ -98,7 +98,7 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
 ## Web search only (fastest path)
 
 1. Render dashboard → your workspace → **New → Web Service** → repo `Bienos/doddy.2`, the default branch
-   (`claude/loving-dirac-uuxoux` on 2026-10-11). On a new Render account, first connect GitHub and give Render
+   (`main` since 7 Nov 2026; `claude/loving-dirac-uuxoux` before). On a new Render account, first connect GitHub and give Render
    access to `Bienos/doddy.2` (Account Settings → Git Providers), or the repo cannot be fetched. Do **not** use
    New → Blueprint: `render.yaml` also creates the paid messaging services and Postgres.
    * Name `doddy`, region Frankfurt, plan Free, root directory `backend`
