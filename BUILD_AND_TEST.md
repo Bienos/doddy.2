@@ -70,7 +70,9 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
 - `ci` (macOS): `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
-  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561). It no longer
+  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; then the
+  simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
+  simulator sometimes freezes during it: ADR-764). It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
 
