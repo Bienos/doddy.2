@@ -19,7 +19,7 @@ on:
   # The default branch is what Render deploys, and it sometimes gets direct pushes (ADR-675): those
   # are tested too. The macOS job runs only when the push can reach the app build (ci_needs_mac.sh).
   push:
-    branches: [claude/loving-dirac-uuxoux]
+    branches: [main]
   pull_request:
   workflow_dispatch:
     inputs:
