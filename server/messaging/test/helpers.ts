@@ -16,8 +16,26 @@ import type { ResultWriter } from "../src/taskCalls/context.js";
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 export const dbSkip = TEST_DATABASE_URL ? false : "TEST_DATABASE_URL not set (needs a disposable Postgres database)";
 
+/**
+ * Refuses a database that isn't plainly a disposable test one (engineering audit, 7 Nov 2026): freshDb
+ * drops its whole public schema, so a TEST_DATABASE_URL pasted from a real service would wipe it. The
+ * database's name must end in `_test` or `-test`, or be `test`, as CI's `doddy_test` does.
+ */
+export function assertDisposableTestDatabase(url: string): void {
+  let name = "";
+  try {
+    name = decodeURIComponent(new URL(url).pathname.replace(/^\//, ""));
+  } catch {
+    name = "";
+  }
+  if (!/(^|[_-])test$/i.test(name)) {
+    throw new Error(`TEST_DATABASE_URL must name a disposable database whose name ends in _test (it names "${name || "no database"}"): the tests drop its public schema`);
+  }
+}
+
 /** Wipes the test database's public schema and re-applies migrations. */
 export async function freshDb(): Promise<Db> {
+  assertDisposableTestDatabase(TEST_DATABASE_URL!);
   const db = createPool(TEST_DATABASE_URL!);
   await db.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
   await migrate(db);

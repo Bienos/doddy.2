@@ -367,6 +367,11 @@ export interface DocumentRow {
 export class Store {
   private constructor(readonly db: Database) {}
 
+  /** One round trip to the database, for `GET /v1/health`. Throws when the database doesn't answer. */
+  async ping(): Promise<void> {
+    await this.db.query("SELECT 1");
+  }
+
   /** Opens the database and makes sure every table exists. */
   static async open(options: DatabaseOptions): Promise<Store> {
     const db = await openDatabase(options);
