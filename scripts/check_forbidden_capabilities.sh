@@ -82,6 +82,8 @@ rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 off_client=DoddyApp/Infrastructure/Network/OpenFoodFactsClient.swift
 # A parcel number, one address built by DoddyCore (ADR-641).
 inpost_client=DoddyApp/Infrastructure/Network/InPostTrackingClient.swift
+# A buyer's NIP, one address built by DoddyCore: the Ministry of Finance's VAT register (ADR-685).
+vat_register_client=DoddyApp/Infrastructure/Network/VatRegisterClient.swift
 # The Keychain: the files that hold a token or key. AccountKeyStore (ADR-640) holds keys the person pasted in.
 keychain_only='import Security|SecItem(Add|Update|Delete|CopyMatching)|kSecClass'
 keychain_files='^(DoddyApp/Infrastructure/(Network/KeychainCredentialStore|Server/ServerKeychainStore|DeviceSession|KeychainSessionStore|AccountKeyStore)|DoddyApp/Features/Voice/VoiceAuthSession)\.swift:'
@@ -157,8 +159,8 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$voice_auth:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client, $off_client and $inpost_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$vat_register_client:" -e "^$voice_auth:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client, $off_client, $inpost_client and $vat_register_client." >&2; status=1
 fi
 # The Keychain only where a token or key already lives (ADR-640).
 if grep -RInE --include='*.swift' "$keychain_only" "${dirs[@]}" | code_only | grep -vE "$keychain_files"; then
@@ -192,6 +194,10 @@ fi
 # The Open Food Facts client may only ask OpenFoodFacts.productURL(for:) (ADR-631), never an address it builds.
 if [ -f "$off_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ O]' "$off_client" | code_only; then
   echo "FAIL: $off_client may only ask OpenFoodFacts.productURL(for:)." >&2; status=1
+fi
+# The VAT register client may only ask VatRegister.url(for:on:) (ADR-685), never an address it builds.
+if [ -f "$vat_register_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ V]' "$vat_register_client" | code_only; then
+  echo "FAIL: $vat_register_client may only ask VatRegister.url(for:on:)." >&2; status=1
 fi
 # The InPost client may only ask InPostTracking.url(for:) (ADR-641), never an address it builds.
 if [ -f "$inpost_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ I]' "$inpost_client" | code_only; then
@@ -437,5 +443,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare DoddyNotificationContent Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), HomeKit, camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client and the InPost client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, HomeKit only in HomeKitClient (lights, outlets, fans and scenes of those; no triggers, cameras, locks, garage doors or alarms), photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client, the InPost client and the VAT register client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, HomeKit only in HomeKitClient (lights, outlets, fans and scenes of those; no triggers, cameras, locks, garage doors or alarms), photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

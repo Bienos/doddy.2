@@ -13,6 +13,14 @@ adding one adapter, not rewriting the app or the agent.
 **`draft_blik_transfer` removed from the spec, 5 Nov 2026 (ADR-810, owner: BLIK payments go through Stripe later).** It is gone from `tools.json` and `instructions.md`, so the OpenAI voice and any app built from this tree no longer offer it, and an app answers it as unsupported. **The live ElevenLabs agent was not changed:** it still has client tool `tool_5701m57c1717fmebcs14kbrjqmdq` and a "## BLIK transfers" section in its prompt (see "Applied to the live agent 2026-10-18" below) until the owner says "sync it to ElevenLabs"; that sync removes the tool and the section.
 
 **OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
+**Applied to the live agent 1 Nov 2026 (ADR-677 to ADR-679, `draft_invoice`; owner: "Add everything", then "Go" after being told the first try on 30 Oct was refused by the session's safety check).**
+- **Read first, twice (30 Oct and right before writing on 1 Nov), unchanged between the two:** `agtvrsn_1401m63gw56bfm6934d4g33gef37`, 102 tool ids (two more than the entries below record: `tool_5201m626991zfjgrw2b4mhsyqzcb`, `tool_9101m626b83yfsyr5d68zckqjnqd`, kept as found), model `gpt-6-luna`, temperature 0.5, Europe/Warsaw, backup LLMs `qwen36-35b-a3b`, `gpt-6.1-sol`. A tool listing showed no `draft_invoice`. **Rollback:** `agtvrsn_1401m63gw56bfm6934d4g33gef37`.
+- **Created:** `draft_invoice` `tool_9301m6bqvywnfmv93krv5jhdpd7b`, exactly as `voice_agent_spec.py elevenlabs` renders it from this branch at `2ca3de7` (client tool, 60 s, speak first, expects a response, 28 parameters).
+- **Saved:** `agtvrsn_7901m6bqz362eah8t83pghsbdj3e`, `tool_ids` only: the 102 live ids unchanged and in order, plus the new one (103). No prompt, model or other setting was sent; the read-back shows the model, temperature, time zone and backup LLMs as they were.
+- **Checked, by script, on a read-back:** the tool's description, its 28 parameters (type, description, enum), required list, timeout, speech settings and expects-response equal the spec.
+- **The prompt was not changed:** the tool's description carries its rules (only what the user said, NIP and VAT checked against their words, sums from the result, never "issued"). `instructions.md` has the same line for the OpenAI voice.
+- **Not checked:** a real conversation. **Only an app build from `claude/invoices-by-voice-ksef` (ADR-677 or later) runs the tool**; an older build answers that it doesn't support it, and the agent then says it isn't available yet.
+
 **Applied to the live agent 2 Nov 2026, about 22:10 UTC (ADR-692, `lost_wallet`; owner: "add lost_wallet to the live agent", after the question about it on PR #176).**
 - **Read first, and again right before saving, unchanged between the two:** `agtvrsn_5301m6et97fde7ysr5q2em33x62h`, 103 tools, model `gpt-6-luna`. That version was saved by someone else after the 1 Nov `draft_invoice` change (`agtvrsn_7901m6bqz362eah8t83pghsbdj3e`); this change did not touch it. **Rollback:** `agtvrsn_5301m6et97fde7ysr5q2em33x62h`.
 - **Created:** `lost_wallet` `tool_4201m6f4xwztfs08n8r4ht6nf0ka`, exactly as `voice_agent_spec.py elevenlabs` renders it from `claude/lost-wallet-flow` (client tool, 60 s, speak first). A listing first showed no tool of that name existed.
@@ -364,7 +372,6 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Voice: not set (decision needed).** Neither `phone/session.json` nor the setup script sets a TTS model or voice, and `languages` is only `en`. ElevenLabs therefore uses its default for an English agent. The prompt says to answer Polish callers in Polish, but whether that voice speaks Polish hasn't been checked. Before the first real call, choose a multilingual TTS model, or add a `pl` preset, and record it in `phone/session.json`.
 - Drift: export the live phone agent's prompt and tools as above and run `voice_agent_spec.py compare EXPORT.json --agent phone`.
 - Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead).
-
 
 **Applied to the live agent 2026-10-11 (ADR-300 to ADR-305): round 4.**
 - **Re-read first:** version `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` (43 tools), unchanged since round 3. `instructions.md`, which includes the affectionate-edison lines merged in PR #27, matched it except for the order of one sentence.

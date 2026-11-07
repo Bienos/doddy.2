@@ -22,6 +22,8 @@ import { errandRoutes } from "./routes/errands.js";
 import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
 import { assistantRoutes } from "./routes/assistant.js";
 import { dealsRoutes } from "./routes/deals.js";
+import { registryRoutes } from "./routes/registry.js";
+import type { CeidgClient } from "./registry/ceidg.js";
 import type { DealsDeps } from "./deals/service.js";
 import type { AssistantDeps } from "./assistant/deps.js";
 import { watchRoutes } from "./routes/watches.js";
@@ -69,6 +71,8 @@ export interface Deps {
   errands?: ErrandDeps;
   /** Leaflets (ADR-609, SHOPPING.md section 2): settings, the polite fetcher and the Haiku reader. */
   deals?: DealsDeps;
+  /** Company registers (ADR-685): CEIDG with the owner's token; absent answers 503 registry_disabled. */
+  ceidg?: CeidgClient;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
   /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
@@ -148,6 +152,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(errandRoutes(deps, errandCtx));
   await app.register(assistantRoutes(deps));
   await app.register(dealsRoutes(deps));
+  await app.register(registryRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));
   return app;
 }

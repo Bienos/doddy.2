@@ -45,6 +45,9 @@ public enum CarProfile {
             return CloudToolName.isWrite(call.name)
                 ? .refuse(reason: "Drafts and tasks in online accounts need a tap on the iPhone, so not while driving.")
                 : .run
+        case .draftInvoice:
+            // An invoice is checked line by line on the screen (ADR-677), so not while driving.
+            return .refuse(reason: "An invoice draft is checked on the iPhone's screen, so it waits until the user isn't driving.")
         case .saveMemory(let text):
             return .askAloud(readBack: CarConfirmation.readBack(saving: text))
         case .addToList(let request):

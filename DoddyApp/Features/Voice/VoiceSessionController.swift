@@ -345,6 +345,13 @@ final class VoiceSessionController {
     /// conversation, so the steps are there while the person uses mObywatel or their bank. In
     /// memory only: what was lost and the ticks are never saved or sent.
     private(set) var lostWalletCard: LostWalletCard?
+    /// The invoice being dictated (ADR-677): what the person said and the draft made from it. Kept on
+    /// this iPhone between conversations (ADR-678, `InvoiceDraftFile`, read back after every write)
+    /// until the card is closed or Delete all; never sent. Issuing in inFakt is the card's own tap
+    /// (ADR-640), not offered yet.
+    private(set) var invoiceSession = InvoiceVoiceSession()
+    /// An earlier draft's file couldn't be read and was set aside; the next draft reply says so once.
+    @ObservationIgnored private var invoiceDraftWasSetAside = false
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession? {
@@ -609,6 +616,7 @@ final class VoiceSessionController {
         listReceipt = nil
         changeReceipt = nil
         lostWalletCard = nil
+        restoreInvoiceDraft()
         translatorSummary = nil
         translatorFactsSaved = nil
         holdToTalk = false
@@ -2040,6 +2048,46 @@ final class VoiceSessionController {
         Task { _ = await open(url) }
     }
 
+    /// The user tapped Confirm next to a value only the model suggested (ADR-677): the NIP or a
+    /// line's VAT rate, exactly as the card showed it.
+    func confirmInvoiceSuggestion(_ field: InvoiceField) {
+        guard invoiceSession.confirmSuggested(field) else { return }
+        Self.invoiceDraftFile?.save(invoiceSession)
+    }
+
+    /// The user closed the invoice card: the draft is gone from the screen and from this iPhone;
+    /// nothing was sent anywhere.
+    func dismissInvoiceDraft() {
+        invoiceSession.close()
+        Self.invoiceDraftFile?.remove()
+    }
+
+    /// The draft kept from an earlier conversation (ADR-678), with a default issue date moved to today.
+    private func restoreInvoiceDraft() {
+        invoiceSession = InvoiceVoiceSession()
+        guard let file = Self.invoiceDraftFile else { return }
+        switch file.load() {
+        case .none: break
+        case .setAside: invoiceDraftWasSetAside = true
+        case .draft(var kept):
+            if let today = CalendarDate.day(of: Date(), in: .current), kept.refreshDefaults(today: today) { file.save(kept) }
+            invoiceSession = kept
+        }
+    }
+
+    /// The VAT register from this iPhone, then CEIDG through Doddy's server when the register has no
+    /// such taxpayer or couldn't be asked (ADR-685, `CompanyLookup.combined`).
+    private static func lookUpCompany(_ nip: Nip, on day: CalendarDate) async -> CompanyLookup {
+        let vat = await VatRegisterClient.shared.lookup(nip, on: day)
+        guard vat.asksCeidgToo, let server = ServerConfig.client() else { return vat }
+        return CompanyLookup.combined(vat: vat, ceidg: await server.lookupCeidg(nip, on: day))
+    }
+
+    /// Application Support/Invoices/invoice-draft.json; a new file for each UI-test launch.
+    static let invoiceDraftFile: InvoiceDraftFile? = ProcessInfo.processInfo.arguments.contains("-inMemoryStore")
+        ? InvoiceDraftFile(url: FileManager.default.temporaryDirectory.appendingPathComponent("invoice-draft-\(UUID().uuidString).json"))
+        : InvoiceDraftFile.inApplicationSupport()
+
     /// The user fixed the name on the "Start a new list?" card.
     func changeNewListName(_ name: String) {
         guard case .createList(let id, _, let items) = pendingAction else { return }
@@ -2925,6 +2973,51 @@ final class VoiceSessionController {
                 }
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .draftInvoice(let update):
+            // ADR-677: the draft on the card changes with each detail the user dictates. Only the
+            // user's own transcribed words count as having said a NIP or a VAT rate; nothing leaves
+            // this iPhone, and issuing is the card's own tap (not offered while
+            // InFaktAPI.createVerified is false).
+            guard let today = CalendarDate.day(of: Date(), in: .current) else {
+                await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the iPhone's date couldn't be read."), isError: true)
+                return
+            }
+            let userWords = lines.filter(\.fromUser).map(\.text)
+            var session = invoiceSession
+            switch session.apply(update, userWords: userWords, today: today) {
+            case .drafted(var operation, var notes):
+                guard onScreen(attempt) else {
+                    await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the conversation ended before the draft could be shown."))
+                    return
+                }
+                invoiceSession = session
+                // ADR-685: a NIP the person said is looked up in the public registers, the VAT register
+                // from this iPhone and CEIDG through Doddy's server; only the NIP leaves the phone.
+                // The answer is applied to the draft as it is now, and only if the NIP is still the same.
+                if let nip = invoiceSession.registerLookupNip {
+                    if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) {
+                        notes.append(.registerPaused)
+                    } else {
+                        let lookup = await Self.lookUpCompany(nip, on: today)
+                        guard onScreen(attempt) else {
+                            await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the conversation ended before the draft could be shown."))
+                            return
+                        }
+                        notes += invoiceSession.applyRegister(lookup, for: nip)
+                        operation = invoiceSession.operation ?? operation
+                    }
+                }
+                // Kept only when the file reads back as this draft (ADR-678); the agent hears which.
+                let kept = Self.invoiceDraftFile?.save(invoiceSession) ?? false
+                var text = VoiceToolReply.invoiceDraft(operation, notes: notes, kept: kept)
+                if invoiceDraftWasSetAside {
+                    invoiceDraftWasSetAside = false
+                    text += "\nAn earlier invoice draft on this iPhone couldn't be read, so it was set aside, not deleted. Tell the user in one sentence."
+                }
+                await reply(call.toolCallId, text)
+            case .refused(let reason):
+                await reply(call.toolCallId, VoiceToolReply.invoiceRefused(reason))
             }
         case .makePresentation(let draft):
             // ADR-567: every slide on a card; the file is made only on the tap.

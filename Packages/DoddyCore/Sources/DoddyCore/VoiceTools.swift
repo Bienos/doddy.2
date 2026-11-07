@@ -297,6 +297,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
+    /// Builds or changes the invoice draft on screen (ADR-677, InvoiceVoice.swift). Nothing is sent.
+    case draftInvoice(InvoiceVoiceUpdate)
     /// "I lost my wallet" (ADR-692): a checklist of official steps on a card. Doddy does none of them;
     /// a step's page opens or its number is dialled only on the person's tap.
     case lostWallet(LostWalletSituation)
@@ -415,6 +417,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCheckErrands(args)
         case VoiceToolName.findDeals:
             return parseFindDeals(args, name: name)
+        case VoiceToolName.draftInvoice:
+            return parseDraftInvoice(args, name: name)
         case VoiceToolName.lostWallet:
             return parseLostWallet(args, name: name)
         default:

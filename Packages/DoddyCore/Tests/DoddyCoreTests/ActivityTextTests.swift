@@ -75,9 +75,9 @@ final class ActivityTextTests: XCTestCase {
              .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
-             .noteCapabilityGap, .lostWallet:
+             .noteCapabilityGap, .lostWallet, .draftInvoice:
             // The gap tool leaves no row in What Doddy did (ADR-440), nor does the lost-wallet
-            // checklist, which changes nothing (ADR-692).
+            // checklist, which changes nothing (ADR-692), nor an invoice draft on screen (ADR-677).
             false
         }
     }

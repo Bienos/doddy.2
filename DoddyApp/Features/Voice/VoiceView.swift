@@ -254,6 +254,11 @@ struct VoiceView: View {
                                 .id("lostWalletCard")
                         }
 
+                        if let operation = controller.invoiceSession.operation {
+                            invoiceDraftCard(operation, controller: controller)
+                                .id("invoiceDraft")
+                        }
+
                         if let ready = controller.presentationReady {
                             PresentationReadyCard(ready: ready, onShare: { sharingPresentation = ready }, onClose: { controller.dismissPresentationReady() })
                                 .id("presentationReady")
@@ -331,6 +336,9 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.lostWalletCard?.steps) { _, steps in
                     if steps != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("lostWalletCard", anchor: .top) } }
+                }
+                .onChange(of: controller.invoiceSession) { _, session in
+                    if session.operation != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("invoiceDraft", anchor: .bottom) } }
                 }
                 .onChange(of: controller.noteReminderStatus) { _, status in
                     if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
@@ -1633,6 +1641,31 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.listReceipt")
     }
 
+    }
+
+    /// The invoice being dictated (ADR-677): every word and sum from `InvoiceCard` (DoddyCore,
+    /// tested). A value only the model suggested has its own Confirm; closing the card drops the
+    /// draft. Nothing here sends anything: the card offers no issue button while
+    /// `InFaktAPI.createVerified` is false.
+    private func invoiceDraftCard(_ operation: InvoiceOperation, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Invoice draft").font(.headline)
+                Spacer()
+                Button { controller.dismissInvoiceDraft() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close the draft")
+            }
+            InvoiceCardView(
+                card: InvoiceCard(operation, polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish,
+                                  register: controller.invoiceSession.register),
+                onConfirm: { controller.confirmInvoiceSuggestion($0) })
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.invoiceDraft")
     /// One side of a change card: "Now" or "After", then the title and when.
     private func changeRow(after: Bool, title: String?, when: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {

@@ -14,6 +14,7 @@ import type { AssistantDeps } from "../assistant/deps.js";
 import { ClaudeAssistantResponder } from "../assistant/responder.js";
 import { PoliteFetcher } from "../deals/fetcher.js";
 import type { DealsDeps } from "../deals/service.js";
+import { CeidgClient } from "../registry/ceidg.js";
 import { AnthropicDealsModel } from "../deals/vision.js";
 import { log } from "../log.js";
 import { AffiliateLinks } from "../shopping/affiliate.js";
@@ -118,6 +119,8 @@ export function providersFrom(config: Config) {
     errands,
     assistant,
     deals,
+    // ADR-685: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.
+    ceidg: config.ceidg ? new CeidgClient(config.ceidg) : undefined,
     watches,
     // Account, verification, text and call caps and the allowed countries (ADR-702, ADR-704): the web service and the
     // worker read the same settings.

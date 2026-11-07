@@ -202,6 +202,23 @@ public enum DataFlow {
                     : !state.inFaktKeySaved
                         ? "No inFakt key is saved, so nothing goes there."
                         : state.pauseAll ? "Connections are paused, so invoices aren't sent." : nil),
+            // Registers (ADR-685): only a buyer's NIP the person said for an invoice, to fill in their official name and address.
+            DataFlowRow(
+                id: "vatRegister", destination: "Ministry of Finance (VAT register)",
+                what: "Only a buyer's NIP you said for an invoice, to fill in their official name and address. Nothing about you or the invoice.",
+                when: "When you dictate an invoice and say the buyer's NIP, at most 6 a minute.", isActive: !state.pauseAll,
+                note: state.pauseAll
+                    ? "Connections are paused, so no NIP is looked up."
+                    : "The register asks for no account or key and sees this iPhone's internet address as any website would. The bank accounts it lists aren't read or kept."),
+            DataFlowRow(
+                id: "ceidg", destination: "CEIDG (register of sole traders), through Doddy's messaging server",
+                what: "Only a buyer's NIP the VAT register doesn't know or couldn't check. Your messaging server asks CEIDG with Doddy's own key and keeps nothing.",
+                when: "When you dictate an invoice and the VAT register has no such taxpayer or couldn't be asked.",
+                isActive: state.messagingServerSet && !state.pauseAll,
+                note: !state.messagingServerSet
+                    ? "Your messaging server isn't set up in this build, so CEIDG isn't asked."
+                    : state.pauseAll ? "Connections are paused, so no NIP is looked up."
+                    : "Only when CEIDG is switched on on the server; otherwise it answers that it isn't, and nothing is asked."),
             DataFlowRow(
                 id: "placeSearch", destination: "Apple Maps (place search and travel time)",
                 what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are.",
@@ -368,6 +385,8 @@ public enum DataFlow {
         "exchangeRates": "the European Central Bank (exchange rates; nothing about you)",
         "openFoodFacts": "Open Food Facts (barcodes you scan; nothing about you)",
         "inPost": "InPost (parcel numbers you look up; nothing else about you)",
+        "vatRegister": "the Ministry of Finance's VAT register (buyers' NIPs for invoices)",
+        "ceidg": "CEIDG through your messaging server (buyers' NIPs the VAT register doesn't know)",
         "inFakt": "inFakt (invoices you confirm, with your own key)",
         "placeSearch": "Apple Maps (place searches)",
         "tokenServer": "your voice token server",
