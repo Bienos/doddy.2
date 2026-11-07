@@ -77,9 +77,8 @@ final class DeviceConnections {
         case .timers: .notDetermined
         // Home (HomeKit): its own file; no prompt until Allow is tapped (HomeKitClient).
         case .home: HomeKitClient.access()
-        // BLIK transfers (ADR-510) need no iOS permission: the card only shows what to send.
         // Presentations (ADR-567) are a file Doddy makes; the user picks where it goes.
-        case .maps, .shortcuts, .messages, .blik, .presentations: .granted
+        case .maps, .shortcuts, .messages, .presentations: .granted
         }
     }
 
@@ -91,7 +90,7 @@ final class DeviceConnections {
             guard current == .notDetermined else { return current }
             let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
             return granted ? .granted : .denied
-        case .maps, .shortcuts, .messages, .blik, .presentations:
+        case .maps, .shortcuts, .messages, .presentations:
             return .granted
         case .steps:
             return await requestMotion()
