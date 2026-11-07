@@ -18,7 +18,8 @@ groups_for() {
     docs/* | design/*) echo swift; return ;;
     # Notes, text sources, archives, agent tooling: no heavy suite reads them (the generators and
     # the pack check, which do, are in the `checks` group that always runs).
-    prompts/* | reference/* | blog/* | l10n/* | VISUAL_REVIEW/* \
+    # changes/: per-pull-request notes (decision 2026-11-07-agent-rules-and-records).
+    changes/* | prompts/* | reference/* | blog/* | l10n/* | VISUAL_REVIEW/* \
       | .agents/* | .claude/* | */CLAUDE.md | */AGENTS.md) echo none; return ;;
     # Paused Watch and Mac apps (ADR-572): in no target of project.yml, in no suite.
     DoddyWatch/* | DoddyWatchWidgets/* | DoddyMac/* | DoddyMacWidgets/* \
@@ -30,7 +31,7 @@ groups_for() {
     contracts/*) echo "swift backend node messaging"; return ;;
     schemas/*) echo "swift backend node messaging"; return ;;
     voice-agent/*) echo "swift backend messaging"; return ;;
-    Packages/* | DoddyApp/* | DoddyTests/* | DoddyUITests/* | DoddyWidgets/* | DoddyShare/* \
+    Packages/* | DoddyApp/* | DoddyTests/* | DoddyUITests/* | DoddyWidgets/* | DoddyShare/* | DoddyNotificationContent/* \
       | Shared/* | Config/* | assets/* | project.yml | project-iphone.yml) echo swift; return ;;
     */*) echo all; return ;;                             # scripts/, tools/, .github/, server/other, new folders
     *.md) echo none; return ;;                           # top-level notes: README, STATUS, DECISIONS

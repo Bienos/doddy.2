@@ -579,10 +579,10 @@ function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): Payment
   if (maxPerPayment > userDaily && userDaily > 0) problems.push("DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC must not exceed DODDY_PAYMENTS_USER_DAILY_USDC");
   if (userDaily > serviceDaily && serviceDaily > 0) problems.push("DODDY_PAYMENTS_USER_DAILY_USDC must not exceed DODDY_PAYMENTS_SERVICE_DAILY_USDC");
 
-  // Real money is NOT approved (ADR-733; the owner approved review of this code, not use). Only the test
+  // Real money is NOT approved (ADR-737; the owner approved review of this code, not use). Only the test
   // network is accepted until the owner decides on mainnet; lifting this is a code change with its own ADR.
   if (NETWORKS[e.DODDY_PAYMENTS_NETWORK].testnet !== true) {
-    problems.push("DODDY_PAYMENTS_NETWORK must be base-sepolia: paying on a network with real money is not approved (ADR-733)");
+    problems.push("DODDY_PAYMENTS_NETWORK must be base-sepolia: paying on a network with real money is not approved (ADR-737)");
   }
 
   const allowedHosts = e.DODDY_PAYMENTS_ALLOWED_HOSTS.split(",").map((h) => h.trim().toLowerCase()).filter((h) => h !== "");

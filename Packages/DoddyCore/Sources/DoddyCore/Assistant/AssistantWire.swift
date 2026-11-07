@@ -31,6 +31,16 @@ struct AssistWireRequest: Codable, Equatable {
         /// Base64 of the JPEG.
         let data: String
     }
+
+    /// Messages only, like `image`, and never with it.
+    var file: File? = nil
+
+    struct File: Codable, Equatable {
+        let name: String
+        let mediaType: String
+        /// Base64 of the PDF, or of the text in UTF-8.
+        let data: String
+    }
 }
 
 struct AssistWireResponse: Codable, Equatable {
@@ -117,6 +127,7 @@ enum WireCoding {
                     source: $0.record.source.rawValue,
                     capturedAt: $0.record.capturedAt.map(isoDate))
             },
-            image: request.image.map { .init(mediaType: AssistantImage.mediaType, data: $0.jpeg.base64EncodedString()) })
+            image: request.image.map { .init(mediaType: AssistantImage.mediaType, data: $0.jpeg.base64EncodedString()) },
+            file: request.file.map { .init(name: $0.name, mediaType: $0.mediaType, data: $0.data.base64EncodedString()) })
     }
 }

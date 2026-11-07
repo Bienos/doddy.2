@@ -49,7 +49,7 @@ public enum ThreadRules {
     /// A message that did not get through can be sent again; one that is answered or on its way cannot. One sent with a
     /// photo cannot: the photo was not kept, and sending the words alone would ask a different question.
     public static func canRetry(_ message: ThreadMessage) -> Bool {
-        message.sender == .user && message.delivery == .failed && !message.hasPhoto
+        message.sender == .user && message.delivery == .failed && !message.hasPhoto && message.attachedFileName == nil
     }
 
     /// The line under a user bubble, or nil when there is nothing to say (answered).
@@ -57,13 +57,17 @@ public enum ThreadRules {
         case sending, notDelivered
         /// Not delivered, and it had a photo that was not kept: add the photo again to ask.
         case notDeliveredPhoto
+        /// Not delivered, and it had a file that was not kept: attach it again to ask.
+        case notDeliveredFile
     }
 
     public static func deliveryLine(for message: ThreadMessage) -> DeliveryLine? {
         guard message.sender == .user else { return nil }
         switch message.delivery {
         case .sending: return .sending
-        case .failed: return message.hasPhoto ? .notDeliveredPhoto : .notDelivered
+        case .failed:
+            if message.hasPhoto { return .notDeliveredPhoto }
+            return message.attachedFileName == nil ? .notDelivered : .notDeliveredFile
         case .sent: return nil
         }
     }

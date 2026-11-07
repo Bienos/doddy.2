@@ -14,7 +14,7 @@ public protocol PaymentsBannerStorage: Sendable {
     func setLastUnresolved(_ count: Int)
 }
 
-/// The banner on Home for a payment that was sent and never confirmed (ADR-732). The server keeps counting such
+/// The banner on Home for a payment that was sent and never confirmed (ADR-736). The server keeps counting such
 /// a payment until its record is pruned (90 days) because only the person can learn what happened, from their wallet's
 /// history. So the banner shows while the server's count is above the number the person said they had checked.
 @MainActor

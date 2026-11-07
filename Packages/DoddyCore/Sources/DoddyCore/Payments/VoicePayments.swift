@@ -1,6 +1,6 @@
 import Foundation
 
-/// The voice agent's payment tool (ADR-732). The agent only PROPOSES a page: the app shows the approval
+/// The voice agent's payment tool (ADR-736). The agent only PROPOSES a page: the app shows the approval
 /// card, the person confirms (typing the amount for larger payments) and Face ID, and only then does
 /// Doddy's server pay. The agent can never pay, never names an amount, a recipient or a wallet, and
 /// learns the outcome only after the person has decided.

@@ -75,9 +75,10 @@ final class DeviceConnections {
         case .photos: PhotoLibrarySearch.access()
         case .camera: CameraAccess.access()
         case .timers: .notDetermined
-        // BLIK transfers (ADR-510) need no iOS permission: the card only shows what to send.
+        // Home (HomeKit): its own file; no prompt until Allow is tapped (HomeKitClient).
+        case .home: HomeKitClient.access()
         // Presentations (ADR-567) are a file Doddy makes; the user picks where it goes.
-        case .maps, .shortcuts, .messages, .blik, .presentations: .granted
+        case .maps, .shortcuts, .messages, .presentations: .granted
         }
     }
 
@@ -89,7 +90,7 @@ final class DeviceConnections {
             guard current == .notDetermined else { return current }
             let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
             return granted ? .granted : .denied
-        case .maps, .shortcuts, .messages, .blik, .presentations:
+        case .maps, .shortcuts, .messages, .presentations:
             return .granted
         case .steps:
             return await requestMotion()
@@ -97,6 +98,8 @@ final class DeviceConnections {
             return await PhotoLibrarySearch.request()
         case .camera:
             return await CameraAccess.request()
+        case .home:
+            return await HomeKitClient.request()
         case .calendar, .reminders, .contacts:
             guard access(for: connection) == .notDetermined else { return access(for: connection) }
             let granted: Bool

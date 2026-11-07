@@ -8,7 +8,7 @@ import SwiftUI
 /// (DODDY Capture, ADR-588). A file is downloaded only when it is tapped, then opens in Quick Look, whose
 /// Share button saves or sends it. Notes and lists moved to Settings › Doddy's memory.
 ///
-/// NOT COMPILED here (no Xcode in the session that wrote it); the list and download rules are
+/// Compiled in hosted CI (#195), NOT RUN on a device; the list and download rules are
 /// `MadeDocumentsClient` in DoddyCore, tested on Linux.
 struct FilesSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -21,6 +21,7 @@ struct FilesSheet: View {
         NavigationStack {
             List {
                 madeByDoddy
+                CallRecapSection(preview: $preview)
                 Section {
                     Button { showRecordings = true } label: {
                         Label("Recordings", systemImage: "waveform.circle")

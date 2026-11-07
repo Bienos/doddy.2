@@ -82,7 +82,7 @@ final class AppLock {
     }
 }
 
-/// Face ID (or Touch ID, or the passcode) for ONE payment (ADR-731). Asked fresh every time, right
+/// Face ID (or Touch ID, or the passcode) for ONE payment (ADR-735). Asked fresh every time, right
 /// before Doddy's server is told to pay, whether or not the app lock is on. It is a separate check
 /// on purpose: it never reads or sets `AppLock.unlockedAt`, so confirming a payment can't unlock
 /// private notes, and an earlier unlock can't stand in for a payment's yes. No Face ID, Touch ID or

@@ -121,6 +121,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
+        // Follow something in Following (ADR-657): Doddy's own feature on this iPhone.
+        .init(VoiceToolName.followNews, .localChange, .card),
         // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
         .init(VoiceToolName.startStopwatch, .localChange, .card),
         .init(VoiceToolName.stopStopwatch, .localChange, .card),
@@ -137,12 +139,12 @@ public enum ToolCatalog {
         .init(VoiceToolName.openMap, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
-        // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
-        .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
         .init(VoiceToolName.openCamera, .handoff, .card),
+        // A light, outlet, fan or scene in HomeKit, after a card naming the exact accessory.
+        .init(VoiceToolName.controlHome, .localChange, .card),
         // A task handed over (ADR-570): web research on Doddy's server that changes nothing on the
         // iPhone; one tap covers every look-up of that task. A tap and not a spoken yes (ADR-716):
         // its text goes to a server that opens what it names. Checking what it found is a read.
@@ -151,7 +153,7 @@ public enum ToolCatalog {
         // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
         // changes; it asks first until the owner decides whether it joins the public look-ups.
         .init(VoiceToolName.findDeals, .lookup, .askFirst),
-        // Paying for one web page (ADR-730 to 732; off by default, not on the live agent). The agent only
+        // Paying for one web page (ADR-734 to 736; off by default, not on the live agent). The agent only
         // names the page; Doddy's server's own terms are on the payment card, and only a tap (plus the typed
         // amount from the threshold) and a fresh Face ID start it. Counted as a handoff because it hands one
         // request to Doddy's server behind its own card; it is not a `CloudToolName` and never a plan step.

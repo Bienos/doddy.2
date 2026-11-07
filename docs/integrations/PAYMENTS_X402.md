@@ -1,11 +1,11 @@
 # Doddy paying for things (x402), with an optional Coinbase wallet
 
 Date: 2026-10-12. Owner instruction: "Use Coinbase wallet connection but not as default and build it so Doddy can pay for stuff."
-ADR-730. Status report and constitution evidence log: `docs/implementation/PAYMENTS_STATUS.md`.
+ADR-734. Status report and constitution evidence log: `docs/implementation/PAYMENTS_STATUS.md`.
 
-> **State (5 Nov 2026, rebased onto the default branch, ADR-733): approved for review only, NOT enabled.** The backend is
-> built and tested on Linux against a demo seller and a demo wallet. The iPhone approval card with Face ID (ADR-731), the
-> voice handler (ADR-732) and the Home banner are written but have **never been compiled or run** (no Swift toolchain);
+> **State (5 Nov 2026, rebased onto the default branch, ADR-737): approved for review only, NOT enabled.** The backend is
+> built and tested on Linux against a demo seller and a demo wallet. The iPhone approval card with Face ID (ADR-735), the
+> voice handler (ADR-736) and the Home banner are written but have **never been compiled or run** (no Swift toolchain);
 > the hosted Mac build is their first compile. Nothing has run against the real Coinbase service, a real x402 seller, a
 > funded wallet, the live voice agent or a device. The server accepts the test network only. The voice tool is **not** on
 > the live ElevenLabs agent (the owner detached it on 19 Oct, ADR-544; this branch does not sync it).
@@ -25,7 +25,7 @@ ADR-730. Status report and constitution evidence log: `docs/implementation/PAYME
 | Layer | Default | To turn on |
 |---|---|---|
 | Server wallet | `DODDY_PAYMENTS_WALLET=none`: every payment route answers "not set up" | The owner sets `coinbase_cdp` plus four `CDP_*` values (below) |
-| Network | `base-sepolia` (test network, no real money). The server **refuses to start** with a network that moves real money (ADR-733) | A code change and an owner decision on mainnet; not part of this branch |
+| Network | `base-sepolia` (test network, no real money). The server **refuses to start** with a network that moves real money (ADR-737) | A code change and an owner decision on mainnet; not part of this branch |
 | Each person's switch | Off (`pay_x402`, same switch table as the other tools) | The person turns it on in Settings › Payments (written, not yet run) |
 | Per payment | 0.25 USDC | `DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC` |
 | Type the amount to confirm | From 0.10 USDC up | `DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC` (see "Larger payments") |
@@ -79,7 +79,7 @@ history. The signed authorization stops being usable after `validBefore` (at mos
 when. A server that stops mid-payment leaves a ledger row that shows as unresolved after five minutes; nothing is
 forgotten.
 
-## Larger payments: the person types the amount (ADR-732)
+## Larger payments: the person types the amount (ADR-736)
 
 From `DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC` (default 0.10) up, `prepare` returns `confirmAmountRequired: true` and the card
 asks the person to type the amount. **The server enforces it**, not only the screen: `pay` compares `confirmAmount`, as a
@@ -88,7 +88,7 @@ receipt) if it is missing or different. This happens before anything is reserved
 typo costs nothing. The check is against the *current* offer, so a typed price for an old offer doesn't pass. Below the
 threshold nothing is typed and a `confirmAmount` that is sent is ignored (the price always comes from the page).
 
-## The voice agent (ADR-732)
+## The voice agent (ADR-736)
 
 `pay_for_page(url)` in `voice-agent/tools.json` lets the agent **propose** paying for one page. It cannot pay.
 
@@ -107,7 +107,7 @@ It rides the existing online-account tool route so the same gates apply: not whi
 the person has paused connections, never a step of a plan (the plan allow-list is explicit), and the activity log says
 "Paid for a page" without the address. The phone-call agent (`voice-agent/phone/`) has no payment tool.
 
-**Live agent: not changed (ADR-733).** On 12 Oct the old branch synced this tool and a prompt line to the live ElevenLabs agent
+**Live agent: not changed (ADR-737).** On 12 Oct the old branch synced this tool and a prompt line to the live ElevenLabs agent
 (tool `tool_1401m4rmxkm5eg3v87sphf87c45p`). The owner detached it on 19 Oct (ADR-544: "remove"), and approving the rebase on 5 Nov
 (ADR-729) restored the code only. In this repository the tool is listed as `not_synced` and `voice-agent/instructions.md` has no
 payment line, so the spec and the live prompt still agree. Mixed versions, if it ever returns: an installed app without
@@ -145,7 +145,7 @@ person was researching). Retention matches the other receipts: 90 days. Logs car
 
 ```
 DODDY_PAYMENTS_WALLET=coinbase_cdp
-DODDY_PAYMENTS_NETWORK=base-sepolia          # the only accepted value; `base` (real money) is refused at startup (ADR-733)
+DODDY_PAYMENTS_NETWORK=base-sepolia          # the only accepted value; `base` (real money) is refused at startup (ADR-737)
 CDP_API_KEY_ID=…                             # CDP portal › API keys › Secret API key (Ed25519)
 CDP_API_KEY_SECRET=…                         # base64 of 64 bytes, as the portal shows it
 CDP_WALLET_SECRET=…                          # CDP portal › Wallet Secret (base64 PKCS#8 P-256)
@@ -173,7 +173,7 @@ variable, never the value. `production` + `live` is still refused until real app
 official contract list (the Base *Sepolia* address was confirmed against Circle's page; the Base *mainnet* address was
 only seen on a third-party page), fund a minimal balance, keep the caps small, and read "Open decisions" below.
 
-## The iPhone side (ADR-731; written, never compiled)
+## The iPhone side (ADR-735; written, never compiled)
 
 | Piece | Where | What it guarantees |
 |---|---|---|
@@ -207,7 +207,7 @@ the unknown-outcome rules; privacy (no path or query stored); configuration; the
   addresses without connecting, but a TLS connection to a real seller has not been made.
 - The iPhone: the approval card, Face ID step and Settings › Payments screen are written (see "The iPhone side"
   below) but were **never compiled or run**: this environment has no Swift toolchain. The same is true of the voice tool
-  (the tool is not on the live agent, ADR-544 and ADR-733).
+  (the tool is not on the live agent, ADR-544 and ADR-737).
 
 ## Limits of this version (each refused with a plain message, never guessed)
 

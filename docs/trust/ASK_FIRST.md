@@ -96,7 +96,7 @@ Before = `voice-agent/tools.json` at `2278430`. "Card, tap" tools already asked;
 | `remove_from_list` | **Doesn't ask**: runs on the agent's call | Card with the exact change; **tap only** |
 | `create_list` | Asks: card, tap | Card with the exact change; **tap only** |
 | `note_capability_gap` | **Doesn't ask**: runs on the agent's call | Card with the exact change; **tap only** |
-| `pay_for_page` | Asks: payment card, tap + Face ID + server approval (ADR-730 to 732; **not on the live agent**, ADR-544 and ADR-733) | The server's own terms (amount first, recipient, wallet, network) on the payment card; **tap only** (plus the typed amount from 0.10 USDC) and a fresh Face ID, and a single-use server approval issued by `AskGate` for the page, recipient, amount, token and wallet. The app's `AskLedger` is not consulted for this tool: the card is its own gate (gap recorded in `docs/implementation/PAYMENTS_STATUS.md`) |
+| `pay_for_page` | Asks: payment card, tap + Face ID + server approval (ADR-734 to 736; **not on the live agent**, ADR-544 and ADR-737) | The server's own terms (amount first, recipient, wallet, network) on the payment card; **tap only** (plus the typed amount from 0.10 USDC) and a fresh Face ID, and a single-use server approval issued by `AskGate` for the page, recipient, amount, token and wallet. The app's `AskLedger` is not consulted for this tool: the card is its own gate (gap recorded in `docs/implementation/PAYMENTS_STATUS.md`) |
 
 Added later the same day (ADR-485), all **card with the exact change; tap only + server approval bound to the payload**:
 `send_email`, `reply_to_email`, `forward_email`, `change_email`, `trash_email`; and (ADR-486, ADR-487)

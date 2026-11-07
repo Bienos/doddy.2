@@ -1,5 +1,7 @@
 # BLIK transfers by voice: status (ADR-510)
 
+> **REMOVED, 5 Nov 2026 (ADR-810).** The BLIK transfer draft described below (the `draft_blik_transfer` tool, its card, the Connections switch and the Activity rows) was taken out of the repository on the owner's decision: BLIK payments are to go through Stripe later (not built). This page is history. The live ElevenLabs agent still has the tool until the owner separately says to sync it.
+
 Last updated 2026-10-18. Branch `claude/dreamy-cannon-gc33dj` (PR #85). Numbered ADR-510; ADR-483 is ASK-01.
 
 ## What it is
@@ -10,7 +12,7 @@ Why not more: BLIK has no public interface that lets an app send money. Phone tr
 ## How it works
 | Step | What happens | Where |
 |---|---|---|
-| Switch | Settings › Connections › Money › **BLIK transfers**, off by default. Off: the agent hears "BLIK transfers isn't connected". No iOS permission. | `VoiceConnection.blik`, `ConnectionsView.swift` |
+| Switch | Settings › Connections › Money › **BLIK transfers**, on by default since ADR-813 (it needs no iOS permission); the person can turn it off. Off: the agent hears "BLIK transfers isn't connected". No iOS permission. | `VoiceConnection.blik`, `ConnectionsView.swift` |
 | The agent asks | `draft_blik_transfer` with `to`, `amount` (złoty), optional `title`, optional `currency` | `voice-agent/tools.json`, `instructions.md` |
 | Asks first (ASK-01, ADR-483) | `ask: tap`: the BLIK card is the ask, so nothing extra is shown before it, and its tap sends nothing either. `AskFirst` lists it with the other own-card tools. | `AskFirst.swift`, `tools.json` |
 | Typed checks | Amount kept in grosze, never rounded. Refused, so the agent asks again: more than two decimals, zero or less, not a number, another currency, more than 1,000 zł (Doddy's own ceiling, `BlikTransferLimits.maxGrosze`; the owner lowered it from 10,000 zł on 19 Oct, ADR-541). Name and title bounded like every other tool argument. | `BlikTransfer.swift` |

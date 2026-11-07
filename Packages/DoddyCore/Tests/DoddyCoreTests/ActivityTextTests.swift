@@ -40,8 +40,6 @@ final class ActivityTextTests: XCTestCase {
             .addIngredients(IngredientsProposal(list: "Shopping", dish: "Pancakes", items: ["Eggs"])),
             .findFreeTime(FreeTimeRequest(firstDay: now, days: 1)),
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
-            // ADR-510.
-            .draftBlikTransfer(BlikTransferDraft(recipientName: "Ania", amount: BlikAmount(grosze: 5_000)!, title: "Pizza")),
             // ADR-567, ADR-568.
             .makePresentation(PresentationDraft(title: "Trip", subtitle: nil, slides: [PresentationSlide(title: "Day 1", points: ["Old Town"])])),
             .readSteps(StepDay(daysAgo: 0)!),
@@ -49,6 +47,7 @@ final class ActivityTextTests: XCTestCase {
             .readHealthWeek,
             // ADR-569.
             .findPhotos(PhotoSearchRequest(firstDay: now, days: 1)!), .openCamera,
+            .controlHome(.scene(name: "Good night")),
             // ADR-570.
             .handOverErrand(ErrandDraft(words: "sprawdź loty do Rzymu", brief: "Loty do Rzymu w listopadzie.", title: "Rzym")),
             .checkErrands(about: nil),
@@ -58,6 +57,7 @@ final class ActivityTextTests: XCTestCase {
             .openTrainingPlan(PlanAsk(goal: .tenK, daysPerWeek: 3, minutesPerSession: 45)),
             // SHOPPING.md.
             .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),
+            .followNews(.words(name: "CPK", keywords: ["CPK"])),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests
@@ -69,10 +69,10 @@ final class ActivityTextTests: XCTestCase {
         switch request {
         case .searchMemories, .saveMemory, .readCalendar, .createCalendarEvent, .createReminder, .remindAboutNote,
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
-             .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
+             .draftMessage, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .findDeals,
-             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan:
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap:
@@ -85,7 +85,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 45, "open_training_plan since ADR-626")
+        XCTAssertEqual(kinds.count, 46, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); one fewer since ADR-810 removed the BLIK draft")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
@@ -106,6 +106,22 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertEqual(ActivityRequest.describe(.draftMessage(MessageDraft(recipientName: "M", channel: .email, body: "x")), calendar: calendar)?.title, "Draft an email")
         // Rows written before the article was fixed still read in Polish.
         XCTAssertEqual(ActivityText.title("Draft a email", .polish), "Szkic e-maila")
+    }
+
+    /// ADR-810 removed the BLIK draft, but a row it saved (app "blik", outcome "shown") must still
+    /// load: the log is decoded as one array, so one unknown value would drop the whole 30 days.
+    func testARowSavedByTheRemovedBlikDraftStillLoadsAndReadsInPolish() throws {
+        let saved = ActivityEntry(at: now, app: .messages, title: "Prepare a BLIK transfer", detail: "to Ania", outcome: .done)
+        let json = try XCTUnwrap(String(data: JSONEncoder().encode([saved]), encoding: .utf8))
+            .replacingOccurrences(of: "\"app\":\"messages\"", with: "\"app\":\"blik\"")
+            .replacingOccurrences(of: "\"outcome\":\"done\"", with: "\"outcome\":\"shown\"")
+        XCTAssertTrue(json.contains("\"app\":\"blik\"") && json.contains("\"outcome\":\"shown\""), json)
+        let loaded = try JSONDecoder().decode([ActivityEntry].self, from: Data(json.utf8))
+        XCTAssertEqual(loaded.count, 1)
+        XCTAssertEqual(loaded[0].app, .blik)
+        XCTAssertEqual(loaded[0].outcome, .shown)
+        XCTAssertNil(loaded[0].outcome.status, "nothing to track on an old card")
+        XCTAssertEqual(loaded[0].title(.polish), "Przygotuj przelew BLIK")
     }
 
     func testEveryResultHasPolish() {

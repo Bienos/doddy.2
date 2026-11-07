@@ -5,16 +5,10 @@ import Foundation
 import UIKit
 import os
 
-/// **Since ADR-593 no control runs `TalkButtonIntent`** (owner, 22 Oct: the Action Button should open
-/// Doddy, not the Dynamic Island on its own): the Action Button and the controls run
-/// `TalkToDoddyIntent`, which opens the app. `TalkButton` and the picker's logic below are kept,
-/// tested and unwired (ADR-579, superseded); `TalkInIslandIntent` still starts a conversation without
-/// opening Doddy from the Shortcuts app.
-///
-/// "Talk to Doddy" from the Action Button or a control (ADR-579), and the older "Talk in the
-/// Island" control (ADR-577). One press decides with `TalkLaunchPlanner`, following Settings ›
-/// Action Button: start in the Dynamic Island without opening Doddy, open Doddy, or end the
-/// conversation that is running (press again to stop).
+/// "Talk to Doddy" from the Action Button or a control (ADR-579, wired again by ADR-632 after
+/// ADR-593 had the controls open the app). One press decides with `TalkLaunchPlanner`: start in
+/// the Dynamic Island without opening Doddy, or end the conversation that is running (press again
+/// to stop). `TalkInIslandIntent` does the same from the Shortcuts app.
 @MainActor
 enum TalkButton {
     /// What the intent does next.
@@ -31,9 +25,10 @@ enum TalkButton {
 
     static let openDoddyToTalk = NSLocalizedString("Open Doddy to talk.", comment: "")
 
+    /// Always the island (ADR-632). Settings has had no Action Button choice since ADR-593, so a
+    /// choice stored by the ADR-579 build isn't read: the user could no longer see or change it.
     static func press(now: Date = .now) async -> Outcome {
-        let mode = TalkLaunchMode.stored(UserDefaults.standard.string(forKey: TalkLaunchMode.preferenceKey))
-        return await TalkInIsland.press(mode: mode, now: now)
+        await TalkInIsland.press(mode: .dynamicIsland, now: now)
     }
 }
 

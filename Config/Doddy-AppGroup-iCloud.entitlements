@@ -26,5 +26,8 @@
 	<true/>
 	<key>com.apple.developer.healthkit.access</key>
 	<array/>
+	<!-- Home control by voice: lights, outlets, fans and scenes after a tap (HomeKitClient). -->
+	<key>com.apple.developer.homekit</key>
+	<true/>
 </dict>
 </plist>

@@ -27,12 +27,10 @@ public enum VoiceToolName {
     public static let findDeals = "find_deals"
 }
 
-/// The functions a user turns on in Settings, Connections. All start off, and each one may also
-/// need an iOS permission of its own.
+/// The functions a user turns on or off in Settings, Connections. The ones that need no iOS permission
+/// start on (`startsOn`); the rest start off, and each of those needs an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
-    /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
-    case blik
     /// Presentations made on the iPhone as a file Keynote opens (ADR-567). No iOS permission.
     case presentations
     /// Step count, walking distance and floors from Motion & Fitness (ADR-568).
@@ -41,6 +39,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     case photos
     /// Doddy's own camera, for a photo note (ADR-569).
     case camera
+    /// Lights, outlets, fans and scenes in HomeKit (HomeCommand.swift). Needs the HomeKit entitlement.
+    case home
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -52,16 +52,34 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .maps: "Maps"
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
-        case .blik: "BLIK transfers"
         case .presentations: "Presentations"
         case .steps: "Steps"
         case .photos: "Photos"
         case .camera: "Camera"
+        case .home: "Home"
         }
     }
 
     /// Per-device preference key for @AppStorage.
     public var preferenceKey: String { "voiceConnection.\(rawValue)" }
+
+    /// Whether the switch is on until the person turns it off. Only the connections that need no iOS
+    /// permission start on: Doddy only prepares a draft, a card or a file, and the person still taps
+    /// Send, Open or Save. A connection that needs iOS permission (calendar, reminders, contacts, timers,
+    /// steps, photos, camera) stays off, because a switch that is on without the permission is shown as
+    /// blocked and never asks; turning it on in Settings is what makes iOS ask.
+    public var startsOn: Bool {
+        switch self {
+        case .maps, .shortcuts, .messages, .presentations: true
+        case .calendar, .reminders, .contacts, .timers, .steps, .photos, .camera, .home: false
+        }
+    }
+
+    /// The stored value for each connection that starts on, to register as the app's defaults. A value
+    /// the person stored (on or off) always wins over it.
+    public static var registeredDefaults: [String: Bool] {
+        Dictionary(uniqueKeysWithValues: allCases.filter(\.startsOn).map { ($0.preferenceKey, true) })
+    }
 
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {
@@ -75,11 +93,11 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
-        case VoiceToolName.draftBlikTransfer: .blik
         case VoiceToolName.makePresentation: .presentations
         case VoiceToolName.readSteps: .steps
         case VoiceToolName.findPhotos: .photos
         case VoiceToolName.openCamera: .camera
+        case VoiceToolName.controlHome: .home
         default: nil
         }
     }
@@ -216,6 +234,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case listAlarms
     /// Turn one of Doddy's alarms off, after a card.
     case cancelAlarm(clock: String, label: String?)
+    /// Follow something in Following (ADR-657): a catalog topic or the person's own words, after a card.
+    case followNews(NewsFollowAsk)
     /// A stopwatch that counts up (ADR-652): started and stopped after a card, read after a "yes".
     case startStopwatch(label: String?)
     case stopStopwatch
@@ -223,9 +243,6 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
-    /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
-    /// never sends money.
-    case draftBlikTransfer(BlikTransferDraft)
     /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-568).
@@ -239,6 +256,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
     case openCamera
+    /// Turn a light, outlet or fan on or off, or run a scene, in HomeKit (HomeCommand.swift). The
+    /// app resolves the words to one exact accessory and shows a card with it before anything runs.
+    case controlHome(HomeProposal)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -343,6 +363,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .listAlarms
         case VoiceToolName.cancelAlarm:
             return parseCancelAlarm(args, name: name)
+        case VoiceToolName.followNews:
+            switch NewsFollowAsk.parse(topic: args.text("topic"), name: args.text("name"), words: args.texts("words")) {
+            case .success(let ask): return .followNews(ask)
+            case .failure(let refusal): return .invalid(name: name, reason: refusal.reason)
+            }
         case VoiceToolName.startStopwatch:
             return .startStopwatch(label: Stopwatch.cleanLabel(args.text("label")))
         case VoiceToolName.stopStopwatch:
@@ -357,8 +382,6 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
-        case VoiceToolName.draftBlikTransfer:
-            return parseBlikTransfer(args, name: name)
         case VoiceToolName.makePresentation:
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:
@@ -371,6 +394,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:
             return .openCamera
+        case VoiceToolName.controlHome:
+            return parseControlHome(args, name: name)
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:
@@ -709,7 +734,7 @@ public enum VoiceToolReply {
     /// plan summary both read these, so a new result verb must be added here (review C1, D3).
     public static let donePrefixes = [
         "added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:",
-        // A payment the server confirmed (ADR-732); anything unclear is "unknown:", never this.
+        // A payment the server confirmed (ADR-736); anything unclear is "unknown:", never this.
         "paid:",
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.

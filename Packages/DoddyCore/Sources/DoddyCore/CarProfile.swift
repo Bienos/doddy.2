@@ -45,15 +45,12 @@ public enum CarProfile {
             return CloudToolName.isWrite(call.name)
                 ? .refuse(reason: "Drafts and tasks in online accounts need a tap on the iPhone, so not while driving.")
                 : .run
-        case .draftBlikTransfer:
-            // Money (ADR-510): a card to check and a bank app to send from, so never while driving.
-            return .refuse(reason: "A BLIK transfer is shown on the iPhone for the user to check and send in their bank app, so it waits until they aren't driving.")
         case .saveMemory(let text):
             return .askAloud(readBack: CarConfirmation.readBack(saving: text))
         case .addToList(let request):
             return .askAloud(readBack: CarConfirmation.readBack(adding: request.items, to: request.list))
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
-             .setTimer, .setAlarm, .cancelAlarm, .startStopwatch, .stopStopwatch, .openTrainingPlan, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .startTranslator,
+             .setTimer, .setAlarm, .cancelAlarm, .followNews, .startStopwatch, .stopStopwatch, .openTrainingPlan, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .startTranslator,
              .stopTranslator, .checkOff, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")

@@ -90,7 +90,7 @@ test("limits must be sensible amounts and ordered", () => {
   assert.match(problems({ DODDY_PAYMENTS_USER_DAILY_USDC: "9", DODDY_PAYMENTS_SERVICE_DAILY_USDC: "5" })!.message, /USER_DAILY_USDC must not exceed DODDY_PAYMENTS_SERVICE_DAILY_USDC/);
 });
 
-test("only the test network is accepted (real money is not approved, ADR-733), and only known networks at all", () => {
+test("only the test network is accepted (real money is not approved, ADR-737), and only known networks at all", () => {
   assert.equal(loadConfig({ DODDY_PAYMENTS_NETWORK: "base-sepolia" }).payments.network, "base-sepolia");
   assert.match(problems({ DODDY_PAYMENTS_NETWORK: "base" })!.message, /must be base-sepolia: paying on a network with real money is not approved/);
   assert.throws(() => loadConfig({ DODDY_PAYMENTS_NETWORK: "ethereum" }), ConfigError);
