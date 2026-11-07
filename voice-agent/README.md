@@ -1,5 +1,10 @@
 # Doddy voice agent — spec in OpenAI Realtime shape
 
+**In short:** this folder holds what Doddy's voice agents are told and which tools they have. There are three ElevenLabs agents: the main agent the app talks to (the files in this folder, 102 tools), the phone agent for Doddy's phone number (`phone/`, 3 tools) and the agent that calls a business for the user (`task-call/`, no tools). The last two are not created yet.
+Check all three with `python3 -I scripts/voice_agent_spec.py check`, adding `--agent phone` or `--agent task-call`; `scripts/ci.sh --only checks` runs all three.
+Editing these files doesn't change a live agent. The live agents are changed only by the owner, or on the owner's separate instruction. Most of this page is a dated log of what was applied to the live main agent, mostly newest first.
+**Newest recorded read of the live main agent:** 1 Nov 2026, about 19:00 UTC, `agtvrsn_7901m6bqz362eah8t83pghsbdj3e`, 103 tools: the 102 here plus `draft_invoice` from unmerged PR #161 (`docs/archive/STATUS-log-2026-10-08-to-2026-11-07.md`). `hand_over_errand` and `check_errands` are live (27 Oct entry below) but still say `not_synced` in `tools.json`.
+
 Owner decision 2026-10-09 (ADR-058): Doddy runs on **ElevenLabs Agents**, but everything that
 defines Doddy is kept here in **OpenAI Realtime** form, so moving to OpenAI Realtime later means
 adding one adapter, not rewriting the app or the agent.
@@ -7,10 +12,38 @@ adding one adapter, not rewriting the app or the agent.
 | File | What it is | ElevenLabs today | OpenAI Realtime later |
 |---|---|---|---|
 | `instructions.md` | Doddy's system prompt with `{{placeholders}}` | Agent prompt; placeholders are dynamic variables the app passes at `startConversation` | `session.instructions`, rendered on the phone by `RealtimeInstructions.render` |
-| `tools.json` | 10 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy` | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
+| `tools.json` | 102 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy`: 98 the app answers (`runs_on: phone`), 4 weather and Wikipedia lookups (`runs_on: web`) | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
 **OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
+
+## Tools at a glance (`tools.json`)
+
+Every tool asks first (ASK-01, `x_doddy.ask`): a read, or a request to Claude, waits for a spoken yes or a tap; anything that changes or opens something needs a tap on a card. Sums, conversions, web, news and place lookups, weather, Wikipedia and the translator run at once (ADR-575, ADR-619).
+
+| What | Tools | Who does the work |
+|---|---|---|
+| Notes | `search_memories`, `save_memory`, `remind_me_about_note`, `note_capability_gap` | The app, on the iPhone |
+| iPhone Calendar and Reminders | `read_calendar`, `find_free_time`, `create_calendar_event`, `change_calendar_event`, `delete_calendar_event`, `delete_calendar_events`, `create_reminder`, `change_reminder`, `delete_reminder`, `move_reminders`, `undo_last`, `remind_when_to_leave`; `propose_plan` puts several changes on one card | The app |
+| Contacts, messages, BLIK | `lookup_contact`, `upcoming_birthdays`, `draft_message`, `draft_blik_transfer` (the user sends it in their bank app; Doddy never sends money) | The app |
+| Sums and conversions | `calculate`, `convert_units`, `convert_currency` | The app |
+| Timers, alarms, stopwatch | `set_timer`, `set_alarm`, `list_alarms`, `cancel_alarm`, `start_stopwatch`, `stop_stopwatch`, `check_stopwatch` | The app |
+| Lists | `add_to_list`, `add_ingredients`, `read_list`, `check_off`, `remove_from_list`, `create_list` | The app |
+| The phone itself | `open_map`, `parking_spot`, `run_shortcut`, `open_camera`, `find_photos`, `control_home` (Apple Home), `follow_news` (Doddy's Following feed), `make_presentation` (Keynote only) | The app |
+| Health and sport | `read_steps`, `read_health_week`, `open_training_plan` | The app |
+| Translator | `start_translator`, `stop_translator` | The app |
+| Tasks and leaflets | `hand_over_errand`, `check_errands`, `find_deals` | The app asks; the messaging server (`doddy-messaging`) does the work |
+| Web, news, places, Claude | `web_search`, `news_search`, `find_places`, `ask_claude`, `make_document` (any deck or document except Keynote) | The app asks; Doddy's phone backend (`doddy`) runs them |
+| Gmail | `check_email`, `read_email`, `draft_email`, `draft_email_reply`, `send_email`, `reply_to_email`, `forward_email`, `change_email`, `trash_email` | Doddy's phone backend, once the user connects the account |
+| Outlook mail | `check_outlook_email`, `read_outlook_email`, `draft_outlook_email`, `send_outlook_email`, `reply_outlook_email`, `forward_outlook_email`, `move_outlook_email`, `mark_outlook_email` | Doddy's phone backend, once connected |
+| Google and Outlook calendars | `read_google_calendar`, `create_google_event`, `change_google_event`, `delete_google_event`, `answer_google_invite`, `read_outlook_calendar`, `create_outlook_event`, `change_outlook_event`, `delete_outlook_event`, `accept_outlook_invite`, `decline_outlook_invite` | Doddy's phone backend, once connected |
+| Drive, Notion, Todoist | `find_drive_file`, `create_drive_doc`, `search_notion`, `read_notion_page`, `create_notion_page`, `append_notion_page`, `trash_notion_page`, `list_todoist_tasks`, `add_todoist_task`, `complete_todoist_task`, `move_todoist_task`, `rename_todoist_task` | Doddy's phone backend, once connected |
+| Weather and Wikipedia | `geocode_place`, `get_weather`, `wikipedia_search`, `wikipedia_summary` (`runs_on: web`) | ElevenLabs calls the public services itself. On the OpenAI voice the app answers that they don't work there |
+
+The app's routing is `VoiceToolRequest.parse` and `CloudToolName` in DoddyCore. `check` fails if a phone tool has no Swift source that names it. Tools that were on the live agent and were detached (not in `tools.json`, no app handler): `upcoming_renewals`, `add_to_diary`, `pay_for_page`, `text_me`, `call_me_later` (19 Oct, ADR-544).
+
+## Changes to the live main agent, 20 Oct to 1 Nov 2026 (newest first)
+
 **Applied to the live agent 1 Nov 2026, in two steps, about 14:20 and 15:32 UTC (ADR-667 and ADR-669, `find_deals`'s wording: the shops of #156 and #157; owner: "Yes" to putting the new `find_deals` text live, then "Approved").**
 - **Read first:** `tool_9201m5rpyjhfe2kv0yd5xbbfk6k3` with the text of 29 Oct (ADR-660): Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka read; `chains` lists ten ids. **Rollback:** re-send that text (`git show ef3ff50:voice-agent/tools.json`, the `find_deals` entry, rendered with `voice_agent_spec.py elevenlabs`).
 - **Step 1 (14:20 UTC):** the tool as `voice_agent_spec.py elevenlabs` renders it at `20f8f55` (#156, the server deployed at 13:52 UTC): Delikatesy Centrum by default, E.Leclerc when named, Maxi Zoo, CCC and Komfort for their kind of item.
@@ -194,7 +227,7 @@ Editing the agent in the ElevenLabs dashboard without updating these files is dr
 step catches it. Each tool's `x_doddy.elevenlabs_tool_id` is its live id; a tool not yet on the live agent
 says `not_synced`, and `check` fails on a missing id or on a phone tool no Swift source answers.
 
-**Current state (read 2026-10-11, version `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`):** 43 tools, all with
+**State read on 2026-10-11 (old; newer reads are at the top of this file), version `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`:** 43 tools, all with
 their ids here. The dynamic-variable placeholders are recorded in `session.json` (`elevenlabs.placeholders`).
 The history below lists each change applied and its rollback version.
 
@@ -296,10 +329,11 @@ Both lines are merged now, so the spec has them all.
 - `RealtimeToolCatalog.unhandledPhoneTools`: phone tools the app cannot run (each would leave
   the model waiting until its timeout).
 
-**Not wired yet:** the voice screen still talks to the ElevenLabs SDK directly. The
-ElevenLabs adapter (`ElevenLabsRealtimeSession`) and the switch of `VoiceSessionController` to
-`RealtimeVoiceSession` come after the parallel voice branches are merged (calendar, knowledge,
-Island), so the rewrite happens once on the combined code.
+**How the app really connects (ADR-265):** `VoiceSessionController` talks to a `LiveVoiceLink`
+(`DoddyApp/Features/Voice/LiveVoiceLink.swift`). The ElevenLabs SDK's `Conversation` conforms to it
+with small shims, and `OpenAIRealtimeSession` (same folder) is the other one. No app type implements
+`RealtimeVoiceSession`, the app doesn't use `RealtimeConversationState`, and there is no
+`ElevenLabsRealtimeSession`. The table below is the mapping such an adapter would use; it isn't built.
 
 ElevenLabs SDK → event mapping for that adapter:
 
@@ -318,15 +352,18 @@ ElevenLabs SDK → event mapping for that adapter:
 ElevenLabs does not expose speech-start/stop events, so `userSpeechStarted/Stopped` only come
 from the OpenAI adapter; the screen works without them.
 
-## What moving to OpenAI Realtime needs (not built)
+## OpenAI Realtime: what is built and what isn't (ADR-265)
 
-1. A token server that mints short-lived client secrets (the API key never ships in the app).
-2. `OpenAIRealtimeSession`: WebRTC connection, `session.update` from `voice_agent_spec.py openai`
-   with instructions rendered on the phone, events mapped as named above.
-3. Run the four `web` tools (weather, Wikipedia) in the app or on the token server from
-   `x_doddy.http`, because OpenAI sends every function call to the client.
-4. Pick a voice. OpenAI has preset voices only; Doddy's ElevenLabs voice does not carry over.
-5. Bake-off on the same Polish/English phrases before switching (latency, interruptions, cost).
+1. **Built:** a token server that mints short-lived client secrets (`server/voice-token`; the API key never ships in the app).
+2. **Built, for testing:** `OpenAIRealtimeSession` in the app: a WebSocket to OpenAI (not WebRTC). The app
+   builds `session.update` itself (`OpenAIRealtimeWire.sessionUpdate`) from the bundled files, with the
+   instructions rendered on the phone. Not yet heard on a device (`session.json`, `openai_realtime.status`).
+3. **Not built:** the four `web` tools (weather, Wikipedia) don't run on OpenAI, because OpenAI sends every
+   function call to the client. The app answers them as unavailable and Doddy says so. Running them would
+   mean the app or the token server making those requests (`x_doddy.http`).
+4. **Done:** the token server picks the voice (`OPENAI_REALTIME_VOICE`, default `marin`). OpenAI has preset
+   voices only; Doddy's ElevenLabs voice does not carry over.
+5. **Not done:** a bake-off on the same Polish/English phrases (latency, interruptions, cost).
 
 ## Speed settings (2026-10-09)
 
@@ -353,8 +390,20 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - Create the agent: `server/messaging/scripts/setup-phone-agent.mjs` reads these files; `--dry-run` prints every request.
 - **Voice: not set (decision needed).** Neither `phone/session.json` nor the setup script sets a TTS model or voice, and `languages` is only `en`. ElevenLabs therefore uses its default for an English agent. The prompt says to answer Polish callers in Polish, but whether that voice speaks Polish hasn't been checked. Before the first real call, choose a multilingual TTS model, or add a `pl` preset, and record it in `phone/session.json`.
 - Drift: export the live phone agent's prompt and tools as above and run `voice_agent_spec.py compare EXPORT.json --agent phone`.
-- Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead).
+- Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead). An older status note (24 Oct, branch `claude/phone-agent-pl-en`, since deleted) said a phone agent already existed in ElevenLabs with no number. List the workspace's agents (read only) before running the setup script, so a second one isn't made.
 
+## Task-call agent (`task-call/`, ADR-500)
+
+`voice-agent/task-call/` defines the separate ElevenLabs agent **"Doddy (calls for you)"**: it phones a business for the user and asks one question the user approved, in Polish.
+
+- **Tools:** none of its own, only the `end_call` and `voicemail_detection` system tools. It can't look anything up or act.
+- **Variables:** the first message is `{{doddy_opening_line}}` (the AI disclosure and the question), built by the server from the approved brief, like the other `doddy_*` variables (`server/messaging/src/taskCalls/payload.ts`).
+- **Settings (`task-call/session.json`):** Polish only, phone audio (`ulaw_8000`), no audio recording, transcripts kept one day as a backstop, authentication on, at most 330 s.
+- **Check:** `python3 -I scripts/voice_agent_spec.py check --agent task-call` (in `scripts/ci.sh`). It also checks that the server's copy, `server/messaging/src/taskCalls/agentSpec.ts`, matches this folder. The server refuses to call while the live agent differs from it.
+- **Create:** `server/messaging/scripts/setup-task-call-agent.mjs` (`--dry-run` prints the request). It needs a Polish voice id in `TASK_CALL_VOICE_ID`; `session.json` holds only a placeholder.
+- **Status: not created yet.** The owner's steps are in `docs/decisions/calls.md` and `docs/implementation/CALL_CASES_STATUS.md`.
+
+## Changes to the live main agent, 11 and 18 Oct 2026 (rounds 4 to 6, ASK-01)
 
 **Applied to the live agent 2026-10-11 (ADR-300 to ADR-305): round 4.**
 - **Re-read first:** version `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` (43 tools), unchanged since round 3. `instructions.md`, which includes the affectionate-edison lines merged in PR #27, matched it except for the order of one sentence.
