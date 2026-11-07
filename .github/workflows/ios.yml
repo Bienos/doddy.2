@@ -16,10 +16,11 @@
 name: iOS build and tests
 
 on:
-  # The default branch is what Render deploys, and it sometimes gets direct pushes (ADR-675): those
-  # are tested too. The macOS job runs only when the push can reach the app build (ci_needs_mac.sh).
+  # The default branch, `main` (renamed from `claude/loving-dirac-uuxoux` on 7 Nov 2026), is what
+  # Render deploys and Xcode Cloud builds. Every push to it runs every job (ADR-811), so `main`'s own
+  # result says the whole app and every server were built and tested at that commit.
   push:
-    branches: [claude/loving-dirac-uuxoux]
+    branches: [main]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -30,9 +31,13 @@ on:
         default: all
 
 concurrency:
+  # Pull requests: a newer push to the branch cancels the older run. Pushes to `main` (ADR-811): the
+  # commit is in the group, so each one gets its own run that is never cancelled, and never replaced
+  # while it waits (GitHub drops a pending run when a newer one joins the same group). Before this, a
+  # docs merge right after an app merge cancelled the app merge's run (7 Nov 2026, run 42376928312).
   # The quick island run (ADR-618) has its own group, so it doesn't cancel a full run of the same branch.
-  group: ios-${{ github.ref }}-${{ inputs.only || 'all' }}
-  cancel-in-progress: true
+  group: ios-${{ github.event_name == 'push' && github.sha || github.ref }}-${{ inputs.only || 'all' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -59,19 +64,14 @@ jobs:
         id: files
         env:
           EVENT: ${{ github.event_name }}
-          BEFORE: ${{ github.event.before }}
         run: |
           # An empty list makes both scripts run everything: the safe answer.
           : > "$RUNNER_TEMP/changed.txt"
           if [ "$EVENT" = "push" ]; then
-            # What the push changes: from the commit the branch was at before it, to the new head (ADR-675).
-            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
-              && git fetch -q --depth=1 origin "$BEFORE" \
-              && git diff --name-only --no-renames "$BEFORE" HEAD > "$RUNNER_TEMP/changed.txt.new"; then
-              mv "$RUNNER_TEMP/changed.txt.new" "$RUNNER_TEMP/changed.txt"
-            else
-              echo "Couldn't list what the push changes: everything runs." >&2
-            fi
+            # A push to `main` runs everything (ADR-811). Testing only what the push changed (ADR-675)
+            # left `main` green on a docs commit whose app or servers were never tested (7 Nov 2026,
+            # run 42379647254 after #195's messaging failure and #198's cancelled run).
+            echo "Push to main: everything runs." >&2
           elif [ "$EVENT" != "pull_request" ]; then
             echo "Run by hand: everything runs." >&2
           elif git rev-parse --verify -q 'HEAD^2' >/dev/null \
@@ -90,18 +90,25 @@ jobs:
         run: scripts/ci_groups.sh < "$RUNNER_TEMP/changed.txt" >> "$GITHUB_OUTPUT"
 
   # Preserve #164: Mac Swift + Xcode tests only, no repeated Linux checks.
-  ci:
+  # Named `ios-build` (was `ci`, ADR-811) so the required check in the `main` ruleset says what it is.
+  # A pull request that can't reach the app skips it, and a skipped job counts as passed.
+  # Image and Xcode are pinned (ADR-811): `macos-latest` and `latest-stable` let a new runner image or
+  # Xcode change CI overnight with no code change. They are what this job ran on 7 Nov 2026 (image
+  # macos-26-arm64 20261102, Xcode 26.6 17F113) and match project.yml's `xcodeVersion`. Move all three
+  # together, in a pull request of their own.
+  ios-build:
+    name: ios-build
     needs: [changes]
     if: needs.changes.outputs.mac == 'true' && inputs.only != 'island'
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Select the latest stable Xcode
+      - name: Select Xcode 26.6
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: latest-stable
+          xcode-version: "26.6"
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -285,15 +292,16 @@ jobs:
   # simulator's screenshots are kept like the full run's. Not a substitute for the full run.
   island:
     if: github.event_name == 'workflow_dispatch' && inputs.only == 'island'
-    runs-on: macos-latest
+    # Pinned like ios-build (ADR-811).
+    runs-on: macos-26
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Select the latest stable Xcode
+      - name: Select Xcode 26.6
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: latest-stable
+          xcode-version: "26.6"
 
       - name: Install XcodeGen
         run: brew install xcodegen

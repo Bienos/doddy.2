@@ -69,12 +69,18 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
-- `ci` (macOS): `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
+- `ios-build` (macOS; named `ci` until ADR-811; runner image `macos-26` and Xcode 26.6 pinned):
+  `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
   once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; then the
   simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
   simulator sometimes freezes during it: ADR-764). It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
+- Pushes to `main` (ADR-811) run every job, each commit in its own run that nothing cancels; pull requests
+  keep the path selection above, and a newer push to a pull request cancels its older run.
+- `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
+  is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths) and
+  doesn't carry the owner's `owner-approved` label. Adding the label reruns it.
 
 Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs.
 
