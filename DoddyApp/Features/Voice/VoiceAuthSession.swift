@@ -133,7 +133,17 @@ final class VoiceAuthSession {
         }
     }
 
-    func serverRejectedSession() {
+    /// The voice token server refused the access token (401). That alone doesn't mean the sign-in is
+    /// gone: the access token can be revoked or expire early on the server. So the saved refresh token is
+    /// tried once first (engineering audit, 7 Nov 2026: before, any 401 deleted it and forced a new
+    /// Sign in with Apple). restore() itself clears the session when the server refuses the refresh
+    /// token too; offline, the refresh token is kept and restore() says why.
+    func serverRejectedSession() async {
+        accessToken = nil
+        accessTokenExpiresAt = .distantPast
+        await restore()
+        if accessToken != nil { return }
+        guard VoiceSessionKeychain.refreshToken() == nil else { return }
         clearLocalSession()
         lastFailure = .sessionExpired
         message = "Your voice session expired. Sign in with Apple again to reconnect."

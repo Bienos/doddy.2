@@ -1264,9 +1264,18 @@ final class VoiceSessionController {
         callsAsReceived = [:]
         accountNeeded = nil
         accountMessage = nil
-        if isLive { phase = .ended }
+        let endedLive = isLive
+        if endedLive { phase = .ended }
         keepLog()
         offerSaveSuggestions()
+        // The learning card (ADR-440) after End too, not only when Doddy hangs up: disconnected()
+        // offers it, but the startAttempt bump above drops the SDK's disconnect for this conversation
+        // (engineering audit, 7 Nov 2026). Only when this stop ended a live conversation, so an End
+        // after Doddy already hung up doesn't offer it twice.
+        if endedLive {
+            offerLearning()
+            activity.sessionID = nil
+        }
         await active?.endConversation()
     }
 
