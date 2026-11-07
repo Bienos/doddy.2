@@ -186,6 +186,20 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
 
+### Round faces for the island's compact and minimal views
+`WholeDoddy_face_listening`, `_shush`, `_yawn_stretch`, `_crosslegged` (app and widgets; 48×48 and 72×72).
+Each is a crop of the matching `WholeDoddy_<pose>` image set (itself a downscale of the pack's
+01-transparent-poses picture) to the head circle in `IslandPose.head`, with the pixels outside the circle made
+transparent, cut by `tools/whole_doddy/cut_faces.py`. Nothing redrawn or recoloured. Source = the widget
+catalog's `art@3x.png` (SHA-256):
+
+| Face | Cut from | SHA-256 of the source |
+|---|---|---|
+| `WholeDoddy_face_listening` | `WholeDoddy_listening` | 69ac3b1ab13beb758d9f196cfebc71cbdcfb640b3b3b69cff0e7fa6e1221a482 |
+| `WholeDoddy_face_shush` | `WholeDoddy_shush` | 11b6e3e9b654524e5b9e1852edc7f66638027cda96cbb2d0636179cf2dae49d6 |
+| `WholeDoddy_face_yawn_stretch` | `WholeDoddy_yawn_stretch` | 3ef49ce4d7870c437f6dc242635489e6e7aaed211b047d08b4e3b9842f6d8646 |
+| `WholeDoddy_face_crosslegged` | `WholeDoddy_crosslegged` | e6b3c15fbd5852f30dc0ae7361b9bcf86b3daa1bc689b9f2db62f0518a8a0518 |
+
 ## The app icon: his face on orange (ADR-565, 21 October 2026)
 
 Owner: "I would like just his face", then option B (face on orange) of four shown. Source: `007_doddy_blink_v02.png` from the Drive folder, downloaded in the session and verified against the SHA-256 recorded below for the eyes (`1de78fb2…`). `tools/whole_doddy/make_app_icon.py` cuts tile 1 (x 0–543, the open head) to its ink (alpha above 8): 369 × 363 px, the head with both open eyes, the one brow and the smile. It is Lanczos-resized to 780 px wide and centred on brand orange `#FF6A00` (Brand Guidelines V2.2 p.20, ADR-556) at 1024 px, RGB, no alpha. Nothing is redrawn or recoloured.

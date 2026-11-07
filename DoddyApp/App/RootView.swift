@@ -20,6 +20,8 @@ enum PreferenceKey {
     /// The Apple Watch app shows pinned notes, reminders and lists (ADR-232); on unless turned off.
     static let watchShowContent = "watchShowContent"
     static let hideCharacterArt = "hideCharacterArt"
+    /// "Note saved" in the Dynamic Island for a few seconds after a save (ADR-781). On unless turned off.
+    static let savedIsland = "savedIsland"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
     /// The one-time basketball introduction has been shown or skipped on this installation.
@@ -99,6 +101,8 @@ enum PreferenceKey {
     static let welcomeSeen = "welcomeSeen"
     /// Settings › "Show the welcome again": the welcome shows once more, then clears this.
     static let welcomeReplay = "welcomeReplay"
+    /// The first-run "Allow access" step (ADR-814) has been answered or skipped on this installation.
+    static let firstRunAccessSeen = "firstRunAccessSeen"
     /// Cheapest this week › My loyalty apps (ADR-661): the programs the user said they don't use
     /// (`DealsPrograms.stored`). Empty means every leaflet price counts. Stays on this iPhone.
     static let dealsProgramsNotUsed = "deals.programsNotUsed"
@@ -123,7 +127,7 @@ enum AppTab: Hashable {
 
 struct RootView: View {
     @Environment(MemoryStore.self) private var store
-    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
+    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.default.rawValue
     @Environment(ProfileStore.self) private var profiles
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
@@ -169,9 +173,11 @@ struct RootView: View {
 
     /// The Terms acceptance (ADR-581); the "Before we start" step shows until it is stored.
     @AppStorage(PreferenceKey.legalAcceptance) private var legalRecordData: Data?
+    /// The "Allow access" step (ADR-814) was answered or skipped; it sets this itself.
+    @AppStorage(PreferenceKey.firstRunAccessSeen) private var accessSeen = false
 
     private var colorScheme: ColorScheme? {
-        switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
+        switch AppearancePreference(rawValue: appearanceRaw) ?? .default {
         case .system: nil
         case .light: .light
         case .dark: .dark
@@ -257,6 +263,9 @@ struct RootView: View {
                 if StudioModel.shared.hasOpenItems { Task { await StudioModel.shared.refresh() } }
                 FocusController.shared.refresh()
                 StopwatchController.shared.refresh()
+                CountdownController.shared.refresh()
+                // "A thought is ready for review" (ADR-785): the next one, from the notes as they are now.
+                Task { _ = await ThoughtReviewScheduler.refresh(store: store) }
                 // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                 // A cold launch also syncs (LaunchWork), so one that just ran is not repeated (ADR-547).
                 Task { await SharedListsController.shared.syncAllUnlessRecent() }
@@ -377,6 +386,8 @@ struct RootView: View {
                     if legalGateUp {
                         LegalAcceptanceView(source: LegalAcceptance.source(
                             hasUsedDoddyBefore: !profiles.isFirstInstallation, previous: LegalAcceptanceStore.record))
+                    } else if accessStepUp {
+                        FirstRunAccessView()
                     } else {
                         OnboardingFlowView()
                     }
@@ -384,7 +395,7 @@ struct RootView: View {
                 .preferredColorScheme(colorScheme)
             }
             // Drafts and listen-on-open wait while the terms step is up, as during first use.
-            .onChange(of: legalGateUp, initial: true) { _, up in
+            .onChange(of: legalGateUp || accessStepUp, initial: true) { _, up in
                 router.isOnboardingShown = up || profiles.route != .home
             }
         } else {
@@ -475,13 +486,22 @@ struct RootView: View {
         LegalAcceptanceStore.isNeeded(legalRecordData) && !AppLock.shared.isLocked
     }
 
+    /// "Allow access" is due (ADR-814): after the Terms, before the introduction, on a new installation only.
+    /// Not over the Face ID lock, and not while the Terms step is up.
+    private var accessStepUp: Bool {
+        !legalGateUp && !AppLock.shared.isLocked
+            && FirstRunAccessRule.shouldShow(
+                seen: accessSeen, firstInstallation: profiles.isFirstInstallation,
+                override: UserDefaults.standard.object(forKey: "firstRunAccess") as? Bool)
+    }
+
     private var introductionPresentation: Binding<Bool> {
         Binding(
-            // The introduction, and the Terms step inside it, wait until the first-launch welcome is over (ADR-598, ADR-581).
-            get: { (legalGateUp || profiles.isIntroductionPresented) && !welcomeVisible },
+            // The introduction, and the Terms and access steps inside it, wait until the first-launch welcome is over (ADR-598, ADR-581).
+            get: { (legalGateUp || accessStepUp || profiles.isIntroductionPresented) && !welcomeVisible },
             set: { presented in
-                // The terms step can't be closed without its Continue.
-                guard !presented, !legalGateUp, profiles.isIntroductionPresented else { return }
+                // The terms and access steps can't be closed without their own buttons.
+                guard !presented, !legalGateUp, !accessStepUp, profiles.isIntroductionPresented else { return }
                 Task { await profiles.finishIntroduction(saved: false) }
             })
     }
@@ -569,7 +589,7 @@ struct RootView: View {
             showFind = true
         }
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
-            router.isOnboardingShown = !atHome || legalGateUp
+            router.isOnboardingShown = !atHome || legalGateUp || accessStepUp
             // The first time Home is ready and on screen is the launch (OpeningModel decides).
             // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-598).
             if !welcomeVisible { opening.homeReady(openingConditions, isActive: scenePhase == .active) }

@@ -44,6 +44,9 @@ struct HomeView: View {
     @State private var showPhotoCamera = false
     @State private var showPhotoLibrary = false
     @State private var photoForMessages: AssistantImage?
+    /// "Attach a file" (7 Nov 2026): a file for Doddy to read opens Messages with it above the box.
+    @State private var choosingFile = false
+    @State private var fileForMessages: AssistantFile?
     @State private var tool: HomeTool?
     /// Translate (ADR-215): the start sheet, and what the user chose on it.
     @State private var showTranslator = false
@@ -53,6 +56,8 @@ struct HomeView: View {
     @State private var showToday = false
     /// Tasks handed to Doddy (ADR-570): the list and each result card.
     @State private var showErrands = false
+    /// The stories behind what the person follows (ADR-656).
+    @State private var showFollowing = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
     @State private var showVoicePicker = false
@@ -120,10 +125,13 @@ struct HomeView: View {
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
             .sheet(isPresented: $showFiles) { FilesSheet() }
+            // A finished call's push, tapped (ADR-730): Files, where Calls lists the recaps.
+            .sheet(isPresented: Binding(get: { router.isCallRecapsPresented }, set: { router.isCallRecapsPresented = $0 })) { FilesSheet() }
             .sheet(isPresented: $showToday) {
                 HomeTodaySheet(openSettings: { showToday = false; selectedTab = .settings })
             }
@@ -132,11 +140,18 @@ struct HomeView: View {
                 switch tool {
                 case .focus: FocusView()
                 case .stopwatch: StopwatchView()
+                // The kitchen timer and the wind-down (ADR-780).
+                case .timer: CountdownView(purpose: .timer)
+                case .windDown: CountdownView(purpose: .windDown)
                 }
             }
-            .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil }) {
+            .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
-                             openSettings: { selectedTab = .settings })
+                             file: fileForMessages, openSettings: { selectedTab = .settings })
+            }
+            .attachFileImporter(isPresented: $choosingFile) { file in
+                fileForMessages = file
+                showAsk = true
             }
             .askAboutPhotoSources(showCamera: $showPhotoCamera, showLibrary: $showPhotoLibrary) { photo in
                 photoForMessages = photo
@@ -156,7 +171,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -173,6 +188,8 @@ struct HomeView: View {
                 if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
                 }
+                // One small mark while Doddy has a call going for the person; nothing otherwise.
+                ActiveCallBadge()
                 Spacer()
                 moreMenu
             }
@@ -245,8 +262,25 @@ struct HomeView: View {
                         }
                     }
                     .accessibilityIdentifier("home.stopwatch")
+                    // A kitchen timer and a wind-down countdown, on the island and in StandBy (ADR-780).
+                    Button { tool = .timer } label: {
+                        if CountdownController.shared.session(.timer).map({ !$0.isOver }) ?? false {
+                            Label("Timer · on", systemImage: "timer.circle")
+                        } else {
+                            Label("Timer", systemImage: "timer.circle")
+                        }
+                    }
+                    .accessibilityIdentifier("home.timer")
+                    Button { tool = .windDown } label: {
+                        if CountdownController.shared.session(.windDown).map({ !$0.isOver }) ?? false {
+                            Label("Wind down · on", systemImage: "moon")
+                        } else {
+                            Label("Wind down", systemImage: "moon")
+                        }
+                    }
+                    .accessibilityIdentifier("home.windDown")
                 } label: {
-                    Label("Focus and stopwatch", systemImage: "timer")
+                    Label("Focus, timers and stopwatch", systemImage: "timer")
                 }
                 .accessibilityIdentifier("home.timers")
                 // Today only points to Settings until something is connected (ADR-326).
@@ -268,6 +302,9 @@ struct HomeView: View {
                 // MemoryJourneyTests). Settings, which leads to Doddy's memory too (ADR-633), heads the menu.
                 Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                     .accessibilityIdentifier("home.deals")
+                // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
+                Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                    .accessibilityIdentifier("home.following")
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
@@ -536,9 +573,8 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// + (5 Nov 2026): show Doddy something, or write it down. A photo goes to Messages with a question
-    /// (Doddy says what it is); a note opens the capture screen as + always did. Attaching a file is not
-    /// here because it is not built: a document would be a new data flow and needs the owner's yes.
+    /// + (5 Nov 2026): show Doddy something, or write it down. A photo or a file (7 Nov) goes to Messages with a
+    /// question (Doddy says what it is or reads it); a note opens the capture screen as + always did.
     private var plusMenu: some View {
         Menu {
             if CameraCapture.isAvailable, store.environment.capabilities.isAvailable(.textAssistant) {
@@ -548,6 +584,8 @@ struct HomeView: View {
             if store.environment.capabilities.isAvailable(.textAssistant) {
                 Button { showPhotoLibrary = true } label: { Label("Choose a photo", systemImage: "photo") }
                     .accessibilityIdentifier("home.save.photo")
+                Button { choosingFile = true } label: { Label("Attach a file", systemImage: "paperclip") }
+                    .accessibilityIdentifier("home.save.file")
             }
             Button { modal = .capture } label: { Label("New note", systemImage: "square.and.pencil") }
                 .disabled(!store.isStorageAvailable)
@@ -1006,7 +1044,7 @@ private struct SlideIn: ViewModifier {
 }
 
 private enum HomeTool: String, Identifiable {
-    case focus, stopwatch
+    case focus, stopwatch, timer, windDown
     var id: String { rawValue }
 }
 

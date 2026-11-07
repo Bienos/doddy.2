@@ -8,6 +8,7 @@ import type { TaskCallContext } from "./context.js";
 import { previewOf } from "./payload.js";
 import { isRetryableOutcome } from "./result.js";
 import { decryptPayload, phaseOf, resultAad } from "./service.js";
+import { mayReadTranscripts, withoutTranscript } from "./transcriptAccess.js";
 
 type Client = Pick<pg.PoolClient, "query">;
 
@@ -60,6 +61,7 @@ export async function getCase(ctx: TaskCallContext, accountId: string, caseId: s
     `SELECT r.attempt_id, r.state, r.outcome, r.confidence, r.ciphertext, r.result_digest, r.expires_at
      FROM call_results r JOIN call_attempts a ON a.id = r.attempt_id WHERE a.case_id = $1 ORDER BY a.attempt_no`, [caseId]);
   const items = await costItems(ctx.db, caseId);
+  const mayRead = await mayReadTranscripts(ctx, accountId);
   return {
     caseId: kase.id,
     state: kase.state,
@@ -75,7 +77,7 @@ export async function getCase(ctx: TaskCallContext, accountId: string, caseId: s
     results: results.map((r) => ({
       attemptId: r.attempt_id, state: r.state, outcome: r.outcome, confidence: r.confidence, expiresAt: r.expires_at,
       resultDigest: r.result_digest?.toString("hex") ?? null,
-      result: r.ciphertext ? safeDecrypt(ctx, r.ciphertext, resultAad(accountId, r.attempt_id)) : null,
+      result: r.ciphertext ? withoutTranscript(mayRead, safeDecrypt(ctx, r.ciphertext, resultAad(accountId, r.attempt_id))) : null,
     })),
     cost: costSummary(items),
     deletions: await receipts(ctx.db, caseId),

@@ -81,6 +81,21 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         }
     }
 
+    /// The saved-thought shelf (ADR-783): how many notes there are and how many were saved in
+    /// the last seven days, with the last save's time. Counts only, never words. Lists and
+    /// private notes aren't counted.
+    public struct Shelf: Codable, Equatable, Sendable {
+        public let noteCount: Int
+        public let savedThisWeek: Int
+        public let lastSavedAt: Date?
+
+        public init(noteCount: Int, savedThisWeek: Int, lastSavedAt: Date?) {
+            self.noteCount = noteCount
+            self.savedThisWeek = savedThisWeek
+            self.lastSavedAt = lastSavedAt
+        }
+    }
+
     public let version: Int
     public let writtenAt: Date
     /// False when the user turned "Show in widgets" off: the widgets say so and show nothing.
@@ -94,9 +109,12 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// leave Doddy's pictures out too. Written only when true, so snapshots from before (and with
     /// it off) are unchanged and still read.
     public let hidesDoddy: Bool?
+    /// Absent in snapshots written before ADR-783; those still read, and the shelf widget then
+    /// asks to open Doddy once.
+    public let shelf: Shelf?
 
     public init(version: Int = currentVersion, writtenAt: Date, isOn: Bool, pinned: [Note], reminders: [Reminder], lists: [List],
-                parking: Parked? = nil, hidesDoddy: Bool = false) {
+                parking: Parked? = nil, hidesDoddy: Bool = false, shelf: Shelf? = nil) {
         self.version = version
         self.writtenAt = writtenAt
         self.isOn = isOn
@@ -105,6 +123,7 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         self.lists = lists
         self.parking = parking
         self.hidesDoddy = hidesDoddy ? true : nil
+        self.shelf = shelf
     }
 
     /// Whether Doddy's pictures are to be left out (ADR-331).
@@ -146,7 +165,20 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         return WidgetSnapshot(
             writtenAt: wholeMilliseconds(now), isOn: true, pinned: Array(notes.prefix(maxPinned)),
             reminders: Array(upcoming.prefix(maxReminders)), lists: Array(shownLists),
-            parking: parking.map { Parked(savedAt: wholeMilliseconds($0.savedAt), note: $0.note.map(shortened)) }, hidesDoddy: hidesDoddy)
+            parking: parking.map { Parked(savedAt: wholeMilliseconds($0.savedAt), note: $0.note.map(shortened)) }, hidesDoddy: hidesDoddy,
+            shelf: shelf(memories, now: now))
+    }
+
+    /// Counts for the shelf widget (ADR-783): notes only (not lists), the ones saved in the last
+    /// seven days, and the newest save. `memories` is already the shareable set. The time is in
+    /// whole milliseconds, like the other dates, so it reads back from the file exactly.
+    public static func shelf(_ memories: [MemoryRecord], now: Date) -> Shelf {
+        let notes = memories.filter { $0.category != .list }
+        let weekAgo = now.addingTimeInterval(-7 * 86_400)
+        let dates = notes.compactMap(\.capturedAt)
+        return Shelf(noteCount: notes.count,
+                     savedThisWeek: dates.filter { $0 > weekAgo && $0 <= now }.count,
+                     lastSavedAt: dates.max().map(wholeMilliseconds))
     }
 
     /// The first line, cut on a word boundary with "…" when longer than `maxTextLength`.

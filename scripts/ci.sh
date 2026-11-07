@@ -63,6 +63,26 @@ restart_simulator() {
   xcrun simctl shutdown "$1" 2>/dev/null || true  # fails harmlessly if it is already shut down
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
+# Runs a command and stops it if it is still running after $1 seconds (ADR-764). For a simulator
+# whose drawing has frozen: xcodebuild then waits for ever on an app launch that never returns.
+with_watchdog() {  # seconds, command...
+  local limit=$1; shift
+  "$@" &
+  local pid=$! waited=0
+  while kill -0 "$pid" 2>/dev/null; do
+    if [ "$waited" -ge "$limit" ]; then
+      echo "WATCHDOG: still running after ${limit} s, stopping it (the simulator has most likely frozen, ADR-764)"
+      kill -TERM "$pid" 2>/dev/null || true
+      sleep 15
+      kill -KILL "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+      return 124
+    fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+  wait "$pid"
+}
 
 if [ "$app_only" -eq 1 ]; then
   record "Pack, guard, agent spec, page and catalog checks" "SKIPPED" "--app-only: Linux core runs them"
@@ -92,6 +112,8 @@ run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_ne
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
+run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
+run_step "Privacy manifest declares every required-reason API (7 Nov audit)" scripts/test_check_privacy_manifest.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -223,6 +245,10 @@ elif ! command -v xcodegen >/dev/null 2>&1; then
   not_run "iOS app build + tests" "xcodegen not found (brew install xcodegen)"
 else
   run_step "Generate Xcode project" xcodegen generate --spec project.yml
+  # The app's pinned package versions (Config/Package.resolved, 7 Nov 2026 audit): installed into the
+  # generated project before anything resolves, and checked after `xcodebuild -list` resolves.
+  resolved_in_project=Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  run_step "Install the pinned package versions" scripts/install_package_resolved.sh Doddy.xcodeproj
   # Default: first available iPhone simulator; override with DODDY_DESTINATION.
   if [ -n "${DODDY_DESTINATION:-}" ]; then
     dest=$DODDY_DESTINATION
@@ -235,6 +261,26 @@ else
   else
     echo "Destination: $dest"
     run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
+    # `-list` resolved the packages. A copy of what it resolved always goes to build/Package.resolved
+    # (hosted CI keeps it), so pinning or moving versions is one download. With pins committed, any
+    # difference fails: the build would not be the one TestFlight gets.
+    mkdir -p build
+    if [ ! -f "$resolved_in_project" ]; then
+      not_run "App package versions match Config/Package.resolved" "xcodebuild wrote no $resolved_in_project"
+    else
+      cp "$resolved_in_project" build/Package.resolved
+      if [ ! -f Config/Package.resolved ]; then
+        record "App package versions match Config/Package.resolved" "SKIPPED" \
+          "no pins committed yet: commit build/Package.resolved from this run as Config/Package.resolved"
+      elif cmp -s Config/Package.resolved "$resolved_in_project"; then
+        record "App package versions match Config/Package.resolved" PASS ""
+      else
+        diff -u Config/Package.resolved "$resolved_in_project" || true
+        record "App package versions match Config/Package.resolved" FAIL \
+          "resolution changed the pins; if that was meant, run make update-packages on a Mac and commit it"
+        failed=1
+      fi
+    fi
     # Build once, then run the unit tests and the UI tests as two passes, with the simulator
     # restarted in between (ADR-561). The unit tests run inside the app on the simulator; right
     # after them its first launches are slow, and on 20 Oct (run 39496321722) XCTest could not take
@@ -254,22 +300,63 @@ else
       if [ -n "${sim_id:-}" ]; then
         run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
       fi
+      # The native island test runs on its own, last (ADR-764). Twice (2 Nov, run 41368047283; 7 Nov,
+      # run 42381695855) the hosted simulator's drawing froze right after it tapped a button on the
+      # system's island: backboardd waited on a GPU command that never finished, SpringBoard waited
+      # on backboardd, the tap never reached the app, and every later test failed to launch the app
+      # until the job's 75 minutes ran out. On its own, a freeze costs only this test.
+      island_test="DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd"
+      # DODDY_UI_TESTS=smoke (ADR-811; hosted CI sets it on pull requests): only the smoke classes,
+      # about 8 of the full suite's 27 minutes on 7 Nov 2026 (run 42370455942: the motion, art and
+      # memory-journey classes took about 20). Every push to main runs the whole suite and the native
+      # island test, so a pull request learns of those a merge later. Anything else, or unset: all.
+      if [ "${DODDY_UI_TESTS:-all}" = "smoke" ]; then
+        ui_scope="smoke"
+        ui_tests="-only-testing:DoddyUITests/LaunchSmokeTests -only-testing:DoddyUITests/WelcomeUITests"
+        ui_tests="$ui_tests -only-testing:DoddyUITests/LegalAcceptanceUITests -only-testing:DoddyUITests/PolishSmokeTests"
+        ui_label="UI smoke tests"
+      else
+        ui_scope="all"
+        ui_tests="-only-testing:DoddyUITests -skip-testing:$island_test"
+        ui_label="UI tests"
+      fi
       # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
       # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
       # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
       ui_workers=${DODDY_UI_TEST_WORKERS:-1}
       if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
         # shellcheck disable=SC2086
-        run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \
-          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyUITests \
+        run_step "xcodebuild test: $ui_label ($ui_workers simulators)" xcodebuild test-without-building \
+          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" $ui_tests \
           -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
       else
         # shellcheck disable=SC2086
-        run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-          -destination "$dest" -only-testing:DoddyUITests $test_limits
+        run_step "xcodebuild test: $ui_label" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+          -destination "$dest" $ui_tests $test_limits
+      fi
+      if [ "$ui_scope" = "smoke" ]; then
+        record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); every push to main runs it"
+      else
+        if [ -n "${sim_id:-}" ]; then
+          run_step "Restart the simulator before the native island test" restart_simulator "$sim_id"
+        fi
+        # The test takes under a minute; 3 minutes ends it if it hangs. The watchdog ends the whole
+        # pass after 8 (runner start about 70 s, the test, and the spindump XCTest takes on a hang),
+        # where a frozen simulator would otherwise hold xcodebuild until the job's limit.
+        run_step "xcodebuild test: native island test (alone, 8-minute watchdog)" with_watchdog 480 \
+          xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
+          -only-testing:"$island_test" -test-timeouts-enabled YES -default-test-execution-time-allowance 180
       fi
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
+    fi
+    # DODDY_RELEASE_BUILD=1 (hosted CI on pushes to main): compile the Release configuration for
+    # devices, unsigned. Everything above is a Debug simulator build; without this, Xcode Cloud's
+    # archive was the first Release compile, where a failure costs build hours and a TestFlight build.
+    if [ "${DODDY_RELEASE_BUILD:-0}" = "1" ]; then
+      run_step "xcodebuild build: Release, generic iOS device, unsigned" xcodebuild build -project Doddy.xcodeproj \
+        -scheme Doddy -configuration Release -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO \
+        -IDEBuildingContinueBuildingAfterErrors=YES
     fi
   fi
 fi

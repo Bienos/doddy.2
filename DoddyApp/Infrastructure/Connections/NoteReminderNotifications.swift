@@ -170,6 +170,14 @@ extension TimerBanners {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let action = response.actionIdentifier
         let requestID = response.notification.request.identifier
+        // A call Doddy made for the person has its answer ready (ADR-730): the tap opens Files › Calls,
+        // where the recap is. The push says only that (the server sends a kind, never words or ids).
+        if ServerPushKind.parse(response.notification.request.content.userInfo) == .callResult {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.callRecapsOpened() }
+            }
+            return
+        }
         // The weekly tidy-up (ADR-228) opens its screen; nothing changes until the user taps.
         if TidyUp.isTidyUp(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {
@@ -207,6 +215,21 @@ extension TimerBanners {
             }
             return
         }
+        // "A thought is ready for review" (ADR-785) opens that note; opening it is what the
+        // review log records. Nothing else changes.
+        if ThoughtReview.isReview(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier,
+               let memoryString = response.notification.request.content.userInfo[ThoughtReview.memoryIDKey] as? String,
+               let memoryID = UUID(uuidString: memoryString) {
+                await MainActor.run {
+                    ThoughtReviewScheduler.opened(memoryID)
+                    NoteReminderRouter.shared.reminders?.pendingOpenMemoryID = memoryID
+                }
+            }
+            return
+        }
+        // A timer's or wind-down's "done" (ADR-780) just opens Doddy.
+        if CountdownSession.isCountdown(notificationID: requestID) { return }
         // The morning check-in (ADR-220) opens its screen; nothing else happens until the user taps.
         if MorningCheckIn.isCheckIn(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

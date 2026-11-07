@@ -181,4 +181,13 @@ final class SQLiteMessageThreadRepositoryTests: XCTestCase {
         let stored = try await repo.recent(limit: 10)
         XCTAssertEqual(stored.map(\.hasPhoto), [true, false])
     }
+
+    func testAFileMessageKeepsOnlyTheFileName() async throws {
+        let repo = SQLiteMessageThreadRepository(database: try DoddyDatabase.inMemory())
+        let withFile = ThreadMessage(id: UUID(), sender: .user, text: "Co to?", createdAt: t0, delivery: .sent, attachedFileName: "umowa.pdf")
+        try await repo.append(withFile)
+        try await repo.append(user("bez pliku", at: 1))
+        let stored = try await repo.recent(limit: 10)
+        XCTAssertEqual(stored.map(\.attachedFileName), ["umowa.pdf", nil])
+    }
 }

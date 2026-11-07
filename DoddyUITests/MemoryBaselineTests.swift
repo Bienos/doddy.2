@@ -77,13 +77,18 @@ final class MemoryBaselineTests: XCTestCase {
         XCTAssertTrue(unmute.waitForExistence(timeout: 15))
         attach(springboard, name: "Native expanded Island controls - offline labelled fixture")
         unmute.tap()
+        // Let the island settle before the app comes forward, so the system's island change and the
+        // app's activation don't animate at once (ADR-764). Twice on CI the simulator's drawing froze
+        // at that moment (2 Nov after Unmute, 7 Nov after Stop): backboardd waited on a GPU command
+        // that never finished, and the tap never reached the app. That overlap is a guess, not a
+        // proven cause, so this wait asserts nothing; the checks below are unchanged.
+        _ = unmute.waitUntilGone(timeout: 5)
         app.activate()
         XCTAssertTrue(app.buttons["island.fixture.end"].waitForExistence(timeout: 5))
         // The system button reaches the app's handler a few seconds later, as with Stop below
-        // (20a6e031). 5 s was too short once on CI (run 39147513810, 18 Oct), and 10 s twice on
-        // 1 and 2 Nov when the hosted Mac reached the UI tests sooner after it started (ADR-680:
-        // runs 41341166440, 41368047283). The handler is iOS's to call, so the wait is iOS's
-        // latency, not Doddy's: 20 s, the same check.
+        // (20a6e031): 5 s was too short once on CI (run 39147513810, 18 Oct). The 10 s failures
+        // of 1 and 2 Nov (runs 41341166440, 41368047283) were not slowness but the frozen
+        // simulator above (ADR-764), which no wait fixes. 20 s, the same check.
         XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture active", timeout: 20), "System Unmute must reach the app handler.")
         XCUIDevice.shared.press(.home)
         let activeCompact = springboard.descendants(matching: .any).matching(NSPredicate(format: "label == 'Test activity'")).firstMatch
@@ -92,9 +97,12 @@ final class MemoryBaselineTests: XCTestCase {
         attach(springboard, name: "Native compact Island, not muted - offline labelled fixture")
         activeCompact.press(forDuration: 1.2)
         // The island's end control is labelled "Stop" ("Stop listening" in Hey Doddy mode).
-        XCTAssertTrue(springboard.buttons["Stop"].waitForExistence(timeout: 8))
+        let stop = springboard.buttons["Stop"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 8))
         attach(springboard, name: "Native expanded Island, not muted - offline labelled fixture")
-        springboard.buttons["Stop"].tap()
+        stop.tap()
+        // As after Unmute: the island settles first (ADR-764).
+        _ = stop.waitUntilGone(timeout: 5)
         app.activate()
         // Like Unmute above, the system button reaches the app's handler a few seconds later (20 s).
         XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture ended", timeout: 20), "System Stop must reach the app handler.")
@@ -113,5 +121,10 @@ final class MemoryBaselineTests: XCTestCase {
 private extension XCUIElement {
     func waitForLabel(_ expected: String, timeout: TimeInterval) -> Bool {
         XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", expected), object: self)], timeout: timeout) == .completed
+    }
+
+    /// True once the element is gone, false if it is still there after `timeout`.
+    func waitUntilGone(timeout: TimeInterval) -> Bool {
+        XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: self)], timeout: timeout) == .completed
     }
 }

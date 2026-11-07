@@ -53,7 +53,6 @@ struct JourneyHeading: View {
 }
 
 /// Byte-identical drawings from the owner's numbered ZIP. No invented animation.
-/// Light paper backing preserves the supplied cream/black illustration in dark appearance.
 struct UploadedCharacterView: View {
     let assetName: String
     var height: CGFloat = 180
@@ -178,9 +177,10 @@ struct SceneryBackdrop: View {
     }
 }
 
-/// The picture itself at an exact height, with the paper backing in dark appearance. Shared by
-/// `UploadedCharacterView` and the opening's hand-over (ADR-225), so the opening's last frame
-/// and Home's picture are drawn the same way, pixel for pixel.
+/// The picture itself at an exact height. Shared by `UploadedCharacterView` and the opening's hand-over
+/// (ADR-225), so the opening's last frame and Home's picture are drawn the same way, pixel for pixel.
+/// Drawn the same in light and dark: no card behind it. In dark appearance it gets a thin white outline
+/// (`DarkOutline`), so his black outline and limbs don't vanish into the canvas.
 struct CharacterArtImage: View {
     let assetName: String
     let height: CGFloat
@@ -190,10 +190,28 @@ struct CharacterArtImage: View {
         Image(decorative: assetName)
             .resizable().scaledToFit()
             .frame(height: height)
-            .padding(.horizontal, colorScheme == .dark ? 12 : 0)
-            .background(colorScheme == .dark ? Color(red: 245/255, green: 239/255, blue: 226/255) : .clear,
-                        in: RoundedRectangle(cornerRadius: 24))
+            // The pose is white fills and black ink on a clear background. On the dark canvas he
+            // keeps his own colours and gets a thin white outline round his whole shape, so the
+            // black arms and legs show, instead of a cream plate behind him.
+            .modifier(DarkOutline(isDark: colorScheme == .dark, width: max(1.5, height / 120)))
             .accessibilityHidden(true)
+    }
+}
+
+private struct DarkOutline: ViewModifier {
+    let isDark: Bool
+    let width: CGFloat
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if isDark {
+            content
+                .shadow(color: .white, radius: 0, x: width, y: 0)
+                .shadow(color: .white, radius: 0, x: -width, y: 0)
+                .shadow(color: .white, radius: 0, x: 0, y: width)
+                .shadow(color: .white, radius: 0, x: 0, y: -width)
+        } else {
+            content
+        }
     }
 }
 

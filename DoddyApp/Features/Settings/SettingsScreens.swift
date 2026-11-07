@@ -97,8 +97,9 @@ struct AboutYouSettingsView: View {
 
 /// Settings › Appearance.
 struct AppearanceSettingsView: View {
-    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
+    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.default.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    @AppStorage(PreferenceKey.savedIsland) private var savedIslandOn = true
 
     var body: some View {
         Form {
@@ -111,6 +112,20 @@ struct AppearanceSettingsView: View {
                 Toggle("Hide character artwork", isOn: $hideCharacterArt)
             } footer: {
                 Text("Text size follows your iPhone's settings. With Reduce Motion on, Doddy stays still.")
+            }
+            Section {
+                // "Note saved" in the Dynamic Island for a few seconds after a save (ADR-781).
+                Toggle("\u{201C}Note saved\u{201D} in the Dynamic Island", isOn: $savedIslandOn)
+                    .accessibilityIdentifier("settings.savedIsland")
+                // A still paper wallpaper for the Lock Screen (ADR-784).
+                NavigationLink {
+                    WallpaperView()
+                } label: {
+                    Label("Lock Screen wallpaper", systemImage: "photo")
+                }
+                .accessibilityIdentifier("settings.wallpaper")
+            } footer: {
+                Text("After you save a note, the island shows \u{201C}Note saved\u{201D} for a few seconds, never the note's words. Needs Live Activities on for Doddy in iOS Settings.")
             }
         }
         .settingsPage()
@@ -224,7 +239,7 @@ struct WaysSettingsView: View {
             }
             Section {
                 // What Siri, the Shortcuts app and Back Tap's "Talk to Doddy" do. The Action Button's
-                // control has its own choice in Settings (ADR-579).
+                // control doesn't follow it: it talks in the Dynamic Island (ADR-632).
                 Picker("When Siri or Back Tap opens Doddy", selection: $backTapActionRaw) {
                     Text("Start a conversation").tag(BackTapAction.conversation.rawValue)
                     Text("Only open Doddy").tag(BackTapAction.openApp.rawValue)
@@ -698,6 +713,8 @@ struct RoutinesSettingsView: View {
             EveningWrapUpSettingsSection()
             WeeklyPlanSettingsSection()
             WeeklyLookBackSettingsSection()
+            // "A thought is ready for review" (ADR-785).
+            ThoughtReviewSettingsSection()
             TidyUpSettingsSection()
             if store.environment.capabilities.isAvailable(.noteReminders) {
                 NoteReminderSettingsSection()

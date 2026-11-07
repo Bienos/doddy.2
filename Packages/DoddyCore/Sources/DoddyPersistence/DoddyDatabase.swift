@@ -467,6 +467,11 @@ public final class DoddyDatabase: Sendable {
         migrator.registerMigration("v20_thread_photo") { db in
             try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN has_photo INTEGER NOT NULL DEFAULT 0 CHECK (has_photo IN (0, 1))")
         }
+        // A message the person sent with a file (Messages, 7 Nov 2026): only its name. The file itself goes with the
+        // question to Doddy's server and on to Anthropic, and is kept neither on this iPhone nor on the server.
+        migrator.registerMigration("v21_thread_file") { db in
+            try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN attached_file_name TEXT CHECK (attached_file_name IS NULL OR length(attached_file_name) > 0)")
+        }
         return migrator
     }
 

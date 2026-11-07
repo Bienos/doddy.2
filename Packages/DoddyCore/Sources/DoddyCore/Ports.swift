@@ -124,6 +124,8 @@ public struct AssistantRequest: Equatable, Sendable {
     public let locale: String
     /// A photo sent with this question only (Messages). Never sent again with a later question.
     public let image: AssistantImage?
+    /// A file sent with this question only (Messages, 7 Nov 2026). Never with a photo, never sent again.
+    public let file: AssistantFile?
 
     public init(
         sessionID: UUID,
@@ -132,6 +134,7 @@ public struct AssistantRequest: Equatable, Sendable {
         recentTurns: [ConversationTurn] = [],
         locale: String = "en",
         image: AssistantImage? = nil,
+        file: AssistantFile? = nil,
         requestID: UUID = UUID()
     ) {
         self.requestID = requestID
@@ -141,6 +144,7 @@ public struct AssistantRequest: Equatable, Sendable {
         self.recentTurns = recentTurns
         self.locale = locale
         self.image = image
+        self.file = file
     }
 }
 
@@ -157,6 +161,62 @@ public struct AssistantImage: Equatable, Sendable {
     public init?(jpeg: Data) {
         guard !jpeg.isEmpty, jpeg.count <= Self.maxBytes, jpeg.starts(with: [0xFF, 0xD8, 0xFF]) else { return nil }
         self.jpeg = jpeg
+    }
+}
+
+/// A file the person attached to a message (Messages, 7 Nov 2026): a PDF, or a text file in UTF-8, within the size the
+/// server accepts. Anything else is refused here so it never leaves the iPhone. Like a photo it goes with that one
+/// question to Doddy's server and on to Anthropic, and is kept on neither; the thread keeps only its name.
+public struct AssistantFile: Equatable, Sendable {
+    public enum Kind: String, Sendable {
+        case pdf, text
+    }
+
+    /// The server's limit is 4,000,000 characters of base64, so the bytes stay under 3 MB.
+    public static let maxBytes = 3_000_000
+    /// A text file's words, in Unicode scalars; the server counts the same way.
+    public static let maxTextScalars = 60_000
+    public static let maxNameScalars = 120
+
+    public let name: String
+    public let kind: Kind
+    public let data: Data
+
+    public var mediaType: String {
+        switch kind {
+        case .pdf: "application/pdf"
+        case .text: "text/plain"
+        }
+    }
+
+    /// Nil when the data is empty, too large, not what `kind` says (a PDF starts with "%PDF-"; text is UTF-8, not
+    /// blank, within `maxTextScalars`), or the name is empty once cleaned.
+    public init?(name: String, kind: Kind, data: Data) {
+        guard !data.isEmpty, data.count <= Self.maxBytes else { return nil }
+        switch kind {
+        case .pdf:
+            guard data.starts(with: Array("%PDF-".utf8)) else { return nil }
+        case .text:
+            guard let words = String(data: data, encoding: .utf8), !words.allSatisfy(\.isWhitespace),
+                  words.unicodeScalars.count <= Self.maxTextScalars
+            else { return nil }
+        }
+        let cleaned = Self.safeName(name)
+        guard !cleaned.isEmpty else { return nil }
+        self.name = cleaned
+        self.kind = kind
+        self.data = data
+    }
+
+    /// The name without control characters, trimmed, at most `maxNameScalars`: the model sees it, as data.
+    static func safeName(_ raw: String) -> String {
+        var view = String.UnicodeScalarView()
+        view.append(contentsOf: raw.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) })
+        let trimmed = String(view).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.unicodeScalars.count > maxNameScalars else { return trimmed }
+        var cut = String.UnicodeScalarView()
+        cut.append(contentsOf: trimmed.unicodeScalars.prefix(maxNameScalars))
+        return String(cut).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

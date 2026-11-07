@@ -61,4 +61,8 @@ public struct PrivacyDefaults: Equatable, Sendable {
 /// User-selectable appearance. Persisted by the app as a UI preference only.
 public enum AppearancePreference: String, CaseIterable, Sendable {
     case system, light, dark
+
+    /// What a person who never chose gets: light, whatever the iPhone is set to. Choosing System or
+    /// Dark in Settings → Appearance still works and is kept.
+    public static let `default`: AppearancePreference = .light
 }
