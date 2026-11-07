@@ -2,7 +2,7 @@
 
 Owner, 2 Nov 2026: "ok do 3", to "automatic TestFlight builds, so new versions reach your phone
 without Xcode". After the one-time setup below, every merge into the default branch
-(`claude/loving-dirac-uuxoux`) becomes a TestFlight build on your iPhone. You don't need Xcode.
+(`main`; called `claude/loving-dirac-uuxoux` until 7 Nov 2026) becomes a TestFlight build on your iPhone. You don't need Xcode.
 
 **Why Xcode Cloud and not GitHub Actions:** Apple's build service signs with your team's
 certificates, kept by Apple. No signing key or App Store Connect key goes into GitHub, and this
@@ -56,9 +56,11 @@ Linux, and `scripts/ci.sh` runs that test.
    Install the "Xcode Cloud" GitHub app for `Bienos/doddy.2` only.
 4. **The app record.** Pick the App Store Connect app you uploaded to by hand. Its bundle ID must
    be the one the build uses: `com.bienos.doddy2.dev` unless you set `DODDY_BUNDLE_ID` (step 5).
+   That record is **Doddy Beta** (ADR-812); the production app "Doddy" gets its own ID and record
+   later, with its own workflow.
 5. **Edit the workflow:**
    - **General:** name it "TestFlight on merge".
-   - **Start condition:** Branch Changes, branch `claude/loving-dirac-uuxoux`. Delete any "Pull
+   - **Start condition:** Branch Changes, branch `main` (a workflow set up before 7 Nov 2026 names `claude/loving-dirac-uuxoux`: change it). Delete any "Pull
      Request Changes" condition: GitHub already checks pull requests, and it would use up the 25
      hours.
    - **Environment:** the latest released Xcode. Environment variables only if needed:

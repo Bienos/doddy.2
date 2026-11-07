@@ -30,16 +30,25 @@ struct MessagesView: View {
     @State private var preview: URL?
     /// A finished task opened from its card.
     @State private var openedTask: OpenedTask?
+    /// Calls Doddy made (ADR-730), read from this iPhone's own copy of them. Shown under the thread; never part of it.
+    @Environment(\.appEnvironment) private var environment
+    @State private var calls: [StoredCallCase] = []
+    /// A finished call opened from its card: its page in Settings, where the recap is.
+    @State private var openedCall: OpenedCall?
 
     /// - Parameter draft: text already in the box, for the person to read, change and send
     ///   themselves (the Apple Health week summary, ADR-622). Nothing is sent without their tap.
-    /// - Parameter photo: a photo chosen on Home's + menu, shown above the box until Send or until removed.
-    init(repository: any MessageThreadRepository, draft: String = "", photo: AssistantImage? = nil, openSettings: @escaping () -> Void = {}) {
+    /// - Parameters:
+    ///   - photo: a photo chosen on Home's + menu, shown above the box until Send or until removed.
+    ///   - file: a file chosen on Home's + menu, the same way.
+    init(repository: any MessageThreadRepository, draft: String = "", photo: AssistantImage? = nil, file: AssistantFile? = nil,
+         openSettings: @escaping () -> Void = {}) {
         self.openSettings = openSettings
         // Messages on the web (owner, 28 Oct 2026: always on): the thread is copied to Doddy's server after every change.
         let model = MessagesModel(repository: repository, sync: ServerThreadSync())
         model.draft = draft
         model.photo = photo
+        if let file { model.file = file }
         _model = State(initialValue: model)
     }
 
@@ -121,8 +130,18 @@ struct MessagesView: View {
         .task(id: consent) { if consent { await files.refresh() } }
         .quickLookPreview($preview)
         .task { await ErrandsModel.shared.load() }
+        // A failed read shows no cards here; the calls themselves are in Settings › Phone calls.
+        .task { calls = (try? await environment.callCaseRepository.list()) ?? [] }
         .sheet(item: $openedTask) { opened in
             NavigationStack { ErrandDetailView(id: opened.id) }
+        }
+        .sheet(item: $openedCall) { opened in
+            NavigationStack {
+                CallCasesView(openCase: opened.id)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { Button("Close") { openedCall = nil } }
+                    }
+            }
         }
         // Motion v2 (MV4, Q2): he comes up with this cover, on its composer, and is back on
         // Home's stage as it goes.
@@ -165,6 +184,7 @@ struct MessagesView: View {
                             .id(message.id)
                     }
                     taskResults
+                    callResults
                     attachments
                     if model.isSending {
                         TypingBubble()
@@ -183,7 +203,7 @@ struct MessagesView: View {
                                 .foregroundStyle(Theme.error)
                                 .accessibilityIdentifier("messages.notSaved")
                         }
-                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
+                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .multilineTextAlignment(.center)
@@ -243,6 +263,50 @@ struct MessagesView: View {
                     .buttonStyle(.plain)
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("messages.taskResult")
+                }
+            }
+            .padding(.top, 14)
+            .padding(.trailing, 40)
+        }
+    }
+
+    /// Calls Doddy made for the person this week (ADR-730): "Doddy called Anna", and a tap opens that call's page in
+    /// Settings, where the recap is (and, for the owner's account only, the words). Read from this iPhone's own copy;
+    /// nothing is added to the saved thread, so nothing about a call is copied to Doddy Web or sent to the model.
+    @ViewBuilder
+    private var callResults: some View {
+        let shown = ThreadCallResults.shown(calls, now: Date())
+        if !shown.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Calls Doddy made")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(shown) { record in
+                    Button { openedCall = OpenedCall(id: record.id) } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "phone.fill")
+                                .font(.title3)
+                                .foregroundStyle(Theme.accentText)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: String(format: NSLocalizedString("Doddy called %@.", comment: "Messages: a call Doddy made; the name of the person he called"), record.brief.calleeName))
+                                    .font(.body.bold())
+                                    .multilineTextAlignment(.leading)
+                                Text("See the recap.")
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(Theme.ink)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("messages.callResult")
                 }
             }
             .padding(.top, 14)
@@ -349,6 +413,16 @@ struct MessagesView: View {
                     .padding(.trailing, 6)
                     .accessibilityIdentifier("messages.photoSent")
             }
+            if let name = message.attachedFileName {
+                // The file itself was not kept (on this iPhone or the server); the thread keeps only its name.
+                Label { Text(verbatim: name) } icon: { Image(systemName: "doc") }
+                    .font(.caption)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .foregroundStyle(Theme.secondaryText)
+                    .padding(.trailing, 6)
+                    .accessibilityIdentifier("messages.fileSent")
+            }
             HStack(spacing: 0) {
                 Spacer(minLength: 56)
                 MessageBubble(text: message.text, fromUser: true, tail: tail)
@@ -381,6 +455,12 @@ struct MessagesView: View {
                     .foregroundStyle(Theme.error)
                     .padding(.trailing, 6)
                     .accessibilityIdentifier("messages.photoNotDelivered")
+            case .notDeliveredFile:
+                Text("No answer. The file wasn't kept, so attach it again to ask.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.error)
+                    .padding(.trailing, 6)
+                    .accessibilityIdentifier("messages.fileNotDelivered")
             case nil:
                 EmptyView()
             }
@@ -684,8 +764,13 @@ private struct OpenedTask: Identifiable {
     let id: UUID
 }
 
+/// A finished call opened from Messages, for `.sheet(item:)` (the call case's id).
+private struct OpenedCall: Identifiable {
+    let id: UUID
+}
+
 /// The box at the bottom: a plus button, a capsule with the text and a round send button inside it.
-/// Plus holds the one real choice there is (use saved notes or not); photos, files and voice notes are not
+/// Plus holds "Attach a file" and the one setting there is (use saved notes or not); voice notes are not
 /// offered because they are not built.
 private struct MessagesComposer: View {
     @Bindable var model: MessagesModel
@@ -695,15 +780,23 @@ private struct MessagesComposer: View {
     @State private var dictation = MessageDictation()
     /// What was in the box when the mic was tapped; the words heard are added after it.
     @State private var dictationBase = ""
+    /// iOS's file picker for "Attach a file".
+    @State private var choosingFile = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 0) {
+            if let file = model.file {
+                MessageFileChip(file: file) { model.file = nil }
+            }
             if let photo = model.photo {
                 MessagePhotoChip(photo: photo) { model.photo = nil }
             }
             HStack(alignment: .bottom, spacing: 8) {
                 Menu {
+                    Button { choosingFile = true } label: { Label("Attach a file", systemImage: "paperclip") }
+                        .disabled(model.isSending)
+                        .accessibilityIdentifier("messages.attachFile")
                     Toggle("Use relevant saved notes", isOn: $useNotes)
                 } label: {
                     Image(systemName: "plus")
@@ -749,6 +842,7 @@ private struct MessagesComposer: View {
         // Motion v2 (Q2): the composer is "the composer" he stands on, left of Send, and rides
         // with the keyboard.
         .motionSurface(.composer)
+        .attachFileImporter(isPresented: $choosingFile) { model.file = $0 }
         .onChange(of: model.isSending) { _, sending in if sending { dictation.stop() } }
         // Dictation listens only while this screen is in front (ADR-676): the app may run in the
         // background for a conversation, and the microphone must not stay on for a box nobody sees.

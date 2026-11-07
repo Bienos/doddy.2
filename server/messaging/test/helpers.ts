@@ -9,7 +9,7 @@ import type {
   RegisterOutcome as ElRegisterOutcome, TaskTelephony, TaskVoice,
 } from "../src/providers/taskCalls.js";
 import type {
-  CallOutcome, CallRegistrar, DeleteOutcome, OutboundCall, OutboundCaller, PhoneVerifier, PushSender, PushTarget, RecordDeleter,
+  CallOutcome, CallRegistrar, DeleteOutcome, OutboundCall, OutboundCaller, PhoneVerifier, PushData, PushSender, PushTarget, RecordDeleter,
   RegisterOutcome, SendOutcome, SmsSender, VerifyCheck,
 } from "../src/providers/types.js";
 import type { BriefInput } from "../src/taskCalls/brief.js";
@@ -28,10 +28,10 @@ export async function freshDb(): Promise<Db> {
 
 // Test doubles stand in for Apple/Twilio only; database, HTTP layer and dispatcher are real.
 export class FakePush implements PushSender {
-  sent: { target: PushTarget; body: string }[] = [];
+  sent: { target: PushTarget; body: string; data?: PushData }[] = [];
   next: SendOutcome[] = [];
-  async send(target: PushTarget, alert: { body: string }, messageId: string): Promise<SendOutcome> {
-    this.sent.push({ target, body: alert.body });
+  async send(target: PushTarget, alert: { body: string }, messageId: string, data?: PushData): Promise<SendOutcome> {
+    this.sent.push({ target, body: alert.body, ...(data ? { data } : {}) });
     return this.next.shift() ?? { kind: "accepted", providerId: messageId };
   }
 }

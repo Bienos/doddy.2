@@ -149,7 +149,10 @@ describe("client bucket (ADR-702)", () => {
     const secret = randomBytes(32);
     const key = counterKey(secret, "203.0.113.7");
     assert.match(key, /^[0-9a-f]{64}$/);
-    assert.ok(!key.includes("203"));
+    // A random 64-character hex string contains "203" about 1.5% of the time, so that is not what proves the
+    // key is not the address. The pattern above (hex only: no dots) and these checks do, deterministically.
+    assert.ok(!key.includes("203.0.113.7") && !key.includes("203.0.113"), "the key is never the address");
+    assert.notEqual(key, "203.0.113.7");
     assert.notEqual(key, counterKey(undefined, "203.0.113.7"), "with a secret the key is an HMAC, not the bare hash");
     assert.equal(key, counterKey(secret, "203.0.113.7"));
     assert.notEqual(key, counterKey(randomBytes(32), "203.0.113.7"));

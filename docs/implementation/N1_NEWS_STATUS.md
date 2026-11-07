@@ -10,6 +10,8 @@ Date: 2026-10-10. Owner decisions on that date:
 - **Writer:** Claude Haiku writes the one-liners.
 - **Frequency:** one daily digest at the user's chosen time.
 
+> **28 Oct 2026:** the same sources now also feed **Following** (ADR-656, `FOLLOWING_STATUS.md`): a screen of cards for what the person follows, with no AI step and nothing stored on the server. The digest below is unchanged.
+
 ## Architecture
 ```
 App: Settings → Daily news ──PUT /v1/news/settings──▶ Postgres (news_settings, news_topics, news_feeds)

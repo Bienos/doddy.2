@@ -14,9 +14,9 @@ public enum ConnectionPause {
         case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator,
              .calculate, .convertUnits, .parkingSpot, .addIngredients,
              .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap,
-             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan:
-            // The stopwatch is Doddy's own tool on this iPhone (ADR-652), and so is the plan screen
-            // (ADR-626): no other app or account.
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews:
+            // The stopwatch is Doddy's own tool on this iPhone (ADR-652), and so are the plan screen
+            // (ADR-626) and the follow list of Following (ADR-657): no other app or account.
             false
         case .checkErrands:
             // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
@@ -28,7 +28,7 @@ public enum ConnectionPause {
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
             true
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
-             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .cloudTool, .changeCalendarEvent, .changeReminder,
+             .openMap, .runShortcut, .draftMessage, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
              .convertCurrency, .textMe, .callMeLater:

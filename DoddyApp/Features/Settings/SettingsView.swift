@@ -202,11 +202,11 @@ struct AboutSettingsView: View {
             Section {
                 // Doddy's own social accounts (ADR-130). Opening one hands off to the system; the app sends nothing.
                 Link(destination: SettingsView.tiktokURL) {
-                    Label("TikTok · doddy_mate", systemImage: "play.rectangle")
+                    Label("TikTok", systemImage: "play.rectangle")
                 }
                 .accessibilityIdentifier("settings.tiktok")
                 Link(destination: SettingsView.instagramURL) {
-                    Label("Instagram · doddy_mate", systemImage: "camera")
+                    Label("Instagram", systemImage: "camera")
                 }
                 .accessibilityIdentifier("settings.instagram")
             }

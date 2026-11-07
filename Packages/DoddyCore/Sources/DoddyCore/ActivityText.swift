@@ -21,13 +21,15 @@ extension ActivityApp {
         case .gmail, .drive, .notion, .todoist, .outlook: return title
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
-        case .blik: return "Przelewy BLIK"
+        case .blik: return "Przelewy BLIK"  // only on rows saved before ADR-810
         case .presentations: return "Prezentacje"
         case .steps: return "Kroki"
         case .photos: return "Zdjęcia"
         case .camera: return "Aparat"
+        case .home: return "Dom"
         case .health: return "Zdrowie"
         case .training: return "Plan treningowy"
+        case .news: return "Śledzone"
         }
     }
 }
@@ -66,12 +68,14 @@ public enum ActivityText {
         "Open in Maps": "Otwórz w Mapach",
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
+        // Rows saved before ADR-810 removed the BLIK draft still read in Polish.
         "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
         "Make a presentation": "Przygotuj prezentację",
         "Read steps": "Odczytano kroki",
         "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
         "Looked through photos": "Przejrzano zdjęcia",
         "Open the camera": "Otwórz aparat",
+        "Control the home": "Steruj domem",
         "Open the training plan": "Otwórz plan treningowy",
         "Draft an email": "Szkic e-maila",
         // ADR-750 U2.
@@ -106,6 +110,7 @@ public enum ActivityText {
         // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
         "Read alarms": "Odczytano budziki",
         "Turn off alarm": "Wyłącz budzik",
+        "Follow in Following": "Śledź w Śledzonych",
         "Start stopwatch": "Włącz stoper",
         "Stop stopwatch": "Zatrzymaj stoper",
         "Read stopwatch": "Odczytano stoper",
@@ -215,11 +220,11 @@ public enum ActivityText {
         case .maps: "Mapy"
         case .shortcuts: "Skróty"
         case .messages: "Wiadomości i e-mail"
-        case .blik: "Przelewy BLIK"
         case .presentations: "Prezentacje"
         case .steps: "Kroki"
         case .photos: "Zdjęcia"
         case .camera: "Aparat"
+        case .home: "Dom"
         }
     }
 

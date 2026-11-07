@@ -100,6 +100,9 @@ public enum AskFirst {
             return .tapFirst(AskCard(title: "Make a training plan?", lines: ask.cardLines, confirmLabel: "Open"))
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
+        case .followNews(let ask):
+            // ADR-657: a change to what the person follows, so a tap.
+            return .tapFirst(AskCard(title: "Follow this?", lines: ask.cardLines, confirmLabel: "Follow"))
         case .startStopwatch(let label):
             return .tapFirst(AskCard(
                 title: "Start a stopwatch?", lines: [label.map { "“\($0)”" } ?? "It counts up until you stop it"], confirmLabel: "Start"))
@@ -147,7 +150,7 @@ public enum AskFirst {
             // place Maps found and the leave time follows (ADR-718).
             return .tapFirst(LeaveByAsk.card(request, calendar: calendar))
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
-             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
+             .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
              // The card shows the exact text, or the time and the exact reason; the tap approves exactly that (ADR-752, ADR-754).
              .textMe, .callMeLater:

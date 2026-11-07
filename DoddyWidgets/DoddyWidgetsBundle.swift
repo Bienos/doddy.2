@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 /// Widget extension: the voice conversation's Live Activity, Doddy's calls for the user, the tools' Live Activity (focus,
-/// breathing, read-aloud), the Home and Lock Screen widgets (ADR-219) and, on iOS 18+, the
+/// breathing, read-aloud, timer, wind-down, "Note saved"), the Home and Lock Screen widgets (ADR-219, ADR-783) and, on iOS 18+, the
 /// Talk to Doddy and New note controls.
 @main
 struct DoddyWidgetsBundle: WidgetBundle {
@@ -61,8 +61,8 @@ struct DoddyWidgetsBundle: WidgetBundle {
 struct DoddyControls: WidgetBundle {
     var body: some Widget {
         TalkToDoddyControl()
-        // Was "Talk in the Island" (ADR-577); opens Doddy since ADR-593. Kept so an Action Button
-        // or control already set to it keeps working.
+        // Was "Talk in the Island" (ADR-577); the same as Talk to Doddy since ADR-632. Kept so an
+        // Action Button or control already set to it keeps working.
         TalkInIslandControl()
         NewNoteControl()
         // Opens Doddy and starts a recording (ADR-588).
@@ -81,5 +81,7 @@ struct DoddyHomeWidgets: WidgetBundle {
         TalkToDoddyWidget()
         NewNoteWidget()
         DoddyRestWidget()
+        // The saved-thought shelf (ADR-783): eight entries, under the ten.
+        SavedNotesWidget()
     }
 }

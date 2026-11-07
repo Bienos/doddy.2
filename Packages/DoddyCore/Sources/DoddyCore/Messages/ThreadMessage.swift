@@ -76,11 +76,14 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
     public let document: ThreadDocument?
     /// A message the person sent with a photo. Only this flag is kept: the photo went with the question and is not stored.
     public let hasPhoto: Bool
+    /// The name of a file the person sent with this message (7 Nov 2026). Only the name is kept: the file went with the
+    /// question and is not stored.
+    public let attachedFileName: String?
 
     public init(
         id: UUID = UUID(), sender: Sender, text: String, createdAt: Date, delivery: Delivery,
         basis: Basis? = nil, noteIDs: [UUID] = [], notesSent: Int = 0, notesSearchFailed: Bool = false,
-        document: ThreadDocument? = nil, hasPhoto: Bool = false
+        document: ThreadDocument? = nil, hasPhoto: Bool = false, attachedFileName: String? = nil
     ) {
         self.id = id
         self.sender = sender
@@ -93,15 +96,19 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
         self.notesSearchFailed = notesSearchFailed
         self.document = document
         self.hasPhoto = hasPhoto
+        self.attachedFileName = attachedFileName
     }
 
     /// A message the user is sending now.
-    public static func user(_ text: String, now: Date = Date(), id: UUID = UUID(), hasPhoto: Bool = false) -> ThreadMessage {
-        ThreadMessage(id: id, sender: .user, text: text, createdAt: now, delivery: .sending, hasPhoto: hasPhoto)
+    public static func user(_ text: String, now: Date = Date(), id: UUID = UUID(), hasPhoto: Bool = false,
+                            attachedFileName: String? = nil) -> ThreadMessage {
+        ThreadMessage(id: id, sender: .user, text: text, createdAt: now, delivery: .sending, hasPhoto: hasPhoto,
+                      attachedFileName: attachedFileName)
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, sender, text, createdAt, delivery, basis, noteIDs, notesSent, notesSearchFailed, document, hasPhoto
+        case attachedFileName
     }
 
     /// An export written before photos existed has no `hasPhoto`; it reads as false.
@@ -114,7 +121,8 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
             noteIDs: try c.decode([UUID].self, forKey: .noteIDs), notesSent: try c.decode(Int.self, forKey: .notesSent),
             notesSearchFailed: try c.decode(Bool.self, forKey: .notesSearchFailed),
             document: try c.decodeIfPresent(ThreadDocument.self, forKey: .document),
-            hasPhoto: try c.decodeIfPresent(Bool.self, forKey: .hasPhoto) ?? false)
+            hasPhoto: try c.decodeIfPresent(Bool.self, forKey: .hasPhoto) ?? false,
+            attachedFileName: try c.decodeIfPresent(String.self, forKey: .attachedFileName))
     }
 
     /// Doddy's answer, from what the assistant returned.

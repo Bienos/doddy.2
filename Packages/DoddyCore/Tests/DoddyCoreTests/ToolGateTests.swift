@@ -139,7 +139,7 @@ final class ToolGateTests: XCTestCase {
         VoiceToolName.changeCalendarEvent, VoiceToolName.changeReminder, VoiceToolName.deleteCalendarEvent,
         VoiceToolName.deleteReminder, VoiceToolName.deleteCalendarEvents, VoiceToolName.moveReminders,
         VoiceToolName.upcomingBirthdays, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm,
-        VoiceToolName.remindWhenToLeave, VoiceToolName.draftBlikTransfer, VoiceToolName.makePresentation,
-        VoiceToolName.readSteps, VoiceToolName.findPhotos, VoiceToolName.openCamera,
+        VoiceToolName.remindWhenToLeave, VoiceToolName.makePresentation,
+        VoiceToolName.readSteps, VoiceToolName.findPhotos, VoiceToolName.openCamera, VoiceToolName.controlHome,
     ]
 }

@@ -65,3 +65,48 @@ State repository reality (implemented / mock / missing / unsupported); name the 
 
 # Design (owner, 2026-10-20, ADR-548)
 Use only the new design: what the app shows now (Home as the calm "I'm here" screen, ADR-545, and the memory-journey screens), `design/dynamic-island-v4` for the island, and `design/website-what-can-doddy-do` plus the chosen `design/website-homepage-vision/g-sort-thursday.html` for the site. The old design folders were deleted: `design/interface-v1.2` (Pocket Notebook), `VISUAL_REVIEW/`, `design/ios-ready-asset-catalog/`, `design/landing-film-mockup/` and the seven rejected homepage options. Where the text above names them it is history; a deleted file can be read with `git show f7eedf0:<path>`. Colour and type tokens live in `DoddyDesignTokens` and `Theme`. This replaces the "Primary current visual reference is Pocket Notebook" line near the top.
+
+---
+
+# Current working rules — read this section first (owner, 7 Nov 2026; `docs/decisions/2026-11-07-agent-rules-and-records.md`)
+Everything above is kept byte for byte (this file and `CLAUDE.md` are append-only, ADR-178). Where an older line above conflicts with this section, this section wins. Codex reads this file; `CLAUDE.md` imports it for Claude Code.
+
+## Still binding (short form of the owner rules above and in CLAUDE.md)
+- Work only in `Bienos/doddy.2`. `Bienos/AI-AGENT-DODDY` is read-only.
+- The constitution (`docs/trust/`, `docs/trust/config/doddy_rules.yaml`) governs behaviour, memory, actions, privacy and character. A model proposes, typed code validates, scoped tools execute. An external write needs its exact payload and the user's approval bound to it. `unknown` is never success. Never say memory was saved or forgotten without a verified storage operation. Pull requests touching AI, memory, tools, voice or UX include the constitution evidence log (rule IDs, enforcing code, tests run, gaps).
+- Character art: only the owner's DODDY-Numbered-Video-Assets-v01 pack (`UploadedDoddy_*`, `WholeDoddy_*`). Design: ADR-548. Brand: `design/brand-v2.2/` (ADR-556). No font binaries.
+- Apple Watch and Mac are paused (ADR-572).
+- The live ElevenLabs prompt changes only on the owner's separate instruction.
+- Never call mock, design or unbuilt work implemented or tested. Report the exact commands and their results; write "not compiled" when you couldn't build. Never put a key, token or password in a file, log or pull request.
+
+## Read only what the task needs
+- `STATUS.md`: one page, what's live and what's open.
+- `docs/platforms/<platform>.md`: the feature map for that platform.
+- `BUILD_AND_TEST.md`: commands and CI.
+- `docs/OWNER_QUEUE.md`: what waits on the owner.
+- `DECISIONS.md`: ADR-001 to ADR-812. Search it by number; never read it whole. New decisions live in `docs/decisions/`.
+- History, unless the task names a file: `docs/archive/`, `docs/implementation/*_STATUS.md`, the dated round reports, `prompts/`, `reference/`.
+
+## Commands
+- Any OS: `make test-core`; `scripts/ci.sh --only checks|swift|backend|node|messaging`.
+- Mac: `make project`, scheme `Doddy`; `scripts/ci.sh`.
+- Generated files (string catalogs, site pages, blog, web assets, tokens): never merge them by hand. After a conflict, run `scripts/regen.sh`, then `scripts/ci.sh --only checks`.
+
+## Branches and pull requests
+- `main` is the only permanent branch. Start from current `main`, one topic per branch and pull request, and keep each one small enough to review.
+- **Never** push to `main`, force-push a branch you didn't create, merge, approve, or add the `owner-approved` or `full-ui-tests` labels. The owner merges (squash).
+- One agent at a time on these files; check open pull requests first: `VoiceSessionController.swift`, `VoiceView.swift`, `SettingsView.swift`, `SettingsScreens.swift`, `RootView.swift`, `DoddyApp.swift`, `voice-agent/tools.json`, `DoddyDatabase.swift`.
+- Fill in `.github/pull_request_template.md`. When the `sensitive-paths` check names your files, say in the description why they change.
+
+## Records, not shared ledgers
+- **Feature pull requests don't edit `DECISIONS.md` or `STATUS.md`.** Those two files made almost every pull request conflict with every other.
+- A product or architecture decision: a new file `docs/decisions/YYYY-MM-DD-short-slug.md` (template in `docs/decisions/README.md`), cited by its file name. Old ADR numbers stay valid.
+- What a pull request changed: a note in `changes/<slug>.md` (`changes/README.md`). Whoever next updates `STATUS.md` folds the notes in and deletes them.
+- Something only the owner can do: a row in `docs/OWNER_QUEUE.md`.
+
+## Live systems and data
+- Don't deploy, sync the live voice agents, or change settings in Render, Vercel, Supabase, ElevenLabs, Twilio, App Store Connect or the Apple Developer account. Reading them is fine. Write the exact change you need into the pull request or the owner queue.
+- Never rename, reorder or edit a database migration that has been merged. On the phone they are in `DoddyDatabase.swift`; on the server in `server/messaging/migrations/`, where a new file must sort after every existing one.
+
+## Done means
+New behaviour has tests; the `scripts/ci.sh` groups the change can reach have run, with results in the pull request; docs say what changed (the platform page, `BUILD_AND_TEST.md`); a `changes/` note exists; and anything you couldn't run is listed as not run.

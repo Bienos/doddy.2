@@ -91,6 +91,38 @@
 				<string>CA92.1</string>
 			</array>
 		</dict>
+		<!-- Required reasons for the other APIs the app calls (engineering audit, 7 Nov 2026);
+		     scripts/check_privacy_manifest.sh fails if the code uses one that isn't declared here. -->
+		<dict>
+			<!-- ProcessInfo.systemUptime: time between in-app events (the voice meter's staleness,
+			     Doddy's motion clock, Home's timing). Never sent off the device. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- Creation and modification dates of Doddy's own files in its container: recordings
+			     (RecordingFiles) and day-old presentation folders to delete (PresentationFiles). -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- volumeAvailableCapacityForImportantUsage: whether there is room to start or keep a
+			     recording (RecordingCoordinator). -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

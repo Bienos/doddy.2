@@ -36,12 +36,10 @@ struct MemoriesView: View {
                             .buttonStyle(.plain).accessibilityLabel("Save a detail")
                             .accessibilityIdentifier("memories.add").disabled(!store.isStorageAvailable)
                     }
-                    JourneyHeading(eyebrow: "Little things, kept", title: "Your memories.",
-                                   subtitle: "Your words. Ready when you need them.")
-                    // A strip of the memory library, edge to edge, between the heading and the
-                    // notes; no text over it (ADR-308).
-                    SceneryBackdrop(place: .memory, height: 110, focus: 0.3)
-                        .padding(.horizontal, -24)
+                    // Simpler (owner, 7 Nov 2026): a plain title instead of the heading and the library strip.
+                    Text("Notes and lists")
+                        .font(.largeTitle.weight(.bold)).tracking(-1)
+                        .accessibilityAddTraits(.isHeader)
                     Button { showFind = true } label: {
                         HStack { Image(systemName: "magnifyingglass"); Text("Find something you saved"); Spacer() }
                     }
@@ -70,16 +68,12 @@ struct MemoriesView: View {
                                 MemorySortMenu(sortRaw: $sortRaw)
                             }
                         }
-                        if !choices.isEmpty {
-                            MemoryTypeFilterRow(choices: choices, total: store.memories.count, selection: $category, active: active)
-                        }
+                        // The type and tag filter rows are gone (owner, 7 Nov 2026: less is better); Find and the sort
+                        // stay. Both filters are @State and start empty, so no hidden choice can narrow the list.
                         // Tags the user wrote with # (ADR-333). A private note's tags only after Face ID.
                         let tagged = AppLock.shared.privateUnlocked ? store.memories : PrivateNotesStore.current().shareable(store.memories)
                         let tags = NoteTags.counts(tagged)
                         let activeTag = tags.contains { $0.tag == tag } ? tag : nil
-                        if !tags.isEmpty {
-                            MemoryTagRow(tags: tags, selection: $tag, active: activeTag)
-                        }
                         let pins = PinnedNotes(stored: pinnedRaw)
                         // Pinned notes first (ADR-187), then the chosen order.
                         let shown = pins.apply(to: MemorySort(stored: sortRaw).apply(to: NoteTags.filter(MemoryFilter.apply(active, to: store.memories), tag: activeTag)))

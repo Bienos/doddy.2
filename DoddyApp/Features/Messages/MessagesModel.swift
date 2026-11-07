@@ -37,7 +37,11 @@ final class MessagesModel {
     private(set) var makeFailure: ThreadDocumentError?
     var draft = ""
     /// A photo to send with the next message, already made smaller on this iPhone. Sent once, then dropped; never saved.
-    var photo: AssistantImage?
+    /// One attachment a message: choosing a photo takes off a file.
+    var photo: AssistantImage? { didSet { if photo != nil { file = nil } } }
+    /// A file to send with the next message (7 Nov 2026). Sent once, then dropped; only its name is saved. Choosing a file
+    /// takes off a photo.
+    var file: AssistantFile? { didSet { if file != nil { photo = nil } } }
 
     /// The copy on Doddy's server for Doddy Web could not be confirmed deleted. This iPhone's copy is gone; the screen says
     /// what is left and offers to try again.
@@ -59,7 +63,7 @@ final class MessagesModel {
         self.now = now
     }
 
-    var canSend: Bool { storage != .loading && ThreadRules.canSend(draft: draft, isSending: isSending, hasPhoto: photo != nil) }
+    var canSend: Bool { storage != .loading && ThreadRules.canSend(draft: draft, isSending: isSending, hasPhoto: photo != nil || file != nil) }
 
     // MARK: Loading
 
@@ -84,13 +88,21 @@ final class MessagesModel {
     func send(using service: AssistantService?, policy: AssistantPolicy, locale: String) {
         guard canSend else { return }
         let image = photo
-        let question = image == nil
-            ? draft.trimmingCharacters(in: .whitespacesAndNewlines)
-            : ThreadRules.photoQuestion(draft: draft, fallback: NSLocalizedString("What's in this photo?", comment: "Messages: the question sent with a photo when nothing was typed"))
+        let attached = file
+        let question: String
+        if image != nil {
+            question = ThreadRules.photoQuestion(draft: draft, fallback: NSLocalizedString("What's in this photo?", comment: "Messages: the question sent with a photo when nothing was typed"))
+        } else if attached != nil {
+            question = ThreadRules.photoQuestion(draft: draft, fallback: NSLocalizedString("What's in this file?", comment: "Messages: the question sent with a file when nothing was typed"))
+        } else {
+            question = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
         guard preflight(question, service: service, policy: policy) else { return }
         draft = ""
         photo = nil
-        deliver(ThreadMessage.user(question, now: now(), hasPhoto: image != nil), image: image, replacing: nil, using: service, policy: policy, locale: locale)
+        file = nil
+        deliver(ThreadMessage.user(question, now: now(), hasPhoto: image != nil, attachedFileName: attached?.name),
+                image: image, file: attached, replacing: nil, using: service, policy: policy, locale: locale)
     }
 
     /// Sends a message that got no answer once more, as a new message at the end of the thread.
@@ -119,7 +131,7 @@ final class MessagesModel {
         return true
     }
 
-    private func deliver(_ message: ThreadMessage, image: AssistantImage? = nil, replacing old: UUID?, using service: AssistantService?, policy: AssistantPolicy, locale: String) {
+    private func deliver(_ message: ThreadMessage, image: AssistantImage? = nil, file: AssistantFile? = nil, replacing old: UUID?, using service: AssistantService?, policy: AssistantPolicy, locale: String) {
         guard let service else { return }
         let history = ThreadRules.history(from: messages, before: message.createdAt)
         messages.append(message)
@@ -131,7 +143,7 @@ final class MessagesModel {
             await self.persist { try await $0.append(message) }
             let result: Result<AssistantAnswer, AssistantError>
             do throws(AssistantError) {
-                result = .success(try await service.ask(message.text, sessionID: sessionID, history: history, locale: locale, image: image, policy: policy))
+                result = .success(try await service.ask(message.text, sessionID: sessionID, history: history, locale: locale, image: image, file: file, policy: policy))
             } catch {
                 result = .failure(error)
             }

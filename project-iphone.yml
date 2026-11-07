@@ -8,9 +8,11 @@ include:
 name: DoddyiPhone
 # No entitlements in this project, so a Personal (free) Apple team can sign and install it: such a
 # team can't have Sign in with Apple, App Groups or push. A Debug build talks to Doddy without Apple
-# sign-in (Settings > Voice > "Developer: talk without Apple sign-in", PR #108). The cost: widgets
-# and "Save to Doddy" say they aren't set up. The shipping project (project.yml) keeps its
-# entitlements.
+# sign-in (Settings > Voice > "Developer: talk without Apple sign-in", PR #108). The widgets and
+# "Save to Doddy" can't work without App Groups, so they are left out of the app here (owner, 23 Oct
+# 2026): Xcode asks for a team for the app and for DoddyNotificationContent (the expanded note
+# notification, ADR-786: no entitlements, so it stays in). The shipping project (project.yml) keeps its
+# entitlements and all three extensions.
 settings:
   base:
     # No HealthKit either (owner, 25 Oct 2026): Settings › Connections › Apple Health says this build
@@ -26,8 +28,8 @@ settings:
 targets:
   Doddy:
     dependencies:REPLACE:
-      - target: DoddyWidgets
-      - target: DoddyShare
+      # The expanded paper notification (ADR-786): no entitlements and no App Group, so a free team signs it.
+      - target: DoddyNotificationContent
       - package: DoddyCore
         product: DoddyCore
       - package: DoddyCore
