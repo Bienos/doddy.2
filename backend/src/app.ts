@@ -13,6 +13,11 @@ import { MemoryCipher } from "./memory/crypto.js";
 import { MEMORY_KEPT_DAYS } from "./memory/contract.js";
 import { MemoryService } from "./memory/service.js";
 import { ThreadService } from "./messages/service.js";
+import { CoinbaseCdpWallet } from "./payments/coinbase.js";
+import { MockPaymentSeller } from "./payments/mockSeller.js";
+import { PublicHttps, type SellerHttp } from "./payments/net.js";
+import { PaymentsService } from "./payments/service.js";
+import { MockPaymentWallet, type PaymentWallet } from "./payments/wallet.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
@@ -44,6 +49,8 @@ export async function buildApp(
     chatClaude?: ClaudeProvider | null;
     store?: Store;
     verifier?: SessionVerifier;
+    paymentWallet?: PaymentWallet | null;
+    sellerHttp?: SellerHttp;
   } = {},
 ) {
   const store =
@@ -145,6 +152,31 @@ export async function buildApp(
     floors,
     log,
   });
+  // Payments. Live: a wallet exists only when the owner chose and configured one (default: none, so
+  // every payment route says "not set up"). Mock mode uses the demo wallet and the offline demo seller.
+  const paymentWallet: PaymentWallet | null =
+    overrides.paymentWallet !== undefined
+      ? overrides.paymentWallet
+      : config.mode === "mock"
+        ? new MockPaymentWallet()
+        : config.payments.wallet === "coinbase_cdp" && config.payments.cdp
+          ? new CoinbaseCdpWallet(config.payments.cdp)
+          : null;
+  const payments = new PaymentsService({
+    store,
+    mode: config.mode,
+    wallet: paymentWallet,
+    http: overrides.sellerHttp ?? (config.mode === "mock" ? new MockPaymentSeller(config.payments.network) : new PublicHttps()),
+    policy: {
+      network: config.payments.network,
+      maxPerPayment: config.payments.maxPerPayment,
+      confirmAmount: config.payments.confirmAmount,
+      userDaily: config.payments.userDaily,
+      serviceDaily: config.payments.serviceDaily,
+      allowedHosts: config.payments.allowedHosts,
+    },
+    limits: config.limits,
+  });
   // Apple and Google on the web (ADR-818): only with the Supabase project's URL and publishable key.
   const social =
     config.web?.social && webAuth
@@ -163,6 +195,7 @@ export async function buildApp(
   const handler = createHandler({
     service,
     tools,
+    payments,
     verifier,
     deviceSessions,
     web,
@@ -209,7 +242,7 @@ export async function buildApp(
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, provider, assist };
+  return { server, store, service, tools, payments, provider, assist };
 }
 
 /** Which sign-ins this server accepts (ADR-526). */

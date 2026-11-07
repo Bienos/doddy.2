@@ -72,6 +72,11 @@ enum PreferenceKey {
     /// reads it, and only through `DeviceSession.serverURL()` (ADR-720); a shipped build ignores it and
     /// removes a value an earlier build saved.
     static let connectedAppsServerURL = "connectedAppsServerURL"
+    /// Payments were switched on at some point; until then Home never asks the server about payments (ADR-736).
+    static let paymentsEverEnabled = "paymentsEverEnabled"
+    /// How many unconfirmed payments the person said they checked, and the server's last count (ADR-736).
+    static let paymentsAcknowledgedUnresolved = "paymentsAcknowledgedUnresolved"
+    static let paymentsLastUnresolved = "paymentsLastUnresolved"
     /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-587). Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"

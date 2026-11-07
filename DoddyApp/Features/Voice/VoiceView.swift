@@ -99,6 +99,16 @@ struct VoiceView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        // The payment card the voice agent asked for (ADR-736). Closing it before paying cancels; it can't be
+        // closed while the payment is being sent (PaymentApprovalModel.canDismiss).
+        .sheet(isPresented: Binding(
+            get: { controller?.paymentApproval.map { $0.phase != .idle } ?? false },
+            set: { shown in if !shown { controller?.paymentApproval?.dismiss() } })
+        ) {
+            if let model = controller?.paymentApproval {
+                PaymentApprovalCard(model: model)
+            }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await controller?.recheckConnectionAccess() } }
         }

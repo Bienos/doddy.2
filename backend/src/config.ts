@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { InviteLimits } from "./deviceSession.js";
+import { CdpKeyError, type CdpSettings, loadCdpKeys } from "./payments/coinbase.js";
+import { NETWORK_IDS, NETWORKS, type NetworkId, parseUsdc } from "./payments/x402.js";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
 import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 
@@ -73,6 +75,26 @@ export interface MonidSettings {
   baseUrl: string;
 }
 
+/**
+ * Paying for things (x402). Off unless the owner sets a wallet: `wallet: "none"` is the default and
+ * means no payment route can run. The Coinbase wallet is one optional choice, never an implied one.
+ * Amounts are atomic USDC units (6 decimals).
+ */
+export interface PaymentsSettings {
+  wallet: "none" | "coinbase_cdp";
+  /** Defaults to the Base test network: real money needs an explicit `base`. */
+  network: NetworkId;
+  maxPerPayment: number;
+  /** From this amount up, the person must also type the amount to confirm (enforced by the server). */
+  confirmAmount: number;
+  userDaily: number;
+  serviceDaily: number;
+  /** Empty: any public https site. Each payment still needs its own approval. */
+  allowedHosts: string[];
+  /** Live mode with wallet "coinbase_cdp" only. */
+  cdp: CdpSettings | null;
+}
+
 /** Claude through the Anthropic API (ADR-564). Doddy's own key; users never sign in. */
 export interface ClaudeSettings {
   apiKey: string;
@@ -120,6 +142,7 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
+  payments: PaymentsSettings;
   /** Doddy Web (ADR-600). Null: no web routes and no web pages on this server. */
   web: WebSettings | null;
   /** `DODDY_TRUST_PROXY=1`: behind one proxy that appends the client to X-Forwarded-For (Render). */
@@ -249,6 +272,17 @@ const EnvSchema = z.object({
   COMPOSIO_OUTLOOK_TOOLKIT_VERSION: z.string().optional(),
   MONID_API_KEY: z.string().optional(),
   MONID_BASE_URL: z.string().default(MONID_DEFAULT_BASE_URL),
+  DODDY_PAYMENTS_WALLET: z.enum(["none", "coinbase_cdp"]).default("none"),
+  DODDY_PAYMENTS_NETWORK: z.enum(NETWORK_IDS).default("base-sepolia"),
+  DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC: z.string().default("0.25"),
+  DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC: z.string().default("0.10"),
+  DODDY_PAYMENTS_USER_DAILY_USDC: z.string().default("1.00"),
+  DODDY_PAYMENTS_SERVICE_DAILY_USDC: z.string().default("5.00"),
+  DODDY_PAYMENTS_ALLOWED_HOSTS: z.string().default(""),
+  CDP_API_KEY_ID: z.string().optional(),
+  CDP_API_KEY_SECRET: z.string().optional(),
+  CDP_WALLET_SECRET: z.string().optional(),
+  CDP_PAYMENT_ACCOUNT_ADDRESS: z.string().optional(),
   DODDY_LIMIT_USER_DAILY_WEB_SEARCHES: intSetting(30, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES: intSetting(200, 1, 100_000),
   DODDY_LIMIT_SERVICE_DAILY_CALLS: intSetting(300, 1, 1_000_000),
@@ -510,6 +544,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     problems.push("DATABASE_URL is required when DODDY_MODE=live and DODDY_HOST isn't loopback");
   }
 
+  // Paying for things (x402): off unless the owner sets a wallet.
+  const payments = loadPayments(e, problems);
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -539,6 +576,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     composio,
     toolkits,
     monid,
+    payments,
     web,
     trustProxy: e.DODDY_TRUST_PROXY === "1",
     limits: {
@@ -567,6 +605,69 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       // Polish can take two bytes a character.
       maxBodyBytes: 24 * 1024,
     },
+  };
+}
+
+const HOSTNAME = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+
+/**
+ * Payments are strictly opt-in: wallet "none" (the default) leaves every payment route unavailable.
+ * Mock mode never reads live wallet settings. Messages name variables, never values.
+ */
+function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): PaymentsSettings {
+  const amount = (name: string, value: string, min = 10_000): number => {
+    const parsed = parseUsdc(value);
+    if (parsed === null || parsed < min || parsed > 10_000 * 1_000_000) {
+      problems.push(`${name} must be an amount of USDC between 0.01 and 10000, like 0.25`);
+      return 0;
+    }
+    return parsed;
+  };
+  const maxPerPayment = amount("DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC", e.DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC);
+  const confirmAmount = amount("DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC", e.DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC);
+  const userDaily = amount("DODDY_PAYMENTS_USER_DAILY_USDC", e.DODDY_PAYMENTS_USER_DAILY_USDC);
+  const serviceDaily = amount("DODDY_PAYMENTS_SERVICE_DAILY_USDC", e.DODDY_PAYMENTS_SERVICE_DAILY_USDC);
+  if (maxPerPayment > userDaily && userDaily > 0) problems.push("DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC must not exceed DODDY_PAYMENTS_USER_DAILY_USDC");
+  if (userDaily > serviceDaily && serviceDaily > 0) problems.push("DODDY_PAYMENTS_USER_DAILY_USDC must not exceed DODDY_PAYMENTS_SERVICE_DAILY_USDC");
+
+  // Real money is NOT approved (ADR-737; the owner approved review of this code, not use). Only the test
+  // network is accepted until the owner decides on mainnet; lifting this is a code change with its own ADR.
+  if (NETWORKS[e.DODDY_PAYMENTS_NETWORK].testnet !== true) {
+    problems.push("DODDY_PAYMENTS_NETWORK must be base-sepolia: paying on a network with real money is not approved (ADR-737)");
+  }
+
+  const allowedHosts = e.DODDY_PAYMENTS_ALLOWED_HOSTS.split(",").map((h) => h.trim().toLowerCase()).filter((h) => h !== "");
+  if (allowedHosts.some((h) => !HOSTNAME.test(h))) problems.push("DODDY_PAYMENTS_ALLOWED_HOSTS must be comma-separated host names like example.com");
+
+  let cdp: CdpSettings | null = null;
+  const names = ["CDP_API_KEY_ID", "CDP_API_KEY_SECRET", "CDP_WALLET_SECRET", "CDP_PAYMENT_ACCOUNT_ADDRESS"] as const;
+  if (e.DODDY_MODE === "live" && e.DODDY_PAYMENTS_WALLET === "coinbase_cdp") {
+    const missing = names.filter((n) => (e[n] ?? "").trim() === "");
+    for (const n of missing) problems.push(`${n} is required when DODDY_PAYMENTS_WALLET=coinbase_cdp`);
+    if (missing.length === 0) {
+      const candidate: CdpSettings = {
+        apiKeyId: e.CDP_API_KEY_ID!.trim(),
+        apiKeySecret: e.CDP_API_KEY_SECRET!.trim(),
+        walletSecret: e.CDP_WALLET_SECRET!.trim(),
+        accountAddress: e.CDP_PAYMENT_ACCOUNT_ADDRESS!.trim(),
+      };
+      try {
+        loadCdpKeys(candidate);
+        cdp = candidate;
+      } catch (error) {
+        problems.push(error instanceof CdpKeyError ? error.message : "the Coinbase wallet settings are invalid");
+      }
+    }
+  }
+  return {
+    wallet: e.DODDY_PAYMENTS_WALLET,
+    network: e.DODDY_PAYMENTS_NETWORK,
+    maxPerPayment,
+    confirmAmount,
+    userDaily,
+    serviceDaily,
+    allowedHosts,
+    cdp,
   };
 }
 

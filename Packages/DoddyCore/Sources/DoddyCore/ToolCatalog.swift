@@ -170,6 +170,11 @@ public enum ToolCatalog {
         // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
         // changes; it asks first until the owner decides whether it joins the public look-ups.
         .init(VoiceToolName.findDeals, .lookup, .askFirst),
+        // Paying for one web page (ADR-734 to 736; off by default, not on the live agent). The agent only
+        // names the page; Doddy's server's own terms are on the payment card, and only a tap (plus the typed
+        // amount from the threshold) and a fresh Face ID start it. Counted as a handoff because it hands one
+        // request to Doddy's server behind its own card; it is not a `CloudToolName` and never a plan step.
+        .init(PaymentToolName.payForPage, .handoff, .card),
         // The conversation itself.
         // ADR-619: translator mode starts and stops at once, without asking (owner, 24 Oct 2026).
         .init(VoiceToolName.startTranslator, .session, .runsNow),
