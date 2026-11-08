@@ -124,6 +124,21 @@ jobs:
           swift --version
           xcodegen --version
 
+      # The app's Swift packages (checkouts and the binary frameworks, LiveKit's alone is several
+      # hundred MB) are downloaded from GitHub on every run. On 8 Nov 2026 a LiveKit release asset
+      # answered 504 for hours and no Mac build could start (runs 42465092351, 42465199294). Restored
+      # here, saved after, but only once ci.sh says every package resolved (build/packages-ok): a cache
+      # key can't be overwritten, so a partial download must never be saved. The folder's name is
+      # derived from the project's path, which is the same on every run.
+      - name: Restore the app's Swift packages
+        id: packages-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/Doddy-*/SourcePackages
+          key: app-packages-${{ runner.os }}-${{ hashFiles('project.yml', 'Config/Package.resolved') }}
+          restore-keys: |
+            app-packages-${{ runner.os }}-
+
       - name: scripts/ci.sh --app-only
         env:
           # Pull requests run the UI smoke classes, about 8 of the suite's 27 minutes (ADR-811);
@@ -134,6 +149,13 @@ jobs:
           # Release-only error fails here instead of in Xcode Cloud's archive.
           DODDY_RELEASE_BUILD: ${{ github.event_name != 'pull_request' && '1' || '0' }}
         run: scripts/ci.sh --app-only
+
+      - name: Save the app's Swift packages
+        if: always() && steps.packages-cache.outputs.cache-hit != 'true' && hashFiles('build/packages-ok') != ''
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/Doddy-*/SourcePackages
+          key: app-packages-${{ runner.os }}-${{ hashFiles('project.yml', 'Config/Package.resolved') }}
 
       # What this run resolved for the app's packages: the file to commit as Config/Package.resolved
       # when pinning or moving versions (`make update-packages` does the same on a Mac).
