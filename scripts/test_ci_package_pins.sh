@@ -78,6 +78,8 @@ copied() {  # description, expected text of build/Package.resolved ("" = must no
 # No pins committed: capture whatever Xcode resolved, and never block when it wrote nothing.
 run_case "no pins; resolve writes the file" 0 "no pins committed yet: commit build" none 1 0 xcode-pins
 copied "build/Package.resolved holds what Xcode resolved" xcode-pins
+[ -f "$root/build/packages-ok" ] && echo "ok    build/packages-ok is written once the packages resolved (the cache may be saved)" \
+  || { echo "FAIL  no build/packages-ok after a successful resolve"; failures=$((failures + 1)); }
 run_case "no pins; only the build writes the file (late capture)" 0 "no pins committed yet: commit build" none 0 1 xcode-pins
 copied "build/Package.resolved exists after the late capture" xcode-pins
 run_case "no pins; nothing writes the file (run 42409624440): not blocked" 0 "no Package.resolved naming LiveKit" none 0 0 xcode-pins
