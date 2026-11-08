@@ -40,6 +40,8 @@ final class ActivityTextTests: XCTestCase {
             .addIngredients(IngredientsProposal(list: "Shopping", dish: "Pancakes", items: ["Eggs"])),
             .findFreeTime(FreeTimeRequest(firstDay: now, days: 1)),
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
+            // ADR-510.
+            .draftBlikTransfer(BlikTransferDraft(recipientName: "Ania", amount: BlikAmount(grosze: 5_000)!, title: "Pizza")),
             // ADR-750 U2.
             .textMe(body: "Parcel code 4417"),
             // ADR-754.
@@ -75,7 +77,7 @@ final class ActivityTextTests: XCTestCase {
         switch request {
         case .searchMemories, .saveMemory, .readCalendar, .createCalendarEvent, .createReminder, .remindAboutNote,
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
-             .draftMessage, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
+             .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
              .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater:
@@ -92,7 +94,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 49, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); one fewer since ADR-810 removed the BLIK draft; plus make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754)")
+        XCTAssertEqual(kinds.count, 50, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
@@ -115,9 +117,10 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertEqual(ActivityText.title("Draft a email", .polish), "Szkic e-maila")
     }
 
-    /// ADR-810 removed the BLIK draft, but a row it saved (app "blik", outcome "shown") must still
-    /// load: the log is decoded as one array, so one unknown value would drop the whole 30 days.
-    func testARowSavedByTheRemovedBlikDraftStillLoadsAndReadsInPolish() throws {
+    /// A BLIK row (app "blik", outcome "shown") must load: the log is decoded as one array, so one
+    /// unknown value would drop the whole 30 days. Kept from #207's test (ADR-810), which loaded such
+    /// a row after the flow was removed; it still guards the same decode now that the flow is back.
+    func testABlikRowStillLoadsAndReadsInPolish() throws {
         let saved = ActivityEntry(at: now, app: .messages, title: "Prepare a BLIK transfer", detail: "to Ania", outcome: .done)
         let json = try XCTUnwrap(String(data: JSONEncoder().encode([saved]), encoding: .utf8))
             .replacingOccurrences(of: "\"app\":\"messages\"", with: "\"app\":\"blik\"")
@@ -127,7 +130,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertEqual(loaded.count, 1)
         XCTAssertEqual(loaded[0].app, .blik)
         XCTAssertEqual(loaded[0].outcome, .shown)
-        XCTAssertNil(loaded[0].outcome.status, "nothing to track on an old card")
+        XCTAssertNil(loaded[0].outcome.status, "nothing to track on a card the user sends themselves")
         XCTAssertEqual(loaded[0].title(.polish), "Przygotuj przelew BLIK")
     }
 

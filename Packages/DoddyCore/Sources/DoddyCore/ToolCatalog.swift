@@ -145,6 +145,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.openMap, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
+        // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
+        .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // Sent by Doddy, so the card shows the exact text and the tap approves exactly that
         // text; the server checks the same approval hash (ADR-750 U2).
         .init(VoiceToolName.textMe, .sendText, .card),
