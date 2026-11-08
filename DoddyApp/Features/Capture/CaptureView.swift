@@ -110,7 +110,10 @@ struct CaptureView: View {
                             ProblemView(message: takenPhotoProblem).accessibilityIdentifier("capture.takenPhotoProblem")
                         }
                         CapturePhotoPicker(text: $text, prepared: $photo, isDisabled: isSaving)
-                        CaptureVoiceMemo(text: $text, draft: $memo, isDisabled: isSaving)
+                        // A second microphone path; hidden in the beta (decision 2026-11-07-release-scope).
+                        if ReleaseScopeStore.current.shows(.voiceMemos) {
+                            CaptureVoiceMemo(text: $text, draft: $memo, isDisabled: isSaving)
+                        }
                         Text("No folders. Your words, exactly.").font(.caption).foregroundStyle(Theme.secondaryText)
                         DisclosureGroup("Optional note type") {
                             Picker("Type", selection: $category) {

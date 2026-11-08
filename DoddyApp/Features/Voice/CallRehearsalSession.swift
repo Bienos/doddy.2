@@ -51,6 +51,13 @@ final class CallRehearsalSession {
             state = .failed(NSLocalizedString("Voice isn't set up yet. Try again later.", comment: ""))
             return
         }
+        // The same consent gate as the main voice (VoiceSessionController.start): a rehearsal streams the
+        // microphone to OpenAI, so it needs the person's yes to OpenAI voice data sharing first
+        // (engineering audit, 7 Nov 2026; before, it started without asking).
+        guard VoiceProviderConsent.isGranted(for: .openAIRealtime) else {
+            state = .failed(NSLocalizedString("Open Talk to Doddy to review voice data sharing before starting a conversation.", comment: ""))
+            return
+        }
         attempt += 1
         let mine = attempt
         lines = []

@@ -152,6 +152,15 @@ interface SupabaseOptions {
 
 const JWT_SEGMENT = /^[A-Za-z0-9_-]+$/;
 
+/** True when Supabase's `amr` (how the session was made) names a password, as a string or `{ method }`. */
+export function madeWithPassword(amr: unknown): boolean {
+  if (!Array.isArray(amr)) return false;
+  return amr.some((entry) => {
+    const method = typeof entry === "string" ? entry : typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>).method : undefined;
+    return typeof method === "string" && method.toLowerCase() === "password";
+  });
+}
+
 /**
  * Checks a Supabase Auth access token: the signature against the project's published keys
  * (ES256 or RS256, never a shared secret), the issuer, the audience, the role and the expiry.
@@ -181,7 +190,8 @@ export class SupabaseSessionVerifier implements SessionVerifier {
     this.keysTtlMs = options.keysTtlMs ?? 10 * 60_000;
     this.refetchMinMs = options.refetchMinMs ?? 30_000;
     this.timeoutMs = options.timeoutMs ?? 5_000;
-    this.providers = new Set(options.providers ?? ["apple", "google"]);
+    // Decision 2026-11-08-required-account: email (a code by email) joins Apple and Google.
+    this.providers = new Set(options.providers ?? ["apple", "google", "email"]);
   }
 
   async verify(header: string | undefined, now: Date): Promise<AuthenticatedUser | null> {
@@ -223,6 +233,10 @@ export class SupabaseSessionVerifier implements SessionVerifier {
     const meta = claims.app_metadata;
     const provider = typeof meta === "object" && meta !== null ? (meta as Record<string, unknown>).provider : undefined;
     if (typeof provider !== "string" || !this.providers.has(provider)) return null;
+    // No passwords (decision 2026-11-08-required-account): an email account proves its address with a
+    // code each time. Supabase lists how the session was made in `amr`; a password there is refused, even
+    // if password sign-in was left on in the project. A token without `amr` passes, as before.
+    if (madeWithPassword(claims.amr)) return null;
     return { userId: claims.sub };
   }
 

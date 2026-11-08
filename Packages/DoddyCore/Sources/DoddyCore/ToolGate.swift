@@ -5,6 +5,10 @@ import Foundation
 /// so the order and the stale-conversation rule are tested here, on any OS.
 public enum ToolGate {
     public enum Decision: Equatable, Sendable {
+        /// The tool belongs to a feature this build hides (decision 2026-11-07-release-scope, `ReleaseScope`): nothing runs and
+        /// nothing is logged; the agent is told the feature isn't in the app. Checked first, before
+        /// the translator: a hidden tool is hidden in every mode.
+        case hidden(Feature)
         /// Translator mode is on and the call isn't stop_translator: nothing runs, a plan card
         /// included (ADR-215). Checked before anything is looked up or logged.
         case translatorRefused
@@ -19,13 +23,14 @@ public enum ToolGate {
         case run
     }
 
-    /// In this order: translator, plan, Pause all, the tool's connection. The controller logs the
-    /// request (What Doddy did) after `.plan` and before `.paused`, so a paused or switched-off
-    /// call is still listed.
+    /// In this order: the release scope, translator, plan, Pause all, the tool's connection. The
+    /// controller logs the request (What Doddy did) after `.plan` and before `.paused`, so a paused
+    /// or switched-off call is still listed; a hidden or translator-refused one is not.
     public static func decide(
         toolName: String, request: VoiceToolRequest, translatorOn: Bool, pauseAll: Bool,
-        isOn: (VoiceConnection) -> Bool
+        isOn: (VoiceConnection) -> Bool, scope: ReleaseScope = .everything
     ) -> Decision {
+        if let feature = scope.hiddenFeature(forTool: toolName) { return .hidden(feature) }
         if translatorOn, !TranslatorPolicy.allows(request) { return .translatorRefused }
         if toolName == VoiceToolName.proposePlan { return .plan }
         if pauseAll, ConnectionPause.applies(to: request) { return .paused }

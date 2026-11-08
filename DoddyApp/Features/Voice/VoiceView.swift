@@ -214,8 +214,16 @@ struct VoiceView: View {
 
                         if controller.isPrivate {
                             Label {
-                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI (or ElevenLabs, if you switched Home to it) still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
-                                    .font(.footnote)
+                                // Names the voice that runs this conversation (engineering audit, 7 Nov 2026):
+                                // the one text named OpenAI first though ElevenLabs is the default.
+                                Group {
+                                    if controller.provider == .openAIRealtime {
+                                        Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                    } else {
+                                        Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                    }
+                                }
+                                .font(.footnote)
                             } icon: {
                                 Image(systemName: "eye.slash.fill")
                             }

@@ -1323,9 +1323,18 @@ final class VoiceSessionController {
         callsAsReceived = [:]
         accountNeeded = nil
         accountMessage = nil
-        if isLive { phase = .ended }
+        let endedLive = isLive
+        if endedLive { phase = .ended }
         keepLog()
         offerSaveSuggestions()
+        // The learning card (ADR-440) after End too, not only when Doddy hangs up: disconnected()
+        // offers it, but the startAttempt bump above drops the SDK's disconnect for this conversation
+        // (engineering audit, 7 Nov 2026). Only when this stop ended a live conversation, so an End
+        // after Doddy already hung up doesn't offer it twice.
+        if endedLive {
+            offerLearning()
+            activity.sessionID = nil
+        }
         await active?.endConversation()
     }
 
@@ -2784,11 +2793,17 @@ final class VoiceSessionController {
         callOwners.record(call.toolCallId, attempt: attempt)
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
-        // Translator (ADR-215), plan, Pause all, then the tool's switch, in that order (ToolGate).
+        // The release scope (decision 2026-11-07-release-scope), translator (ADR-215), plan, Pause all, then the tool's switch,
+        // in that order (ToolGate).
         let gate = ToolGate.decide(
             toolName: call.toolName, request: request, translatorOn: translator != nil,
-            pauseAll: UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), isOn: { isOn($0) })
+            pauseAll: UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), isOn: { isOn($0) },
+            scope: ReleaseScopeStore.current)
         switch gate {
+        case .hidden:
+            // A feature this build hides: nothing runs, nothing is logged; the agent says it isn't in the app.
+            await reply(call.toolCallId, VoiceToolReply.hidden(call.toolName))
+            return
         case .translatorRefused:
             // Checked before anything is looked up or logged.
             await reply(call.toolCallId, VoiceToolReply.translatorRefused(call.toolName))
@@ -2808,7 +2823,7 @@ final class VoiceSessionController {
         case .notConnected(let connection):
             await notConnected(call.toolCallId, connection)
             return
-        case .translatorRefused, .plan, .run:
+        case .hidden, .translatorRefused, .plan, .run:
             break
         }
         // ASK-01 (ADR-483): nothing below runs before the user's yes for exactly this call. Tools
