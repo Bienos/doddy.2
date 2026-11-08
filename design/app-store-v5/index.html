@@ -86,15 +86,15 @@
     <div class="series">
       <figure><div class="shot-scale"><img src="shots/web/s1.jpg" alt="Plansza 1: Obiad w 20 minut? Stuknij i zapytaj." loading="lazy"></div><figcaption><b>1</b> · Pierwsza rozmowa</figcaption></figure>
       <figure><div class="shot-scale"><img src="shots/web/s3.jpg" alt="Plansza 3: Gdzie auto? Odpowiedź z Twojej notatki." loading="lazy"></div><figcaption><b>3</b> · Zapisana informacja</figcaption></figure>
+      <figure><div class="shot-scale"><img src="shots/web/s4.jpg" alt="Plansza 4: Mówisz po polsku. Kelner słyszy hiszpański." loading="lazy"></div><figcaption><b>4</b> · Za granicą</figcaption></figure>
       <figure><div class="shot-scale"><img src="shots/web/s5.jpg" alt="Plansza 5: Menu po włosku? Zrób zdjęcie i zapytaj." loading="lazy"></div><figcaption><b>5</b> · Pytanie do zdjęcia</figcaption></figure>
       <figure><div class="shot-scale"><img src="shots/web/s6.jpg" alt="Plansza 6: Jajka, pomidory, feta? Doddy podpowie obiad." loading="lazy"></div><figcaption><b>6</b> · Z tego, co jest</figcaption></figure>
       <figure><div class="shot-scale"><img src="shots/web/s2.jpg" alt="Plansza 2: Paczka o 18? Naciśnij i powiedz." loading="lazy"></div><figcaption><b>2</b> · Przycisk czynności (po sprawdzeniu)</figcaption></figure>
-      <figure><div class="shot-scale"><img src="shots/web/s4.jpg" alt="Plansza 4: Mówisz po polsku. Kelner słyszy hiszpański." loading="lazy"></div><figcaption><b>4</b> · Za granicą (tłumacz ukryty w becie)</figcaption></figure>
     </div>
     <div class="order" aria-label="Proponowana kolejność">
       <span>Proponowana kolejność w sklepie:</span>
-      <span class="o">1</span><span class="o">3</span><span class="o">5</span><span class="o">6</span><span class="o late">2</span><span class="o late">4</span>
-      <span>Plansza 2 dołącza, gdy rozmowa z przycisku czynności zostanie sprawdzona na telefonie; wtedy może wrócić na drugie miejsce. Plansza 4 dopiero wtedy, gdy tłumacz przestanie być ukryty w wersji beta (decyzja <code>2026-11-07-release-scope</code>).</span>
+      <span class="o">1</span><span class="o">3</span><span class="o">4</span><span class="o">5</span><span class="o">6</span><span class="o late">2</span>
+      <span>Plansza 2 dołącza, gdy rozmowa z przycisku czynności zostanie sprawdzona na telefonie; wtedy może wrócić na drugie miejsce. Tłumacz z planszy 4 jest w wersji beta od 8 listopada (decyzja <code>2026-11-08-translator-in-beta</code>).</span>
     </div>
   </div>
 </section>
@@ -120,6 +120,7 @@
                 <div class="car" tabindex="0" aria-label="Plansze, przewiń w bok">
                   <div class="shot-scale" style="--k:.5"><img src="shots/web/s1.jpg" alt="" width="215" height="466"></div>
                   <div class="shot-scale" style="--k:.5"><img src="shots/web/s3.jpg" alt="" width="215" height="466"></div>
+                  <div class="shot-scale" style="--k:.5"><img src="shots/web/s4.jpg" alt="" width="215" height="466"></div>
                   <div class="shot-scale" style="--k:.5"><img src="shots/web/s5.jpg" alt="" width="215" height="466"></div>
                   <div class="shot-scale" style="--k:.5"><img src="shots/web/s6.jpg" alt="" width="215" height="466"></div>
                   <div class="shot-scale" style="--k:.5"><img src="shots/web/s2.jpg" alt="" width="215" height="466"></div>
@@ -142,7 +143,7 @@
                 <div class="trio">
                   <div class="shot-scale"><img src="shots/web/s1.jpg" alt="" width="115" height="249"></div>
                   <div class="shot-scale"><img src="shots/web/s3.jpg" alt="" width="115" height="249"></div>
-                  <div class="shot-scale"><img src="shots/web/s5.jpg" alt="" width="115" height="249"></div>
+                  <div class="shot-scale"><img src="shots/web/s4.jpg" alt="" width="115" height="249"></div>
                 </div>
                 <div class="more"><div></div><div></div><div></div></div>
               </div>
@@ -185,24 +186,21 @@
           <li><b>1:</b> stuknięcie Doddy’ego zaczyna rozmowę na ekranie głównym, „Zapis rozmowy” pokazuje obie linie.</li>
           <li><b>2:</b> macierz z <code>docs/implementation/ACTION_BUTTON_ISLAND.md</code>, co najmniej przypadki 1, 2, 4, 5, 13 i 16, plus „Pokaż” otwierające kartę.</li>
           <li><b>3:</b> „Zapamiętaj: …” daje kartę notatki (a nie kartę miejsca parkowania), a pytanie w Wiadomościach pokazuje tę notatkę pod odpowiedzią.</li>
-          <li><b>4:</b> najpierw decyzja właściciela, czy tłumacz wychodzi z ukrycia w becie; potem „Twarzą w twarz” PL ⇄ ES i polskie słowa na pasku.</li>
+          <li><b>4:</b> „Twarzą w twarz” PL ⇄ ES i polskie słowa na pasku (tłumacz jest w becie od 8 listopada).</li>
           <li><b>5:</b> <b>+</b> › Zrób zdjęcie na prawdziwej karcie dań; trafność na kilkunastu kartach.</li>
           <li><b>6:</b> dyktowanie w polu pytania i sensowność odpowiedzi.</li>
         </ul>
       </article>
       <article class="wide">
-        <h3>3. Luki w polskim tłumaczeniu, znalezione przy odtwarzaniu ekranów</h3>
-        <p style="margin:0;font-size:15px">Te napisy nie mają polskiej wersji w katalogach aplikacji, więc w polskiej wersji pokażą się po angielsku. Na planszach je pominęliśmy, zamiast tłumaczyć je za aplikację. Do poprawy przed zrobieniem prawdziwych zrzutów.</p>
+        <h3>3. Luki w polskim tłumaczeniu: poprawione 8 listopada</h3>
+        <p style="margin:0;font-size:15px">Te napisy były po angielsku w polskiej wersji. Zmiana z 8 listopada dodała ich polskie wersje (razem 163 nowe linie tłumaczeń, w tym napisy z warunków typu „Wstrzymaj/Wznów”), ale nie była jeszcze skompilowana ani oglądana na telefonie. Plansze nadal je pomijają, dopóki prawdziwe zrzuty tego nie potwierdzą.</p>
         <div class="gaps-scroll"><table class="gaps">
           <thead><tr><th>Napis w kodzie</th><th>Gdzie</th><th>Plansza</th></tr></thead>
           <tbody>
-            <tr><td>Doddy checks your open reminders on this iPhone first, so it isn't added twice.</td><td>Karta przypomnienia</td><td>2</td></tr>
             <tr><td>Swipe to Controls (Shortcut on iOS 17)…, Pick Talk to Doddy., Under Controls, Talk to Doddy talks in the Dynamic Island…</td><td>Przewodnik „Sposoby na otwarcie Doddy’ego” (<code>OpenDoddyWaysView.swift</code>)</td><td>2</td></tr>
             <tr><td>If your question is about something you saved, I'll look at the matching notes…</td><td>Pusty ekran Wiadomości: zwykły napis, nigdy nie tłumaczony (<code>MessagesView.swift</code>, <code>intro</code>)</td><td>3, 6</td></tr>
-            <tr><td>Doddy is an AI, not a person. This conversation is saved on this iPhone…</td><td>Akapit pod rozmową w Wiadomościach</td><td>3, 5, 6</td></tr>
             <tr><td>Listening · Paused · Hold a button to talk</td><td>Pasek tłumacza: zwykłe napisy bez tłumaczenia (<code>TranslatorViews.swift</code>, <code>statusText</code>)</td><td>4</td></tr>
             <tr><td>Doddy said to them: %@ · They speak</td><td>Tłumacz: Twoja połowa ekranu i arkusz startu</td><td>4</td></tr>
-            <tr><td>What leaves this iPhone</td><td>Menu ••• i arkusz rozmowy</td><td>1–4</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -213,7 +211,7 @@
           <li>Nie twierdzimy, że nowa seria poprawi konwersję. Tego nikt nie zmierzył.</li>
           <li>Zrzuty z CI pochodzą z symulatora, nie z telefonu, i działają bez serwera.</li>
           <li>Nie piszemy, że Doddy coś „zrobił”, kiedy na ekranie jest karta czekająca na Twoje stuknięcie.</li>
-          <li>Nie reklamujemy funkcji ukrytych w wersji, która trafi do sklepu (dziś: tłumacz).</li>
+          <li>Nie reklamujemy funkcji ukrytych w wersji, która trafi do sklepu.</li>
         </ul>
       </article>
       <article>

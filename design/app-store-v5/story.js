@@ -368,10 +368,10 @@
       ],
       needs: "Najpierw Doddy mówi rozmówcy w jego języku, że jest tłumaczem AI. Oba głosy trafiają do ElevenLabs; notatki, rozmowy i profil nie są wysyłane, a tekst znika po zakończeniu. Nie do nagłych wypadków.",
       proof: [
-        ["no", "Tłumacz jest ukryty w wersji beta (decyzja <code>2026-11-07-release-scope</code>): nie ma go w menu •••, a narzędzie <code>start_translator</code> jest odrzucane. Plansza 4 może trafić do sklepu dopiero wtedy, gdy właściciel go odkryje."],
+        ["code", "Tłumacz jest w wersji beta od 8 listopada (decyzja <code>2026-11-08-translator-in-beta</code>); wcześniej zakres bety go ukrywał."],
         ["code", "Ekran „Twarzą w twarz” i hiszpańskie zdania Doddy’ego: <code>TranslatorViews.swift</code>, <code>Translator.swift</code>. Tego ekranu nie ma w atlasie zrzutów CI."],
         ["ci", "Wyspa „Tłumaczę” z kodami języków: zrzut z CI (symulator)."],
-        ["no", "Pasek tłumacza pokazuje dziś „Listening” po angielsku; na planszy jest „Słucham”, czyli stan po poprawce tłumaczenia."],
+        ["code", "Pasek tłumacza („Słucham”, „Wstrzymane”) i linia „Doddy powiedział do nich” przechodzą przez tłumaczenie od zmiany z 8 listopada; wcześniej były po angielsku. Nieskompilowane tutaj."],
         ["ex", "Zdania kelnera i tłumaczenia to przykład."]
       ],
       situ: { sprite: pose("shrug"), text: "Walencja. Kelner mówi tylko po hiszpańsku." },

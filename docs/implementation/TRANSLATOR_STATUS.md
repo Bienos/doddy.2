@@ -2,6 +2,7 @@
 Date: 2026-10-10. Owner: "build translator mode". Design: ADR-214, `docs/design/TRANSLATOR_MODE.md`, canvas "Doddy Translator". Decisions T1–T6 as the owner answered them.
 
 ## What ships
+- **In the beta** since 8 Nov 2026 (decision `2026-11-08-translator-in-beta`); the release scope hid it from 7 Nov. Its middle bar's words ("Listening", "Paused", "Hold a button to talk") and "Doddy said to them" now go through the catalog, so a Polish iPhone shows them in Polish.
 **Two ways in**
 - **Ask Doddy** in a conversation ("help me talk to the taxi driver, he speaks Spanish"). The agent calls `start_translator`; the app shows "Start translating?" with the pair, what changes, Change languages and Not now. Nothing switches until Start.
 - **Home › Translate:** pick face to face or listen only, your language and theirs (or "Detect when they talk"), then Start translating. The conversation opens in translator mode, and the agent gets **no saved notes, recent conversations or profile**: each of those variables carries a "not shared" line instead.

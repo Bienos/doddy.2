@@ -37,7 +37,7 @@ Criteria: concrete, natural, readable in a small preview, 3–7 words; no line t
 | 5 | Photo of an Italian menu, „Który to makaron z grzybami?” | **Menu po włosku? Zrób zdjęcie i zapytaj.** | Nie przepisuj. Pokaż zdjęcie. (no situation) · Zdjęcie karty, odpowiedź po polsku. (less natural) · Pytaj o to, co widzisz. (any assistant) · Rozumie każde menu. (unproven) |
 | 6 | Eggs, tomatoes, feta: a dinner idea and one clarifying question | **Jajka, pomidory, feta? Doddy podpowie obiad.** | Z tego, co masz w lodówce. (not concrete) · Trzy składniki, jeden obiad. (reads as a guarantee) · Co ugotować? Wymień, co masz. (weaker in a thumbnail) · Koniec z marnowaniem jedzenia. (unproven) |
 
-Proposed store order: 1, 3, 5, 6, then 2 and 4 only when they qualify. Frame 2 joins once the Action Button path is checked on a phone. **Frame 4 can't be used while the translator is hidden in the beta:** decision `docs/decisions/2026-11-07-release-scope.md` (merged on 8 Nov, after this work started) hides it, along with `start_translator`. The other scenes use features the beta shows: the conversation, notes, Reminders, Messages (behind its own consent) and photos. Parking is hidden too, which is one more reason scene 3 uses a note.
+Proposed store order: 1, 3, 4, 5, 6, then 2. Frame 2 joins once the Action Button path is checked on a phone. Frame 4 was held back for a few hours: decision `2026-11-07-release-scope` hid the translator in the beta, and the owner reversed that for the translator on 8 Nov (`docs/decisions/2026-11-08-translator-in-beta.md`). The other scenes use features the beta shows: the conversation, notes, Reminders, Messages (behind its own consent) and photos. Parking stays hidden, which is one more reason scene 3 uses a note.
 
 ## What is checked, and what isn't
 
@@ -46,26 +46,25 @@ Proposed store order: 1, 3, 5, 6, then 2 and 4 only when they qualify. Frame 2 j
 | 1 | Home, the tap target | Talking on Home, Transcript | The conversation itself (CI runs offline) |
 | 2 | Island Listening and Confirm (fixture), the reminder card | Action Button control → island | All 16 cases in `docs/implementation/ACTION_BUTTON_ISLAND.md` are NOT VERIFIED on a device |
 | 3 | The "Save this note?" card | "From your saved notes" with the note's text and date | Whether "Remember…" yields the note card rather than the parking card; recall quality |
-| 4 | Island "Translating" with codes | Face-to-face screen, the Spanish disclosure line | On a device; **hidden in the beta** (release scope) |
+| 4 | Island "Translating" with codes | Face-to-face screen, the Spanish disclosure line | On a device (in the beta since 8 Nov) |
 | 5 | — | `+` › Take a photo › Messages with the photo above the box; "Photo" in the thread | Menu reading accuracy |
 | 6 | — | Dictation in the box, "Not from your notes" label | Answer quality |
 
-## Polish strings missing in the app (found while rebuilding the screens)
+## Polish strings missing in the app (found while rebuilding the screens, fixed on 8 Nov)
 
-Shown in English in a Polish build today; left out of the frames.
+These showed in English in a Polish build. The change of 8 Nov (`changes/polish-strings-and-translator-in-beta.md`) gave them Polish; it hasn't been compiled or seen on a phone yet, so the frames still leave them out.
 
-- Reminder card: "Doddy checks your open reminders on this iPhone first, so it isn't added twice."
 - Ways to open Doddy, Action Button page: "Make the Action Button start a conversation with Doddy.", "Swipe to Controls (Shortcut on iOS 17)…", "Pick Talk to Doddy.", "Under Controls, Talk to Doddy talks in the Dynamic Island…".
-- Messages: the intro "If your question is about something you saved…" (a plain `String` passed to `Text`, so never localised) and the disclosure paragraph "Doddy is an AI, not a person. This conversation is saved…".
-- Translator: the middle bar's "Listening", "Paused", "Hold a button to talk" are plain `String`s in `TranslatorViews.swift` (`statusText`), so they are never localised; "Doddy said to them: %@"; "They speak".
-- ••• menu and voice sheet: "What leaves this iPhone".
+- Messages: the intro "If your question is about something you saved…" (a condition inside `Text`, which the catalog generator didn't read until this change).
+- Translator: the middle bar's "Listening", "Paused", "Hold a button to talk" (plain `String`s in `statusText`, now `NSLocalizedString`); "Doddy said to them: %@" (an interpolated literal, now a format string); "They speak" (a condition in `Picker`).
 
+Checked and not gaps after all: the reminder card's "Doddy checks your open reminders…", the Messages disclosure paragraph and "What leaves this iPhone" have Polish; the catalog stores them as iPhone/iPad variations, which an earlier lookup here missed.
 Not gaps, checked: the voice sheet's "Listen until I finish" and the "Doddy is listening · Stop listening" pill take their Polish from DoddyCore (`LongTurn`, `ListeningPrivacy`), not from the catalog, and are drawn in Polish.
 
 ## Before publishing
 
 1. Build `main` on an iPhone with a voice account, "Ask Doddy" on, Polish. Go through each scene for real and screenshot the result. Swap only the phone screen into the frame; the paper layer stays.
 2. Run the device checks: scene 1 (talk on Home, Transcript); scene 2 (Action Button matrix, at least cases 1, 2, 4, 5, 13 and 16, and Show opening the card); scene 3 (note card, recall with the note shown); scene 4 (PL ⇄ ES face to face); scene 5 (a real menu, accuracy on a dozen menus); scene 6 (dictation, answer quality).
-3. Fix the missing Polish strings above first, so the real screenshots are Polish throughout.
+3. Check on the phone that the strings fixed on 8 Nov show in Polish, so the real screenshots are Polish throughout.
 4. Remove the "Rekonstrukcja" label only from frames whose phone screen is real.
 5. Don't claim better conversion. Before launch: five-second and first-click tests with 5–8 people, headline preference tests. After launch: Product Page Optimization in App Store Connect, v4 against v5.

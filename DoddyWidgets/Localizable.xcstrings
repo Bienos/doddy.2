@@ -133,6 +133,17 @@
         }
       }
     },
+    "ALARM": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BUDZIK"
+          }
+        }
+      }
+    },
     "ASK": {
       "extractionState": "manual",
       "localizations": {
@@ -258,6 +269,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在添加提醒"
+          }
+        }
+      }
+    },
+    "All done": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko zrobione"
           }
         }
       }
@@ -3434,6 +3456,17 @@
         }
       }
     },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pauza"
+          }
+        }
+      }
+    },
     "Pause DODDY Recording": {
       "extractionState": "manual",
       "localizations": {
@@ -4023,6 +4056,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "提醒事项已确认"
+          }
+        }
+      }
+    },
+    "Resume": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów"
           }
         }
       }
@@ -4649,6 +4693,17 @@
         }
       }
     },
+    "Starts a voice conversation without opening Doddy. He greets you and stays in the Dynamic Island while you talk. Tap the island to see the conversation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaczyna rozmowę głosową bez otwierania Doddy’ego. Doddy się wita i zostaje w Dynamic Island, gdy mówisz. Stuknij wyspę, żeby zobaczyć rozmowę."
+          }
+        }
+      }
+    },
     "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this device.": {
       "extractionState": "manual",
       "localizations": {
@@ -4936,6 +4991,17 @@
         }
       }
     },
+    "Talk in the Island": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa w wyspie"
+          }
+        }
+      }
+    },
     "Talk it through": {
       "extractionState": "manual",
       "localizations": {
@@ -5013,6 +5079,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa z Doddym"
+          }
+        }
+      }
+    },
+    "Talks to Doddy in the Dynamic Island, without opening him. Press again to end.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa z Doddym w Dynamic Island, bez otwierania aplikacji. Naciśnij ponownie, żeby zakończyć."
           }
         }
       }
@@ -5116,6 +5193,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aplikacja zatrzymała się w tle"
+          }
+        }
+      }
+    },
+    "Tick": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odhacz"
           }
         }
       }
@@ -5448,6 +5536,17 @@
         }
       }
     },
+    "Untick": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odznacz"
+          }
+        }
+      }
+    },
     "VOICE": {
       "extractionState": "manual",
       "localizations": {
@@ -5709,6 +5808,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "zapisane"
+          }
+        }
+      }
+    },
+    "thought saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zapisana myśl"
+          }
+        }
+      }
+    },
+    "thoughts saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zapisane myśli"
           }
         }
       }

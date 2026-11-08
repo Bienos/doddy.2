@@ -202,11 +202,12 @@ public struct ReleaseScope: Equatable, Sendable {
     /// The v1 beta (`docs/product/V1_SCOPE.md`, `PRZEGLAD_FUNKCJI_2026-11-07.md` §6): the
     /// conversation, memory, Apple Calendar, Reminders and Contacts, timers, alarms, the stopwatch,
     /// sums, the weather and Wikipedia, photo notes and camera, Face ID, backup and export, Messages
-    /// behind its own consent. Everything that needs a server the beta doesn't keep, a vendor, a
-    /// permission the beta doesn't ask for, or that has never run on a phone, is hidden. The list
-    /// is the owner's to change: edit it here, and the tests say what the agent must lose.
+    /// behind its own consent, and the translator (owner, 8 Nov 2026: decision 2026-11-08-translator-in-beta).
+    /// Everything that needs a server the beta doesn't keep, a vendor, a permission the beta doesn't
+    /// ask for, or that has never run on a phone, is hidden. The list is the owner's to change: edit
+    /// it here, and the tests say what the agent must lose.
     public static let shipping = ReleaseScope(hidden: [
-        .translator, .planCard, .voiceProviderPicker,
+        .planCard, .voiceProviderPicker,
         .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning, .recordings, .sharedLists,
         .shoppingModeLockScreen, .placeReminders,
         .leaveBy, .parking, .birthdays, .eveningWrapUp, .weeklyLookBack, .weeklyPlan, .steps,

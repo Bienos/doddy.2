@@ -124,13 +124,13 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(ReleaseScopeStore.current, .shipping)
         t.controller.beginForTesting(link: t.link)
 
+        // The translator is shown in the beta since decision 2026-11-08-translator-in-beta; leaflets stay hidden.
         await t.controller.receiveToolCallForTesting(
-            name: VoiceToolName.startTranslator, id: "translator-2", parameters: #"{"their_language":"es"}"#).value
+            name: VoiceToolName.findDeals, id: "deals-2", parameters: #"{"items":["masło"]}"#).value
 
-        XCTAssertNil(t.controller.translator, "the translator never started")
         XCTAssertNil(t.controller.pendingAction, "no card")
-        XCTAssertEqual(t.link.results.map(\.id), ["translator-2"])
-        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.hidden(VoiceToolName.startTranslator))
+        XCTAssertEqual(t.link.results.map(\.id), ["deals-2"])
+        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.hidden(VoiceToolName.findDeals))
     }
 
     // MARK: Declined card runs nothing
