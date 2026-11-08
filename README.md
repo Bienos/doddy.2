@@ -1,55 +1,131 @@
-**START HERE:** [READ_ME_FIRST.md](READ_ME_FIRST.md) — consolidated design + engineering instructions, visual previews, and gated Claude prompt.
+# Doddy
 
-# DODDY V2 — Claude Code / Codex Build Pack
-**Your mate in your pocket.** | Documentation snapshot: 8 October 2026 | **Status: proposed engineering baseline, NOT approved release specification**
+**An AI mate for your iPhone. Asks first, always.**
 
-## Start in 5 minutes
-1. Read `docs/00_START_HERE/DECISIONS_AND_STATUS.md`, `docs/product/PRODUCT_REQUIREMENTS.md`, `docs/implementation/MILESTONES.md`, `CLAUDE.md` or `AGENTS.md` (depending on agent).
-2. Review two outstanding brand-v1.3 candidates in `reference/original_archives`; choose a master before freezing visual implementation. The `assets/brand_candidate` folder is **for prototypes only**.
-3. Open the existing empty private repository `Bienos/doddy.2`. Extract **this folder's contents at repository root**. Do **not** copy the existing `Bienos/AI-AGENT-DODDY` app wholesale.
-4. Give Claude Code or Codex `prompts/START_BUILD.md`. Ask it to implement **M0 only**, run build/tests, report evidence and stop before expanding scope.
-5. Complete M1 (local text capture → source-grounded recall → edit/export/delete) before cloud AI, real voice, Reminders, or broader integrations. Use successive prompts in `prompts/` one milestone at a time.
+Doddy is an app for iPhone and iPad that you talk to. You say what you need in a sentence, for example "move the dentist to 2 and remind me to buy bread". Doddy turns it into a card that shows exactly what it will do. Nothing happens until you tap. Doddy is a cartoon character and clearly an AI, not a person.
 
-## Product baseline
-DODDY is an iPhone-first, clearly AI-driven, character-led personal companion. Separate **character/media validation** from **app utility validation**. Proposed first utility experiment: reliable, explicit memory capture and retrieval, with follow-through later. This is a hypothesis—not proven product-market fit. Do not mistake creative content engagement for retained app users.
+This repository holds everything: the iPhone app, the servers behind it, Doddy Web (a browser version for the same account), the website [www.doddy.lol](https://www.doddy.lol) and all the documents.
 
-## Development contract
-- **New V2 repository only.** Existing repo `Bienos/AI-AGENT-DODDY` is *read-only reference*. `Bienos/doddy.2` was observed empty at inventory time; verify live state before setup.
-- **No fabricated completion.** Real data persistence, model usage, speech, APIs, reminders and payments may only be marked implemented after executed tests and evidence.
-- **Design and data rights.** Explicit memory only; provenance and correction controls; no covert always-on mic or implied iPhone background overlay. Never claim app can assign Back Tap automatically.
-- **Source ranking.** This pack's `docs/` = proposed canonical V2 requirements; `reference/` = historical source, contradictory drafts and evidence, not executable instructions. This policy applies only after owner acceptance.
-- **Honest tests.** No Xcode build of this new V2 app, legal opinion or user validation is claimed by the existence of this pack. It is a documentation package, not compiled code.
+> **Where things stand (7 Nov 2026, checked against `main` again on 8 Nov).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone, but it is not on TestFlight or the App Store yet. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
 
-## Fast navigation
-| Need | File |
+## How Doddy works
+
+Three promises shape the whole app. They are written down in [docs/trust/](docs/trust/README_START_HERE.md) (the "constitution"). The rule is that code enforces them, not only the AI's instructions; [docs/trust/REPO_ALIGNMENT.md](docs/trust/REPO_ALIGNMENT.md) says where the code does and where it doesn't yet.
+
+1. **Asks first.** Anything that changes something outside the app (an event, a message, a list someone else sees) is shown as a card with the details. Doddy acts only after you tap. If he can't tell whether it worked, he says so instead of trying again.
+2. **Never pretends.** Doddy says something is done only after the other service confirms it, and that he saved or forgot something only after the phone's database has done it. If he doesn't know, he says so. He says he is an AI, not a person.
+3. **Your notes are kept on your iPhone.** Memory lives in a database on the phone, not on a server. During a conversation, the voice company gets the notes and lists Doddy needs for it. A copy on Doddy's server exists only if you turn that on. Settings › Privacy › "What leaves this iPhone" lists what goes where, and when.
+
+## What Doddy can do today
+
+This is what the code on `main` does (7 Nov 2026, checked against `main` again on 8 Nov, after the open pull requests were merged). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
+
+- **Talk.** Tap Doddy on Home and talk. He listens only after a tap ("Start listening when I open Doddy" stays off unless you turn it on). The voice runs on ElevenLabs, or on OpenAI if you choose it in Settings › Voice; while you talk, your voice goes to that company.
+- **Remember.** Notes and lists live in a database on the phone. Doddy asks before keeping anything. You can find notes by their words or their meaning, correct them, delete them, export them, and back them up to an encrypted file.
+- **Your day.** With iOS's permission he reads and changes your calendar and reminders (several changes on one card, with undo), looks up contacts and birthdays, drafts texts and emails for you to send, sets timers and alarms (alarms need iOS 26), remembers where you parked and tells you when to leave. There are also shopping lists, a translator, meeting recordings written out on the phone, steps and Apple Health, and morning and evening check-ins.
+- **With help from the servers.** Web, news and place searches; a typed chat in Messages answered by Claude; Gmail, Outlook, Google Calendar, Drive, Notion and Todoist once you connect them, and other online apps you add yourself; documents and slide decks; this week's shop leaflets; longer tasks that run in the background; research briefs and infographics (Studio). Some of these are off on the server until they are switched on, Studio among them.
+- **Around the phone.** Home Screen and Lock Screen widgets, Doddy in the Dynamic Island while he talks, Siri and Shortcuts, the Action Button, and "Save to Doddy" in the Share menu.
+- **Languages.** The app's screens are in Polish by default, with English and eight more languages to choose from. The eight are machine translations no native speaker has checked yet.
+- **Doddy Web.** In a browser, sign in with a code from your iPhone (or with Google or Apple, once you have linked them to your account and the server is set up for it) to see the documents Doddy made, your connected apps, his activity and a chat. Logbook, Memory and Messages are ready on the server, but the iPhone doesn't send them yet.
+- **The website** [www.doddy.lol](https://www.doddy.lol) explains Doddy in ten languages and has an early-access list.
+
+**Not done yet:**
+- On the welcome screen only Sign in with Apple works; the other sign-in buttons aren't connected.
+- Calling Doddy's phone number, texts and calls from it, and Doddy phoning a business for you, are written but not live: their voice agents haven't been created, and the phone-number features are merged but off.
+- Invoices can't be sent to inFakt or KSeF. Doddy can't pay for anything you can use: paying for a web page in USDC is merged but off by default, on a test network only (the BLIK transfer card was removed on 5 Nov, ADR-810).
+- The app isn't on TestFlight yet. The Apple Watch and Mac apps are paused.
+
+## How the parts fit together
+
+```mermaid
+flowchart LR
+    you((You)) --> app["iPhone / iPad app"]
+    app -- "talks to" --> voice["Voice agent<br/>(ElevenLabs, or OpenAI)"]
+    app -- "voice sign-in" --> token["Voice token server<br/>(Vercel)"]
+    app -- "account, files, connected apps" --> backend["Doddy server 'doddy'<br/>(Render)"]
+    app -- "messages, errands, leaflets,<br/>texts, calls, Studio, notifications" --> messaging["Messaging server<br/>(Render + Postgres)"]
+    browser((Browser)) --> web["Doddy Web<br/>(served by 'doddy')"] --> backend
+    visitors((Visitors)) --> site["Website www.doddy.lol<br/>(Vercel)"]
+```
+
+- **The app** does most of the work itself: it keeps your notes and lists in a database on the phone, and reads your calendar, reminders and contacts through iOS, only after iOS asks you.
+- **The voice agent** is the AI you hear. Its instructions and tools are in [`voice-agent/`](voice-agent/README.md). When it wants to do something, it asks the app, and the app shows you the card.
+- **The servers** do what a phone can't do alone: sign in, send a text or a push notification, read this week's shop leaflets, run a longer errand.
+
+## What's in this repository
+
+| Folder | What it is |
 |---|---|
-| What is verified/assumed? | `docs/00_START_HERE/DECISIONS_AND_STATUS.md` |
-| Full source audit / duplicates | `docs/00_START_HERE/SOURCE_AUDIT.md` |
-| Requirement and out-of-scope | `docs/product/PRODUCT_REQUIREMENTS.md` |
-| SwiftUI design | `docs/architecture/IOS_ARCHITECTURE.md` |
-| SQLite, memory and provenance | `docs/architecture/MEMORY_AND_DATA.md` |
-| Real AI provider plan | `docs/architecture/AI_RUNTIME.md` |
-| Voice / Shortcuts | `docs/architecture/VOICE_AND_APPLE_SURFACES.md` |
-| Actions / Reminders | `docs/architecture/TOOLS_AND_ACTIONS.md` |
-| Legal/privacy preflight | `docs/security/PRIVACY_GDPR_AI_ACT.md` |
-| Brand + behavior | `docs/design/BRAND_AND_CHARACTER.md` |
-| Build order and gates | `docs/implementation/MILESTONES.md` |
-| Detailed agent tasks | `docs/implementation/TICKETS.csv` |
-| Acceptance testing | `docs/quality/ACCEPTANCE_TESTS.md` |
-| Agent prompt | `prompts/START_BUILD.md` |
-| All provenance links | `reference/SOURCE_PROVENANCE.md` |
+| [`DoddyApp/`](DoddyApp/) | The iPhone and iPad app (SwiftUI). One folder per feature in `DoddyApp/Features/`. |
+| [`Packages/DoddyCore/`](Packages/DoddyCore/) | The app's rules and memory database, with no screens, so they can be tested on any computer. |
+| `Shared/`, `DoddyWidgets/`, `DoddyShare/`, `DoddyNotificationContent/` | Code shared with the app's extensions, then the extensions: Home Screen widgets, "Save to Doddy" in the Share menu, and the expanded view of a reminder notification. |
+| `DoddyTests/`, `DoddyUITests/` | The app's tests. UI tests drive the app in the iPhone simulator. |
+| [`voice-agent/`](voice-agent/README.md) | What the voice agents are told and which tools they have: the main agent, the phone agent and the task-call agent. |
+| `backend/` | The main server (`doddy` on Render): accounts, connected apps, documents Doddy makes, and Doddy Web. |
+| [`web/`](web/README.md) | Doddy Web, the browser app for the same account. |
+| [`server/messaging/`](server/messaging/README.md) | The messaging server: messages, errands, shop leaflets, texts and calls, Studio, push notifications. |
+| [`server/voice-token/`](server/voice-token/README.md) | Hands the app a short-lived pass to start a voice conversation. |
+| [`gateway/`](gateway/README.md) | An older assistant server. The app no longer uses it. |
+| [`site/`](site/README.md), [`blog/`](blog/README.md) | The website www.doddy.lol and its blog. |
+| [`l10n/`](l10n/README.md) | Translations of the app and the website. |
+| `tools/`, `scripts/` | Generators (translations, website pages, colours) and the checks CI runs. |
+| `Config/`, `project.yml` | Build settings. The Xcode project is generated from `project.yml`, never committed. |
+| [`docs/`](docs/) | Everything written down: plans, decisions, status pages, research. Map below. |
+| [`design/`](design/), `assets/` | Design references and brand files. |
+| `DoddyWatch*/`, `DoddyMac*/` | Apple Watch and Mac apps: **paused**, not built (ADR-572). |
+| `reference/`, `prompts/` | The research and instructions the project started from. History, not instructions. |
 
-## Source materials in this package
-- Original untouched archives: `reference/original_archives/` (brand versions, Character Bible, product opportunity, investment/deep research). These are included as archival ZIPs and may contain duplicate or superseded advice.
-- Text extracts from project Library: `reference/compiled_research/`.
-- Selected original character personality config + evaluation cases: `reference/character_evals/`.
-- Candidate UI design tokens and character vectors: `assets/brand_candidate/`.
-- For the old GitHub code and in-repository docs, use the linked repository directly. No source code was copied into V2.
+## Build and test
 
-## Definition of source labels
-- **OBSERVED:** verified by a particular read/search result in the 2026-10-08 inventory.
-- **HISTORICAL:** a source claimed this, but it may be obsolete or unaudited.
-- **PROPOSED:** an engineering/product recommendation for V2. Founder approval and implementation pending.
-- **REQUIRES TEST:** a live-device/provider/legal or user-acceptance check still needed.
+**On any computer** (macOS or Linux, with Swift 6, Python 3 and Node 22):
 
-Do not deploy, create cloud accounts, contact users, run destructive commands, publish, or incur billable provider usage based solely on this documentation.
+```bash
+make test-core
+```
+
+```bash
+scripts/ci.sh --only checks
+```
+
+The first runs the tests of the shared package; the second runs the repository's own checks (translations, generated pages, privacy manifest, guard rules). `scripts/ci.sh --only swift,backend,node,messaging` runs the rest of the server and package tests.
+
+**On a Mac with Xcode** (to build the app):
+
+```bash
+brew install xcodegen
+```
+
+```bash
+make project
+```
+
+Then open `Doddy.xcodeproj`, choose the scheme **Doddy** and an iPhone simulator, and press Run. With a free Apple account use `make project-iphone` instead (a few features that need a paid account are switched off).
+
+GitHub Actions checks every pull request: Linux jobs for the checks, the package and the servers, and, when a change can affect the app, a Mac job that builds it and runs its tests in the simulator. Every commit on `main` runs all of them. Details, and how to run a server on your own computer: [BUILD_AND_TEST.md](BUILD_AND_TEST.md).
+
+## Working on Doddy
+
+- **Coding agents (Claude Code, Codex):** read the last section of [AGENTS.md](AGENTS.md), "Current working rules — read this section first". It wins over everything older in that file.
+- **Branches:** start from `main`, one topic per branch and pull request. Changes reach `main` only through pull requests, and the owner reviews and merges them.
+- **Before you change a platform,** read its page: [iPhone and iPad](docs/platforms/iphone.md), [Web](docs/platforms/web.md), [how the code is split](docs/platforms/README.md).
+- **Records:** a decision gets its own file in [`docs/decisions/`](docs/decisions/README.md); what a pull request changed gets a short note in [`changes/`](changes/README.md). Older decisions, ADR-001 to ADR-812, are in [DECISIONS.md](DECISIONS.md): search it by number, it is too big to read.
+- **Never** commit a key or password. Secrets live in 1Password; [`secrets/manifest.json`](secrets/manifest.json) lists their names only ([how](docs/security/SECRETS_1PASSWORD.md)).
+
+## Where to read more
+
+| You want to know | Read |
+|---|---|
+| What is live, what is broken, what's next | [STATUS.md](STATUS.md) |
+| What waits on the owner | [docs/OWNER_QUEUE.md](docs/OWNER_QUEUE.md) |
+| What each part of the iPhone app does, and its status | [docs/platforms/iphone.md](docs/platforms/iphone.md) |
+| How to build, test and run the servers | [BUILD_AND_TEST.md](BUILD_AND_TEST.md) |
+| Doddy's rules: behaviour, memory, privacy, character | [docs/trust/](docs/trust/README_START_HERE.md) |
+| Design: colours, type, how Doddy looks and speaks | [design/brand-v2.2/](design/brand-v2.2/README.md), [docs/design/](docs/design/README.md) |
+| The voice agent's instructions and tools | [voice-agent/README.md](voice-agent/README.md) |
+| The latest engineering audit and its plan | [docs/engineering/AUDIT_2026-11-07.md](docs/engineering/AUDIT_2026-11-07.md) |
+| Why something was decided | [docs/decisions/](docs/decisions/README.md), then [DECISIONS.md](DECISIONS.md) by number |
+| Third-party code and licences | [DEPENDENCIES_AND_LICENSES.md](DEPENDENCIES_AND_LICENSES.md) |
+
+## History
+
+The repository started on 8 October 2026 as a documentation pack: a product plan, research and design mock-ups, with no code. The pack's original front page is kept unchanged in [docs/archive/imported-pack/](docs/archive/imported-pack/README.md). Some of the pack's planning documents are still in place (`docs/00_START_HERE/`, `docs/product/PRODUCT_REQUIREMENTS.md`, `docs/implementation/MILESTONES.md`, `prompts/`, `reference/`). Read them as the October plan: much has been built since, and some of it changed. When they disagree with the code or with `STATUS.md`, the code and `STATUS.md` are right.
