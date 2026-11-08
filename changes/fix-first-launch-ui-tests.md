@@ -1,0 +1,9 @@
+Three first-launch UI smoke tests (`testFirstLaunchLandsOnHomeAndOptionalConversationCanBeSkipped`, `testFirstLaunchOpeningCanBeSkippedAndNeverStartsVoice`, `testIntroductionReviewsAndSavesOnlyNameAndStyle`) failed on every Mac run since the 7 Nov merge (#194 added the first-run "Allow access" step, ADR-814). The tests were right; the app's test switch was wrong.
+
+`UITestLaunch.arguments` passes `-firstRunAccess NO`, and `RootView.accessStepUp` read it as `UserDefaults.standard.object(forKey: "firstRunAccess") as? Bool`. A launch argument reaches `UserDefaults` as the string "NO", so the cast was always nil, the override did nothing, and on every fresh-install test (`onboardingDone: false`) the rule fell back to `firstInstallation && !seen` and put "Allow access" over Home. Home's `home.getToKnow` and `home.save` were then not reachable (`reveal` scrolled 40 times, about 2 minutes per test) and the opening scene could not be skipped by a tap. Tests that start with `onboardingDone: true` are not a first installation, so they never saw it.
+
+The fix is `FirstRunAccessRule.override(in:)` in DoddyCore, which reads the string or a real Bool, and `RootView` uses it. Release behaviour is unchanged: with no argument the override is nil. `WelcomePreferences.override` already read its argument with `bool(forKey:)` for the same reason.
+
+Checked: DoddyCore test `testTheLaunchArgumentIsReadAsTheStringItArrivesAs` added. NOT COMPILED or run here (no Swift toolchain); the hosted `swift` and `ios-build` jobs are the check. No test was skipped, disabled or loosened. The path was not run in a simulator: the cause is read from `RootView.swift` and the hosted log of run 42466712628 (failures at LaunchSmokeTests.swift:37, 50 and 331), not reproduced.
+
+Platforms: iPhone app (RootView) and DoddyCore (shared). Watch and Mac paused (ADR-572).

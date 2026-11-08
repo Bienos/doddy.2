@@ -501,7 +501,7 @@ struct RootView: View {
         !legalGateUp && !AppLock.shared.isLocked
             && FirstRunAccessRule.shouldShow(
                 seen: accessSeen, firstInstallation: profiles.isFirstInstallation,
-                override: UserDefaults.standard.object(forKey: "firstRunAccess") as? Bool)
+                override: FirstRunAccessRule.override())
     }
 
     private var introductionPresentation: Binding<Bool> {

@@ -58,6 +58,26 @@ public enum FirstRunAccessRule {
         return firstInstallation && !seen
     }
 
+    /// The UI-test launch argument `-firstRunAccess YES|NO`, read from `defaults`, or nil when there is none.
+    ///
+    /// A launch argument reaches `UserDefaults` as a string ("YES", "NO"), not as a Bool, so
+    /// `object(forKey:) as? Bool` is always nil for it and the override silently did nothing: the step
+    /// then showed on every fresh-install UI test, over Home, even with `-firstRunAccess NO`. Reads a real
+    /// Bool or number too, and returns nil for a value it can't read as yes or no.
+    public static func override(in defaults: UserDefaults = .standard) -> Bool? {
+        switch defaults.object(forKey: "firstRunAccess") {
+        case let flag as Bool: return flag
+        case let number as NSNumber: return number.boolValue
+        case let text as String:
+            switch text.trimmingCharacters(in: .whitespaces).lowercased() {
+            case "yes", "true", "1": return true
+            case "no", "false", "0": return false
+            default: return nil
+            }
+        default: return nil
+        }
+    }
+
     /// The items to ask about, in order, from what the person left ticked.
     public static func itemsToAsk(ticked: Set<FirstRunAccessItem>) -> [FirstRunAccessItem] {
         FirstRunAccessItem.allCases.filter(ticked.contains)

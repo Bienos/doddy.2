@@ -16,6 +16,26 @@ final class FirstRunAccessTests: XCTestCase {
         XCTAssertFalse(FirstRunAccessRule.shouldShow(seen: false, firstInstallation: true, override: false))
     }
 
+    func testTheLaunchArgumentIsReadAsTheStringItArrivesAs() {
+        // `-firstRunAccess NO` is stored by iOS as the string "NO". `as? Bool` on it is nil, which is how the
+        // step came to show over Home in every fresh-install UI test.
+        let name = "FirstRunAccessTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        XCTAssertNil(FirstRunAccessRule.override(in: defaults), "no argument, no override")
+        for (value, expected) in [("NO", false), ("no", false), ("0", false), ("false", false),
+                                  ("YES", true), ("yes", true), ("1", true), ("true", true)] {
+            defaults.set(value, forKey: "firstRunAccess")
+            XCTAssertEqual(FirstRunAccessRule.override(in: defaults), expected, value)
+        }
+        defaults.set("maybe", forKey: "firstRunAccess")
+        XCTAssertNil(FirstRunAccessRule.override(in: defaults), "a value that is not yes or no is no override")
+        defaults.set(false, forKey: "firstRunAccess")
+        XCTAssertEqual(FirstRunAccessRule.override(in: defaults), false)
+        defaults.set(true, forKey: "firstRunAccess")
+        XCTAssertEqual(FirstRunAccessRule.override(in: defaults), true)
+    }
+
     func testEveryItemStartsTickedAndTheOrderIsFixed() {
         XCTAssertEqual(FirstRunAccessItem.allCases.count, 9)
         XCTAssertTrue(FirstRunAccessItem.allCases.allSatisfy(\.tickedAtStart))
