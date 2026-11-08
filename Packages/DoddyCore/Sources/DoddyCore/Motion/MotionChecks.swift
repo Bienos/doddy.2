@@ -22,8 +22,16 @@ public struct MotionChecks: Sendable {
     private var zoneBlockedSince: [String: Double] = [:]
     private var lastOpacity = 1.0
     private var lastLandSeen = -99_999.0
+    /// When the previous frame was checked (ms), to tell a hitch from a resize.
+    private var lastCheckT: Double?
     /// Below this opacity a figure isn't a visible size change (a quarter).
     static let visible = 0.25
+    /// A frame longer than this (ms) is a hitch, not judged for rule 13: it can span a fade's whole
+    /// invisible gap, so the frame before and the frame after both show him clearly and a size
+    /// changed between them (hosted run 42481741193, Reduce Motion: "scale 1.00 while fade", one
+    /// check in a 77-test run on a busy runner). Frames run about 17 ms; the sweep test proves 56 ms
+    /// clean. A real resize on screen happens inside one frame, which this still judges.
+    static let hitchMs = 60.0
     /// The newest finding in words (the annotated mode shows it).
     public var lastDetail: String { violations.last.map { "\($0.rule): \($0.detail)" } ?? "" }
     /// Keep the list short; the count keeps going.
@@ -45,6 +53,7 @@ public struct MotionChecks: Sendable {
         // Before he has a place there is nothing to check (his default size isn't a size he has).
         guard host.isPlaced else {
             lastScale = nil
+            lastCheckT = nil
             doubleSeen = false
             lastCarries = e.carries
             lastLandSeen = e.lastLand
@@ -78,8 +87,10 @@ public struct MotionChecks: Sendable {
         // may run a frame or two after it, so "since the last check", not "this frame").
         let landedSinceLastCheck = e.lastLand != lastLandSeen
         let carriedSinceLastCheck = e.carries != lastCarries
+        let frameMs = lastCheckT.map { t - $0 } ?? 0
+        lastCheckT = t
         if let last = lastScale, abs(e.scale - last) > 1e-6, e.mode != .flight, !landedSinceLastCheck,
-           !carriedSinceLastCheck, e.opacity > Self.visible, lastOpacity > Self.visible {
+           !carriedSinceLastCheck, e.opacity > Self.visible, lastOpacity > Self.visible, frameMs <= Self.hitchMs {
             add(t, "two sizes, one figure", "scale \(MotionMath.format(e.scale, digits: 2)) while \(e.mode.rawValue)")
         }
         lastScale = e.scale
