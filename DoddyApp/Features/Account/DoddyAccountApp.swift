@@ -176,6 +176,8 @@ enum DoddyAccountServers {
     /// Settings › Delete my Doddy account. Each step goes ahead only when the one before was confirmed,
     /// and nothing is called deleted that a server didn't confirm (DOD-08):
     /// 1. the messaging server deletes its account (phone number, updates);
+    /// 1b. an account made with Apple has Sign in with Apple ended at Apple (`revokeApple`, decision
+    ///    2026-11-09-apple-revoke-for-doddy-accounts); Apple failing is said at the end and doesn't stop the rest;
     /// 2. the backend deletes what it keeps and, with it, the sign-in at the account service (its
     ///    cleanup queue, decision 2026-11-08-required-account), and disconnects the online accounts;
     /// 3. this iPhone's own voice account, if it still has one, is deleted the way it always was;
@@ -201,6 +203,9 @@ enum DoddyAccountServers {
             UserDefaults.standard.set(false, forKey: PreferenceKey.textsToDoddyOn)
             MemoryCopySync.shared.stop()
         }
+        // Before the backend removes the sign-in at the account service: the voice server checks the
+        // account's token to end Sign in with Apple. A failure doesn't stop the deletion; it is said at the end.
+        let appleLine = await revokeApple()
         guard await DeviceSession.ensure(server: backend) else {
             model.message = NSLocalizedString("Your messaging data was deleted, but Doddy couldn't reach his server to delete the rest, so you're still signed in. Check your connection and try again.", comment: "")
             return
@@ -217,9 +222,44 @@ enum DoddyAccountServers {
         // Not `VoiceAuthSession.deleteAccount`: that would ask the backend again, with a token it now refuses.
         var voiceLine: String?
         if VoiceAuthSession.shared.hasSavedSession { voiceLine = await VoiceAuthSession.shared.deleteVoiceAccountOnly() }
+        let userID = model.session?.userID
         await model.signOut()
+        if let userID { UserDefaults.standard.removeObject(forKey: appleRevokedKey(userID)) }
         let done = NSLocalizedString("Your Doddy account was deleted and this iPhone is signed out. Notes on this iPhone stay.", comment: "")
-        model.message = [done, serverLine, voiceLine].compactMap { $0 }.joined(separator: " ")
+        model.message = [done, serverLine, voiceLine, appleLine].compactMap { $0 }.joined(separator: " ")
+    }
+
+    // MARK: Sign in with Apple, ended when the account is deleted
+
+    /// Decision 2026-11-09-apple-revoke-for-doddy-accounts (App Store 5.1.1(v)). Right after a Doddy
+    /// account signs in with Apple, Apple's one-time code goes to the voice server, which keeps Apple's
+    /// token sealed. Best effort: the sign-in has already counted, and a failure only means deleting the
+    /// account can't end Sign in with Apple (the delete result then says how to do it by hand).
+    static func linkAppleRevocation(identityToken: String, rawNonce: String, authorizationCode: String) async {
+        guard let token = try? await DoddyAccountModel.shared.accessToken() else { return }
+        _ = try? await VoiceAuthAPI.shared.linkApple(
+            accountToken: token, identityToken: identityToken, rawNonce: rawNonce, authorizationCode: authorizationCode)
+    }
+
+    /// Set once Apple confirmed the revoke, so asking to delete again after a later step failed doesn't
+    /// report a missing token as a failure. Removed when the deletion finishes.
+    private static func appleRevokedKey(_ userID: String) -> String { "doddyAccount.appleRevoked.\(userID)" }
+
+    /// The first step of deleting an account made with Apple: the voice server tells Apple to end the
+    /// link. Nil when Apple confirmed it (now or on an earlier try), or the account didn't use Apple.
+    /// Otherwise a line, shown at the end, saying how to remove Doddy in the Apple ID settings. Apple
+    /// failing never keeps the account (ADR-524).
+    private static func revokeApple() async -> String? {
+        let model = DoddyAccountModel.shared
+        guard let session = model.session, session.method == .apple else { return nil }
+        let key = appleRevokedKey(session.userID)
+        if UserDefaults.standard.bool(forKey: key) { return nil }
+        if let token = try? await model.accessToken(),
+           (try? await VoiceAuthAPI.shared.revokeApple(accountToken: token)) == true {
+            UserDefaults.standard.set(true, forKey: key)
+            return nil
+        }
+        return NSLocalizedString("Doddy couldn't end its Sign in with Apple link. To remove it yourself, open Settings, tap your name, then Sign in with Apple, choose Doddy and tap Stop Using Apple ID.", comment: "")
     }
 
     /// Signed out: the account's tokens go from where the clients find them.

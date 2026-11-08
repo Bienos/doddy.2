@@ -55,6 +55,22 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `APPLE_SIGN_IN_KEY_ID` | The key ID of a Sign in with Apple key (Apple Developer › Certificates, Identifiers & Profiles › Keys). |
 | `APPLE_SIGN_IN_PRIVATE_KEY` | That key's `.p8` file contents (PEM; literal `\n` line breaks work). Secret: 1Password only. |
 
+### Revoking Sign in with Apple for a Doddy account (decision `2026-11-09-apple-revoke-for-doddy-accounts`)
+
+A Doddy account (a Supabase user, `SUPABASE_URL` set) made with Sign in with Apple needs the same
+revoke, but it has no voice session. Two more `POST /api/voice-auth` actions take the **Doddy account's
+access token** as the Bearer, checked like `/api/voice-token` checks it (a voice session's token is
+refused). Both need the three `APPLE_*` key settings and `APPLE_BUNDLE_ID` below; without them they
+answer 200 and do nothing.
+
+| Action | Body | When the app sends it | Answer |
+|---|---|---|---|
+| `apple-link` | `identityToken`, `rawNonce`, `authorizationCode` (all from the Apple sheet just used) | right after the sign-in with Apple | `{ linked: true }` once Apple's refresh token is kept, sealed, under `account:<Supabase user id>` for 400 days; `{ linked: false }` when the code wasn't the same Apple person's or Apple refused. Counted against the per-caller sign-in limits. |
+| `apple-revoke` | none | first, when "Delete my Doddy account" runs | `{ appleRevoked, apple }`, `apple` being `revoked`, `failed`, `no_token` or `not_configured`. A revoked or missing token is forgotten; a failed one is kept so asking again can work. Apple failing never stops the deletion. |
+
+`APPLE_BUNDLE_ID` is one value: it must be the bundle ID of the build that signs in (Beta:
+`com.bienos.doddy2.dev`), because Apple issues the one-time code to that app.
+
 ### Revoking Sign in with Apple when an account is deleted (ADR-524)
 
 App Store guideline 5.1.1(v) expects an app with Sign in with Apple to revoke the user's tokens when

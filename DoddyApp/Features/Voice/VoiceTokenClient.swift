@@ -100,6 +100,24 @@ actor VoiceAuthAPI {
         let _: EmptyReply = try await post(["action": "delete-account"], bearer: accessToken)
     }
 
+    // Decision 2026-11-09-apple-revoke-for-doddy-accounts: a Doddy account (not a voice session) that
+    // signed in with Apple. Both take the Doddy account's access token as the bearer.
+
+    /// Right after that sign-in: the server keeps Apple's token, sealed, so deleting the account can end
+    /// Sign in with Apple. True only when the server kept it; the account works either way.
+    func linkApple(accountToken: String, identityToken: String, rawNonce: String, authorizationCode: String) async throws -> Bool {
+        let reply: AppleLinkReply = try await post(
+            ["action": "apple-link", "identityToken": identityToken, "rawNonce": rawNonce, "authorizationCode": authorizationCode],
+            bearer: accountToken)
+        return reply.linked
+    }
+
+    /// Before the account is deleted: the server tells Apple to end the link. True only when Apple said yes.
+    func revokeApple(accountToken: String) async throws -> Bool {
+        let reply: AppleRevokeReply = try await post(["action": "apple-revoke"], bearer: accountToken)
+        return reply.appleRevoked
+    }
+
     private func post<T: Decodable>(_ body: [String: Any], bearer: String? = nil) async throws -> T {
         guard let endpoint = VoiceConfig.authEndpoint else { throw VoiceAuthFailure.serverNotConfigured }
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
@@ -130,3 +148,5 @@ actor VoiceAuthAPI {
 }
 
 private struct EmptyReply: Decodable {}
+private struct AppleLinkReply: Decodable { let linked: Bool }
+private struct AppleRevokeReply: Decodable { let appleRevoked: Bool }

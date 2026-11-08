@@ -152,7 +152,18 @@ struct AppleAccountSignInButton: View {
         }
         if doddyAccount.isConfigured {
             // Apple's token and the raw nonce go to the Doddy account service, which checks both.
-            Task { await doddyAccount.signInWithApple(identityToken: identityToken, rawNonce: rawNonce) }
+            // Apple's one-time code goes to the voice server once the account exists, so deleting the
+            // account can also end Sign in with Apple (decision 2026-11-09-apple-revoke-for-doddy-accounts).
+            // That step is best effort: the sign-in has already counted without it.
+            let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+            let account = doddyAccount
+            Task { @MainActor in
+                await account.signInWithApple(identityToken: identityToken, rawNonce: rawNonce)
+                if account.isSignedIn, let authorizationCode, !authorizationCode.isEmpty {
+                    await DoddyAccountServers.linkAppleRevocation(
+                        identityToken: identityToken, rawNonce: rawNonce, authorizationCode: authorizationCode)
+                }
+            }
             self.rawNonce = nil
             return
         }
