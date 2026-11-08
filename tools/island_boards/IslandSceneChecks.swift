@@ -651,6 +651,33 @@ enum IslandSceneChecks {
         // raw values are fixed here.
         expect(DoddyToolAttributes.Kind(rawValue: "timer") == .timer && DoddyToolAttributes.Kind(rawValue: "windDown") == .windDown
                && DoddyToolAttributes.Kind(rawValue: "noteSaved") == .noteSaved, "kind raw values")
+        // Minimal (another app's activity also running): with Whole Doddy a centred time, tick or
+        // symbol is drawn alone, never over his face (8 Nov 2026: a timer's "14:34" behind his face).
+        func whole(_ tool: DoddyToolAttributes, _ state: DoddyToolAttributes.ContentState) -> IslandScene {
+            var s = state
+            s.islandStyle = .wholeDoddy
+            return tool.islandScene(s, isStale: false, now: now)
+        }
+        let minimalCases: [(String, IslandScene)] = [
+            ("timer", whole(timer, .init(isPaused: false, endsAt: end))),
+            ("timer paused", whole(timer, .init(isPaused: true, remaining: 874))),
+            ("timer done", whole(timer, .init(isPaused: false, isFinished: true))),
+            ("wind-down", whole(wind, .init(isPaused: false, endsAt: end))),
+            ("focus", whole(focus, .init(isPaused: false, endsAt: end))),
+            ("stopwatch", whole(watch, .init(isPaused: false, countsFrom: from))),
+        ]
+        for (name, scene) in minimalCases {
+            expect(scene.pose != nil && scene.minimalSignCentred && scene.minimalSign != .none, "\(name): centred minimal sign")
+            expect(!scene.minimalShowsPoseFace, "\(name): no face under the minimal sign")
+        }
+        expect(whole(timer, .init(isPaused: false, endsAt: end)).minimalSign == .countdown(end), "the timer's minimal is its countdown")
+        // A sign at the side keeps his face beside it (reading aloud: the bars on the right).
+        let reading = whole(read, .init(isPaused: false))
+        expect(!reading.minimalSignCentred && reading.minimalShowsPoseFace, "reading keeps his face beside the bars")
+        // A centred board with nothing to show keeps his face (note saved has no minimal sign).
+        expect(whole(saved, .init(isPaused: false, isFinished: true)).minimalShowsPoseFace, "note saved keeps his face")
+        // No style: the board's art, which has no face, as before.
+        expect(!timer.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).minimalShowsPoseFace, "no pose, no face")
         return failures
     }
 }
