@@ -1,0 +1,2 @@
+Voice: a person signed in to a Doddy account always uses the account's token for the voice token server. Before, a voice session left in the Keychain by an earlier build won over it, and when that one was dead the start said "Your voice session expired" (decision `2026-11-08-voice-prefers-doddy-account`). One condition in `DoddyAccountServers.voiceAccountToken()`.
+Ran: `scripts/ci.sh --only checks`. Not compiled here (no Xcode); the hosted Mac job builds it. Not confirmed on a device.

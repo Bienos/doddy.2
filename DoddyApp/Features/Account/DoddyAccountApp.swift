@@ -160,11 +160,14 @@ enum DoddyAccountServers {
         }
     }
 
-    /// For the voice token server: the account's token, unless this iPhone still has its own voice
-    /// session (which works whether or not the voice server takes accounts yet).
+    /// For the voice token server: the account's token whenever this iPhone is signed in to a Doddy
+    /// account. An older voice session kept in the Keychain from an earlier build no longer wins over it:
+    /// it can be dead, and then a signed-in person was told "Your voice session expired" at the start
+    /// (8 Nov 2026, decision 2026-11-08-voice-prefers-doddy-account). Signed out: nil, and the voice
+    /// session is used as before.
     static func voiceAccountToken() async -> String? {
         let model = DoddyAccountModel.shared
-        guard model.isSignedIn, !VoiceAuthSession.shared.hasSavedSession else { return nil }
+        guard model.isSignedIn else { return nil }
         return try? await model.accessToken()
     }
 
