@@ -102,5 +102,11 @@
 			</array>
 		</dict>
 	</array>
+	<!-- The commit this build was made from (7 Nov 2026 audit): the DODDY_GIT_COMMIT build setting,
+	     which Xcode Cloud sets from CI_COMMIT (ci_scripts/ci_post_clone.sh) and every other build
+	     leaves at "local". Settings › About shows its first seven characters. Public: the
+	     repository is too. -->
+	<key>DoddyGitCommit</key>
+	<string>$(DODDY_GIT_COMMIT)</string>
 </dict>
 </plist>

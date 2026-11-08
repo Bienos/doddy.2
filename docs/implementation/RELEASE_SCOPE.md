@@ -5,7 +5,7 @@ One list in DoddyCore says which features a build shows. Before it, a feature co
 ## Where it is
 
 - **The list:** `Packages/DoddyCore/Sources/DoddyCore/ReleaseScope.swift`. `Feature` names every feature that can be hidden; `ReleaseScope.shipping` is the list the app ships with; `ReleaseScope.everything` hides nothing. Each `Feature` says which voice tools, which Settings › Connections switch and which capability (for "What I can do") belong to it.
-- **What the app reads:** `DoddyApp/Infrastructure/ReleaseScopeStore.swift`. Always `ReleaseScope.shipping`. A **Debug** build also reads the preference `releaseScope.previewEverything` (Settings › About › Advanced › "Developer: show every feature"), so the owner can try a hidden feature on their phone. A Release or TestFlight build never reads it.
+- **What the app reads:** `DoddyApp/Infrastructure/ReleaseScopeStore.swift`. A Release or TestFlight build: always `ReleaseScope.shipping`, and it never reads the preference. A **Debug** build (Run in Xcode) shows **every feature** until the preference `releaseScope.previewEverything` is turned off (Settings › About › Advanced › "Developer: show every feature"); off, it shows `ReleaseScope.shipping` (decision `2026-11-08-debug-shows-every-feature`).
 - **The tests:** `ReleaseScopeTests` (DoddyCore) checks every tool in `voice-agent/tools.json` is either core (`ReleaseScope.coreTools`) or belongs to exactly one feature, so a new tool has to be placed on purpose; `ToolGateTests` checks a hidden tool is refused before every other check.
 
 ## What "hidden" does

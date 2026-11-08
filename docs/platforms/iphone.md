@@ -20,6 +20,15 @@
   - no conversation at all means the app failed before connecting;
   - a conversation with no messages means the session started without its start data.
 
+## Doddy account (decision `2026-11-08-required-account`, in progress)
+Every user will sign in with a Doddy account, using Apple, Google or a code sent by email, and the app won't go further without one.
+- **Built so far:** the logic, in DoddyCore `Account/DoddyAccount.swift`, tested on Linux (`DoddyAccountTests`, 16 tests).
+  - The requests to Supabase Auth: an email code (send, then verify), Sign in with Apple's identity token, and Google through the browser with PKCE (RFC 7636).
+  - Refreshing the session, and signing out.
+  - The rules for addresses, codes and sessions.
+  - The two calls that bring an iPhone's earlier data into the account: the backend's `link-device` and the messaging server's `accounts/sign-in`.
+- **Nothing uses it yet.** The screens, the "signed out goes back to sign-in" gate, the Keychain and sending the token to every server come next. They touch `RootView.swift` and the Settings screens, so they wait for #221.
+
 ## Feature map
 Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/implementation/`. Rules with no UI are in `Packages/DoddyCore/Sources/DoddyCore/`.
 
@@ -66,7 +75,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Photos, VoiceMemos | Photo notes (picker and, since ADR-569, Doddy's camera), the photo search card, voice memos | 218, 230, 569 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS, APPLE_CONNECTIONS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |
 | Settings | Four groups on the first page: Voice, Doddy's memory · Connections, Notifications · Language, Appearance, Privacy · About (Help, the legal pages, the version and Advanced are one page down, ADR-727); their pages are in `SettingsView`, `SettingsHubs`, `SettingsScreens`; the Action Button choice | 580, 579, 607, 727 | SETTINGS_SIMPLIFIED, ACTION_BUTTON_ISLAND |
-| Release scope (`Infrastructure/ReleaseScopeStore.swift`, DoddyCore `ReleaseScope.swift`) | Which features this build shows: `ReleaseScope.shipping` hides a feature's every way in (voice tool, Home, Settings, Connections, quick actions, languages); Debug builds can show everything from Settings › About › Advanced. **NOT COMPILED** (7 Nov) | `2026-11-07-release-scope` | RELEASE_SCOPE |
+| Release scope (`Infrastructure/ReleaseScopeStore.swift`, DoddyCore `ReleaseScope.swift`) | Which features this build shows: `ReleaseScope.shipping` hides a feature's every way in (voice tool, Home, Settings, Connections, quick actions, languages); Debug builds show everything until Settings › About › Advanced turns it off (`2026-11-08-debug-shows-every-feature`); Release and TestFlight always ship the beta scope. **NOT COMPILED** (7 Nov) | `2026-11-07-release-scope` | RELEASE_SCOPE |
 | Onboarding | "Before we start": Terms acceptance (`LegalAcceptanceView`, `LegalAcceptanceStore`), then the optional introduction | 581 | LEGAL_PAGES_OWNER_CHECKLIST |
 | QuickActions, Spotlight | Icon menu, iPhone search | 339, 330 | - |
 | Setup | Ways to open Doddy: Back Tap guide, Action Button (talks in the island, ADR-632), control, Siri | 380, 558, 579, 632 | V2_SHORTCUT_SETUP_STATUS, ACTION_BUTTON_ISLAND |
