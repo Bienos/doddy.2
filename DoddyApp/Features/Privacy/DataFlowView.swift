@@ -34,7 +34,8 @@ extension DataFlowState {
             learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice),
             webNotesKept: defaults.bool(forKey: WebMemoryModel.notesKey),
             webConversationsKept: defaults.bool(forKey: WebMemoryModel.conversationsKey),
-            inFaktKeySaved: AccountKeyStore.manager(for: .inFakt).state().isSaved)
+            inFaktKeySaved: AccountKeyStore.manager(for: .inFakt).state().isSaved,
+            textsToDoddyOn: defaults.bool(forKey: PreferenceKey.textsToDoddyOn))
     }
 }
 
@@ -51,6 +52,7 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+    @AppStorage(PreferenceKey.textsToDoddyOn) private var textsToDoddyOn = false
     // Redraws this screen when a switch for keeping notes or conversations on Doddy's server changes (ADR-603).
     @AppStorage(WebMemoryModel.notesKey) private var webNotesKept = false
     @AppStorage(WebMemoryModel.conversationsKey) private var webConversationsKept = false

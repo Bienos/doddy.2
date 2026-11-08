@@ -58,6 +58,39 @@ run_step() {  # name, command...
   if "$@"; then record "$name" PASS ""; else record "$name" FAIL "exit $?"; failed=1; return 1; fi
 }
 not_run() { record "$1" "NOT RUN" "$2"; blocked=1; echo; echo "=== $1"; echo "NOT RUN: $2"; }
+# The app's package pins (Config/Package.resolved, 7 Nov 2026 audit). Xcode writes this file when it
+# resolves packages; `xcodebuild -list` does not (run 42409624440: "wrote no Package.resolved", and the
+# step logged NOT RUN, which blocked an otherwise green job).
+resolved_in_project=Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+# Copies the file Xcode resolved to build/Package.resolved (hosted CI keeps it, so pinning or moving
+# versions is one download). With pins committed, any difference fails: the build would not be the one
+# TestFlight gets. Returns 1, recording nothing, when Xcode has not written the file (yet).
+check_package_pins() {
+  [ -f "$resolved_in_project" ] || return 1
+  mkdir -p build
+  cp "$resolved_in_project" build/Package.resolved
+  if [ ! -f Config/Package.resolved ]; then
+    record "App package versions match Config/Package.resolved" "SKIPPED" \
+      "no pins committed yet: commit build/Package.resolved from this run as Config/Package.resolved"
+  elif cmp -s Config/Package.resolved "$resolved_in_project"; then
+    record "App package versions match Config/Package.resolved" PASS ""
+  else
+    diff -u Config/Package.resolved "$resolved_in_project" || true
+    record "App package versions match Config/Package.resolved" FAIL \
+      "resolution changed the pins; if that was meant, run make update-packages on a Mac and commit it"
+    failed=1
+  fi
+}
+# Nothing to check or copy after Xcode resolved. With pins committed the guard could not run, which
+# blocks. Without pins there is nothing to guard and nothing to block on: say so and carry on.
+pins_not_found() {
+  if [ -f Config/Package.resolved ]; then
+    not_run "App package versions match Config/Package.resolved" "xcodebuild wrote no $resolved_in_project, so the pins could not be checked"
+  else
+    record "App package versions match Config/Package.resolved" "SKIPPED" \
+      "no pins committed yet, and xcodebuild wrote no $resolved_in_project to copy"
+  fi
+}
 # Shut a simulator down and boot it again, waiting until it has finished booting (ADR-561).
 restart_simulator() {
   xcrun simctl shutdown "$1" 2>/dev/null || true  # fails harmlessly if it is already shut down
@@ -99,6 +132,15 @@ run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
 run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py --check
 run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --check
+# Doddy Studio's skills (STUDIO.md): frontmatter limits and no unlisted font or image files (plain
+# Python), then both renderers on the samples with every output checked the way the server checks it.
+run_step "Studio skills: frontmatter and files" scripts/studio_skills.sh check-files
+if python3 -I -c "import reportlab, matplotlib" 2>/dev/null; then
+  run_step "Studio skills: renderers on samples" scripts/studio_skills.sh check
+else
+  not_run "Studio skills: renderers on samples" "python3 needs reportlab and matplotlib (apt python3-reportlab python3-matplotlib, or pip)"
+fi
+run_step "Screen fixture data up to date (ADR-821)" python3 -I scripts/gen_screen_fixture_data.py --check
 run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I tools/gen_web_assets.py --check
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
@@ -106,6 +148,7 @@ run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
 run_step "Privacy manifest declares every required-reason API (7 Nov audit)" scripts/test_check_privacy_manifest.sh
+run_step "The Mac job's package-pin step never blocks without pins (7 Nov audit)" scripts/test_ci_package_pins.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -131,6 +174,8 @@ elif command -v swift >/dev/null 2>&1; then
     run_step "Messages screen's state tests" scripts/test_messages_model.sh
     # The price watch's state, run with a fake for Doddy's server (SHOPPING_WATCH.md).
     run_step "Price watch state tests" scripts/test_watch_model.sh
+    # The "Na oku" page's state, run with a fake provider (ADR-756).
+    run_step "Open loops page state tests" scripts/test_open_loops_model.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
     # The kept training plan (ADR-625): read back, edited and unreadable files, delete.
     run_step "Training plan on real files" scripts/check_training_plan_store.sh
@@ -198,6 +243,12 @@ if ! want messaging; then :
 elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d server/messaging/node_modules ]; then run_step "Messaging server install (npm ci)" npm ci --prefix server/messaging --no-audit --no-fund; fi
   run_step "Messaging server typecheck + tests" npm test --prefix server/messaging
+  # Studio (ADR-740): the server's checks on files the real renderers make (needs the build above).
+  if python3 -I -c "import reportlab, matplotlib" 2>/dev/null; then
+    run_step "Studio: server checks on rendered samples" scripts/check_studio_crosscheck.sh
+  else
+    not_run "Studio: server checks on rendered samples" "python3 needs reportlab and matplotlib"
+  fi
   [ -z "${TEST_DATABASE_URL:-}" ] && record "Messaging server database tests" "SKIPPED" "TEST_DATABASE_URL not set"
 else
   not_run "Messaging server tests" "node/npm not found on PATH"
@@ -232,9 +283,9 @@ elif ! command -v xcodegen >/dev/null 2>&1; then
 else
   run_step "Generate Xcode project" xcodegen generate --spec project.yml
   # The app's pinned package versions (Config/Package.resolved, 7 Nov 2026 audit): installed into the
-  # generated project before anything resolves, and checked after `xcodebuild -list` resolves.
-  resolved_in_project=Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  # generated project before anything resolves, and checked once Xcode has resolved (check_package_pins).
   run_step "Install the pinned package versions" scripts/install_package_resolved.sh Doddy.xcodeproj
+  pins_checked=0
   # Default: first available iPhone simulator; override with DODDY_DESTINATION.
   if [ -n "${DODDY_DESTINATION:-}" ]; then
     dest=$DODDY_DESTINATION
@@ -247,26 +298,11 @@ else
   else
     echo "Destination: $dest"
     run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
-    # `-list` resolved the packages. A copy of what it resolved always goes to build/Package.resolved
-    # (hosted CI keeps it), so pinning or moving versions is one download. With pins committed, any
-    # difference fails: the build would not be the one TestFlight gets.
-    mkdir -p build
-    if [ ! -f "$resolved_in_project" ]; then
-      not_run "App package versions match Config/Package.resolved" "xcodebuild wrote no $resolved_in_project"
-    else
-      cp "$resolved_in_project" build/Package.resolved
-      if [ ! -f Config/Package.resolved ]; then
-        record "App package versions match Config/Package.resolved" "SKIPPED" \
-          "no pins committed yet: commit build/Package.resolved from this run as Config/Package.resolved"
-      elif cmp -s Config/Package.resolved "$resolved_in_project"; then
-        record "App package versions match Config/Package.resolved" PASS ""
-      else
-        diff -u Config/Package.resolved "$resolved_in_project" || true
-        record "App package versions match Config/Package.resolved" FAIL \
-          "resolution changed the pins; if that was meant, run make update-packages on a Mac and commit it"
-        failed=1
-      fi
-    fi
+    # `-list` does not resolve packages, so resolve them here: a failure to fetch a package stops the run
+    # before the long build, and the pins can be checked now. If Xcode still wrote no file, the check
+    # is tried again after the build, which resolves too.
+    run_step "Resolve the app's packages" xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
+    if check_package_pins; then pins_checked=1; fi
     # Build once, then run the unit tests and the UI tests as two passes, with the simulator
     # restarted in between (ADR-561). The unit tests run inside the app on the simulator; right
     # after them its first launches are slow, and on 20 Oct (run 39496321722) XCTest could not take
@@ -336,6 +372,7 @@ else
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
     fi
+    if [ "$pins_checked" -eq 0 ]; then check_package_pins || pins_not_found; fi
     # DODDY_RELEASE_BUILD=1 (hosted CI on pushes to main): compile the Release configuration for
     # devices, unsigned. Everything above is a Debug simulator build; without this, Xcode Cloud's
     # archive was the first Release compile, where a failure costs build hours and a TestFlight build.

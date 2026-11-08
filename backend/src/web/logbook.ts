@@ -20,7 +20,7 @@ export const LOGBOOK_MAX_BODY_BYTES = 16 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";
 
 /**
- * The voice agent's tool ids (voice-agent/tools.json, 101 today). A test reads that file and fails
+ * The voice agent's tool ids (voice-agent/tools.json, 102 today). A test reads that file and fails
  * if this list and the file disagree, so a new tool can't be counted before it is listed here.
  */
 export const LOGBOOK_TOOL_IDS = [
@@ -30,7 +30,7 @@ export const LOGBOOK_TOOL_IDS = [
   "calculate", "convert_units", "convert_currency", "set_timer", "set_alarm", "start_stopwatch", "stop_stopwatch",
   "check_stopwatch", "follow_news", "list_alarms", "cancel_alarm",
   "propose_plan", "open_map", "parking_spot", "remind_when_to_leave", "run_shortcut", "draft_message",
-  "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "control_home", "open_camera", "check_email",
+  "draft_invoice", "text_me", "call_me_later", "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "control_home", "open_camera", "lost_wallet", "check_email",
   "read_email", "draft_email", "draft_email_reply", "send_email", "reply_to_email", "forward_email", "change_email",
   "trash_email", "find_drive_file", "create_drive_doc", "search_notion", "read_notion_page", "create_notion_page",
   "append_notion_page", "trash_notion_page", "check_outlook_email", "read_outlook_email", "draft_outlook_email",
@@ -41,7 +41,7 @@ export const LOGBOOK_TOOL_IDS = [
   "add_todoist_task", "complete_todoist_task", "move_todoist_task", "rename_todoist_task", "web_search",
   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places",
   "start_translator", "stop_translator", "add_to_list", "add_ingredients", "read_list", "check_off",
-  "remove_from_list", "create_list", "hand_over_errand", "check_errands", "find_deals", "note_capability_gap", "ask_claude",
+  "remove_from_list", "create_list", "hand_over_errand", "check_errands", "make_something", "find_deals", "pay_for_page", "note_capability_gap", "ask_claude",
   "make_document",
 ] as const;
 

@@ -409,6 +409,9 @@ struct MemoriesSettingsView: View {
             try await environment.callCaseRepository.deleteAll()
             // Tasks handed to Doddy (ADR-570): words and results kept on this iPhone.
             try await environment.errandRepository.deleteAll()
+            // Studio (ADR-740): the topics and the opened copies kept here. The items stay on
+            // Doddy's server until they are deleted in Studio (said below).
+            StudioModel.shared.forgetLocal()
             // The typed conversation with Doddy (ADR-585): messages kept on this iPhone.
             try await environment.messageThreadRepository.deleteAll()
             // Recordings (ADR-588): their audio and words, on this iPhone only. One being made is
@@ -429,6 +432,10 @@ struct MemoriesSettingsView: View {
         if !AccountKeyStore.removeAll() {
             problems.append(NSLocalizedString("Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).", comment: ""))
         }
+        // The invoice draft kept between conversations (ADR-678) is a file of its own.
+        if VoiceSessionController.invoiceDraftFile?.remove() == false {
+            problems.append(NSLocalizedString("The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again.", comment: ""))
+        }
         if !stillShared.isEmpty {
             problems.append(String(
                 format: NSLocalizedString("Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.", comment: ""),
@@ -440,6 +447,10 @@ struct MemoriesSettingsView: View {
             problems.append(String(
                 format: NSLocalizedString("The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.", comment: ""),
                 UpdatesModel.text(for: error)))
+        }
+        // Studio (ADR-740): its items are kept on Doddy's server, not on this iPhone; said, never covered by "deleted".
+        if !StudioModel.shared.items.isEmpty {
+            problems.append(NSLocalizedString("What Doddy made in Studio stays on Doddy's server until you delete it in Studio.", comment: ""))
         }
         deleteError = problems.isEmpty ? nil : problems.joined(separator: " ")
     }
@@ -736,6 +747,7 @@ struct RoutinesSettingsView: View {
 struct AdvancedSettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
+    @State private var showStudio = false
     #if DEBUG
     /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope). Only a Debug build has the toggle or reads the key.
     @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = false
@@ -771,6 +783,16 @@ struct AdvancedSettingsView: View {
                 }
                 .accessibilityIdentifier("settings.welcomeAgain")
             }
+            // Studio (ADR-740): kept here, not on Home's menu (it has no room for a twelfth row, ADR-652) or
+            // Settings' first page (ADR-633). Studio is off on the server until the owner turns it on, and says so
+            // when it is.
+            // Hidden in the beta with `make_something` (decision 2026-11-07-release-scope).
+            if ReleaseScopeStore.current.shows(.studio) {
+                Section {
+                    Button("Studio") { showStudio = true }
+                        .accessibilityIdentifier("settings.studio")
+                }
+            }
             Section("What's built") {
                 ForEach(Capability.allCases, id: \.self) { capability in
                     StatusRow(
@@ -786,6 +808,7 @@ struct AdvancedSettingsView: View {
         }
         .settingsPage()
         .navigationTitle("Advanced")
+        .sheet(isPresented: $showStudio) { StudioView() }
     }
 
     #if DEBUG

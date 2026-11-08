@@ -88,6 +88,10 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case phoneCalls
     /// Calls Doddy places for the person (ADR-500).
     case callCases
+    /// Studio: research briefs and infographics made on the server (ADR-740 to 742).
+    case studio
+    /// USDC for a web page that asks for payment (ADR-734 to 737).
+    case payments
 
     // Other apps and devices
     /// Apple Health, read only (ADR-620).
@@ -104,6 +108,8 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case parcels
     /// Photo counts and Doddy's camera by voice (ADR-569).
     case photosAndCamera
+    /// The official steps after a lost or stolen wallet, ID or cards, shown as a checklist (`LostWallet.swift`).
+    case lostWallet
 
     /// The voice tools that belong to the feature alone. A hidden feature's tools are refused by
     /// `ToolGate` before anything is looked up or logged, and they come off the live agent
@@ -127,10 +133,17 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .homeKit: [VoiceToolName.controlHome]
         case .presentations: [VoiceToolName.makePresentation]
         case .photosAndCamera: [VoiceToolName.findPhotos, VoiceToolName.openCamera]
+        // Doddy's own phone number (ADR-750 to 755): a text to the person's own number goes with the
+        // texts, a call booked for later with the calls.
+        case .updates: [VoiceToolName.textMe]
+        case .phoneCalls: [VoiceToolName.callMeLater]
+        case .invoices: [VoiceToolName.draftInvoice]
+        case .studio: [VoiceToolName.makeSomething]
+        case .payments: [PaymentToolName.payForPage]
+        case .lostWallet: [VoiceToolName.lostWallet]
         case .voiceProviderPicker, .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
              .recordings, .sharedLists, .shoppingModeLockScreen, .placeReminders, .eveningWrapUp, .weeklyLookBack,
-             .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .updates, .phoneCalls,
-             .callCases, .invoices, .parcels:
+             .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .callCases, .parcels:
             []
         }
     }
@@ -194,8 +207,8 @@ public struct ReleaseScope: Equatable, Sendable {
         .shoppingModeLockScreen, .placeReminders,
         .leaveBy, .parking, .birthdays, .eveningWrapUp, .weeklyLookBack, .weeklyPlan, .steps,
         .files, .doddyWeb, .cloudMemory, .onlineAccounts, .webSearch, .claudeDocuments, .deals, .errands, .priceWatch,
-        .following, .dailyNews, .updates, .phoneCalls, .callCases,
-        .health, .trainingPlan, .homeKit, .presentations, .invoices, .parcels,
+        .following, .dailyNews, .updates, .phoneCalls, .callCases, .studio, .payments,
+        .health, .trainingPlan, .homeKit, .presentations, .invoices, .parcels, .lostWallet,
     ])
 
     /// The Debug-only preference that shows everything on the owner's phone. A Release build never reads it.

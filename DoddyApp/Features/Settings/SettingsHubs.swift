@@ -125,6 +125,16 @@ struct ConnectionsSettingsView: View {
                     }
                     .accessibilityIdentifier("settings.invoices")
                 }
+                // ADR-735: USDC for pages that ask for payment. Off until the server has a wallet and the person turns it on.
+                // Hidden in the beta with its voice tool. Home's "a payment wasn't confirmed" banner stays in every build.
+                if scope.shows(.payments) {
+                    NavigationLink {
+                        PaymentsScreen()
+                    } label: {
+                        Text("Payments")
+                    }
+                    .accessibilityIdentifier("settings.payments")
+                }
                 // ADR-600: sign in to Doddy on the web with a code from this iPhone.
                 if scope.shows(.doddyWeb) {
                     NavigationLink {

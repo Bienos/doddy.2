@@ -4,20 +4,27 @@ import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
-import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, openSession } from "../calls.js";
+import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
+import type { NoteSource } from "../inbox.js";
 import { isAllowedNumber } from "../phoneCountries.js";
+import { formatClock, isValidTimeZone, QUIET_HOURS_DEFAULT } from "../quietHours.js";
+import { cancelScheduledCalls } from "../scheduledCalls.js";
 import { returnServerSlot, takeServerSlot } from "../serverUsage.js";
+import { callsAvailable } from "./twilioVoice.js";
 
 const settingsBody = z.object({
   inboundEnabled: z.boolean().optional(),
   outboundConsent: z.boolean().optional(),
   outboundConsentTextVersion: z.string().max(32).optional(),
+  /** The iPhone's current time zone, for quiet hours on scheduled calls (ADR-754). */
+  timeZone: z.string().refine(isValidTimeZone, "unknown time zone").optional(),
 }).refine((b) => b.outboundConsent !== true || OUTBOUND_CONSENT_VERSIONS.has(b.outboundConsentTextVersion ?? ""),
   { path: ["outboundConsentTextVersion"] });
 const pinBody = z.object({ pin: z.string() });
+const MAX_SNAPSHOT_ITEMS = 5000;
 const snapshotBody = z.object({
   items: z.array(z.object({
     // Postgres returns uuids in lowercase; the encryption binding must use the same spelling
@@ -25,7 +32,7 @@ const snapshotBody = z.object({
     id: z.uuid().transform((id) => id.toLowerCase()),
     text: z.string().min(1).max(5000),
     capturedAt: z.iso.datetime({ offset: true }).nullable().optional(),
-  })).max(5000),
+  })).max(MAX_SNAPSHOT_ITEMS),
 }).refine((b) => new Set(b.items.map((i) => i.id)).size === b.items.length, "duplicate ids");
 const idParam = z.object({ id: z.uuid() });
 
@@ -40,14 +47,16 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const ensureRow = (accountId: string) =>
     db.query("INSERT INTO call_settings (account_id) VALUES ($1) ON CONFLICT DO NOTHING", [accountId]);
 
+  const quiet = deps.quietHours ?? QUIET_HOURS_DEFAULT;
+
   app.get("/v1/calls/settings", { preHandler: auth }, async (req) => {
     const { accountId } = principal(req);
     // One round trip; the settings row may not exist yet.
     const { rows } = await db.query<{
       inbound_enabled: boolean | null; pin_set: boolean | null; pin_locked: boolean | null; outbound: boolean | null;
-      memory_on: boolean | null; copies: number; phone: boolean;
+      memory_on: boolean | null; copies: number; phone: boolean; time_zone: string | null;
     }>(
-      `SELECT s.inbound_enabled, s.pin_hash IS NOT NULL AS pin_set, coalesce(s.pin_locked_until > now(), false) AS pin_locked,
+      `SELECT s.inbound_enabled, s.time_zone, s.pin_hash IS NOT NULL AS pin_set, coalesce(s.pin_locked_until > now(), false) AS pin_locked,
               s.outbound_consent_at IS NOT NULL AS outbound, s.memory_copy_enabled_at IS NOT NULL AS memory_on,
               (SELECT count(*)::int FROM memory_copies WHERE account_id = $1) AS copies,
               EXISTS (SELECT 1 FROM phone_numbers WHERE account_id = $1) AS phone
@@ -56,7 +65,7 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const s = r.inbound_enabled === null ? undefined : r;
     return {
       // What the server can actually do; the app shows "needs setup" otherwise.
-      available: { inbound: !!(deps.toolSecret && deps.cipher), outbound: !!(deps.outbound && deps.toolSecret && deps.cipher) },
+      available: callsAvailable(deps),
       doddyNumber: deps.doddyPhoneNumber ?? null,
       phoneVerified: r.phone,
       inboundEnabled: s?.inbound_enabled ?? false,
@@ -64,6 +73,9 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       pinLocked: s?.pin_locked ?? false,
       outboundConsent: s?.outbound ?? false,
       memoryCopy: { enabled: s?.memory_on ?? false, count: r.copies },
+      // No scheduled call rings inside these, where the user is, unless its card allowed it.
+      quietHours: { start: formatClock(quiet.start), end: formatClock(quiet.end) },
+      timeZone: r.time_zone,
     };
   });
 
@@ -76,13 +88,19 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       if (!phone.rowCount) return reply.code(409).send({ error: "no_verified_phone" });
     }
     await ensureRow(accountId);
-    await db.query(
-      `UPDATE call_settings SET updated_at = now(),
-         inbound_enabled = coalesce($2, inbound_enabled),
-         outbound_consent_at = CASE WHEN $3::boolean IS NULL THEN outbound_consent_at WHEN $3 THEN now() END,
-         outbound_consent_text_version = CASE WHEN $3::boolean IS NULL THEN outbound_consent_text_version WHEN $3 THEN $4 END
-       WHERE account_id = $1`,
-      [accountId, body.inboundEnabled ?? null, body.outboundConsent ?? null, body.outboundConsentTextVersion ?? null]);
+    await inTransaction(db, async (c) => {
+      await c.query(
+        `UPDATE call_settings SET updated_at = now(),
+           inbound_enabled = coalesce($2, inbound_enabled),
+           outbound_consent_at = CASE WHEN $3::boolean IS NULL THEN outbound_consent_at WHEN $3 THEN now() END,
+           outbound_consent_text_version = CASE WHEN $3::boolean IS NULL THEN outbound_consent_text_version WHEN $3 THEN $4 END,
+           time_zone = coalesce($5, time_zone)
+         WHERE account_id = $1`,
+        [accountId, body.inboundEnabled ?? null, body.outboundConsent ?? null, body.outboundConsentTextVersion ?? null,
+          body.timeZone ?? null]);
+      // Turning calls from Doddy off also cancels the calls booked for later (ADR-754).
+      if (body.outboundConsent === false) await cancelScheduledCalls(c, accountId, "consent_off");
+    });
     return reply.code(204).send();
   });
 
@@ -111,9 +129,13 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     return reply.code(204).send();
   });
 
-  // "Call me now". Doddy only calls the verified number, only after explicit consent.
-  app.post("/v1/calls/outbound", { preHandler: auth, config: { rateLimit: { max: 3, timeWindow: "1 hour" } } }, async (req, reply) => {
-    if (!deps.outbound || !deps.toolSecret || !deps.cipher) return reply.code(503).send({ error: "not_configured" });
+  // "Call me now". Doddy only calls the verified number, only after explicit consent. Twilio rings
+  // it from Doddy's number; the phone agent and the call's session start only when it is answered
+  // (routes/twilioVoice.ts, ADR-750).
+  app.post("/v1/calls/outbound", {
+    preHandler: auth, config: { rateLimit: { max: OUTBOUND_HOURLY_LIMIT, timeWindow: "1 hour" } },
+  }, async (req, reply) => {
+    if (!callsAvailable(deps).outbound) return reply.code(503).send({ error: "not_configured" });
     const { accountId } = principal(req);
     const { rows } = await db.query<{ e164: string; consent: boolean }>(
       `SELECT p.e164, s.outbound_consent_at IS NOT NULL AS consent FROM phone_numbers p
@@ -139,14 +161,18 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       return true;
     });
     if (!underLimit) return reply.code(429).send({ error: "daily_limit" });
-    const variables = await openSession(db, accountId, callId, "outbound");
-    const outcome = await deps.outbound.placeCall(target.e164, { ...variables });
+    const outcome = await deps.outbound!.placeCall({
+      to: target.e164, from: deps.doddyPhoneNumber!,
+      answerUrl: `${deps.publicBaseUrl}/webhooks/twilio/voice/outbound/${callId}`,
+      statusCallbackUrl: `${deps.publicBaseUrl}/webhooks/twilio/call-status`,
+    });
     const status = outcome.kind === "accepted" ? "requested" : outcome.kind === "unknown" ? "unknown" : "failed";
+    // Only from "requested": Twilio's callbacks may already have moved the call on.
     await db.query(
-      "UPDATE calls SET status = $2, conversation_id = $3, call_sid = $4, error_code = $5 WHERE id = $1",
+      `UPDATE calls SET status = CASE WHEN status = 'requested' THEN $2 ELSE status END,
+         call_sid = coalesce(call_sid, $3), error_code = $4 WHERE id = $1`,
       [callId, status,
-        outcome.kind === "accepted" ? outcome.conversationId ?? null : null,
-        outcome.kind === "accepted" ? outcome.callSid ?? null : null,
+        outcome.kind === "accepted" ? outcome.callSid : null,
         outcome.kind === "accepted" ? null : outcome.code]);
     // Refused by the provider: no call was placed, so it doesn't use up the server's day. (An unknown outcome might be
     // ringing, so that one stays counted.) The account's own count stays, as before.
@@ -168,16 +194,17 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   app.get("/v1/call-notes", { preHandler: auth }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
     const { accountId } = principal(req);
-    const { rows } = await db.query<{ id: string; ciphertext: Buffer; created_at: Date }>(
-      "SELECT id, ciphertext, created_at FROM call_notes WHERE account_id = $1 ORDER BY created_at", [accountId]);
+    const { rows } = await db.query<{ id: string; ciphertext: Buffer; created_at: Date; source: NoteSource }>(
+      "SELECT id, ciphertext, created_at, source FROM call_notes WHERE account_id = $1 ORDER BY created_at", [accountId]);
     const cipher = deps.cipher;
     // A note that won't decrypt (e.g. after a key change) must not hide the others; it is listed
     // separately (older apps ignore the field) so it can still be discarded.
-    const notes: { id: string; text: string; createdAt: Date }[] = [];
+    // `source`: taken on a call, the user's text word for word, or written by Doddy from a text (ADR-753).
+    const notes: { id: string; text: string; createdAt: Date; source: NoteSource }[] = [];
     const unreadable: { id: string; createdAt: Date }[] = [];
     for (const r of rows) {
       try {
-        notes.push({ id: r.id, text: cipher.decrypt(r.ciphertext, `${accountId}:note:${r.id}`), createdAt: r.created_at });
+        notes.push({ id: r.id, text: cipher.decrypt(r.ciphertext, `${accountId}:note:${r.id}`), createdAt: r.created_at, source: r.source });
       } catch {
         unreadable.push({ id: r.id, createdAt: r.created_at });
       }
@@ -215,6 +242,11 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     preHandler: auth, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
   }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
+    // Checked before parsing, so an over-long list is refused without validating each element.
+    const rawItems = (req.body as { items?: unknown } | null)?.items;
+    if (!Array.isArray(rawItems) || rawItems.length > MAX_SNAPSHOT_ITEMS) {
+      return reply.code(400).send({ error: "invalid_request", fields: ["items"] });
+    }
     const body = parse(snapshotBody, req.body, reply);
     if (!body) return;
     const { accountId } = principal(req);

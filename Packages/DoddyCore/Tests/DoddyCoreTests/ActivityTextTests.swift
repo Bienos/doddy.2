@@ -40,6 +40,10 @@ final class ActivityTextTests: XCTestCase {
             .addIngredients(IngredientsProposal(list: "Shopping", dish: "Pancakes", items: ["Eggs"])),
             .findFreeTime(FreeTimeRequest(firstDay: now, days: 1)),
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
+            // ADR-750 U2.
+            .textMe(body: "Parcel code 4417"),
+            // ADR-754.
+            .callMeLater(CallLaterDraft(at: now.addingTimeInterval(3_600), reason: "Cake", timeZoneID: "Europe/Warsaw")),
             // ADR-567, ADR-568.
             .makePresentation(PresentationDraft(title: "Trip", subtitle: nil, slides: [PresentationSlide(title: "Day 1", points: ["Old Town"])])),
             .readSteps(StepDay(daysAgo: 0)!),
@@ -51,6 +55,8 @@ final class ActivityTextTests: XCTestCase {
             // ADR-570.
             .handOverErrand(ErrandDraft(words: "sprawdź loty do Rzymu", brief: "Loty do Rzymu w listopadzie.", title: "Rzym")),
             .checkErrands(about: nil),
+            // ADR-740.
+            .makeSomething(StudioJob(topic: "Pompy ciepła")),
             // ADR-652.
             .startStopwatch(label: "Bieg"), .stopStopwatch, .checkStopwatch,
             // ADR-626.
@@ -71,12 +77,13 @@ final class ActivityTextTests: XCTestCase {
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
              .draftMessage, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
-             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .findDeals,
-             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews:
+             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
-             .noteCapabilityGap:
-            // The gap tool leaves no row in What Doddy did (ADR-440).
+             .noteCapabilityGap, .lostWallet, .draftInvoice:
+            // The gap tool leaves no row in What Doddy did (ADR-440), nor does the lost-wallet
+            // checklist, which changes nothing (ADR-692), nor an invoice draft on screen (ADR-677).
             false
         }
     }
@@ -85,7 +92,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 46, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); one fewer since ADR-810 removed the BLIK draft")
+        XCTAssertEqual(kinds.count, 49, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); one fewer since ADR-810 removed the BLIK draft; plus make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
@@ -142,6 +149,7 @@ final class ActivityTextTests: XCTestCase {
         let fixed = [
             "Connections were paused.", "Doddy couldn't confirm it went through.", "Demo data from a test server, not your account.",
             ActivityLog.interruptedNote, "The conversation ended before you answered.", "Reminders isn't connected.",
+            "Twilio accepted the text; delivery isn't confirmed.", "Doddy's server has the text; it wasn't confirmed as sent yet.",
         ]
         for note in fixed { XCTAssertNotEqual(ActivityText.note(note, .polish), note, note) }
 

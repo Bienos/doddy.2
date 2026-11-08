@@ -72,6 +72,11 @@ enum PreferenceKey {
     /// reads it, and only through `DeviceSession.serverURL()` (ADR-720); a shipped build ignores it and
     /// removes a value an earlier build saved.
     static let connectedAppsServerURL = "connectedAppsServerURL"
+    /// Payments were switched on at some point; until then Home never asks the server about payments (ADR-736).
+    static let paymentsEverEnabled = "paymentsEverEnabled"
+    /// How many unconfirmed payments the person said they checked, and the server's last count (ADR-736).
+    static let paymentsAcknowledgedUnresolved = "paymentsAcknowledgedUnresolved"
+    static let paymentsLastUnresolved = "paymentsLastUnresolved"
     /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-587). Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
@@ -81,6 +86,8 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
+    /// Texts to Doddy (ADR-753), as the server last reported; for What leaves this iPhone.
+    static let textsToDoddyOn = "textsToDoddyOn"
     // Notes and conversations kept on Doddy's server (ADR-603) are `WebMemoryModel.notesKey` and
     // `WebMemoryModel.conversationsKey` in DoddyCore, off by default.
     /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
@@ -259,6 +266,8 @@ struct RootView: View {
                 Task { await noteReminders.refreshOnForeground() }
                 // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged.
                 Task { await ErrandsModel.shared.refresh() }
+                // Studio (ADR-740): asked again only while something is being made.
+                if StudioModel.shared.hasOpenItems { Task { await StudioModel.shared.refresh() } }
                 FocusController.shared.refresh()
                 StopwatchController.shared.refresh()
                 CountdownController.shared.refresh()
@@ -274,6 +283,8 @@ struct RootView: View {
                 // Notes kept on Doddy's server (ADR-603): the same, for a send that failed.
                 WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
                                                notesLoaded: store.hasLoaded && store.loadError == nil)
+                // Quiet hours for a booked call are checked in this iPhone's zone (ADR-754).
+                CallZoneSender.sendIfNeeded()
                 pickUpSharedItem()
                 Task { await OpenWaysReminderScheduler.refresh(router.setup) }
                 // Doddy's free server sleeps when idle (ADR-686): one health ping now starts its
@@ -490,7 +501,15 @@ struct RootView: View {
         !legalGateUp && !AppLock.shared.isLocked
             && FirstRunAccessRule.shouldShow(
                 seen: accessSeen, firstInstallation: profiles.isFirstInstallation,
-                override: UserDefaults.standard.object(forKey: "firstRunAccess") as? Bool)
+                override: firstRunAccessOverride)
+    }
+
+    /// The UI tests' `-firstRunAccess YES/NO`, or nil when it isn't passed. A launch argument arrives as the
+    /// text "YES" or "NO", not a Bool, so `as? Bool` never matched: `NO` was ignored, and a fresh install
+    /// showed the step over Home unless an earlier test had answered it (the release-scope PR's Mac run,
+    /// 7 Nov, where `FirstRunAccessUITests` didn't run first). Read like the welcome's `-welcome`.
+    private var firstRunAccessOverride: Bool? {
+        UserDefaults.standard.object(forKey: "firstRunAccess") == nil ? nil : UserDefaults.standard.bool(forKey: "firstRunAccess")
     }
 
     private var introductionPresentation: Binding<Bool> {

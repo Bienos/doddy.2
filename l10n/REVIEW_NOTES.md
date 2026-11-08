@@ -148,3 +148,10 @@ Eleven new Polish lines in `l10n/pl.json`, agent-written: "Skupienie i stoper" (
 ## Dynamic Island and Lock Screen, Polish (24 Oct 2026, ADR-617)
 
 92 lines in `l10n/pl.json` for the island's words: labels (GŁOS, SMS, PRZYPOMNIENIE, …), titles ("SMS do sprawdzenia", "Twój dokument jest gotowy"), second lines and the Lock Screen. Written in a coding session, not read by another Polish speaker. Check on a device first: whether PRZYPOMNIENIE fits beside the camera with LIVE, and whether "Wysyłasz go Ty, w Wiadomościach" reads naturally.
+
+## Added 2 November 2026 (ADR-828, the home page's privacy lines)
+
+Written by the agent that fixed the two lines, not by the translation agents; no native speaker has read them. The same native review applies:
+
+- The hero's small print and the early-access facts no longer say "Your notes stay on your iPhone" without a condition. They say the notes are stored on the iPhone and that voice, calls, shared lists and connected accounts (and mail, calendar and files) leave it only when the person switches them on. Two keys changed in all nine tables, plus the English master and its key list.
+- Polish, German, Spanish, French, Italian, Portuguese (Brazil), Japanese, Simplified Chinese and Croatian keep the register of the lines they replace (informal "ty", "du", "tu", "tú", "você").

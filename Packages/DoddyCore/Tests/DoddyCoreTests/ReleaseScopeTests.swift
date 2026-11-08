@@ -75,6 +75,13 @@ final class ReleaseScopeTests: XCTestCase {
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.handOverErrand), .errands)
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.startTranslator), .translator)
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.proposePlan), .planCard)
+        // Merged into main after the list was first written (8 Nov): placed, and hidden in the beta.
+        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.makeSomething), .studio)
+        XCTAssertEqual(scope.hiddenFeature(forTool: PaymentToolName.payForPage), .payments)
+        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.lostWallet), .lostWallet)
+        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.draftInvoice), .invoices)
+        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.textMe), .updates)
+        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.callMeLater), .phoneCalls)
     }
 
     func testShippingConnectionsFollowTheirFeature() {

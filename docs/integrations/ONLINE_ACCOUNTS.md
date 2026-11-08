@@ -177,7 +177,7 @@ The email or task text is not stored; only the argument digest, as before.
 
 ## API (all authenticated, strict bodies)
 
-`GET /v1/tools` · `PUT /v1/tools/switch {tool, enabled}` · `POST /v1/tools/{gmail|googledrive|notion|todoist}/{connect|complete|disconnect}` ·
+`GET /v1/tools` · `PUT /v1/tools/switch {tool, enabled}` · `PUT /v1/tools/access {app, mode: off|read|act}` (ADR-815: all of an app's switches at once; `find_in_app` and `read_from_app` are accepted by prepare and run for Gmail and Google Calendar) · `POST /v1/tools/{gmail|googledrive|notion|todoist}/{connect|complete|disconnect}` ·
 `POST /v1/tools/prepare {tool, arguments}` · `POST /v1/tools/run {tool, arguments, timeZone, approvalId?}` · `GET /v1/tools/receipts`.
 Contract fixtures: `contracts/online-accounts/*.json` (written by `npm run fixtures`, decoded by the Swift and TS tests).
 

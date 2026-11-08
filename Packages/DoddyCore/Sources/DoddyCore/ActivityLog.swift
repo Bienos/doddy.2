@@ -236,6 +236,18 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
+        case .textMe:
+            // The card shows the text; the log keeps none of it (review C2).
+            return ActivityRequest(app: .messages, title: "Text you from Doddy's number", detail: nil, isLookup: false)
+        case .callMeLater(let draft):
+            // The time, never the reason (ADR-754): the log is kept on the iPhone longer than the call.
+            var local = calendar
+            local.timeZone = draft.timeZone
+            let time = VoiceToolReply.localText(draft.at, hasTime: true, calendar: local)
+            return ActivityRequest(app: .messages, title: "Call you later from Doddy's number", detail: time, logDetail: time, isLookup: false)
+        case .draftInvoice:
+            // A draft on screen changes nothing and reads nothing (ADR-677); issuing will log itself.
+            return nil
         case .makePresentation(let draft):
             return ActivityRequest(
                 app: .presentations, title: "Make a presentation", detail: "“\(draft.title)” · \(draft.slideCount) slides",
@@ -341,11 +353,17 @@ public struct ActivityRequest: Equatable, Sendable {
         case .noteCapabilityGap:
             // A category Doddy notes for itself (ADR-440); no app is used and nothing changes.
             return nil
+        case .lostWallet:
+            // A checklist on screen (ADR-692): nothing changes, and what was lost isn't kept in the log.
+            return nil
         case .handOverErrand(let draft):
             // ADR-570: the 30-day log keeps that a task was handed over, not its title or words.
             return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
         case .checkErrands:
             return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
+        case .makeSomething(let job):
+            // ADR-740: the 30-day log keeps that a Studio job was asked for, not its topic.
+            return ActivityRequest(app: .web, title: "Make a research brief", detail: "\u{201C}\(job.topic)\u{201D}", logDetail: nil, isLookup: false)
         case .findDeals(let request):
             // SHOPPING.md: the card shows the items; the 30-day log keeps only how many and where.
             let count = request.items.count
@@ -394,6 +412,8 @@ public struct ActivityRequest: Equatable, Sendable {
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
         case CloudToolName.addTodoistTask: ActivityRequest(app: .todoist, title: "Add a task", detail: nil, isLookup: false)
         case CloudToolName.webSearch: ActivityRequest(app: .web, title: "Searched the web", detail: nil, isLookup: true)
+        // Never the address: it can say what the user was researching.
+        case PaymentToolName.payForPage: ActivityRequest(app: .web, title: "Paid for a page", detail: nil, isLookup: false)
         case CloudToolName.checkOutlookEmail: ActivityRequest(app: .outlook, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.readOutlookEmail: ActivityRequest(app: .outlook, title: "Read an email", detail: nil, isLookup: true)
         case CloudToolName.draftOutlookEmail: ActivityRequest(app: .outlook, title: "Create an email draft", detail: nil, isLookup: false)
@@ -569,6 +589,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
+        // Texts from Doddy's number (ADR-750 U2): accepted is not delivered, so not done.
+        if text.hasPrefix("sent:") { return (.notSure, "Twilio accepted the text; delivery isn't confirmed.") }
+        if text.hasPrefix("queued:") { return (.notSure, "Doddy's server has the text; it wasn't confirmed as sent yet.") }
         if text.hasPrefix("not found:") { return (.notDone, "Doddy couldn't find it, so nothing changed.") }
         // Round 3 (ADR-280, ADR-283): "partly" means only some of the ticked ones changed, so the
         // row says which part.

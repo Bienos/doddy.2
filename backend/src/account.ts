@@ -1,5 +1,5 @@
 import type { TokenFloors } from "./auth.js";
-import type { QueuedCleanup, Store, UserErasure } from "./store.js";
+import { CLEANUP_RETRY, type QueuedCleanup, type Store, type UserErasure } from "./store.js";
 
 /**
  * Deleting a Doddy account on the server (ADR-674): everything this backend keeps for the person
@@ -79,6 +79,16 @@ export class AccountEraser {
       kept: [...KEPT_EXPLAINED],
       erasedAt: new Date(now).toISOString(),
     };
+  }
+
+  /**
+   * Hourly (app.ts): retries removals owed after a deletion for `providers` that have no sweep of
+   * their own (ADR-818: a person's Supabase sign-in). Same rules as the other sweeps (CLEANUP_RETRY).
+   */
+  async sweep(providers: readonly string[]): Promise<void> {
+    const now = this.deps.now?.() ?? Date.now();
+    const due = await this.deps.store.cleanupsToRetry([...providers], now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    for (const cleanup of due) await this.remove(cleanup);
   }
 
   /** Removed and dequeued, or kept as `failed` for the sweep. A provider with no remover here stays queued. */
