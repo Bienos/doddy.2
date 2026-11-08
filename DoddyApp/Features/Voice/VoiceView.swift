@@ -1769,8 +1769,6 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.listReceipt")
     }
 
-    }
-
     /// The invoice being dictated (ADR-677): every word and sum from `InvoiceCard` (DoddyCore,
     /// tested). A value only the model suggested has its own Confirm; closing the card drops the
     /// draft. Nothing here sends anything: the card offers no issue button while
@@ -1794,6 +1792,8 @@ struct VoiceView: View {
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
         .accessibilityIdentifier("voice.invoiceDraft")
+    }
+
     /// One side of a change card: "Now" or "After", then the title and when.
     private func changeRow(after: Bool, title: String?, when: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
