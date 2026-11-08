@@ -87,7 +87,13 @@ extension XCUIApplication {
             if isReachable(element) { return true }
             scrollStep()
         }
-        return isReachable(element)
+        let reached = isReachable(element)
+        if !reached {
+            // The hosted log has no screenshots, so say what was on screen: a failure here can be read
+            // from the log (three LaunchSmokeTests failed this way on 7 Nov 2026 with nothing to go on).
+            print("reveal failed: \(element), exists=\(element.exists), hittable=\(element.isHittable), frame=\(element.frame)\n\(debugDescription)")
+        }
+        return reached
     }
 
     /// Scrolls up just over half the screen with no momentum: less than the visible height, so no
