@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { DEV_IDENTITIES } from "../src/auth.js";
 import { loadConfig } from "../src/config.js";
-import { ProviderError } from "../src/errors.js";
+import { AppError, ProviderError } from "../src/errors.js";
+import { MEMORY_MAX_NOTES } from "../src/memory/contract.js";
 import { MemoryCipher } from "../src/memory/crypto.js";
 import { fold, queryTerms } from "../src/memory/search.js";
 import { type ClaudeProvider, ClaudeRefusal, MockClaudeProvider, type StructuredInput } from "../src/tools/claude.js";
@@ -212,6 +213,23 @@ for (const [name, items] of BAD_SNAPSHOTS) {
     assert.equal((await rig.store.memoryNoteRows(ID_A)).length, 1);
   });
 }
+
+test("a note list over the most is refused before any note in it is read; one at the most is stored", async () => {
+  rig = await startWeb();
+  await turnOn(rig);
+  let touched = 0;
+  const trap = new Proxy({}, { get: () => { touched += 1; return undefined; } });
+  await assert.rejects(rig.memory.replaceNotes(ID_A, { items: Array.from({ length: MEMORY_MAX_NOTES + 1 }, () => trap) }), (e: unknown) => e instanceof AppError && e.code === "invalid_request");
+  assert.equal(touched, 0, "no note was looked at");
+
+  const over = await putNotes(rig, Array.from({ length: MEMORY_MAX_NOTES + 1 }, (_, i) => note(i + 1, "a b", { capturedAt: ago(1) })));
+  assert.equal(over.status, 400, over.text.slice(0, 200));
+  assert.equal(over.body.error.code, "invalid_request");
+  assert.equal(over.body.error.message, "That wasn't valid (items). Nothing was stored.");
+  const atMost = await putNotes(rig, Array.from({ length: MEMORY_MAX_NOTES }, (_, i) => note(i + 1, "a b", { capturedAt: ago(1) })));
+  assert.equal(atMost.status, 200, atMost.text.slice(0, 200));
+  assert.equal((await rig.store.memoryNoteRows(ID_A)).length, MEMORY_MAX_NOTES);
+});
 
 test("a refusal names the section and never what was sent", async () => {
   rig = await startWeb();

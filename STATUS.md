@@ -2,27 +2,27 @@
 
 Doddy is a voice-first companion for iPhone and iPad. The Apple Watch app and the Mac menu bar prototype are **paused** (ADR-572). This page says what is true now, in one page. **Replace facts when they change; don't add dated log paragraphs.** What a pull request changed goes in `changes/` (see `changes/README.md`); the full log up to 7 Nov 2026 is in `docs/archive/STATUS-log-2026-10-08-to-2026-11-07.md`.
 
-Last checked: **7 Nov 2026, 19:30 UTC** (GitHub, and Render read-only through its API). Repository facts re-checked against the code the same evening (docs review, decision `docs/decisions/2026-11-07-plain-readme.md`); live services not re-read.
+Last checked: **7 Nov 2026, 20:30 UTC** (GitHub; Render last read 19:30 UTC through its API). Repository facts re-checked against the code (docs review, decision `docs/decisions/2026-11-07-plain-readme.md`, re-checked on 8 Nov after the merge of `main`); live services not re-read.
 
 ## Code
 - **Default branch:** `main` (renamed from `claude/loving-dirac-uuxoux` on 7 Nov 2026). It is the only permanent branch; every change arrives by pull request (`AGENTS.md`, last section).
 - **CI:** `.github/workflows/ios.yml`. Pushes to `main` run every job (ADR-765, ADR-811); pull requests run path-selected jobs and the UI smoke classes.
-- **Open pull requests:** [GitHub list](https://github.com/Bienos/doddy.2/pulls). Long-running drafts that are off by default and for review only: #196 (Doddy's own phone number), #193 (Studio research jobs), #192 (USDC pay-for-pages).
-- **Decisions:** ADR-001 to ADR-812 in `DECISIONS.md` (look them up by number, never read the file whole); new ones in `docs/decisions/`.
+- **Open pull requests:** [GitHub list](https://github.com/Bienos/doddy.2/pulls). On 7 Nov every open pull request but one was merged into `main` (owner: "make sure all branches are merged"; `changes/merge-all-open-prs-2026-11-07.md`). Still open: #172 (the Mac UI tests split over four jobs), held because it conflicts with the CI design #209 and #211 chose the same day. Merged but **off until the owner turns them on:** #196 (Doddy's own phone number), #193 (Studio research jobs), #192 (USDC pay-for-pages).
+- **Decisions:** ADR-001 to ADR-828 in `DECISIONS.md` (look them up by number, never read the file whole); new ones in `docs/decisions/`.
 
 ## On a phone
-- **Last build recorded as working on a device:** `ce02763` (PR #60, 11 Oct). Newer builds have been run since, but none is recorded by commit. Nothing merged since 20 Oct has a recorded device check.
+- **Last build recorded as working on a device:** `ce02763` (PR #60, 11 Oct). Newer builds have been run since, but none is recorded by commit. Nothing merged since 20 Oct has a recorded device check. To try everything merged on 7 Nov, build `main` (`make project`, scheme `Doddy`) and record the commit here.
 - **TestFlight:** Xcode Cloud is the one path (ADR-697), into the App Store Connect record for `com.bienos.doddy2.dev`, which is **Doddy Beta** (ADR-812). It hasn't produced a build yet: its first runs failed on package resolution and on a quoted project value. The fix for both, #200, was merged on 7 Nov; the next Xcode Cloud run will show whether it works.
 
 ## Live services
 | Service | Runs | Notes |
 |---|---|---|
-| `doddy` (Render, https://doddy-yaci.onrender.com): phone backend and Doddy Web | `360c99f` (4 Nov), deployed 5 Nov 05:49 UTC | Branch `main`, auto-deploy off. Since then `main` changed only Logbook's tool list (#195: `backend/src/web/logbook.ts` and two `web/` files, adding `follow_news` and `control_home`); it matters once the iPhone sends Logbook days. Free plan: sleeps after about 15 minutes. |
+| `doddy` (Render, https://doddy-yaci.onrender.com): phone backend and Doddy Web | `360c99f` (4 Nov), deployed 5 Nov 05:49 UTC | Branch `main`, auto-deploy off. **Behind `main`:** #186 (Google and Apple sign-in on the web), #184 (generic app tools) and #192 (payments, off) changed `backend/` and `web/` on 7 Nov; not deployed. Free plan: sleeps after about 15 minutes. |
 | `doddy`'s database (Supabase) | Free plan | Pauses after 7 days without use (engineering audit, 7 Nov). Its password is to be rotated (owner queue 6). |
-| `doddy-messaging` (Render): Messages, errands, leaflets, texts and calls, push | `174ba21` (#198), deployed 7 Nov 13:58 UTC (owner queue 19) | Branch `main`, auto-deploy off. Free plan, with the worker inside the web process. |
+| `doddy-messaging` (Render): Messages, errands, leaflets, texts and calls, push | `174ba21` (#198), deployed 7 Nov 13:58 UTC (owner queue 19) | Branch `main`, auto-deploy off. **Behind `main`:** Studio (#193), the phone number (#196, off), phone-agent conversation deletion and the other #169 parts changed `server/messaging/` on 7 Nov; not deployed. The next deploy applies migrations 017 to 020 (two files start 017; they run in name order). Free plan, with the worker inside the web process. |
 | `doddy-messaging-db` (Render Postgres) | Free plan | **Expires 10 Nov 2026, 10:11 UTC**, read 7 Nov 19:30 UTC. Not upgraded. Everything the messaging server keeps is in it (owner queue 1). |
-| Vercel `doddy-voice-token`, `doddy` (www.doddy.lol), `doddy-gateway` | Production builds of the default branch | After the rename, the Production Branch setting must say `main` (owner queue 20). Pull requests' Vercel statuses say "Account is blocked." The gateway is unused by the app (ADR-586, ADR-587) and has no variables, so it answers 503. |
-| ElevenLabs agent (main) | One agent for Debug, TestFlight and future App Store builds | Authentication off (owner queue 4). 103 tools when last read (1 Nov): the 101 now in `voice-agent/tools.json`, plus `draft_blik_transfer` (removed from the spec on 5 Nov, ADR-810, still on the live agent until the owner asks for a sync) and `draft_invoice` from unmerged work. `tools.json` still lacks the live ids of `hand_over_errand` and `check_errands`. The phone and task-call agents aren't created yet. |
+| Vercel `doddy-voice-token`, `doddy` (www.doddy.lol), `doddy-gateway` | Production builds of the default branch | After the rename, the Production Branch setting must say `main` (owner queue 20). Pull requests' Vercel statuses say "Account is blocked." The gateway is unused by the app (ADR-587). |
+| ElevenLabs agent (main) | One agent for Debug, TestFlight and future App Store builds | Authentication off (owner queue 4). `draft_invoice` (#161) and `lost_wallet` (#176) are live on it and now on `main` too. The tools of #193, #196 and #192 (`make_something`, `text_me`, `call_me_later`, `pay_for_page`) are in `voice-agent/` but not on the live agent; the agent is changed only on the owner's instruction. |
 | Old Render copies `doddy-gateway`, `doddy-voice-token` | Old branch, free plan | Not used. Delete them. |
 
 ## Platforms

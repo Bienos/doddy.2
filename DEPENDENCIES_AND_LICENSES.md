@@ -34,6 +34,13 @@ Pinned exactly in `backend/package.json`; full tree locked in `backend/package-l
 | @types/node (dev) | 22.20.5 | MIT | Node type definitions |
 | @types/pg (dev) | 8.23.0 | MIT | `pg` type definitions |
 
+**Payments (x402, 2026-10-12) added no dependency.** The Coinbase wallet adapter (`backend/src/payments/coinbase.ts`) is
+plain REST with Node's built-in `node:crypto` (Ed25519 and ES256 JWTs), and the seller client uses `node:https`. Coinbase's
+`@coinbase/cdp-sdk` (MIT) was deliberately not added: it pulls in viem, the Solana libraries and axios, which is a lot of
+unreviewed code on a path that moves money. The cost is that the request format is written by hand from Coinbase's published
+docs and SDK source and has **not been run against the real service**; revisit if that proves brittle. Coinbase's
+`@x402/*` packages (Apache-2.0) were not used either: the buyer side is one file of about 300 lines (`payments/x402.ts`), and Doddy needs its own address checks regardless.
+
 Runtime: Node.js 22. The backend no longer uses `node:sqlite` (ADR-525). `@composio/core`
 declares `engines.node >= 22.22.3`; the authoring environment ran Node 22.22.0 — all tests passed, but use ≥ 22.22.3.
 

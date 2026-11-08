@@ -1,6 +1,6 @@
 # Doddy Web (browser)
 
-**State (7 Nov 2026):** on the default branch (`main`) since 23 Oct (the web line's merge, #133); the chat since 28 Oct (ADR-657; ADR-604 on its branch). **Live** on the Render service `doddy` at https://doddy-yaci.onrender.com, recorded in `STATUS.md` as running `360c99f` (4 Nov), deployed 5 Nov 05:49 UTC. Since then only #195 has changed `backend/` and `web/` (two more tool names in Logbook's list, `follow_news` and `control_home`, 7 Nov), and it isn't deployed yet. Tested in Chromium against the real backend in mock mode. Signed-in use of the live site and the chat with the real model aren't recorded as tried. Decisions: ADR-600 (sign-in and sessions), ADR-601 (stack and hosting), ADR-602 (Logbook), ADR-603 (kept memory), ADR-594 (the website's design), ADR-657 (the chat). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
+**State (7 Nov 2026):** on the default branch (`main`) since 23 Oct (the web line's merge, #133); the chat since 28 Oct (ADR-657; ADR-604 on its branch). **Live** on the Render service `doddy` at https://doddy-yaci.onrender.com, recorded in `STATUS.md` as running `360c99f` (4 Nov), deployed 5 Nov 05:49 UTC. Since then #184 (generic app tools), #186 (Google and Apple sign-in, ADR-818), #192 (payments, off) and #195 (two more tool names in Logbook's list, `follow_news` and `control_home`) changed `backend/` and `web/` (all merged 7 Nov), and none is deployed yet (`STATUS.md`). Tested in Chromium against the real backend in mock mode. Signed-in use of the live site and the chat with the real model aren't recorded as tried. Decisions: ADR-600 (sign-in and sessions), ADR-601 (stack and hosting), ADR-602 (Logbook), ADR-603 (kept memory), ADR-594 (the website's design), ADR-657 (the chat). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
 
 History: built on `claude/exciting-carson-08x2pk`; the service ran `d03562ae` from `claude/friendly-faraday-8juosh` from 22 Oct 21:39 UTC (the website's design and Logbook), then `69762f6` (the chat) from 24 Oct 11:08 UTC, then the default branch.
 
@@ -33,6 +33,13 @@ Doddy Web follows the website's design (owner, 22 Oct): the cream canvas, a stic
 3. The browser gets an HttpOnly, SameSite=Strict cookie for the same server account. It lasts 30 days, or until 14 days unused.
 
 The phone can list and sign out every browser. A browser can sign itself or others out.
+
+## Google and Apple (ADR-818, branch `claude/web-google-apple-signin`)
+The code still works. Next to it, the sign-in page shows "Continue with Google" and "Continue with Apple" once the server has `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. They open a person's own Doddy account only after they have linked Google or Apple to it once:
+- **On the iPhone:** Settings › Doddy on the web › Link Google (or Apple). The phone opens the system sign-in sheet with a one-time ticket from the server.
+- **In a browser signed in with a code:** Settings › Sign-in methods › Link.
+
+Linking from the iPhone takes effect only when that iPhone confirms it with its own session, so a ticket forwarded to someone else can't link their account to the sender's. A browser can link or unlink only within 15 minutes of signing in with a code. A Google or Apple account that isn't linked to any Doddy account can make a new one (owner, 3 Nov 2026): the sign-in page asks "Make a Doddy account with Google?", and only "Create my Doddy account" makes it (`POST /v1/web/signup`); `DODDY_WEB_SIGNUP=off` stops that. A web-made account starts empty, works with the web workspace and the chat, and is deleted in Settings › Delete account (an iPhone's account is still deleted on the iPhone). The iPhone app can sign in to it too: Settings › Doddy on the web › Your account from the web › Sign in with Google (ADR-819). One that is linked to another Doddy account is refused, and nothing is merged. Both sides list and unlink. The server runs the sign-in itself (OAuth with PKCE through Supabase Auth, `backend/src/web/social.ts`), so the browser never holds a Supabase token. The owner's setup steps (Google and Apple in Supabase, the redirect address, Render's two variables) are in `docs/integrations/DEPLOY_RENDER.md`, "Google and Apple on the web". **Not tried against the real Supabase, Google or Apple, and the iPhone part hasn't been compiled yet** (the hosted Mac job is its first build).
 
 ## Folders
 | Folder | What |
@@ -69,7 +76,7 @@ curl -s -X POST localhost:8787/v1/web/link-codes -H "authorization: Bearer $TOKE
 | Command | What |
 |---|---|
 | `npm test` in `backend/` | All backend tests; `test/web.test.ts` is the web part (sign-in, isolation, CSRF, expiry, revocation, documents, pages, logs) |
-| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 125 tests (7 Nov): 50 for Logbook, 25 for the chat page, 5 for signing out |
+| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 143 tests (8 Nov 2026, run after merging `main`; the type-check passes too) |
 | `npm run build` in `backend/` and `web/`, then `npm run e2e` in `web/` | Playwright: the real backend (mock providers, in-memory database) serving the built app, Chromium at desktop and phone width |
 | `DODDY_SCREENS=<folder> npx playwright test e2e/screens.spec.ts` in `web/` | Screenshots in light and dark, for a person to look at |
 | `scripts/ci.sh --core-only`, or `--only backend,node` | All of the above (the web steps are in the `node` group). The end-to-end run is SKIPPED (not PASS) where there's no Playwright Chromium (`PLAYWRIGHT_BROWSERS_PATH`), as in the hosted Linux `node` job |
@@ -81,7 +88,7 @@ The web app is served by the existing Render service `doddy`, so there's no new 
    - `DODDY_WEB_ORIGIN=https://app.doddy.lol`, once that name points at the service as a Render custom domain (owner decision 8). This is recommended: the phone's signed document links stay on `DODDY_PUBLIC_BASE_URL` (the Render address), a different origin from the web session. `https://doddy-yaci.onrender.com` also works for a first try; then those links share the web app's origin (see the audit's security section).
    - `DODDY_TRUST_PROXY=1`.
    - Optional: `DODDY_WEB_SIGNIN_TRIES_PER_CLIENT` (default 10 per quarter hour; raise it for an office behind one address).
-   - Signing in and the pages add nothing secret. `DODDY_SESSION_SIGNING_KEY` and the database are already there.
+   - Signing in with a code and the pages add nothing secret (Google and Apple sign-in need `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`, above). `DODDY_SESSION_SIGNING_KEY` and the database are already there.
    - Memory and Messages need one secret, `DODDY_MEMORY_KEY` (base64 of 32 random bytes); without it they say "not set up". It isn't in `render.yaml` or `secrets/manifest.json` (the 7 Nov audit asks for it).
 3. **Deploy** the branch or main (autoDeploy is off). Check:
    - `GET /v1/health` answers;

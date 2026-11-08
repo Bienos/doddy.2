@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import { LogbookDeleted, LogbookView } from "../logbook/schema.js";
 import { ChatContext, ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../memory/schema.js";
-import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, SignedOut, ThreadView, ToolsCatalog } from "./schemas.js";
+import { AccountDeleted, AccountKind, CurrentSession, DocumentList, ErrorBody, IdentityList, ReceiptList, SessionList, SignedOut, SignedUp, SignInOptions, type SocialProvider, ThreadView, ToolsCatalog, Unlinked } from "./schemas.js";
 
 /**
  * Talks to Doddy's server on this page's own origin (ADR-600). The session is a cookie the page
@@ -112,6 +112,27 @@ export const api = {
   signIn: (code: string) => json(CurrentSession, "/v1/web/session", { method: "POST", body: { code } }).then((r) => r.session),
   signOut: () => json(SignedOut, "/v1/web/session", { method: "DELETE" }),
   sessions: (signal?: AbortSignal) => json(SessionList, "/v1/web/sessions", { signal }).then((r) => r.sessions),
+  /** Which Apple or Google buttons the sign-in page shows (ADR-818). An older server has none. */
+  signInOptions: (signal?: AbortSignal) => api.signInSetup(signal).then((r) => r.providers),
+  /** The buttons, and whether a new account can be made with one. */
+  signInSetup: (signal?: AbortSignal): Promise<{ providers: SocialProvider[]; signup: boolean }> =>
+    json(SignInOptions, "/v1/web/sign-in-options", { signal }).catch((error: unknown) => {
+      if (error instanceof ApiError && error.code === "not_found") return { providers: [] as SocialProvider[], signup: false };
+      throw error;
+    }),
+  /** "Create my Doddy account" after Google or Apple sent the person back without one. */
+  signUp: () => json(SignedUp, "/v1/web/signup", { method: "POST", body: {} }),
+  /** Whether this account was made on the web. A server without the route: no. */
+  account: (signal?: AbortSignal) =>
+    json(AccountKind, "/v1/web/account", { signal }).catch((error: unknown) => {
+      if (error instanceof ApiError && error.code === "not_found") return { madeOnWeb: false };
+      throw error;
+    }),
+  /** Deletes the whole account and everything Doddy's server keeps for it, then this browser is signed out. */
+  deleteAccount: () => json(AccountDeleted, "/v1/web/account/delete", { method: "POST", body: { confirm: "delete" } }),
+  /** Apple and Google sign-ins linked to this account. */
+  identities: (signal?: AbortSignal) => json(IdentityList, "/v1/web/identities", { signal }).then((r) => r.identities),
+  unlinkIdentity: (id: string) => json(Unlinked, `/v1/web/identities/${encodeURIComponent(id)}`, { method: "DELETE" }),
   revokeSession: (id: string) => json(SignedOut, `/v1/web/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   documents: (signal?: AbortSignal) => json(DocumentList, "/v1/web/documents", { signal }),
   /** The iPhone's Messages thread, as it last sent it. Read only. */
@@ -158,3 +179,11 @@ export const api = {
     return response.blob();
   },
 };
+
+/**
+ * Where the browser goes to sign in with Apple or Google, or to link one to this account (ADR-818).
+ * A whole-page navigation: the server sends it on to Supabase, then Apple or Google, and back.
+ */
+export function socialStartUrl(provider: SocialProvider, intent: "signin" | "link"): string {
+  return `/v1/web/oauth/start?${new URLSearchParams({ provider, ...(intent === "link" ? { intent } : {}) })}`;
+}

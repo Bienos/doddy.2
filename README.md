@@ -6,7 +6,7 @@ Doddy is an app for iPhone and iPad that you talk to. You say what you need in a
 
 This repository holds everything: the iPhone app, the servers behind it, Doddy Web (a browser version for the same account), the website [www.doddy.lol](https://www.doddy.lol) and all the documents.
 
-> **Where things stand (7 Nov 2026).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone, but it is not on TestFlight or the App Store yet. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
+> **Where things stand (7 Nov 2026, checked against `main` again on 8 Nov).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone, but it is not on TestFlight or the App Store yet. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
 
 ## How Doddy works
 
@@ -18,21 +18,21 @@ Three promises shape the whole app. They are written down in [docs/trust/](docs/
 
 ## What Doddy can do today
 
-This is what the code on `main` does (7 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
+This is what the code on `main` does (7 Nov 2026, checked against `main` again on 8 Nov, after the open pull requests were merged). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
 
 - **Talk.** Tap Doddy on Home and talk. He listens only after a tap ("Start listening when I open Doddy" stays off unless you turn it on). The voice runs on ElevenLabs, or on OpenAI if you choose it in Settings › Voice; while you talk, your voice goes to that company.
 - **Remember.** Notes and lists live in a database on the phone. Doddy asks before keeping anything. You can find notes by their words or their meaning, correct them, delete them, export them, and back them up to an encrypted file.
 - **Your day.** With iOS's permission he reads and changes your calendar and reminders (several changes on one card, with undo), looks up contacts and birthdays, drafts texts and emails for you to send, sets timers and alarms (alarms need iOS 26), remembers where you parked and tells you when to leave. There are also shopping lists, a translator, meeting recordings written out on the phone, steps and Apple Health, and morning and evening check-ins.
-- **With help from the servers.** Web, news and place searches; a typed chat in Messages answered by Claude; Gmail, Outlook, Google Calendar, Drive, Notion and Todoist once you connect them; documents and slide decks; this week's shop leaflets; longer tasks that run in the background. Some of these are off on the server until they are switched on.
+- **With help from the servers.** Web, news and place searches; a typed chat in Messages answered by Claude; Gmail, Outlook, Google Calendar, Drive, Notion and Todoist once you connect them, and other online apps you add yourself; documents and slide decks; this week's shop leaflets; longer tasks that run in the background; research briefs and infographics (Studio). Some of these are off on the server until they are switched on, Studio among them.
 - **Around the phone.** Home Screen and Lock Screen widgets, Doddy in the Dynamic Island while he talks, Siri and Shortcuts, the Action Button, and "Save to Doddy" in the Share menu.
 - **Languages.** The app's screens are in Polish by default, with English and eight more languages to choose from. The eight are machine translations no native speaker has checked yet.
-- **Doddy Web.** In a browser, sign in with a code from your iPhone to see the documents Doddy made, your connected apps, his activity and a chat. Logbook, Memory and Messages are ready on the server, but the iPhone doesn't send them yet.
+- **Doddy Web.** In a browser, sign in with a code from your iPhone (or with Google or Apple, once you have linked them to your account and the server is set up for it) to see the documents Doddy made, your connected apps, his activity and a chat. Logbook, Memory and Messages are ready on the server, but the iPhone doesn't send them yet.
 - **The website** [www.doddy.lol](https://www.doddy.lol) explains Doddy in ten languages and has an early-access list.
 
 **Not done yet:**
 - On the welcome screen only Sign in with Apple works; the other sign-in buttons aren't connected.
-- Calling Doddy's phone number, and Doddy phoning a business for you, are written but not live: their voice agents haven't been created.
-- Invoices can't be sent to inFakt, and Doddy can't pay for anything (the BLIK transfer card was removed on 5 Nov, ADR-810).
+- Calling Doddy's phone number, texts and calls from it, and Doddy phoning a business for you, are written but not live: their voice agents haven't been created, and the phone-number features are merged but off.
+- Invoices can't be sent to inFakt or KSeF. Doddy can't pay for anything you can use: paying for a web page in USDC is merged but off by default, on a test network only (the BLIK transfer card was removed on 5 Nov, ADR-810).
 - The app isn't on TestFlight yet. The Apple Watch and Mac apps are paused.
 
 ## How the parts fit together
@@ -43,7 +43,7 @@ flowchart LR
     app -- "talks to" --> voice["Voice agent<br/>(ElevenLabs, or OpenAI)"]
     app -- "voice sign-in" --> token["Voice token server<br/>(Vercel)"]
     app -- "account, files, connected apps" --> backend["Doddy server 'doddy'<br/>(Render)"]
-    app -- "messages, errands, leaflets,<br/>texts, calls, notifications" --> messaging["Messaging server<br/>(Render + Postgres)"]
+    app -- "messages, errands, leaflets,<br/>texts, calls, Studio, notifications" --> messaging["Messaging server<br/>(Render + Postgres)"]
     browser((Browser)) --> web["Doddy Web<br/>(served by 'doddy')"] --> backend
     visitors((Visitors)) --> site["Website www.doddy.lol<br/>(Vercel)"]
 ```
@@ -63,7 +63,7 @@ flowchart LR
 | [`voice-agent/`](voice-agent/README.md) | What the voice agents are told and which tools they have: the main agent, the phone agent and the task-call agent. |
 | `backend/` | The main server (`doddy` on Render): accounts, connected apps, documents Doddy makes, and Doddy Web. |
 | [`web/`](web/README.md) | Doddy Web, the browser app for the same account. |
-| [`server/messaging/`](server/messaging/README.md) | The messaging server: messages, errands, shop leaflets, texts and calls, push notifications. |
+| [`server/messaging/`](server/messaging/README.md) | The messaging server: messages, errands, shop leaflets, texts and calls, Studio, push notifications. |
 | [`server/voice-token/`](server/voice-token/README.md) | Hands the app a short-lived pass to start a voice conversation. |
 | [`gateway/`](gateway/README.md) | An older assistant server. The app no longer uses it. |
 | [`site/`](site/README.md), [`blog/`](blog/README.md) | The website www.doddy.lol and its blog. |

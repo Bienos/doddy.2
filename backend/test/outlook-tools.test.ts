@@ -63,10 +63,10 @@ test("Outlook's tools, each named once; every write behind a tap; nothing delete
   assert.ok(CLOUD_TOOLS.filter((t) => t.risk === "write").every((t) => t.maxRetries === 0), "a write is never retried");
   assert.match(TOOLKITS.outlook.access, /each only after you tap the card/);
   assert.match(TOOLKITS.outlook.access, /never deletes anything for good/);
-  for (const name of OUTLOOK_TOOLS) assert.match(TOOL_COPY[name]!.blurb, /On when you connect the account; switch it off any time\.$/, name);
+  for (const name of OUTLOOK_TOOLS) assert.match(TOOL_COPY[name]!.blurb, /Off until you choose what Doddy may do with this account; change it any time\.$/, name);
 });
 
-test("connecting Outlook turns every switch on (ADR-563); each tool switched off refuses, and nothing reaches the provider", async () => {
+test("once the user chose act, every Outlook switch is on (ADR-816); each tool switched off refuses, and nothing reaches the provider", async () => {
   rig = await start();
   const connected = await connect(rig, "outlook");
   assert.equal(connected.status, 200, connected.text);

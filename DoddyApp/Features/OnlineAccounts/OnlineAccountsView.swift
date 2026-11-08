@@ -19,7 +19,7 @@ struct OnlineAccountsScreen: View {
 }
 
 /// Settings → Online accounts. One section per account, one switch per tool. Web search starts on and
-/// an account's tools come on with it (ADR-563); a switch moves only after Doddy's server accepts it.
+/// an account's tools start off after connecting until the user chooses (ADR-816, which replaces ADR-563 for accounts); a switch moves only after Doddy's server accepts it.
 struct OnlineAccountsView: View {
     @State private var model: OnlineAccountsModel
     @State private var confirmConnect: ToolkitView?
@@ -66,7 +66,7 @@ struct OnlineAccountsView: View {
 
             if let catalog = model.catalog {
                 Section {
-                    Text("Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.")
+                    Text("Web search is on. When you connect an account its tools start off, and you choose what Doddy may do with it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. You can switch any tool off here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -113,6 +113,12 @@ struct OnlineAccountsView: View {
         } message: { toolkit in
             Text("Doddy switches off every \(toolkit.title) tool right away and asks \(toolkit.title) to remove its access. Nothing you saved in Doddy is deleted.")
         }
+        .sheet(item: Binding<ToolkitView?>(
+            get: { model.choosingAccess.flatMap { model.toolkit($0) } },
+            set: { if $0 == nil { model.dismissAccessChoice() } })
+        ) { toolkit in
+            AccessChoiceSheet(toolkit: toolkit, model: model)
+        }
         .foregroundStyle(Theme.ink)
     }
 
@@ -130,7 +136,7 @@ struct OnlineAccountsView: View {
     private func connectExplanation(_ toolkit: ToolkitView) -> String {
         model.isDemo
             ? "This server is in demo mode. No \(toolkit.title) account is used; you'll see made-up data."
-            : "You'll sign in to \(toolkit.title) on its own secure page, not inside Doddy. \(toolkit.access) The tools stay off until you switch them on."
+            : "You'll sign in to \(toolkit.title) on its own secure page, not inside Doddy. \(toolkit.access) Afterwards you choose what Doddy may do with it."
     }
 
     // MARK: Account section
@@ -148,6 +154,19 @@ struct OnlineAccountsView: View {
             .accessibilityElement(children: .combine)
 
             controls(toolkit)
+
+            if toolkit.status == .connected, toolkit.hasAccount {
+                Picker("What Doddy may do", selection: Binding(
+                    get: { model.accessMode(toolkit.id) },
+                    set: { mode in Task { await model.setAccess(toolkit.id, mode: mode) } })
+                ) {
+                    ForEach(AppAccess.allCases, id: \.self) { mode in
+                        Text(Self.accessTitle(mode)).tag(mode)
+                    }
+                }
+                .disabled(model.settingAccess.contains(toolkit.id) || model.busyToolkit != nil)
+                .accessibilityIdentifier("onlineAccounts.access.\(toolkit.id)")
+            }
 
             if toolkit.status == .connected {
                 ForEach(toolkit.tools) { tool in
@@ -241,6 +260,22 @@ struct OnlineAccountsView: View {
         }
     }
 
+    static func accessTitle(_ mode: AppAccess) -> String {
+        switch mode {
+        case .off: NSLocalizedString("Off", comment: "")
+        case .read: NSLocalizedString("Look only", comment: "")
+        case .act: NSLocalizedString("Look and act", comment: "")
+        }
+    }
+
+    static func accessDetail(_ mode: AppAccess) -> String {
+        switch mode {
+        case .off: NSLocalizedString("Doddy won't use this account.", comment: "")
+        case .read: NSLocalizedString("Doddy can look things up in this account when you ask. He asks first every time.", comment: "")
+        case .act: NSLocalizedString("Doddy can also send, add or change things, but only after you tap a card that shows exactly what will happen.", comment: "")
+        }
+    }
+
     static func permissionText(_ toolkit: ToolkitView) -> String {
         switch toolkit.reason {
         case .grantTooBroad:
@@ -250,6 +285,63 @@ struct OnlineAccountsView: View {
         default:
             "The access \(toolkit.title) granted isn't what Doddy expects, so it won't use it. Reconnect and allow what's asked."
         }
+    }
+}
+
+/// Shown right after an account is connected (ADR-816): its tools are all off until the person says what
+/// Doddy may do. Three plain options, none pre-selected. "Not now" leaves the account connected and off.
+private struct AccessChoiceSheet: View {
+    let toolkit: ToolkitView
+    let model: OnlineAccountsModel
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text(toolkit.title).font(.headline)
+                    Text("Choose what Doddy may do with this account. You can change it any time in Settings.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
+                if let message = model.message {
+                    Section {
+                        Label(message, systemImage: "info.circle")
+                            .font(.footnote)
+                            .accessibilityIdentifier("onlineAccounts.access.message")
+                    }
+                }
+
+                Section {
+                    ForEach([AppAccess.read, .act, .off], id: \.self) { mode in
+                        Button {
+                            Task { await model.setAccess(toolkit.id, mode: mode) }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(OnlineAccountsView.accessTitle(mode)).font(.headline)
+                                Text(OnlineAccountsView.accessDetail(mode))
+                                    .font(.footnote)
+                                    .foregroundStyle(Theme.secondaryText)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .disabled(model.settingAccess.contains(toolkit.id))
+                        .accessibilityIdentifier("onlineAccounts.access.choose.\(mode.rawValue)")
+                    }
+                }
+
+                Section {
+                    Button("Not now") { model.dismissAccessChoice() }
+                        .accessibilityIdentifier("onlineAccounts.access.notNow")
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Theme.canvas)
+            .navigationTitle("What may Doddy do?")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .foregroundStyle(Theme.ink)
+        .presentationDetents([.medium, .large])
     }
 }
 

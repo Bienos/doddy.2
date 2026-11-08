@@ -4,7 +4,7 @@ import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { abuseLimits } from "../config.js";
 import { inTransaction } from "../db.js";
-import { EncryptionNotConfigured, enqueue, IdempotencyConflict, SmsDailyLimit, usableChannels, type Channel } from "../outbox.js";
+import { EncryptionNotConfigured, enqueue, ERASE, IdempotencyConflict, SmsDailyLimit, usableChannels, type Channel } from "../outbox.js";
 
 const MAX_DAYS_AHEAD = 30;
 
@@ -61,8 +61,8 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!p) return;
     // Scoped by account: another account's id is indistinguishable from a missing one.
     const { rows } = await db.query(
-      `SELECT id, channel, state, send_at AS "sendAt", delivery_status AS "deliveryStatus", error_code AS "errorCode"
-       FROM outbound_messages WHERE id = $1 AND account_id = $2`,
+      `SELECT id, channel, state, send_at AS "sendAt", delivery_status AS "deliveryStatus", error_code AS "errorCode",
+         lookup FROM outbound_messages WHERE id = $1 AND account_id = $2`,
       [p.id, principal(req).accountId]);
     if (!rows[0]) return reply.code(404).send({ error: "not_found" });
     return rows[0];
@@ -72,10 +72,9 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const p = parse(idParam, req.params, reply);
     if (!p) return;
     const r = await db.query(
-      // Both body forms go: with an encryption key the text sits in body_ciphertext, and the
-      // table refuses a final row that still holds either (migration 007).
-      `UPDATE outbound_messages SET state = 'cancelled', error_code = 'cancelled_by_user',
-         body = NULL, body_ciphertext = NULL, body_key_version = NULL, updated_at = now()
+      // ERASE clears the encrypted text too (before U2 only the plain one was cleared, which an
+      // encrypted queued message refused).
+      `UPDATE outbound_messages SET state = 'cancelled', error_code = 'cancelled_by_user', ${ERASE}, updated_at = now()
        WHERE id = $1 AND account_id = $2 AND state = 'queued'`,
       [p.id, principal(req).accountId]);
     if (r.rowCount) return reply.code(204).send();

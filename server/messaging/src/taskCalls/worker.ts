@@ -308,19 +308,19 @@ export async function settleCosts(ctx: TaskCallContext): Promise<number> {
 // ---------- deletions ----------
 
 /** Deletes conversations at ElevenLabs; "deleted" only once a read confirms it is gone. */
-export async function runDeletions(ctx: TaskCallContext): Promise<number> {
+export async function runDeletions(ctx: Pick<TaskCallContext, "db" | "voice" | "now" | "log">): Promise<number> {
   const now = ctx.now();
   const { rows } = await ctx.db.query<{ id: string; provider_ref: string; tries: number; attempt_id: string | null }>(
     `SELECT id, provider_ref, tries, attempt_id FROM server_data_deletions
      WHERE result = 'pending' AND location = 'elevenlabs' AND next_try_at <= $1 ORDER BY next_try_at LIMIT 10`, [now]);
   for (const r of rows) {
     // Capture the voice cost first if it is still missing.
-    if (r.attempt_id) {
+    if (r.attempt_id && "telephony" in ctx) {
       const { rows: pending } = await ctx.db.query("SELECT 1 FROM call_cost_items WHERE attempt_id = $1 AND component = 'elevenlabs_voice' AND status = 'pending'", [r.attempt_id]);
       if (pending.length) {
         await ctx.db.query("UPDATE call_cost_items SET next_try_at = $2 WHERE attempt_id = $1 AND component = 'elevenlabs_voice' AND status = 'pending'", [r.attempt_id, now]);
         await ctx.db.query("UPDATE call_attempts SET el_conversation_id = coalesce(el_conversation_id, $2) WHERE id = $1", [r.attempt_id, r.provider_ref]);
-        await settleCosts(ctx);
+        await settleCosts(ctx as TaskCallContext);
       }
     }
     const del = await ctx.voice.deleteConversation(r.provider_ref);

@@ -56,7 +56,7 @@ The app hasn't used the gateway since 22 Oct (ADR-586, ADR-587); it stays until 
 never been called against the real OpenAI API.
 
 ### Messaging server (Node 22 + Postgres)
-The `messaging` group installs and tests `server/messaging/` (Messages, errands, leaflets, texts and calls, push).
+The `messaging` group installs and tests `server/messaging/` (Messages, errands, leaflets, texts and calls, Studio, push).
 Set `TEST_DATABASE_URL` to a **disposable** Postgres database (the tests drop its schema); without it the database
 tests are listed as SKIPPED. The hosted Linux job provides one. See `server/messaging/README.md`. The app has the
 live server's address built in (`DoddyApp/Infrastructure/Server/ServerConfig.swift`); a Debug build can point at
@@ -135,7 +135,7 @@ Mac build.
 ## Layout
 
 ```
-DoddyApp/                    the iPhone and iPad app (SwiftUI): App/, Features/ (one folder per feature, 57 of them;
+DoddyApp/                    the iPhone and iPad app (SwiftUI): App/, Features/ (one folder per feature, 60 of them;
                              the map is docs/platforms/iphone.md), DesignSystem/, Infrastructure/, Intents/, Resources/
                              (string catalogs generated from l10n/, asset catalog, PrivacyInfo.xcprivacy)
 Shared/                      code built into the app and its extensions: Live Activity, island art, widget snapshot, intents
@@ -217,7 +217,7 @@ It began on 9 Oct as a read-only Google Calendar view, which a Debug build still
 cd backend
 npm ci                    # installs the pinned versions from package-lock.json
 npm run typecheck         # type-checks against the installed @composio/core declarations
-npm test                  # builds, then 510 offline tests (7 Nov 2026, about 9 minutes); no secrets, no network
+npm test                  # builds, then 649 offline tests (8 Nov 2026, about 15 minutes here); no secrets, no network
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
 ```
 `scripts/ci.sh --only backend` runs the same install, type-check and tests.

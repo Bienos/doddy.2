@@ -75,6 +75,13 @@ final class VoiceSessionController {
         case leaveBy(toolCallID: String, plan: LeaveByPlan)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
+        /// "Send this text to you?" (ADR-750 U2): from Doddy's number to the user's own verified
+        /// number, exactly `draft.body`. The tap approves that text for that number only.
+        case text(toolCallID: String, draft: ApprovedTextDraft)
+        /// "Call you later?" (ADR-754): from Doddy's number to the user's own verified number `to`,
+        /// at `draft.at`, saying `draft.reason` first. The tap approves that with the card's
+        /// quiet-hours switch (`callLaterAllowQuiet`).
+        case callLater(toolCallID: String, draft: CallLaterDraft, to: String, quietHours: CallQuietHours)
         /// ASK-01 (ADR-483): "Doddy wants to …" before a tool with no card of its own runs. A read
         /// runs on a tap or the user's own spoken yes; a change (`needsTap`) only on a tap. The
         /// call is kept as it came, and handled again after the yes.
@@ -99,7 +106,7 @@ final class VoiceSessionController {
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
-                 .presentation(let id, _), .camera(let id), .home(let id, _):
+                 .presentation(let id, _), .camera(let id), .home(let id, _), .text(let id, _), .callLater(let id, _, _, _):
                 id
             }
         }
@@ -158,6 +165,14 @@ final class VoiceSessionController {
         let url: URL
         let title: String
         let slideCount: Int
+    }
+
+    /// "I lost my wallet" (ADR-692): the official steps, as shown. `done` holds only the steps the
+    /// person ticked themselves; Doddy never ticks one and can't see whether a step was done.
+    struct LostWalletCard: Equatable {
+        let situation: LostWalletSituation
+        let steps: [LostWalletStep]
+        var done: Set<LostWalletStepID> = []
     }
 
     /// Contacts found by a lookup. Shown on screen only; the agent receives names.
@@ -244,6 +259,9 @@ final class VoiceSessionController {
     }
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
+    /// The payment card the voice agent asked for (ADR-736). Only a page address came from the agent; the card
+    /// shows Doddy's server's own terms. Kept after the outcome until the person closes the card.
+    private(set) var paymentApproval: PaymentApprovalModel?
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
@@ -331,8 +349,25 @@ final class VoiceSessionController {
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
+    /// True from the tap on Send text until its result (ADR-750 U2): the card is gone by then.
+    private(set) var textSending = false
+    /// The "Call even in quiet hours" switch on a call-later card (ADR-754); off for each new card.
+    var callLaterAllowQuiet = false
+    /// True from the tap on Book call until the server's answer.
+    private(set) var callBooking = false
     /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
     private(set) var changeReceipt: ChangeReceipt?
+    /// The lost-wallet checklist (ADR-692). It stays on screen until dismissed or the next
+    /// conversation, so the steps are there while the person uses mObywatel or their bank. In
+    /// memory only: what was lost and the ticks are never saved or sent.
+    private(set) var lostWalletCard: LostWalletCard?
+    /// The invoice being dictated (ADR-677): what the person said and the draft made from it. Kept on
+    /// this iPhone between conversations (ADR-678, `InvoiceDraftFile`, read back after every write)
+    /// until the card is closed or Delete all; never sent. Issuing in inFakt is the card's own tap
+    /// (ADR-640), not offered yet.
+    private(set) var invoiceSession = InvoiceVoiceSession()
+    /// An earlier draft's file couldn't be read and was set aside; the next draft reply says so once.
+    @ObservationIgnored private var invoiceDraftWasSetAside = false
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession? {
@@ -500,6 +535,12 @@ final class VoiceSessionController {
         phase = .speaking
     }
 
+    /// Test seam only (ADR-821, the screens run): a line of the transcript, as the provider's own
+    /// events add one, so a photographed conversation shows what was said before its card.
+    func addLineForTesting(_ text: String, fromUser: Bool) {
+        lines.append(Line(fromUser: fromUser, text: text))
+    }
+
     /// Test seam only: the provider's disconnect.
     func disconnectForTesting(_ kind: VoiceSessionEnd.Disconnect) {
         disconnected(kind)
@@ -596,6 +637,8 @@ final class VoiceSessionController {
         translator = nil
         listReceipt = nil
         changeReceipt = nil
+        lostWalletCard = nil
+        restoreInvoiceDraft()
         translatorSummary = nil
         translatorFactsSaved = nil
         holdToTalk = false
@@ -1601,6 +1644,19 @@ final class VoiceSessionController {
             let record = await runConfirmedCloud(call, approvalID: approvalID, app: asked[id]?.app ?? .gmail)
             writeResults[id] = WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
             await reply(id, record.reply)
+        case .text(let id, let draft):
+            textSending = true
+            let result = await sendApprovedText(draft)
+            textSending = false
+            writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
+            await reply(id, result.reply)
+        case .callLater(let id, let draft, let to, let quietHours):
+            callBooking = true
+            let result = await bookCall(draft, to: to, quietHours: quietHours, allowQuietHours: callLaterAllowQuiet)
+            callBooking = false
+            callLaterAllowQuiet = false
+            writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
+            await reply(id, result.reply)
         case .noteReminder(let id, let memoryID, let noteText, _, let target):
             guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
@@ -1812,6 +1868,10 @@ final class VoiceSessionController {
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
+        case .text(let id, _): await reply(id, VoiceToolReply.textDeclined)
+        case .callLater(let id, _, _, _):
+            callLaterAllowQuiet = false
+            await reply(id, VoiceToolReply.callDeclined)
         case .presentation(let id, _): await reply(id, VoiceToolReply.presentationDeclined)
         case .camera(let id): await reply(id, VoiceToolReply.cameraDeclined)
         case .home(let id, _): await reply(id, VoiceToolReply.homeDeclined)
@@ -2009,6 +2069,63 @@ final class VoiceSessionController {
     func dismissListReceipt() {
         listReceipt = nil
     }
+
+    func dismissLostWalletCard() {
+        lostWalletCard = nil
+    }
+
+    /// The person's own tick (ADR-692): it records only that they said they did the step.
+    func toggleLostWalletStep(_ id: LostWalletStepID) {
+        guard var card = lostWalletCard, card.steps.contains(where: { $0.id == id }) else { return }
+        if card.done.contains(id) { card.done.remove(id) } else { card.done.insert(id) }
+        lostWalletCard = card
+    }
+
+    /// The step's official page or number, on the person's tap. Only what DoddyCore allows opens.
+    func openLostWalletStep(_ step: LostWalletStep) {
+        guard let action = step.action, LostWalletPlan.isAllowed(action), let url = action.url else { return }
+        Task { _ = await open(url) }
+    }
+
+    /// The user tapped Confirm next to a value only the model suggested (ADR-677): the NIP or a
+    /// line's VAT rate, exactly as the card showed it.
+    func confirmInvoiceSuggestion(_ field: InvoiceField) {
+        guard invoiceSession.confirmSuggested(field) else { return }
+        Self.invoiceDraftFile?.save(invoiceSession)
+    }
+
+    /// The user closed the invoice card: the draft is gone from the screen and from this iPhone;
+    /// nothing was sent anywhere.
+    func dismissInvoiceDraft() {
+        invoiceSession.close()
+        Self.invoiceDraftFile?.remove()
+    }
+
+    /// The draft kept from an earlier conversation (ADR-678), with a default issue date moved to today.
+    private func restoreInvoiceDraft() {
+        invoiceSession = InvoiceVoiceSession()
+        guard let file = Self.invoiceDraftFile else { return }
+        switch file.load() {
+        case .none: break
+        case .setAside: invoiceDraftWasSetAside = true
+        case .draft(var kept):
+            if let today = CalendarDate.day(of: Date(), in: .current), kept.refreshDefaults(today: today) { file.save(kept) }
+            invoiceSession = kept
+        }
+    }
+
+    /// The VAT register from this iPhone, then CEIDG through Doddy's server when the register has no
+    /// such taxpayer or couldn't be asked (ADR-685, `CompanyLookup.combined`).
+    private static func lookUpCompany(_ nip: Nip, on day: CalendarDate) async -> CompanyLookup {
+        let vat = await VatRegisterClient.shared.lookup(nip, on: day)
+        guard vat.asksCeidgToo, let server = ServerConfig.client() else { return vat }
+        return CompanyLookup.combined(vat: vat, ceidg: await server.lookupCeidg(nip, on: day))
+    }
+
+    /// Application Support/Invoices/invoice-draft.json; a new file for each UI-test launch.
+    static let invoiceDraftFile: InvoiceDraftFile? = ProcessInfo.processInfo.arguments.contains("-inMemoryStore")
+        ? InvoiceDraftFile(url: FileManager.default.temporaryDirectory.appendingPathComponent("invoice-draft-\(UUID().uuidString).json"))
+        : InvoiceDraftFile.inApplicationSupport()
 
     /// The user fixed the name on the "Start a new list?" card.
     func changeNewListName(_ name: String) {
@@ -2303,7 +2420,9 @@ final class VoiceSessionController {
         // A spoken yes answers a read only (ADR-483); an ask that needs a tap (ADR-716) says nothing of "yes".
         case .ask(_, _, let needsTap, _, _): return needsTap ? .other : .askFirst
         case .cloudRead: return .askFirst
-        case .memory, .plan, .bulk, .undo, .parking, .home: return .other
+        // A text from Doddy's number, or a call booked for later (ADR-752, ADR-754): not "a text you send yourself",
+        // so the island says only that something waits for a tap.
+        case .memory, .plan, .bulk, .undo, .parking, .home, .text, .callLater: return .other
         }
     }
 
@@ -2896,6 +3015,51 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
+        case .draftInvoice(let update):
+            // ADR-677: the draft on the card changes with each detail the user dictates. Only the
+            // user's own transcribed words count as having said a NIP or a VAT rate; nothing leaves
+            // this iPhone, and issuing is the card's own tap (not offered while
+            // InFaktAPI.createVerified is false).
+            guard let today = CalendarDate.day(of: Date(), in: .current) else {
+                await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the iPhone's date couldn't be read."), isError: true)
+                return
+            }
+            let userWords = lines.filter(\.fromUser).map(\.text)
+            var session = invoiceSession
+            switch session.apply(update, userWords: userWords, today: today) {
+            case .drafted(var operation, var notes):
+                guard onScreen(attempt) else {
+                    await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the conversation ended before the draft could be shown."))
+                    return
+                }
+                invoiceSession = session
+                // ADR-685: a NIP the person said is looked up in the public registers, the VAT register
+                // from this iPhone and CEIDG through Doddy's server; only the NIP leaves the phone.
+                // The answer is applied to the draft as it is now, and only if the NIP is still the same.
+                if let nip = invoiceSession.registerLookupNip {
+                    if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) {
+                        notes.append(.registerPaused)
+                    } else {
+                        let lookup = await Self.lookUpCompany(nip, on: today)
+                        guard onScreen(attempt) else {
+                            await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the conversation ended before the draft could be shown."))
+                            return
+                        }
+                        notes += invoiceSession.applyRegister(lookup, for: nip)
+                        operation = invoiceSession.operation ?? operation
+                    }
+                }
+                // Kept only when the file reads back as this draft (ADR-678); the agent hears which.
+                let kept = Self.invoiceDraftFile?.save(invoiceSession) ?? false
+                var text = VoiceToolReply.invoiceDraft(operation, notes: notes, kept: kept)
+                if invoiceDraftWasSetAside {
+                    invoiceDraftWasSetAside = false
+                    text += "\nAn earlier invoice draft on this iPhone couldn't be read, so it was set aside, not deleted. Tell the user in one sentence."
+                }
+                await reply(call.toolCallId, text)
+            case .refused(let reason):
+                await reply(call.toolCallId, VoiceToolReply.invoiceRefused(reason))
+            }
         case .makePresentation(let draft):
             // ADR-567: every slide on a card; the file is made only on the tap.
             propose(.presentation(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
@@ -2978,6 +3142,10 @@ final class VoiceSessionController {
             }
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
+        case .textMe(let body):
+            await proposeText(body, toolCallID: call.toolCallId)
+        case .callMeLater(let draft):
+            await proposeCallLater(draft, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
             guard let setup = proposal.setup(ownerDefault: Self.ownerLanguage) else {
                 await reply(call.toolCallId, VoiceToolReply.failed("Both languages are the same. Ask the user which language the other person speaks."), isError: true)
@@ -3034,10 +3202,27 @@ final class VoiceSessionController {
             await reply(call.toolCallId, await ErrandsModel.shared.handOver(draft))
         case .checkErrands(let about):
             await reply(call.toolCallId, await ErrandsModel.shared.agentReply(about: about))
+        case .makeSomething(let job):
+            // ADR-740: after the user's tap on the ask card above (a spoken yes can't start it, ADR-742),
+            // the app creates the job on Doddy's server and approves it with the digest of that job. That
+            // one tap covers its web look-ups and making its files, within the server's dollar limits;
+            // it is never approved twice.
+            if let issue = job.validationIssues().first {
+                await reply(call.toolCallId, VoiceToolReply.failed(issue.reason), isError: true)
+                return
+            }
+            await reply(call.toolCallId, await StudioModel.shared.make(job))
         case .findDeals(let request):
             // SHOPPING.md 2: after the ask card's yes, one request to Doddy's server, which reads the
             // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.
             await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
+        case .lostWallet(let situation):
+            // ADR-692: the checklist is its own card and changes nothing. Its steps and links come
+            // from DoddyCore's table; a page opens or a number is dialled only on the person's tap.
+            if isCurrent(call.toolCallId) {
+                lostWalletCard = LostWalletCard(situation: situation, steps: LostWalletPlan.steps(for: situation, polish: Self.cardsInPolish))
+            }
+            await reply(call.toolCallId, VoiceToolReply.lostWalletShown(situation))
         case .noteCapabilityGap(let category):
             // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
             // "Written down" only after the write (ADR-672); no store or a failed write says so.
@@ -3320,9 +3505,39 @@ final class VoiceSessionController {
         return entry
     }
 
+    /// The voice agent proposed paying for a page (ADR-736). The agent only names the page. The card shows the
+    /// server's exact terms; the person confirms (typing the amount for larger payments), then Face ID; only then
+    /// does Doddy's server pay. The agent hears the outcome after the person has decided, and never pays itself.
+    private func handlePayForPage(_ call: CloudToolCall, toolCallID: String) async {
+        guard let url = PaymentToolName.address(from: call) else {
+            await reply(toolCallID, VoiceToolReply.paymentBadArguments, isError: true)
+            return
+        }
+        if let open = paymentApproval, open.phase != .idle {
+            await reply(toolCallID, VoiceToolReply.paymentCardOpen, isError: true)
+            return
+        }
+        guard let client = PaymentsClientFactory.make() else {
+            await reply(toolCallID, VoiceToolReply.paymentNotSetUp, isError: true)
+            return
+        }
+        let model = PaymentApprovalModel(client: client, authenticator: FaceIDPaymentAuthenticator())
+        paymentApproval = model
+        await model.start(url: url)
+        let outcome = await model.outcome()
+        var failed = false
+        if case .failed = outcome { failed = true }
+        await reply(toolCallID, VoiceToolReply.paymentOutcome(outcome), isError: failed)
+    }
+
     /// Gmail, Drive, Notion, Todoist and web search go through Doddy's server, which checks the tool's
     /// switch (and, for accounts, the connection and the grant). Reads answer at once; writes show a card first.
+    /// `pay_for_page` is answered by its own payment card first (ADR-736).
     private func handleCloud(_ cloud: CloudToolCall, toolCallID: String) async {
+        if cloud.name == PaymentToolName.payForPage {
+            await handlePayForPage(cloud, toolCallID: toolCallID)
+            return
+        }
         guard let client = await OnlineAccountsClientFactory.ready() else {
             await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)
             return
@@ -3608,6 +3823,167 @@ final class VoiceSessionController {
             WidgetSync.shared.refresh()
             await reply(toolCallID, ParkingStore.current() == nil ? VoiceToolReply.parkingCleared : VoiceToolReply.failed("The parking spot couldn't be removed."))
         }
+    }
+
+    // MARK: Texts from Doddy's number (ADR-750 U2)
+
+    /// One messaging client for approved texts while Doddy runs, shared by every conversation, so
+    /// a try-again after an unknown outcome reuses its idempotency key and the server sends that
+    /// text at most once (`DoddyServerClient.sendApprovedText`). The key lives in memory only:
+    /// after Doddy is closed, a new try is a new request.
+    private static var textClient: (url: URL, client: DoddyServerClient)?
+    /// Approval hashes of texts whose outcome was unknown, so the card can say so.
+    private(set) static var unconfirmedTexts: Set<String> = []
+    /// When each approved text was queued, by approval hash, so a card for the same text again
+    /// says it was already sent (the agent may ask again after its own wait ran out).
+    private(set) static var queuedTexts: [String: Date] = [:]
+
+    private static func messagingClient() -> DoddyServerClient? {
+        guard let url = ServerConfig.baseURL() else { return nil }
+        if let held = textClient, held.url == url { return held.client }
+        guard let client = ServerConfig.client() else { return nil }
+        textClient = (url, client)
+        return client
+    }
+
+    /// Asks Doddy's server which number is the user's and whether texts are on before the card is
+    /// shown. Nothing is sent here; the card waits for the tap.
+    private func proposeText(_ body: String, toolCallID: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(toolCallID, VoiceToolReply.textNoServer, isError: true)
+            return
+        }
+        // No account yet means no verified number; asking the server would create an account.
+        guard await client.hasAccount() else {
+            await reply(toolCallID, VoiceToolReply.textNotReady(.noPhone))
+            return
+        }
+        let readiness: TextReadiness
+        do {
+            readiness = TextReadiness(try await client.phoneStatus())
+        } catch {
+            await reply(toolCallID, VoiceToolReply.textCheckFailed(error as? ServerError), isError: true)
+            return
+        }
+        guard case .ready(let to) = readiness else {
+            await reply(toolCallID, VoiceToolReply.textNotReady(readiness))
+            return
+        }
+        propose(.text(toolCallID: toolCallID, draft: ApprovedTextDraft(body: body, to: to)), toolCallID: toolCallID)
+    }
+
+    /// After the tap: the text and the approval hash of exactly what the card showed go to the
+    /// server, which checks the hash against the number it holds before queueing. Then a few
+    /// seconds of status, so the reply says what is known and no more (DOD-08).
+    private func sendApprovedText(_ draft: ApprovedTextDraft) async -> (reply: String, attempted: Bool) {
+        guard let client = Self.messagingClient() else { return (VoiceToolReply.textNoServer, false) }
+        let outcome: ApprovedTextOutcome
+        do {
+            outcome = try await client.sendApprovedText(draft.body, approvalHash: draft.approvalHash)
+        } catch {
+            // Certainly not queued: offline before it left, or an answer that means it never ran.
+            return (VoiceToolReply.textNotSent(error as? ServerError), false)
+        }
+        switch outcome {
+        case .unknown:
+            Self.unconfirmedTexts.insert(draft.approvalHash)
+            return (VoiceToolReply.textUnknown, true)
+        case .refused(let code):
+            return (VoiceToolReply.textRefused(code), false)
+        case .queued(let queued):
+            Self.unconfirmedTexts.remove(draft.approvalHash)
+            Self.queuedTexts[draft.approvalHash] = Date()
+            // A few seconds at most, so the reply comes well inside the agent's wait; after that
+            // the reply says the server has it, and What Doddy did keeps the rest.
+            let deadline = Date().addingTimeInterval(6)
+            var status: UpdateStatus?
+            while Date() < deadline {
+                try? await Task.sleep(for: .seconds(1))
+                guard let latest = try? await client.updateStatus(queued.id, timeout: 3) else { break }
+                status = latest
+                if !latest.isPending { break }
+            }
+            return (VoiceToolReply.textResult(status), true)
+        }
+    }
+
+    // MARK: Calls from Doddy's number later (ADR-754)
+
+    /// Approval hashes of calls whose booking was unknown, so the card can say so.
+    private(set) static var unconfirmedCalls: Set<String> = []
+
+    /// Asks Doddy's server which number is the user's, whether calls from Doddy are on and what
+    /// quiet hours are before the card is shown. Nothing is booked here.
+    private func proposeCallLater(_ draft: CallLaterDraft, toolCallID: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(toolCallID, VoiceToolReply.callNoServer, isError: true)
+            return
+        }
+        // No account yet means no verified number; asking the server would create an account.
+        guard await client.hasAccount() else {
+            await reply(toolCallID, VoiceToolReply.callNotReady(.noPhone))
+            return
+        }
+        let readiness: CallReadiness
+        do {
+            async let settings = client.callSettings()
+            async let phone = client.phoneStatus()
+            readiness = CallReadiness(settings: try await settings, phone: try await phone)
+        } catch {
+            await reply(toolCallID, VoiceToolReply.callCheckFailed(error as? ServerError), isError: true)
+            return
+        }
+        guard case .ready(let to, let quietHours) = readiness else {
+            await reply(toolCallID, VoiceToolReply.callNotReady(readiness))
+            return
+        }
+        callLaterAllowQuiet = false
+        propose(.callLater(toolCallID: toolCallID, draft: draft, to: to, quietHours: quietHours), toolCallID: toolCallID)
+    }
+
+    /// After the tap: the time, reason and quiet-hours choice go to the server with the approval
+    /// hash of exactly what the card showed. The server books it; the call is placed later.
+    private func bookCall(
+        _ draft: CallLaterDraft, to: String, quietHours: CallQuietHours, allowQuietHours: Bool
+    ) async -> (reply: String, attempted: Bool) {
+        // An earlier try of this call (either switch) had an unclear outcome: a refusal now
+        // doesn't mean nothing is booked.
+        let identity = draft.identity(to: to)
+        let mayBeBooked = Self.unconfirmedCalls.contains(identity)
+        // The card may have waited: a time inside quiet hours needs the switch, and a time that
+        // is now under a minute away can't be booked.
+        if draft.inQuietHours(quietHours) && !allowQuietHours {
+            return (VoiceToolReply.callRefused("quiet_hours", quietHours: quietHours, mayBeBooked: mayBeBooked), false)
+        }
+        if draft.at.timeIntervalSinceNow < 60 { return (VoiceToolReply.callRefused("too_soon", mayBeBooked: mayBeBooked), false) }
+        guard let client = Self.messagingClient() else { return (VoiceToolReply.callNoServer, false) }
+        do {
+            switch try await client.scheduleCall(draft, to: to, allowQuietHours: allowQuietHours, language: .current) {
+            case .booked:
+                Self.unconfirmedCalls.remove(identity)
+                Self.rememberBooked(draft)
+                return (VoiceToolReply.callBooked(draft, calendar: .current), true)
+            case .refused(let code):
+                return (VoiceToolReply.callRefused(code, quietHours: quietHours, mayBeBooked: mayBeBooked), false)
+            case .unknown:
+                Self.unconfirmedCalls.insert(identity)
+                Self.rememberBooked(draft)
+                return (VoiceToolReply.callUnknown, true)
+            }
+        } catch {
+            // Certainly not booked now: offline before it left, or an answer that means it never ran.
+            let reply = VoiceToolReply.callNotBooked(error as? ServerError)
+            return (mayBeBooked ? reply + " An earlier try of this call may already be booked: tell the user to check Settings, Phone calls." : reply, false)
+        }
+    }
+
+    /// So the app sends its time zone again when it comes to the front while this call may be
+    /// waiting (CallZoneSync); the booking itself sent this zone.
+    private static func rememberBooked(_ draft: CallLaterDraft) {
+        let defaults = UserDefaults.standard
+        let until = defaults.object(forKey: CallZoneSync.waitingUntilKey) as? Date
+        defaults.set(max(until ?? draft.at, draft.at), forKey: CallZoneSync.waitingUntilKey)
+        defaults.set(draft.timeZoneID, forKey: CallZoneSync.lastSentKey)
     }
 
     private func propose(_ action: PendingAction, toolCallID: String) {
@@ -4489,7 +4865,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .text, .callLater: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs.
