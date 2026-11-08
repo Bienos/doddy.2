@@ -1,0 +1,3 @@
+Agents squash-merge their own pull requests once `core`, `ios-build` and `sensitive-paths` are green, and add `owner-approved` themselves (owner, 8 Nov; decision `2026-11-08-agents-merge-their-own-pull-requests`, `AGENTS.md` "Merging"). A merge ships to Vercel production and Xcode Cloud.
+The rule commit of #250 on its own, so it lands without waiting for #250's app build (owner, 8 Nov: separate pull request now). #250 carries the same lines and still merges cleanly.
+Ran: `python3 -I scripts/verify_imported_pack.py`, `scripts/ci.sh --only checks`, `scripts/check_sensitive_paths.sh` (results in the pull request).
