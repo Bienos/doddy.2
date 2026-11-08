@@ -40,7 +40,9 @@ final class EncryptedBackupTests: XCTestCase {
     func testRoundTripAndWrongPassphrase() throws {
         let (contents, _, _) = try contents()
         let file = try EncryptedBackup.encrypt(contents, passphrase: passphrase, iterations: 1_000)
-        XCTAssertFalse(String(decoding: file, as: UTF8.self).contains("4512"), "nothing readable without the passphrase")
+        // The whole phrase, not "4512": four characters turn up by chance in about 3 KB of random base64
+        // (roughly 1 run in 5,000, with a fresh random salt each time), and that failed a Mac build.
+        XCTAssertFalse(String(decoding: file, as: UTF8.self).contains("Locker code 4512"), "nothing readable without the passphrase")
         XCTAssertFalse(String(decoding: file, as: UTF8.self).contains("Locker"))
         XCTAssertEqual(try EncryptedBackup.decrypt(file, passphrase: passphrase, minimumIterations: 1_000), contents)
         // Same words, decomposed accents: same key.
