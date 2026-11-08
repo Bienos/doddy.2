@@ -158,7 +158,7 @@ struct TodayCard: View {
             eventRow(event)
         }
         if agenda.moreEvents > 0 {
-            Text("And \(agenda.moreEvents) more in Calendar.")
+            Text(verbatim: String(format: NSLocalizedString("And %lld more in Calendar.", comment: ""), agenda.moreEvents))
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -166,7 +166,7 @@ struct TodayCard: View {
             reminderRow(reminder)
         }
         if agenda.moreReminders > 0 {
-            Text("And \(agenda.moreReminders) more in Reminders.")
+            Text(verbatim: String(format: NSLocalizedString("And %lld more in Reminders.", comment: ""), agenda.moreReminders))
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -215,7 +215,7 @@ struct TodayCard: View {
             }
         } label: {
             Image(systemName: model.nudge(for: event) == nil ? "bell" : "bell.fill")
-                .accessibilityLabel("Nudge before \(event.title)")
+                .accessibilityLabel(String(format: NSLocalizedString("Nudge before %@", comment: ""), event.title))
         }
         .accessibilityIdentifier("today.nudge")
     }
@@ -231,7 +231,7 @@ struct TodayCard: View {
                 if overdue {
                     Text("Overdue").font(.footnote).foregroundStyle(Theme.error)
                 } else if reminder.dueHasTime, let due = reminder.due {
-                    Text("Due \(due.formatted(date: .omitted, time: .shortened))")
+                    Text(verbatim: String(format: NSLocalizedString("Due %@", comment: ""), due.formatted(date: .omitted, time: .shortened)))
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

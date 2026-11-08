@@ -34,7 +34,7 @@ struct NativeIslandBaselineView: View {
                         .accessibilityIdentifier("island.fixture.mute")
                 }
                 Section("System observation") {
-                    Text("\(nativeActivityCount) native activities")
+                    Text(verbatim: "\(nativeActivityCount) native activities")
                         .accessibilityIdentifier("island.fixture.nativeCount")
                     // Read by the UI test, so it skips instead of failing where iOS has Live Activities off.
                     Text(verbatim: ActivityAuthorizationInfo().areActivitiesEnabled ? "Live Activities on" : "Live Activities off")

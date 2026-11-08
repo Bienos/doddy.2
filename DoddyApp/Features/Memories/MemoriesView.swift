@@ -185,7 +185,7 @@ private struct MemorySortMenu: View {
                 .font(.caption)
                 .frame(minHeight: 44)
         }
-        .accessibilityLabel("Order, \(Self.title(MemorySort(stored: sortRaw)))")
+        .accessibilityLabel(String(format: NSLocalizedString("Order, %@", comment: ""), Self.title(MemorySort(stored: sortRaw))))
         .accessibilityIdentifier("memories.sort")
     }
 }
@@ -204,7 +204,7 @@ struct MemoryTagRow: View {
                     Button {
                         selection = isOn ? nil : item.tag
                     } label: {
-                        Text("#\(item.tag) \(item.count)")
+                        Text(verbatim: "#\(item.tag) \(item.count)")
                             .font(.subheadline)
                             .padding(.horizontal, 14)
                             .frame(minHeight: 44)
@@ -249,7 +249,7 @@ struct MemoryTypeFilterRow: View {
 
     private func chip(_ title: String, count: Int, isOn: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text("\(title) \(count)")
+            Text(verbatim: "\(title) \(count)")
                 .font(.subheadline)
                 .padding(.horizontal, 14)
                 .frame(minHeight: 44)
@@ -257,7 +257,9 @@ struct MemoryTypeFilterRow: View {
                 .foregroundStyle(isOn ? Theme.canvas : Theme.ink)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(title), \(count) \(count == 1 ? "note" : "notes")")
+        .accessibilityLabel(count == 1
+                            ? String(format: NSLocalizedString("%@, 1 note", comment: ""), title)
+                            : String(format: NSLocalizedString("%@, %lld notes", comment: ""), title, count))
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

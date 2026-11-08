@@ -113,7 +113,8 @@ struct NoteReminderSheet: View {
                                 .foregroundStyle(Theme.secondaryText)
                         } else {
                             Text(ReminderFormat.dateTime(resolvedDate, timeZoneID: zoneID)).font(.headline)
-                            Text("\(ReminderFormat.zoneName(zoneID)) · fires at this moment even if you travel")
+                            Text(verbatim: String(format: NSLocalizedString("%@ · fires at this moment even if you travel", comment: ""),
+                                                 ReminderFormat.zoneName(zoneID)))
                                 .font(.footnote)
                                 .foregroundStyle(Theme.secondaryText)
                         }
@@ -140,10 +141,10 @@ struct NoteReminderSheet: View {
                 Text("Never").tag(ReminderRepeat?.none)
                 Text("Every day").tag(ReminderRepeat?.some(.daily))
                 Text("Weekdays").tag(ReminderRepeat?.some(.weekdays))
-                Text("Every week, on \(ReminderFormat.cadence(.weekly, anchor: resolvedDate, timeZoneID: zoneID).dropFirst(6))")
+                Text(verbatim: String(format: NSLocalizedString("Every week, on %@", comment: ""), weekdayName))
                     .tag(ReminderRepeat?.some(.weekly))
                 if monthlyAllowed {
-                    Text("Every month, on the \(ReminderFormat.ordinal(Calendar.autoupdatingCurrent.component(.day, from: resolvedDate)))")
+                    Text(verbatim: String(format: NSLocalizedString("Every month, on the %@", comment: ""), dayOfMonth))
                         .tag(ReminderRepeat?.some(.monthly))
                 }
             }
@@ -183,6 +184,18 @@ struct NoteReminderSheet: View {
 
     private var monthlyAllowed: Bool {
         ReminderSchedule.allows(.monthly, picked: resolvedDate, timeZoneID: zoneID)
+    }
+
+    /// The picked day's weekday and day of the month in the app's language, for the repeat choices:
+    /// "Wednesday" and "5th" in English, "środa" and "5." in Polish. `zoneID` is this iPhone's time
+    /// zone, which is the one these formatters use.
+    private var weekdayName: String { resolvedDate.formatted(.dateTime.weekday(.wide)) }
+
+    private var dayOfMonth: String {
+        let day = Calendar.autoupdatingCurrent.component(.day, from: resolvedDate)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .ordinal
+        return formatter.string(from: NSNumber(value: day)) ?? "\(day)"
     }
 
     /// "Warsaw time · first on Mon 12 Oct, 20:00 · uses 5 of your 50 reminders".
@@ -231,7 +244,8 @@ struct NoteReminderSheet: View {
                 Text("Doddy needs permission to remind you")
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text("To bring this note back on \(ReminderFormat.dateTime(resolvedDate, timeZoneID: zoneID)), iOS needs to let Doddy send notifications.")
+                Text(verbatim: String(format: NSLocalizedString("To bring this note back on %@, iOS needs to let Doddy send notifications.", comment: ""),
+                                     ReminderFormat.dateTime(resolvedDate, timeZoneID: zoneID)))
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Only reminders you set yourself.", systemImage: "checkmark")
                     Label("No tips, streaks or marketing. No badge on the app icon.", systemImage: "checkmark")

@@ -49,7 +49,8 @@ struct RememberedConversationsView: View {
                         }
                     }
                 } footer: {
-                    Text("At most \(ConversationLogStore.maxLogs) are kept; the oldest goes when a new one is added. Older ones that don't fit are kept but not brought up.")
+                    Text(verbatim: String(format: NSLocalizedString("At most %lld are kept; the oldest goes when a new one is added. Older ones that don't fit are kept but not brought up.", comment: ""),
+                                         ConversationLogStore.maxLogs))
                 }
             }
 

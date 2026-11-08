@@ -17,17 +17,17 @@ struct PresentationCardContent: View {
                     Text(subtitle)
                         .foregroundStyle(Theme.secondaryText)
                 }
-                Text("\(draft.slideCount) slides, with the title slide")
+                Text(verbatim: String(format: NSLocalizedString("%lld slides, with the title slide", comment: ""), draft.slideCount))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
             ForEach(Array(draft.slides.enumerated()), id: \.offset) { index, slide in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("\(index + 2)")
+                        Text(verbatim: "\(index + 2)")
                             .font(.footnote.monospacedDigit().weight(.semibold))
                             .foregroundStyle(Theme.secondaryText)
-                            .accessibilityLabel("Slide \(index + 2)")
+                            .accessibilityLabel(String(format: NSLocalizedString("Slide %lld", comment: ""), index + 2))
                         Text(slide.title)
                             .font(.body.weight(.semibold))
                     }
@@ -62,7 +62,7 @@ struct PresentationReadyCard: View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Your presentation is ready", systemImage: "rectangle.on.rectangle.angled")
                 .font(.headline)
-            Text("“\(ready.title)” · \(ready.slideCount) slides")
+            Text(verbatim: String(format: NSLocalizedString("“%@” · %lld slides", comment: ""), ready.title, ready.slideCount))
                 .foregroundStyle(Theme.secondaryText)
             Text("It's in Doddy's temporary files until iOS clears them. Save it in Keynote or Files to keep it.")
                 .font(.footnote)

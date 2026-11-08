@@ -89,11 +89,11 @@ struct MemoryTextEditor: View {
                 .padding(12)
                 .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
                 .accessibilityLabel(label)
-            Text("\(length) / \(MemoryLimits.maxTextLength)")
+            Text(verbatim: "\(length) / \(MemoryLimits.maxTextLength)")
                 .font(.footnote)
                 .monospacedDigit()
                 .foregroundStyle(length > MemoryLimits.maxTextLength ? Theme.error : Theme.secondaryText)
-                .accessibilityLabel("\(length) of \(MemoryLimits.maxTextLength) characters")
+                .accessibilityLabel(String(format: NSLocalizedString("%lld of %lld characters", comment: ""), length, MemoryLimits.maxTextLength))
         }
     }
 }
@@ -110,11 +110,12 @@ struct MemoryRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(record.currentText)
                     .lineLimit(3)
-                Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))\(record.userEdited ? " · corrected" : "")")
+                Text(verbatim: "\(record.source.displayName) · \(DateText.full(record.capturedAt))"
+                     + (record.userEdited ? NSLocalizedString(" · corrected", comment: "") : ""))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
                 if !matchedTerms.isEmpty {
-                    Text("Matched: \(matchedTerms.joined(separator: ", "))")
+                    Text(verbatim: String(format: NSLocalizedString("Matched: %@", comment: ""), matchedTerms.joined(separator: ", ")))
                         .font(.footnote)
                         .foregroundStyle(Theme.accentText)
                 }

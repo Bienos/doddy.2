@@ -44,9 +44,9 @@ struct VoiceAccessGate: View {
                     .accessibilityIdentifier("voice.auth.appleSignIn")
             } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("Voice runs through \(provider.shortName)", systemImage: "waveform")
+                    Label(String(format: NSLocalizedString("Voice runs through %@", comment: ""), provider.shortName), systemImage: "waveform")
                         .font(.headline)
-                    Text("When you continue, your voice and this conversation are sent to \(provider.shortName) so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.")
+                    Text(verbatim: String(format: NSLocalizedString("When you continue, your voice and this conversation are sent to %@ so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.", comment: ""), provider.shortName))
                         .font(.body)
                     Text("Apple sign-in and microphone access are separate. You can use notes without enabling voice, and you can change this provider’s consent in Settings.")
                         .font(.footnote)
@@ -57,7 +57,8 @@ struct VoiceAccessGate: View {
                 .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
                 .accessibilityIdentifier("voice.auth.providerConsent")
 
-                Toggle("I agree to send voice data to \(provider.shortName) for this conversation", isOn: $consented)
+                Toggle(String(format: NSLocalizedString("I agree to send voice data to %@ for this conversation", comment: ""), provider.shortName),
+                       isOn: $consented)
                     .accessibilityIdentifier("voice.auth.consentToggle")
                 Button("Continue to microphone access") {
                     VoiceProviderConsent.grant(for: provider)

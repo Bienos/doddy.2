@@ -69,7 +69,7 @@ struct CountdownView: View {
                 .font(.title2.weight(.medium))
                 .accessibilityAddTraits(.isHeader)
             Picker("Minutes", selection: $minutes) {
-                ForEach(presets, id: \.self) { Text("\($0) min").tag($0) }
+                ForEach(presets, id: \.self) { Text(verbatim: String(format: NSLocalizedString("%lld min", comment: ""), $0)).tag($0) }
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("countdown.minutes")

@@ -257,7 +257,8 @@ struct MemoryLinkCard: View {
                     Text(record.currentText).lineLimit(3).font(.body)
                 }
                 HStack(alignment: .top) {
-                    Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))\(record.userEdited ? " · Edited" : "")")
+                    Text(verbatim: "\(record.source.displayName) · \(DateText.full(record.capturedAt))"
+                         + (record.userEdited ? NSLocalizedString(" · Edited", comment: "") : ""))
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                     Spacer(minLength: 8)
                     if isPinned {
@@ -267,7 +268,7 @@ struct MemoryLinkCard: View {
                     Image(systemName: "arrow.up.right").font(.caption).accessibilityHidden(true)
                 }
                 if !matchedTerms.isEmpty {
-                    Text("Matched: \(matchedTerms.joined(separator: ", "))")
+                    Text(verbatim: String(format: NSLocalizedString("Matched: %@", comment: ""), matchedTerms.joined(separator: ", ")))
                         .font(.caption).foregroundStyle(Theme.accentText)
                 }
             }

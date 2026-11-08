@@ -231,7 +231,7 @@ struct CallApprovalSections: View {
             Text(preview.goal)
         }
         Section {
-            Text("„\(preview.openingLine)”").italic()
+            Text(verbatim: "„\(preview.openingLine)”").italic()
         } header: {
             Text("Doddy says first, word for word")
         } footer: {
@@ -249,7 +249,7 @@ struct CallApprovalSections: View {
             ForEach(Array(preview.forbidden.enumerated()), id: \.offset) { _, rule in
                 Label(rule, systemImage: "xmark.circle")
             }
-            Text("„\(preview.callbackLine)”").italic()
+            Text(verbatim: "„\(preview.callbackLine)”").italic()
         } header: {
             Text("Doddy must not")
         } footer: {
@@ -379,7 +379,7 @@ struct CallResultSections: View {
             }
             if let quote = result.quote {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("„\(quote.text)”").font(.title3).foregroundStyle(Theme.ink)
+                    Text(verbatim: "„\(quote.text)”").font(.title3).foregroundStyle(Theme.ink)
                     Text("Quoted word for word from the transcript").font(.caption).foregroundStyle(Theme.secondaryText)
                 }
                 .accessibilityIdentifier("callResult.quote")
@@ -409,7 +409,7 @@ struct CallResultSections: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(CallCaseText.warning(warning.kind)).foregroundStyle(Theme.error)
                         if result.transcript.indices.contains(warning.line) {
-                            Text("„\(result.transcript[warning.line].text)”").font(.footnote).italic()
+                            Text(verbatim: "„\(result.transcript[warning.line].text)”").font(.footnote).italic()
                         }
                     }
                 }
