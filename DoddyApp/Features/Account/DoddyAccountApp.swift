@@ -29,9 +29,10 @@ enum DoddyAccountSetup {
 
     /// From Info.plist (`DoddyAccountsURL`, `DoddyAccountsPublishableKey`, both public), or nil when this
     /// build has no Doddy accounts set up: then nobody is asked to sign in, as before. UI-test launches
-    /// (`-inMemoryStore`) have none, so their screens stay the same.
+    /// (`-inMemoryStore`, or a per-test database with `-memoryTestID`, the same test-run rule as
+    /// `AppLanguageStore`) have none, so their screens stay the same.
     static func config(bundle: Bundle = .main, arguments: [String] = ProcessInfo.processInfo.arguments) -> DoddyAccountConfig? {
-        if arguments.contains("-inMemoryStore") { return nil }
+        if arguments.contains("-inMemoryStore") || arguments.contains("-memoryTestID") { return nil }
         let address = (bundle.object(forInfoDictionaryKey: "DoddyAccountsURL") as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let key = bundle.object(forInfoDictionaryKey: "DoddyAccountsPublishableKey") as? String
         return DoddyAccountConfig(projectURL: address.isEmpty ? nil : URL(string: address), publishableKey: key, redirectURL: redirect)
