@@ -20025,6 +20025,17 @@
         }
       }
     },
+    "Doddy couldn't end its Sign in with Apple link. To remove it yourself, open Settings, tap your name, then Sign in with Apple, choose Doddy and tap Stop Using Apple ID.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie zdołał zakończyć powiązania z logowaniem przez Apple. Aby usunąć je samodzielnie, otwórz Ustawienia, stuknij swoje imię i nazwisko, wybierz Logowanie przez Apple, wybierz Doddy i stuknij Przestań używać Apple ID."
+          }
+        }
+      }
+    },
     "Doddy couldn't keep a copy of this unfinished note on this iPhone (%@). Save it before you leave.": {
       "extractionState": "manual",
       "localizations": {
