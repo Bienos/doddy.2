@@ -2793,11 +2793,17 @@ final class VoiceSessionController {
         callOwners.record(call.toolCallId, attempt: attempt)
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
-        // Translator (ADR-215), plan, Pause all, then the tool's switch, in that order (ToolGate).
+        // The release scope (decision 2026-11-07-release-scope), translator (ADR-215), plan, Pause all, then the tool's switch,
+        // in that order (ToolGate).
         let gate = ToolGate.decide(
             toolName: call.toolName, request: request, translatorOn: translator != nil,
-            pauseAll: UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), isOn: { isOn($0) })
+            pauseAll: UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), isOn: { isOn($0) },
+            scope: ReleaseScopeStore.current)
         switch gate {
+        case .hidden:
+            // A feature this build hides: nothing runs, nothing is logged; the agent says it isn't in the app.
+            await reply(call.toolCallId, VoiceToolReply.hidden(call.toolName))
+            return
         case .translatorRefused:
             // Checked before anything is looked up or logged.
             await reply(call.toolCallId, VoiceToolReply.translatorRefused(call.toolName))
@@ -2817,7 +2823,7 @@ final class VoiceSessionController {
         case .notConnected(let connection):
             await notConnected(call.toolCallId, connection)
             return
-        case .translatorRefused, .plan, .run:
+        case .hidden, .translatorRefused, .plan, .run:
             break
         }
         // ASK-01 (ADR-483): nothing below runs before the user's yes for exactly this call. Tools

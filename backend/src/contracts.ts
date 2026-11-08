@@ -191,6 +191,8 @@ export const ErrorCode = z.enum([
   "live_not_configured",
   /** The model declined to answer (Ask Doddy, ADR-587). Not retried. */
   "refused",
+  /** A sign-in or device already linked elsewhere (decision 2026-11-08-required-account). Not retried. */
+  "account_conflict",
   "internal",
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;

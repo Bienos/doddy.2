@@ -110,3 +110,6 @@ Everything above is kept byte for byte (this file and `CLAUDE.md` are append-onl
 
 ## Done means
 New behaviour has tests; the `scripts/ci.sh` groups the change can reach have run, with results in the pull request; docs say what changed (the platform page, `BUILD_AND_TEST.md`); a `changes/` note exists; and anything you couldn't run is listed as not run.
+
+## Accounts (owner, 8 Nov 2026)
+Every user signs in with a Doddy account, using Apple, Google or a code sent by email; nobody uses Doddy without one. This replaces "no mandatory account" under "Project defaults" above. Design and order of work: `docs/decisions/2026-11-08-required-account.md`.

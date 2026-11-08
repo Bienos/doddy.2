@@ -101,7 +101,10 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: macos-26
-    timeout-minutes: 75
+    # A push to main runs the whole UI suite, the native island test and the Release build: 70 to 75
+    # minutes on 8 Nov 2026 (runs 42408593703, 42481741193), against a limit of 75. Run 42479036099 was
+    # cancelled after 75 minutes. Pull requests run the smoke classes and take about 30.
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 

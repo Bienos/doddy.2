@@ -75,6 +75,7 @@ export const ERASED_TABLES = [
   "web_link_pending",
   "web_accounts",
   "device_joins",
+  "account_links",
   "logbook_state",
   "logbook_days",
   "memory_state",
@@ -114,6 +115,8 @@ export interface UserErasure {
   remaining: number;
   cleanups: QueuedCleanup[];
   tokensValidAfter: number;
+  /** The Supabase users behind the account, queued for removal there and cut off here (decision 2026-11-08-required-account). */
+  subjects: string[];
 }
 
 /**
@@ -278,6 +281,13 @@ export const SCHEMA_SQL = `
     created_at BIGINT NOT NULL,
     expires_at BIGINT NOT NULL,
     consumed_at BIGINT
+  );
+  -- Decision 2026-11-08-required-account: a Doddy account (a Supabase user, \`subject\`) that took over
+  -- an iPhone's earlier data (\`user_id\`, the device's own user id), one each way and never merged.
+  CREATE TABLE IF NOT EXISTS account_links (
+    subject TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE,
+    linked_at BIGINT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS device_joins (
     device_user_id TEXT PRIMARY KEY,
@@ -930,7 +940,7 @@ export class Store {
    * first (in the same transaction), so a grant is never forgotten; the caller removes them and the
    * hourly sweeps retry what fails. Server-wide counters and the owner binding stay (`KEPT_ON_ERASE`).
    */
-  eraseUser(userId: string, now: number): Promise<UserErasure> {
+  eraseUser(userId: string, now: number, accountSubjects: readonly string[] = []): Promise<UserErasure> {
     return this.db.transaction(async (tx) => {
       const openAttempts = (await tx.query<AttemptRow>("SELECT * FROM attempts WHERE user_id = $1 AND consumed_at IS NULL", [userId])).rows;
       await this.endAttempts(tx, openAttempts, now);
@@ -940,6 +950,11 @@ export class Store {
       // and email), owed a removal there like any online account.
       const identities = (await tx.query<{ identity_id: string }>("SELECT identity_id FROM web_identities WHERE user_id = $1", [userId])).rows;
       for (const i of identities) await this.queueCleanupIn(tx, i.identity_id, userId, SUPABASE_AUTH_CLEANUP, now);
+      // Decision 2026-11-08-required-account: the Supabase user that signs in to this account (the one
+      // asking, and any that took over this iPhone's data) is removed there too, and its sign-ins end now.
+      const linked = (await tx.query<{ subject: string }>("SELECT subject FROM account_links WHERE user_id = $1", [userId])).rows;
+      const subjects = [...new Set([...accountSubjects, ...linked.map((l) => l.subject)])];
+      for (const subject of subjects) await this.queueCleanupIn(tx, subject, userId, SUPABASE_AUTH_CLEANUP, now);
       const deleted = {} as UserErasure["deleted"];
       // ADR-819: an iPhone whose own account this is stops using another one too.
       await tx.query("DELETE FROM device_joins WHERE device_user_id = $1", [userId]);
@@ -956,12 +971,14 @@ export class Store {
       // Cut off the person's earlier sign-in tokens in the same step (ADR-709): the second after this
       // one, so every token dated up to now stops working and one dated later (a new sign-in) does not.
       const tokensValidAfter = Math.floor(now / 1000) + 1;
-      await tx.query(
-        `INSERT INTO token_floor (user_id, valid_after) VALUES ($1, $2)
-         ON CONFLICT (user_id) DO UPDATE SET valid_after = GREATEST(token_floor.valid_after, EXCLUDED.valid_after)`,
-        [userId, tokensValidAfter],
-      );
-      return { deleted, remaining, cleanups, tokensValidAfter };
+      for (const id of [userId, ...subjects.filter((x) => x !== userId)]) {
+        await tx.query(
+          `INSERT INTO token_floor (user_id, valid_after) VALUES ($1, $2)
+           ON CONFLICT (user_id) DO UPDATE SET valid_after = GREATEST(token_floor.valid_after, EXCLUDED.valid_after)`,
+          [id, tokensValidAfter],
+        );
+      }
+      return { deleted, remaining, cleanups, tokensValidAfter, subjects };
     });
   }
 
@@ -1496,6 +1513,44 @@ export class Store {
        RETURNING identity_id, provider`,
       [codeHash, userId, now, intent],
     );
+  }
+
+  // ------------------------------------------------------------ an account taking over an iPhone's data (decision 2026-11-08-required-account)
+
+  /** The earlier user id this Doddy account (a Supabase user) took over, or null. */
+  async linkedUserOf(subject: string): Promise<string | null> {
+    return (await this.one<{ user_id: string }>(this.db, "SELECT user_id FROM account_links WHERE subject = $1", [subject]))?.user_id ?? null;
+  }
+
+  /** True once some Doddy account has taken over this user id: its own device sign-in is retired then. */
+  async isLinkedUser(userId: string): Promise<boolean> {
+    return (await this.one<{ one: number }>(this.db, "SELECT 1 AS one FROM account_links WHERE user_id = $1", [userId])) !== null;
+  }
+
+  /**
+   * Lets the Doddy account `subject` take over `userId`'s data, once and never merged (ADR-600):
+   * - `already`: this exact pair is linked (a repeat is harmless);
+   * - `subject_taken`: the account already took over other data;
+   * - `user_taken`: another account took over this data;
+   * - `account_has_data`: the account has data of its own, which would have to be merged.
+   */
+  linkAccount(subject: string, userId: string, now: number): Promise<"linked" | "already" | "subject_taken" | "user_taken" | "account_has_data"> {
+    return this.db.transaction(async (tx) => {
+      const mine = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
+      if (mine) return mine.user_id === userId ? "already" : "subject_taken";
+      if (await this.one<{ one: number }>(tx, "SELECT 1 AS one FROM account_links WHERE user_id = $1", [userId])) return "user_taken";
+      if (subject !== userId) {
+        for (const table of ERASED_TABLES) {
+          if (table === "account_links") continue;
+          if (await this.one<{ one: number }>(tx, `SELECT 1 AS one FROM ${table} WHERE user_id = $1 LIMIT 1`, [subject])) return "account_has_data";
+        }
+      }
+      // Two links at once: the keys decide, and the loser reads what won.
+      const inserted = await tx.query("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", [subject, userId, now]);
+      if (inserted.rowCount === 1) return "linked";
+      const now2 = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
+      return now2 ? (now2.user_id === userId ? "already" : "subject_taken") : "user_taken";
+    });
   }
 
   // ------------------------------------------------------------ an iPhone using another account (ADR-819)
