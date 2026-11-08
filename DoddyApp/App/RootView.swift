@@ -501,7 +501,15 @@ struct RootView: View {
         !legalGateUp && !AppLock.shared.isLocked
             && FirstRunAccessRule.shouldShow(
                 seen: accessSeen, firstInstallation: profiles.isFirstInstallation,
-                override: UserDefaults.standard.object(forKey: "firstRunAccess") as? Bool)
+                override: firstRunAccessOverride)
+    }
+
+    /// The UI tests' `-firstRunAccess YES/NO`, or nil when it isn't passed. A launch argument arrives as the
+    /// text "YES" or "NO", not a Bool, so `as? Bool` never matched: `NO` was ignored, and a fresh install
+    /// showed the step over Home unless an earlier test had answered it (the release-scope PR's Mac run,
+    /// 7 Nov, where `FirstRunAccessUITests` didn't run first). Read like the welcome's `-welcome`.
+    private var firstRunAccessOverride: Bool? {
+        UserDefaults.standard.object(forKey: "firstRunAccess") == nil ? nil : UserDefaults.standard.bool(forKey: "firstRunAccess")
     }
 
     private var introductionPresentation: Binding<Bool> {

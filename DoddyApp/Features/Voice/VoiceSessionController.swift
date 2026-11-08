@@ -45,6 +45,10 @@ final class VoiceSessionController {
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
         case message(toolCallID: String, draft: MessageDraft, address: String)
+        /// A BLIK phone transfer to send in the user's bank app (ADR-510). `contactName` and
+        /// `numbers` come from Contacts when iOS allows it, and are shown on screen only. Doddy
+        /// never sends money; "I'll send it myself" only keeps the details on screen.
+        case blik(toolCallID: String, draft: BlikTransferDraft, contactName: String?, numbers: [BlikPhoneNumber])
         /// Gmail draft or Todoist task. `preview` and `approvalID` come from Doddy's server for exactly
         /// these arguments; the approval works once and expires after two minutes.
         case cloud(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
@@ -101,7 +105,7 @@ final class VoiceSessionController {
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _), .cancelAlarm(let id, _),
-                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
+                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .blik(let id, _, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
@@ -165,6 +169,13 @@ final class VoiceSessionController {
         let url: URL
         let title: String
         let slideCount: Int
+    }
+
+    /// A BLIK transfer to send in the bank app (ADR-510), as shown on its card.
+    struct BlikCard: Equatable {
+        let draft: BlikTransferDraft
+        let contactName: String?
+        let numbers: [BlikPhoneNumber]
     }
 
     /// "I lost my wallet" (ADR-692): the official steps, as shown. `done` holds only the steps the
@@ -311,7 +322,7 @@ final class VoiceSessionController {
     private(set) var permissionRequest: PermissionRequest? { didSet { syncIsland() } }
     /// Connections the user said Not now to in this conversation: not asked for again.
     private var declinedPermissions: Set<VoiceConnection> = []
-    /// The searches of Contacts this conversation made for a text or email draft, before any
+    /// The searches of Contacts this conversation made for a text, email or BLIK draft, before any
     /// card: at most `ContactSearchBudget.perConversation` (ADR-717).
     private var contactSearches = ContactSearchBudget()
     /// Each call as it came, until it is answered, so one held for the permission sheet can be
@@ -357,6 +368,10 @@ final class VoiceSessionController {
     private(set) var callBooking = false
     /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
     private(set) var changeReceipt: ChangeReceipt?
+    /// The BLIK transfer the user said they'll send (ADR-510). It stays on screen until dismissed
+    /// or the next conversation, so the amount and number are there while they use their bank
+    /// app. In memory only; Doddy never sends it.
+    private(set) var blikCard: BlikCard?
     /// The lost-wallet checklist (ADR-692). It stays on screen until dismissed or the next
     /// conversation, so the steps are there while the person uses mObywatel or their bank. In
     /// memory only: what was lost and the ticks are never saved or sent.
@@ -637,6 +652,7 @@ final class VoiceSessionController {
         translator = nil
         listReceipt = nil
         changeReceipt = nil
+        blikCard = nil
         lostWalletCard = nil
         restoreInvoiceDraft()
         translatorSummary = nil
@@ -1603,6 +1619,10 @@ final class VoiceSessionController {
             await reply(id, opened
                 ? VoiceToolReply.messageOpened(draft, recipient: draft.recipientName)
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
+        case .blik(let id, let draft, let contactName, let numbers):
+            // Nothing runs (ADR-510): the details stay on screen and the user sends it in their bank app.
+            if onScreen(attempt) { blikCard = BlikCard(draft: draft, contactName: contactName, numbers: numbers) }
+            await reply(id, VoiceToolReply.blikShown(draft, contactName: contactName))
         case .presentation(let id, let draft):
             // ADR-567: written on this iPhone and read back; the share sheet hands it to Keynote.
             do {
@@ -1868,6 +1888,7 @@ final class VoiceSessionController {
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
+        case .blik(let id, _, _, _): await reply(id, VoiceToolReply.blikDeclined)
         case .text(let id, _): await reply(id, VoiceToolReply.textDeclined)
         case .callLater(let id, _, _, _):
             callLaterAllowQuiet = false
@@ -2070,6 +2091,10 @@ final class VoiceSessionController {
         listReceipt = nil
     }
 
+    func dismissBlikCard() {
+        blikCard = nil
+    }
+
     func dismissLostWalletCard() {
         lostWalletCard = nil
     }
@@ -2218,6 +2243,14 @@ final class VoiceSessionController {
             [["public.utf8-plain-text": summary.transcript]],
             options: [.localOnly: true, .expirationDate: summary.expiresAt])
         return true
+    }
+
+    /// Copy from the BLIK card (ADR-510): a phone number or the title, to paste in the bank app.
+    /// This iPhone only (no Universal Clipboard), and gone from the clipboard after ten minutes.
+    func copyForBlik(_ text: String) {
+        UIPasteboard.general.setItems(
+            [["public.utf8-plain-text": text]],
+            options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(600)])
     }
 
     /// "Save the facts as a note": the exact facts, saved only on this tap and read back from the store.
@@ -2406,6 +2439,7 @@ final class VoiceSessionController {
     private static func islandAction(_ action: PendingAction) -> IslandAction {
         switch action {
         case .message(_, let draft, _): return draft.channel == .email ? .email : .text
+        case .blik: return .transfer
         case .event, .changeEvent, .deleteEvent: return .calendar
         case .reminder, .noteReminder, .changeReminder, .deleteReminder: return .reminder
         case .timer, .alarm, .cancelAlarm: return .alarm
@@ -3014,6 +3048,26 @@ final class VoiceSessionController {
                 }
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .draftBlikTransfer(let draft):
+            // ADR-510: a card with the details, for the user to send in their bank app. Doddy never
+            // sends money. Contacts only adds the number, when Doddy's Contacts switch is on, iOS allows
+            // it and this conversation still has a search left (ADR-717); otherwise the card shows the name
+            // as said. When several contacts have the name, the agent asks which one instead of the card
+            // guessing.
+            var recipient = BlikRecipient.nameOnly
+            if ContactRead.decide(
+                switchOn: isOn(.contacts), iosAllows: devices.access(for: .contacts) == .granted, budget: &contactSearches) == .search,
+               let matches = try? devices.findContacts(named: draft.recipientName) {
+                recipient = BlikRecipient.resolve(matches.map { (name: $0.name, phoneNumbers: $0.phoneNumbers) }, query: draft.recipientName)
+            }
+            switch recipient {
+            case .several(let names):
+                await reply(call.toolCallId, VoiceToolReply.blikSeveralContacts(names, query: draft.recipientName))
+            case .nameOnly:
+                propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: nil, numbers: []), toolCallID: call.toolCallId)
+            case .contact(let name, let numbers):
+                propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: name, numbers: numbers), toolCallID: call.toolCallId)
             }
         case .draftInvoice(let update):
             // ADR-677: the draft on the card changes with each detail the user dictates. Only the
@@ -4868,8 +4922,9 @@ private extension VoiceSessionController.PendingAction {
              .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .text, .callLater: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
-        // ASK-01 asks: the change itself (a list item) is logged by the flow it runs.
-        case .map, .shortcut, .message, .plan, .undo, .ask, .cloudRead, .camera: false
+        // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only
+        // shows what the user sends in their bank app (ADR-510).
+        case .map, .shortcut, .message, .blik, .plan, .undo, .ask, .cloudRead, .camera: false
         }
     }
 }

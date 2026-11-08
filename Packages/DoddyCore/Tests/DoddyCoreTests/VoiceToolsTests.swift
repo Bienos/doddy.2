@@ -377,19 +377,21 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.serving("open_map"), .maps)
         XCTAssertEqual(VoiceConnection.serving("run_shortcut"), .shortcuts)
         XCTAssertEqual(VoiceConnection.serving("draft_message"), .messages)
+        XCTAssertEqual(VoiceConnection.serving("draft_blik_transfer"), .blik)
         XCTAssertEqual(VoiceConnection.serving("make_presentation"), .presentations)
         XCTAssertEqual(VoiceConnection.serving("read_steps"), .steps)
         XCTAssertEqual(VoiceConnection.serving("find_photos"), .photos)
         XCTAssertEqual(VoiceConnection.serving("open_camera"), .camera)
         XCTAssertNil(VoiceConnection.serving("save_memory"))
         XCTAssertEqual(VoiceConnection.calendar.preferenceKey, "voiceConnection.calendar")
+        XCTAssertEqual(VoiceConnection.blik.preferenceKey, "voiceConnection.blik")
         // ADR-567 and ADR-568 added Presentations and Steps; ADR-569 Photos and Camera.
-        XCTAssertEqual(VoiceConnection.allCases.count, 12)
+        XCTAssertEqual(VoiceConnection.allCases.count, 13)
     }
 
     func testOnlyConnectionsWithoutAnIOSPermissionStartOn() {
         let on = Set(VoiceConnection.allCases.filter(\.startsOn))
-        XCTAssertEqual(on, [.maps, .shortcuts, .messages, .presentations])
+        XCTAssertEqual(on, [.maps, .shortcuts, .messages, .blik, .presentations])
         XCTAssertEqual(Set(VoiceConnection.registeredDefaults.keys), Set(on.map(\.preferenceKey)))
         XCTAssertTrue(VoiceConnection.registeredDefaults.values.allSatisfy { $0 })
     }
