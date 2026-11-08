@@ -91,6 +91,22 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(errands.note?.contains("no words from the task") ?? false)
     }
 
+    /// ADR-740: Studio jobs go to the messaging server and Anthropic, and the row says what isn't
+    /// zero-retention and how long the server keeps the files.
+    func testStudioRowNamesAnthropicRetentionAndNeverTheNotes() {
+        XCTAssertFalse(row("studio", base).isActive)
+        XCTAssertTrue(row("studio", base).note?.contains("can't make anything") ?? false)
+        var state = base
+        state.messagingServerSet = true
+        let studio = row("studio", state)
+        XCTAssertTrue(studio.isActive)
+        XCTAssertTrue(studio.destination.contains("Anthropic"))
+        XCTAssertTrue(studio.what.contains("Never your saved notes"))
+        XCTAssertTrue(studio.note?.contains("aren't zero-retention") ?? false)
+        XCTAssertTrue(studio.note?.contains("until you delete them") ?? false)
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (Studio)"))
+    }
+
     /// SHOPPING.md: leaflets go through the messaging server; nothing that identifies the user goes to the
     /// shops, and the row says Rossmann gets the item names as a search.
     func testLeafletsRowSaysNothingIdentifyingGoesToTheShops() {
@@ -154,6 +170,21 @@ final class DataFlowTests: XCTestCase {
         state.memoryCopyOn = true
         XCTAssertTrue(row("messagingServer", state).what.contains("this iPhone's notification token"))
         XCTAssertTrue(row("messagingServer", state).what.contains("a copy of your saved notes"))
+    }
+
+    func testTextsToDoddyAreListedAsNotesWithNoAI() {
+        // ADR-753: texts kept as notes on the messaging server; no model reads them (ADR-755).
+        var state = base
+        state.messagingServerSet = true
+        state.newsWriterProvider = "openai"
+        XCTAssertFalse(row("messagingServer", state).what.contains("texts you send"))
+        state.textsToDoddyOn = true
+        XCTAssertTrue(row("messagingServer", state).what.contains("the texts you send Doddy's number"))
+        XCTAssertFalse(row("messagingServer", state).destination.contains("Anthropic"), "notes alone go to no AI")
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("replies to your texts"))
+        XCTAssertFalse(row("messagingServer", state).note?.contains("written by Anthropic") == true)
+        state.textsToDoddyOn = false
+        XCTAssertFalse(row("messagingServer", state).what.contains("the texts you send Doddy's number"))
     }
 
     func testNewsWriterIsNamedOnlyAsTheServerReportsIt() {
@@ -246,7 +277,7 @@ final class DataFlowSummaryTests: XCTestCase {
         // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
+            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         var elevenLabs = everything
         elevenLabs.voiceProvider = .elevenLabs

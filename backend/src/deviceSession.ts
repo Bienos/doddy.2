@@ -86,6 +86,8 @@ export interface DeviceOwnerStore {
    * without it nothing is written and an empty server answers null (ADR-707).
    */
   claimDeviceOwner(userId: string, now: number, allowClaim: boolean): Promise<string | null>;
+  /** ADR-819: the account this iPhone chose to use instead of its own (Google or Apple on the iPhone). */
+  deviceJoin?(deviceUserId: string): Promise<{ user_id: string } | null>;
   reserveUsage(checks: readonly { counter: string; period: string; limit: number }[], units: number): Promise<boolean>;
   /** Tokens issued before this many seconds since 1970 no longer work for the user (ADR-709); 0: none. */
   tokenFloor(userId: string): Promise<number>;
@@ -132,6 +134,9 @@ export class DeviceSessionIssuer {
     const parsed = DeviceSessionRequest.safeParse(body);
     if (!parsed.success) throw new AppError("invalid_request");
     const userId = deviceUserId(this.key, parsed.data.deviceId.toLowerCase());
+    // ADR-819: an iPhone that signed in to an account with Google or Apple keeps getting that account.
+    const joined = await this.options.store.deviceJoin?.(userId);
+    if (joined) return this.mint(joined.user_id, now);
     const code = parsed.data.inviteCode?.trim() ?? "";
     // A valid code that has no room left (ADR-709): what to say if nothing else lets this iPhone in.
     let full: AppError | null = null;
@@ -201,6 +206,12 @@ export class DeviceSessionIssuer {
     );
     if (!allowed) throw new AppError("rate_limited", { message: "Too many new sign-ins right now. Try again later.", retryAfterSeconds: 3_600 });
     return this.mint(userId, now, "ask");
+  }
+
+  /** This device's own user ID (ADR-819), or null for something that isn't a device ID. */
+  userIdFor(deviceId: unknown): string | null {
+    const parsed = DeviceSessionRequest.shape.deviceId.safeParse(deviceId);
+    return parsed.success ? deviceUserId(this.key, parsed.data.toLowerCase()) : null;
   }
 
   /** One try with an invite code, per client network per hour (ADR-709). */

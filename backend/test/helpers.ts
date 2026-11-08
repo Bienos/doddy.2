@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { DevSessionVerifier, type SessionVerifier } from "../src/auth.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { type Limits, testLimits } from "../src/config.js";
-import { createHandler } from "../src/http.js";
+import { createHandler, type HttpDeps } from "../src/http.js";
 import { type ComposioLike, ComposioCalendarProvider } from "../src/providers/composio.js";
 import { MockCalendarProvider } from "../src/providers/mock.js";
 import type { CalendarProvider } from "../src/providers/types.js";
@@ -44,6 +44,7 @@ export async function harness(
     limits?: Partial<Limits>;
     nowIso?: string;
     verifier?: SessionVerifier;
+    health?: HttpDeps["health"];
   } = {},
 ): Promise<Harness> {
   const store = await Store.memory();
@@ -67,6 +68,7 @@ export async function harness(
   const handler = createHandler({
     service,
     verifier: opts.verifier ?? new DevSessionVerifier(),
+    ...(opts.health !== undefined ? { health: opts.health } : {}),
     appReturnUrl: "doddy-dev://connected-apps/return",
     maxBodyBytes: 8 * 1024,
     now: () => new Date(clock.ms),

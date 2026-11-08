@@ -25,6 +25,8 @@ public struct DataFlowState: Equatable, Sendable {
     public var pushOn: Bool
     /// The user turned on the server copy of their notes for phone calls.
     public var memoryCopyOn: Bool
+    /// Texts the user sends Doddy's number are kept as notes (ADR-753), as the server last said. No model reads them.
+    public var textsToDoddyOn: Bool
     /// The user chose to keep notes, and conversations, as text on Doddy's server so the web can show them
     /// and answer questions about them (ADR-603). Both off by default.
     public var webNotesKept: Bool
@@ -56,8 +58,10 @@ public struct DataFlowState: Equatable, Sendable {
         learnedSharedWithVoice: Bool = false,
         newsWriterProvider: String? = nil,
         webNotesKept: Bool = false, webConversationsKept: Bool = false,
-        inFaktKeySaved: Bool = false
+        inFaktKeySaved: Bool = false,
+        textsToDoddyOn: Bool = false
     ) {
+        self.textsToDoddyOn = textsToDoddyOn
         self.inFaktKeySaved = inFaktKeySaved
         self.webNotesKept = webNotesKept
         self.webConversationsKept = webConversationsKept
@@ -112,6 +116,7 @@ public enum DataFlow {
         // ADR-656: the follows go with each request to the feed and are not stored there.
         messaging.append("the topics and words you follow, each time you open or refresh Following (the server keeps none of them)")
         if state.memoryCopyOn { messaging.append("a copy of your saved notes, for phone calls with Doddy") }
+        if state.textsToDoddyOn { messaging.append("the texts you send Doddy's number, kept as notes until you save or discard them") }
 
         // The server can use either provider (ADR-197); name one only when the server said which.
         let writer = switch state.newsWriterProvider {
@@ -202,6 +207,23 @@ public enum DataFlow {
                     : !state.inFaktKeySaved
                         ? "No inFakt key is saved, so nothing goes there."
                         : state.pauseAll ? "Connections are paused, so invoices aren't sent." : nil),
+            // Registers (ADR-685): only a buyer's NIP the person said for an invoice, to fill in their official name and address.
+            DataFlowRow(
+                id: "vatRegister", destination: "Ministry of Finance (VAT register)",
+                what: "Only a buyer's NIP you said for an invoice, to fill in their official name and address. Nothing about you or the invoice.",
+                when: "When you dictate an invoice and say the buyer's NIP, at most 6 a minute.", isActive: !state.pauseAll,
+                note: state.pauseAll
+                    ? "Connections are paused, so no NIP is looked up."
+                    : "The register asks for no account or key and sees this iPhone's internet address as any website would. The bank accounts it lists aren't read or kept."),
+            DataFlowRow(
+                id: "ceidg", destination: "CEIDG (register of sole traders), through Doddy's messaging server",
+                what: "Only a buyer's NIP the VAT register doesn't know or couldn't check. Your messaging server asks CEIDG with Doddy's own key and keeps nothing.",
+                when: "When you dictate an invoice and the VAT register has no such taxpayer or couldn't be asked.",
+                isActive: state.messagingServerSet && !state.pauseAll,
+                note: !state.messagingServerSet
+                    ? "Your messaging server isn't set up in this build, so CEIDG isn't asked."
+                    : state.pauseAll ? "Connections are paused, so no NIP is looked up."
+                    : "Only when CEIDG is switched on on the server; otherwise it answers that it isn't, and nothing is asked."),
             DataFlowRow(
                 id: "placeSearch", destination: "Apple Maps (place search and travel time)",
                 what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are.",
@@ -218,8 +240,8 @@ public enum DataFlow {
             // ADR-575: web, news and places searches run at once, without asking, and go on to Monid.
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (web search; Google, Microsoft Outlook, Notion, Todoist via Composio)",
-                what: "A random device ID that Doddy made and keeps in this iPhone's Keychain; it signs this iPhone in. Then what you ask for: the words of a web, news or places search, which go at once without asking and on to Monid, the search service Doddy's server uses; a date or a search word for a look-up in one of your accounts, after you say yes or tap; and the text of a draft, email, reply or task, only after you tap its card to confirm. An email you send or forward goes on to its recipient. Never your saved notes, except the copy you choose to keep on Doddy's server (see the rows below). With Read an email or Read a Notion page on, that one email or page comes back.",
-                when: "When this iPhone signs in or renews its session (about every 30 days), when Doddy looks something up on the web or uses an online-account tool you switched on, and when you use Online accounts or Connected Apps.",
+                what: "A random device ID that Doddy made and keeps in this iPhone's Keychain; it signs this iPhone in. Then what you ask for: the words of a web, news or places search, which go at once without asking and on to Monid, the search service Doddy's server uses; a date or a search word for a look-up in one of your accounts, after you say yes or tap; and the text of a draft, email, reply or task, only after you tap its card to confirm. An email you send or forward goes on to its recipient. Never your saved notes, except the copy you choose to keep on Doddy's server (see the rows below). With Read an email or Read a Notion page on, that one email or page comes back. If you start a payment, the web address of the page you pay for goes there too: the server reads the price from that site, and pays only after you confirm with Face ID.",
+                when: "When this iPhone signs in or renews its session (about every 30 days), when Doddy looks something up on the web or uses an online-account tool you switched on, when you use Online accounts or Connected Apps, and when you start a payment.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet
                     ? "Nothing has been sent to Doddy's server yet. The first time you use something online (web search, an online account, Doddy on the web), this iPhone signs in there with a random device ID, and this row moves up."
@@ -272,6 +294,15 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "The server keeps the words and the result, encrypted, until the result is saved on this iPhone, then deletes them; a result never fetched is deleted after 30 days. The notification has no words from the task."
                     : "No messaging server is set, so tasks can't be handed over."),
+            // ADR-740: Studio, a research brief and an infographic made in the background.
+            DataFlowRow(
+                id: "studio", destination: "Your Doddy messaging server and Anthropic (Studio)",
+                what: "The topic you ask Doddy to research, your own words about it, who it's for, its length, style and language, and any pages you picked. Anthropic's Claude searches the web and reads pages for it, so search words made from your topic go to Anthropic's search provider, then makes the files in Anthropic's container. Never your saved notes, lists, profile or earlier conversations.",
+                when: "Only when you tap Allow on a Studio job's card.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "Web research and code execution at Anthropic aren't zero-retention, so Anthropic keeps that work under its normal retention. The server keeps the job and the files, encrypted, until you delete them in Studio. The notification has no words from the job."
+                    : "No messaging server is set, so Studio can't make anything."),
             // ADR-500..507 (docs/decisions/calls.md): a call Doddy places for the user, from Settings › Notifications ›
             // Phone calls › Calls for you. Read from CallBriefDraft.requestBody, CallCasesModel and server/messaging/src/
             // taskCalls (payload, twiml, worker, cases, writer), review of 4 Nov 2026.
@@ -351,6 +382,8 @@ public enum DataFlow {
         }
         // ADR-570: Claude researches the tasks you hand over.
         if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
+        // ADR-740: Claude researches and makes what you ask Studio for.
+        if active.contains("studio") { parts.append("Anthropic (Studio)") }
         // ADR-504: Claude reads a call's transcript to write its answer card.
         if active.contains("callCases") { parts.append("Anthropic (the answer card of calls Doddy places for you)") }
         // SHOPPING.md: item names and leaflet pages, for leaflets that are only pictures.
@@ -368,12 +401,15 @@ public enum DataFlow {
         "exchangeRates": "the European Central Bank (exchange rates; nothing about you)",
         "openFoodFacts": "Open Food Facts (barcodes you scan; nothing about you)",
         "inPost": "InPost (parcel numbers you look up; nothing else about you)",
+        "vatRegister": "the Ministry of Finance's VAT register (buyers' NIPs for invoices)",
+        "ceidg": "CEIDG through your messaging server (buyers' NIPs the VAT register doesn't know)",
         "inFakt": "inFakt (invoices you confirm, with your own key)",
         "placeSearch": "Apple Maps (place searches)",
         "tokenServer": "your voice token server",
         "doddyServer": "your Doddy server (web search, online accounts and the web)",
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
+        "studio": "Anthropic (Studio, through your messaging server)",
         "callCases": "Twilio, ElevenLabs and Anthropic (calls Doddy places for you, through your messaging server)",
         "updates": "Apple and Twilio (notifications and texts from Doddy, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",

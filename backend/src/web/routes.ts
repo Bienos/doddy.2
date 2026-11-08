@@ -10,6 +10,8 @@ import type { MemoryService } from "../memory/service.js";
 import { threadRoutes } from "../messages/routes.js";
 import type { ThreadService } from "../messages/service.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
+import { LINK_REAUTH_MS, type SocialSignIn } from "./social.js";
+import type { AccountEraser } from "../account.js";
 
 /**
  * The `/v1/web/…` routes (ADR-600). Each route says who may call it:
@@ -17,10 +19,11 @@ import type { WebAuth, WebSessionContext } from "./sessions.js";
  *  - `phone`: the iPhone's own session (Authorization header) only.
  *  - `either`: the iPhone's session, or a browser session cookie.
  *  - `browser`: a browser session cookie only.
+ *  - `device`: the iPhone's own session, a guest's too (ADR-819: a guest iPhone may sign in to an account).
  * A cookie request that changes something must pass the same-origin check (`assertSameOrigin`).
  */
 
-export type Access = "public" | "phone" | "either" | "browser";
+export type Access = "public" | "phone" | "either" | "browser" | "device";
 
 export interface WebCaller {
   userId: string;
@@ -31,7 +34,9 @@ export interface WebCaller {
 export interface Reply {
   status: number;
   body?: unknown;
-  setCookie?: string;
+  setCookie?: string | string[];
+  /** A redirect (303) instead of JSON: the browser steps of Apple and Google sign-in (ADR-818). */
+  redirect?: string;
   /** A file instead of JSON. */
   file?: { name: string; mime: string; bytes: Buffer };
 }
@@ -43,7 +48,7 @@ export interface Route {
   access: Access;
   /** A larger body than the default, for the one route that takes a summary. */
   maxBodyBytes?: number;
-  run(input: { caller: WebCaller | null; params: string[]; body: unknown; req: IncomingMessage; now: Date }): Promise<Reply>;
+  run(input: { caller: WebCaller | null; params: string[]; query: URLSearchParams; body: unknown; req: IncomingMessage; now: Date }): Promise<Reply>;
 }
 
 /** Documents are kept a week (ADR-564); the list says so instead of implying they stay. */
@@ -67,6 +72,12 @@ export class WebRoutes {
     memory?: { service: MemoryService; chat: MemoryChat },
     /** The Messages copy for the web. Without it those routes don't exist. */
     thread?: ThreadService,
+    /** Apple and Google sign-in (ADR-818). Without it the sign-in page offers the code only. */
+    private readonly social?: SocialSignIn | null,
+    /** Deleting the account from a browser (ADR-818: an account made on the web has no iPhone to do it). */
+    account?: AccountEraser | null,
+    /** This server's device sign-in (ADR-563), so an iPhone can use another account (ADR-819). */
+    devices?: { userIdFor(deviceId: unknown): string | null } | null,
   ) {
     this.routes = [
       {
@@ -197,6 +208,141 @@ export class WebRoutes {
           return { status: 200, body: { stored: true, day: day.day } };
         },
       },
+      // ---------------------------------------------------------------- Apple and Google (ADR-818)
+      {
+        method: "GET",
+        pattern: /^\/v1\/web\/sign-in-options$/,
+        template: "GET /v1/web/sign-in-options",
+        access: "public",
+        run: async () => ({ status: 200, body: this.social ? this.social.options() : { providers: [] } }),
+      },
+      ...(social
+        ? ([
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/oauth\/start$/,
+              template: "GET /v1/web/oauth/start",
+              access: "public",
+              run: async ({ req, query, now }) => redirect(await social.start(req, query, now)),
+            },
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/oauth\/callback$/,
+              template: "GET /v1/web/oauth/callback",
+              access: "public",
+              run: async ({ req, query, now }) => redirect(await social.callback(req, query, now)),
+            },
+            {
+              method: "POST",
+              pattern: /^\/v1\/web\/oauth\/tickets$/,
+              template: "POST /v1/web/oauth/tickets",
+              access: "phone",
+              run: async ({ caller, body, now }) => ({ status: 200, body: await social.ticket(caller!.userId, body, now) }),
+            },
+            {
+              // "Create my Doddy account", after Google or Apple. Public (its own one-time cookie), same origin.
+              method: "POST",
+              pattern: /^\/v1\/web\/signup$/,
+              template: "POST /v1/web/signup",
+              access: "public",
+              run: async ({ req, now }) => {
+                const done = await social.signup(req, now);
+                return { status: 200, body: { session: done.view, created: done.created, provider: done.provider }, setCookie: done.setCookies };
+              },
+            },
+            {
+              method: "POST",
+              pattern: /^\/v1\/web\/oauth\/complete$/,
+              template: "POST /v1/web/oauth/complete",
+              access: "phone",
+              run: async ({ caller, body, now }) => ({ status: 200, body: await social.complete(caller!.userId, body, now) }),
+            },
+            ...(devices
+              ? ([
+                  {
+                    method: "POST",
+                    pattern: /^\/v1\/web\/oauth\/join-tickets$/,
+                    template: "POST /v1/web/oauth/join-tickets",
+                    access: "device",
+                    run: async ({ caller, body, now }) => ({ status: 200, body: await social.joinTicket(caller!.userId, body, now) }),
+                  },
+                  {
+                    method: "POST",
+                    pattern: /^\/v1\/web\/oauth\/join$/,
+                    template: "POST /v1/web/oauth/join",
+                    access: "device",
+                    run: async ({ caller, body, now }) => ({ status: 200, body: await social.join(caller!.userId, body, now, (id) => devices.userIdFor(id)) }),
+                  },
+                  {
+                    method: "POST",
+                    pattern: /^\/v1\/web\/device-account$/,
+                    template: "POST /v1/web/device-account",
+                    access: "device",
+                    run: async ({ caller, body }) => ({ status: 200, body: await social.deviceAccount(caller!.userId, body, (id) => devices.userIdFor(id)) }),
+                  },
+                  {
+                    method: "POST",
+                    pattern: /^\/v1\/web\/device-account\/leave$/,
+                    template: "POST /v1/web/device-account/leave",
+                    access: "device",
+                    run: async ({ caller, body }) => ({ status: 200, body: await social.leave(caller!.userId, body, (id) => devices.userIdFor(id)) }),
+                  },
+                ] satisfies Route[])
+              : []),
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/identities$/,
+              template: "GET /v1/web/identities",
+              access: "either",
+              run: async ({ caller }) => ({ status: 200, body: { identities: await social.list(caller!.userId) } }),
+            },
+            {
+              method: "DELETE",
+              pattern: /^\/v1\/web\/identities\/([0-9a-f-]{36})$/,
+              template: "DELETE /v1/web/identities/:id",
+              access: "either",
+              run: async ({ caller, params, now }) => {
+                social.assertMayChange(caller!.session, now);
+                await social.unlink(caller!.userId, params[0]!);
+                return { status: 200, body: { unlinked: true } };
+              },
+            },
+          ] satisfies Route[])
+        : []),
+      ...(account
+        ? ([
+            {
+              // Whether this browser may delete the account: only one made on the web. An iPhone's
+              // account is deleted on the iPhone, as before (ADR-674).
+              method: "GET",
+              pattern: /^\/v1\/web\/account$/,
+              template: "GET /v1/web/account",
+              access: "browser",
+              run: async ({ caller }) => ({ status: 200, body: { madeOnWeb: await this.store.isWebAccount(caller!.userId) } }),
+            },
+            {
+              // Deletes the whole account, as the iPhone's Delete account does (ADR-674): only an account
+              // made on the web, from a browser signed in within the last 15 minutes, with the word sent
+              // back. The answer is the receipt.
+              method: "POST",
+              pattern: /^\/v1\/web\/account\/delete$/,
+              template: "POST /v1/web/account/delete",
+              access: "browser",
+              run: async ({ caller, body, now }) => {
+                const confirm = typeof body === "object" && body !== null ? (body as Record<string, unknown>).confirm : undefined;
+                if (confirm !== "delete" || Object.keys(body as object).length !== 1) throw new AppError("invalid_request");
+                if (!(await this.store.isWebAccount(caller!.userId))) {
+                  throw new AppError("refused", { message: "This account belongs to your iPhone: delete it in Doddy on the iPhone." });
+                }
+                if (now.getTime() - caller!.session!.createdAt > LINK_REAUTH_MS) {
+                  throw new AppError("refused", { message: "For safety, sign in again, then delete within 15 minutes." });
+                }
+                const erasure = await account.erase(caller!.userId);
+                return { status: 200, body: erasure, setCookie: this.auth.clearCookie() };
+              },
+            },
+          ] satisfies Route[])
+        : []),
       ...(memory ? memoryRoutes(memory) : []),
       ...(thread ? threadRoutes(thread) : []),
     ];
@@ -219,7 +365,7 @@ export class WebRoutes {
   }
 
   /** Authenticates, checks the origin, runs the route and writes the reply. Throws AppError before writing. */
-  async serve(match: { route: Route; params: string[] }, req: IncomingMessage, res: ServerResponse, now: Date): Promise<number> {
+  async serve(match: { route: Route; params: string[] }, req: IncomingMessage, res: ServerResponse, now: Date, query: URLSearchParams = new URLSearchParams()): Promise<number> {
     const { route } = match;
     if (route === notFoundRoute) throw new AppError("not_found");
     const caller = await this.caller(route.access, req, res, now);
@@ -227,8 +373,14 @@ export class WebRoutes {
     // A browser request that changes something (signing in included) must come from the web app.
     if (unsafe && (route.access === "public" || caller?.session)) this.auth.assertSameOrigin(req);
     const body = route.method === "POST" || route.method === "PUT" ? await readJson(req, route.maxBodyBytes ?? this.maxBodyBytes) : undefined;
-    const reply = await route.run({ caller, params: match.params, body, req, now });
-    if (reply.setCookie) res.setHeader("set-cookie", reply.setCookie);
+    const reply = await route.run({ caller, params: match.params, query, body, req, now });
+    if (reply.setCookie && reply.setCookie.length > 0) res.setHeader("set-cookie", reply.setCookie);
+    if (reply.redirect !== undefined) {
+      // The callback's address carries Supabase's code: no Referer to the next page, nothing cached.
+      res.writeHead(303, { location: reply.redirect, "cache-control": "no-store", "referrer-policy": "no-referrer", "content-length": 0 });
+      res.end();
+      return 303;
+    }
     if (reply.file) {
       writeFile(res, reply.file);
       return 200;
@@ -247,11 +399,12 @@ export class WebRoutes {
       if (access === "browser") throw new AppError("unauthenticated");
       const user: AuthenticatedUser | null = await this.verifier.verify(authorization, now);
       if (!user) throw new AppError("unauthenticated");
-      // A guest iPhone (ADR-587) can't open the web workspace: it has Ask Doddy only.
-      requireFullAccess(user);
+      // A guest iPhone (ADR-587) can't open the web workspace: it has Ask Doddy only. It may still
+      // sign in to an account it proves with Google or Apple (`device`, ADR-819).
+      if (access !== "device") requireFullAccess(user);
       return { userId: user.userId, session: null };
     }
-    if (access === "phone") throw new AppError("unauthenticated");
+    if (access === "phone" || access === "device") throw new AppError("unauthenticated");
     const session = await this.auth.fromCookie(req, now);
     if (!session) {
       // A stale cookie is removed, so the browser stops sending it.
@@ -333,4 +486,8 @@ async function readJson(req: IncomingMessage, maxBytes: number): Promise<unknown
 function header(req: IncomingMessage, name: string): string | undefined {
   const value = req.headers[name];
   return Array.isArray(value) ? undefined : value;
+}
+
+function redirect(outcome: { location: string; setCookies: string[] }): Reply {
+  return { status: 303, redirect: outcome.location, setCookie: outcome.setCookies };
 }

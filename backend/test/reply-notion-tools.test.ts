@@ -40,7 +40,7 @@ const REPLY = { query: "from:anna", body: "Yes, 1pm works." };
 
 // ------------------------------------------------------------------ switches start off
 
-test("both new switches come on with the connection (ADR-563); each switched off refuses, and nothing reaches the provider", async () => {
+test("both new switches are on once the user chose act (ADR-816); each switched off refuses, and nothing reaches the provider", async () => {
   rig = await start();
   await connect(rig, "gmail");
   await connect(rig, "notion");
@@ -55,7 +55,7 @@ test("both new switches come on with the connection (ADR-563); each switched off
   }
   assert.deepEqual(TOOL_COPY.read_notion_page, {
     title: "Read a Notion page",
-    blurb: "Reads one page aloud when you ask, the best match among pages shared with Doddy. On when you connect the account; switch it off any time.",
+    blurb: "Reads one page aloud when you ask, the best match among pages shared with Doddy. Off until you choose what Doddy may do with this account; change it any time.",
   });
   assert.match(TOOLKITS.notion.access, /read one page aloud when you ask/);
   assert.doesNotMatch(TOOLKITS.notion.access, /doesn't read page content/);

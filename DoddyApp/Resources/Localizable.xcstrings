@@ -211,6 +211,17 @@
         }
       }
     },
+    "%@ · seen %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · odczytano %@"
+          }
+        }
+      }
+    },
     "%@: %lld × %lld–%lld s, stop before your form slips": {
       "extractionState": "manual",
       "localizations": {
@@ -943,6 +954,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Informacja, np. numer zlecenia 12345"
+          }
+        }
+      }
+    },
+    "A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also asks Twilio to delete its records of each call and text, a day later unless the server is set up otherwise. The file is removed from this iPhone when you leave this screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also asks Twilio to delete its records of each call and text, a day later unless the server is set up otherwise. The file is removed from this iPad when you leave this screen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also asks Twilio to delete its records of each call and text, a day later unless the server is set up otherwise. The file is removed from this iPhone when you leave this screen."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Plik z Twoimi rozmowami, stanem SMS-ów między Tobą a Doddym i notatkami, które tu czekają. Nie ma w nim treści wiadomości: serwer Doddy’ego usuwa ją po wysłaniu. Serwer Doddy’ego prosi też Twilio o usunięcie zapisów każdej rozmowy i SMS-a, dzień później, chyba że ustawiono go inaczej. Plik znika z tego iPada, gdy opuścisz ten ekran."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Plik z Twoimi rozmowami, stanem SMS-ów między Tobą a Doddym i notatkami, które tu czekają. Nie ma w nim treści wiadomości: serwer Doddy’ego usuwa ją po wysłaniu. Serwer Doddy’ego prosi też Twilio o usunięcie zapisów każdej rozmowy i SMS-a, dzień później, chyba że ustawiono go inaczej. Plik znika z tego iPhone’a, gdy opuścisz ten ekran."
+                }
+              }
+            }
           }
         }
       }
@@ -1971,6 +2023,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "A payment wasn't confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatność nie została potwierdzona"
           }
         }
       }
@@ -3595,6 +3658,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "关于你"
+          }
+        }
+      }
+    },
+    "Accept texts from my number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przyjmuj SMS-y z mojego numeru"
           }
         }
       }
@@ -6872,6 +6946,17 @@
         }
       }
     },
+    "Anyone who answers your phone hears this, and so does your voicemail.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usłyszy to każdy, kto odbierze Twój telefon, a także Twoja poczta głosowa."
+          }
+        }
+      }
+    },
     "Anything for\ntomorrow?": {
       "extractionState": "manual",
       "localizations": {
@@ -7804,6 +7889,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Każdą z tych rzeczy możesz zlecić Doddy’emu w rozmowie."
+          }
+        }
+      }
+    },
+    "Ask Doddy in a conversation to research something, like \"research heat pumps for a Polish house\". After one yes, Doddy searches the web, writes a research brief (PDF) and makes an infographic, in the background. You get a notification when it's ready. Nothing is published or sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poproś Doddy’ego w rozmowie, żeby coś zbadał, na przykład „sprawdź pompy ciepła do polskiego domu”. Po jednym „tak” Doddy szuka w sieci, pisze raport (PDF) i robi infografikę, w tle. Dostaniesz powiadomienie, gdy będzie gotowe. Nic nie jest publikowane ani wysyłane."
           }
         }
       }
@@ -9042,6 +9138,28 @@
         }
       }
     },
+    "Book call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umów telefon"
+          }
+        }
+      }
+    },
+    "Booking your call…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umawiam Twój telefon…"
+          }
+        }
+      }
+    },
     "Both voices go to ElevenLabs, or OpenAI if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number.": {
       "extractionState": "manual",
       "localizations": {
@@ -9786,6 +9904,17 @@
         }
       }
     },
+    "Call even in quiet hours (%@–%@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoń nawet w godzinach ciszy (%@–%@)"
+          }
+        }
+      }
+    },
     "Call me now": {
       "extractionState": "manual",
       "localizations": {
@@ -9874,6 +10003,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mów tak, jak w prawdziwej rozmowie. Powiedz „koniec próby”, aby dostać wskazówki."
+          }
+        }
+      }
+    },
+    "Call you later?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwonić do Ciebie później?"
           }
         }
       }
@@ -9999,6 +10139,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Połączenia za Ciebie"
+          }
+        }
+      }
+    },
+    "Calls you booked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umówione telefony"
           }
         }
       }
@@ -10261,6 +10412,17 @@
         }
       }
     },
+    "Cancel this call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuluj ten telefon"
+          }
+        }
+      }
+    },
     "Canceled": {
       "extractionState": "manual",
       "localizations": {
@@ -10338,6 +10500,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anulowano. Doddy nie zadzwoni."
+          }
+        }
+      }
+    },
+    "Cancelled: your number or your consent to calls changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anulowany: zmienił się Twój numer albo zgoda na rozmowy."
           }
         }
       }
@@ -11477,6 +11650,17 @@
         }
       }
     },
+    "Checking the price…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam cenę…"
+          }
+        }
+      }
+    },
     "Checking tomorrow…": {
       "extractionState": "manual",
       "localizations": {
@@ -11790,6 +11974,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择其他地点"
+          }
+        }
+      }
+    },
+    "Choose what Doddy may do with this account. You can change it any time in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz, co Doddy może robić z tym kontem. Możesz to zmienić w każdej chwili w Ustawieniach."
           }
         }
       }
@@ -12218,6 +12413,17 @@
         }
       }
     },
+    "Close the draft": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamknij szkic"
+          }
+        }
+      }
+    },
     "Cloud AI": {
       "extractionState": "manual",
       "localizations": {
@@ -12332,6 +12538,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "验证码"
+          }
+        }
+      }
+    },
+    "Coinbase wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel Coinbase"
           }
         }
       }
@@ -12520,6 +12737,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Potwierdź w Doddym"
+          }
+        }
+      }
+    },
+    "Confirm with Face ID…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potwierdź przez Face ID…"
           }
         }
       }
@@ -14580,6 +14808,17 @@
         }
       }
     },
+    "Couldn't load the settings for texts to Doddy. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać ustawień SMS-ów do Doddy’ego. %@"
+          }
+        }
+      }
+    },
     "Couldn't load this feed last time": {
       "extractionState": "manual",
       "localizations": {
@@ -14635,6 +14874,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "上次无法加载这个订阅源"
+          }
+        }
+      }
+    },
+    "Couldn't load your booked calls. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać umówionych telefonów. %@"
+          }
+        }
+      }
+    },
+    "Couldn't load your notes. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać Twoich notatek. %@"
           }
         }
       }
@@ -16677,6 +16938,17 @@
         }
       }
     },
+    "Delete this item?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć ten element?"
+          }
+        }
+      }
+    },
     "Delete this memory?": {
       "extractionState": "manual",
       "localizations": {
@@ -17300,6 +17572,28 @@
         }
       }
     },
+    "Demo data: no real money moves": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane demo: żadne prawdziwe pieniądze nie są przesyłane"
+          }
+        }
+      }
+    },
+    "Demo wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel demo"
+          }
+        }
+      }
+    },
     "Demo — nothing real will be created": {
       "extractionState": "manual",
       "localizations": {
@@ -17355,6 +17649,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "演示 · 不会创建任何真实内容"
+          }
+        }
+      }
+    },
+    "Demo: no real money moved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo: żadne prawdziwe pieniądze nie zostały przesłane."
+          }
+        }
+      }
+    },
+    "Demo: no real money moves": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo: żadne prawdziwe pieniądze nie są przesyłane"
           }
         }
       }
@@ -18225,6 +18541,17 @@
         }
       }
     },
+    "Doddy asks for Face ID or your passcode every time before paying.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy za każdym razem prosi o Face ID lub kod, zanim zapłaci."
+          }
+        }
+      }
+    },
     "Doddy asks for “While Using” only, never “Always”.": {
       "extractionState": "manual",
       "localizations": {
@@ -18280,6 +18607,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 只会请求“使用 App 期间”，绝不会请求“始终”。"
+          }
+        }
+      }
+    },
+    "Doddy asks the page for its price and shows it to you. Nothing is paid until you confirm with Face ID.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pyta stronę o cenę i pokazuje ją Tobie. Nic nie jest płacone, dopóki nie potwierdzisz przez Face ID."
           }
         }
       }
@@ -18431,6 +18769,17 @@
         }
       }
     },
+    "Doddy can also send, add or change things, but only after you tap a card that shows exactly what will happen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może też wysyłać, dodawać lub zmieniać rzeczy, ale dopiero po stuknięciu karty, która pokazuje dokładnie, co się stanie."
+          }
+        }
+      }
+    },
     "Doddy can ask your iPhone for these now, so nothing interrupts you later. Your iPhone asks each question itself, and you can say no to any of them.": {
       "extractionState": "manual",
       "localizations": {
@@ -18438,6 +18787,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy może teraz poprosić Twój iPhone o te zgody, żeby nic Ci później nie przeszkadzało. iPhone sam zadaje każde pytanie i na każde możesz odpowiedzieć „nie”."
+          }
+        }
+      }
+    },
+    "Doddy can look things up in this account when you ask. He asks first every time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może sprawdzać rzeczy na tym koncie, gdy o to poprosisz. Za każdym razem najpierw pyta."
           }
         }
       }
@@ -18822,6 +19182,17 @@
         }
       }
     },
+    "Doddy can't tell whether it went through. Check your wallet's history before paying that page again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie wie, czy płatność doszła do skutku. Zanim zapłacisz za tę stronę ponownie, sprawdź historię portfela."
+          }
+        }
+      }
+    },
     "Doddy can't use that address. Use a public web address (https://…).": {
       "extractionState": "manual",
       "localizations": {
@@ -19084,6 +19455,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy couldn't confirm an earlier try of this exact call. It may already be booked: Doddy's server never books the same time and reason twice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł potwierdzić wcześniejszej próby umówienia dokładnie tego telefonu. Może już być umówiony: serwer Doddy’ego nigdy nie umawia dwa razy tej samej godziny z tym samym powodem."
+          }
+        }
+      }
+    },
+    "Doddy couldn't confirm an earlier try of this exact text. Sending again while Doddy is open won't send it twice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł potwierdzić wcześniejszej próby wysłania dokładnie tego SMS-a. Ponowne wysłanie, póki Doddy jest otwarty, nie wyśle go dwa razy."
           }
         }
       }
@@ -19732,6 +20125,17 @@
         }
       }
     },
+    "Doddy couldn't tell what happened to this call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie wie, co stało się z tym telefonem."
+          }
+        }
+      }
+    },
     "Doddy counts how often you undo something, change a step, say \"That's wrong\", ask for the same thing again or leave a card unanswered, so you can see whether he gets better. Only the kind of event and the tool name are kept, for 90 days, on this iPhone, never sent.": {
       "extractionState": "manual",
       "localizations": {
@@ -19928,6 +20332,17 @@
         }
       }
     },
+    "Doddy doesn't call in quiet hours (%@–%@ in your iPhone's time zone) unless you allowed it on the call's card. Turning off \"Doddy may call me\" cancels the calls still waiting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie dzwoni w godzinach ciszy (%@–%@ w strefie czasowej Twojego iPhone’a), chyba że zezwolisz na to na karcie telefonu. Wyłączenie „Doddy może do mnie dzwonić” anuluje telefony, które jeszcze czekają."
+          }
+        }
+      }
+    },
     "Doddy doesn't read this chain's leaflet yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -19994,6 +20409,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 在这里不会对任何人说话。用于导游讲解、演讲或广播，不要用于别人的私人对话。"
+          }
+        }
+      }
+    },
+    "Doddy doesn't text or call numbers in that country.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie wysyła SMS-ów ani nie dzwoni na numery z tego kraju."
           }
         }
       }
@@ -20530,6 +20956,17 @@
         }
       }
     },
+    "Doddy is already making as many things as the server allows. Try again when one is ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przygotowuje już tyle rzeczy, ile pozwala serwer. Spróbuj ponownie, gdy coś będzie gotowe."
+          }
+        }
+      }
+    },
     "Doddy is an AI, not a doctor or a coach, and this plan isn't medical advice. Stop at once if you get pain in your chest, neck, jaw or arm, feel faint or dizzy, are unusually short of breath, or your heart races. In an emergency call 112.": {
       "extractionState": "manual",
       "localizations": {
@@ -20969,6 +21406,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy jeszcze nad tym pracuje"
+          }
+        }
+      }
+    },
+    "Doddy is still working on this. You'll get a notification when it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy wciąż nad tym pracuje. Dostaniesz powiadomienie, gdy będzie gotowe."
           }
         }
       }
@@ -22725,61 +23173,24 @@
         }
       }
     },
-    "Doddy wrote these down during calls. They become memories only when you save them.": {
+    "Doddy won't use this account.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy hat das bei Anrufen notiert. Gemerkt wird es erst, wenn du es speicherst."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy apuntó esto durante las llamadas. Solo se convierten en recuerdos cuando los guardas."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy a noté ceci pendant des appels. Ça ne devient des souvenirs que si tu l’enregistres."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy je ovo zapisao tijekom poziva. Postaju sjećanja tek kad ih spremiš."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy le ha annotate durante le chiamate. Diventano ricordi solo quando le salvi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyが通話中に書き留めたものです。あなたが保存したときにだけ記憶になります。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy zanotował to podczas rozmów. Staną się wspomnieniami dopiero, gdy je zapiszesz."
+            "value": "Doddy nie będzie używać tego konta."
           }
-        },
-        "pt-BR": {
+        }
+      }
+    },
+    "Doddy wrote these down during calls, or kept them from your texts. They become memories only when you save them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy anotou isto durante as chamadas. Só vira memória quando você salva."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这些是 Doddy 在通话中记下的。只有你保存后，它们才会成为记忆。"
+            "value": "Doddy zanotował to podczas rozmów albo zachował z Twoich SMS-ów. Staną się wspomnieniami dopiero, gdy je zapiszesz."
           }
         }
       }
@@ -22883,6 +23294,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Głos, którym dzwoni Doddy, nie zgadza się z zatwierdzonymi ustawieniami, więc serwer nie dzwoni, dopóki to nie zostanie poprawione."
+          }
+        }
+      }
+    },
+    "Doddy's checks found something to look at before you share this:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzanie Doddy’ego znalazło coś do przejrzenia, zanim to udostępnisz:"
           }
         }
       }
@@ -23167,61 +23589,13 @@
         }
       }
     },
-    "Doddy's phone line isn't set up on the server yet. Everything below starts working once it is.": {
+    "Doddy's phone line isn't set up on the server yet. Calls start working once it is.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Telefonleitung von Doddy ist auf dem Server noch nicht eingerichtet. Alles darunter funktioniert, sobald sie es ist."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La línea telefónica de Doddy aún no está configurada en el servidor. Todo lo de abajo empieza a funcionar cuando lo esté."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La ligne téléphonique de Doddy n’est pas encore configurée sur le serveur. Tout ce qui suit fonctionnera dès qu’elle le sera."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyjeva telefonska linija još nije postavljena na poslužitelju. Sve u nastavku proradit će kad bude."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La linea telefonica di Doddy non è ancora configurata sul server. Tutto ciò che segue inizia a funzionare appena lo sarà."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyの電話回線はまだサーバーに設定されていません。設定が済めば、以下はすべて使えるようになります。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Linia telefoniczna Doddy’ego nie jest jeszcze ustawiona na serwerze. Wszystko poniżej zacznie działać, gdy będzie."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A linha telefônica do Doddy ainda não está configurada no servidor. Tudo abaixo começa a funcionar quando estiver."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "服务器上尚未设置 Doddy 的电话线路。设置好后，下面的一切就会开始工作。"
+            "value": "Linia telefoniczna Doddy’ego nie jest jeszcze skonfigurowana na serwerze. Rozmowy zadziałają, gdy będzie."
           }
         }
       }
@@ -23296,6 +23670,17 @@
         }
       }
     },
+    "Doddy's server can't receive texts right now, so nothing you text it is kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie może teraz odbierać SMS-ów, więc nic, co wyślesz, nie zostanie zachowane."
+          }
+        }
+      }
+    },
     "Doddy's server couldn't be reached. Check your connection and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -23303,6 +23688,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się połączyć z serwerem Doddy’ego. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Doddy's server couldn't be reached. Check your internet connection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z serwerem Doddy’ego. Sprawdź połączenie z internetem."
           }
         }
       }
@@ -23381,6 +23777,17 @@
         }
       }
     },
+    "Doddy's server didn't confirm the item is gone, so it isn't shown as deleted. Pull down to check again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie potwierdził, że element zniknął, więc nie jest pokazany jako usunięty. Przeciągnij w dół, aby sprawdzić ponownie."
+          }
+        }
+      }
+    },
     "Doddy's server doesn't keep this file any more. Ask him to make it again.": {
       "extractionState": "manual",
       "localizations": {
@@ -23403,6 +23810,17 @@
         }
       }
     },
+    "Doddy's server is placing this call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego wykonuje teraz to połączenie."
+          }
+        }
+      }
+    },
     "Doddy's server isn't keeping this any more (it may have been deleted on the web). Turn it on again if you want it kept.": {
       "extractionState": "manual",
       "localizations": {
@@ -23410,6 +23828,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego już tego nie przechowuje (mogło to zostać usunięte w przeglądarce). Włącz to ponownie, jeśli chcesz to zachować."
+          }
+        }
+      }
+    },
+    "Doddy's server isn't set up in this build, so Studio can't make anything yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc Studio nie może jeszcze nic przygotować."
           }
         }
       }
@@ -23443,6 +23872,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc sprawy nie mogą jeszcze działać."
+          }
+        }
+      }
+    },
+    "Doddy's server isn't set up in this build, so this item can't be deleted from here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc nie można stąd usunąć tego elementu."
           }
         }
       }
@@ -23513,6 +23953,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "AI 密钥由 Doddy 的服务器保管，所以你的 iPhone 上不会存放任何密钥。这部 iPhone 使用其匿名 Doddy 账户来证明它可以使用该服务器。"
+          }
+        }
+      }
+    },
+    "Doddy's server keeps the reason encrypted until the call is over, and checks quiet hours in your iPhone's time zone when it's time. Twilio places the call. You can cancel it in Settings, Phone calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego przechowuje powód zaszyfrowany do końca rozmowy i w chwili połączenia sprawdza godziny ciszy w strefie czasowej Twojego iPhone’a. Połączenie wykonuje Twilio. Możesz je anulować w Ustawieniach, w sekcji Rozmowy telefoniczne."
           }
         }
       }
@@ -24055,6 +24506,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "不添加这张照片"
+          }
+        }
+      }
+    },
+    "Don't book": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie umawiaj"
           }
         }
       }
@@ -24660,6 +25122,17 @@
         }
       }
     },
+    "Don't send": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie wysyłaj"
+          }
+        }
+      }
+    },
     "Don't set": {
       "extractionState": "manual",
       "localizations": {
@@ -24837,6 +25310,17 @@
         }
       }
     },
+    "Done on Doddy's server. This iPhone switches the next time it connects.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe na serwerze Doddy’ego. Ten iPhone przełączy się przy następnym połączeniu."
+          }
+        }
+      }
+    },
     "Done with Doddy, and checked": {
       "extractionState": "manual",
       "localizations": {
@@ -24903,6 +25387,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe. Na kilka rzeczy nie zezwolono. Możesz to zmienić w Ustawieniach iPhone’a › Doddy."
+          }
+        }
+      }
+    },
+    "Done. This iPhone now uses that account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe. Ten iPhone używa teraz tego konta."
           }
         }
       }
@@ -25415,6 +25910,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "E-MAIL"
+          }
+        }
+      }
+    },
+    "Each day, at most": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziennie, najwyżej"
+          }
+        }
+      }
+    },
+    "Each payment, at most": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna płatność, najwyżej"
           }
         }
       }
@@ -26931,6 +27448,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eksportuj moje połączenia"
+          }
+        }
+      }
+    },
+    "Export phone and text history": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksportuj historię rozmów i SMS-ów"
           }
         }
       }
@@ -29409,6 +29937,17 @@
         }
       }
     },
+    "From Doddy's number to your number ending %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z numeru Doddy’ego na Twój numer kończący się na %@"
+          }
+        }
+      }
+    },
     "From Google Keep: in Google Takeout, export Keep. In the Files app, tap the .zip to unpack it, open the Keep folder and pick the .json files. You can also pick .txt and .md files.": {
       "extractionState": "manual",
       "localizations": {
@@ -29501,6 +30040,17 @@
         }
       }
     },
+    "From the register": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z rejestru"
+          }
+        }
+      }
+    },
     "From walking to 30 minutes of running without stopping": {
       "extractionState": "manual",
       "localizations": {
@@ -29567,6 +30117,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "来自你保存的笔记"
+          }
+        }
+      }
+    },
+    "From your text · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z Twojego SMS-a · %@"
           }
         }
       }
@@ -31291,6 +31852,28 @@
         }
       }
     },
+    "I've checked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzone"
+          }
+        }
+      }
+    },
+    "I've checked my wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel sprawdzony"
+          }
+        }
+      }
+    },
     "I've done it, let me try": {
       "extractionState": "manual",
       "localizations": {
@@ -32109,6 +32692,17 @@
         }
       }
     },
+    "Infographic": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Infografika"
+          }
+        }
+      }
+    },
     "Intention": {
       "extractionState": "manual",
       "localizations": {
@@ -32197,6 +32791,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przykład karty faktury"
+          }
+        }
+      }
+    },
+    "Invoice draft": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szkic faktury"
           }
         }
       }
@@ -33413,6 +34018,17 @@
         }
       }
     },
+    "It was already linked to this account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Było już połączone z tym kontem."
+          }
+        }
+      }
+    },
     "It was changed elsewhere since, so Doddy left it alone. Check it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -33645,6 +34261,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "它从未被保存，所以无法恢复。"
+          }
+        }
+      }
+    },
+    "It's deleted from Doddy's server and this iPhone. Doddy's server also deletes Anthropic's working copies.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's deleted from Doddy's server and this iPad. Doddy's server also deletes Anthropic's working copies."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's deleted from Doddy's server and this iPhone. Doddy's server also deletes Anthropic's working copies."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięty z serwera Doddy’ego i z tego iPada. Serwer Doddy’ego usuwa też kopie robocze u Anthropic."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięty z serwera Doddy’ego i z tego iPhone’a. Serwer Doddy’ego usuwa też kopie robocze u Anthropic."
+                }
+              }
+            }
           }
         }
       }
@@ -34498,6 +35155,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Po prostu zapytaj."
+          }
+        }
+      }
+    },
+    "KSeF number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer KSeF"
           }
         }
       }
@@ -36358,6 +37026,17 @@
         }
       }
     },
+    "Larger payments need the amount typed, not just a tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Większe płatności wymagają wpisania kwoty, a nie tylko stuknięcia."
+          }
+        }
+      }
+    },
     "Last 7 days": {
       "extractionState": "manual",
       "localizations": {
@@ -37135,6 +37814,17 @@
         }
       }
     },
+    "Let Doddy pay for pages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwól Doddy płacić za strony"
+          }
+        }
+      }
+    },
     "Let Doddy use my memories on calls": {
       "extractionState": "manual",
       "localizations": {
@@ -37356,6 +38046,17 @@
         }
       }
     },
+    "Limits": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limity"
+          }
+        }
+      }
+    },
     "Lines": {
       "extractionState": "manual",
       "localizations": {
@@ -37367,6 +38068,39 @@
         }
       }
     },
+    "Link Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz Apple"
+          }
+        }
+      }
+    },
+    "Link Google": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz Google"
+          }
+        }
+      }
+    },
+    "Link Google or Apple once, then choose it on Doddy's web sign-in page instead of typing a code. It opens this same account; nothing is copied or merged. The code keeps working.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz Google lub Apple raz, potem wybieraj je na stronie logowania Doddy w przeglądarce zamiast wpisywać kod. Otwiera to samo konto; nic nie jest kopiowane ani łączone. Kod dalej działa."
+          }
+        }
+      }
+    },
     "Link to the leaflet only": {
       "extractionState": "manual",
       "localizations": {
@@ -37374,6 +38108,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tylko link do gazetki"
+          }
+        }
+      }
+    },
+    "Linked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączono"
+          }
+        }
+      }
+    },
+    "Linked. Next time, choose it on Doddy's web sign-in page.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączono. Następnym razem wybierz je na stronie logowania Doddy w przeglądarce."
+          }
+        }
+      }
+    },
+    "Linking didn't finish. Nothing changed. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Łączenie się nie udało. Nic się nie zmieniło. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Linking was cancelled. Nothing changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Łączenie anulowano. Nic się nie zmieniło."
           }
         }
       }
@@ -38396,6 +39174,17 @@
         }
       }
     },
+    "Loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytywanie"
+          }
+        }
+      }
+    },
     "Loading notes": {
       "extractionState": "manual",
       "localizations": {
@@ -38451,6 +39240,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在加载笔记"
+          }
+        }
+      }
+    },
+    "Loading the files": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytywanie plików"
           }
         }
       }
@@ -39023,6 +39823,28 @@
         }
       }
     },
+    "Look and act": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzanie i działanie"
+          }
+        }
+      }
+    },
+    "Look only": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko sprawdzanie"
+          }
+        }
+      }
+    },
     "Looking for": {
       "extractionState": "manual",
       "localizations": {
@@ -39295,6 +40117,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Maszyny, hantle i sztanga"
+          }
+        }
+      }
+    },
+    "Made a Doddy account on the web with Google or Apple? Sign in with it here and this iPhone uses that account. What this iPhone's own account keeps on Doddy's server stays there; you can switch back. Notes on this iPhone stay on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made a Doddy account on the web with Google or Apple? Sign in with it here and this iPad uses that account. What this iPad's own account keeps on Doddy's server stays there; you can switch back. Notes on this iPad stay on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made a Doddy account on the web with Google or Apple? Sign in with it here and this iPhone uses that account. What this iPhone's own account keeps on Doddy's server stays there; you can switch back. Notes on this iPhone stay on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Założono konto Doddy w przeglądarce przez Google lub Apple? Zaloguj się nim tutaj, a ten iPad będzie używał tego konta. To, co własne konto tego iPada przechowuje na serwerze Doddy’ego, tam zostaje; możesz wrócić. Notatki na tym iPadzie zostają na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Założono konto Doddy w przeglądarce przez Google lub Apple? Zaloguj się nim tutaj, a ten iPhone będzie używał tego konta. To, co własne konto tego iPhone’a przechowuje na serwerze Doddy’ego, tam zostaje; możesz wrócić. Notatki na tym iPhonie zostają na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -39941,6 +40804,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Robię Twój dokument"
+          }
+        }
+      }
+    },
+    "Mark as done": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oznacz jako zrobione"
           }
         }
       }
@@ -41261,6 +42135,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Większość biegania spokojnie i nigdy dwa mocne dni pod rząd"
+          }
+        }
+      }
+    },
+    "Most urgent first. Doddy can't do these for you: each button opens the official page or calls the number when you tap it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpilniejsze na górze. Doddy nie zrobi tego za ciebie: każdy przycisk otwiera oficjalną stronę albo dzwoni pod numer dopiero, gdy go stukniesz."
           }
         }
       }
@@ -44084,6 +44969,17 @@
         }
       }
     },
+    "No payment wallet is set up on your Doddy server, so this can't be turned on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na Twoim serwerze Doddy nie ustawiono portfela do płatności, więc nie można tego włączyć."
+          }
+        }
+      }
+    },
     "No product barcode was found in the photo. Try again with the barcode filling more of the picture, or type the item.": {
       "extractionState": "manual",
       "localizations": {
@@ -44737,6 +45633,17 @@
         }
       }
     },
+    "None set up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ustawiono"
+          }
+        }
+      }
+    },
     "None this week": {
       "extractionState": "manual",
       "localizations": {
@@ -44814,6 +45721,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "还没有。当你在三个不同的日子以相同顺序做了同样几件事后，Doddy 可能会提议保存它们。"
+          }
+        }
+      }
+    },
+    "None. Ask Doddy, for example “Call me at six about the cake.”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak. Poproś Doddy’ego, na przykład „Zadzwoń do mnie o szóstej w sprawie ciasta”."
           }
         }
       }
@@ -45120,6 +46038,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "未构建 · 未排期"
+          }
+        }
+      }
+    },
+    "Not called: Doddy had already tried to call as many times as it may.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez połączenia: Doddy próbował już dzwonić tyle razy, ile może."
+          }
+        }
+      }
+    },
+    "Not called: Doddy's phone line wasn't set up on its server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez połączenia: linia telefoniczna Doddy’ego nie była skonfigurowana na serwerze."
+          }
+        }
+      }
+    },
+    "Not called: Doddy's server couldn't place it in time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez połączenia: serwer Doddy’ego nie zdążył go wykonać."
+          }
+        }
+      }
+    },
+    "Not called: Doddy's server couldn't read what the call was about.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez połączenia: serwer Doddy’ego nie mógł odczytać, czego dotyczy rozmowa."
+          }
+        }
+      }
+    },
+    "Not called: it was quiet hours in your iPhone's time zone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez połączenia: w strefie czasowej Twojego iPhone’a trwały godziny ciszy."
+          }
+        }
+      }
+    },
+    "Not called: the phone service turned it down.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez połączenia: usługa telefoniczna je odrzuciła."
           }
         }
       }
@@ -46030,6 +47014,17 @@
         }
       }
     },
+    "Not sure: Doddy couldn't confirm whether the call was placed. It won't try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niepewne: Doddy nie mógł potwierdzić, czy połączenie zostało wykonane. Nie spróbuje ponownie."
+          }
+        }
+      }
+    },
     "Not the same words. Check it's the one you meant.": {
       "extractionState": "manual",
       "localizations": {
@@ -46288,6 +47283,17 @@
         }
       }
     },
+    "Noted by Doddy, saved by you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zanotowane przez Doddy’ego, zapisane przez Ciebie"
+          }
+        }
+      }
+    },
     "Notes": {
       "extractionState": "manual",
       "localizations": {
@@ -46476,65 +47482,6 @@
         }
       }
     },
-    "Notes from your calls": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notizen aus deinen Anrufen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notas de tus llamadas"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes de tes appels"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bilješke iz tvojih poziva"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Note dalle tue chiamate"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通話からのメモ"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notatki z Twoich rozmów telefonicznych"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notas das suas chamadas"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "来自你通话的笔记"
-          }
-        }
-      }
-    },
     "Notes on Doddy's server:": {
       "extractionState": "manual",
       "localizations": {
@@ -46719,6 +47666,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已保存的笔记：%lld"
+          }
+        }
+      }
+    },
+    "Notes waiting for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki czekające na Ciebie"
           }
         }
       }
@@ -47125,6 +48083,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic się nie stanie, dopóki nie stukniesz Tak"
+          }
+        }
+      }
+    },
+    "Nothing here yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na razie nic tu nie ma."
           }
         }
       }
@@ -48231,6 +49200,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic nie było przechowywane, więc nic nie usunięto."
+          }
+        }
+      }
+    },
+    "Nothing was paid": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie zapłacono"
           }
         }
       }
@@ -49799,6 +50779,17 @@
         }
       }
     },
+    "Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Each text waits here as a note, while there's room for 20 notes and up to 30 texts an hour. Doddy does not answer them, and no AI reads them. Texts aren't encrypted between phone networks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domyślnie wyłączone. Liczą się tylko SMS-y z Twojego zweryfikowanego numeru; SMS-y od innych są pomijane bez odpowiedzi. Każdy SMS czeka tutaj jako notatka, dopóki jest miejsce na 20 notatek i do 30 SMS-ów na godzinę. Doddy na nie nie odpowiada i żadne AI ich nie czyta. SMS-y nie są szyfrowane między sieciami komórkowymi."
+          }
+        }
+      }
+    },
     "Off by default. When on, an encrypted copy of your memories is kept on the Doddy messaging server so Doddy can answer from them on a call, after your PIN. The server can read this copy in order to answer, so it is not end-to-end encrypted. What Doddy reads out is processed by ElevenLabs. Turning this off deletes the copy.": {
       "extractionState": "manual",
       "localizations": {
@@ -49906,6 +50897,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłączona, dopóki jej nie włączysz. Doddy sprawdza przesyłkę w InPost tylko wtedy, gdy ją dodasz albo stukniesz Odśwież. Numer z wiadomości czy maila nigdy nie jest sprawdzany sam z siebie. Do InPost trafia tylko numer; nie potrzeba konta ani klucza."
+          }
+        }
+      }
+    },
+    "Off until you turn it on. Even then, every payment shows you the exact price and asks for Face ID first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączone, dopóki tego nie włączysz. Nawet wtedy każda płatność pokazuje dokładną cenę i najpierw prosi o Face ID."
           }
         }
       }
@@ -52562,6 +53564,17 @@
         }
       }
     },
+    "Open Payments": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Płatności"
+          }
+        }
+      }
+    },
     "Open Photos": {
       "extractionState": "manual",
       "localizations": {
@@ -53037,6 +54050,17 @@
         }
       }
     },
+    "Open the brief (PDF)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz raport (PDF)"
+          }
+        }
+      }
+    },
     "Open the camera?": {
       "extractionState": "manual",
       "localizations": {
@@ -53475,6 +54499,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwarto stronę sklepu %@"
+          }
+        }
+      }
+    },
+    "Opening the sign-in…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwieram logowanie…"
           }
         }
       }
@@ -54330,6 +55365,50 @@
         }
       }
     },
+    "Paid": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłacono"
+          }
+        }
+      }
+    },
+    "Paid from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płacone z"
+          }
+        }
+      }
+    },
+    "Paid from Doddy's account at Anthropic, as measured by the server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opłacone z konta Doddy’ego w Anthropic, według pomiaru serwera."
+          }
+        }
+      }
+    },
+    "Paid today": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłacono dziś"
+          }
+        }
+      }
+    },
     "Pain": {
       "extractionState": "manual",
       "localizations": {
@@ -54930,6 +56009,17 @@
         }
       }
     },
+    "Pay for a page": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłać za stronę"
+          }
+        }
+      }
+    },
     "Pay or give card or account numbers": {
       "extractionState": "manual",
       "localizations": {
@@ -54937,6 +56027,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Płacić ani podawać numerów kart czy kont"
+          }
+        }
+      }
+    },
+    "Paying… keep Doddy open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płacę… zostaw Doddy otwartego."
+          }
+        }
+      }
+    },
+    "Payment": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatność"
           }
         }
       }
@@ -54996,6 +56108,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "支付"
+          }
+        }
+      }
+    },
+    "Payments need a Doddy server session. This iPhone signs in to its server the first time you use something online, such as Online accounts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatności wymagają sesji na serwerze Doddy. Ten iPhone loguje się na swoim serwerze przy pierwszym użyciu czegoś online, na przykład Kont online."
           }
         }
       }
@@ -56305,6 +57428,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "地点：%@ → %@"
+          }
+        }
+      }
+    },
+    "Placed: Twilio accepted the call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wykonany: Twilio przyjął połączenie."
           }
         }
       }
@@ -58606,6 +59740,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czekam, aż zaczniesz"
+          }
+        }
+      }
+    },
+    "Real money": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prawdziwe pieniądze"
           }
         }
       }
@@ -63003,6 +64148,17 @@
         }
       }
     },
+    "Said on a call · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedziane w rozmowie · %@"
+          }
+        }
+      }
+    },
     "Same as this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -66360,6 +67516,17 @@
         }
       }
     },
+    "See the price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz cenę"
+          }
+        }
+      }
+    },
     "See the recap.": {
       "extractionState": "manual",
       "localizations": {
@@ -67002,6 +68169,28 @@
         }
       }
     },
+    "Send text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij SMS-a"
+          }
+        }
+      }
+    },
+    "Send this text to you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysłać Ci tego SMS-a?"
+          }
+        }
+      }
+    },
     "Send to Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -67142,6 +68331,17 @@
         }
       }
     },
+    "Sending your text…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłam SMS-a…"
+          }
+        }
+      }
+    },
     "Sending…": {
       "extractionState": "manual",
       "localizations": {
@@ -67197,6 +68397,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在发送…"
+          }
+        }
+      }
+    },
+    "Sent as %lld SMS parts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysłany jako %lld części SMS"
           }
         }
       }
@@ -67584,6 +68795,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已为 %lld 人设置。已核对。"
+          }
+        }
+      }
+    },
+    "Set on your Doddy server. A page that asks for more is refused before anything is shown to confirm.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawiane na Twoim serwerze Doddy. Strona, która żąda więcej, jest odrzucana, zanim cokolwiek zobaczysz do potwierdzenia."
           }
         }
       }
@@ -70199,6 +71421,39 @@
         }
       }
     },
+    "Sign in with Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się przez Apple"
+          }
+        }
+      }
+    },
+    "Sign in with Google": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się przez Google"
+          }
+        }
+      }
+    },
+    "Sign in with Google or Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logowanie przez Google lub Apple"
+          }
+        }
+      }
+    },
     "Sign out": {
       "extractionState": "manual",
       "localizations": {
@@ -70221,6 +71476,17 @@
         }
       }
     },
+    "Sign-in was cancelled. Nothing changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logowanie anulowano. Nic się nie zmieniło."
+          }
+        }
+      }
+    },
     "Signed-in browsers": {
       "extractionState": "manual",
       "localizations": {
@@ -70239,6 +71505,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podobne, nie to samo"
+          }
+        }
+      }
+    },
+    "Since": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od"
           }
         }
       }
@@ -70622,6 +71899,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "其中一些笔记之后已被删除。"
+          }
+        }
+      }
+    },
+    "Some payments weren't confirmed. Check your wallet's history before paying that page again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niektóre płatności nie zostały potwierdzone. Zanim zapłacisz za tę stronę ponownie, sprawdź historię portfela."
           }
         }
       }
@@ -72911,6 +74199,17 @@
         }
       }
     },
+    "Stop making this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań to przygotowywać"
+          }
+        }
+      }
+    },
     "Stop recording to play this.": {
       "extractionState": "manual",
       "localizations": {
@@ -73356,6 +74655,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trening siłowy"
+          }
+        }
+      }
+    },
+    "Studio": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Studio"
+          }
+        }
+      }
+    },
+    "Studio is switched off or not set up on Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Studio jest wyłączone albo nieskonfigurowane na serwerze Doddy’ego."
           }
         }
       }
@@ -74671,6 +75992,17 @@
         }
       }
     },
+    "Test network, no real money": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieć testowa, bez prawdziwych pieniędzy"
+          }
+        }
+      }
+    },
     "Tested by you": {
       "extractionState": "manual",
       "localizations": {
@@ -75058,6 +76390,91 @@
         }
       }
     },
+    "Texts from Doddy are off: turn on texts in Notifications and texts first. If you sent STOP, text START to Doddy's number.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS-y od Doddy’ego są wyłączone: najpierw włącz SMS-y w Powiadomieniach i SMS-ach. Jeśli wysłano STOP, napisz START na numer Doddy’ego."
+          }
+        }
+      }
+    },
+    "Texts to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS-y do Doddy’ego"
+          }
+        }
+      }
+    },
+    "Texts to Doddy aren't set up on Doddy's server yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS-y do Doddy’ego nie są jeszcze skonfigurowane na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
+    "That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPhone's account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPad's account."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPhone's account."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To konto nie ma jeszcze konta Doddy. Najpierw załóż je na stronie Doddy w przeglądarce albo użyj Połącz poniżej, żeby dodać je do konta tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To konto nie ma jeszcze konta Doddy. Najpierw załóż je na stronie Doddy w przeglądarce albo użyj Połącz poniżej, żeby dodać je do konta tego iPhone’a."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "That account is already linked to another Doddy account (perhaps one made on the web), so it wasn't linked here. Nothing was merged.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To konto jest już połączone z innym kontem Doddy (może założonym w przeglądarce), więc nie połączono go tutaj. Nic nie zostało scalone."
+          }
+        }
+      }
+    },
     "That address didn't return a news feed. Look for an RSS or Atom link on the site.": {
       "extractionState": "manual",
       "localizations": {
@@ -75235,6 +76652,17 @@
         }
       }
     },
+    "That call isn't waiting any more: it was placed, cancelled or skipped.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten telefon już nie czeka: został wykonany, anulowany albo pominięty."
+          }
+        }
+      }
+    },
     "That code has expired. Ask for a new one.": {
       "extractionState": "manual",
       "localizations": {
@@ -75349,6 +76777,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "验证码不正确。请检查短信后重试。"
+          }
+        }
+      }
+    },
+    "That couldn't be done: the item has already finished or changed. Pull down to check again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się: element już się zakończył albo zmienił. Przeciągnij w dół, aby sprawdzić ponownie."
           }
         }
       }
@@ -75980,6 +77419,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "该文件不是 Doddy 备份。没有添加任何内容。"
+          }
+        }
+      }
+    },
+    "That is already this iPhone's own account. Nothing changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That is already this iPad's own account. Nothing changed."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That is already this iPhone's own account. Nothing changed."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To już jest własne konto tego iPada. Nic się nie zmieniło."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To już jest własne konto tego iPhone’a. Nic się nie zmieniło."
+                }
+              }
+            }
           }
         }
       }
@@ -76714,6 +78194,17 @@
         }
       }
     },
+    "That sign-in didn't finish. Nothing changed. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To logowanie się nie udało. Nic się nie zmieniło. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "That time has already passed, so no nudge was set.": {
       "extractionState": "manual",
       "localizations": {
@@ -77005,61 +78496,13 @@
         }
       }
     },
-    "That's the limit for calls for now. Try again later.": {
+    "That's the limit for now. Try again later.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Das ist vorerst das Limit für Anrufe. Versuch es später noch einmal."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ese es el límite de llamadas por ahora. Inténtalo más tarde."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "C’est la limite d’appels pour le moment. Réessaie plus tard."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To je zasad limit poziva. Pokušaj poslije."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Per ora è il limite di chiamate. Riprova più tardi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今のところ通話の上限に達しています。後でもう一度お試しください。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na razie to limit rozmów. Spróbuj później."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esse é o limite de chamadas por enquanto. Tente de novo mais tarde."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目前通话次数已达上限。请稍后再试。"
+            "value": "To na razie limit. Spróbuj później."
           }
         }
       }
@@ -78420,6 +79863,17 @@
         }
       }
     },
+    "The file that arrived isn't the one Doddy's server described, so it isn't opened.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik, który dotarł, nie jest tym, który opisał serwer Doddy’ego, więc nie zostanie otwarty."
+          }
+        }
+      }
+    },
     "The file wasn't made, or Doddy couldn't confirm it. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -78427,6 +79881,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plik nie powstał albo Doddy nie mógł tego potwierdzić. Spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
+    "The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The invoice draft couldn't be removed from this iPad. Close it on the voice screen to try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć szkicu faktury z tego iPada. Zamknij go na ekranie rozmowy, żeby spróbować ponownie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć szkicu faktury z tego iPhone’a. Zamknij go na ekranie rozmowy, żeby spróbować ponownie."
+                }
+              }
+            }
           }
         }
       }
@@ -82967,6 +84462,28 @@
         }
       }
     },
+    "This confirmation has run out.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To potwierdzenie wygasło."
+          }
+        }
+      }
+    },
+    "This confirmation runs out in %lld s.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To potwierdzenie wygaśnie za %lld s."
+          }
+        }
+      }
+    },
     "This doesn't turn anything on. Doddy asks separately before using the microphone or sending anything.": {
       "extractionState": "manual",
       "localizations": {
@@ -83527,6 +85044,39 @@
         }
       }
     },
+    "This iPhone uses its own account again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone znów używa własnego konta."
+          }
+        }
+      }
+    },
+    "This iPhone uses your Doddy account from Apple.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone używa Twojego konta Doddy z Apple."
+          }
+        }
+      }
+    },
+    "This iPhone uses your Doddy account from Google.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone używa Twojego konta Doddy z Google."
+          }
+        }
+      }
+    },
     "This iPhone's Doddy messaging account no longer exists. Try again to start a new one.": {
       "extractionState": "manual",
       "localizations": {
@@ -83733,6 +85283,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这不是 Google Keep 笔记。"
+          }
+        }
+      }
+    },
+    "This item isn't on Doddy's server any more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego elementu nie ma już na serwerze Doddy’ego."
           }
         }
       }
@@ -84039,6 +85600,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这条记忆已不存在。"
+          }
+        }
+      }
+    },
+    "This month's spending limit for Studio is reached. Try again next month.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miesięczny limit wydatków Studia został osiągnięty. Spróbuj w przyszłym miesiącu."
           }
         }
       }
@@ -85569,6 +87141,17 @@
         }
       }
     },
+    "This time is in quiet hours. Turn on the switch to book it anyway, or ask Doddy for another time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta godzina wypada w godzinach ciszy. Włącz przełącznik, żeby mimo to umówić telefon, albo poproś Doddy’ego o inną godzinę."
+          }
+        }
+      }
+    },
     "This week": {
       "extractionState": "manual",
       "localizations": {
@@ -85786,6 +87369,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Doddy 中勾选清单项目"
+          }
+        }
+      }
+    },
+    "Tick a step when you've done it. Doddy can't see your bank or mObywatel, so only you know it's done.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznacz krok, gdy go zrobisz. Doddy nie widzi twojego banku ani mObywatela, więc tylko ty wiesz, że jest zrobiony."
           }
         }
       }
@@ -86974,6 +88568,17 @@
         }
       }
     },
+    "Today's spending limit for Studio is reached. Try again tomorrow.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzisiejszy limit wydatków Studia został osiągnięty. Spróbuj jutro."
+          }
+        }
+      }
+    },
     "Tomorrow": {
       "extractionState": "manual",
       "localizations": {
@@ -87202,6 +88807,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zbyt wiele prób. Spróbuj później."
+          }
+        }
+      }
+    },
+    "Too many tries. Wait a few minutes, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Za dużo prób. Poczekaj kilka minut i spróbuj ponownie."
           }
         }
       }
@@ -87464,6 +89080,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plan treningowy"
+          }
+        }
+      }
+    },
+    "Transaction %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transakcja %@"
           }
         }
       }
@@ -88755,6 +90382,17 @@
         }
       }
     },
+    "Turn on “Let Doddy pay for pages” first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw włącz „Pozwól Doddy płacić za strony”."
+          }
+        }
+      }
+    },
     "Turn the parcel list off?": {
       "extractionState": "manual",
       "localizations": {
@@ -88843,6 +90481,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłączenie zatrzymuje zapisywanie. To, co już zapisano, zostaje, dopóki tego nie usuniesz."
+          }
+        }
+      }
+    },
+    "Twilio carries the text. Doddy's server keeps it encrypted only until it's sent, and sends exactly this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS-a przenosi Twilio. Serwer Doddy’ego trzyma go zaszyfrowanego tylko do wysłania i wysyła dokładnie ten tekst."
           }
         }
       }
@@ -89053,6 +90702,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisz go pod adresem"
+          }
+        }
+      }
+    },
+    "Type the amount to confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz kwotę, aby potwierdzić"
           }
         }
       }
@@ -89444,6 +91104,17 @@
         }
       }
     },
+    "Unlink": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odłącz"
+          }
+        }
+      }
+    },
     "Unlock": {
       "extractionState": "manual",
       "localizations": {
@@ -89816,6 +91487,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Do %@"
+          }
+        }
+      }
+    },
+    "Untitled": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez tytułu"
           }
         }
       }
@@ -90721,6 +92403,47 @@
         }
       }
     },
+    "Use this iPhone's own account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use this iPad's own account"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use this iPhone's own account"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Użyj własnego konta tego iPada"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Użyj własnego konta tego iPhone’a"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Use what Doddy learned in voice conversations": {
       "extractionState": "manual",
       "localizations": {
@@ -91104,6 +92827,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "请先验证你的手机号码。"
+          }
+        }
+      }
+    },
+    "Verify your phone number in Notifications and texts first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw zweryfikuj swój numer w Powiadomieniach i SMS-ach."
           }
         }
       }
@@ -91657,6 +93391,17 @@
         }
       }
     },
+    "Waiting since %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka od %@"
+          }
+        }
+      }
+    },
     "Waiting to start": {
       "extractionState": "manual",
       "localizations": {
@@ -91664,6 +93409,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czeka na start"
+          }
+        }
+      }
+    },
+    "Waiting. Doddy's server will call you then.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka. Serwer Doddy’ego zadzwoni o tej porze."
           }
         }
       }
@@ -91697,6 +93453,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Spacer"
+          }
+        }
+      }
+    },
+    "Wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel"
           }
         }
       }
@@ -91988,61 +93755,24 @@
         }
       }
     },
-    "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": {
+    "Web address of the page (https://…)": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Websuche ist an, und die Werkzeuge eines Kontos gehen an, sobald du es verbindest. Doddy fragt trotzdem vor jedem Nachsehen, und alles, was etwas sendet, hinzufügt oder ändert, zeigt dir zuerst eine Karte und wartet auf dein Tippen. Hier kannst du jedes Werkzeug ausschalten."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La búsqueda web está activada, y las herramientas de una cuenta se activan al conectarla. Doddy sigue preguntando antes de cada consulta, y todo lo que envía, añade o cambia algo te muestra primero una tarjeta y espera tu toque. Aquí puedes desactivar cualquier herramienta."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La recherche web est activée, et les outils d’un compte s’activent quand vous le connectez. Doddy demande quand même avant chaque consultation, et tout ce qui envoie, ajoute ou modifie quelque chose vous montre d’abord une carte et attend votre toucher. Désactivez ici n’importe quel outil."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pretraživanje weba je uključeno, a alati računa uključuju se kad ga povežeš. Doddy ipak pita prije svakog pregleda, a sve što nešto šalje, dodaje ili mijenja najprije ti pokaže karticu i čeka tvoj dodir. Ovdje možeš isključiti bilo koji alat."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La ricerca web è attiva, e gli strumenti di un account si attivano quando lo colleghi. Doddy chiede comunque prima di ogni controllo, e tutto ciò che invia, aggiunge o modifica qualcosa ti mostra prima una scheda e aspetta il tuo tocco. Qui puoi disattivare qualsiasi strumento."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ウェブ検索はオンです。アカウントのツールは、接続するとオンになります。それでもDoddyは確認のたびに尋ね、何かを送信・追加・変更するものは、まずカードを表示してあなたのタップを待ちます。ここでどのツールもオフにできます。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wyszukiwanie w sieci jest włączone, a narzędzia konta włączają się, gdy je połączysz. Doddy i tak pyta przed każdym sprawdzeniem, a wszystko, co coś wysyła, dodaje lub zmienia, najpierw pokazuje kartę i czeka na Twoje stuknięcie. Tutaj możesz wyłączyć każde narzędzie."
+            "value": "Adres strony (https://…)"
           }
-        },
-        "pt-BR": {
+        }
+      }
+    },
+    "Web search is on. When you connect an account its tools start off, and you choose what Doddy may do with it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. You can switch any tool off here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "A busca na web está ativada, e as ferramentas de uma conta são ativadas quando você a conecta. O Doddy ainda pergunta antes de cada consulta, e tudo o que envia, adiciona ou muda algo mostra primeiro um cartão e espera seu toque. Desative qualquer ferramenta aqui."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "网页搜索已开启，账户的工具会在你连接账户后开启。Doddy 每次查看前仍会询问，任何会发送、添加或更改内容的操作都会先显示一张卡片，等你轻点确认。你可以在这里关闭任何工具。"
+            "value": "Wyszukiwanie w sieci jest włączone. Gdy połączysz konto, jego narzędzia są na początku wyłączone, a Ty wybierasz, co Doddy może z nim robić. Doddy i tak pyta przed każdym sprawdzeniem, a wszystko, co coś wysyła, dodaje lub zmienia, najpierw pokazuje kartę i czeka na Twoje stuknięcie. Tutaj możesz wyłączyć każde narzędzie."
           }
         }
       }
@@ -92596,6 +94326,28 @@
         }
       }
     },
+    "What Doddy made in Studio stays on Doddy's server until you delete it in Studio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co Doddy przygotował w Studiu, zostaje na serwerze Doddy’ego, dopóki tego nie usuniesz w Studiu."
+          }
+        }
+      }
+    },
+    "What Doddy may do": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy może robić"
+          }
+        }
+      }
+    },
     "What Doddy may say": {
       "extractionState": "manual",
       "localizations": {
@@ -93046,6 +94798,17 @@
         }
       }
     },
+    "What may Doddy do?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co może robić Doddy?"
+          }
+        }
+      }
+    },
     "What next": {
       "extractionState": "manual",
       "localizations": {
@@ -93123,6 +94886,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co zostaje tutaj"
+          }
+        }
+      }
+    },
+    "What to do now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co zrobić teraz"
           }
         }
       }
@@ -94289,6 +96063,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "When you answer, Doddy says:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy odbierzesz, Doddy powie:"
           }
         }
       }
@@ -96006,6 +97791,17 @@
         }
       }
     },
+    "You already sent this exact text at %@. Sending again sends it a second time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten sam SMS został już wysłany o %@. Ponowne wysłanie wyśle go drugi raz."
+          }
+        }
+      }
+    },
     "You also have an unfinished note from %@. It's kept; it opens the next time you start a new note.": {
       "extractionState": "manual",
       "localizations": {
@@ -96131,6 +97927,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你问 Doddy 它们在哪里。"
+          }
+        }
+      }
+    },
+    "You asked for": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja prośba"
           }
         }
       }
@@ -96282,6 +98089,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "之后几秒钟内可以撤销。"
+          }
+        }
+      }
+    },
+    "You cancelled it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anulowano na Twoją prośbę."
           }
         }
       }
@@ -97490,6 +99308,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的 PIN 码"
+          }
+        }
+      }
+    },
+    "Your account from the web": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje konto z przeglądarki"
           }
         }
       }
@@ -99157,6 +100986,17 @@
         }
       }
     },
+    "Your phone and text history": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Historia Twoich rozmów i SMS-ów"
+          }
+        }
+      }
+    },
     "Your phone was rung twice already. Doddy carries on with the call.": {
       "extractionState": "manual",
       "localizations": {
@@ -99768,6 +101608,17 @@
         }
       }
     },
+    "answered": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "odebrane"
+          }
+        }
+      }
+    },
     "at least %@": {
       "extractionState": "manual",
       "localizations": {
@@ -99797,6 +101648,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "średnio %@ /km"
+          }
+        }
+      }
+    },
+    "busy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zajęte"
+          }
+        }
+      }
+    },
+    "cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "anulowane"
           }
         }
       }
@@ -99900,6 +101773,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "usuwanie w toku"
+          }
+        }
+      }
+    },
+    "failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nieudane"
           }
         }
       }
@@ -100321,6 +102205,17 @@
         }
       }
     },
+    "no answer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nieodebrane"
+          }
+        }
+      }
+    },
     "none": {
       "extractionState": "manual",
       "localizations": {
@@ -100380,6 +102275,17 @@
         }
       }
     },
+    "not confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "niepotwierdzone"
+          }
+        }
+      }
+    },
     "not known": {
       "extractionState": "manual",
       "localizations": {
@@ -100431,6 +102337,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "w toku"
+          }
+        }
+      }
+    },
+    "ringing": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dzwoni"
           }
         }
       }

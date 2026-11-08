@@ -59,7 +59,7 @@ test("strict bodies: user, connection and slug fields are rejected, not ignored"
 
 // ------------------------------------------------------------------ switches
 
-test("accounts start disconnected; connecting turns an account's tools on (ADR-563); the user's off blocks at once", async () => {
+test("accounts start disconnected; choosing 'act' after connecting turns an account's tools on (ADR-816); the user's off blocks at once", async () => {
   rig = await start();
   const catalog = await rig.call("GET", "/v1/tools");
   assert.equal(catalog.status, 200);
@@ -76,7 +76,7 @@ test("accounts start disconnected; connecting turns an account's tools on (ADR-5
   assert.equal(unconnected.body.error.code, "not_connected");
   assert.equal(rig.provider.executed.length, 0);
 
-  // Connected: the tools are on with it, and a read still runs only after its yes (run() asks first).
+  // Connected and the user chose act (connect() does): the tools are on, and a read still runs only after its yes (run() asks first).
   assert.equal((await connect(rig, "gmail")).status, 200);
   const ok = await run(rig, "check_email", {});
   assert.equal(ok.status, 200, ok.text);
@@ -130,7 +130,7 @@ test("disconnect switches the account's tools off and blocks them at once", asyn
   const res = await run(rig, "list_todoist_tasks", {});
   assert.equal(res.status, 409);
   assert.equal(res.body.error.code, "not_connected");
-  // A fresh connection never inherits old switches: it starts with every tool on (ADR-563), not the old set.
+  // A fresh connection never inherits old switches: its tools start off until the user chooses (ADR-816), not the old set.
   await off(rig, "add_todoist_task");
   await connect(rig, "todoist");
   const view = (await rig.call("GET", "/v1/tools")).body.toolkits.find((t: any) => t.id === "todoist");

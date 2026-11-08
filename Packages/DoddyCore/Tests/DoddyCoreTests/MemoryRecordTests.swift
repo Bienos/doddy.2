@@ -43,9 +43,11 @@ final class MemoryRecordTests: XCTestCase {
                 XCTAssertEqual($0 as? MemoryValidationError, .sourceNotCapturable(source))
             }
         }
-        for source in [MemorySource.explicitText, .explicitVoice, .sharedContent] {
+        for source in [MemorySource.explicitText, .explicitVoice, .sharedContent, .notedByDoddy] {
             XCTAssertNoThrow(try NewMemory(text: "x", source: source, capturedAt: t0))
         }
+        // A note Doddy wrote keeps its day like any capture.
+        XCTAssertThrowsError(try MemoryRecord(id: id, rawText: "x", source: .notedByDoddy, capturedAt: nil))
     }
 
     // MARK: provenance (A-02, A-06 domain rules)

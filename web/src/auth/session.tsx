@@ -10,13 +10,17 @@ import { clearThreads } from "../chat/threads.js";
 
 export type SessionState =
   | { status: "checking" }
-  | { status: "signedOut"; notice: "expired" | null }
+  | { status: "signedOut"; notice: "expired" | "deleted" | "deletedPending" | null }
   | { status: "signedIn"; session: WebSessionView }
   | { status: "unreachable"; error: ApiError };
 
 interface SessionApi {
   state: SessionState;
   signIn(code: string): Promise<void>;
+  /** A session the server opened another way (a new account made with Google or Apple, ADR-818). */
+  signedIn(session: WebSessionView): void;
+  /** The account was deleted: everything here goes, and the sign-in page says so (and whether a removal is still owed). */
+  deleted(complete: boolean): void;
   signOut(): Promise<void>;
   /** A call answered `unauthenticated`: the session ended (signed out elsewhere, expired). */
   expired(): void;
@@ -52,6 +56,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setState({ status: "signedIn", session });
   }, []);
 
+  const signedIn = useCallback((session: WebSessionView) => setState({ status: "signedIn", session }), []);
+  const deleted = useCallback((complete: boolean) => {
+    clearThreads();
+    setState({ status: "signedOut", notice: complete ? "deleted" : "deletedPending" });
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await api.signOut();
@@ -73,7 +83,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setAttempt((n) => n + 1);
   }, []);
 
-  const value = useMemo(() => ({ state, signIn, signOut, expired, recheck }), [state, signIn, signOut, expired, recheck]);
+  const value = useMemo(() => ({ state, signIn, signedIn, deleted, signOut, expired, recheck }), [state, signIn, signedIn, deleted, signOut, expired, recheck]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

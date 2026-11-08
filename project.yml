@@ -203,7 +203,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).notificationcontent
         PRODUCT_NAME: DoddyNotificationContent
-        MARKETING_VERSION: "0.0.1"
+        MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Config/DoddyNotificationContent-Info.plist
