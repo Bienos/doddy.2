@@ -41,6 +41,40 @@ final class ToolGateTests: XCTestCase {
         }
     }
 
+    // MARK: The release scope (decision 2026-11-07-release-scope)
+
+    func testHiddenToolIsRefusedBeforeEverything() {
+        // A hidden tool is hidden whatever else is on: translator, Pause all, a switch.
+        let timer = #"{"seconds": 300}"#
+        func decide(_ name: String, _ json: String, translator: Bool = false, pauseAll: Bool = false, on: Bool = true) -> ToolGate.Decision {
+            ToolGate.decide(toolName: name, request: request(name, json), translatorOn: translator, pauseAll: pauseAll,
+                            isOn: { _ in on }, scope: .shipping)
+        }
+        XCTAssertEqual(decide(VoiceToolName.findDeals, #"{"items":["masło"]}"#), .hidden(.deals))
+        XCTAssertEqual(decide(VoiceToolName.handOverErrand, "{}", translator: true, pauseAll: true, on: false), .hidden(.errands))
+        XCTAssertEqual(decide(VoiceToolName.startTranslator, "{}"), .hidden(.translator), "translator mode can't start")
+        XCTAssertEqual(decide(VoiceToolName.stopTranslator, "{}", translator: true), .hidden(.translator))
+        XCTAssertEqual(decide(VoiceToolName.proposePlan, "{}"), .hidden(.planCard), "the plan card is hidden before .plan")
+        XCTAssertEqual(decide(CloudToolName.draftEmail, Self.draft), .hidden(.onlineAccounts))
+        XCTAssertEqual(decide(VoiceToolName.controlHome, #"{"action":"off","name":"Lamp"}"#, on: false), .hidden(.homeKit), "hidden before its switch")
+        // Core tools go on to the other checks as before.
+        XCTAssertEqual(decide(VoiceToolName.setTimer, timer), .run)
+        XCTAssertEqual(decide(VoiceToolName.setTimer, timer, on: false), .notConnected(.timers))
+        // The gate is pure: it still honours the controller's translator flag, whatever the scope.
+        XCTAssertEqual(decide(VoiceToolName.searchMemories, #"{"query":"keys"}"#, translator: true), .translatorRefused)
+    }
+
+    func testEverythingScopeChangesNoDecision() {
+        // The default scope is `.everything`: every row of the gate table holds with it spelled out.
+        for name in Self.allToolNames + [VoiceToolName.findDeals, VoiceToolName.startTranslator, CloudToolName.draftEmail] {
+            let request = request(name)
+            let without = ToolGate.decide(toolName: name, request: request, translatorOn: false, pauseAll: false, isOn: { _ in true })
+            let with = ToolGate.decide(toolName: name, request: request, translatorOn: false, pauseAll: false, isOn: { _ in true }, scope: .everything)
+            XCTAssertEqual(without, with, name)
+            if case .hidden = with { XCTFail("\(name) hidden by .everything") }
+        }
+    }
+
     func testOrderHoldsWhenEveryCheckWouldStopTheCall() {
         // A request that Pause all covers, under names that a switch also covers: the earlier
         // check wins each time. Swapping any two checks in decide fails one of these.

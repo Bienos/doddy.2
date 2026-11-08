@@ -110,6 +110,9 @@ final class RecordingCoordinator {
     /// Starts a recording and returns once the recorder has delivered audio, or has failed. A second
     /// call while one is going is rejected, never queued.
     func start(origin: CaptureOrigin) async -> StartOutcome {
+        // Hidden in this build (decision 2026-11-07-release-scope): Siri, the control and the Action Button still reach here, and
+        // are told why nothing started. Nothing is installed or set up for a hidden feature.
+        guard ReleaseScopeStore.current.shows(.recordings) else { return .rejected(.notInThisVersion) }
         install()
         let id = UUID()
         let effects = machine.handle(.startRequested(id: id, origin: origin, at: .now))
