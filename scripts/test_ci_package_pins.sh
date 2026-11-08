@@ -33,7 +33,15 @@ cat > "$bin/xcodebuild" <<'EOF'
 dest=Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
 write() { mkdir -p "$dest"; printf '%s\n' "$FAKE_PINS" > "$dest/Package.resolved"; }
 case "$1" in
-  -resolvePackageDependencies) [ "${FAKE_RESOLVE_WRITES:-0}" = 1 ] && write ;;
+  -resolvePackageDependencies)
+    # FAKE_RESOLVE_FAILS=N: the first N resolves fail like run 42465092351 (a 504 on a binary framework);
+    # FAKE_RESOLVE_FAIL_TEXT is what they print. FAKE_COUNTER counts the resolves.
+    n=$(cat "$FAKE_COUNTER" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "$FAKE_COUNTER"
+    if [ "$n" -le "${FAKE_RESOLVE_FAILS:-0}" ]; then
+      echo "${FAKE_RESOLVE_FAIL_TEXT:-failed downloading 'https://example.invalid/F.xcframework.zip' which is required by binary target 'F': badResponseStatusCode(504)}" >&2
+      exit 74
+    fi
+    [ "${FAKE_RESOLVE_WRITES:-0}" = 1 ] && write ;;
   build-for-testing) [ "${FAKE_BUILD_WRITES:-0}" = 1 ] && write ;;
 esac
 exit 0
@@ -45,14 +53,14 @@ root="$tmp/case"
 # COMMITTED_PINS is the text of Config/Package.resolved, or "none".
 run_case() {
   local name=$1 want_exit=$2 want_text=$3 committed=$4 resolve=$5 build=$6 xcode_pins=$7
-  rm -rf "$root"; mkdir -p "$root/scripts" "$root/Config"
+  rm -rf "$root"; mkdir -p "$root/scripts" "$root/Config"; rm -f "$tmp/count"
   cp "$ci_script" "$root/scripts/ci.sh"
   cp "$repo/scripts/install_package_resolved.sh" "$root/scripts/"
   : > "$root/project.yml"
   if [ "$committed" != none ]; then printf '%s\n' "$committed" > "$root/Config/Package.resolved"; fi
   local out got
   out=$(cd "$root" && PATH="$bin:$PATH" FAKE_PINS=$xcode_pins FAKE_RESOLVE_WRITES=$resolve FAKE_BUILD_WRITES=$build \
-        DODDY_UI_TESTS=smoke bash scripts/ci.sh --only ios 2>&1)
+        FAKE_COUNTER="$tmp/count" CI_FETCH_WAIT=0 DODDY_UI_TESTS=smoke bash scripts/ci.sh --only ios 2>&1)
   got=$?
   if [ "$got" = "$want_exit" ] && grep -q -- "$want_text" <<<"$out"; then
     echo "ok    exit=$want_exit  $name"
@@ -83,6 +91,23 @@ copied "no build/Package.resolved when there was nothing to copy" ""
 # Pins committed: they are installed first, so the file is there. Unchanged passes; a move fails.
 run_case "pins committed and unchanged: PASS" 0 "PASS     App package versions match" committed-pins 0 0 xcode-pins
 run_case "pins committed and resolution moved them: FAIL" 1 "FAIL     App package versions match" committed-pins 1 0 other-pins
+
+# A failed download is tried again (8 Nov 2026, run 42465092351: 504 on the LiveKit binary frameworks); a
+# failure that isn't a download is not; and after the last try the step still fails.
+resolves() {  # description, expected number of resolve attempts
+  local got; got=$(cat "$tmp/count" 2>/dev/null || echo 0)
+  if [ "$got" = "$2" ]; then echo "ok    $1 ($got resolve attempts)"; else echo "FAIL  $1: wanted $2 resolve attempts, got $got"; failures=$((failures + 1)); fi
+}
+export FAKE_RESOLVE_FAILS=2
+run_case "two 504s then success: tried again, step PASSES" 0 "PASS     Resolve the app's packages" none 1 0 xcode-pins
+resolves "two failures then success" 3
+export FAKE_RESOLVE_FAILS=99
+run_case "504 on every try: still FAILS after 4 tries" 1 "FAIL     Resolve the app's packages (exit 74)" none 1 0 xcode-pins
+resolves "gives up" 4
+export FAKE_RESOLVE_FAIL_TEXT="error: the manifest is invalid"
+run_case "a failure that is not a download: not retried, FAILS" 1 "FAIL     Resolve the app's packages (exit 74)" none 1 0 xcode-pins
+resolves "no retry for a manifest error" 1
+unset FAKE_RESOLVE_FAILS FAKE_RESOLVE_FAIL_TEXT
 
 if [ "$failures" -ne 0 ]; then echo "$failures check(s) failed"; exit 1; fi
 echo "all package-pin cases passed"
