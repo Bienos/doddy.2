@@ -418,6 +418,7 @@ extension IslandAction {
         switch self {
         case .text: IslandWords(label: islandWord("MESSAGE"), title: "A text to check", subtitle: "You send it yourself, in Messages")
         case .email: IslandWords(label: islandWord("EMAIL"), title: "An email to check", subtitle: "Nothing is sent until you tap yes")
+        case .transfer: IslandWords(label: islandWord("BLIK"), title: "A transfer to check", subtitle: "You send it in your bank app")
         case .calendar: IslandWords(label: islandWord("CALENDAR"), title: "A calendar change", subtitle: "Nothing changes until you tap yes")
         case .reminder: IslandWords(label: islandWord("REMINDER"), title: "A reminder change", subtitle: "Nothing changes until you tap yes")
         case .alarm: IslandWords(label: islandWord("ALARM"), title: "An alarm to check", subtitle: "Nothing is set until you tap yes")
