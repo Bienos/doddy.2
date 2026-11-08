@@ -1,2 +1,3 @@
 A Debug build (Run in Xcode) shows every feature again by default; Settings › About › Advanced › "Developer: show every feature" now starts on, and off shows the beta scope. Release and TestFlight builds still always ship the beta scope (decision `2026-11-08-debug-shows-every-feature`).
 Ran: see the pull request. Not run: the SwiftUI edit in `SettingsScreens.swift` was not compiled here (no Xcode); the hosted Mac job compiles it.
+Also in this pull request: agents squash-merge their own pull requests once `core`, `ios-build` and `sensitive-paths` are green, and add `owner-approved` themselves (owner, 8 Nov; decision `2026-11-08-agents-merge-their-own-pull-requests`, `AGENTS.md` "Merging"). A merge ships to Vercel production and Xcode Cloud.

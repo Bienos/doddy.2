@@ -11,7 +11,7 @@
 - [ ] docs only
 
 ## Risk
-- [ ] Touches entitlements, Info.plist, Xcode specs, Xcode Cloud scripts, deploy config, `secrets/`, `voice-agent/`, a migration, CI or agent rules: the `sensitive-paths` check needs the owner's `owner-approved` label (agents never add it)
+- [ ] Touches entitlements, Info.plist, Xcode specs, Xcode Cloud scripts, deploy config, `secrets/`, `voice-agent/`, a migration, CI or agent rules: the `sensitive-paths` check needs the `owner-approved` label (an agent adds it to its own pull request after saying why each file changes; decision `2026-11-08-agents-merge-their-own-pull-requests`)
 - [ ] Needs a server deploy or a live voice agent change before or after the app ships (say which, in order)
 - [ ] Behind a flag (name, and its default)
 
