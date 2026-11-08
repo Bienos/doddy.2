@@ -91,6 +91,15 @@
 	     because the device ID the phone signs in with goes there. -->
 	<key>DoddyServerURL</key>
 	<string>https://doddy-yaci.onrender.com</string>
+	<!-- Decision 2026-11-08-required-account: the Doddy accounts (Supabase Auth, project
+	     doddy-gateway). Both values are public by design: the project's address and its publishable
+	     key (sb_publishable_…), which every app that signs in to Supabase ships; the servers keep the
+	     secret key. With them filled in, everyone signs in (Apple, Google or a code by email) before
+	     using Doddy. Emptying both turns accounts off again in the next build. -->
+	<key>DoddyAccountsURL</key>
+	<string>https://sliondswemhneuzehpoq.supabase.co</string>
+	<key>DoddyAccountsPublishableKey</key>
+	<string>sb_publishable_qvClrOM9aE-OZvFGZ54x-Q_5q53mS_4</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

@@ -288,6 +288,24 @@ final class DoddyAccountTests: XCTestCase {
         XCTAssertTrue(none.requests.isEmpty)
     }
 
+    func testTheBackendProbeAsksWithTheAccountAndReadsYesNotYetOrLater() async throws {
+        let yes = ScriptedTransport(status: 200, body: Data("{}".utf8))
+        let use = await DoddyAccountLink.probeBackend(server: backend, account: account, transport: yes)
+        XCTAssertEqual(use, .account)
+        let request = try XCTUnwrap(yes.requests.first)
+        XCTAssertEqual(request.method, "GET")
+        XCTAssertEqual(request.url.absoluteString, "https://doddy.example.com/v1/connected-apps")
+        XCTAssertEqual(request.headers["authorization"], "Bearer acc")
+        let notYet = await DoddyAccountLink.probeBackend(server: backend, account: account, transport: ScriptedTransport(status: 401))
+        XCTAssertEqual(notYet, .notYet)
+        for status in [404, 500, 503] {
+            let later = await DoddyAccountLink.probeBackend(server: backend, account: account, transport: ScriptedTransport(status: status))
+            XCTAssertNil(later, "\(status)")
+        }
+        let offline = await DoddyAccountLink.probeBackend(server: backend, account: account, transport: ScriptedTransport(fails: true))
+        XCTAssertNil(offline)
+    }
+
     func testTheMessagingSignInSendsTheEarlierTokenOnlyWhenItIsOne() async throws {
         let reply = Data(#"{"accountId":"6C1D9A8F-3B52-4D4E-8F70-123456789ABC","deviceToken":"\#(deviceToken43)"}"#.utf8)
         let transport = ScriptedTransport(body: reply)

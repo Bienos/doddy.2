@@ -899,6 +899,17 @@
         }
       }
     },
+    "A code is on its way to %@. It works once, and only for a short time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod jest w drodze na adres %@. Działa jeden raz i tylko przez krótki czas."
+          }
+        }
+      }
+    },
     "A draft, not a note: it's saved only if you tap Save as note.": {
       "extractionState": "manual",
       "localizations": {
@@ -7602,6 +7613,17 @@
         }
       }
     },
+    "Apple sign-in didn’t finish. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logowanie przez Apple nie zostało dokończone. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Apple, Face ID, Google or email": {
       "extractionState": "manual",
       "localizations": {
@@ -7609,6 +7631,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apple, Face ID, Google lub e-mail"
+          }
+        }
+      }
+    },
+    "Apple, Google or email": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple, Google lub e-mail"
           }
         }
       }
@@ -12564,6 +12597,17 @@
         }
       }
     },
+    "Code from the email": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod z e-maila"
+          }
+        }
+      }
+    },
     "Coinbase wallet": {
       "extractionState": "manual",
       "localizations": {
@@ -16617,6 +16661,17 @@
         }
       }
     },
+    "Delete my Doddy account": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń moje konto Doddy’ego"
+          }
+        }
+      }
+    },
     "Delete my Doddy messaging data": {
       "extractionState": "manual",
       "localizations": {
@@ -17324,6 +17379,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除这个？"
+          }
+        }
+      }
+    },
+    "Delete your Doddy account?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć konto Doddy’ego?"
           }
         }
       }
@@ -18684,6 +18750,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy zada to pytanie dosłownie, może dopytać jeden raz, potem podziękuje i zakończy. Pytaj, nie umawiaj: „Czy laptop jest gotowy?”, a nie „Proszę mnie zapisać”."
+          }
+        }
+      }
+    },
+    "Doddy asks you to sign in again before you use him. Your notes stay on this iPhone, and whoever signs in here next can see them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy asks you to sign in again before you use him. Your notes stay on this iPad, and whoever signs in here next can see them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy asks you to sign in again before you use him. Your notes stay on this iPhone, and whoever signs in here next can see them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zanim znów skorzystasz z Doddy’ego, poprosi o ponowne zalogowanie. Notatki zostają na tym iPadzie i zobaczy je każdy, kto zaloguje się tu następny."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zanim znów skorzystasz z Doddy’ego, poprosi o ponowne zalogowanie. Notatki zostają na tym iPhonie i zobaczy je każdy, kto zaloguje się tu następny."
+                }
+              }
+            }
           }
         }
       }
@@ -20110,6 +20217,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie mógł przygotować zapisu słów do udostępnienia."
+          }
+        }
+      }
+    },
+    "Doddy couldn't reach the sign-in service. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł połączyć się z usługą logowania. Sprawdź połączenie i spróbuj ponownie."
           }
         }
       }
@@ -22037,6 +22155,17 @@
         }
       }
     },
+    "Doddy needs an account. There's no password: Apple, Google or a code sent by email.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy potrzebuje konta. Bez hasła: Apple, Google albo kod wysłany e-mailem."
+          }
+        }
+      }
+    },
     "Doddy needs permission to remind you": {
       "extractionState": "manual",
       "localizations": {
@@ -23791,6 +23920,47 @@
         }
       }
     },
+    "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes on this iPhone stay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes on this iPad stay."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes on this iPhone stay."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego usuwa to, co dla ciebie przechowuje, dane wiadomości i logowanie, a także odłącza konta online. Notatki na tym iPadzie zostają."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego usuwa to, co dla ciebie przechowuje, dane wiadomości i logowanie, a także odłącza konta online. Notatki na tym iPhonie zostają."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy's server didn't accept this iPhone. Try again in a moment.": {
       "extractionState": "manual",
       "localizations": {
@@ -23839,6 +24009,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego nie przyjął tej listy. Wpisz do 12 rzeczy, każdą do 60 znaków."
+          }
+        }
+      }
+    },
+    "Doddy's server didn't confirm deleting your messaging data, so nothing else was deleted and you're still signed in. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie potwierdził usunięcia danych wiadomości, więc nic więcej nie zostało usunięte i nadal jesteś zalogowany. Sprawdź połączenie i spróbuj ponownie."
           }
         }
       }
@@ -23894,6 +24075,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego już tego nie przechowuje (mogło to zostać usunięte w przeglądarce). Włącz to ponownie, jeśli chcesz to zachować."
+          }
+        }
+      }
+    },
+    "Doddy's server isn't set up for Doddy accounts yet, so it can't delete yours. Nothing was deleted. Try again later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie obsługuje jeszcze kont Doddy’ego, więc nie może usunąć twojego. Nic nie zostało usunięte. Spróbuj później."
           }
         }
       }
@@ -68357,6 +68549,17 @@
         }
       }
     },
+    "Send me a code": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij mi kod"
+          }
+        }
+      }
+    },
     "Send me daily news": {
       "extractionState": "manual",
       "localizations": {
@@ -71564,6 +71767,17 @@
         }
       }
     },
+    "Sign in": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się"
+          }
+        }
+      }
+    },
     "Sign in from Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -71771,6 +71985,17 @@
         }
       }
     },
+    "Sign out of Doddy?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wylogować się z Doddy’ego?"
+          }
+        }
+      }
+    },
     "Sign-in isn't connected yet. You can try Doddy without an account.": {
       "extractionState": "manual",
       "localizations": {
@@ -71782,6 +72007,17 @@
         }
       }
     },
+    "Sign-in isn't set up in this build of Doddy yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tej wersji Doddy’ego logowanie nie jest jeszcze skonfigurowane."
+          }
+        }
+      }
+    },
     "Sign-in was cancelled. Nothing changed.": {
       "extractionState": "manual",
       "localizations": {
@@ -71789,6 +72025,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Logowanie anulowano. Nic się nie zmieniło."
+          }
+        }
+      }
+    },
+    "Signed in with Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zalogowano przez Apple"
+          }
+        }
+      }
+    },
+    "Signed in with Google": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zalogowano przez Google"
+          }
+        }
+      }
+    },
+    "Signed in with email": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zalogowano przez e-mail"
           }
         }
       }
@@ -77028,6 +77297,17 @@
         }
       }
     },
+    "That code is wrong or has expired. Check it, or ask for a new one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten kod jest błędny albo wygasł. Sprawdź go albo poproś o nowy."
+          }
+        }
+      }
+    },
     "That code isn't right. Check the text and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -77430,6 +77710,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这看起来不像手机号码。请包含国家代码，例如 +86 138 0000 0000。"
+          }
+        }
+      }
+    },
+    "That doesn't look like an email address. Check it and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nie wygląda na adres e-mail. Sprawdź go i spróbuj ponownie."
           }
         }
       }
@@ -78507,6 +78798,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To logowanie się nie udało. Nic się nie zmieniło. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "That sign-in didn't work. Try again, or use another way to sign in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To logowanie się nie udało. Spróbuj ponownie albo zaloguj się w inny sposób."
           }
         }
       }
@@ -82878,6 +83180,17 @@
         }
       }
     },
+    "The sign-in service had a problem. Try again in a moment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usługa logowania ma problem. Spróbuj ponownie za chwilę."
+          }
+        }
+      }
+    },
     "The suggested quote wasn't word for word in the transcript, so it was dropped.": {
       "extractionState": "manual",
       "localizations": {
@@ -85287,6 +85600,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "这部 iPhone 无法在设备上转写你的语言，所以 Doddy 没有聆听。没有发送任何内容。"
+          }
+        }
+      }
+    },
+    "This iPhone couldn't keep your sign-in, so you aren't signed in. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie mógł zachować logowania, więc logowanie się nie udało. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "This iPhone couldn’t start secure Apple sign-in. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie mógł rozpocząć bezpiecznego logowania przez Apple. Spróbuj ponownie."
           }
         }
       }
@@ -89106,6 +89441,17 @@
         }
       }
     },
+    "Too many tries for now. Wait a minute, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na razie za dużo prób. Odczekaj minutę i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Too many tries. Try again later.": {
       "extractionState": "manual",
       "localizations": {
@@ -92564,6 +92910,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "请使用不带路径的 https 地址，例如 https://doddy-messaging.onrender.com。"
+          }
+        }
+      }
+    },
+    "Use another email": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj innego adresu e-mail"
           }
         }
       }
@@ -99108,6 +99465,17 @@
         }
       }
     },
+    "You were signed out. Sign in again to keep using Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nastąpiło wylogowanie. Zaloguj się ponownie, żeby dalej korzystać z Doddy’ego."
+          }
+        }
+      }
+    },
     "You'd saved “keys under the sofa cushion”.": {
       "extractionState": "manual",
       "localizations": {
@@ -99358,6 +99726,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoja lista domowa (co masz w domu)"
+          }
+        }
+      }
+    },
+    "Your Doddy account": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje konto Doddy’ego"
+          }
+        }
+      }
+    },
+    "Your Doddy account was deleted and this iPhone is signed out. Notes on this iPhone stay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Doddy account was deleted and this iPad is signed out. Notes on this iPad stay."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Doddy account was deleted and this iPhone is signed out. Notes on this iPhone stay."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Konto Doddy’ego zostało usunięte, a ten iPad jest wylogowany. Notatki na tym iPadzie zostają."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Konto Doddy’ego zostało usunięte, a ten iPhone jest wylogowany. Notatki na tym iPhonie zostają."
+                }
+              }
+            }
           }
         }
       }
@@ -99835,6 +100255,17 @@
         }
       }
     },
+    "Your email address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój adres e-mail"
+          }
+        }
+      }
+    },
     "Your first name": {
       "extractionState": "manual",
       "localizations": {
@@ -100234,6 +100665,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的消息仍在对话中。点按即可再次发送。你保存的笔记不受影响。"
+          }
+        }
+      }
+    },
+    "Your messaging data was deleted, but Doddy couldn't reach his server to delete the rest, so you're still signed in. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane wiadomości zostały usunięte, ale Doddy nie mógł połączyć się ze swoim serwerem, żeby usunąć resztę, więc nadal jesteś zalogowany. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Your messaging data was deleted, but Doddy's server didn't confirm deleting your account, so you're still signed in. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane wiadomości zostały usunięte, ale serwer Doddy’ego nie potwierdził usunięcia konta, więc nadal jesteś zalogowany. Spróbuj ponownie."
           }
         }
       }

@@ -195,9 +195,10 @@ struct VoiceSettingsView: View {
     }
 
     private var connectionText: String {
-        VoiceSessionKeychain.refreshToken() == nil
-            ? NSLocalizedString("Sign in on first use", comment: "")
-            : NSLocalizedString("Doddy voice account", comment: "")
+        if VoiceSessionKeychain.refreshToken() != nil { return NSLocalizedString("Doddy voice account", comment: "") }
+        // Decision 2026-11-08-required-account: the Doddy account also opens voice.
+        if DoddyAccountModel.shared.isSignedIn { return NSLocalizedString("Your Doddy account", comment: "") }
+        return NSLocalizedString("Sign in on first use", comment: "")
     }
 }
 
