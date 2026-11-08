@@ -1,6 +1,7 @@
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
+import { createAccountVerifier } from "./doddyAccount.js";
 import { providersFrom, scheduledCallsFrom } from "./providers/index.js";
 import { callsAvailable } from "./routes/twilioVoice.js";
 import { taskCallContext } from "./taskCalls/context.js";
@@ -16,6 +17,7 @@ await migrateOrExit(db, log);
 const providers = providersFrom(config);
 const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
+  accounts: config.supabaseUrl ? createAccountVerifier({ projectUrl: config.supabaseUrl }) : null,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };

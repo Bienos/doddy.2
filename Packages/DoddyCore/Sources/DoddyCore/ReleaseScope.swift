@@ -218,6 +218,16 @@ public struct ReleaseScope: Equatable, Sendable {
     /// The Debug-only preference that shows everything on the owner's phone. A Release build never reads it.
     public static let previewEverythingKey = "releaseScope.previewEverything"
 
+    /// A Debug build shows every feature until the switch is turned off (owner, 8 Nov 2026, decision
+    /// 2026-11-08-debug-shows-every-feature). A Release or TestFlight build is always `shipping`.
+    public static let debugShowsEverythingByDefault = true
+
+    /// The scope of a Debug build, from the preference: nil (never set) or true shows everything,
+    /// false shows what the beta ships.
+    public static func debug(showEverything: Bool?) -> ReleaseScope {
+        (showEverything ?? debugShowsEverythingByDefault) ? .everything : .shipping
+    }
+
     public func shows(_ feature: Feature) -> Bool { !hidden.contains(feature) }
 
     /// A Connections switch is shown unless the one feature it serves is hidden.

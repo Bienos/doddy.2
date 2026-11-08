@@ -49,11 +49,13 @@ export class AccountEraser {
     },
   ) {}
 
-  async erase(userId: string): Promise<AccountErasure> {
+  /** `accountSubjects`: the Doddy account (Supabase user) asking, removed there too (decision 2026-11-08-required-account). */
+  async erase(userId: string, accountSubjects: readonly string[] = []): Promise<AccountErasure> {
     const now = this.deps.now?.() ?? Date.now();
-    const erased = await this.deps.store.eraseUser(userId, now);
+    const erased = await this.deps.store.eraseUser(userId, now, accountSubjects);
     // The cut-off is already in the database (same transaction as the erasure); this makes it count here without waiting for the memory to refresh.
     this.deps.floors?.remember(userId, erased.tokensValidAfter, now);
+    for (const subject of erased.subjects) this.deps.floors?.remember(subject, erased.tokensValidAfter, now);
     const removed: string[] = [];
     const pending: string[] = [];
     for (const cleanup of erased.cleanups) {

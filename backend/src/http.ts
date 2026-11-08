@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { AccountEraser } from "./account.js";
+import { type AccountLinker, accountSubjectOf } from "./accountLinks.js";
 import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
 import { requireFullAccess, type SessionVerifier } from "./auth.js";
 import { clientAddress } from "./clientAddress.js";
@@ -40,6 +41,8 @@ export interface HttpDeps {
   assist?: AssistService | null;
   /** Deleting the account on this server (ADR-674). Absent: `DELETE /v1/account` is not found. */
   account?: AccountEraser | null;
+  /** An account taking over an iPhone's earlier data (decision 2026-11-08-required-account). Absent: not found. */
+  accountLinker?: AccountLinker | null;
   /**
    * What `GET /v1/health` checks and reports (engineering audit, 7 Nov 2026): a database round trip,
    * so a server whose database is gone answers 503 instead of a static "ok", and the commit that is
@@ -200,11 +203,23 @@ export function createHandler(deps: HttpDeps) {
       // data. No body. The answer is the receipt; `complete: false` says what is still owed.
       if (key === "DELETE /v1/account" && deps.account) {
         route = key;
-        const user = await deps.verifier.verify(header(req, "authorization"), now());
+        const authorization = header(req, "authorization");
+        const user = await deps.verifier.verify(authorization, now());
         if (!user) throw new AppError("unauthenticated");
-        const erasure = await deps.account.erase(user.userId);
+        const subject = accountSubjectOf(authorization);
+        const erasure = await deps.account.erase(user.userId, subject ? [subject] : []);
         status = 200;
         return send(res, 200, erasure);
+      }
+
+      // Decision 2026-11-08-required-account: a Doddy account takes over this iPhone's earlier data,
+      // once, with the iPhone's own device token in the body as proof.
+      if (key === "POST /v1/account/link-device" && deps.accountLinker) {
+        route = key;
+        const body = await readJson(req, deps.maxBodyBytes);
+        const linked = await deps.accountLinker.link(header(req, "authorization"), body, now());
+        status = 200;
+        return send(res, 200, linked);
       }
 
       // Doddy Web (ADR-600): its own routes, then its pages for anything that isn't the API.

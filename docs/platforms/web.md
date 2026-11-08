@@ -41,6 +41,23 @@ The code still works. Next to it, the sign-in page shows "Continue with Google" 
 
 Linking from the iPhone takes effect only when that iPhone confirms it with its own session, so a ticket forwarded to someone else can't link their account to the sender's. A browser can link or unlink only within 15 minutes of signing in with a code. A Google or Apple account that isn't linked to any Doddy account can make a new one (owner, 3 Nov 2026): the sign-in page asks "Make a Doddy account with Google?", and only "Create my Doddy account" makes it (`POST /v1/web/signup`); `DODDY_WEB_SIGNUP=off` stops that. A web-made account starts empty, works with the web workspace and the chat, and is deleted in Settings › Delete account (an iPhone's account is still deleted on the iPhone). The iPhone app can sign in to it too: Settings › Doddy on the web › Your account from the web › Sign in with Google (ADR-819). One that is linked to another Doddy account is refused, and nothing is merged. Both sides list and unlink. The server runs the sign-in itself (OAuth with PKCE through Supabase Auth, `backend/src/web/social.ts`), so the browser never holds a Supabase token. The owner's setup steps (Google and Apple in Supabase, the redirect address, Render's two variables) are in `docs/integrations/DEPLOY_RENDER.md`, "Google and Apple on the web". **Not tried against the real Supabase, Google or Apple, and the iPhone part hasn't been compiled yet** (the hosted Mac job is its first build).
 
+
+## Doddy accounts on the server (decision `2026-11-08-required-account`)
+Every user is getting a Doddy account: a Supabase user made with Apple, Google or a code sent by email. The iPhone talks to Supabase itself; this server only checks the token (ADR-526, `DODDY_AUTH_MODE=supabase`).
+- **Email counts now.** The token check accepts `apple`, `google` and `email`. It refuses any session whose `amr` names a password (`madeWithPassword`, `src/auth.ts`), even if password sign-in were left on in the project.
+- **Linking an iPhone's earlier data:** `POST /v1/account/link-device`. The account goes in the Authorization header, and `{ "deviceToken": "<the iPhone's ds1 token>" }` in the body, as proof.
+  - It writes one row of `account_links`, mapping the account to the device's user id. From then on the account works on that data, and the device token is refused, so `POST /v1/session/device` for that iPhone answers 409 `account_conflict`.
+  - A repeat answers the same way, so the iPhone can safely try again after a lost answer.
+  - Accounts are never merged, so the route refuses with 409 `account_conflict` when the account already has data of its own, when it already took over another iPhone's data, or when another account took over this iPhone's data.
+  - Limit: 10 tries per account per hour. Without a Supabase project the route answers 503 `live_not_configured`.
+  - Code: `src/accountLinks.ts`, `Store.linkAccount`.
+- **Deleting the account** (`DELETE /v1/account` with the account's token):
+  - erases the linked data;
+  - queues the Supabase user for removal (`supabase_auth` cleanup; it needs `SUPABASE_SECRET_KEY`, as for ADR-818);
+  - ends that account's earlier tokens at once, through its cut-off second.
+- **Tests:** `backend/test/account-links.test.ts` builds the real app from its config (supabase mode, device sign-in on, a local ES256 key in place of the project's). `auth-supabase.test.ts` covers email and passwords.
+- **To turn it on, live:** `DODDY_AUTH_MODE=supabase` and `SUPABASE_URL` on Render `doddy`. Keep `DODDY_SESSION_SIGNING_KEY` while phones move over: old device tokens and the link proof need it. Render runs `DODDY_ENV=development`, where that is allowed.
+
 ## Folders
 | Folder | What |
 |---|---|
