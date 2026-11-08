@@ -14,6 +14,7 @@ const UPSTREAM_TIMEOUT_MS = 10_000;
 import {
   authenticateVoiceSession, DEFAULT_TOKENS_PER_DAY, limitSetting, sessionStoreFromEnv, VoiceAuthStoreUnavailable,
 } from "./voice-auth.js";
+import { AccountCheckUnavailable, authenticateDoddyAccount } from "./doddy-account.js";
 
 const DEFAULT_TOKENS_PER_HOUR = 30;
 const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
@@ -55,7 +56,8 @@ function openAccessEnabled(env) {
  * @param {Request} request
  * @param {Env} env
  * @param {{ fetch?: typeof fetch, log?: (entry: object) => void, now?: () => number,
- *   authStore?: object, authenticateSession?: (request: Request) => Promise<{userId:string,sessionId:string}|null> }} [deps]
+ *   authStore?: object, authenticateSession?: (request: Request) => Promise<{userId:string,sessionId:string|null}|null>,
+ *   accountFetch?: typeof fetch }} [deps] `accountFetch`: where the Supabase project's signing keys are read (tests)
  * @returns {Promise<Response>}
  */
 export async function handleTokenRequest(request, env, deps = {}) {
@@ -91,10 +93,15 @@ export async function handleTokenRequest(request, env, deps = {}) {
   let session;
   try {
     store = deps.authStore ?? sessionStoreFromEnv(env, { fetch: deps.storeFetch });
+    // A Doddy account (decision 2026-11-08-required-account) first, then this server's own Apple
+    // sign-in (ADR-522) while phones move over.
     session = deps.authenticateSession
       ? await deps.authenticateSession(request)
-      : await authenticateVoiceSession(request, env, { store, now: now() });
+      : (await authenticateDoddyAccount(request, env, { ...(deps.accountFetch ? { fetch: deps.accountFetch } : {}), now: now() }))
+        ?? await authenticateVoiceSession(request, env, { store, now: now() });
   } catch (error) {
+    // The account's keys couldn't be read: "try again", never "signed out" (which would send the app to sign in again).
+    if (error instanceof AccountCheckUnavailable) return finish(503, "account_check_unavailable", { provider });
     if (error instanceof VoiceAuthStoreUnavailable) return finish(503, "server_not_configured", { provider });
     return finish(503, "server_not_configured", { provider });
   }
