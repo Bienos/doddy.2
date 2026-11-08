@@ -1,65 +1,83 @@
-# Build and test — DODDY V2 (M0 shell + M1 local memory + V1 voice + M2 typed assistant)
+# Build and test
 
-**Status of this document: written without access to Xcode.** Everything under "Verified on Linux"
-was executed (results in [docs/implementation/M0_REPORT.md](docs/implementation/M0_REPORT.md)).
-Everything under "Needs a Mac" is **NOT RUN / UNVERIFIED** until someone runs it and records the result.
+How to build Doddy, run its tests and checks, and what CI runs. What is live is in [STATUS.md](STATUS.md); each
+platform's page is in [docs/platforms/](docs/platforms/README.md).
 
-> **Connected Apps (2026-10-09):** see [Connected Apps](#connected-apps--google-calendar-read-only-2026-10-09) below.
-> The root `README.md` is part of the imported pack and must stay byte-identical (ADR-024), so this V2 build guide is
-> where the Connected Apps instructions live.
+**What runs where (7 Nov 2026).** Everything on this page runs in CI. The Linux jobs run the checks, the Swift
+package tests and the servers' tests. The hosted Mac job (`ios-build`: macOS 26, Xcode 26.6) builds the app and runs
+its unit and UI tests in the iPhone simulator. Nothing in CI runs on a real iPhone: device checks are recorded by hand
+(`STATUS.md`, "On a phone").
 
 ## Prerequisites
 
 | Need | For | Notes |
 |---|---|---|
-| Swift 6.0+ toolchain | package tests (any OS) | authored/tested with Swift 6.3.3 (Linux, x86_64) |
-| macOS + Xcode (see below) | app build, unit + UI tests | not available when M0 was written |
-| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | generating `Doddy.xcodeproj` | `brew install xcodegen`; dev tool only, not shipped |
+| Swift 6 toolchain | `Packages/DoddyCore` tests (any OS) | CI's Linux job uses the `swift:6.1-noble` image; macOS uses Xcode's Swift |
+| Python 3, with PyYAML | the checks and generators (`scripts/ci.sh --only checks`) | without PyYAML, the platform-spec check is NOT RUN |
+| Node.js 22 | `backend/`, `server/`, `gateway/`, `web/`, `site/`, `tools/secrets/` | `backend/` asks for ≥ 22.22.3 (`@composio/core`); `server/messaging/` for ≥ 22.12 |
+| A disposable Postgres database | `server/messaging/` database tests | `TEST_DATABASE_URL`; CI uses Postgres 16. The tests drop its schema |
+| macOS with Xcode 26.6 | building the app, unit and UI tests | the version CI pins (`.github/workflows/ios.yml`, `xcodeVersion` in `project.yml`) |
+| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | generating `Doddy.xcodeproj` | `brew install xcodegen`; a development tool, not shipped |
 
-Deployment target: **iOS 17.0**, iPhone only (ADR-002 in `docs/architecture/DECISIONS.md`; recorded in
-`DECISIONS.md`). Use the current stable Xcode that ships an SDK your account can submit with; the
-project uses Swift language mode 6 and needs Xcode 16 or newer at minimum.
+Deployment target: **iOS 17.0**, iPhone and iPad (`TARGETED_DEVICE_FAMILY 1,2` in `project.yml`). Swift language
+mode 6.
 
-## Verified on Linux (no Xcode needed)
-
-```sh
-scripts/ci.sh --core-only      # pack integrity + forbidden-capability guard + Swift package tests + gateway tests/typecheck
-# or individually:
-python3 -I scripts/verify_imported_pack.py
-scripts/check_forbidden_capabilities.sh
-swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined   # both flags on Linux only
-```
-
-### Gateway (Node, no Xcode, no network, no keys)
+## On any computer (no Xcode needed)
 
 ```sh
-cd gateway && npm install && npm test && npm run typecheck   # 63 tests; see gateway/README.md
+make test-core                 # the Swift package's tests; on Linux the Makefile adds the SQLite flags
+scripts/ci.sh --only checks    # pack integrity, guards, voice agent specs, generated files up to date, CI scripts' own tests
+scripts/ci.sh --core-only      # every Linux group: checks, swift, backend, node, messaging
+# or a Swift package test by hand (both flags on Linux only):
+swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
 ```
-Needs Node 22+. `ci.sh` runs these when `node` is on the PATH (typecheck only if `npm install` was done).
-The gateway has never been deployed or called against the real OpenAI API.
 
-`scripts/ci.sh` **without** flags needs Xcode too; if it cannot run a step it prints `NOT RUN` and exits
-non-zero (exit 2 = blocked, 1 = failure, 0 = everything passed). `--core-only` exits 0 only for its own
-narrower scope and still prints the iOS step as `NOT RUN`.
+`scripts/ci.sh` takes `--only` with any of `checks`, `swift`, `backend`, `node`, `messaging` and `ios`, comma
+separated. Each hosted Linux job runs one group. `scripts/ci.sh` **without** flags needs Xcode too; if it cannot run a
+step it prints `NOT RUN` and exits non-zero (exit 2 = blocked, 1 = failure, 0 = everything passed). `--core-only` exits
+0 only for its own narrower scope and still prints the iOS step as `NOT RUN`.
+
+The voice agents' specs are checked in the `checks` group, or by hand:
+```sh
+python3 -I scripts/voice_agent_spec.py check                     # the main agent (voice-agent/)
+python3 -I scripts/voice_agent_spec.py check --agent phone       # voice-agent/phone/
+python3 -I scripts/voice_agent_spec.py check --agent task-call   # voice-agent/task-call/
+```
+
+Generated files (string catalogs, site pages, blog, web assets, tokens) are never edited or merged by hand: run
+`scripts/regen.sh`, then `scripts/ci.sh --only checks`.
+
+### Gateway (Node, no network, no keys)
+
+```sh
+cd gateway && npm install && npm test && npm run typecheck   # see gateway/README.md
+```
+The app hasn't used the gateway since 22 Oct (ADR-586, ADR-587); it stays until the owner decides to delete it. It has
+never been called against the real OpenAI API.
 
 ### Messaging server (Node 22 + Postgres)
-`scripts/ci.sh` also installs and tests `server/messaging/` (notifications, texts, phone calls, daily
-news). Set `TEST_DATABASE_URL` to a **disposable** Postgres database (the tests drop its schema);
-without it the database tests are listed as SKIPPED. The Linux CI job provides one. See
-`server/messaging/README.md`. On a device, Settings → Messages from Doddy needs a deployed server
-address (https).
+The `messaging` group installs and tests `server/messaging/` (Messages, errands, leaflets, texts and calls, Studio, push).
+Set `TEST_DATABASE_URL` to a **disposable** Postgres database (the tests drop its schema); without it the database
+tests are listed as SKIPPED. The hosted Linux job provides one. See `server/messaging/README.md`. The app has the
+live server's address built in (`DoddyApp/Infrastructure/Server/ServerConfig.swift`); a Debug build can point at
+another one in Settings.
 
-## Needs a Mac (UNVERIFIED)
+## On a Mac
 
 ```sh
 brew install xcodegen
 make project                   # xcodegen generate --spec project.yml  -> Doddy.xcodeproj (iPhone/iPad; Watch and Mac are paused, ADR-572)
+make project-iphone            # or: the same app with no entitlements, for a free Apple team -> DoddyiPhone.xcodeproj
 xcodebuild -list -project Doddy.xcodeproj
 xcodebuild test -project Doddy.xcodeproj -scheme Doddy \
   -destination 'platform=iOS Simulator,name=iPhone 17'   # pick any installed iPhone simulator
 # or all of the above plus the Linux-safe steps:
 scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 ```
+
+`Doddy.xcodeproj` is generated from `project.yml` and never committed (`.gitignore`); `make project`, `scripts/ci.sh`
+and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds come from Xcode Cloud only (ADR-697,
+`docs/implementation/XCODE_CLOUD.md`).
 
 **Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-684)** runs these jobs side by side:
 - `changes` (Ubuntu, seconds): `scripts/ci_needs_mac.sh` decides whether the pull request needs the macOS build
@@ -82,11 +100,14 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
   7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
   test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
-- Package versions are pinned: `Config/Package.resolved` holds every Swift package the app resolves
-  (LiveKit is also `exactVersion` in `project.yml`). `make project`, `scripts/ci.sh` and Xcode Cloud's
-  `ci_post_clone.sh` install it into the generated project; CI fails if resolution changes it, and keeps
-  what it resolved as the `app-package-resolved` artifact. To move versions: `make update-packages` on a
-  Mac, then commit `Config/Package.resolved` (decision `docs/decisions/2026-11-07-reproducible-app-builds.md`).
+- Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
+  2.19.0). `Config/Package.resolved` is meant to lock every package they pull in too, but **it isn't committed
+  yet** (7 Nov 2026). Until it is, `make project`, `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` print
+  that there are no pins, and CI records "App package versions match Config/Package.resolved" as SKIPPED. Each
+  Mac run keeps what it resolved as the `app-package-resolved` artifact; committing that file as
+  `Config/Package.resolved` turns the check on, and from then on CI fails if resolution changes it. To move
+  versions later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
+  `docs/decisions/2026-11-07-reproducible-app-builds.md`).
 - Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
   Release-only error shows up before Xcode Cloud archives.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
@@ -95,20 +116,13 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 
 Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs.
 
-**Timings measured 1 Nov 2026** (runs 41330977302 on the Mac side, 41340906950 on the Linux side), before
-ADR-684: `core` 14.5 min (backend tests 411 s, Swift package tests 214 s, messaging 40 s, the rest under 45 s each);
-the Mac job 62 min (UI tests 40.7 min, unit tests 4.3, build 4.3, `xcodebuild -list` 1.3, and about 14 min of Linux
-checks it repeated, 413 s of them the backend tests). With the Mac waiting for `core`, a pull request took about
-79 minutes.
+**Timings measured 7 Nov 2026** (49 finished runs, `docs/engineering/AUDIT_2026-11-07.md`): a run takes 50
+minutes at the median, 59 at the 90th percentile. The Mac job takes about 34 minutes, 28 of them UI tests (the
+motion, art and memory-journey classes about 20, the smoke classes about 8). The Linux groups finish well
+before it. Older measurements (1 Nov, before the Linux groups split, ADR-684) are in the git history of this file.
 
-**Historical #166 run before reconciliation with #164** (first hosted run of the new workflow, run 41344675285, 1 Nov): all jobs green. The Linux side
-finished in 7.5 min (`swift` 6.7 min on a cold SwiftPM cache, `backend` 4.0, `messaging` 0.8, `node` 0.6,
-`checks` 0.3); the Mac job took 48.6 min (the historical `ci.sh --skip-node` path 47.4), so the whole pull request took 48.8 min
-instead of about 79. The npm caches and the SwiftPM cache were empty on that run; the next run shows their effect.
-
-**Cost:** the repository is now public, so standard hosted Actions runners are free (ADR-543). Historical private-repository costs follow. A macOS run took about 52 minutes
-(34 of them UI tests) at $0.062 a minute, about $3.20, on 14 October; ADR-499 should take about 10 minutes
-off the UI tests (not yet measured). From 12 to 14 October CI used about $250.
+**Cost:** the repository is public, so standard hosted Actions runners are free (ADR-543). If it goes private
+again, a Mac run costs about $2 to $3 (about $0.062 a minute in October 2026).
 
 **When jobs end in seconds with no logs** (no runner assigned, `runner_id: 0`, both jobs), GitHub is
 refusing to start them for the account: it happened on 10–11 October and again from 16 October. The
@@ -118,45 +132,46 @@ Billing and licensing → Usage, Budgets and alerts, Payment information). Less 
 blocks the actions used (repo Settings → Actions → General). While it lasts, every iOS build is a manual
 Mac build.
 
-Why `Doddy.xcodeproj` is not committed: no Xcode could open or build a generated project when M0 was
-authored, and the architecture notes forbid presenting an unverified project file as working. The
-`project.yml` spec **was** run through XcodeGen 2.44.1 on Linux and generated a project (targets,
-paths, local package, asset catalog, privacy manifest resolved), but that project has never been opened
-in Xcode. After the first successful Mac build, the owner may decide to commit the generated project.
-
-Open points the first Mac run will settle: SwiftUI/UIKit compile errors in `DoddyApp/` (the sources were
-only syntax-parsed on Linux, never type-checked), Swift 6 strict-concurrency diagnostics in app code,
-simulator name availability, and whether the UI tests' launch-argument defaults behave as written.
-
 ## Layout
 
 ```
-Packages/DoddyCore/          platform-agnostic Swift package (tested on Linux)
-  Sources/DoddyCore/           domain types, ports, Unavailable adapters, capability catalog, privacy defaults
-  Sources/DoddyDesignTokens/   CANDIDATE colour tokens + WCAG contrast maths (no SwiftUI)
-  Sources/DoddyPersistence/    SQLite memory store (GRDB 7.9.0, FTS5)
-  Sources/DoddyCore/ConnectedApps/  Connected Apps contracts, client (transport-agnostic), view model
-  Sources/DoddyCore/Assistant/ M2: wire types, error taxonomy, citation verifier, grounding selector,
-                               assistant service (retry), gateway client + transport/credential ports
-  Tests/                       XCTest cases (incl. contract fixtures shared with the gateway)
-DoddyApp/                    SwiftUI app target (iPhone): App/, Features/{Home,Capture,Memories,Settings,Onboarding,Voice,Ask,ConnectedApps}/,
-                             DesignSystem/, Infrastructure/ (+ Network/: the assistant transport), Resources/ (asset catalog, PrivacyInfo.xcprivacy)
-gateway/                     M2 assistant gateway (Vercel functions, plain JS, node tests) - NOT deployed
-schemas/fixtures/            wire-contract examples read by both the Swift and the node tests
-DoddyTests/ DoddyUITests/    app-level unit and UI smoke tests (NOT RUN without Xcode)
-project.yml                  XcodeGen spec (source of truth for the Xcode project)
-scripts/                     ci.sh, check_forbidden_capabilities.sh, verify_imported_pack.py
-backend/                     Connected Apps server (Node/TypeScript, Composio); server-side only, never in the app
-contracts/connected-apps/    JSON fixtures shared by backend and Swift contract tests
-docs/integrations/           Connected Apps research, plan, capability matrix, security, status (V2-owned)
-docs/ schemas/ assets/ design/ reference/ prompts/   imported pack (read-only reference; not in the app target)
+DoddyApp/                    the iPhone and iPad app (SwiftUI): App/, Features/ (one folder per feature, 60 of them;
+                             the map is docs/platforms/iphone.md), DesignSystem/, Infrastructure/, Intents/, Resources/
+                             (string catalogs generated from l10n/, asset catalog, PrivacyInfo.xcprivacy)
+Shared/                      code built into the app and its extensions: Live Activity, island art, widget snapshot, intents
+DoddyWidgets/ DoddyShare/    Home and Lock Screen widgets, controls and Live Activities; "Save to Doddy" in the Share Sheet
+DoddyNotificationContent/    the expanded view of a long-pressed note reminder notification (ADR-786)
+DoddyTests/ DoddyUITests/    the app's unit tests and UI tests (run by the hosted Mac job)
+Packages/DoddyCore/          the shared Swift package, no UI, tested on Linux and macOS
+  Sources/DoddyCore/           the app's rules: voice tools, memory, lists, plans, shopping, privacy, motion and more
+  Sources/DoddyPersistence/    the on-device SQLite database (GRDB, FTS5); migrations in DoddyDatabase.swift
+  Sources/DoddyDesignTokens/   colour tokens and contrast maths (no SwiftUI)
+project.yml                  XcodeGen spec for the app (the source of truth for Doddy.xcodeproj)
+project-iphone.yml           the same app with no entitlements, for a free Apple team
+Config/                      Info.plists and entitlements for each target
+ci_scripts/                  Xcode Cloud's scripts (TestFlight builds)
+voice-agent/                 the voice agents' prompt, tools and settings (main, phone/, task-call/)
+backend/                     the main server `doddy` (Node/TypeScript): accounts, connected apps, documents, Doddy Web
+web/                         Doddy Web, the browser app (Vite, React), served by backend/
+server/messaging/            the messaging server `doddy-messaging` (Node/TypeScript, Postgres)
+server/voice-token/          the voice token server (Vercel)
+gateway/                     an older assistant gateway, unused by the app since 22 Oct (ADR-586, ADR-587)
+site/ blog/                  the website www.doddy.lol and its blog (Vercel)
+l10n/                        translation tables for the app and the website
+contracts/ schemas/fixtures/ JSON examples shared by the servers' tests and the Swift tests
+tools/                       generators (catalogs, site pages, blog, web assets, tokens) and the secrets tool
+scripts/                     ci.sh and the checks it runs, regen.sh
+docs/                        status, platform pages, decisions, plans, research (docs/platforms/README.md maps the code)
+design/ assets/              design references and brand files
+DoddyWatch*/ DoddyMac*/      Apple Watch and Mac apps: paused, not built (ADR-572)
+reference/ prompts/          the October 2026 pack's research and prompts: history, not instructions
 ```
 
 ## Secrets and signing
 
-None are committed. The app needs none. The Connected Apps backend needs secrets only in live mode
-(`COMPOSIO_API_KEY`, `DODDY_SESSION_SIGNING_KEY`); keep them in the ignored `backend/.env.local` or a secret
-manager — `backend/.env.example` lists names with empty values.
+None are committed, and the app carries none: provider keys live on the servers. Each server lists the names of
+the variables it needs in its README and its `.env.example`; for local runs keep values in ignored files such as
+`backend/.env.local`, or use 1Password as below.
 
 **1Password (ADR-493).**
 - **The record:** project secrets are recorded in 1Password. `secrets/manifest.json` lists each one and its hosts, and each service's `.env.op` holds 1Password references only.
@@ -165,62 +180,54 @@ manager — `backend/.env.example` lists names with empty values.
 - **Checks:** `node tools/secrets/sync.mjs check` and `node --test "tools/secrets/test/*.test.mjs"` run in `scripts/ci.sh`. They need no 1Password account and no network.
 - **Guide:** `docs/security/SECRETS_1PASSWORD.md`. No signing team, provider key, token or production identifier is committed;
 `DEVELOPMENT_TEAM` is blank (choose your own team in Xcode to run on a device). The bundle identifier
-`com.bienos.doddy2.dev` is a **development placeholder** pending an owner decision.
+`com.bienos.doddy2.dev` is **Doddy Beta**, the TestFlight app (ADR-812); the production identifier isn't registered
+yet (`docs/OWNER_QUEUE.md`, item 21).
 
-**App Group (on since 2026-10-11, owner has a paid Apple Developer account).** The widgets (ADR-219), the
-watch complications (ADR-262), "Save to Doddy" in the Share Sheet (ADR-311) and the parking widget (ADR-315)
-share a folder, the App Group `group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default).
-`project.yml` signs the app, the widget extension and the share extension with it (the watch targets, paused, are in `project-watch.yml`; the
+**App Group (on since 2026-10-11, owner has a paid Apple Developer account).** The widgets (ADR-219), "Save to
+Doddy" in the Share Sheet (ADR-311) and the parking widget (ADR-315) share a folder, the App Group
+`group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default). `project.yml` signs the app, the widget
+extension and the share extension with it (the paused Watch targets, ADR-572, are in `project-watch.yml`; the
 notification content extension, ADR-786, has no entitlements and needs only a team). Choose
 your team in Xcode for each target; automatic signing adds the App Groups capability and registers the group.
-If you also use push, set `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements`. To build without it
-(a free Apple ID, whose support for App Groups isn't verified here), set `DODDY_APP_ENTITLEMENTS`,
-`DODDY_WIDGET_ENTITLEMENTS`, `DODDY_SHARE_ENTITLEMENTS` and `DODDY_WATCH_ENTITLEMENTS` to `""`: the widgets then
-say "Open Doddy to set up widgets" and the share extension says sharing isn't set up.
+If you also use push, set `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements`. For a free Apple
+team, use `make project-iphone`: it sets `DODDY_APP_ENTITLEMENTS`, `DODDY_WIDGET_ENTITLEMENTS` and
+`DODDY_SHARE_ENTITLEMENTS` to `""` and leaves the widgets and the share extension out (`project-iphone.yml`).
 
-## Connected Apps — Google Calendar, read-only (2026-10-09)
+## Doddy's server (`backend/`) on your own computer
 
-**Status: mock milestone complete; live integration unverified/blocked; iOS app not compiled for this change.**
-Details: [IMPLEMENTATION_STATUS](docs/integrations/IMPLEMENTATION_STATUS.md) ·
+`backend/` is the server the app calls `doddy` (Render). It signs the phone in, runs the online-account tools through
+Composio (Gmail, Outlook, Google Calendar, Drive, Notion, Todoist: anything that changes something waits for the
+person's tap on the exact card), web search, Claude's answers and the documents Doddy makes, account deletion, and
+Doddy Web (`docs/platforms/web.md`). On your own computer it starts in **mock mode**: demo data, no keys, a "Demo
+server" banner. Live mode refuses to start while a setting it needs is missing, and never falls back to demo data.
+
+It began on 9 Oct as a read-only Google Calendar view, which a Debug build still has (below). Background:
+[IMPLEMENTATION_STATUS](docs/integrations/IMPLEMENTATION_STATUS.md) ·
 [plan](docs/integrations/COMPOSIO_INTEGRATION_PLAN.md) · [capability matrix](docs/integrations/PROVIDER_CAPABILITY_MATRIX.md) ·
-[security](docs/integrations/SECURITY_AND_PERMISSIONS.md) · [research baseline](docs/integrations/CONNECTED_INTELLIGENCE_RESEARCH.md).
-
-Doddy can show **tomorrow's events from one user's primary Google Calendar** through a small Doddy backend that uses
-Composio. It cannot create, change or delete events. Events are shown, not stored; one tap saves a single event as a
-memory. Settings › Connected Apps.
+[security](docs/integrations/SECURITY_AND_PERMISSIONS.md) · [online accounts](docs/integrations/ONLINE_ACCOUNTS.md).
 
 ### Prerequisites
 | Need | For |
 |---|---|
-| Node.js ≥ 22.22.3 (tests ran on 22.22.0) | `backend/` (Postgres; PGlite in tests, ADR-525) |
-| Swift 6 toolchain | `Packages/DoddyCore` tests (any OS) |
-| macOS + Xcode 16+ and XcodeGen | the iOS app (see `BUILD_AND_TEST.md`) |
+| Node.js ≥ 22.22.3 (`@composio/core`'s minimum; Render uses Node 22) | `backend/` (Postgres; PGlite in tests, ADR-525) |
 | Composio account, Google account, HTTPS URL | live mode only |
 
 ### Commands
 ```sh
-# backend
 cd backend
 npm ci                    # installs the pinned versions from package-lock.json
 npm run typecheck         # type-checks against the installed @composio/core declarations
-npm test                  # 73 offline tests (mock + fake Composio client); no secrets, no network
+npm test                  # builds, then 649 offline tests (8 Nov 2026, about 15 minutes here); no secrets, no network
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
-
-# Swift package (from repo root)
-swift test --package-path Packages/DoddyCore            # on Linux add -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
-
-# everything that runs without Xcode
-scripts/ci.sh --core-only
-# on a Mac, everything including the app build and app tests (UNVERIFIED for this change)
-scripts/ci.sh
 ```
+`scripts/ci.sh --only backend` runs the same install, type-check and tests.
 
-### Mock walkthrough (no accounts)
+### Mock walkthrough of the first calendar view (no accounts, Debug build)
 1. `cd backend && npm run build && npm start` — prints `MOCK MODE … tokens: dev-user-a, dev-user-b`.
-2. Run the app in the iOS Simulator. Settings › **Connected Apps server (development)**: address `http://localhost:8787`,
-   session token `dev-user-a` (stored in the Keychain).
-3. Settings › **Connected Apps** › Connect Google Calendar → Continue → **Connect demo calendar**. No Google page is
-   shown; the screen says **Demo data — Google Calendar is not connected**.
+2. Run a Debug build in the iOS Simulator. Settings › Advanced › **Connected Apps server (development)**: address
+   `http://localhost:8787`, session token `dev-user-a` (stored in the Keychain).
+3. In the same section, **Connected Apps** › Connect Google Calendar → Continue → **Connect demo calendar**. No Google
+   page is shown; the screen says **Demo data — Google Calendar is not connected**.
 4. **Tomorrow's events** → three made-up events, source, checked time, receipt. Tap **Save** on one to keep it as a memory.
 5. **Disconnect** → events disappear; reads are refused.
 
@@ -238,7 +245,8 @@ Without the backend you can drive the same flow with curl, e.g.
    anything is missing; it never falls back to demo data.
 4. `npm run build && npm run start:env`; mint a device token with
    `node --env-file=.env.local dist/src/mintSession.js` and paste it in the app.
-5. Connect from the app, read tomorrow, then optionally `npm run live-check` (read-only; prints counts only).
+5. Connect from the app, read tomorrow, then optionally `npm run live-check` (read-only; prints counts only; it
+   also needs `DODDY_LIVE_CHECK_USER_ID` and `DODDY_LIVE_CHECK_TIME_ZONE`, or it prints NOT RUN and exits 2).
 6. **Disconnect** in the app. It blocks reads immediately and asks Composio to revoke and delete the connection; if that
    can't be confirmed the app says so — disconnect again or remove access in your Google Account.
 

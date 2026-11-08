@@ -1,5 +1,7 @@
 # DODDY voice service
 
+**Live** on Vercel as the project `doddy-voice-token`; the app's voice screen uses it. An old copy on Render is unused (`STATUS.md`).
+
 This service verifies Sign in with Apple once, keeps a revocable DODDY voice session, and exchanges
 that session for a provider-scoped credential. Apple and provider credentials stay on the server;
 the app never asks for a provider API key, tester code, or server URL. Voice transcripts, audio,
