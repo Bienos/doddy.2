@@ -1,0 +1,2 @@
+A Debug build (Run in Xcode) shows every feature again by default; Settings › About › Advanced › "Developer: show every feature" now starts on, and off shows the beta scope. Release and TestFlight builds still always ship the beta scope (decision `2026-11-08-debug-shows-every-feature`).
+Ran: see the pull request. Not run: the SwiftUI edit in `SettingsScreens.swift` was not compiled here (no Xcode); the hosted Mac job compiles it.
