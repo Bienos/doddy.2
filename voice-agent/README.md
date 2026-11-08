@@ -10,8 +10,6 @@ adding one adapter, not rewriting the app or the agent.
 | `tools.json` | 10 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy` | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
-**`draft_blik_transfer` removed from the spec, 5 Nov 2026 (ADR-810, owner: BLIK payments go through Stripe later).** It is gone from `tools.json` and `instructions.md`, so the OpenAI voice and any app built from this tree no longer offer it, and an app answers it as unsupported. **The live ElevenLabs agent was not changed:** it still has client tool `tool_5701m57c1717fmebcs14kbrjqmdq` and a "## BLIK transfers" section in its prompt (see "Applied to the live agent 2026-10-18" below) until the owner says "sync it to ElevenLabs"; that sync removes the tool and the section.
-
 **`make_something` (Studio, ADR-740, ADR-742) is in `tools.json` and `instructions.md` only; it is NOT on the live ElevenLabs agent** (`elevenlabs_tool_id` is `not_synced`, and its prompt lines were not applied). The agent is changed only on the owner's separate instruction, and Studio is off on the server by default. An app build that has it answers the tool; the live agent never calls it.
 
 **OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
