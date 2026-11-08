@@ -88,6 +88,7 @@ final class ReleaseScopeTests: XCTestCase {
         let scope = ReleaseScope.shipping
         // Each hidden feature with a switch takes its switch with it; the product's switches stay.
         XCTAssertFalse(scope.shows(VoiceConnection.home))
+        XCTAssertFalse(scope.shows(VoiceConnection.blik))
         XCTAssertFalse(scope.shows(VoiceConnection.steps))
         XCTAssertFalse(scope.shows(VoiceConnection.presentations))
         for connection in [VoiceConnection.calendar, .reminders, .contacts, .timers, .maps, .shortcuts, .messages, .photos, .camera] {

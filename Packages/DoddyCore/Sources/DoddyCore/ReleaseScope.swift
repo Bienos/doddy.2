@@ -100,6 +100,8 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case trainingPlan
     /// Lights, outlets, fans and scenes (HomeCommand.swift).
     case homeKit
+    /// A BLIK transfer on a card, sent by the person in their bank app (ADR-510; restored by #226).
+    case blik
     /// A Keynote file made on the iPhone (ADR-567).
     case presentations
     /// inFakt invoices (ADR-640). Nothing is sent to inFakt in any build.
@@ -131,6 +133,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .health: [VoiceToolName.readHealthWeek]
         case .trainingPlan: [VoiceToolName.openTrainingPlan]
         case .homeKit: [VoiceToolName.controlHome]
+        case .blik: [VoiceToolName.draftBlikTransfer]
         case .presentations: [VoiceToolName.makePresentation]
         case .photosAndCamera: [VoiceToolName.findPhotos, VoiceToolName.openCamera]
         // Doddy's own phone number (ADR-750 to 755): a text to the person's own number goes with the
@@ -155,6 +158,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         switch self {
         case .steps: .steps
         case .homeKit: .home
+        case .blik: .blik
         case .presentations: .presentations
         default: nil
         }
@@ -208,7 +212,7 @@ public struct ReleaseScope: Equatable, Sendable {
         .leaveBy, .parking, .birthdays, .eveningWrapUp, .weeklyLookBack, .weeklyPlan, .steps,
         .files, .doddyWeb, .cloudMemory, .onlineAccounts, .webSearch, .claudeDocuments, .deals, .errands, .priceWatch,
         .following, .dailyNews, .updates, .phoneCalls, .callCases, .studio, .payments,
-        .health, .trainingPlan, .homeKit, .presentations, .invoices, .parcels, .lostWallet,
+        .health, .trainingPlan, .homeKit, .blik, .presentations, .invoices, .parcels, .lostWallet,
     ])
 
     /// The Debug-only preference that shows everything on the owner's phone. A Release build never reads it.
