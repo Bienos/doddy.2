@@ -129,6 +129,10 @@ struct AppleAccountSignInButton: View {
             }
             rawNonce = nonce.raw
             request.nonce = nonce.hashed
+            // Doddy accounts only (decision 2026-11-09-apple-email-for-linking): Apple's token then carries
+            // the person's email (or Apple's private relay address), so Supabase can join this sign-in to a
+            // Google or email account with the same verified address. The voice-only sign-in is unchanged.
+            if doddyAccount.isConfigured { request.requestedScopes = [.email] }
         }, onCompletion: completeSignIn)
         .signInWithAppleButtonStyle(adaptsToDarkAppearance && colorScheme == .dark ? .white : .black)
         .frame(height: height)
