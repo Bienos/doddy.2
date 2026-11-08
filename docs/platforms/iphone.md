@@ -20,6 +20,15 @@
   - no conversation at all means the app failed before connecting;
   - a conversation with no messages means the session started without its start data.
 
+## Doddy account (decision `2026-11-08-required-account`, in progress)
+Every user will sign in with a Doddy account, using Apple, Google or a code sent by email, and the app won't go further without one.
+- **Built so far:** the logic, in DoddyCore `Account/DoddyAccount.swift`, tested on Linux (`DoddyAccountTests`, 16 tests).
+  - The requests to Supabase Auth: an email code (send, then verify), Sign in with Apple's identity token, and Google through the browser with PKCE (RFC 7636).
+  - Refreshing the session, and signing out.
+  - The rules for addresses, codes and sessions.
+  - The two calls that bring an iPhone's earlier data into the account: the backend's `link-device` and the messaging server's `accounts/sign-in`.
+- **Nothing uses it yet.** The screens, the "signed out goes back to sign-in" gate, the Keychain and sending the token to every server come next. They touch `RootView.swift` and the Settings screens, so they wait for #221.
+
 ## Feature map
 Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/implementation/`. Rules with no UI are in `Packages/DoddyCore/Sources/DoddyCore/`.
 
