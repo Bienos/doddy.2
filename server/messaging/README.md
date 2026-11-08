@@ -8,6 +8,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Area | Endpoints |
 |---|---|
 | Anonymous account (no email/name) | `POST /v1/accounts` → `{accountId, deviceToken}` · `DELETE /v1/account` erases everything |
+| Sign in with a Doddy account (decision `2026-11-08-required-account`) | `POST /v1/accounts/sign-in` with `Authorization: Bearer <the account's Supabase access token>` and, optionally, `{deviceToken}`, this iPhone's earlier anonymous token. Answers `{accountId, deviceToken}`. Needs `SUPABASE_URL`; without it, 503 `not_configured`. The token is checked against the project's published keys (`src/doddyAccount.ts`: Apple, Google or email, never a password). One account here per Doddy account (`accounts.auth_subject`, migration 021), and each iPhone its own device token, at most 10 per account; the iPhone unseen longest makes room. An earlier anonymous account is linked once. If the Doddy account already has an account here, this iPhone moves to it only when its own holds nothing; otherwise 409 `account_conflict`, because accounts are never merged. Keys that can't be read: 503 `account_check_unavailable`. Limit: 30 an hour per address. |
 | Push token | `PUT/DELETE /v1/device/push-token` `{token, environment: sandbox\|production}` |
 | Phone (Twilio Verify) | `POST /v1/phone/verification` `{phone}` · `POST /v1/phone/verification/check` `{phone, code}` · `GET/DELETE /v1/phone` |
 | SMS opt-in | `PUT /v1/phone/sms-consent` `{consent, textVersion}`: the app records which wording the user agreed to |

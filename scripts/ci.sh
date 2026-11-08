@@ -316,7 +316,11 @@ else
     # `-list` does not resolve packages, so resolve them here: a failure to fetch a package stops the run
     # before the long build, and the pins can be checked now. If Xcode still wrote no file, the check
     # is tried again after the build, which resolves too.
-    run_step "Resolve the app's packages" xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
+    # build/packages-ok: every package resolved and downloaded, so hosted CI may save them as its cache.
+    mkdir -p build; rm -f build/packages-ok
+    if run_step "Resolve the app's packages" xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy; then
+      touch build/packages-ok
+    fi
     if check_package_pins; then pins_checked=1; fi
     # Build once, then run the unit tests and the UI tests as two passes, with the simulator
     # restarted in between (ADR-561). The unit tests run inside the app on the simulator; right
