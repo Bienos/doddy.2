@@ -74,6 +74,8 @@ struct FindMemoriesView: View {
             outcome = result
             isRunning = false
             // Then, without holding up the word results: notes close in meaning, on this iPhone.
+            // Hidden in the beta (decision 2026-11-07-release-scope): the word search stands alone.
+            guard ReleaseScopeStore.current.shows(.meaningSearch) else { return }
             var found: Set<UUID> = []
             if case .matches(let candidates) = result { found = Set(candidates.map(\.memoryID)) }
             let hits = await MeaningService.index.search(question, in: store.memories, excluding: found)

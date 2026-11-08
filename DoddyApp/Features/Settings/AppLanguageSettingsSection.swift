@@ -9,8 +9,9 @@ struct AppLanguageSettingsSection: View {
 
     var body: some View {
         Section {
+            // The build's languages (decision 2026-11-07-release-scope), plus the current choice if it is one the build hides.
             Picker("App language", selection: $selection) {
-                ForEach(AppLanguage.allCases, id: \.self) { language in
+                ForEach(ReleaseScopeStore.current.languageChoices(current: selection), id: \.self) { language in
                     if let name = language.nativeName {
                         Text(verbatim: name).tag(language)
                     } else {

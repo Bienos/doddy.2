@@ -12,8 +12,10 @@ adding one adapter, not rewriting the app or the agent.
 | File | What it is | ElevenLabs today | OpenAI Realtime later |
 |---|---|---|---|
 | `instructions.md` | Doddy's system prompt with `{{placeholders}}` | Agent prompt; placeholders are dynamic variables the app passes at `startConversation` | `session.instructions`, rendered on the phone by `RealtimeInstructions.render` |
-| `tools.json` | 107 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy`: 103 the app answers (`runs_on: phone`), 4 weather and Wikipedia lookups (`runs_on: web`) | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
+| `tools.json` | 108 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy`: 104 the app answers (`runs_on: phone`), 4 weather and Wikipedia lookups (`runs_on: web`) | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
+
+**Release scope (decision `2026-11-07-release-scope`, 7 Nov 2026):** the app refuses the tools of a feature its build hides (`ReleaseScope.shipping` in DoddyCore; `docs/implementation/RELEASE_SCOPE.md` lists the 67 tools the beta's agent should lose and the 41 it keeps). The spec here still describes every tool; taking the hidden ones off the live agent is the owner's change, as always.
 
 **`make_something` (Studio, ADR-740, ADR-742) is in `tools.json` and `instructions.md` only; it is NOT on the live ElevenLabs agent** (`elevenlabs_tool_id` is `not_synced`, and its prompt lines were not applied). The agent is changed only on the owner's separate instruction, and Studio is off on the server by default. An app build that has it answers the tool; the live agent never calls it.
 

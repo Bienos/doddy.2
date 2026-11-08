@@ -7,13 +7,16 @@ import UIKit
 enum QuickActions {
     /// Sets the menu; called when Doddy goes to the background, so it matches the parking spot.
     static func install() {
-        UIApplication.shared.shortcutItems = QuickAction.shown(hasParkingSpot: ParkingStore.current() != nil).map(item)
+        UIApplication.shared.shortcutItems = QuickAction.shown(hasParkingSpot: ParkingStore.current() != nil,
+                                                               scope: ReleaseScopeStore.current).map(item)
     }
 
     /// Runs one action. False for anything Doddy doesn't know.
     @discardableResult
     static func handle(_ shortcutItem: UIApplicationShortcutItem) -> Bool {
         guard let action = QuickAction(rawValue: shortcutItem.type) else { return false }
+        // An item from a menu installed by an older build, for a feature this build hides (decision 2026-11-07-release-scope).
+        if action == .parking, !ReleaseScopeStore.current.shows(.parking) { return false }
         let router = ShortcutRouter.shared
         switch action {
         case .talk: router.talkToDoddyInvoked()
