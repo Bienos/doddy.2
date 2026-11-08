@@ -136,7 +136,8 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await book(o, { at, reason, allowQuietHours: true })).json().error, "already_booked");
     // A repeat is answered with what happened to the first, before any other check: here the
     // time has come so close that a new booking would be refused as too soon.
-    const soon = (await book(o, { at: inMinutes(300), reason: "Soon", key: "soon-key" })).json() as { id: string };
+    const soonAt = inMinutes(300);
+    const soon = (await book(o, { at: soonAt, reason: "Soon", key: "soon-key" })).json() as { id: string };
     const past = iso(inMinutes(-1));
     await db.query("UPDATE scheduled_calls SET call_at_text = $2, approval_hash = $3 WHERE id = $1",
       [soon.id, past, callApprovalHash(o.phone, past, "Soon", false)]);
@@ -146,8 +147,11 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await call("DELETE", `/v1/calls/scheduled/${soon.id}`, o.h)).statusCode, 204);
     const over = await book(o, { at: new Date(past), reason: "Soon", key: "soon-key" });
     assert.deepEqual([over.statusCode, over.json().error, over.json().state], [409, "already_done", "cancelled"]);
-    // The booking tells the server the user's zone, for quiet hours when the call is due.
-    assert.equal((await call("GET", "/v1/calls/settings", o.h)).json().timeZone, zone);
+    // The booking tells the server the user's zone, for quiet hours when the call is due. The last new
+    // booking sets it: `soon`, whose default zone is the one awake at its own time, five hours ahead. (This
+    // used to expect the zone awake two hours ahead. The two differ for about nine hours of every UTC day,
+    // so the test failed at those times whatever the change under test was.)
+    assert.equal((await call("GET", "/v1/calls/settings", o.h)).json().timeZone, zoneWhere(soonAt, false));
 
     // Without consent, or without a number, nothing is booked.
     const noConsent = await owner("+48500200002", { consent: false });
