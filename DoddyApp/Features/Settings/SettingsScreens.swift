@@ -749,8 +749,9 @@ struct AdvancedSettingsView: View {
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     @State private var showStudio = false
     #if DEBUG
-    /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope). Only a Debug build has the toggle or reads the key.
-    @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = false
+    /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope); on until turned off
+    /// (decision 2026-11-08-debug-shows-every-feature). Only a Debug build has the toggle or reads the key.
+    @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = ReleaseScope.debugShowsEverythingByDefault
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
@@ -821,7 +822,7 @@ struct AdvancedSettingsView: View {
                       value: previewEverything ? "0" : "\(ReleaseScope.shipping.hidden.count) of \(Feature.allCases.count)")
             StatusRow(title: "Voice tools kept", value: "\(ReleaseScopeStore.current.hiddenTools.isEmpty ? ToolCatalog.all.count : ToolCatalog.all.count - ReleaseScope.shipping.hiddenTools.count) of \(ToolCatalog.all.count)")
         } footer: {
-            Text("Off: this build shows what the beta ships (docs/implementation/RELEASE_SCOPE.md). On: every feature, as before. A hidden feature's data stays; only its ways in go. Takes effect on the next screen and the next conversation.")
+            Text("On (the default in a Debug build): every feature. Off: what the beta ships, as a Release or TestFlight build always shows (docs/implementation/RELEASE_SCOPE.md). A hidden feature's data stays; only its ways in go. Takes effect on the next screen and the next conversation.")
         }
     }
 

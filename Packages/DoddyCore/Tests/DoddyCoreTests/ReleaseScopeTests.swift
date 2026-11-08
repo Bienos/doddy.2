@@ -161,6 +161,14 @@ final class ReleaseScopeTests: XCTestCase {
         XCTAssertEqual(ReleaseScope.previewEverythingKey, "releaseScope.previewEverything")
     }
 
+    func testDebugBuildShowsEverythingUntilTheSwitchIsTurnedOff() {
+        // Decision 2026-11-08-debug-shows-every-feature: a fresh Debug install shows every feature.
+        XCTAssertEqual(ReleaseScope.debug(showEverything: nil), .everything)
+        XCTAssertEqual(ReleaseScope.debug(showEverything: true), .everything)
+        XCTAssertEqual(ReleaseScope.debug(showEverything: false), .shipping)
+        XCTAssertTrue(ReleaseScope.debugShowsEverythingByDefault)
+    }
+
     // MARK: Quick actions
 
     func testParkingQuickActionGoesWithTheFeature() {
