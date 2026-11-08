@@ -1,0 +1,2 @@
+README.md rewritten: it still described the 8 Oct 2026 documentation pack (empty repo, no code, brand-v1.3 candidates). It now points to STATUS.md, BUILD_AND_TEST.md and AGENTS.md and lists folders, commands and the standing rules. PACKAGE_MANIFEST.json holds the new README hash and size (owner chose a full rewrite). MANIFEST.json (the original pack record) is untouched. No code changed.
+Ran: scripts/ci.sh --only checks. Not run: nothing else applies (docs only). Folder descriptions come from folder names and the Makefile, not from reading each folder.
