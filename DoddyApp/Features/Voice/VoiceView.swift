@@ -86,7 +86,7 @@ struct VoiceView: View {
             // and keeps it going after the sheet closes (ADR-595), as the gate's button already does.
             await Task { @MainActor in
                 await authSession.restore()
-                if (authSession.isSignedIn || VoiceConfig.talksWithoutAccount(for: provider)) && VoiceProviderConsent.isGranted(for: provider) {
+                if authSession.hasVoiceAccess(for: provider) && VoiceProviderConsent.isGranted(for: provider) {
                     await beginConversation()
                 }
             }.value

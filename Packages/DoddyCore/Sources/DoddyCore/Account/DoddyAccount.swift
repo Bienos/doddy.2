@@ -354,6 +354,21 @@ public enum DoddyAccountLink {
         }
     }
 
+    /// For a new account with no earlier device sign-in to link: does the backend take Doddy accounts
+    /// yet? `GET /v1/connected-apps` with the account's token: 200 yes, 401 not yet (a server still in
+    /// device-session mode), anything else: ask again later (nil).
+    public static func probeBackend(server: URL, account: DoddyAccountSession, transport: any HTTPTransport) async -> DoddyAccountServerUse? {
+        let request = HTTPRequest(
+            method: "GET", url: server.appendingPathComponent("v1/connected-apps"),
+            headers: ["authorization": account.authorization, "accept": "application/json"], body: nil)
+        guard let response = try? await transport.send(request) else { return nil }
+        switch response.status {
+        case 200: return .account
+        case 401: return .notYet
+        default: return nil
+        }
+    }
+
     public enum MessagingSignIn: Equatable, Sendable {
         /// This iPhone's own token on the messaging server, for the account.
         case signedIn(accountID: String, deviceToken: String)

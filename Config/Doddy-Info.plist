@@ -91,6 +91,14 @@
 	     because the device ID the phone signs in with goes there. -->
 	<key>DoddyServerURL</key>
 	<string>https://doddy-yaci.onrender.com</string>
+	<!-- Decision 2026-11-08-required-account: the Doddy accounts (Supabase Auth). Both values are
+	     public by design: the project's address (https://<ref>.supabase.co) and its publishable key.
+	     Empty until the owner fills them in (docs/OWNER_QUEUE.md, row 23). While empty, this build has
+	     no Doddy accounts: nobody is asked to sign in, exactly as before. -->
+	<key>DoddyAccountsURL</key>
+	<string></string>
+	<key>DoddyAccountsPublishableKey</key>
+	<string></string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

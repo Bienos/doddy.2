@@ -23,6 +23,8 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 header
+                // Decision 2026-11-08-required-account: only in a build with Doddy accounts set up.
+                DoddyAccountSettingsSection()
                 doddySection
                 connectionsSection
                 iPhoneSection

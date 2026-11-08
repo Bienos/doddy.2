@@ -163,13 +163,22 @@ struct RootView: View {
     @AppStorage(PreferenceKey.welcomeReplay) private var welcomeReplay = false
     /// The welcome was finished in this run, so it doesn't show again until a replay is asked for.
     @State private var welcomeDone = false
+    /// The Doddy account (decision 2026-11-08-required-account).
+    @State private var doddyAccount = DoddyAccountModel.shared
 
     /// The first-launch welcome (ADR-598) is on screen. It covers Home and the opening, and the first-use
     /// introduction waits until it is over. Only read once the store has loaded (`isFirstInstallation`).
     private var welcomeVisible: Bool {
-        !welcomeDone && WelcomeRule.shouldShow(
+        accountRequired || (!welcomeDone && WelcomeRule.shouldShow(
             seen: WelcomePreferences.seen(), firstInstallation: profiles.isFirstInstallation,
-            replayRequested: welcomeReplay, override: WelcomePreferences.override())
+            replayRequested: welcomeReplay, override: WelcomePreferences.override()))
+    }
+
+    /// Decision 2026-11-08-required-account: in a build with Doddy accounts set up, nobody uses Doddy
+    /// signed out. The welcome, whose sheet signs in, stays until they are, including after a sign-out.
+    /// A build without them (and UI tests, `-welcome NO`) is unchanged.
+    private var accountRequired: Bool {
+        doddyAccount.isConfigured && !doddyAccount.isSignedIn && WelcomePreferences.override() != false
     }
 
     private func finishWelcome() {
@@ -230,6 +239,8 @@ struct RootView: View {
                 lockLifted()
             }
         }
+        // Signed in: a server that didn't answer about the account last time is asked again.
+        .task { await DoddyAccountServers.catchUp() }
         .task {
             let notesLoad = LaunchWork.signposter.beginInterval("Notes load")
             await store.reload()

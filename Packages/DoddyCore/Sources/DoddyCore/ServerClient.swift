@@ -237,10 +237,18 @@ public actor DoddyServerClient {
     var pendingCallKeys: [String: String] = [:]
     /// The account being created right now, if any (see `ensureAccount`).
     private var accountCreation: Task<String, any Error>?
+    /// Decision 2026-11-08-required-account: how this iPhone gets its token when it has none, with its
+    /// Doddy account (`POST /v1/accounts/sign-in`). It answers nil while the server isn't set up for
+    /// Doddy accounts, and only then is an anonymous account made, as before.
+    private let accountSignIn: (@Sendable () async throws -> String?)?
 
-    public init(transport: any ServerTransport, credentials: any ServerCredentialStore) {
+    public init(
+        transport: any ServerTransport, credentials: any ServerCredentialStore,
+        accountSignIn: (@Sendable () async throws -> String?)? = nil
+    ) {
         self.transport = transport
         self.credentials = credentials
+        self.accountSignIn = accountSignIn
     }
 
     public func hasAccount() -> Bool { (try? credentials.load()) != nil }
@@ -259,6 +267,11 @@ public actor DoddyServerClient {
     }
 
     private func createAccount() async throws -> String {
+        // The Doddy account first: this iPhone's own token for it, made or found by the server.
+        if let accountSignIn, let token = try await accountSignIn() {
+            try credentials.save(token)
+            return token
+        }
         let response = try await send(.post, "/v1/accounts", body: nil, token: nil)
         guard response.status == 201,
               let created = try? JSONDecoder().decode(CreatedAccount.self, from: response.body)

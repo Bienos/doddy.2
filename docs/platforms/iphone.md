@@ -21,13 +21,21 @@
   - a conversation with no messages means the session started without its start data.
 
 ## Doddy account (decision `2026-11-08-required-account`, in progress)
-Every user will sign in with a Doddy account, using Apple, Google or a code sent by email, and the app won't go further without one.
-- **Built so far:** the logic, in DoddyCore `Account/DoddyAccount.swift`, tested on Linux (`DoddyAccountTests`, 16 tests).
-  - The requests to Supabase Auth: an email code (send, then verify), Sign in with Apple's identity token, and Google through the browser with PKCE (RFC 7636).
-  - Refreshing the session, and signing out.
-  - The rules for addresses, codes and sessions.
-  - The two calls that bring an iPhone's earlier data into the account: the backend's `link-device` and the messaging server's `accounts/sign-in`.
-- **Nothing uses it yet.** The screens, the "signed out goes back to sign-in" gate, the Keychain and sending the token to every server come next. They touch `RootView.swift` and the Settings screens, so they wait for #221.
+Every user signs in with a Doddy account, using Apple, Google or a code sent by email, and the app goes no further without one. **Off until the owner fills in `DoddyAccountsURL` and `DoddyAccountsPublishableKey` in `Config/Doddy-Info.plist`** (both public; empty today). While they are empty, and in every UI-test launch (`-inMemoryStore`), the app behaves exactly as before.
+- **Rules (DoddyCore, tested on Linux):**
+  - `Account/DoddyAccount.swift`: the Supabase Auth requests (an email code, Apple's identity token, Google through the browser with PKCE, refresh, sign-out), the rules for addresses, codes and sessions, and the calls that bring an iPhone's earlier data into the account (the backend's `link-device`, its `probeBackend` check, the messaging server's `accounts/sign-in`). `DoddyAccountTests`, 17 tests.
+  - `Account/DoddyAccountModel.swift`: the signed-in state the screens show. A sign-in counts only once the Keychain kept it; one refresh at a time; a refused refresh signs out. `DoddyAccountModelTests`, 11 tests.
+  - `DoddyServerClient(accountSignIn:)`: with no messaging token it signs in with the account, and makes an anonymous account only while the server isn't set up for accounts. `ServerAccountSignInTests`, 4 tests.
+- **The app (`Features/Account/`, `Features/Welcome/`; not compiled, no Xcode on the Linux machine that wrote it):**
+  - The welcome's sign-in sheet shows Apple, Google and "Continue with email" (`EmailCodeForm`: the address, then the code). There is no "without an account" button, and the welcome stays until the person is signed in, including after a sign-out (`RootView.accountRequired`).
+  - Settings › Your Doddy account: who is signed in, Sign out, and Delete my Doddy account (messaging data first, then the backend, which also removes the sign-in at Supabase, then an old voice account; each step only after the one before was confirmed).
+  - The session is kept in the Keychain (`DoddyAccountKeychain`, this device only).
+  - Each server switches separately (`DoddyAccountServers`). The backend gets the account's token once it has linked or accepted the account; the messaging server gets a device token for the account once it signed this iPhone in. Until a server says yes, the iPhone keeps its device session or anonymous account there. The voice token server gets the account's token unless this iPhone still has its own voice session. Voice may start with the account (`VoiceAuthSession.hasVoiceAccess`).
+  - Account error messages have Polish lines (`DoddyAccountWords`).
+- **Known gaps:**
+  - Notes stay on the iPhone after a sign-out, so whoever signs in next on the same iPhone sees them. The sign-out dialog says so; whether to clear them is an owner decision.
+  - The new layout has no UI test yet (UI-test launches have no accounts).
+  - Retiring the old ways in (guests, device sessions, anonymous accounts, the Apple-only voice sign-in) is step 5.
 
 ## Feature map
 Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/implementation/`. Rules with no UI are in `Packages/DoddyCore/Sources/DoddyCore/`.
