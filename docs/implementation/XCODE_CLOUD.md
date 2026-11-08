@@ -16,13 +16,17 @@ keeps it. Two paths would number their builds differently (the workflow's run nu
 Cloud's own counter), and TestFlight refuses a build number it has already seen for a version.
 
 **What this repository adds:** `ci_scripts/ci_post_clone.sh`. Xcode Cloud runs it on its Mac
-after it downloads the code and before it builds. It does four things:
+after it downloads the code and before it builds. It does five things:
 1. Generates `Doddy.xcodeproj` from `project.yml`, as `make project` does. The project isn't
    committed.
 2. Gives the app and its three extensions (widgets, share, notification content) Xcode Cloud's
    build number. TestFlight needs a higher one for every upload, the same in all four.
-3. Sets a team or a bundle ID, but only if the workflow names one (below).
-4. Resolves the Swift packages. Xcode Cloud won't do that itself without `Package.resolved`, which
+3. Writes the commit the build is made from (`CI_COMMIT`) into the `DODDY_GIT_COMMIT` build
+   setting. Info.plist carries it as `DoddyGitCommit`, and Settings › About shows its first seven
+   characters next to the version, for example "0.1.0 (12, 8f3c2a1)". A build made anywhere else
+   says `local` and shows only the version and build number (7 Nov 2026 audit).
+4. Sets a team or a bundle ID, but only if the workflow names one (below).
+5. Resolves the Swift packages. Xcode Cloud won't do that itself without `Package.resolved`, which
    a generated project doesn't have.
 
 It never signs, uploads or reads a key. `scripts/test_xcode_cloud_post_clone.sh` checks it on

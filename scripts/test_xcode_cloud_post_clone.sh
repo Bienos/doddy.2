@@ -21,6 +21,7 @@ fresh() {
 				DEVELOPMENT_TEAM = "";
 				DODDY_APP_BUNDLE_IDENTIFIER = com.bienos.doddy2.dev;
 				DODDY_APP_ENTITLEMENTS = "Config/Doddy-AppGroup.entitlements";
+				DODDY_GIT_COMMIT = local;
 				MARKETING_VERSION = 0.0.1;'
   printf '%s\n%s\n%s\n' "$block" "$block" "$block" > "$work/repo/Doddy.xcodeproj/project.pbxproj"
 }
@@ -81,6 +82,22 @@ run
 [ $? -ne 0 ] || fail "when the entitlements line isn't found the build must stop, not ship without push"
 grep -q "couldn't set push notifications" "$work/out" || fail "and say what it couldn't set"
 
+# The commit (7 Nov 2026 audit): Xcode Cloud's CI_COMMIT replaces `local`; without it, and outside a
+# repository (this stand-in), `local` stays.
+fresh; run
+[ "$(count 'DODDY_GIT_COMMIT = local;')" = 3 ] || fail "with no CI_COMMIT and no repository the project keeps 'local'"
+fresh; run CI_COMMIT=8f3c2a1d9b7e6f5a4c3b2a1908f7e6d5c4b3a291
+[ $? -eq 0 ] || fail "a 40-character commit should succeed: $(cat "$work/out")"
+[ "$(count 'DODDY_GIT_COMMIT = 8f3c2a1d9b7e6f5a4c3b2a1908f7e6d5c4b3a291;')" = 3 ] || fail "the commit reaches every target"
+[ "$(count 'DODDY_GIT_COMMIT = local;')" = 0 ] || fail "and no target keeps 'local'"
+grep -q "commit 8f3c2a1 set" "$work/out" || fail "and the log names its short form"
+fresh; run CI_COMMIT='8f3c2a1; rm -rf /'
+[ $? -ne 0 ] || fail "a commit with other characters must stop the build"
+[ "$(count 'DODDY_GIT_COMMIT = local;')" = 3 ] || fail "a refused commit changes nothing"
+fresh; run CI_COMMIT=8f3c2a
+[ $? -ne 0 ] || fail "a commit shorter than 7 characters must stop the build"
+fresh; run CI_COMMIT=8F3C2A1D
+[ $? -ne 0 ] || fail "git writes commits in lowercase; anything else isn't one"
 # Refusals: a build number, team or bundle ID that isn't one stops the build.
 fresh; run CI_BUILD_NUMBER=4a
 [ $? -ne 0 ] || fail "a build number with a letter must stop the build"
@@ -110,4 +127,4 @@ fresh; printf '{ "pins" : [], "version" : 3 }\n' > "$work/repo/Config/Package.re
 cmp -s "$work/repo/Config/Package.resolved" "$pins" || fail "Config/Package.resolved should be copied into the project unchanged"
 
 if [ "$failures" -ne 0 ]; then echo "FAIL: $failures check(s)"; exit 1; fi
-echo "PASS: ci_post_clone.sh sets the build number, team, bundle ID and push entitlements and refuses bad values"
+echo "PASS: ci_post_clone.sh sets the build number, commit, team, bundle ID and push entitlements and refuses bad values"

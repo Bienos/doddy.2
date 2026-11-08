@@ -108,6 +108,10 @@ and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds c
   `Config/Package.resolved` turns the check on, and from then on CI fails if resolution changes it. To move
   versions later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
   `docs/decisions/2026-11-07-reproducible-app-builds.md`).
+- The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a
+  download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
+  binary frameworks gave on 8 Nov 2026 (`xcodebuild` exit 74). Any other error is not retried, and the step
+  still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
 - Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
   Release-only error shows up before Xcode Cloud archives.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
