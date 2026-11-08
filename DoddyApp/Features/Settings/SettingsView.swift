@@ -172,11 +172,14 @@ struct SettingsView: View {
     static let tiktokURL = URL(string: "https://www.tiktok.com/@doddy_mate")!
     static let instagramURL = URL(string: "https://www.instagram.com/doddy_mate/")!
 
+    /// "0.1.0 (12, 8f3c2a1)": the version, the build number and, for a build Xcode Cloud made, the
+    /// commit it was made from (`BuildCommit`, 7 Nov 2026 audit).
     static var versionText: String {
         let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return "\(version) (\(build))"
+        return BuildCommit.versionText(
+            version: info?["CFBundleShortVersionString"] as? String,
+            build: info?["CFBundleVersion"] as? String,
+            commit: info?["DoddyGitCommit"] as? String)
     }
 }
 

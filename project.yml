@@ -103,6 +103,10 @@ targets:
         PRODUCT_NAME: Doddy
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
+        # The commit this build was made from (7 Nov 2026 audit), read by Settings › About through
+        # Info.plist `DoddyGitCommit`. Xcode Cloud replaces `local` with its CI_COMMIT
+        # (ci_scripts/ci_post_clone.sh); a build made anywhere else says "local".
+        DODDY_GIT_COMMIT: local
         GENERATE_INFOPLIST_FILE: YES
         # Candidate icon (owner request 2026-10-09, DECISIONS.md ADR-050); light + dark variants.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
