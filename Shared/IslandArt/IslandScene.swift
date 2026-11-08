@@ -94,6 +94,11 @@ struct IslandScene: Equatable, Sendable {
     var minimalSign: IslandSign
     /// Minimal boards without a face (Tiny Promise) put the sign in the middle.
     var minimalSignCentred = false
+    /// Whether the minimal island (another app's activity is also running) draws Whole Doddy's face.
+    /// Not with a centred sign: the timer, wind-down, focus and stopwatch put their time, tick or
+    /// symbol in the middle of the small bubble, and his face drawn there too covered it (seen on a
+    /// phone on 8 Nov 2026: a timer's "14:34" behind his face).
+    var minimalShowsPoseFace: Bool { pose != nil && !(minimalSignCentred && minimalSign != .none) }
     /// Words on the expanded drawing, in black on its cream shapes.
     var artLabels: [IslandArtLabel] = []
     /// Whole Doddy (ADR-264): drawn instead of the board's art when set.

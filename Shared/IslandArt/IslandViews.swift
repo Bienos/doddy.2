@@ -471,7 +471,8 @@ struct IslandAuroraView: View {
 }
 
 /// Minimal (another app's activity is also running): the board's 45 pt drawing with the sign
-/// over its right side.
+/// over its right side. A centred sign (a timer's time) is drawn alone with Whole Doddy, never
+/// over his face (`IslandScene.minimalShowsPoseFace`).
 struct IslandMinimalView: View {
     let scene: IslandScene
     let startedAt: Date
@@ -484,9 +485,11 @@ struct IslandMinimalView: View {
     var body: some View {
         ZStack(alignment: scene.minimalSignCentred ? .center : .trailing) {
             if let pose = scene.pose {
-                IslandPoseFaceView(pose: pose, size: 24)
-                    .padding(.leading, 4)
-                    .frame(width: 45, alignment: .leading)
+                if scene.minimalShowsPoseFace {
+                    IslandPoseFaceView(pose: pose, size: 24)
+                        .padding(.leading, 4)
+                        .frame(width: 45, alignment: .leading)
+                }
             } else {
                 IslandArtView(art: scene.art(.minimal), face: scene.face, live: scene.live, showsHands: false)
             }

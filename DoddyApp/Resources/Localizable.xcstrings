@@ -14649,6 +14649,17 @@
         }
       }
     },
+    "Couldn't connect to Doddy's voice. Check your internet connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z głosem Doddy’ego. Sprawdź połączenie z internetem i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Couldn't delete the conversation": {
       "extractionState": "manual",
       "localizations": {
@@ -24510,6 +24521,17 @@
         }
       }
     },
+    "Doddy's voice now needs you to be signed in. Close this screen and tap Talk to Doddy to sign in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego wymaga teraz zalogowania. Zamknij ten ekran i stuknij „Porozmawiaj z Doddym”, żeby się zalogować."
+          }
+        }
+      }
+    },
     "Doddy's voice runs on ElevenLabs, which answers with an OpenAI model, or on OpenAI directly if you chose it on Home. Both get the summary as part of the conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -32150,6 +32172,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe, chcę spróbować"
+          }
+        }
+      }
+    },
+    "If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli dalej się nie udaje, wybierz „Użyj własnego głosu Doddy’ego” i język „Automatycznie” w Ustawieniach → Głos i osobowość."
           }
         }
       }
