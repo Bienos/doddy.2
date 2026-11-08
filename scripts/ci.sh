@@ -297,10 +297,11 @@ else
     not_run "iOS app build + tests" "no available iPhone simulator; install one or set DODDY_DESTINATION"
   else
     echo "Destination: $dest"
-    run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
-    # `-list` does not resolve packages, so resolve them here: a failure to fetch a package stops the run
-    # before the long build, and the pins can be checked now. If Xcode still wrote no file, the check
-    # is tried again after the build, which resolves too.
+    # No `xcodebuild -list` first: it only printed the targets, nothing read them, it does not resolve
+    # packages, and it cost 47 to 111 s a run on the hosted Mac (runs 41341166440 to 41619070789).
+    # Resolve the packages here: a failure to fetch a package stops the run before the long build, and
+    # the pins can be checked now. If Xcode still wrote no file, the check is tried again after the
+    # build, which resolves too.
     run_step "Resolve the app's packages" xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
     if check_package_pins; then pins_checked=1; fi
     # Build once, then run the unit tests and the UI tests as two passes, with the simulator
