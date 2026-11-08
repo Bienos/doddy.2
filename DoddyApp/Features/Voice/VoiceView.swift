@@ -23,6 +23,8 @@ struct VoiceView: View {
     @State private var editingNoteReminderTime = false
     /// The plan step whose "Change" sheet is open (ADR-205).
     @State private var editingPlanStep: PlanStep?
+    /// What was last copied from a BLIK card (ADR-510), to show "Copied" next to it.
+    @State private var copiedForBlik: String?
     /// The presentation whose share sheet is open (ADR-567).
     @State private var sharingPresentation: VoiceSessionController.PresentationReady?
     /// A photo just taken with Doddy's camera (ADR-569), waiting for the camera screen to go.
@@ -212,8 +214,16 @@ struct VoiceView: View {
 
                         if controller.isPrivate {
                             Label {
-                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI (or ElevenLabs, if you switched Home to it) still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
-                                    .font(.footnote)
+                                // Names the voice that runs this conversation (engineering audit, 7 Nov 2026):
+                                // the one text named OpenAI first though ElevenLabs is the default.
+                                Group {
+                                    if controller.provider == .openAIRealtime {
+                                        Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                    } else {
+                                        Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                    }
+                                }
+                                .font(.footnote)
                             } icon: {
                                 Image(systemName: "eye.slash.fill")
                             }
@@ -277,6 +287,11 @@ struct VoiceView: View {
                         if let receipt = controller.changeReceipt {
                             changeReceiptCard(receipt, controller: controller)
                                 .id("changeReceipt")
+                        }
+
+                        if let card = controller.blikCard {
+                            blikReceiptCard(card, controller: controller)
+                                .id("blikCard")
                         }
 
                         if let card = controller.lostWalletCard {
@@ -363,10 +378,14 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
+                    copiedForBlik = nil
                     if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
                 }
                 .onChange(of: controller.listReceipt) { _, receipt in
                     if receipt != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("listReceipt", anchor: .bottom) } }
+                }
+                .onChange(of: controller.blikCard) { _, card in
+                    if card != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("blikCard", anchor: .bottom) } }
                 }
                 .onChange(of: controller.lostWalletCard?.steps) { _, steps in
                     if steps != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("lostWalletCard", anchor: .top) } }
@@ -730,6 +749,10 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .blik(_, let draft, let contactName, let numbers):
+            Text("A BLIK transfer for you to send")
+                .font(.headline)
+            blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
         case .text(_, let draft):
             // ADR-750 U2: exactly the text the approval covers, and who it goes to.
             Text("Send this text to you?")
@@ -1204,6 +1227,7 @@ struct VoiceView: View {
         case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
+        case .blik: (NSLocalizedString("I'll send it myself", comment: "BLIK card: the user sends it in their bank app"), NSLocalizedString("Not now", comment: ""))
         case .presentation: (NSLocalizedString("Make presentation", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .camera: (NSLocalizedString("Open camera", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .home: (NSLocalizedString("Yes", comment: ""), NSLocalizedString("No", comment: ""))
@@ -1759,6 +1783,84 @@ struct VoiceView: View {
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
         .accessibilityIdentifier("voice.listReceipt")
+    }
+
+    /// After "I'll send it myself" (ADR-510): the same details, kept on screen while the user
+    /// opens their bank app. Doddy never sends money and can't see whether it was sent.
+    private func blikReceiptCard(_ card: VoiceSessionController.BlikCard, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Send it in your bank app").font(.headline)
+                Spacer()
+                Button { controller.dismissBlikCard() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+            blikDetails(card.draft, contactName: card.contactName, numbers: card.numbers, controller: controller)
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.blikCard")
+    }
+
+    /// Who, their numbers with Copy, how much and the title (ADR-510). The amount is shown in the
+    /// iPhone's language ("50,00 zł" in Polish) but never copied: it is typed in the bank app.
+    @ViewBuilder
+    private func blikDetails(
+        _ draft: BlikTransferDraft, contactName: String?, numbers: [BlikPhoneNumber], controller: VoiceSessionController
+    ) -> some View {
+        Text(draft.amount.decimal, format: .currency(code: "PLN"))
+            .font(.title2.monospacedDigit())
+            .accessibilityIdentifier("voice.blik.amount")
+        Text("To \(contactName ?? draft.recipientName)")
+            .font(.body)
+        ForEach(numbers, id: \.self) { number in
+            HStack {
+                Label(number.shown, systemImage: "phone")
+                Spacer()
+                blikCopyButton(number.copy, controller: controller)
+                    .accessibilityLabel("Copy phone number")
+            }
+        }
+        if numbers.isEmpty {
+            Group {
+                if contactName == nil {
+                    Text("Pick them in your bank app's BLIK phone transfer.")
+                } else {
+                    Text("No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.")
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(Theme.secondaryText)
+        }
+        if let title = draft.title {
+            HStack {
+                Label("“\(title)”", systemImage: "text.alignleft")
+                Spacer()
+                blikCopyButton(title, controller: controller)
+                    .accessibilityLabel("Copy title")
+            }
+        }
+        Text("Doddy doesn't send money and can't see your bank. Check the person and the amount in your bank app before you confirm there. They need BLIK phone transfers turned on in their own bank app.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+    }
+
+    private func blikCopyButton(_ text: String, controller: VoiceSessionController) -> some View {
+        Button {
+            controller.copyForBlik(text)
+            copiedForBlik = text
+        } label: {
+            if copiedForBlik == text {
+                Label("Copied", systemImage: "checkmark")
+            } else {
+                Text("Copy")
+            }
+        }
+        .buttonStyle(.bordered)
+        .frame(minHeight: 44)
     }
 
     /// The invoice being dictated (ADR-677): every word and sum from `InvoiceCard` (DoddyCore,

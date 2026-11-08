@@ -1,0 +1,5 @@
+Messaging server, step 3 of decision `2026-11-08-required-account`: `POST /v1/accounts/sign-in` signs an iPhone in with a Doddy account (a Supabase user: Apple, Google or a code by email), checked against the project's keys with the backend's rules.
+- **Accounts:** one account here per Doddy account (`accounts.auth_subject`, new migration `021_account_subject.sql`, listed in the frozen-migrations test), and each iPhone its own device token, used for every request as before, at most 10 per account.
+- **Earlier data:** an iPhone's earlier anonymous account is linked once, or moves into the account's existing one when it holds nothing. Accounts are never merged (409).
+- **Unchanged:** the anonymous `POST /v1/accounts` stays for older app builds; it is retired in step 5.
+Ran: `scripts/ci.sh --only messaging` with a throwaway Postgres 16: typecheck and tests PASS (the 824 earlier tests, and 11 new in `test/accountSignIn.test.ts`). The Studio rendered-sample step was NOT RUN (no reportlab/matplotlib here; unrelated). Not run: the live service (needs `SUPABASE_URL`, OWNER_QUEUE 23 in #238) and the iPhone (a later pull request).

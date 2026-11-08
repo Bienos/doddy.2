@@ -151,7 +151,10 @@ struct VoiceSettingsView: View {
                 PersonalityLinkRow()
             }
             Section {
-                VoiceProviderPicker(idPrefix: "settings")
+                // One voice provider in the beta (decision 2026-11-07-release-scope, V1 decision 5): the picker is hidden with the feature.
+                if ReleaseScopeStore.current.shows(.voiceProviderPicker) {
+                    VoiceProviderPicker(idPrefix: "settings")
+                }
                 Toggle(isOn: $listenOnOpen) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Auto-start voice")
@@ -354,7 +357,10 @@ struct MemoriesSettingsView: View {
 
             BackupSettingsSection()
 
-            NoteImportSettingsSection()
+            // Hidden in the beta until one real Takeout export has been tried (decision 2026-11-07-release-scope).
+            if ReleaseScopeStore.current.shows(.noteImport) {
+                NoteImportSettingsSection()
+            }
         }
         .settingsPage()
         .navigationTitle("Memories")
@@ -568,8 +574,10 @@ struct PrivacySettingsView: View {
             Section {
                 // ADR-310: Face ID when Doddy opens, and after a minute away.
                 AppLockToggle()
-                // iPhone search (ADR-330), off until switched on.
-                SpotlightToggle()
+                // iPhone search (ADR-330), off until switched on; no row at all when the build hides it (decision 2026-11-07-release-scope).
+                if ReleaseScopeStore.current.shows(.spotlight) {
+                    SpotlightToggle()
+                }
                 NavigationLink {
                     DataFlowView()
                 } label: {
@@ -714,12 +722,13 @@ struct RoutinesSettingsView: View {
                     .foregroundStyle(Theme.secondaryText)
             }
             MorningCheckInSettingsSection()
-            EveningWrapUpSettingsSection()
-            WeeklyPlanSettingsSection()
-            WeeklyLookBackSettingsSection()
-            // "A thought is ready for review" (ADR-785).
+            // Each routine the build hides (decision 2026-11-07-release-scope) loses its section; the morning check-in stays, off by default.
+            if ReleaseScopeStore.current.shows(.eveningWrapUp) { EveningWrapUpSettingsSection() }
+            if ReleaseScopeStore.current.shows(.weeklyPlan) { WeeklyPlanSettingsSection() }
+            if ReleaseScopeStore.current.shows(.weeklyLookBack) { WeeklyLookBackSettingsSection() }
+            // "A thought is ready for review" (ADR-785). Not in the release scope's list yet, so every build shows it.
             ThoughtReviewSettingsSection()
-            TidyUpSettingsSection()
+            if ReleaseScopeStore.current.shows(.tidyUp) { TidyUpSettingsSection() }
             if store.environment.capabilities.isAvailable(.noteReminders) {
                 NoteReminderSettingsSection()
             }
@@ -740,6 +749,8 @@ struct AdvancedSettingsView: View {
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     @State private var showStudio = false
     #if DEBUG
+    /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope). Only a Debug build has the toggle or reads the key.
+    @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = false
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
@@ -775,9 +786,12 @@ struct AdvancedSettingsView: View {
             // Studio (ADR-740): kept here, not on Home's menu (it has no room for a twelfth row, ADR-652) or
             // Settings' first page (ADR-633). Studio is off on the server until the owner turns it on, and says so
             // when it is.
-            Section {
-                Button("Studio") { showStudio = true }
-                    .accessibilityIdentifier("settings.studio")
+            // Hidden in the beta with `make_something` (decision 2026-11-07-release-scope).
+            if ReleaseScopeStore.current.shows(.studio) {
+                Section {
+                    Button("Studio") { showStudio = true }
+                        .accessibilityIdentifier("settings.studio")
+                }
             }
             Section("What's built") {
                 ForEach(Capability.allCases, id: \.self) { capability in
@@ -788,6 +802,7 @@ struct AdvancedSettingsView: View {
             }
             .accessibilityIdentifier("settings.capabilities")
             #if DEBUG
+            releaseScope
             developerServer
             #endif
         }
@@ -797,6 +812,19 @@ struct AdvancedSettingsView: View {
     }
 
     #if DEBUG
+    /// The release scope (decision 2026-11-07-release-scope): what this build hides, and the switch to see it all. Debug only.
+    private var releaseScope: some View {
+        Section {
+            Toggle("Developer: show every feature", isOn: $previewEverything)
+                .accessibilityIdentifier("settings.previewEverything")
+            StatusRow(title: "Hidden features",
+                      value: previewEverything ? "0" : "\(ReleaseScope.shipping.hidden.count) of \(Feature.allCases.count)")
+            StatusRow(title: "Voice tools kept", value: "\(ReleaseScopeStore.current.hiddenTools.isEmpty ? ToolCatalog.all.count : ToolCatalog.all.count - ReleaseScope.shipping.hiddenTools.count) of \(ToolCatalog.all.count)")
+        } footer: {
+            Text("Off: this build shows what the beta ships (docs/implementation/RELEASE_SCOPE.md). On: every feature, as before. A hidden feature's data stays; only its ways in go. Takes effect on the next screen and the next conversation.")
+        }
+    }
+
     private var developerServer: some View {
         Section {
             TextField("Server address (https://…)", text: $connectedAppsServerURL)

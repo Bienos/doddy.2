@@ -35,6 +35,8 @@ public enum VoiceToolName {
 /// start on (`startsOn`); the rest start off, and each of those needs an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
+    /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
+    case blik
     /// Presentations made on the iPhone as a file Keynote opens (ADR-567). No iOS permission.
     case presentations
     /// Step count, walking distance and floors from Motion & Fitness (ADR-568).
@@ -56,6 +58,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .maps: "Maps"
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
+        case .blik: "BLIK transfers"
         case .presentations: "Presentations"
         case .steps: "Steps"
         case .photos: "Photos"
@@ -74,7 +77,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     /// blocked and never asks; turning it on in Settings is what makes iOS ask.
     public var startsOn: Bool {
         switch self {
-        case .maps, .shortcuts, .messages, .presentations: true
+        case .maps, .shortcuts, .messages, .blik, .presentations: true
         case .calendar, .reminders, .contacts, .timers, .steps, .photos, .camera, .home: false
         }
     }
@@ -97,6 +100,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
+        case VoiceToolName.draftBlikTransfer: .blik
         case VoiceToolName.makePresentation: .presentations
         case VoiceToolName.readSteps: .steps
         case VoiceToolName.findPhotos: .photos
@@ -247,6 +251,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
+    /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
+    /// never sends money.
+    case draftBlikTransfer(BlikTransferDraft)
     /// A text from Doddy's number to the user's own verified number (ADR-750 U2). Shown on a card
     /// with the exact text; sent only on the user's tap, bound to that text by `ApprovalHash`.
     case textMe(body: String)
@@ -400,6 +407,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.draftBlikTransfer:
+            return parseBlikTransfer(args, name: name)
         case VoiceToolName.textMe:
             // Exactly as the agent wrote it: the card shows it and the approval covers it, so
             // nothing is trimmed. Too long is refused, never cut (review C11).
@@ -858,6 +867,13 @@ public enum VoiceToolReply {
     /// The tool's name is the agent's own text, so it follows as data (ToolData).
     public static func unsupported(_ name: String) -> String {
         "The app does not support the tool below. Tell the user this isn't available yet.\n"
+            + ToolData.block([quoted("Tool", name)])
+    }
+
+    /// A tool of a feature this build hides (decision 2026-11-07-release-scope). Nothing was looked up, saved or changed, and
+    /// the call isn't logged. The agent says so in one line and carries on with what the app has.
+    public static func hidden(_ name: String) -> String {
+        "not available: this version of the Doddy app doesn't include the tool below, so nothing was looked up, saved or changed. Tell the user in one short sentence that this isn't in the app yet, and go on with what you can do.\n"
             + ToolData.block([quoted("Tool", name)])
     }
 

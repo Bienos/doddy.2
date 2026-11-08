@@ -64,7 +64,14 @@ public enum AccountErasureOutcome: Equatable, Sendable {
 
     /// The voice account is deleted after this only when the server's part didn't fail, so a failed
     /// deletion can be tried again from the same button (it goes once the voice account is gone).
-    public var mayDeleteVoiceAccount: Bool { self != .failed }
+    /// A server that can't delete accounts yet (404) stops it too (engineering audit, 7 Nov 2026):
+    /// going on removed that button while the server still kept the person's data.
+    public var mayDeleteVoiceAccount: Bool {
+        switch self {
+        case .failed, .notAvailable: false
+        case .nothingThere, .complete, .onlineAccountsPending: true
+        }
+    }
 }
 
 public struct BackendAccountClient: Sendable {

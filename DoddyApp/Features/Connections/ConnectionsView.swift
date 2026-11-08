@@ -16,7 +16,8 @@ struct ConnectionsView: View {
                 Text("Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.")
                     .foregroundStyle(Theme.secondaryText)
 
-                ForEach(ConnectionGroup.all) { group in
+                // A group whose every switch the build hides (decision 2026-11-07-release-scope) goes with its heading.
+                ForEach(ConnectionGroup.shown(in: ReleaseScopeStore.current)) { group in
                     VStack(alignment: .leading, spacing: 12) {
                         Text(group.title)
                             .font(.footnote.weight(.semibold))
@@ -71,7 +72,17 @@ struct ConnectionGroup: Identifiable {
         ConnectionGroup(title: "Photos and camera", items: [.photos, .camera]),
         // Lights, outlets, fans and scenes through HomeKit, after a tap on a card.
         ConnectionGroup(title: "Home", items: [.home]),
+        // ADR-510: shown, never sent; the user sends it in their bank app.
+        ConnectionGroup(title: "Money", items: [.blik]),
     ]
+
+    /// The groups with the switches the scope shows (decision 2026-11-07-release-scope); a group left with no switch is dropped.
+    static func shown(in scope: ReleaseScope) -> [ConnectionGroup] {
+        all.compactMap { group in
+            let items = group.items.filter { scope.shows($0) }
+            return items.isEmpty ? nil : ConnectionGroup(title: group.title, items: items)
+        }
+    }
 }
 
 /// One function as a card. The state is written out in words, not only colour.
@@ -424,6 +435,18 @@ struct ConnectionInfo {
                 canDo: ["Turn a light, outlet or fan on or off, or run a scene, after you tap Yes on a card naming it"],
                 leavesPhone: "Nothing leaves your iPhone: HomeKit talks to your home from here.",
                 staysHere: "Doddy never controls locks, garage doors, alarms, cameras or doorbells.")
+        case .blik:
+            // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
+            ConnectionInfo(
+                symbol: "banknote",
+                examples: ["Send Ania 50 zł for the pizza", "Send Tomek 20 zł with BLIK"],
+                canDo: [
+                    "Show a BLIK phone transfer on your screen: who, their number, how much in złoty, and the title",
+                    "You send it yourself in your bank app; Doddy never sends or pays money",
+                    "Finds the person's number if Contacts is allowed too",
+                ],
+                leavesPhone: "The person's name, the amount and the title you said, as part of the conversation.",
+                staysHere: "Phone numbers are shown only on your screen. Doddy has no access to your bank and can't see whether you sent it.")
         }
     }
 }

@@ -60,22 +60,37 @@ run_step() {  # name, command...
 not_run() { record "$1" "NOT RUN" "$2"; blocked=1; echo; echo "=== $1"; echo "NOT RUN: $2"; }
 # The app's package pins (Config/Package.resolved, 7 Nov 2026 audit). Xcode writes this file when it
 # resolves packages; `xcodebuild -list` does not (run 42409624440: "wrote no Package.resolved", and the
-# step logged NOT RUN, which blocked an otherwise green job).
+# step logged NOT RUN, which blocked an otherwise green job). After `-resolvePackageDependencies` it
+# still wrote nothing in the project's own folder (Xcode 26.6, run 42416065085), though the log listed
+# every resolved package, so look in the other places too and take the first file that names LiveKit
+# (DoddyCore's own Package.resolved doesn't). Every file found is printed, so the next run says where.
 resolved_in_project=Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+derived_data=${DODDY_DERIVED_DATA:-$HOME/Library/Developer/Xcode/DerivedData}
+find_resolved_pins() {
+  local f
+  if [ -f "$resolved_in_project" ]; then echo "$resolved_in_project"; return 0; fi
+  while IFS= read -r f; do
+    echo "Package.resolved candidate: $f" >&2
+    if grep -qi 'livekit' "$f" 2>/dev/null; then echo "$f"; return 0; fi
+  done < <(find Doddy.xcodeproj "$derived_data" -name Package.resolved -not -path '*/checkouts/*' 2>/dev/null)
+  return 1
+}
 # Copies the file Xcode resolved to build/Package.resolved (hosted CI keeps it, so pinning or moving
 # versions is one download). With pins committed, any difference fails: the build would not be the one
 # TestFlight gets. Returns 1, recording nothing, when Xcode has not written the file (yet).
 check_package_pins() {
-  [ -f "$resolved_in_project" ] || return 1
+  local src
+  src=$(find_resolved_pins) || return 1
+  echo "App packages were pinned in: $src"
   mkdir -p build
-  cp "$resolved_in_project" build/Package.resolved
+  cp "$src" build/Package.resolved
   if [ ! -f Config/Package.resolved ]; then
     record "App package versions match Config/Package.resolved" "SKIPPED" \
       "no pins committed yet: commit build/Package.resolved from this run as Config/Package.resolved"
-  elif cmp -s Config/Package.resolved "$resolved_in_project"; then
+  elif cmp -s Config/Package.resolved "$src"; then
     record "App package versions match Config/Package.resolved" PASS ""
   else
-    diff -u Config/Package.resolved "$resolved_in_project" || true
+    diff -u Config/Package.resolved "$src" || true
     record "App package versions match Config/Package.resolved" FAIL \
       "resolution changed the pins; if that was meant, run make update-packages on a Mac and commit it"
     failed=1
@@ -85,10 +100,10 @@ check_package_pins() {
 # blocks. Without pins there is nothing to guard and nothing to block on: say so and carry on.
 pins_not_found() {
   if [ -f Config/Package.resolved ]; then
-    not_run "App package versions match Config/Package.resolved" "xcodebuild wrote no $resolved_in_project, so the pins could not be checked"
+    not_run "App package versions match Config/Package.resolved" "no Package.resolved naming LiveKit in $resolved_in_project, Doddy.xcodeproj or DerivedData, so the pins could not be checked"
   else
     record "App package versions match Config/Package.resolved" "SKIPPED" \
-      "no pins committed yet, and xcodebuild wrote no $resolved_in_project to copy"
+      "no pins committed yet, and no Package.resolved naming LiveKit was found in $resolved_in_project, Doddy.xcodeproj or DerivedData to copy"
   fi
 }
 # Shut a simulator down and boot it again, waiting until it has finished booting (ADR-561).

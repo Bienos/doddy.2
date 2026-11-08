@@ -80,9 +80,15 @@ public enum CaptureFailure: Equatable, Sendable {
 
 public enum StartRejection: Equatable, Sendable {
     case alreadyActive
+    /// Recordings are hidden in this build (decision 2026-11-07-release-scope): Siri, the control and the Action Button still
+    /// know the intent, so the answer says why nothing started.
+    case notInThisVersion
 
     public func message(_ language: NotificationLanguage) -> String {
-        language == .polish ? "Doddy już nagrywa." : "Doddy is already recording."
+        switch self {
+        case .alreadyActive: language == .polish ? "Doddy już nagrywa." : "Doddy is already recording."
+        case .notInThisVersion: language == .polish ? "Nagrywania nie ma w tej wersji Doddy'ego." : "Recording isn't in this version of Doddy."
+        }
     }
 }
 

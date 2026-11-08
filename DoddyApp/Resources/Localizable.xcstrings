@@ -789,6 +789,17 @@
         }
       }
     },
+    "A BLIK transfer for you to send": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przelew BLIK do wysłania przez Ciebie"
+          }
+        }
+      }
+    },
     "A PESEL can only be sent as a fact marked PESEL.": {
       "extractionState": "manual",
       "localizations": {
@@ -3238,6 +3249,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zaznaczona informacja wygląda na PESEL albo adres. Oznacz ją tak albo odznacz."
+          }
+        }
+      }
+    },
+    "A transfer to check": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przelew do sprawdzenia"
           }
         }
       }
@@ -14097,6 +14119,17 @@
         }
       }
     },
+    "Copied": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skopiowano"
+          }
+        }
+      }
+    },
     "Copied to the server": {
       "extractionState": "manual",
       "localizations": {
@@ -14163,6 +14196,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kopiuj"
+          }
+        }
+      }
+    },
+    "Copy phone number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiuj numer telefonu"
           }
         }
       }
@@ -14244,6 +14288,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skopiuj klucz w inFakt i wróć: przycisk wklejania pojawi się, gdy w schowku będzie tekst."
+          }
+        }
+      }
+    },
+    "Copy title": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiuj tytuł"
           }
         }
       }
@@ -20350,6 +20405,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie czyta jeszcze gazetki tej sieci."
+          }
+        }
+      }
+    },
+    "Doddy doesn't send money and can't see your bank. Check the person and the amount in your bank app before you confirm there. They need BLIK phone transfers turned on in their own bank app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie wysyła pieniędzy i nie widzi Twojego banku. Sprawdź osobę i kwotę w aplikacji banku, zanim tam potwierdzisz. Odbiorca musi mieć włączone przelewy na telefon BLIK w swojej aplikacji banku."
           }
         }
       }
@@ -31782,6 +31848,17 @@
         }
       }
     },
+    "I'll send it myself": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślę w aplikacji banku"
+          }
+        }
+      }
+    },
     "I'll tell you when the price I read is at or below this. Suggested: 5 percent below the price, rounded down to whole złoty. Type another if you like.": {
       "extractionState": "manual",
       "localizations": {
@@ -41693,6 +41770,17 @@
         }
       }
     },
+    "Money": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pieniądze"
+          }
+        }
+      }
+    },
     "Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set.": {
       "extractionState": "manual",
       "localizations": {
@@ -44976,6 +45064,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na Twoim serwerze Doddy nie ustawiono portfela do płatności, więc nie można tego włączyć."
+          }
+        }
+      }
+    },
+    "No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak numeru telefonu w Kontaktach. Wybierz tę osobę w przelewie na telefon BLIK w aplikacji banku."
           }
         }
       }
@@ -57126,6 +57225,17 @@
         }
       }
     },
+    "Pick them in your bank app's BLIK phone transfer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz tę osobę w przelewie na telefon BLIK w aplikacji banku."
+          }
+        }
+      }
+    },
     "Pick up where you left off": {
       "extractionState": "manual",
       "localizations": {
@@ -58409,7 +58519,7 @@
         }
       }
     },
-    "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI (or ElevenLabs, if you switched Home to it) still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.": {
+    "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
@@ -58418,13 +58528,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Privates Gespräch. Es wird nicht auf diesem iPad behalten und im nächsten Gespräch nicht aufgegriffen. OpenAI (oder ElevenLabs, wenn du Home darauf umgestellt hast) führt es trotzdem aus und kann eine eigene Aufnahme behalten, wie unter Einstellungen › Datenschutz. Notizen werden nur gespeichert, wenn du auf Speichern tippst."
+                  "value": "Privates Gespräch. Es wird nicht auf diesem iPad behalten und im nächsten Gespräch nicht aufgegriffen. ElevenLabs führt es trotzdem aus und kann eine eigene Aufnahme behalten, wie unter Einstellungen › Datenschutz. Notizen werden nur gespeichert, wenn du auf Speichern tippst."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Privates Gespräch. Es wird nicht auf diesem iPhone behalten und im nächsten Gespräch nicht aufgegriffen. OpenAI (oder ElevenLabs, wenn du Home darauf umgestellt hast) führt es trotzdem aus und kann eine eigene Aufnahme behalten, wie unter Einstellungen › Datenschutz. Notizen werden nur gespeichert, wenn du auf Speichern tippst."
+                  "value": "Privates Gespräch. Es wird nicht auf diesem iPhone behalten und im nächsten Gespräch nicht aufgegriffen. ElevenLabs führt es trotzdem aus und kann eine eigene Aufnahme behalten, wie unter Einstellungen › Datenschutz. Notizen werden nur gespeichert, wenn du auf Speichern tippst."
                 }
               }
             }
@@ -58436,13 +58546,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Private conversation. It won't be kept on this iPad or brought up in your next conversation. OpenAI (or ElevenLabs, if you switched Home to it) still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save."
+                  "value": "Private conversation. It won't be kept on this iPad or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI (or ElevenLabs, if you switched Home to it) still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save."
+                  "value": "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save."
                 }
               }
             }
@@ -58454,13 +58564,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conversación privada. No se guardará en este iPad ni saldrá en tu próxima conversación. OpenAI (o ElevenLabs, si cambiaste Inicio a ella) la ejecuta igualmente y puede conservar su propia grabación, como se indica en Ajustes › Privacidad. Las notas solo se guardan si tocas Guardar."
+                  "value": "Conversación privada. No se guardará en este iPad ni saldrá en tu próxima conversación. ElevenLabs la ejecuta igualmente y puede conservar su propia grabación, como se indica en Ajustes › Privacidad. Las notas solo se guardan si tocas Guardar."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conversación privada. No se guardará en este iPhone ni saldrá en tu próxima conversación. OpenAI (o ElevenLabs, si cambiaste Inicio a ella) la ejecuta igualmente y puede conservar su propia grabación, como se indica en Ajustes › Privacidad. Las notas solo se guardan si tocas Guardar."
+                  "value": "Conversación privada. No se guardará en este iPhone ni saldrá en tu próxima conversación. ElevenLabs la ejecuta igualmente y puede conservar su propia grabación, como se indica en Ajustes › Privacidad. Las notas solo se guardan si tocas Guardar."
                 }
               }
             }
@@ -58472,13 +58582,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conversation privée. Elle ne sera ni conservée sur cet iPad ni évoquée dans ta prochaine conversation. OpenAI (ou ElevenLabs, si tu as choisi cette voix sur l’Accueil) l’exécute quand même et peut garder son propre enregistrement, comme dans Réglages › Confidentialité. Les notes ne sont enregistrées que si tu touches Enregistrer."
+                  "value": "Conversation privée. Elle ne sera ni conservée sur cet iPad ni évoquée dans ta prochaine conversation. ElevenLabs l’exécute quand même et peut garder son propre enregistrement, comme dans Réglages › Confidentialité. Les notes ne sont enregistrées que si tu touches Enregistrer."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conversation privée. Elle ne sera ni conservée sur cet iPhone ni évoquée dans ta prochaine conversation. OpenAI (ou ElevenLabs, si tu as choisi cette voix sur l’Accueil) l’exécute quand même et peut garder son propre enregistrement, comme dans Réglages › Confidentialité. Les notes ne sont enregistrées que si tu touches Enregistrer."
+                  "value": "Conversation privée. Elle ne sera ni conservée sur cet iPhone ni évoquée dans ta prochaine conversation. ElevenLabs l’exécute quand même et peut garder son propre enregistrement, comme dans Réglages › Confidentialité. Les notes ne sont enregistrées que si tu touches Enregistrer."
                 }
               }
             }
@@ -58490,13 +58600,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Privatni razgovor. Neće se čuvati na ovom iPadu niti spominjati u tvojem sljedećem razgovoru. OpenAI (ili ElevenLabs, ako je Početna prebačena na njega) i dalje ga vodi i može zadržati vlastitu snimku, kako je u Postavke › Privatnost. Bilješke se spremaju samo ako dodirneš Spremi."
+                  "value": "Privatni razgovor. Neće se čuvati na ovom iPadu niti spominjati u tvojem sljedećem razgovoru. ElevenLabs i dalje ga vodi i može zadržati vlastitu snimku, kako je u Postavke › Privatnost. Bilješke se spremaju samo ako dodirneš Spremi."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Privatni razgovor. Neće se čuvati na ovom iPhoneu niti spominjati u tvojem sljedećem razgovoru. OpenAI (ili ElevenLabs, ako je Početna prebačena na njega) i dalje ga vodi i može zadržati vlastitu snimku, kako je u Postavke › Privatnost. Bilješke se spremaju samo ako dodirneš Spremi."
+                  "value": "Privatni razgovor. Neće se čuvati na ovom iPhoneu niti spominjati u tvojem sljedećem razgovoru. ElevenLabs i dalje ga vodi i može zadržati vlastitu snimku, kako je u Postavke › Privatnost. Bilješke se spremaju samo ako dodirneš Spremi."
                 }
               }
             }
@@ -58508,13 +58618,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conversazione privata. Non verrà conservata su questo iPad né ripresa nella tua prossima conversazione. OpenAI (o ElevenLabs, se in Home sei passato alla sua voce) la esegue comunque e può conservare una propria registrazione, come in Impostazioni › Privacy. Le note vengono salvate solo se tocchi Salva."
+                  "value": "Conversazione privata. Non verrà conservata su questo iPad né ripresa nella tua prossima conversazione. ElevenLabs la esegue comunque e può conservare una propria registrazione, come in Impostazioni › Privacy. Le note vengono salvate solo se tocchi Salva."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conversazione privata. Non verrà conservata su questo iPhone né ripresa nella tua prossima conversazione. OpenAI (o ElevenLabs, se in Home sei passato alla sua voce) la esegue comunque e può conservare una propria registrazione, come in Impostazioni › Privacy. Le note vengono salvate solo se tocchi Salva."
+                  "value": "Conversazione privata. Non verrà conservata su questo iPhone né ripresa nella tua prossima conversazione. ElevenLabs la esegue comunque e può conservare una propria registrazione, come in Impostazioni › Privacy. Le note vengono salvate solo se tocchi Salva."
                 }
               }
             }
@@ -58526,13 +58636,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "プライベートな会話です。このiPadには保存されず、次の会話で持ち出されることもありません。OpenAI（ホームをElevenLabsに切り替えている場合はElevenLabs）が会話を処理するため、設定 › プライバシーにあるとおり、独自の録音を保持することがあります。メモは「保存」をタップした場合にだけ保存されます。"
+                  "value": "プライベートな会話です。このiPadには保存されず、次の会話で持ち出されることもありません。ElevenLabsが会話を処理するため、設定 › プライバシーにあるとおり、独自の録音を保持することがあります。メモは「保存」をタップした場合にだけ保存されます。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "プライベートな会話です。このiPhoneには保存されず、次の会話で持ち出されることもありません。OpenAI（ホームをElevenLabsに切り替えている場合はElevenLabs）が会話を処理するため、設定 › プライバシーにあるとおり、独自の録音を保持することがあります。メモは「保存」をタップした場合にだけ保存されます。"
+                  "value": "プライベートな会話です。このiPhoneには保存されず、次の会話で持ち出されることもありません。ElevenLabsが会話を処理するため、設定 › プライバシーにあるとおり、独自の録音を保持することがあります。メモは「保存」をタップした場合にだけ保存されます。"
                 }
               }
             }
@@ -58544,13 +58654,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPadzie ani przywołana w następnej rozmowie. OpenAI (albo ElevenLabs, jeśli przełączysz na niego ekran główny) nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
+                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPadzie ani przywołana w następnej rozmowie. ElevenLabs nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPhonie ani przywołana w następnej rozmowie. OpenAI (albo ElevenLabs, jeśli przełączysz na niego ekran główny) nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
+                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPhonie ani przywołana w następnej rozmowie. ElevenLabs nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
                 }
               }
             }
@@ -58562,13 +58672,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conversa privada. Não fica neste iPad nem é trazida à tona na sua próxima conversa. A OpenAI (ou a ElevenLabs, se você trocou o Início para ela) ainda executa a conversa e pode manter a própria gravação, como em Ajustes › Privacidade. As notas só são salvas se você tocar em Salvar."
+                  "value": "Conversa privada. Não fica neste iPad nem é trazida à tona na sua próxima conversa. A ElevenLabs ainda executa a conversa e pode manter a própria gravação, como em Ajustes › Privacidade. As notas só são salvas se você tocar em Salvar."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Conversa privada. Não fica neste iPhone nem é trazida à tona na sua próxima conversa. A OpenAI (ou a ElevenLabs, se você trocou o Início para ela) ainda executa a conversa e pode manter a própria gravação, como em Ajustes › Privacidade. As notas só são salvas se você tocar em Salvar."
+                  "value": "Conversa privada. Não fica neste iPhone nem é trazida à tona na sua próxima conversa. A ElevenLabs ainda executa a conversa e pode manter a própria gravação, como em Ajustes › Privacidade. As notas só são salvas se você tocar em Salvar."
                 }
               }
             }
@@ -58580,13 +58690,198 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "私密对话。它不会保留在这台 iPad 上，也不会在你的下一次对话中被提起。OpenAI（或者 ElevenLabs，如果你在首页切换为它）仍会运行这段对话，并可能保留自己的录音，详见设置 › 隐私。只有你轻点“保存”，笔记才会保存。"
+                  "value": "私密对话。它不会保留在这台 iPad 上，也不会在你的下一次对话中被提起。ElevenLabs 仍会运行这段对话，并可能保留自己的录音，详见设置 › 隐私。只有你轻点“保存”，笔记才会保存。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "私密对话。它不会保留在这台 iPhone 上，也不会在你的下一次对话中被提起。OpenAI（或者 ElevenLabs，如果你在首页切换为它）仍会运行这段对话，并可能保留自己的录音，详见设置 › 隐私。只有你轻点“保存”，笔记才会保存。"
+                  "value": "私密对话。它不会保留在这台 iPhone 上，也不会在你的下一次对话中被提起。ElevenLabs 仍会运行这段对话，并可能保留自己的录音，详见设置 › 隐私。只有你轻点“保存”，笔记才会保存。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Privates Gespräch. Es wird nicht auf diesem iPad behalten und im nächsten Gespräch nicht aufgegriffen. OpenAI führt es trotzdem aus und kann eine eigene Aufnahme behalten, wie unter Einstellungen › Datenschutz. Notizen werden nur gespeichert, wenn du auf Speichern tippst."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Privates Gespräch. Es wird nicht auf diesem iPhone behalten und im nächsten Gespräch nicht aufgegriffen. OpenAI führt es trotzdem aus und kann eine eigene Aufnahme behalten, wie unter Einstellungen › Datenschutz. Notizen werden nur gespeichert, wenn du auf Speichern tippst."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Private conversation. It won't be kept on this iPad or brought up in your next conversation. OpenAI still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conversación privada. No se guardará en este iPad ni saldrá en tu próxima conversación. OpenAI la ejecuta igualmente y puede conservar su propia grabación, como se indica en Ajustes › Privacidad. Las notas solo se guardan si tocas Guardar."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conversación privada. No se guardará en este iPhone ni saldrá en tu próxima conversación. OpenAI la ejecuta igualmente y puede conservar su propia grabación, como se indica en Ajustes › Privacidad. Las notas solo se guardan si tocas Guardar."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conversation privée. Elle ne sera ni conservée sur cet iPad ni évoquée dans ta prochaine conversation. OpenAI l’exécute quand même et peut garder son propre enregistrement, comme dans Réglages › Confidentialité. Les notes ne sont enregistrées que si tu touches Enregistrer."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conversation privée. Elle ne sera ni conservée sur cet iPhone ni évoquée dans ta prochaine conversation. OpenAI l’exécute quand même et peut garder son propre enregistrement, comme dans Réglages › Confidentialité. Les notes ne sont enregistrées que si tu touches Enregistrer."
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Privatni razgovor. Neće se čuvati na ovom iPadu niti spominjati u tvojem sljedećem razgovoru. OpenAI i dalje ga vodi i može zadržati vlastitu snimku, kako je u Postavke › Privatnost. Bilješke se spremaju samo ako dodirneš Spremi."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Privatni razgovor. Neće se čuvati na ovom iPhoneu niti spominjati u tvojem sljedećem razgovoru. OpenAI i dalje ga vodi i može zadržati vlastitu snimku, kako je u Postavke › Privatnost. Bilješke se spremaju samo ako dodirneš Spremi."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conversazione privata. Non verrà conservata su questo iPad né ripresa nella tua prossima conversazione. OpenAI la esegue comunque e può conservare una propria registrazione, come in Impostazioni › Privacy. Le note vengono salvate solo se tocchi Salva."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conversazione privata. Non verrà conservata su questo iPhone né ripresa nella tua prossima conversazione. OpenAI la esegue comunque e può conservare una propria registrazione, come in Impostazioni › Privacy. Le note vengono salvate solo se tocchi Salva."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "プライベートな会話です。このiPadには保存されず、次の会話で持ち出されることもありません。OpenAIが会話を処理するため、設定 › プライバシーにあるとおり、独自の録音を保持することがあります。メモは「保存」をタップした場合にだけ保存されます。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "プライベートな会話です。このiPhoneには保存されず、次の会話で持ち出されることもありません。OpenAIが会話を処理するため、設定 › プライバシーにあるとおり、独自の録音を保持することがあります。メモは「保存」をタップした場合にだけ保存されます。"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPadzie ani przywołana w następnej rozmowie. OpenAI nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPhonie ani przywołana w następnej rozmowie. OpenAI nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conversa privada. Não fica neste iPad nem é trazida à tona na sua próxima conversa. A OpenAI ainda executa a conversa e pode manter a própria gravação, como em Ajustes › Privacidade. As notas só são salvas se você tocar em Salvar."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conversa privada. Não fica neste iPhone nem é trazida à tona na sua próxima conversa. A OpenAI ainda executa a conversa e pode manter a própria gravação, como em Ajustes › Privacidade. As notas só são salvas se você tocar em Salvar."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "私密对话。它不会保留在这台 iPad 上，也不会在你的下一次对话中被提起。OpenAI 仍会运行这段对话，并可能保留自己的录音，详见设置 › 隐私。只有你轻点“保存”，笔记才会保存。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "私密对话。它不会保留在这台 iPhone 上，也不会在你的下一次对话中被提起。OpenAI 仍会运行这段对话，并可能保留自己的录音，详见设置 › 隐私。只有你轻点“保存”，笔记才会保存。"
                 }
               }
             }
@@ -68047,6 +68342,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送方式"
+          }
+        }
+      }
+    },
+    "Send it in your bank app": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij przelew w aplikacji banku"
           }
         }
       }
@@ -98636,6 +98942,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "You send it in your bank app": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłasz go Ty, w aplikacji banku"
           }
         }
       }

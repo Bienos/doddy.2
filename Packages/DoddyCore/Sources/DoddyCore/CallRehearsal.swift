@@ -6,7 +6,9 @@ import Foundation
 // sam" (this script on screen, and the number to dial themselves).
 
 public enum CallRehearsal {
-    public static let banner = "Próba: nikt nie dzwoni, nic nie jest zapisywane. Doddy udaje osobę, która odbiera."
+    /// Names who hears the voice (engineering audit, 7 Nov 2026): "nothing is saved" alone hid that OpenAI
+    /// processes the audio, which the consent gate in CallRehearsalSession now also asks about.
+    public static let banner = "Próba: nikt nie dzwoni, nic nie jest zapisywane. Doddy udaje osobę, która odbiera. OpenAI przetwarza twój głos."
 
     /// Instructions for the tool-less realtime session. Placeholders are filled from the preview.
     public static let instructionsTemplate = """

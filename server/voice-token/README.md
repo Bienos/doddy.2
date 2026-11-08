@@ -1,5 +1,7 @@
 # DODDY voice service
 
+**Live** on Vercel as the project `doddy-voice-token`; the app's voice screen uses it. An old copy on Render is unused (`STATUS.md`).
+
 This service verifies Sign in with Apple once, keeps a revocable DODDY voice session, and exchanges
 that session for a provider-scoped credential. Apple and provider credentials stay on the server;
 the app never asks for a provider API key, tester code, or server URL. Voice transcripts, audio,
@@ -33,6 +35,7 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | Name | Purpose |
 |---|---|
 | `APPLE_BUNDLE_ID` | Exact bundle identifier for the app build signing in (for example, the development bundle identifier). |
+| `SUPABASE_URL` | Optional. The Doddy accounts project (`https://<ref>.supabase.co`, decision `2026-11-08-required-account`). With it, `/api/voice-token` also accepts a Doddy account's access token (Apple, Google or a code by email), checked against the project's published keys (`src/doddy-account.js`): no secret is needed. Its limits count per account (`account:<id>`), apart from the Apple voice accounts. Unreadable keys answer 503 `account_check_unavailable`, never 401. Without it, only this server's own Apple sign-in works, as before. |
 | `DODDY_SESSION_SIGNING_KEY` | Stable random secret, at least 32 bytes. Signs short-lived sessions and pseudonymizes Apple subject identifiers. Rotating it invalidates sessions. |
 | `UPSTASH_REDIS_REST_URL` | HTTPS URL for the durable shared session/rate-limit store. |
 | `UPSTASH_REDIS_REST_TOKEN` | Secret for that store. Never log or expose it to the app. |

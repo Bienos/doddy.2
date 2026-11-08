@@ -483,10 +483,12 @@ final class MotionHostTests: XCTestCase {
     /// frame of the flight and the first on the ground can differ in size at any frame length; and
     /// under Reduce Motion a frame longer than the 20 ms invisible gap shows the fade's two faint
     /// sides back to back. Neither is a visible resize on the ground. Swept over frame lengths
-    /// (in 4 ms steps), both ways, Home's 1.4× and Settings' 1.0×.
+    /// (in 4 ms steps), both ways, Home's 1.4× and Settings' 1.0×. Up to 160 ms: a busy hosted runner
+    /// hitched a frame past the whole fade and flagged "two sizes" (run 42481741193); frames longer
+    /// than `MotionChecks.hitchMs` are not judged for that rule.
     func testChecksAreCleanAtAnyFrameLengthAcrossTabHopsAndFades() {
         for reduce in [false, true] {
-            for frameSteps in 1...14 {
+            for frameSteps in 1...40 {
                 setUp()
                 var checks = MotionChecks()
                 e.setReduceMotion(reduce)

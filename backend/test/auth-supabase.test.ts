@@ -106,12 +106,25 @@ test("forged, re-signed, algorithm-swapped and malformed tokens are refused", as
   }
 });
 
-test("only Apple and Google accounts count; email, phone or a missing method are refused", async () => {
+test("Apple, Google and email (a code) accounts count; phone, a password or a missing method are refused", async () => {
   const { fetchJson } = jwks([jwk(ec.publicKey, "k1", "ES256")]);
   const v = new SupabaseSessionVerifier({ projectUrl: PROJECT, fetchJson });
   assert.deepEqual(await v.verify(bearer(token({ app_metadata: { provider: "apple" } })), NOW), { userId: USER });
   assert.deepEqual(await v.verify(bearer(token()), NOW), { userId: USER });
-  for (const app_metadata of [{ provider: "email" }, { provider: "phone" }, { providers: ["google"] }, {}, null, "google"]) {
+  // Decision 2026-11-08-required-account: an email account signs in with a code (amr "otp").
+  const otp = [{ method: "otp", timestamp: NOW_S - 10 }];
+  assert.deepEqual(await v.verify(bearer(token({ app_metadata: { provider: "email" }, amr: otp })), NOW), { userId: USER });
+  assert.deepEqual(await v.verify(bearer(token({ app_metadata: { provider: "email" } })), NOW), { userId: USER }, "no amr: passes, as before");
+  // Never a password, whichever provider the account was made with, and in either amr shape.
+  for (const amr of [[{ method: "password", timestamp: NOW_S }], ["password"], [{ method: "otp" }, { method: "Password" }]]) {
+    assert.equal(await v.verify(bearer(token({ app_metadata: { provider: "email" }, amr })), NOW), null, JSON.stringify(amr));
+    assert.equal(await v.verify(bearer(token({ amr })), NOW), null, `google ${JSON.stringify(amr)}`);
+  }
+  assert.deepEqual(await v.verify(bearer(token({ amr: [{ method: "oauth" }] })), NOW), { userId: USER }, "Google's own method");
+  // A server can still narrow the list.
+  const appleGoogle = new SupabaseSessionVerifier({ projectUrl: PROJECT, fetchJson, providers: ["apple", "google"] });
+  assert.equal(await appleGoogle.verify(bearer(token({ app_metadata: { provider: "email" } })), NOW), null);
+  for (const app_metadata of [{ provider: "phone" }, { provider: "anonymous" }, { providers: ["google"] }, {}, null, "google"]) {
     assert.equal(await v.verify(bearer(token({ app_metadata })), NOW), null, JSON.stringify(app_metadata));
   }
   assert.equal(await v.verify(bearer(token({ app_metadata: undefined })), NOW), null, "no app_metadata");

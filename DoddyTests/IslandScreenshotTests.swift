@@ -40,6 +40,7 @@ final class IslandScreenshotTests: XCTestCase {
         ("5-muted", "Muted", .listening, true, nil),
         ("6-confirm", "A card waits in Doddy (no kind)", .needsConfirmation, false, nil),
         ("7-text", "A text waits for your yes", .needsConfirmation, false, .actionWaiting(.text)),
+        ("8-transfer", "A BLIK transfer waits", .needsConfirmation, false, .actionWaiting(.transfer)),
         ("9-document", "A document is ready", .speaking, false, .resultReady(.document)),
         // Translator mode (ADR-244), started by asking Doddy in a conversation (start_translator):
         // only the language pair, never a word of what is said.

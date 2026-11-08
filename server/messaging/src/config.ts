@@ -33,6 +33,10 @@ const schema = z.object({
 
   ELEVENLABS_API_KEY: optional,
 
+  // Doddy accounts (decision 2026-11-08-required-account): the Supabase project whose signed-in users
+  // may sign in here (`POST /v1/accounts/sign-in`). Not a secret. Unset: only anonymous accounts, as before.
+  SUPABASE_URL: z.string().url().refine((u) => u.startsWith("https://"), "SUPABASE_URL must be https").optional(),
+
   // S2 phone calls
   MEMORY_ENCRYPTION_KEY: optional, // base64 of 32 random bytes
   // Shared with ElevenLabs as a workspace secret; at least 32 characters (openssl rand -base64 32).
@@ -350,6 +354,8 @@ export const abuseLimits = (over?: Partial<AbuseLimits>): AbuseLimits => ({ ...D
 
 export interface Config {
   databaseUrl: string;
+  /** The Doddy accounts project's origin, or undefined (decision 2026-11-08-required-account). */
+  supabaseUrl?: string;
   port: number;
   trustProxyHops: number;
   verifyDailyCap: number;
@@ -390,6 +396,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     Object.values(o).every((v) => v !== undefined) ? (o as T) : undefined;
   return {
     databaseUrl: e.DATABASE_URL,
+    supabaseUrl: e.SUPABASE_URL ? new URL(e.SUPABASE_URL).origin : undefined,
     port: e.PORT,
     trustProxyHops: e.TRUST_PROXY_HOPS,
     verifyDailyCap: e.VERIFY_DAILY_CAP,

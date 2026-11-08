@@ -443,9 +443,10 @@ struct ListDetailView: View {
             Button { showReminder = true } label: { Label("Remind me", systemImage: "bell") }
             // Shopping mode (ADR-257): this list on the Lock Screen and in the Dynamic Island.
             // Where Live Activities exist: iPhone, and iPad from iPadOS 26 (ADR-432, ADR-453).
+            // Hidden in the beta (decision 2026-11-07-release-scope): the Lock Screen buttons wait for an App Review answer.
             if shopping.isOn(for: list.id) {
                 Button { shopping.end() } label: { Label("End shopping mode", systemImage: "cart.badge.minus") }
-            } else if DeviceSupport.hasLiveActivities {
+            } else if DeviceSupport.hasLiveActivities, ReleaseScopeStore.current.shows(.shoppingModeLockScreen) {
                 Button { confirmShopping = true } label: { Label("Shopping mode", systemImage: "cart") }
                     .disabled(list.open.isEmpty)
             }
@@ -463,8 +464,8 @@ struct ListDetailView: View {
                     Label("Share as a picture", systemImage: "photo")
                 }
             }
-            // Shared lists through iCloud (ADR-263), only in builds set up for it.
-            if sharing.isAvailable {
+            // Shared lists through iCloud (ADR-263), only in builds set up for it, and not in the beta (decision 2026-11-07-release-scope).
+            if sharing.isAvailable, ReleaseScopeStore.current.shows(.sharedLists) {
                 if let link = sharing.isShared(list.id) {
                     Button { Task { await openPeople(list) } } label: { Label("People", systemImage: "person.2") }
                     Button(role: .destructive) { confirmStopSharing = true } label: {

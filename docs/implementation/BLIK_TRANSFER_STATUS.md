@@ -1,8 +1,8 @@
 # BLIK transfers by voice: status (ADR-510)
 
-> **REMOVED, 5 Nov 2026 (ADR-810).** The BLIK transfer draft described below (the `draft_blik_transfer` tool, its card, the Connections switch and the Activity rows) was taken out of the repository on the owner's decision: BLIK payments are to go through Stripe later (not built). This page is history. The live ElevenLabs agent still has the tool until the owner separately says to sync it.
-
 Last updated 2026-10-18. Branch `claude/dreamy-cannon-gc33dj` (PR #85). Numbered ADR-510; ADR-483 is ASK-01.
+
+> **Restored, 7 Nov 2026.** The draft was removed on 5 Nov (ADR-810) and put back on 7 Nov on the owner's word ("keep blik"); ADR-510 and ADR-541 are in force again. Decision: `docs/decisions/2026-11-07-restore-blik-transfer-draft.md`. What is described below is the code as it was before the removal; the switch is on by default since ADR-813.
 
 ## What it is
 "Send Ania 50 zł for the pizza" shows a card with the person, their phone number (from Contacts, when iOS allows it), the amount in złoty and the title. The user sends the transfer themselves in their bank app, with BLIK's phone transfer ("przelew na telefon"). **Doddy never sends, pays or moves money**, and it can't see whether the user sent it.
