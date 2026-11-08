@@ -82,6 +82,10 @@ final class AccountErasureClientTests: XCTestCase {
         let old = await erase(OneReplyTransport(status: 404, body: #"{"error":{"code":"not_found","message":"Not found."}}"#))
         XCTAssertEqual(old, .failure(.notAvailable))
         XCTAssertEqual(AccountErasureOutcome.from(old), .notAvailable)
+        XCTAssertFalse(AccountErasureOutcome.notAvailable.mayDeleteVoiceAccount,
+                       "a server that can't delete yet keeps the voice account, and with it the button to try again")
+        XCTAssertTrue(AccountErasureOutcome.nothingThere.mayDeleteVoiceAccount, "nothing on the server: the voice account may go")
+        XCTAssertTrue(AccountErasureOutcome.complete.mayDeleteVoiceAccount)
         let expired = await erase(OneReplyTransport(status: 401))
         XCTAssertEqual(expired, .failure(.unauthenticated))
     }
