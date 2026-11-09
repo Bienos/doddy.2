@@ -16,7 +16,7 @@ One map of every brand and design source in this repo. **Current (9 Nov 2026):**
 | Brand guidelines v1.3 (history) | `reference/original_archives/DODDY_BRAND_SYSTEM_v1.3.zip`, `…_v1.3_COMPLETE.zip` (hashes in `reference/ARCHIVE_CHECKSUMS.md`) | History only (ADR-056) |
 | Character, voice, personality | `reference/original_archives/DODDY_Character_Bible_v1_Complete.zip`; `reference/character_evals/` | Behaviour and voice reference |
 | Research | `reference/original_archives/DODDY_Deep_Research_2026-10-08.zip`, `…First_Useful_Product_Research_2026.zip`; `reference/compiled_research/` | Evidence, not binding |
-| Code tokens | `Packages/DoddyCore/Sources/DoddyDesignTokens/`: `UploadedTokens.swift` (what the app's `Theme` reads) and `CandidateTokens.swift` (what the site and Doddy Web are generated from, with the V2.2 orange) | The only place colour values live |
+| Code tokens | `Packages/DoddyCore/Sources/DoddyDesignTokens/`: `CandidateTokens.swift` (Brand V2.2 in light: what the site and Doddy Web are generated from) and `UploadedTokens.swift` (what the app's `Theme` reads: since 9 Nov 2026 its light values and its orange are `CandidateTokens`' own, and only its dark values differ, until the owner decides on the guide's night) | The only place colour values live |
 
 **Deleted, in git history:** `design/interface-v1.2/` (Pocket Notebook), `design/ios-ready-asset-catalog/`, `VISUAL_REVIEW/` (ADR-548); `reference/brand_v1.3_unpacked/` (readable copies of the two v1.3 zips) and `assets/brand_candidate/` (the historical candidate art), on 9 Nov 2026 (decision `docs/decisions/2026-11-09-remove-old-design-leftovers.md`). The zips still hold everything the extracts had.
 
