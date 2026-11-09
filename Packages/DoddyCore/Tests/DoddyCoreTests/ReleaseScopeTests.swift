@@ -82,6 +82,7 @@ final class ReleaseScopeTests: XCTestCase {
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.draftInvoice), .invoices)
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.textMe), .updates)
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.callMeLater), .phoneCalls)
+        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.callPlaces), .callCases)
     }
 
     func testShippingConnectionsFollowTheirFeature() {

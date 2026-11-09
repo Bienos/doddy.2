@@ -269,6 +269,8 @@ struct CallApprovalSections: View {
             : String(format: NSLocalizedString("Number from a note: %@", comment: ""), label)
         case .typed: return label.isEmpty ? NSLocalizedString("Number typed in", comment: "")
             : String(format: NSLocalizedString("Number typed in, from: %@", comment: ""), label)
+        // Decision 2026-11-09-restaurant-calls-one-tap: a place Doddy found and the user approved on one card.
+        case .places: return NSLocalizedString("Number from Doddy's place search", comment: "")
         }
     }
 

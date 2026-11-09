@@ -83,6 +83,9 @@ final class VoiceSessionController {
         /// at `draft.at`, saying `draft.reason` first. The tap approves that with the card's
         /// quiet-hours switch (`callLaterAllowQuiet`).
         case callLater(toolCallID: String, draft: CallLaterDraft, to: String, quietHours: CallQuietHours)
+        /// "Call these places for you?" (decision 2026-11-09-restaurant-calls-one-tap): the server's preview of
+        /// every place and the task digest the one tap approves.
+        case callTask(toolCallID: String, preview: CallTaskPreview)
         /// ASK-01 (ADR-483): "Doddy wants to …" before a tool with no card of its own runs. A read
         /// runs on a tap or the user's own spoken yes; a change (`needsTap`) only on a tap. The
         /// call is kept as it came, and handled again after the yes.
@@ -107,7 +110,7 @@ final class VoiceSessionController {
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
-                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _):
+                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _), .callTask(let id, _):
                 id
             }
         }
@@ -359,6 +362,8 @@ final class VoiceSessionController {
     private(set) var listReceipt: ListReceipt?
     /// True from the tap on Send text until its result (ADR-750 U2): the card is gone by then.
     private(set) var textSending = false
+    /// The user's first name for this conversation's call_places cards; empty when About you has none.
+    private var callerFirstName = ""
     /// The "Call even in quiet hours" switch on a call-later card (ADR-754); off for each new card.
     var callLaterAllowQuiet = false
     /// True from the tap on Book call until the server's answer.
@@ -620,6 +625,9 @@ final class VoiceSessionController {
         startAttempt += 1
         let attempt = startAttempt
         callOwners.forget(before: attempt)
+        // "Dzwonię w imieniu …" for call_places: the first word of the approved name in About you, as
+        // Settings, Phone calls, Calls for you starts from (decision 2026-11-09-restaurant-calls-one-tap).
+        callerFirstName = profile.value(.name)?.split(separator: " ").first.map(String.init) ?? ""
         isOffline = false
         offlineSaved = nil
         sessionEnd = nil
@@ -1721,6 +1729,10 @@ final class VoiceSessionController {
             let record = await runConfirmedCloud(call, approvalID: approvalID, app: asked[id]?.app ?? .gmail)
             writeResults[id] = WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
             await reply(id, record.reply)
+        case .callTask(let id, let preview):
+            let outcome = await approveCallTask(preview)
+            writeResults[id] = WriteResult(reply: outcome.reply, attempted: outcome.attempted)
+            await reply(id, outcome.reply)
         case .callLater(let id, let draft, let to, let quietHours):
             callBooking = true
             let result = await bookCall(draft, to: to, quietHours: quietHours, allowQuietHours: callLaterAllowQuiet)
@@ -1940,6 +1952,10 @@ final class VoiceSessionController {
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .blik(let id, _, _, _): await reply(id, VoiceToolReply.blikDeclined)
+        case .callTask(let id, let preview):
+            // Nothing was dialled; the server deletes the places' briefs now instead of when they lapse.
+            if let client = Self.messagingClient() { try? await client.cancelCallTask(preview.taskId) }
+            await reply(id, VoiceToolReply.callTaskDeclined)
         case .callLater(let id, _, _, _):
             callLaterAllowQuiet = false
             await reply(id, VoiceToolReply.callDeclined)
@@ -2505,7 +2521,7 @@ final class VoiceSessionController {
         case .ask(_, _, let needsTap, _, _): return needsTap ? .other : .askFirst
         case .cloudRead: return .askFirst
         // A call booked for later (ADR-754): the island says only that something waits for a tap.
-        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater: return .other
+        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater, .callTask: return .other
         }
     }
 
@@ -3255,6 +3271,8 @@ final class VoiceSessionController {
             await proposeText(body, toolCallID: call.toolCallId)
         case .callMeLater(let draft):
             await proposeCallLater(draft, toolCallID: call.toolCallId)
+        case .callPlaces(let draft):
+            await proposeCallTask(draft, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
             guard let setup = proposal.setup(ownerDefault: Self.ownerLanguage) else {
                 await reply(call.toolCallId, VoiceToolReply.failed("Both languages are the same. Ask the user which language the other person speaks."), isError: true)
@@ -4026,6 +4044,61 @@ final class VoiceSessionController {
             }
             return (VoiceToolReply.textResult(status), true)
         }
+    }
+
+    // MARK: Calls to places (decision 2026-11-09-restaurant-calls-one-tap)
+
+    /// Checks that calls can be made, sends the places to Doddy's server and shows the one card it
+    /// returns, built from the exact payloads it will send. Nothing is dialled here; the card waits
+    /// for the tap.
+    private func proposeCallTask(_ draft: CallTaskDraft, toolCallID: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(toolCallID, VoiceToolReply.callTaskNoServer, isError: true)
+            return
+        }
+        // No account yet means no verified number; asking the server would create an account.
+        guard await client.hasAccount() else {
+            await reply(toolCallID, VoiceToolReply.callTaskNoPhone)
+            return
+        }
+        let availability: CallCaseAvailability
+        do {
+            availability = try await client.callCaseAvailability()
+        } catch {
+            await reply(toolCallID, VoiceToolReply.callTaskRefused(error), isError: true)
+            return
+        }
+        guard availability.available, availability.phoneVerified else {
+            await reply(toolCallID, VoiceToolReply.callTaskNotReady(availability))
+            return
+        }
+        guard !callerFirstName.isEmpty else {
+            await reply(toolCallID, VoiceToolReply.callTaskNoName)
+            return
+        }
+        let preview: CallTaskPreview
+        do {
+            preview = try await client.createCallTask(draft.body(principalName: callerFirstName))
+        } catch {
+            await reply(toolCallID, VoiceToolReply.callTaskRefused(error))
+            return
+        }
+        propose(.callTask(toolCallID: toolCallID, preview: preview), toolCallID: toolCallID)
+    }
+
+    /// After the tap: the task with exactly this digest starts and its first place is dialled. An
+    /// answer that never came back is `unknown`, and nothing is redialled (ADR-672).
+    private func approveCallTask(_ preview: CallTaskPreview) async -> (reply: String, attempted: Bool) {
+        guard let client = Self.messagingClient() else { return (VoiceToolReply.callTaskNoServer, false) }
+        let approval: CallApproval
+        do {
+            approval = try await client.approveCallTask(preview.taskId, digest: preview.digest)
+        } catch {
+            return (VoiceToolReply.callTaskRefused(error), false)
+        }
+        guard approval.state != "unknown" else { return (VoiceToolReply.callTaskUnknown, true) }
+        let first = preview.places.first?.callee.name ?? ""
+        return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult), true)
     }
 
     // MARK: Calls from Doddy's number later (ADR-754)
@@ -4986,7 +5059,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater, .callTask: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only
