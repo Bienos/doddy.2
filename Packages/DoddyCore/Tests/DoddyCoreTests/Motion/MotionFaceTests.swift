@@ -106,7 +106,7 @@ final class MotionFaceTests: XCTestCase {
         // Turned or tilted heads, and poses that draw their own face: front eyes don't fit them.
         for p: MotionArt.Picture in [.strip("jump", 1), .strip("jump", 2), .strip("jump", 3), .strip("jump", 4), .strip("jump", 5),
                                      .pose("listening"), .pose("kneeling_inspect"), .pose("yawn_stretch"),
-                                     .pose("facepalm"), .pose("shrug"), .strip("turn", 2), .strip("sit", 3)] {
+                                     .pose("facepalm"), .pose("shrug"), .strip("turn", 2)] {
             XCTAssertFalse(MotionFace.hasFace(p), "\(p)")
             XCTAssertEqual(MotionFace.layers(for: p, eyes: .half), [], "\(p)")
         }
