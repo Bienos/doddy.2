@@ -61303,6 +61303,17 @@
         }
       }
     },
+    "Recap of a conversation, kept by your setting": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie rozmowy, zachowane według Twojego ustawienia"
+          }
+        }
+      }
+    },
     "Receipt ID: %@": {
       "extractionState": "manual",
       "localizations": {

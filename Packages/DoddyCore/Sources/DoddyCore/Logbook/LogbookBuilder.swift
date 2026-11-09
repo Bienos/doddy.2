@@ -141,7 +141,7 @@ public enum LogbookBuilder {
         for note in sources.notes where note.category != .list && !sources.privateNoteIDs.contains(note.id) {
             if onDay(note.capturedAt) {
                 switch note.source {
-                case .explicitVoice, .notedByDoddy: summary.notes.bySource.voice += 1
+                case .explicitVoice, .notedByDoddy, .conversationRecap: summary.notes.bySource.voice += 1
                 case .explicitText: summary.notes.bySource.typed += 1
                 case .sharedContent: summary.notes.bySource.shared += 1
                 case .importedFile, .importedLegacyUnknown: summary.notes.bySource.imported += 1
