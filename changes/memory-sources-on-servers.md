@@ -1,0 +1,3 @@
+Servers accept every note source the iPhone has. A note Doddy took on a phone call (`noted_by_doddy`) or one imported from a file made Ask Doddy (`server/messaging`, `/v1/assistant/ask`) refuse the whole question, and `noted_by_doddy` made the Doddy Web notes snapshot (`backend`, `PUT /v1/web/memory/notes`) fail; Doddy Web now also shows that source. Tests in both servers compare their lists with `schemas/memory.schema.json`.
+Ran: backend `npm test` (678 pass), server/messaging `npm test` against a local Postgres 16 (864 pass), web `npm test` (166 pass) and `tsc --noEmit`, `scripts/ci.sh --only checks`. Not run: the app (unchanged).
+Owner step: it reaches people with the next Render deploy of `doddy` and `doddy-messaging` (auto-deploy is off).
