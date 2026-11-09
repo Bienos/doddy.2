@@ -75,8 +75,7 @@ public enum ToolCatalog {
     /// can't ask before them; since ADR-575 public lookups run at once, so they are back.
     public static let all: [ToolDescriptor] = phone + cloud + web
 
-    /// Public lookups ElevenLabs runs on its own servers (ADR-575). With OpenAI Realtime the app
-    /// answers them as not available (`OpenAISpec.webTools`).
+    /// Public lookups ElevenLabs runs on its own servers (ADR-575).
     public static let webLookups: Set<String> = ["geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"]
 
     private static let web: [ToolDescriptor] = webLookups.sorted().map {

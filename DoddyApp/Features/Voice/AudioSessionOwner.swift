@@ -120,15 +120,13 @@ enum AudioTalkRefusal {
     static func message(by holder: AudioUse) -> String {
         switch holder {
         case .conversation:
-            NSLocalizedString("End the conversation with Doddy first: a rehearsal needs the microphone.", comment: "")
+            NSLocalizedString("End the conversation with Doddy first: it has the microphone.", comment: "")
         case .captureRecording:
             NSLocalizedString("Doddy is recording. Stop the recording to talk to him.", comment: "")
         case .memoRecording:
             NSLocalizedString("A voice memo is recording. Stop it to talk to Doddy.", comment: "")
         case .dictation:
             NSLocalizedString("You're dictating in Messages. Stop dictating to talk to Doddy.", comment: "")
-        case .callRehearsal:
-            NSLocalizedString("A call rehearsal has the microphone. End it to talk to Doddy.", comment: "")
         case .memoPlayback, .recordingPlayback, .readAloud, .voicePreview:
             // Never the answer: what only plays is stopped instead.
             NSLocalizedString("Something else in Doddy has the microphone. Finish it to talk to him.", comment: "")
@@ -144,8 +142,8 @@ enum AudioPlaybackRefusal {
             NSLocalizedString("Stop recording to play this.", comment: "")
         case .dictation:
             NSLocalizedString("Stop dictating to play this.", comment: "")
-        case .conversation, .callRehearsal, .memoPlayback, .recordingPlayback, .readAloud, .voicePreview:
-            // Players never refuse each other; a rehearsal is a conversation too.
+        case .conversation, .memoPlayback, .recordingPlayback, .readAloud, .voicePreview:
+            // Players never refuse each other.
             NSLocalizedString("This plays after your conversation with Doddy ends.", comment: "")
         }
     }

@@ -164,11 +164,9 @@ enum TalkInIsland {
             throw refused("microphone not allowed", needsApp: NSLocalizedString("Doddy needs the microphone. Open Doddy and start a conversation once to allow it.", comment: ""))
         }
         // The same account and voice-data gate as the voice screen (`VoiceView`).
-        let provider = VoiceProvider.effective(
-            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
         let auth = VoiceAuthSession.shared
         await auth.restore()
-        guard auth.hasVoiceAccess(for: provider), VoiceProviderConsent.isGranted(for: provider) else {
+        guard auth.hasVoiceAccess(), VoiceProviderConsent.isGranted() else {
             throw refused("voice not set up", needsApp: NSLocalizedString("Open Doddy and start a conversation once to set up his voice. After that this works without opening him.", comment: ""))
         }
 

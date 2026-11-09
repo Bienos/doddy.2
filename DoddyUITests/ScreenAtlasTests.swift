@@ -107,7 +107,7 @@ final class ScreenAtlasTests: XCTestCase {
         }
         // What leaves this iPhone left Home's menu on 9 Nov 2026 (it is 4-settings-16); Phone calls took its place.
         visit("2-home-15-phone-calls") { app in self.menu(app, ["home.calls"]) }
-        visit("2-home-16-voice-picker") { app in self.menu(app, ["home.voice"]) }
+        // 2-home-16-voice-picker went with the voice picker on 9 Nov 2026; the numbers after it are unchanged.
         visit("2-home-17-recordings") { app in
             self.tap(app.buttons["home.files"], app, 10) && self.tap(app.buttons["files.recordings"], app)
                 && self.see(app.buttons["recordings.record"])

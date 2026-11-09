@@ -234,7 +234,6 @@ final class DataFlowSummaryTests: XCTestCase {
         state.messagingServerSet = true
         state.siriReadsNotes = true
         state.sharedLists = 1
-        state.voiceProvider = .openAIRealtime
         return state
     }
 
@@ -274,14 +273,12 @@ final class DataFlowSummaryTests: XCTestCase {
 
     func testCloudAINamesEveryAIServiceThatIsOn() {
         XCTAssertEqual(DataFlow.cloudAISummary(base), "ElevenLabs (voice)")
-        // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
+        // ElevenLabs is the only voice (9 Nov 2026): nothing names OpenAI for voice.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
-        XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
-        var elevenLabs = everything
-        elevenLabs.voiceProvider = .elevenLabs
-        XCTAssertTrue(DataFlow.cloudAISummary(elevenLabs).hasPrefix("ElevenLabs (voice); Anthropic (Ask Doddy)"))
+            "ElevenLabs (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
+        XCTAssertTrue(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
+        XCTAssertFalse(DataFlow.networkSummary(everything).contains("OpenAI (while talking)"))
         var state = everything
         state.newsWriterProvider = "anthropic"
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))

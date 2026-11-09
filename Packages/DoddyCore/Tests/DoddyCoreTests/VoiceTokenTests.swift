@@ -113,11 +113,11 @@ final class VoiceTokenTests: XCTestCase {
         for bad in [nil, "", "0", "-3", "soon", "1.5", "Wed, 21 Oct 2026 07:28:00 GMT"] {
             XCTAssertNil(VoiceTokenServer.retryAfterSeconds(bad), bad ?? "nil")
         }
-        // Both providers' token replies read it for a 429.
+        // The token reply reads it for a 429.
         let body = Data(#"{"error":"rate_limited"}"#.utf8)
         XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body, retryAfter: "39600"), .failure(.rateLimited(retryAfterSeconds: 39_600)))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 429, body: body, retryAfter: "1800"), .failure(.rateLimited(retryAfterSeconds: 1_800)))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 429, body: body), .failure(.rateLimited(retryAfterSeconds: nil)))
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body, retryAfter: "1800"), .failure(.rateLimited(retryAfterSeconds: 1_800)))
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body), .failure(.rateLimited(retryAfterSeconds: nil)))
     }
 
     func testAThrottledSignInIsNotAVerificationFailure() {

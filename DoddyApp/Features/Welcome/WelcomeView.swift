@@ -12,10 +12,6 @@ struct WelcomeView: View {
     let finish: () -> Void
 
     private let provider: SignInProviding = UnconnectedSignIn()
-    /// The voice account is created for the voice the person has chosen (ElevenLabs unless they chose otherwise).
-    private var voiceProvider: VoiceProvider {
-        VoiceProvider.effective(stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
-    }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .title) private var textBlock: CGFloat = 196
@@ -49,7 +45,7 @@ struct WelcomeView: View {
                 header
                 dots(y: pageHeight)
                 scrim
-                SignInSheet(expanded: $signInExpanded, provider: provider, voiceProvider: voiceProvider,
+                SignInSheet(expanded: $signInExpanded, provider: provider,
                             continueWithoutAccount: finish, signedIn: finish)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }

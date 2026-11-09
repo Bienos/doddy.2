@@ -1,0 +1,3 @@
+Voice: ElevenLabs is the only voice. OpenAI Realtime, the voice picker (Home ••• and Settings › Voice) and the call rehearsal are removed; the token server accepts ElevenLabs only (decision `2026-11-09-elevenlabs-only-voice`). OpenAI stays for the gateway, the news writer and the model behind the live agent.
+Ran: `node --test` in server/voice-token (65 pass); `scripts/check_forbidden_capabilities.sh`; `tools/secrets/sync.mjs check`; `tools/build_strings_catalog.py --check`. Not run: any Swift (no toolchain here), `make test-core`, the UI tests, a device.
+Needs: redeploy `doddy-voice-token` from main, then remove its OpenAI env vars; legal pages; see OWNER_QUEUE 28. Polish strings updated, the eight draft languages fall back to English for the changed sentences.

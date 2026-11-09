@@ -13,7 +13,6 @@ struct VoiceView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Back from iPhone Settings, the access card looks at iOS's answer again (ADR-578).
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
     @State private var authSession = VoiceAuthSession.shared
@@ -34,8 +33,6 @@ struct VoiceView: View {
     /// "What leaves this iPhone", opened from the note under the transcript.
     @State private var showDataFlow = false
 
-    private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
-
     /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
     /// Debug builds may go straight to the agent without a DODDY voice account (ADR-551).
     private var mode: VoiceConnectionMode { VoiceConfig.connectionMode }
@@ -46,7 +43,7 @@ struct VoiceView: View {
                 if let controller {
                     session(controller)
                 } else {
-                    VoiceAccessGate(provider: provider) {
+                    VoiceAccessGate {
                         Task { await beginConversation() }
                     }
                 }
@@ -86,7 +83,7 @@ struct VoiceView: View {
             // and keeps it going after the sheet closes (ADR-595), as the gate's button already does.
             await Task { @MainActor in
                 await authSession.restore()
-                if authSession.hasVoiceAccess(for: provider) && VoiceProviderConsent.isGranted(for: provider) {
+                if authSession.hasVoiceAccess() && VoiceProviderConsent.isGranted() {
                     await beginConversation()
                 }
             }.value
@@ -182,17 +179,6 @@ struct VoiceView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         statusHeader(controller)
 
-                        // ADR-265/442: the copy below names ElevenLabs; say plainly when it isn't.
-                        if controller.provider == .openAIRealtime {
-                            Label {
-                                Text(verbatim: "OpenAI Realtime \(controller.openAIModel.shortName) runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.")
-                            } icon: {
-                                Image(systemName: "waveform.badge.mic")
-                            }
-                                .font(.footnote)
-                                .foregroundStyle(Theme.secondaryText)
-                                .accessibilityIdentifier("voice.openAITest")
-                        }
                         if controller.audioPausedByOtherApp && controller.isLive {
                             Label("Another app has Doddy's audio. He can't hear you until it lets go.", systemImage: "pause.circle")
                                 .font(.footnote)
@@ -214,16 +200,9 @@ struct VoiceView: View {
 
                         if controller.isPrivate {
                             Label {
-                                // Names the voice that runs this conversation (engineering audit, 7 Nov 2026):
-                                // the one text named OpenAI first though ElevenLabs is the default.
-                                Group {
-                                    if controller.provider == .openAIRealtime {
-                                        Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
-                                    } else {
-                                        Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
-                                    }
-                                }
-                                .font(.footnote)
+                                // Names the voice that runs this conversation (engineering audit, 7 Nov 2026).
+                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                    .font(.footnote)
                             } icon: {
                                 Image(systemName: "eye.slash.fill")
                             }

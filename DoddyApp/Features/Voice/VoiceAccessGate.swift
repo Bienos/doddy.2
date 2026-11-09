@@ -2,15 +2,14 @@ import AuthenticationServices
 import DoddyCore
 import SwiftUI
 
-/// First voice use has two explicit steps: DODDY account sign-in, then consent for the selected
-/// provider. Neither step is required for local notes or other local features.
+/// First voice use has two explicit steps: DODDY account sign-in, then consent for sending voice data
+/// to ElevenLabs. Neither step is required for local notes or other local features.
 struct VoiceAccessGate: View {
-    let provider: VoiceProvider
     let onContinue: () -> Void
     @State private var session = VoiceAuthSession.shared
     @State private var consented = false
     /// A Doddy account, a DODDY voice account, or (Debug builds only, ADR-551) the developer's direct connection.
-    private var accessReady: Bool { session.hasVoiceAccess(for: provider) }
+    private var accessReady: Bool { session.hasVoiceAccess() }
 
     var body: some View {
         ScrollView {
@@ -40,15 +39,15 @@ struct VoiceAccessGate: View {
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
-                AppleAccountSignInButton(provider: provider)
+                AppleAccountSignInButton()
                     .accessibilityIdentifier("voice.auth.appleSignIn")
             } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("Voice runs through \(provider.shortName)", systemImage: "waveform")
+                    Label("Voice runs through ElevenLabs", systemImage: "waveform")
                         .font(.headline)
-                    Text("When you continue, your voice and this conversation are sent to \(provider.shortName) so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.")
+                    Text("When you continue, your voice and this conversation are sent to ElevenLabs so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. ElevenLabs processes this data under its own privacy terms.")
                         .font(.body)
-                    Text("Apple sign-in and microphone access are separate. You can use notes without enabling voice, and you can change this provider’s consent in Settings.")
+                    Text("Apple sign-in and microphone access are separate. You can use notes without enabling voice, and you can change this consent in Settings.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -57,10 +56,10 @@ struct VoiceAccessGate: View {
                 .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
                 .accessibilityIdentifier("voice.auth.providerConsent")
 
-                Toggle("I agree to send voice data to \(provider.shortName) for this conversation", isOn: $consented)
+                Toggle("I agree to send voice data to ElevenLabs for this conversation", isOn: $consented)
                     .accessibilityIdentifier("voice.auth.consentToggle")
                 Button("Continue to microphone access") {
-                    VoiceProviderConsent.grant(for: provider)
+                    VoiceProviderConsent.grant()
                     onContinue()
                 }
                 .buttonStyle(.borderedProminent)
@@ -87,7 +86,7 @@ struct VoiceAccessGate: View {
         .frame(maxWidth: 520)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { consented = VoiceProviderConsent.isGranted(for: provider) }
+        .task { consented = VoiceProviderConsent.isGranted() }
     }
 }
 
@@ -102,7 +101,6 @@ struct VoiceAccessGate: View {
 /// and white on dark backgrounds, no smaller than the other sign-in buttons. A rounder corner is
 /// allowed to match the other buttons.
 struct AppleAccountSignInButton: View {
-    let provider: VoiceProvider
     /// "Continue with Apple" next to other "Continue with…" buttons; "Sign in with Apple" alone.
     var usesContinueTitle = false
     var height: CGFloat = 50
@@ -172,7 +170,7 @@ struct AppleAccountSignInButton: View {
         let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
         Task { await session.finishAppleSignIn(identityToken: identityToken, rawNonce: rawNonce,
                                                authorizationCode: authorizationCode,
-                                               userID: credential.user, provider: provider) }
+                                               userID: credential.user) }
         self.rawNonce = nil
     }
 }

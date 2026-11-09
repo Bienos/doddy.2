@@ -111,7 +111,6 @@ const ENV = {
   DODDY_SESSION_SIGNING_KEY: "server-only-session-key-for-tests-000000000000000",
   ELEVENLABS_API_KEY: "elevenlabs-server-secret",
   ELEVENLABS_AGENT_ID: "agent_test",
-  OPENAI_API_KEY: "openai-server-secret",
   SUPABASE_URL: PROJECT,
 };
 

@@ -59,7 +59,6 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
-    @State private var showVoicePicker = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -133,7 +132,6 @@ struct HomeView: View {
             .sheet(isPresented: $showToday) {
                 HomeTodaySheet(openSettings: { showToday = false; selectedTab = .settings })
             }
-            .sheet(isPresented: $showVoicePicker) { HomeVoiceSheet() }
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
@@ -169,7 +167,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -297,11 +295,6 @@ struct HomeView: View {
                 if hadFirstConversation || calendarOn || remindersOn {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
                         .accessibilityIdentifier("home.today")
-                }
-                // Who runs the voice (ADR-442), once there has been a first conversation (ADR-443).
-                if hadFirstConversation, scope.shows(.voiceProviderPicker) {
-                    Button { showVoicePicker = true } label: { Label("Voice", systemImage: "waveform") }
-                        .accessibilityIdentifier("home.voice")
                 }
             } header: {
                 Text("Doddy is an AI, not a person.")
@@ -1002,31 +995,6 @@ private struct HomeTodaySheet: View {
             }
         }
         .presentationDetents([.medium, .large])
-    }
-}
-
-/// Who runs the voice, and OpenAI's model (ADR-442), from the ••• menu. Settings › Voice has the
-/// same picker.
-private struct HomeVoiceSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                VoiceProviderPicker(idPrefix: "home")
-                Spacer()
-            }
-            .padding(24)
-            .background(Theme.canvas)
-            .navigationTitle("Voice")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium])
     }
 }
 

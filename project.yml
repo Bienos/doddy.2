@@ -73,8 +73,9 @@ targets:
         # Agent notes for this folder, not app content.
         excludes: ["CLAUDE.md"]
       - path: Shared
-      # Doddy's voice spec, read by the OpenAI voice (ADR-265, ADR-442). The same files the live
-      # ElevenLabs agent is synced from, so both providers get the same prompt and tools.
+      # Doddy's voice spec, the same files the live ElevenLabs agent is synced from. The app no longer
+      # reads them at run time (only the OpenAI voice did; removed 9 Nov 2026). They stay bundled until
+      # scripts/ci_needs_mac.sh and its test stop treating them as app content.
       - path: voice-agent/instructions.md
         buildPhase: resources
       - path: voice-agent/tools.json

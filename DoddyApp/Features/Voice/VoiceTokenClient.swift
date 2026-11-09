@@ -1,28 +1,19 @@
 import DoddyCore
 import Foundation
 
-/// Fetches a short-lived, provider-scoped credential from DODDY's server. It sends a DODDY
+/// Fetches a short-lived ElevenLabs credential from DODDY's server. It sends a DODDY
 /// session bearer, never an owner/provider key or conversation content.
-/// For the OpenAI voice (ADR-265) the body also names the provider and the model (ADR-442).
 struct VoiceTokenClient: Sendable {
     let endpoint: URL
-    /// ElevenLabs conversation token. Sends no body, exactly as before ADR-265.
+    /// ElevenLabs conversation token. Sends no body: ElevenLabs is the only voice (9 Nov 2026).
     func fetchToken() async throws(VoiceTokenError) -> String {
-        let (status, data, retryAfter) = try await post(VoiceTokenServer.requestBody(for: .elevenLabs))
+        let (status, data, retryAfter) = try await post()
         return try VoiceTokenServer.token(status: status, body: data, retryAfter: retryAfter).get()
-    }
-
-    /// OpenAI Realtime client secret for the chosen model.
-    func fetchOpenAIGrant(model: OpenAIRealtimeModel) async throws(VoiceTokenError) -> OpenAIRealtimeGrant {
-        // A Debug build may go without a voice account (ADR-726); the server decides whether to allow it.
-        let (status, data, retryAfter) = try await post(
-            VoiceTokenServer.requestBody(for: .openAIRealtime, model: model), anonymousAllowed: VoiceConfig.openAIWithoutAccount)
-        return try VoiceTokenServer.openAIGrant(status: status, body: data, retryAfter: retryAfter).get()
     }
 
     /// The status, the body and the reply's Retry-After header, which says how long a 429 lasts (the
     /// message reads it in minutes, hours or "tomorrow", ADR-712).
-    private func post(_ body: Data?, anonymousAllowed: Bool = false) async throws(VoiceTokenError) -> (Int, Data, String?) {
+    private func post() async throws(VoiceTokenError) -> (Int, Data, String?) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"
         var accessToken: String?
@@ -32,27 +23,18 @@ struct VoiceTokenClient: Sendable {
         if let accountToken { accessToken = accountToken }
         else { do { accessToken = try await VoiceAuthSession.shared.bearerToken() }
         catch let error as VoiceAuthFailure {
-            if anonymousAllowed {
-                // No session: ask without one. The server refuses with 401 unless it allows this (ADR-726).
-                accessToken = nil
-            } else {
-                switch error {
-                case .offline: throw .offline
-                case .sessionExpired: throw .sessionExpired
-                case .serverNotConfigured: throw .serverNotConfigured
-                case .rejected, .badResponse: throw .badResponse
-                // Only a failed sign-in leaves this behind, and then no session is saved: a new sign-in is what's needed.
-                case .tooManySignIns: throw .sessionExpired
-                }
+            switch error {
+            case .offline: throw .offline
+            case .sessionExpired: throw .sessionExpired
+            case .serverNotConfigured: throw .serverNotConfigured
+            case .rejected, .badResponse: throw .badResponse
+            // Only a failed sign-in leaves this behind, and then no session is saved: a new sign-in is what's needed.
+            case .tooManySignIns: throw .sessionExpired
             }
         } catch {
-            if anonymousAllowed { accessToken = nil } else { throw .badResponse }
+            throw .badResponse
         } }
         if let accessToken { request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization") }
-        if let body {
-            request.httpBody = body
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        }
         let data: Data
         let response: URLResponse
         // One ephemeral session per fetch, as before, but released when it is done (review H11):
@@ -68,7 +50,7 @@ struct VoiceTokenClient: Sendable {
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         // A refused account token says nothing about the voice session, so that one is left alone.
-        if status == 401, !anonymousAllowed, accountToken == nil { await VoiceAuthSession.shared.serverRejectedSession() }
+        if status == 401, accountToken == nil { await VoiceAuthSession.shared.serverRejectedSession() }
         return (status, data, (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After"))
     }
 }

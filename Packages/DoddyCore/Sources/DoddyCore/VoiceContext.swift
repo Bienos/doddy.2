@@ -18,7 +18,7 @@ public struct ConversationLog: Equatable, Sendable, Codable, Identifiable {
     public let startedAt: Date
     public let endedAt: Date
     public let lines: [Line]
-    /// Who ran the voice (`VoiceProvider` raw value), for comparing the two in testing (ADR-265).
+    /// Who ran the voice: "elevenlabs" now. Conversations kept from before 9 Nov 2026 may say "openai"; they still load.
     /// Logs kept before ADR-265 have none. Never sent to either provider.
     public let voiceProvider: String?
     /// How it ended (`VoiceSessionEnd.code`, ADR-360): "user", "doddy", "quiet" or "dropped-…".
@@ -187,5 +187,14 @@ public enum ConversationLogExport {
             lines.append("")
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+extension ConversationLog {
+    /// The voice that ran this conversation, for the history screens. ElevenLabs is the only voice
+    /// now (9 Nov 2026); a log kept before then may say OpenAI, which stays true of that conversation.
+    /// Nil for a log that never recorded one.
+    public var voiceName: String? {
+        voiceProvider.map { $0 == "openai" ? "OpenAI" : "ElevenLabs" }
     }
 }

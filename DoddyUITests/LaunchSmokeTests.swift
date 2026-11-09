@@ -109,12 +109,12 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["home.firstHint"].exists)
         XCTAssertFalse(app.buttons["home.backTap.setup"].exists, "held back until the first conversation")
         XCTAssertFalse(app.buttons["today.openSettings"].exists, "nothing connected yet, so no Today card")
-        XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the voice picker waits for the first conversation (ADR-443)")
+        XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the voice picker was removed (9 Nov 2026)")
 
-        // In Home's ••• menu (ADR-545); before the first conversation it has no Today or Voice.
+        // In Home's ••• menu (ADR-545); before the first conversation it has no Today.
         app.buttons["home.more"].tap()
         XCTAssertFalse(app.buttons["home.today"].waitForExistence(timeout: 2), "nothing connected yet, so no Today")
-        XCTAssertFalse(app.buttons["home.voice"].exists, "the voice picker waits for the first conversation (ADR-443)")
+        XCTAssertFalse(app.buttons["home.voice"].exists, "the voice picker was removed (9 Nov 2026)")
         // What leaves this iPhone is on Settings › Privacy only since 9 Nov 2026 (decision 2026-11-09-phone-calls-on-home-menu;
         // testWhatLeavesThisIPhoneFollowsSettings opens it there). What I can do stays on the menu and points to it.
         XCTAssertFalse(app.buttons["home.dataFlow"].exists, "moved to Settings › Privacy")
@@ -125,20 +125,20 @@ final class LaunchSmokeTests: XCTestCase {
         app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForNonExistence(timeout: 5))
 
-        // Settings › Voice has the picker from the start.
+        // Settings › Voice has no provider picker either: ElevenLabs is the only voice.
         app.goToTab("settings")
         app.openSettingsPage("settings.voice")
-        XCTAssertTrue(app.reveal(app.segmentedControls["settings.voiceProvider"]))
+        XCTAssertFalse(app.segmentedControls["settings.voiceProvider"].exists)
     }
 
     @MainActor
-    func testVoicePickerIsOnHomeAfterTheFirstConversation() {
-        // ADR-443: the provider (and OpenAI's model) picker from ADR-442, once there has been a conversation.
+    func testThereIsNoVoicePickerOnHomeAfterTheFirstConversation() {
+        // The picker (ADR-442, ADR-443) was removed on 9 Nov 2026: ElevenLabs is the only voice.
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
-        // In Home's ••• menu (ADR-545).
-        app.tapHomeMenuItem("home.voice")
-        XCTAssertTrue(app.segmentedControls["home.voiceProvider"].waitForExistence(timeout: 5))
+        app.buttons["home.more"].tap()
+        XCTAssertTrue(app.buttons["home.capabilities"].waitForExistence(timeout: 5), "the menu is open")
+        XCTAssertFalse(app.buttons["home.voice"].exists)
         XCTAssertFalse(app.staticTexts["home.firstHint"].exists)
     }
 

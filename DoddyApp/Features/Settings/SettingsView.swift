@@ -8,7 +8,6 @@ import SwiftUI
 /// iPhone" and in the Privacy Policy. Where each old row went: `docs/implementation/SETTINGS_SIMPLIFIED.md`.
 struct SettingsView: View {
     @Environment(MemoryStore.self) private var store
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var connections = ConnectionController()
     /// Opens notes, lists or search (ADR-633). They are their own screen, reached from Doddy's memory.
@@ -76,8 +75,7 @@ struct SettingsView: View {
             NavigationLink {
                 VoiceSettingsView()
             } label: {
-                StatusRow(title: NSLocalizedString("Voice", comment: ""),
-                          value: VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true).shortName)
+                StatusRow(title: NSLocalizedString("Voice", comment: ""), value: "ElevenLabs")
             }
             .accessibilityIdentifier("settings.voice")
             NavigationLink {

@@ -14,12 +14,8 @@ struct CallCaseView: View {
     let onClose: () -> Void
 
     @State private var confirmingCall = false
-    @State private var rehearsing = false
     @State private var selfScript = false
     @State private var editor: EditorItem?
-    /// Acted on once the sheet that chose it has closed: presenting while a sheet is still
-    /// closing fails silently.
-    @State private var rehearsalChoice: CallRehearsalView.Choice?
     @State private var preparedCase: StoredCallCase?
 
     init(model: CallCaseModel, list: CallCasesModel, onOpen: @escaping (StoredCallCase) -> Void, onClose: @escaping () -> Void) {
@@ -42,16 +38,6 @@ struct CallCaseView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.refresh() }
         .onDisappear { model.stopWatching() }
-        .sheet(isPresented: $rehearsing, onDismiss: actOnRehearsalChoice) {
-            if let preview = model.preview {
-                NavigationStack {
-                    CallRehearsalView(preview: preview) { choice in
-                        rehearsalChoice = choice
-                        rehearsing = false
-                    }
-                }
-            }
-        }
         .sheet(isPresented: $selfScript) {
             if let preview = model.preview {
                 NavigationStack { SelfCallScriptView(preview: preview) }
@@ -75,22 +61,6 @@ struct CallCaseView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Doddy says the opening line on the card first, asks the question and ends the call. You can take over or end it from this screen or the Lock Screen.")
-        }
-    }
-
-    /// "Doddy dzwoni" after a rehearsal goes through the same hours check as the card's button.
-    private func actOnRehearsalChoice() {
-        guard let choice = rehearsalChoice else { return }
-        rehearsalChoice = nil
-        switch choice {
-        case .callMyself:
-            selfScript = true
-        case .doddyCalls:
-            if let preview = model.preview, CallHours.fits(Date(), maxDurationSecs: preview.maxDurationSecs) {
-                confirmingCall = true
-            } else {
-                model.message = NSLocalizedString("Doddy calls only between 8:00 and 23:00 Polish time, and the whole call must fit. Pick a time:", comment: "")
-            }
         }
     }
 
@@ -171,11 +141,6 @@ struct CallCaseView: View {
                         Task { await model.approve(at: time) }
                     }
                 }
-            }
-            Button {
-                rehearsing = true
-            } label: {
-                Label("Rehearse first", systemImage: "theatermasks")
             }
             Button {
                 selfScript = true
