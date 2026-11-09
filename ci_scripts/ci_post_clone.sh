@@ -141,16 +141,18 @@ if [ -z "${DODDY_SKIP_RESOLVE:-}" ]; then
   # so Xcode Cloud calls it out of date. It is only a copy of this fresh checkout: drop it here
   # (the repository keeps it for the package's own tests) and let the resolver write a complete one.
   rm -f Packages/DoddyCore/Package.resolved
-  # LiveKit's binary frameworks download from GitHub release assets, which sometimes answer 504
-  # (build 25, 8 Nov 2026, stopped on exactly that). Try up to four times, waiting longer each time;
-  # a real resolution error still stops the build after the last try.
+  # LiveKit's binary frameworks download from GitHub release assets, which answer 504 to anonymous
+  # downloads during GitHub incidents (builds 25 and 26, 8 to 9 Nov 2026: GitHub's "surge in
+  # anonymous users" incident, which came and went for hours). Try up to six times, waiting 30 s,
+  # 60 s, 90 s, 120 s and 150 s (about 7.5 minutes in all); a real resolution error still stops the
+  # build after the last try.
   attempt=1
   until xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy; do
-    if [ "$attempt" -ge "${DODDY_RESOLVE_ATTEMPTS:-4}" ]; then
+    if [ "$attempt" -ge "${DODDY_RESOLVE_ATTEMPTS:-6}" ]; then
       echo "ci_post_clone: package resolution failed $attempt times" >&2
       exit 1
     fi
-    wait=$((attempt * 20))
+    wait=$((attempt * 30))
     echo "ci_post_clone: package resolution failed (try $attempt); trying again in ${wait}s" >&2
     sleep "$wait"
     attempt=$((attempt + 1))
