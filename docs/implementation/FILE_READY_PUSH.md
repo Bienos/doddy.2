@@ -22,7 +22,7 @@ Row `fileReady` in "What leaves this iPhone" (`DataFlow.swift`): the private lin
 - Messaging `test/fileWatches.test.ts` against Postgres 16 (8 database tests and the link-validation units) and `migrationsFrozen.test.ts`; the **whole messaging suite passed: 855 of 855**.
 
 ## Not run
-- **Nothing was deployed.** Both `doddy` (backend) and `doddy-messaging` need a deploy, and `DOCUMENTS_ORIGIN` must be set on `doddy-messaging` (`docs/OWNER_QUEUE.md` item 28).
+- **Nothing was deployed.** Both `doddy` (backend) and `doddy-messaging` need a deploy, and `DOCUMENTS_ORIGIN` must be set on `doddy-messaging` (`docs/OWNER_QUEUE.md` item 29).
 - **Swift not compiled, not run** (no toolchain here): `FileWatchClient.swift` and `FileWatchClientTests` in DoddyCore, `DataFlow.swift` row, `DoddyApp/Infrastructure/Server/FileReadyPush.swift`, the call in `VoiceSessionController.swift`. Not seen on a device; no real push was sent through Apple.
 - Files made from the Messages "Make it" card are not watched (the person is in the app then).
 - A tapped notification does not open Messages by itself.
