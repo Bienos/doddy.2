@@ -1498,7 +1498,9 @@ export class Store {
         [input.identityId, input.userId, input.provider, input.now],
       );
       if (inserted.rowCount === 1) {
-        await tx.query("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, $2, $3)", [input.userId, input.provider, input.now]);
+        // The account's id can be the Supabase user's own (decision 2026-11-09-web-sign-in-same-account), so a
+        // person who unlinked that sign-in and signs in with it again meets the account they made before.
+        await tx.query("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO NOTHING", [input.userId, input.provider, input.now]);
         return { userId: input.userId, created: true };
       }
       const owner = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM web_identities WHERE identity_id = $1", [input.identityId]);
