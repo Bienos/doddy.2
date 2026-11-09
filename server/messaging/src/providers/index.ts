@@ -1,4 +1,4 @@
-import type { Config } from "../config.js";
+import { smsCapsOf, type Config } from "../config.js";
 import { ApnsPushSender } from "./apns.js";
 import { TextCipher } from "../crypto.js";
 import { ElevenLabsCallRegistrar } from "./elevenlabs.js";
@@ -67,7 +67,7 @@ export function providersFrom(config: Config) {
     liveActivity: push ? {
       update: async (token, env, state, end) => { await push.sendLiveActivity({ deviceToken: token, environment: env }, state, end); },
     } : undefined,
-    smsCaps: { perAccount: config.limits.smsPerAccountDay, perServer: config.limits.smsPerServerDay },
+    smsCaps: smsCapsOf(config.limits),
   } : undefined;
   // Errands (ADR-570): a researcher only with an Anthropic key and the switch on. Without
   // MEMORY_ENCRYPTION_KEY the routes answer 503 errands_disabled whatever is set here.
@@ -154,7 +154,7 @@ export function providersFrom(config: Config) {
     limits: config.limits,
     news: {
       cipher,
-      smsCaps: { perAccount: config.limits.smsPerAccountDay, perServer: config.limits.smsPerServerDay },
+      smsCaps: smsCapsOf(config.limits),
       feeds: new HttpFeedSource(),
       search: config.gnewsApiKey ? new GNewsSearch(config.gnewsApiKey) : undefined,
       // Anthropic first when both keys are set; OpenAI otherwise (ADR-197).

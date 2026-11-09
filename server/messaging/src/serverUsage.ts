@@ -4,7 +4,7 @@
 import type pg from "pg";
 
 /** Features with a server-wide cap. `accounts`, `sms` and `outbound_calls` are the abuse caps of ADR-702 and ADR-704. */
-export type CappedFeature = "assistant" | "deals" | "errands" | "studio" | "accounts" | "sms" | "outbound_calls";
+export type CappedFeature = "assistant" | "deals" | "errands" | "studio" | "accounts" | "sms" | "sms_segments" | "outbound_calls";
 /** The part of a paid feature's cap that accounts still "new" share (ADR-702). Counted inside the feature's own total. */
 export type NewAccountPool = "assistant_new" | "deals_new" | "errands_new" | "studio_new";
 type Q = Pick<pg.PoolClient, "query"> | pg.Pool;
@@ -17,23 +17,25 @@ const day = (n: number) => `COALESCE($${n}::date, (now() AT TIME ZONE 'utc')::da
  * Call it inside the reservation's transaction: the row stays locked until that ends, so two requests
  * can't both take the last slot.
  */
-export async function takeServerSlot(c: Q, feature: CappedFeature | NewAccountPool, cap: number, onDay?: string): Promise<boolean> {
-  // The insert below always succeeds for the day's first slot, so a cap of 0 (a pool closed on purpose) is answered here.
-  if (cap < 1) return false;
+export async function takeServerSlot(c: Q, feature: CappedFeature | NewAccountPool, cap: number, onDay?: string, amount = 1): Promise<boolean> {
+  if (!Number.isInteger(amount) || amount < 1) throw new RangeError("amount must be a positive integer");
+  // The insert below always succeeds for the day's first slot, so a cap of 0 (a pool closed on purpose), or a first
+  // request larger than the cap, is answered here.
+  if (cap < amount) return false;
   const { rowCount } = await c.query(
-    `INSERT INTO server_daily_usage (feature, day, requests) VALUES ($1, ${day(3)}, 1)
-     ON CONFLICT (feature, day) DO UPDATE SET requests = server_daily_usage.requests + 1
-       WHERE server_daily_usage.requests < $2`,
-    [feature, cap, onDay ?? null]);
+    `INSERT INTO server_daily_usage (feature, day, requests) VALUES ($1, ${day(3)}, $4::int)
+     ON CONFLICT (feature, day) DO UPDATE SET requests = server_daily_usage.requests + $4::int
+       WHERE server_daily_usage.requests + $4::int <= $2`,
+    [feature, cap, onDay ?? null, amount]);
   return rowCount === 1;
 }
 
-/** Gives back a slot taken earlier in the same transaction (a per-account cap refused afterwards). */
-export async function returnServerSlot(c: Q, feature: CappedFeature | NewAccountPool, onDay?: string): Promise<void> {
+/** Gives back `amount` slots (default 1) taken earlier in the same transaction (a per-account cap refused afterwards). */
+export async function returnServerSlot(c: Q, feature: CappedFeature | NewAccountPool, onDay?: string, amount = 1): Promise<void> {
   await c.query(
-    `UPDATE server_daily_usage SET requests = requests - 1
+    `UPDATE server_daily_usage SET requests = GREATEST(requests - $3::int, 0)
      WHERE feature = $1 AND day = ${day(2)} AND requests > 0`,
-    [feature, onDay ?? null]);
+    [feature, onDay ?? null, amount]);
 }
 
 // ---------- new accounts and established ones (ADR-702) ----------

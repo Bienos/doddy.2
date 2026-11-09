@@ -197,6 +197,13 @@ test("a text through Twilio: a server error after the request may have been sent
     const list = await twilio.recentMessagesTo("+48500000000");
     assert.deepEqual(list, [{ sid: "SM9", body: "Kup mleko", createdAt: new Date("2026-10-17T10:00:00Z"), status: "delivered" }],
       "a record without a body (redacted) is left out");
+    // Twilio's own segment count rides along when it is a whole number of 1 or more ("0" is a text not sent yet).
+    answer = { status: 200, type: "application/json", body: JSON.stringify({ messages: [
+      { sid: "SM1", body: "a", date_created: "Sat, 17 Oct 2026 10:00:00 +0000", status: "delivered", num_segments: "9" },
+      { sid: "SM2", body: "b", date_created: "Sat, 17 Oct 2026 10:00:00 +0000", status: "queued", num_segments: "0" },
+      { sid: "SM3", body: "c", date_created: "Sat, 17 Oct 2026 10:00:00 +0000", status: "sent", num_segments: "x" },
+    ] }) };
+    assert.deepEqual((await twilio.recentMessagesTo("+48500000000"))!.map((m) => m.numSegments), [9, undefined, undefined]);
     const asked = api.requests.at(-1)!;
     assert.equal(asked.url, "/2010-04-01/Accounts/AC1/Messages.json?To=%2B48500000000&PageSize=50");
     answer = { status: 500, type: "application/json", body: "{}" };

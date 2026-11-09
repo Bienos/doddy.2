@@ -31,7 +31,7 @@ export interface SmsSender {
    * The provider's most recent messages to this number, newest first, to settle an unknown
    * outcome (DOD-09). Undefined when the provider couldn't be asked.
    */
-  recentMessagesTo?(toE164: string): Promise<{ sid: string; body: string; createdAt: Date; status: string }[] | undefined>;
+  recentMessagesTo?(toE164: string): Promise<{ sid: string; body: string; createdAt: Date; status: string; numSegments?: number }[] | undefined>;
 }
 
 export type VerifyCheck = "approved" | "wrong_code" | "expired_or_missing";

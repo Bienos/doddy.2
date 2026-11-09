@@ -1,7 +1,7 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { textApprovalHash } from "./approval.js";
 import type pg from "pg";
-import { DEFAULT_ABUSE_LIMITS } from "./config.js";
+import { DEFAULT_ABUSE_LIMITS, type SmsCaps } from "./config.js";
 import { returnCounter, takeCounter } from "./dailyCounters.js";
 import { sha256, type TextCipher } from "./crypto.js";
 import { log } from "./log.js";
@@ -10,6 +10,7 @@ import { scheduleDeletion } from "./providerRecords.js";
 import { isAllowedNumber } from "./phoneCountries.js";
 import type { PushData, PushSender, SendOutcome, SmsSender } from "./providers/types.js";
 import { returnServerSlot, takeServerSlot } from "./serverUsage.js";
+import { reservedSegments } from "./smsSegments.js";
 
 export type Channel = "push" | "sms";
 
@@ -62,9 +63,12 @@ export class EncryptionNotConfigured extends Error {
   constructor() { super("not_configured"); }
 }
 
-/** A daily cap on queued texts is reached (ADR-704): the account's own or the server's. Nothing was queued. */
+/**
+ * A daily cap on queued texts is reached (ADR-704): the account's own or the server's, counted in texts or, since
+ * the segment budget (smsSegments.ts), in estimated segments. Nothing was queued.
+ */
 export class SmsDailyLimit extends Error {
-  constructor(readonly scope: "account" | "server") { super("daily_limit"); }
+  constructor(readonly scope: "account" | "server", readonly unit: "texts" | "segments" = "texts") { super("daily_limit"); }
 }
 
 /** Render sets NODE_ENV=production for a Node service. Read at the time of the call so a test can switch it. */
@@ -81,7 +85,7 @@ export interface EnqueueOptions {
    */
   approvalHash?: Buffer;
   /** Texts queued per UTC day: per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
-  smsCaps?: { perAccount: number; perServer: number };
+  smsCaps?: SmsCaps;
 }
 
 /**
@@ -105,17 +109,18 @@ export async function enqueue(
     // found in Twilio's message list (reconcileUnknownSms).
     const bodyHash = channel === "sms" ? sha256(body) : null;
     const approval = channel === "sms" ? opts.approvalHash ?? null : null;
-    const slots = channel === "sms" ? await takeSmsSlots(db, accountId, idempotencyKey, opts.smsCaps) : undefined;
+    const segments = channel === "sms" ? reservedSegments(body) : undefined;
+    const slots = channel === "sms" ? await takeSmsSlots(db, accountId, idempotencyKey, segments!, opts.smsCaps) : undefined;
     let inserted: number | null;
     try {
       ({ rowCount: inserted } = await db.query(
         `INSERT INTO outbound_messages
            (id, account_id, channel, idempotency_key, body, body_ciphertext, body_key_version, send_at, state, payload_hash,
-            body_hash, approved_text, approval_hash)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'queued', $9, $10, $11, $12)
+            body_hash, approved_text, approval_hash, est_segments)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'queued', $9, $10, $11, $12, $13)
          ON CONFLICT (account_id, channel, idempotency_key) DO NOTHING`,
         [id, accountId, channel, idempotencyKey, sealed ? null : body, sealed ?? null,
-          sealed ? opts.cipher!.keyVersion : null, sendAt, payloadHash, bodyHash, approval !== null, approval]));
+          sealed ? opts.cipher!.keyVersion : null, sendAt, payloadHash, bodyHash, approval !== null, approval, segments ?? null]));
     } catch (err) {
       // Inside a transaction the rollback undoes the count anyway; outside one it must be given back here.
       await slots?.giveBack().catch(() => {});
@@ -135,25 +140,41 @@ export async function enqueue(
 }
 
 /**
- * Takes a slot of each daily cap on queued texts (ADR-704): the account's and the server's, both atomic. A replay of a
- * text already queued under the same idempotency key takes nothing, so a client that retries at the cap still gets its
- * answer. Throws SmsDailyLimit when a cap is reached.
+ * Takes a slot of each daily cap on queued texts (ADR-704) and, for the segment budget, `segments` slots of each daily
+ * cap on estimated segments: the account's and the server's, all atomic. A replay of a text already queued under the
+ * same idempotency key takes nothing, so a client that retries at the cap still gets its answer. Throws SmsDailyLimit
+ * when a cap is reached, after giving back whatever this call had taken.
  */
 async function takeSmsSlots(
-  db: Queryable, accountId: string, idempotencyKey: string, caps?: { perAccount: number; perServer: number },
+  db: Queryable, accountId: string, idempotencyKey: string, segments: number, caps?: SmsCaps,
 ): Promise<{ giveBack(): Promise<void> } | undefined> {
   const seen = await db.query(
     "SELECT 1 FROM outbound_messages WHERE account_id = $1 AND channel = 'sms' AND idempotency_key = $2", [accountId, idempotencyKey]);
   if (seen.rowCount) return undefined;
   const perAccount = caps?.perAccount ?? DEFAULT_ABUSE_LIMITS.smsPerAccountDay;
   const perServer = caps?.perServer ?? DEFAULT_ABUSE_LIMITS.smsPerServerDay;
+  const segPerAccount = caps?.segmentsPerAccount ?? DEFAULT_ABUSE_LIMITS.smsSegmentsPerAccountDay;
+  const segPerServer = caps?.segmentsPerServer ?? DEFAULT_ABUSE_LIMITS.smsSegmentsPerServerDay;
   const key = sha256(accountId).toString("hex"); // an account id is a random uuid: a plain hash is enough
-  if (!(await takeCounter(db, "sms_account", key, perAccount))) throw new SmsDailyLimit("account");
-  if (!(await takeServerSlot(db, "sms", perServer))) {
-    await returnCounter(db, "sms_account", key);
-    throw new SmsDailyLimit("server");
+  // Each step is one atomic statement; a refusal gives back the steps before it. Inside a transaction the rows stay
+  // locked until it ends, outside one the statements are still single and atomic.
+  const undo: (() => Promise<void>)[] = [];
+  const giveBack = async () => { for (const u of undo.splice(0).reverse()) await u(); };
+  const steps: { take: () => Promise<boolean>; undo: () => Promise<void>; scope: "account" | "server"; unit: "texts" | "segments" }[] = [
+    { take: () => takeCounter(db, "sms_account", key, perAccount), undo: () => returnCounter(db, "sms_account", key), scope: "account", unit: "texts" },
+    { take: () => takeServerSlot(db, "sms", perServer), undo: () => returnServerSlot(db, "sms"), scope: "server", unit: "texts" },
+    { take: () => takeCounter(db, "sms_segments_account", key, segPerAccount, undefined, segments),
+      undo: () => returnCounter(db, "sms_segments_account", key, undefined, segments), scope: "account", unit: "segments" },
+    { take: () => takeServerSlot(db, "sms_segments", segPerServer, undefined, segments),
+      undo: () => returnServerSlot(db, "sms_segments", undefined, segments), scope: "server", unit: "segments" },
+  ];
+  for (const step of steps) {
+    let ok: boolean;
+    try { ok = await step.take(); } catch (err) { await giveBack().catch(() => {}); throw err; }
+    if (!ok) { await giveBack(); throw new SmsDailyLimit(step.scope, step.unit); }
+    undo.push(step.undo);
   }
-  return { giveBack: async () => { await returnServerSlot(db, "sms"); await returnCounter(db, "sms_account", key); } };
+  return { giveBack };
 }
 
 export async function cancelQueuedSms(db: Queryable, accountId: string): Promise<void> {
@@ -321,7 +342,7 @@ async function finalize(db: Db, msg: Claimed, o: SendOutcome | { kind: "cancelle
 }
 
 /** One message in Twilio's message list, as the lookup needs it. */
-export interface SentRecord { sid: string; body: string; createdAt: Date; status: string }
+export interface SentRecord { sid: string; body: string; createdAt: Date; status: string; numSegments?: number }
 
 /**
  * Reconciliation first (DOD-09): a text whose outcome is unknown is looked up in Twilio's message
@@ -354,8 +375,9 @@ export async function reconcileUnknownSms(db: Db, sms: SmsSender | undefined, ba
       try {
         await db.query(
           `UPDATE outbound_messages SET state = 'sent', provider_message_id = $2, delivery_status = $3, lookup = 'found',
+             reported_segments = COALESCE($4::smallint, reported_segments),
              error_code = NULL, approval_hash = NULL, body_hash = NULL, updated_at = now()
-           WHERE id = $1 AND state = 'unknown'`, [row.id, match.sid, match.status]);
+           WHERE id = $1 AND state = 'unknown'`, [row.id, match.sid, match.status, match.numSegments ?? null]);
         await scheduleDeletion(db, "message", match.sid);
       } catch {
         // That Twilio message already belongs to another row: don't guess, and don't look again.

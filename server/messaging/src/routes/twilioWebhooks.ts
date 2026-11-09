@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { Deps } from "../app.js";
-import { abuseLimits } from "../config.js";
+import { abuseLimits, smsCapsOf } from "../config.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
 import { scheduleDeletion } from "../providerRecords.js";
@@ -19,6 +19,13 @@ const DELIVERY_RANK: Record<string, number> = {
 const DELIVERY_RANK_SQL = `CASE WHEN delivery_status IS NULL THEN -1
   WHEN delivery_status IN ('accepted', 'scheduled', 'queued') THEN 0 WHEN delivery_status = 'sending' THEN 1
   WHEN delivery_status = 'sent' THEN 2 ELSE 3 END`;
+
+/** Twilio's segment count as a number 1 to 255, or undefined for anything else (absent, "0", text, a negative). */
+export function reportedSegments(raw: string): number | undefined {
+  if (!/^\d{1,3}$/.test(raw)) return undefined;
+  const n = Number(raw);
+  return n >= 1 && n <= 255 ? n : undefined;
+}
 
 export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
@@ -55,7 +62,7 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
       if (kept === "dropped") {
         // Texts to Doddy are off for this sender (or it is nobody's number): Text with Doddy decides. Twilio waits at
         // most 15 s for this answer and a model call can take longer, so the answer is made after it.
-        const done = handleSmsChat({ db, cipher: deps.cipher, assistant: deps.assistant, log: smsChatLog, smsCaps: { perAccount: limits.smsPerAccountDay, perServer: limits.smsPerServerDay } }, from, body, sid)
+        const done = handleSmsChat({ db, cipher: deps.cipher, assistant: deps.assistant, log: smsChatLog, smsCaps: smsCapsOf(limits) }, from, body, sid)
           .catch((err: unknown): SmsChatOutcome => {
             smsChatLog("sms chat failed", { kind: String((err as { name?: unknown }).name) });
             return "unavailable";
@@ -79,6 +86,14 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
       await db.query(
         `UPDATE outbound_messages SET delivery_status = $2, updated_at = now()
          WHERE provider_message_id = $1 AND channel = 'sms' AND ${DELIVERY_RANK_SQL} < $3`, [sid, status, rank]);
+      // Segments Twilio counted, to reconcile with the estimate made when the text was queued (smsSegments.ts). Twilio's
+      // status-callback page does not list NumSegments (checked 9 Nov 2026), so this is read only when it is sent, only
+      // from a status where the count is final (sent or later), and only as a whole number within the column's range.
+      const reported = reportedSegments(str(form.NumSegments));
+      if (sid && reported !== undefined && rank !== undefined && rank >= 2) {
+        await db.query(
+          `UPDATE outbound_messages SET reported_segments = $2 WHERE provider_message_id = $1 AND channel = 'sms'`, [sid, reported]);
+      }
     }
     return reply.code(204).send();
   });

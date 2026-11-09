@@ -1,7 +1,7 @@
 // What the call-case code needs, in one object. Built only when everything is configured
 // (Twilio, ElevenLabs task agent, webhook secret, encryption key, public URL); otherwise the
 // feature answers 503 not_configured and nothing is faked.
-import type { TaskCallConfig, TaskCallSettings } from "../config.js";
+import type { SmsCaps, TaskCallConfig, TaskCallSettings } from "../config.js";
 import type { TextCipher } from "../crypto.js";
 import type { Db } from "../db.js";
 import type { TaskTelephony, TaskVoice } from "../providers/taskCalls.js";
@@ -30,7 +30,7 @@ export interface TaskCallDeps {
   writer?: ResultWriter;
   liveActivity?: LiveActivityPusher;
   /** The daily caps on texts (SMS_DAILY_PER_ACCOUNT / SMS_DAILY_PER_SERVER) for a task's result text. Absent: the defaults. */
-  smsCaps?: { perAccount: number; perServer: number };
+  smsCaps?: SmsCaps;
   /** For tests: a fixed clock. Every task-call time written to the database comes from here. */
   now?: () => Date;
 }
@@ -47,7 +47,7 @@ export interface TaskCallContext {
   push?: PushSender;
   writer?: ResultWriter;
   liveActivity?: LiveActivityPusher;
-  smsCaps?: { perAccount: number; perServer: number };
+  smsCaps?: SmsCaps;
   now: () => Date;
   say: SayVoice;
   drift: DriftCache;

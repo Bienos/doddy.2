@@ -61,7 +61,7 @@ export class FakeSms implements SmsSender {
   sent: { to: string; body: string }[] = [];
   next: SendOutcome[] = [];
   /** Twilio's message list for any number; undefined means Twilio couldn't be asked. */
-  recent: { sid: string; body: string; createdAt: Date; status: string }[] | undefined = [];
+  recent: { sid: string; body: string; createdAt: Date; status: string; numSegments?: number }[] | undefined = [];
   lookups: string[] = [];
   async send(to: string, body: string): Promise<SendOutcome> {
     this.sent.push({ to, body });

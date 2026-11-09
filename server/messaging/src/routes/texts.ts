@@ -4,7 +4,7 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { textApprovalHash } from "../approval.js";
 import { principal, requireDevice } from "../auth.js";
-import { abuseLimits } from "../config.js";
+import { abuseLimits, smsCapsOf } from "../config.js";
 import { sha256 } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { enqueue, IdempotencyConflict, smsNumber, SmsDailyLimit } from "../outbox.js";
@@ -65,7 +65,7 @@ export const textRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
         return enqueue(c, accountId, ["sms"], body.body, new Date(), body.idempotencyKey, {
           fingerprint: expected.toString("hex"), cipher: deps.cipher, approvalHash: expected,
           // The account's and the server's texts per UTC day, taken atomically with the row (ADR-704).
-          smsCaps: { perAccount: limits.smsPerAccountDay, perServer: limits.smsPerServerDay },
+          smsCaps: smsCapsOf(limits),
         });
       });
       return reply.code(202).send({ messages });

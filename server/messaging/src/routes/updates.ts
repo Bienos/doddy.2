@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
-import { abuseLimits } from "../config.js";
+import { abuseLimits, smsCapsOf } from "../config.js";
 import { inTransaction } from "../db.js";
 import { EncryptionNotConfigured, enqueue, ERASE, IdempotencyConflict, SmsDailyLimit, usableChannels, type Channel } from "../outbox.js";
 
@@ -44,7 +44,7 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       const messages = await inTransaction(db, (c) =>
         enqueue(c, accountId, channels, body.text, sendAt, body.idempotencyKey, {
           fingerprint: JSON.stringify([body.text, body.sendAt ?? null]), cipher: deps.cipher,
-          smsCaps: { perAccount: limits.smsPerAccountDay, perServer: limits.smsPerServerDay },
+          smsCaps: smsCapsOf(limits),
         }));
       return reply.code(202).send({ messages });
     } catch (err) {

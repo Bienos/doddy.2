@@ -6,30 +6,33 @@ import { keyedDigest } from "./crypto.js";
 
 type Q = Pick<pg.PoolClient, "query"> | pg.Pool;
 
-export type CounterScope = "signup_ip" | "sms_account";
+export type CounterScope = "signup_ip" | "sms_account" | "sms_segments_account";
 
 /** The day in parameter `n` (YYYY-MM-DD, for a fixed clock) or today in UTC as the database counts it. */
 const day = (n: number) => `COALESCE($${n}::date, (now() AT TIME ZONE 'utc')::date)`;
 
 /**
- * Takes one slot of the key's count for the UTC day, or answers false when `cap` is reached. One statement, so
- * parallel requests cannot both take the last slot; inside a transaction the row stays locked until it ends.
+ * Takes `amount` slots (default 1) of the key's count for the UTC day, or answers false when that would pass `cap`.
+ * One statement, so parallel requests cannot both take the last slots; inside a transaction the row stays locked
+ * until it ends. All or nothing: a request for 4 segments with 3 left takes none.
  */
-export async function takeCounter(c: Q, scope: CounterScope, key: string, cap: number, onDay?: string): Promise<boolean> {
-  if (cap < 1) return false; // the first insert of a day would otherwise pass a cap of 0
+export async function takeCounter(c: Q, scope: CounterScope, key: string, cap: number, onDay?: string, amount = 1): Promise<boolean> {
+  if (!Number.isInteger(amount) || amount < 1) throw new RangeError("amount must be a positive integer");
+  // The first insert of a day would otherwise pass a cap of 0, or a first request larger than the cap.
+  if (cap < amount) return false;
   const { rowCount } = await c.query(
-    `INSERT INTO daily_counters (scope, key, day, n) VALUES ($1, $2, ${day(4)}, 1)
-     ON CONFLICT (scope, key, day) DO UPDATE SET n = daily_counters.n + 1
-       WHERE daily_counters.n < $3`,
-    [scope, key, cap, onDay ?? null]);
+    `INSERT INTO daily_counters (scope, key, day, n) VALUES ($1, $2, ${day(4)}, $5::int)
+     ON CONFLICT (scope, key, day) DO UPDATE SET n = daily_counters.n + $5::int
+       WHERE daily_counters.n + $5::int <= $3`,
+    [scope, key, cap, onDay ?? null, amount]);
   return rowCount === 1;
 }
 
-/** Gives back a slot taken earlier (a later cap refused, or nothing was queued after all). */
-export async function returnCounter(c: Q, scope: CounterScope, key: string, onDay?: string): Promise<void> {
+/** Gives back `amount` slots (default 1) taken earlier (a later cap refused, or nothing was queued after all). */
+export async function returnCounter(c: Q, scope: CounterScope, key: string, onDay?: string, amount = 1): Promise<void> {
   await c.query(
-    `UPDATE daily_counters SET n = n - 1 WHERE scope = $1 AND key = $2 AND day = ${day(3)} AND n > 0`,
-    [scope, key, onDay ?? null]);
+    `UPDATE daily_counters SET n = GREATEST(n - $4::int, 0) WHERE scope = $1 AND key = $2 AND day = ${day(3)} AND n > 0`,
+    [scope, key, onDay ?? null, amount]);
 }
 
 /** Drops counts older than two days. Cheap (indexed by day); called when accounts are made and by the worker. */
