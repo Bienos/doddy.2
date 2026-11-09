@@ -1,0 +1,56 @@
+# Replaces the old Vercel account's "Account is blocked." on pull request branches (decision
+# 2026-11-09-vercel-blocked-status). That account still has this repository connected and marks every
+# push red. The live team (`doddyyyy`) builds no `claude/…` branch (ADR-498, the free plan's 100 deployments
+# a day), so on pull requests nothing replaced the red. This posts, for the same context, "Skipped: Vercel
+# doesn't build pull request branches (ADR-498)". `main` is never touched (scripts/vercel_blocked_status.sh).
+# It goes away once the old account's projects are disconnected from the repository (docs/OWNER_QUEUE.md 14).
+#
+# `status` workflows run from the default branch's copy of this file, so this works once merged.
+# Event values reach the shell through env only, never inline in a script.
+# Actions are pinned to full commit SHAs as in ios.yml (ADR-715).
+name: Vercel blocked status
+
+on:
+  status:
+
+concurrency:
+  group: vercel-blocked-status-${{ github.event.sha }}-${{ github.event.context }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  replace:
+    name: replace
+    if: github.event.state == 'failure' && startsWith(github.event.context, 'Vercel')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          sparse-checkout: scripts/vercel_blocked_status.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Replace the old account's red on a pull request branch
+        env:
+          CONTEXT: ${{ github.event.context }}
+          STATE: ${{ github.event.state }}
+          DESCRIPTION: ${{ github.event.description }}
+          BRANCHES_JSON: ${{ toJSON(github.event.branches.*.name) }}
+          SHA: ${{ github.event.sha }}
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          mapfile -t branches < <(jq -r '.[]' <<<"$BRANCHES_JSON")
+          if ! scripts/vercel_blocked_status.sh "${branches[@]}"; then
+            exit 0
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$SHA" \
+            -f state=success \
+            -f context="$CONTEXT" \
+            -f description="Skipped: Vercel doesn't build pull request branches (ADR-498)" \
+            -f target_url="$RUN_URL" > /dev/null
+          echo "Replaced \"$CONTEXT\" on $SHA."
