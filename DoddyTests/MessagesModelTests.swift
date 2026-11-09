@@ -32,6 +32,35 @@ final class MessagesModelTests: XCTestCase {
         XCTAssertEqual(saved.last?.text, model.messages.last?.text)
     }
 
+    /// The offer bubble outlives its card (cards are never restored), so it says what was offered and that nothing
+    /// happens without a tap. A result read on the phone (here a list) never goes to the model as an earlier turn.
+    @MainActor
+    func testOfferTextStaysTrueAndActionResultsNeverReachTheModel() async throws {
+        let action = try XCTUnwrap(LocalMessageAction.make(name: "read_list", parametersJSON: #"{"list":"Shopping"}"#))
+        let client = ScriptedClient([.local(action), .reply("Sure.")])
+        let (model, repo, _, service) = await loaded(client: client)
+        let policy = AssistantPolicy(consentGranted: true, includeNotes: false, localActionsEnabled: true)
+        model.draft = "What's on my shopping list?"
+        model.send(using: service, policy: policy, locale: "en")
+        await settle(model)
+        let id = try XCTUnwrap(model.localActions.keys.first)
+        XCTAssertEqual(model.messages.last?.text, action.offerText(polish: false))
+        XCTAssertTrue(model.messages.last?.text.contains("Nothing changes until you confirm") ?? false)
+
+        await model.confirmLocalAction(id, using: RecordingLocalActions(outcome: .completed("Shopping\n- secret-item")))
+        model.draft = "Thanks"
+        model.send(using: service, policy: policy, locale: "en")
+        await settle(model)
+
+        let second = try XCTUnwrap(await client.requests.last)
+        let sent = second.recentTurns.map(\.text).joined(separator: "\n")
+        XCTAssertFalse(sent.contains("secret-item"), "a list read on the phone is not sent to the model")
+        XCTAssertFalse(sent.contains("Shopping"), "nor is the offer's payload")
+        XCTAssertTrue(second.recentTurns.contains { $0.text == ThreadRules.localActionStandIn })
+        let stored = await repo.all()
+        XCTAssertTrue(stored.contains { $0.text.contains("secret-item") }, "the phone's own thread keeps the result")
+    }
+
     @MainActor
     func testClosedOrDifferentAccountCannotConfirmPendingAction() async throws {
         let action = try XCTUnwrap(LocalMessageAction.make(name: "save_memory", parametersJSON: #"{"text":"Keep exactly"}"#))

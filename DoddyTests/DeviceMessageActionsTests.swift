@@ -33,7 +33,7 @@ final class DeviceMessageActionsTests: XCTestCase {
         XCTAssertTrue(reopened.messages.suffix(2).allSatisfy(\.isLocalAction))
         XCTAssertEqual(reopened.messages.last?.text, "Saved note:\nDurable synthetic note")
         XCTAssertTrue(reopened.localActions.isEmpty, "reopening restores receipts, never executable offers")
-        XCTAssertEqual(store.memories.last?.source, .explicitText)
+        XCTAssertEqual(store.memories.last?.source, .notedByDoddy)
     }
     @MainActor
     func testProposalCardRendersWithoutExecutingAnything() throws {
@@ -64,7 +64,7 @@ final class DeviceMessageActionsTests: XCTestCase {
         let note = try XCTUnwrap(LocalMessageAction.make(name: "save_memory", parametersJSON: #"{"text":"Synthetic amber notebook"}"#))
         let saved = await executor.execute(note, stillAuthorised: { true })
         XCTAssertEqual(saved, .completed("Saved note:\nSynthetic amber notebook"))
-        XCTAssertEqual(store.memories.last?.source, .explicitText)
+        XCTAssertEqual(store.memories.last?.source, .notedByDoddy)
         let before = store.memories.count
         _ = await executor.execute(note, stillAuthorised: { false })
         XCTAssertEqual(store.memories.count, before, "stale account/screen cannot write")

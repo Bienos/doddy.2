@@ -27,6 +27,24 @@ final class LocalMessageActionTests: XCTestCase {
         }
     }
 
+    func testOfferTextNamesTheOfferAndNeverClaimsItWasDone() throws {
+        let list = try XCTUnwrap(LocalMessageAction.make(name: "create_list", parametersJSON: #"{"name":"Weekend shopping","items":["Oat milk","Eggs"]}"#))
+        XCTAssertEqual(list.offerText(polish: false),
+                       "Create this list?\nWeekend shopping\n\nNothing changes until you confirm it on the card. The card lasts 5 minutes and is gone once Messages closes.")
+        let polish = list.offerText(polish: true)
+        XCTAssertTrue(polish.hasPrefix("Utworzyć listę?\nWeekend shopping"))
+        XCTAssertTrue(polish.contains("Nic się nie zmieni"))
+        for name in LocalMessageAction.Name.allCases {
+            let text = try XCTUnwrap(LocalMessageAction.make(name: name.rawValue, parametersJSON: name == .createReminder
+                ? #"{"title":"Call Mum"}"# : name == .saveMemory ? #"{"text":"x"}"# : name == .searchMemories ? #"{"query":"x"}"#
+                : name == .readList ? #"{"list":"x"}"# : name == .createList ? #"{"name":"x","items":["y"]}"# : #"{"list":"x","items":["y"]}"#))
+                .offerText(polish: false).lowercased()
+            for claim in ["has been", "was ", "done", " added", "created", "removed", "checked off", "saved note"] {
+                XCTAssertFalse(text.contains(claim), "\(name.rawValue) offer must not say '\(claim)'")
+            }
+        }
+    }
+
     func testActionRepliesRequireOptInAndInvalidProposalsAreDropped() throws {
         let id = UUID()
         let body = try JSONSerialization.data(withJSONObject: ["schemaVersion":1, "requestId":id.uuidString.lowercased(), "text":"Offer", "citedMemoryIDs":[],

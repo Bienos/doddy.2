@@ -32,7 +32,8 @@ final class DeviceMessageActions: LocalMessageActionExecuting {
         do {
             switch action.request {
             case .saveMemory(let value):
-                let saved = try await store.save(text: value, category: .other, source: .explicitText)
+                // Doddy's words, saved by the person's tap: the same provenance as a note from a call (ADR-753).
+                let saved = try await store.save(text: value, category: .other, source: .notedByDoddy)
                 return .completed(text("Zapisano notatkę:\n", "Saved note:\n") + saved.currentText)
             case .searchMemories(let query):
                 let notes: [MemoryRecord]

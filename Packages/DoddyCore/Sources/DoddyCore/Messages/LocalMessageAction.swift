@@ -72,6 +72,17 @@ public struct LocalMessageAction: Equatable, Sendable {
         }
     }
 
+    /// The bubble kept in the thread above the card. Cards are never restored, so it must still read truly
+    /// after the card has gone: what was offered, and that nothing happens without a tap.
+    public func offerText(polish: Bool) -> String {
+        let card = card(polish: polish)
+        let offer = ([card.title] + card.lines.prefix(1)).joined(separator: "\n")
+        guard canExecute else { return offer }
+        return offer + "\n\n" + (polish
+            ? "Nic się nie zmieni bez Twojego zatwierdzenia na karcie. Karta jest ważna 5 minut i znika po zamknięciu rozmowy."
+            : "Nothing changes until you confirm it on the card. The card lasts 5 minutes and is gone once Messages closes.")
+    }
+
     public var canExecute: Bool {
         if case .needsClarification = request { return false }
         return true
