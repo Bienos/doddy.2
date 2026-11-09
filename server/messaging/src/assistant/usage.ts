@@ -1,7 +1,9 @@
 // The daily caps behind Messages (ADR-586). Counts per account and UTC day, nothing else: no question,
 // answer or note is stored. A request is counted before the model is called, so a flood cannot spend
 // more than the cap, and an attempt that fails still counts (the cap bounds spend, not success).
+import { errorCode, recordCost, recordRetries } from "../costLedger.js";
 import { inTransaction, type Db } from "../db.js";
+import { attemptsOf, CALL_DETAIL, requestIdOf, type CallDetail } from "./responder.js";
 import { takeServerSlots, type ServerCaps } from "../serverUsage.js";
 
 export type Reservation = "ok" | "account_cap" | "server_cap" | "new_account_cap";
@@ -27,10 +29,30 @@ export async function reserve(db: Db, accountId: string, caps: ServerCaps & { pe
   });
 }
 
-/** Adds what the model reported to today's row. */
-export async function addTokens(db: Db, accountId: string, usage: { inputTokens: number; outputTokens: number }): Promise<void> {
+/** The cost ledger's name for what Messages spends (also used for the text-message chat, which shares the responder). */
+export const LEDGER_FEATURE = "assistant";
+
+/**
+ * Adds what the model reported to today's row and, when the responder attached the call's detail, writes the
+ * provider cost ledger row (and one `retry` row per extra attempt). The ledger is best effort; the count is not.
+ */
+export async function addTokens(db: Db, accountId: string, usage: { inputTokens: number; outputTokens: number }, outcome?: "success" | "refused" | "unparsed"): Promise<void> {
+  const detail = (usage as { [CALL_DETAIL]?: CallDetail })[CALL_DETAIL];
+  if (detail) {
+    const base = { accountId, model: detail.model, feature: LEDGER_FEATURE };
+    await recordRetries(db, base, detail.attempts);
+    await recordCost(db, { ...base, outcome: outcome ?? "success", attempts: detail.attempts, providerRequestId: detail.providerRequestId, usage: detail.usage });
+  }
   await db.query(
     `UPDATE assistant_usage SET input_tokens = input_tokens + $2, output_tokens = output_tokens + $3
      WHERE account_id = $1 AND day = (now() AT TIME ZONE 'utc')::date`,
     [accountId, Math.max(0, Math.trunc(usage.inputTokens)), Math.max(0, Math.trunc(usage.outputTokens))]);
+}
+
+/** A call that ended in an error: one `failure` row with unknown usage (the provider may still have billed it) and a code, never the message. */
+export async function recordAssistantFailure(db: Db, accountId: string, model: string, err: unknown): Promise<void> {
+  const attempts = attemptsOf(err);
+  const base = { accountId, model, feature: LEDGER_FEATURE };
+  await recordRetries(db, base, attempts);
+  await recordCost(db, { ...base, outcome: "failure", attempts, errorCode: errorCode(err), providerRequestId: requestIdOf(err) });
 }

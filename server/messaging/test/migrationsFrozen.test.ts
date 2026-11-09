@@ -39,6 +39,7 @@ const FROZEN = [
   "020_scheduled_calls.sql",
   "021_account_subject.sql",
   "022_call_tasks.sql",
+  "026_provider_cost_events.sql",
 ];
 
 // 017 is shared by two files merged side by side. They sort the same on every database, so it is
