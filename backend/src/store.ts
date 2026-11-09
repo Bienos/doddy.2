@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { ConnectionReason, ConnectionStatus, Receipt } from "./contracts.js";
 import { type Database, type DatabaseOptions, openDatabase, type Queryable } from "./db.js";
+import type { LedgerEvent } from "./usageLedger.js";
 
 /**
  * Small durable store (Postgres, ADR-525). Holds only what the backend needs: the internal-user →
@@ -41,6 +42,22 @@ export interface QueuedCleanup {
   provider: string;
 }
 
+/** One account's Claude calls for one feature and model (`claudeUsageByAccount`). Cost is nano-US-dollars. */
+export interface ClaudeUsageSummary {
+  feature: string;
+  model: string;
+  calls: number;
+  failedCalls: number;
+  retryCalls: number;
+  unknownUsageCalls: number;
+  unpricedCalls: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheCreationTokens: number;
+  cacheReadTokens: number;
+  costNanoUsd: number;
+}
+
 export interface CleanupRow {
   connection_id: string;
   user_id: string;
@@ -68,6 +85,7 @@ export const ERASED_TABLES = [
   "payment_receipts",
   "payments",
   "documents",
+  "claude_usage",
   "web_link_codes",
   "web_sessions",
   "web_identities",
@@ -386,6 +404,33 @@ export const SCHEMA_SQL = `
     received_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
+  CREATE TABLE IF NOT EXISTS claude_usage (
+    id BIGSERIAL PRIMARY KEY,
+    created_at BIGINT NOT NULL,
+    user_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    feature TEXT NOT NULL,
+    request_id TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('initial', 'continuation', 'retry')),
+    outcome TEXT NOT NULL CHECK (outcome IN ('succeeded', 'failed')),
+    error_code TEXT,
+    stop_reason TEXT,
+    usage_known BOOLEAN NOT NULL,
+    input_tokens BIGINT,
+    output_tokens BIGINT,
+    cache_creation_tokens BIGINT,
+    cache_creation_1h_tokens BIGINT,
+    cache_read_tokens BIGINT,
+    cost_nano_usd BIGINT,
+    price_version TEXT,
+    CHECK (usage_known = (input_tokens IS NOT NULL AND output_tokens IS NOT NULL AND cache_creation_tokens IS NOT NULL AND cache_creation_1h_tokens IS NOT NULL AND cache_read_tokens IS NOT NULL)),
+    CHECK (cost_nano_usd IS NULL OR usage_known)
+  );
+  CREATE INDEX IF NOT EXISTS claude_usage_user ON claude_usage(user_id, created_at);
+  CREATE INDEX IF NOT EXISTS claude_usage_request ON claude_usage(user_id, request_id);
+  CREATE INDEX IF NOT EXISTS claude_usage_age ON claude_usage(created_at);
 `;
 
 /**
@@ -1152,6 +1197,67 @@ export class Store {
   /** Days older than `oldest` (a "YYYY-MM-DD") go, for every user. Separate from `prune` so its counts stay as they were. */
   async pruneLogbook(oldest: string): Promise<number> {
     return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Claude usage ledger (research item 1)
+  // Counters, cost and ids only; never a prompt, material or answer (`usageLedger.ts`).
+
+  /** One call to Anthropic. */
+  async recordClaudeCall(e: LedgerEvent): Promise<void> {
+    const u = e.usage;
+    await this.db.query(
+      `INSERT INTO claude_usage (created_at, user_id, provider, model, feature, request_id, seq, kind, outcome, error_code, stop_reason, usage_known,
+         input_tokens, output_tokens, cache_creation_tokens, cache_creation_1h_tokens, cache_read_tokens, cost_nano_usd, price_version)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+      [
+        e.at, e.userId, e.provider, e.model, e.feature, e.requestId, e.seq, e.kind, e.outcome, e.errorCode, e.stopReason, u !== null,
+        u?.inputTokens ?? null, u?.outputTokens ?? null, u?.cacheCreationTokens ?? null, u?.cacheCreation1hTokens ?? null, u?.cacheReadTokens ?? null,
+        e.costNanoUsd, e.priceVersion,
+      ],
+    );
+  }
+
+  /**
+   * One account's calls since `since` (ms), grouped by feature and model. Sums cover only calls whose
+   * usage is known; `unknownUsageCalls` and `unpricedCalls` say how many calls the sums leave out, so a
+   * total is never presented as complete when it isn't. Only this account's rows are read.
+   */
+  async claudeUsageByAccount(userId: string, since: number): Promise<ClaudeUsageSummary[]> {
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT feature, model,
+              COUNT(*) AS calls,
+              COUNT(*) FILTER (WHERE outcome = 'failed') AS failed_calls,
+              COUNT(*) FILTER (WHERE kind = 'retry') AS retry_calls,
+              COUNT(*) FILTER (WHERE NOT usage_known) AS unknown_usage_calls,
+              COUNT(*) FILTER (WHERE usage_known AND cost_nano_usd IS NULL) AS unpriced_calls,
+              COALESCE(SUM(input_tokens), 0) AS input_tokens,
+              COALESCE(SUM(output_tokens), 0) AS output_tokens,
+              COALESCE(SUM(cache_creation_tokens), 0) AS cache_creation_tokens,
+              COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+              COALESCE(SUM(cost_nano_usd), 0) AS cost_nano_usd
+       FROM claude_usage WHERE user_id = $1 AND created_at >= $2 GROUP BY feature, model ORDER BY feature, model`,
+      [userId, since],
+    );
+    const n = (v: unknown) => Number(v);
+    return rows.rows.map((r) => ({
+      feature: String(r.feature),
+      model: String(r.model),
+      calls: n(r.calls),
+      failedCalls: n(r.failed_calls),
+      retryCalls: n(r.retry_calls),
+      unknownUsageCalls: n(r.unknown_usage_calls),
+      unpricedCalls: n(r.unpriced_calls),
+      inputTokens: n(r.input_tokens),
+      outputTokens: n(r.output_tokens),
+      cacheCreationTokens: n(r.cache_creation_tokens),
+      cacheReadTokens: n(r.cache_read_tokens),
+      costNanoUsd: n(r.cost_nano_usd),
+    }));
+  }
+
+  /** Ledger rows older than `before` (ms) go; kept 400 days, like the monthly counters. */
+  async pruneClaudeUsage(before: number): Promise<number> {
+    return (await this.db.query("DELETE FROM claude_usage WHERE created_at < $1", [before])).rowCount;
   }
 
   // ------------------------------------------------------------ Owner panel (decision 2026-11-09-usage-counts-on-by-default)

@@ -25,6 +25,7 @@ import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./provi
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
 import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
+import type { LedgerEvent } from "./usageLedger.js";
 import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
@@ -110,9 +111,11 @@ export async function buildApp(
           ? new MonidWebSearchProvider(config.monid)
           : null
         : new MockWebSearchProvider();
+  // Every live Anthropic call writes a content-free usage row for its account (usageLedger.ts); mock calls cost nothing and write none.
+  const usageDeps = { recorder: { record: (event: LedgerEvent) => store.recordClaudeCall(event) }, log: (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`) };
   // Claude (ADR-564): live only with an Anthropic key; mock mode uses offline demo text.
   const claude =
-    overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
+    overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude, undefined, undefined, usageDeps) : null) : new MockClaudeProvider();
   // Document links are signed with the session key; without one, make_document says "not set up".
   const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
   const tools = new CloudToolsService({
@@ -150,7 +153,7 @@ export async function buildApp(
   const log = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
   const memory = new MemoryService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
   const chatClaude =
-    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : null) : claude;
+    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude, undefined, undefined, usageDeps) : null) : claude;
   // The chat also reads the account's other parts (ADR-604): Logbook, apps, documents, receipts.
   const account = new AccountContext({ store, memory, tools });
   const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, account, log });
@@ -249,6 +252,7 @@ export async function buildApp(
     ])
       .then(() => store.prune(Date.now()))
       .then(() => store.pruneDocuments(Date.now()))
+      .then(() => store.pruneClaudeUsage(Date.now() - 400 * 86_400_000))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => store.pruneTokenFloors(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
