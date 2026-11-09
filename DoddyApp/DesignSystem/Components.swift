@@ -3,12 +3,15 @@ import SwiftUI
 
 /// Label on the left, explicit text value on the right (never colour alone).
 struct StatusRow: View {
+    /// Looked up in the string catalog when shown: a literal `title: "…"` is collected into the
+    /// tables, but `Text(String)` alone would show it in English even in Polish. A title that is
+    /// already translated (`NSLocalizedString` at the call) or is no key shows as it is.
     let title: String
     let value: String
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title)
+            Text(NSLocalizedString(title, comment: ""))
             Spacer(minLength: 12)
             Text(value)
                 .foregroundStyle(Theme.secondaryText)

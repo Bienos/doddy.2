@@ -19,7 +19,8 @@ struct ConnectionsView: View {
                 // A group whose every switch the build hides (decision 2026-11-07-release-scope) goes with its heading.
                 ForEach(ConnectionGroup.shown(in: ReleaseScopeStore.current)) { group in
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(group.title)
+                        // Looked up when shown, so the heading is in the screens' language.
+                        Text(NSLocalizedString(group.title, comment: ""))
                             .font(.footnote.weight(.semibold))
                             .textCase(.uppercase)
                             .foregroundStyle(Theme.secondaryText)

@@ -155,3 +155,12 @@ Written by the agent that fixed the two lines, not by the translation agents; no
 
 - The hero's small print and the early-access facts no longer say "Your notes stay on your iPhone" without a condition. They say the notes are stored on the iPhone and that voice, calls, shared lists and connected accounts (and mail, calendar and files) leave it only when the person switches them on. Two keys changed in all nine tables, plus the English master and its key list.
 - Polish, German, Spanish, French, Italian, Portuguese (Brazil), Japanese, Simplified Chinese and Croatian keep the register of the lines they replace (informal "ty", "du", "tu", "tú", "você").
+
+## Added 9 November 2026 (decision `2026-11-09-remove-old-design-leftovers`, memory journey)
+
+Written by the agent that did the redesign, not by the translation agents; the same native review applies. Four error lines kept their first sentences word for word and got a next step, in all nine tables:
+
+- "… Change the text, then try again." (a note that can't be saved as it is)
+- "… If it keeps happening, make a backup file in Settings › Doddy's memory." The eight drafts write "Doddy's memory" in English, because that row isn't translated in them yet.
+- "… Close Doddy and open it again." (the memory store isn't available)
+- "… Try picking them again." (files for an import couldn't be opened)

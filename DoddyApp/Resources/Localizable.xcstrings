@@ -3113,61 +3113,61 @@
         }
       }
     },
-    "A stored memory couldn't be read. Nothing was deleted.": {
+    "A stored memory couldn't be read. Nothing was deleted. If it keeps happening, make a backup file in Settings › Doddy's memory.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ein gespeicherter Eintrag konnte nicht gelesen werden. Nichts wurde gelöscht."
+            "value": "Ein gespeicherter Eintrag konnte nicht gelesen werden. Nichts wurde gelöscht. Wenn das wieder passiert, erstelle unter Einstellungen › Doddy's memory eine Backup-Datei."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se ha podido leer un recuerdo guardado. No se ha borrado nada."
+            "value": "No se ha podido leer un recuerdo guardado. No se ha borrado nada. Si vuelve a pasar, crea una copia de seguridad en Ajustes › Doddy's memory."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un souvenir enregistré n’a pas pu être lu. Rien n’a été supprimé."
+            "value": "Un souvenir enregistré n’a pas pu être lu. Rien n’a été supprimé. Si cela se reproduit, crée une sauvegarde dans Réglages › Doddy's memory."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Spremljeno sjećanje nije bilo moguće pročitati. Ništa nije izbrisano."
+            "value": "Spremljeno sjećanje nije bilo moguće pročitati. Ništa nije izbrisano. Ako se to ponavlja, napravi datoteku sigurnosne kopije u Postavke › Doddy's memory."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Non è stato possibile leggere un ricordo salvato. Non è stato eliminato nulla."
+            "value": "Non è stato possibile leggere un ricordo salvato. Non è stato eliminato nulla. Se succede ancora, crea un file di backup in Impostazioni › Doddy's memory."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "保存された記憶を読み込めませんでした。何も削除されていません。"
+            "value": "保存された記憶を読み込めませんでした。何も削除されていません。繰り返し起きる場合は、設定 › Doddy's memory でバックアップファイルを作成してください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nie udało się odczytać zapisanej notatki. Nic nie zostało usunięte."
+            "value": "Nie udało się odczytać zapisanej notatki. Nic nie zostało usunięte. Jeśli to się powtarza, utwórz plik kopii zapasowej w Ustawienia › Pamięć Doddy'ego."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uma memória guardada não pôde ser lida. Nada foi apagado."
+            "value": "Uma memória guardada não pôde ser lida. Nada foi apagado. Se continuar acontecendo, crie um arquivo de backup em Ajustes › Doddy's memory."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法读取一条已存储的记忆。没有删除任何内容。"
+            "value": "无法读取一条已存储的记忆。没有删除任何内容。如果反复出现，请在“设置 › Doddy's memory”中创建备份文件。"
           }
         }
       }
@@ -80321,7 +80321,7 @@
         }
       }
     },
-    "The memory store isn't available on this iPhone right now.": {
+    "The memory store isn't available on this iPhone right now. Close Doddy and open it again.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
@@ -80330,13 +80330,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Der Gedächtnisspeicher ist auf diesem iPad gerade nicht verfügbar."
+                  "value": "Der Gedächtnisspeicher ist auf diesem iPad gerade nicht verfügbar. Schließe Doddy und öffne die App erneut."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Der Gedächtnisspeicher ist auf diesem iPhone gerade nicht verfügbar."
+                  "value": "Der Gedächtnisspeicher ist auf diesem iPhone gerade nicht verfügbar. Schließe Doddy und öffne die App erneut."
                 }
               }
             }
@@ -80348,13 +80348,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The memory store isn't available on this iPad right now."
+                  "value": "The memory store isn't available on this iPad right now. Close Doddy and open it again."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The memory store isn't available on this iPhone right now."
+                  "value": "The memory store isn't available on this iPhone right now. Close Doddy and open it again."
                 }
               }
             }
@@ -80366,13 +80366,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "El almacén de recuerdos no está disponible en este iPad ahora mismo."
+                  "value": "El almacén de recuerdos no está disponible en este iPad ahora mismo. Cierra Doddy y vuelve a abrirlo."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "El almacén de recuerdos no está disponible en este iPhone ahora mismo."
+                  "value": "El almacén de recuerdos no está disponible en este iPhone ahora mismo. Cierra Doddy y vuelve a abrirlo."
                 }
               }
             }
@@ -80384,13 +80384,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "La mémoire n’est pas disponible sur cet iPad pour le moment."
+                  "value": "La mémoire n’est pas disponible sur cet iPad pour le moment. Ferme Doddy, puis rouvre-le."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "La mémoire n’est pas disponible sur cet iPhone pour le moment."
+                  "value": "La mémoire n’est pas disponible sur cet iPhone pour le moment. Ferme Doddy, puis rouvre-le."
                 }
               }
             }
@@ -80402,13 +80402,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Spremište sjećanja trenutačno nije dostupno na ovom iPadu."
+                  "value": "Spremište sjećanja trenutačno nije dostupno na ovom iPadu. Zatvori Doddyja i ponovno ga otvori."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Spremište sjećanja trenutačno nije dostupno na ovom iPhoneu."
+                  "value": "Spremište sjećanja trenutačno nije dostupno na ovom iPhoneu. Zatvori Doddyja i ponovno ga otvori."
                 }
               }
             }
@@ -80420,13 +80420,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "L'archivio dei ricordi non è disponibile su questo iPad al momento."
+                  "value": "L'archivio dei ricordi non è disponibile su questo iPad al momento. Chiudi Doddy e riaprilo."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "L'archivio dei ricordi non è disponibile su questo iPhone al momento."
+                  "value": "L'archivio dei ricordi non è disponibile su questo iPhone al momento. Chiudi Doddy e riaprilo."
                 }
               }
             }
@@ -80438,13 +80438,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "今はこのiPadで記憶の保存領域を利用できません。"
+                  "value": "今はこのiPadで記憶の保存領域を利用できません。Doddyを閉じて、もう一度開いてください。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "今はこのiPhoneで記憶の保存領域を利用できません。"
+                  "value": "今はこのiPhoneで記憶の保存領域を利用できません。Doddyを閉じて、もう一度開いてください。"
                 }
               }
             }
@@ -80456,13 +80456,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Pamięć notatek nie jest teraz dostępna na tym iPadzie."
+                  "value": "Pamięć notatek nie jest teraz dostępna na tym iPadzie. Zamknij Doddy'ego i otwórz go ponownie."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Pamięć notatek nie jest teraz dostępna na tym iPhonie."
+                  "value": "Pamięć notatek nie jest teraz dostępna na tym iPhonie. Zamknij Doddy'ego i otwórz go ponownie."
                 }
               }
             }
@@ -80474,13 +80474,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "O armazenamento de memórias não está disponível neste iPad agora."
+                  "value": "O armazenamento de memórias não está disponível neste iPad agora. Feche o Doddy e abra de novo."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "O armazenamento de memórias não está disponível neste iPhone agora."
+                  "value": "O armazenamento de memórias não está disponível neste iPhone agora. Feche o Doddy e abra de novo."
                 }
               }
             }
@@ -80492,13 +80492,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "这台 iPad 上的记忆存储目前不可用。"
+                  "value": "这台 iPad 上的记忆存储目前不可用。请关闭 Doddy 后重新打开。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "这台 iPhone 上的记忆存储目前不可用。"
+                  "value": "这台 iPhone 上的记忆存储目前不可用。请关闭 Doddy 后重新打开。"
                 }
               }
             }
@@ -85555,61 +85555,61 @@
         }
       }
     },
-    "This note can't be saved as it is.": {
+    "This note can't be saved as it is. Change the text, then try again.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Diese Notiz kann so nicht gespeichert werden."
+            "value": "Diese Notiz kann so nicht gespeichert werden. Ändere den Text und versuch es noch einmal."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta nota no se puede guardar tal como está."
+            "value": "Esta nota no se puede guardar tal como está. Cambia el texto e inténtalo de nuevo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cette note ne peut pas être enregistrée telle quelle."
+            "value": "Cette note ne peut pas être enregistrée telle quelle. Modifie le texte, puis réessaie."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ova se bilješka ne može spremiti ovakva."
+            "value": "Ova se bilješka ne može spremiti ovakva. Promijeni tekst i pokušaj ponovno."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questa nota non può essere salvata così com'è."
+            "value": "Questa nota non può essere salvata così com'è. Modifica il testo e riprova."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このメモはこのままでは保存できません。"
+            "value": "このメモはこのままでは保存できません。文章を直して、もう一度お試しください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tej notatki nie da się zapisać w tej postaci."
+            "value": "Tej notatki nie da się zapisać w tej postaci. Zmień tekst i spróbuj ponownie."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta nota não pode ser salva como está."
+            "value": "Esta nota não pode ser salva como está. Altere o texto e tente de novo."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这条笔记无法按现状保存。"
+            "value": "这条笔记无法按现状保存。请修改文字后重试。"
           }
         }
       }
@@ -87140,61 +87140,61 @@
         }
       }
     },
-    "Those files couldn't be opened.": {
+    "Those files couldn't be opened. Try picking them again.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Diese Dateien konnten nicht geöffnet werden."
+            "value": "Diese Dateien konnten nicht geöffnet werden. Wähle sie noch einmal aus."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se han podido abrir esos archivos."
+            "value": "No se han podido abrir esos archivos. Prueba a elegirlos de nuevo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ces fichiers n’ont pas pu être ouverts."
+            "value": "Ces fichiers n’ont pas pu être ouverts. Essaie de les choisir à nouveau."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Te datoteke nije bilo moguće otvoriti."
+            "value": "Te datoteke nije bilo moguće otvoriti. Pokušaj ih ponovno odabrati."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Non è stato possibile aprire quei file."
+            "value": "Non è stato possibile aprire quei file. Prova a sceglierli di nuovo."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "それらのファイルを開けませんでした。"
+            "value": "それらのファイルを開けませんでした。もう一度選び直してください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nie udało się otworzyć tych plików."
+            "value": "Nie udało się otworzyć tych plików. Spróbuj wybrać je jeszcze raz."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esses arquivos não puderam ser abertos."
+            "value": "Esses arquivos não puderam ser abertos. Tente escolhê-los de novo."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法打开这些文件。"
+            "value": "无法打开这些文件。请重新选择。"
           }
         }
       }
