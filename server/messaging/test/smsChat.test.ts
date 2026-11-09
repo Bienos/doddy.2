@@ -7,7 +7,9 @@ import { DEFAULT_ASSISTANT_SETTINGS, type AssistantSettings } from "../src/confi
 import type { Db } from "../src/db.js";
 import { dispatchDue } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
-import { fitSms, SMS_CHAT_COPY, SMS_REPLY_MAX, type SmsChatOutcome } from "../src/smsChat.js";
+import { fitSms, SMS_CHAT_COPY, SMS_REPLY_MAX, SMS_REPLY_MAX_SEGMENTS, type SmsChatOutcome } from "../src/smsChat.js";
+import { estimateSmsSegments } from "../src/smsSegments.js";
+import { polish } from "./smsSamples.js";
 import { BASE_URL, dbSkip, freshDb, testApp, testCipher, TWILIO_TOKEN } from "./helpers.js";
 
 const sid = (n: number) => "SM" + n.toString(16).padStart(32, "0");
@@ -194,6 +196,26 @@ describe("texting Doddy against real Postgres", { skip: dbSkip }, () => {
     const p = (await w.call("GET", "/v1/phone", h)).json();
     assert.equal(p.phone, "+48500300407");
     assert.equal(p.smsChatEnabled, false);
+    await w.app.close();
+  });
+
+  test("a long Polish answer is cut to the segment budget (was 9 segments), keeps its spelling, and what was counted is the estimate", async () => {
+    const w = await world();
+    const h = await w.account("+48500300408");
+    await w.turnOn(h);
+    const answer = polish(600);
+    assert.equal(estimateSmsSegments(answer).segments, 9, "what the old 600-character cap would have sent");
+    w.responder!.next.push(async () => ({ kind: "ok", answer, sources: [], usage: { inputTokens: 5, outputTokens: 5 } }));
+    assert.deepEqual(await w.text("Opowiedz mi o pogodzie", sid(50), "+48500300408"), ["answered"]);
+    const body = w.sms.sent.at(-1)!.body;
+    assert.ok(estimateSmsSegments(body).segments <= SMS_REPLY_MAX_SEGMENTS);
+    assert.ok(body.includes("Zażółć gęślą jaźń."), "Polish letters are not stripped to save segments");
+    assert.ok(body.endsWith(SMS_CHAT_COPY.moreAfterSentence));
+    const reserved = await db.query<{ est_segments: number }>("SELECT est_segments FROM outbound_messages WHERE idempotency_key = $1", [`sms-chat:${sid(50)}`]);
+    assert.equal(reserved.rows[0]!.est_segments, estimateSmsSegments(body).segments, "the reservation is what was sent");
+    const logged = w.logs.find((l) => l.msg === "sms chat answered")!.extra as { segments: number; encoding: string };
+    assert.deepEqual([logged.segments, logged.encoding], [estimateSmsSegments(body).segments, "UCS-2"]);
+    assert.ok(!JSON.stringify(w.logs).includes("Zażółć"), "no answer text in the log");
     await w.app.close();
   });
 });

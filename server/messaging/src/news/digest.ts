@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { SmsCaps } from "../config.js";
 import type { TextCipher } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
 import { log } from "../log.js";
@@ -18,7 +19,7 @@ export interface NewsDeps {
   /** Encrypts queued digest text at rest when the server has the key. */
   cipher?: TextCipher;
   /** Texts queued per UTC day, per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
-  smsCaps?: { perAccount: number; perServer: number };
+  smsCaps?: SmsCaps;
 }
 
 export const MAX_TOPICS = 10;

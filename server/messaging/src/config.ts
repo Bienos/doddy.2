@@ -67,6 +67,9 @@ const schema = z.object({
   // account's own 10 calls a day stay).
   SMS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   SMS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(300),
+  // The same days counted in estimated SMS segments (a Polish text is 67 characters a segment, so a long one costs several).
+  SMS_SEGMENTS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(100000).default(120),
+  SMS_SEGMENTS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(10000000).default(1200),
   OUTBOUND_CALLS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(10000).default(20),
   // "1": run the worker loop inside the web process (one service; e.g. Render free/starter).
   RUN_WORKER_IN_WEB: z.enum(["0", "1"]).default("0"),
@@ -336,6 +339,8 @@ export interface AbuseLimits {
   accountsPerIpDay: number; accountsPerServerDay: number;
   verifyPerIpDay: number; verifyPerAccountDay: number;
   smsPerAccountDay: number; smsPerServerDay: number;
+  /** Estimated SMS segments queued per UTC day (smsSegments.ts), next to the per-text caps above. */
+  smsSegmentsPerAccountDay: number; smsSegmentsPerServerDay: number;
   outboundCallsPerServerDay: number;
   /** Calling codes without "+", see phoneCountries.ts. */
   allowedCountryCodes: readonly string[];
@@ -345,12 +350,21 @@ export const DEFAULT_ABUSE_LIMITS: AbuseLimits = {
   accountsPerIpDay: 50, accountsPerServerDay: 1000,
   verifyPerIpDay: 20, verifyPerAccountDay: 6,
   smsPerAccountDay: 30, smsPerServerDay: 300,
+  smsSegmentsPerAccountDay: 120, smsSegmentsPerServerDay: 1200,
   outboundCallsPerServerDay: 20,
   allowedCountryCodes: DEFAULT_ALLOWED_COUNTRY_CODES,
 };
 
 /** The defaults with whatever a deployment (or a test) sets over them. */
 export const abuseLimits = (over?: Partial<AbuseLimits>): AbuseLimits => ({ ...DEFAULT_ABUSE_LIMITS, ...over });
+
+/** What enqueue() needs to cap texts: per text and per estimated segment, for the account and the server (ADR-704). */
+export interface SmsCaps { perAccount: number; perServer: number; segmentsPerAccount?: number; segmentsPerServer?: number }
+
+export const smsCapsOf = (l: AbuseLimits): SmsCaps => ({
+  perAccount: l.smsPerAccountDay, perServer: l.smsPerServerDay,
+  segmentsPerAccount: l.smsSegmentsPerAccountDay, segmentsPerServer: l.smsSegmentsPerServerDay,
+});
 
 export interface Config {
   databaseUrl: string;
@@ -404,6 +418,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       accountsPerIpDay: e.ACCOUNTS_DAILY_PER_IP, accountsPerServerDay: e.ACCOUNTS_DAILY_PER_SERVER,
       verifyPerIpDay: e.VERIFY_DAILY_PER_IP, verifyPerAccountDay: e.VERIFY_DAILY_PER_ACCOUNT,
       smsPerAccountDay: e.SMS_DAILY_PER_ACCOUNT, smsPerServerDay: e.SMS_DAILY_PER_SERVER,
+      smsSegmentsPerAccountDay: e.SMS_SEGMENTS_DAILY_PER_ACCOUNT, smsSegmentsPerServerDay: e.SMS_SEGMENTS_DAILY_PER_SERVER,
       outboundCallsPerServerDay: e.OUTBOUND_CALLS_DAILY_PER_SERVER,
       allowedCountryCodes: e.PHONE_ALLOWED_COUNTRY_CODES,
     },

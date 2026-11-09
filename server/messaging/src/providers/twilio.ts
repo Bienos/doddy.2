@@ -81,7 +81,7 @@ export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
     return { kind: "rejected", code, unsubscribed: json.code === 21610 };
   }
 
-  async recentMessagesTo(toE164: string): Promise<{ sid: string; body: string; createdAt: Date; status: string }[] | undefined> {
+  async recentMessagesTo(toE164: string): Promise<{ sid: string; body: string; createdAt: Date; status: string; numSegments?: number }[] | undefined> {
     const query = new URLSearchParams({ To: toE164, PageSize: "50" });
     let res: Response;
     try {
@@ -93,12 +93,12 @@ export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
     }
     if (!res.ok) return undefined;
     const json = (await res.json().catch(() => undefined)) as
-      { messages?: { sid?: string; body?: string; date_created?: string; status?: string }[] } | undefined;
+      { messages?: { sid?: string; body?: string; date_created?: string; status?: string; num_segments?: string }[] } | undefined;
     if (!json?.messages) return undefined;
     return json.messages.flatMap((m) => {
       const createdAt = m.date_created ? new Date(m.date_created) : undefined;
       return m.sid && typeof m.body === "string" && createdAt && !Number.isNaN(createdAt.getTime())
-        ? [{ sid: m.sid, body: m.body, createdAt, status: m.status ?? "" }] : [];
+        ? [{ sid: m.sid, body: m.body, createdAt, status: m.status ?? "", ...segmentsField(m.num_segments) }] : [];
     });
   }
 
@@ -188,4 +188,16 @@ export class TwilioVoiceCaller implements OutboundCaller {
     if (res.status >= 500) return { kind: "unknown", code };
     return { kind: "rejected", code };
   }
+}
+
+const segmentsField = (raw: string | undefined): { numSegments?: number } => {
+  const n = segmentsOf(raw);
+  return n === undefined ? {} : { numSegments: n };
+};
+
+/** Twilio sends num_segments as a string; a whole number from 1 to 255, else undefined (it is 0 until the text is sent). */
+function segmentsOf(raw: string | undefined): number | undefined {
+  if (!raw || !/^\d{1,3}$/.test(raw)) return undefined;
+  const n = Number(raw);
+  return n >= 1 && n <= 255 ? n : undefined;
 }
