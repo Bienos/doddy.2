@@ -48,7 +48,6 @@ struct HomeView: View {
     /// Translate (ADR-215): the start sheet, and what the user chose on it.
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
-    @State private var showDataFlow = false
     @State private var showCapabilities = false
     @State private var showToday = false
     /// Tasks handed to Doddy (ADR-570): the list and each result card.
@@ -122,7 +121,6 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
-            .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
@@ -171,7 +169,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -256,7 +254,7 @@ struct HomeView: View {
                 // Focus counts down, the stopwatch counts up (ADR-652). One row for both: the menu
                 // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
                 // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
-                // Phone calls took a row on 9 Nov 2026; leaflets and Following share one below to make room.
+                // Phone calls took a row on 9 Nov 2026; What leaves this iPhone moved to Settings › Privacy only, to make room.
                 Menu {
                     Button { tool = .focus } label: {
                         if FocusController.shared.session.map({ !$0.isOver }) ?? false {
@@ -309,31 +307,23 @@ struct HomeView: View {
                 Text("Doddy is an AI, not a person.")
             }
             Section {
-                // Leaflets read on request (SHOPPING.md 2) and the feed of what the person follows (ADR-656: the
-                // publishers' stories, no AI line), in one row since 9 Nov 2026 so Phone calls fits (eleven rows).
-                // In this section, not the first: there it pushed the menu's first item off its first screen at the
-                // largest text size (the dark, largest-text UI test, MemoryJourneyTests). Settings, which leads to
-                // Doddy's memory too (ADR-633), heads the menu.
-                if scope.shows(.deals) || scope.shows(.following) {
-                    Menu {
-                        if scope.shows(.deals) {
-                            Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
-                                .accessibilityIdentifier("home.deals")
-                        }
-                        if scope.shows(.following) {
-                            Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
-                                .accessibilityIdentifier("home.following")
-                        }
-                    } label: {
-                        Label("Leaflets and news", systemImage: "newspaper")
-                    }
-                    .accessibilityIdentifier("home.feeds")
+                // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
+                // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
+                // MemoryJourneyTests). Settings, which leads to Doddy's memory too (ADR-633), heads the menu.
+                if scope.shows(.deals) {
+                    Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
+                        .accessibilityIdentifier("home.deals")
+                }
+                // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
+                if scope.shows(.following) {
+                    Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                        .accessibilityIdentifier("home.following")
                 }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
-                Button { showDataFlow = true } label: { Label("What leaves this iPhone", systemImage: "lock.shield") }
-                    .accessibilityIdentifier("home.dataFlow")
+                // What leaves this iPhone left this menu on 9 Nov 2026 (owner, decision 2026-11-09-phone-calls-on-home-menu)
+                // to make room for Phone calls; it is on Settings › Privacy, as it has been since ADR-580.
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -1118,18 +1108,3 @@ private struct HomeCallsSheet: View {
     }
 }
 
-/// Settings › Privacy › What leaves this iPhone, opened from Home's footer (ADR-326).
-private struct DataFlowSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            DataFlowView()
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { dismiss() }
-                    }
-                }
-        }
-    }
-}

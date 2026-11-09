@@ -117,7 +117,7 @@ final class ScreenFixtureTests: XCTestCase {
     @MainActor
     private func openDeals(_ app: XCUIApplication) -> Bool {
         settle(2)
-        guard menu(app, ["home.feeds", "home.deals"]), see(app.descendants(matching: .any)["deals.items"], 15) else { return false }
+        guard menu(app, ["home.deals"]), see(app.descendants(matching: .any)["deals.items"], 15) else { return false }
         // The answer sits below the form's long list of shops, which isn't built until it scrolls in
         // (the first run's picture, 2 Nov, showed only the form).
         return app.reveal(app.buttons["deals.basket"], maxSteps: 14)
