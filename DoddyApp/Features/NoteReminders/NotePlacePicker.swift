@@ -107,7 +107,7 @@ struct NotePlacePicker: View {
             .pickerStyle(.segmented)
 
             Picker("How close", selection: $radius) {
-                ForEach(ReminderPlace.radiusOptions, id: \.self) { Text("\($0) m").tag($0) }
+                ForEach(ReminderPlace.radiusOptions, id: \.self) { Text(verbatim: "\($0) m").tag($0) }
             }
             .pickerStyle(.segmented)
             .accessibilityLabel("How close, in metres")
@@ -116,7 +116,7 @@ struct NotePlacePicker: View {
                 Image(systemName: "mappin.and.ellipse").accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(summary).font(.headline)
-                    Text("Within \(radius) m, each time, until you mark it Done. iOS watches this place on your iPhone; Doddy doesn't follow where you go.")
+                    Text(verbatim: String(format: NSLocalizedString("Within %lld m, each time, until you mark it Done. iOS watches this place on your iPhone; Doddy doesn't follow where you go.", comment: ""), radius))
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -143,8 +143,12 @@ struct NotePlacePicker: View {
 
     private var summary: String {
         let shown = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let label = shown.isEmpty ? "this place" : shown
-        return onArrival ? "When you arrive at \(label)" : "When you leave \(label)"
+        if shown.isEmpty {
+            return onArrival ? NSLocalizedString("When you arrive at this place", comment: "")
+                : NSLocalizedString("When you leave this place", comment: "")
+        }
+        return onArrival ? String(format: NSLocalizedString("When you arrive at %@", comment: ""), shown)
+            : String(format: NSLocalizedString("When you leave %@", comment: ""), shown)
     }
 
     // MARK: Permissions
@@ -154,7 +158,8 @@ struct NotePlacePicker: View {
             Text("Doddy needs two permissions for this")
                 .font(.title3.bold())
                 .accessibilityAddTraits(.isHeader)
-            Text("To remind you \(summary.prefix(1).lowercased() + summary.dropFirst()), iOS needs to let Doddy send notifications and use your location while you use the app.")
+            Text(verbatim: String(format: NSLocalizedString("To remind you %@, iOS needs to let Doddy send notifications and use your location while you use the app.", comment: ""),
+                                 summary.prefix(1).lowercased() + String(summary.dropFirst())))
             VStack(alignment: .leading, spacing: 10) {
                 Label("iOS watches the place on this iPhone. Doddy never follows where you go.", systemImage: "checkmark")
                 Label("Doddy asks for \u{201C}While Using\u{201D} only, never \u{201C}Always\u{201D}.", systemImage: "checkmark")

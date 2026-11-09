@@ -11,6 +11,8 @@ import Foundation
 extension VoiceToolName {
     /// A call from Doddy's number to the user's verified number at a later time, after a card.
     public static let callMeLater = "call_me_later"
+    /// Up to three places called one after another after one tap (decision 2026-11-09-restaurant-calls-one-tap).
+    public static let callPlaces = "call_places"
 }
 
 /// Mirrored in `docs/trust/config/doddy_rules.yaml` (contact_policy) and the server's

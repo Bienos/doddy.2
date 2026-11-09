@@ -73,7 +73,7 @@ private struct ListCard: View {
                     .lineLimit(2)
             }
             if let reminder = reminders.reminders.first(where: { $0.memoryID == list.id }) {
-                Label("Reminds you \(ReminderFormat.short(reminder))", systemImage: "bell")
+                Label(String(format: NSLocalizedString("Reminds you %@", comment: ""), ReminderFormat.short(reminder)), systemImage: "bell")
                     .font(.footnote)
                     .foregroundStyle(Theme.confirmed)
             }
@@ -254,7 +254,7 @@ struct ListDetailView: View {
                     }
                 } header: {
                     HStack {
-                        Text("Done (\(list.done.count))")
+                        Text(verbatim: String(format: NSLocalizedString("Done (%lld)", comment: ""), list.done.count))
                         Spacer()
                         Button("Clear ticked") { run { try await store.clearTicked(listID: list.id) } }
                             .font(.subheadline)
@@ -391,7 +391,8 @@ struct ListDetailView: View {
     /// where a confirmation dialog is a popover, it points at the button that opened it (ADR-437).
     private func menuWithDialogs(_ list: DoddyList) -> some View {
         menu(list)
-            .confirmationDialog("Delete “\(list.name)”?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            .confirmationDialog(String(format: NSLocalizedString("Delete “%@”?", comment: ""), list.name), isPresented: $confirmDelete,
+                                titleVisibility: .visible) {
                 Button("Delete list", role: .destructive) {
                     Task {
                         do {
@@ -406,10 +407,13 @@ struct ListDetailView: View {
                     }
                 }
             } message: {
-                Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
+                Text(verbatim: list.items.count == 1
+                     ? NSLocalizedString("The list and its 1 item are removed from this iPhone. You can undo for a few seconds afterwards.", comment: "")
+                     : String(format: NSLocalizedString("The list and its %lld items are removed from this iPhone. You can undo for a few seconds afterwards.", comment: ""), list.items.count))
                     + Text(verbatim: sharing.deleteWarning(list.id).map { " " + $0 } ?? "")
             }
-            .confirmationDialog("Share “\(list.name)” through iCloud?", isPresented: $confirmSharing, titleVisibility: .visible) {
+            .confirmationDialog(String(format: NSLocalizedString("Share “%@” through iCloud?", comment: ""), list.name), isPresented: $confirmSharing,
+                                titleVisibility: .visible) {
                 Button("Share") { Task { await startSharing(list) } }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -481,7 +485,7 @@ struct ListDetailView: View {
                 .disabled(list.items.isEmpty)
             Button { newName = list.name; renaming = true } label: { Label("Rename", systemImage: "pencil") }
             Button { run { try await store.clearTicked(listID: list.id) } } label: {
-                Label("Clear ticked (\(list.done.count))", systemImage: "checkmark")
+                Label(String(format: NSLocalizedString("Clear ticked (%lld)", comment: ""), list.done.count), systemImage: "checkmark")
             }
             .disabled(list.done.isEmpty)
             Button(role: .destructive) { confirmDelete = true } label: { Label("Delete list", systemImage: "trash") }

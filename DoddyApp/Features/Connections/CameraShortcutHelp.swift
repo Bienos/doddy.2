@@ -16,7 +16,7 @@ struct CameraShortcutHelp: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if style == .full {
-                Text("Say “open the camera” and Doddy runs your \(CameraShortcut.name) shortcut, which opens the Camera app. Doddy never uses the camera itself and can't see your photos.")
+                Text(verbatim: String(format: NSLocalizedString("Say “open the camera” and Doddy runs your %@ shortcut, which opens the Camera app. Doddy never uses the camera itself and can't see your photos.", comment: ""), CameraShortcut.name))
             }
             if let link = CameraShortcut.installLink {
                 if style == .full {
@@ -30,7 +30,7 @@ struct CameraShortcutHelp: View {
                     .frame(minHeight: 44)
                     .accessibilityIdentifier("voice.cameraShortcutHelp")
             } else {
-                Text("Make it once in the Shortcuts app: tap +, add the action Open App, choose Camera, and name the shortcut \(CameraShortcut.name).")
+                Text(verbatim: String(format: NSLocalizedString("Make it once in the Shortcuts app: tap +, add the action Open App, choose Camera, and name the shortcut %@.", comment: ""), CameraShortcut.name))
                     .font(style == .card ? .footnote : .body)
                     .foregroundStyle(Theme.secondaryText)
                 if let shortcuts = URL(string: "shortcuts://") {

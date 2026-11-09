@@ -235,7 +235,7 @@ struct LogSessionView: View {
             if kind == .run {
                 Section {
                     Stepper(value: $runMinutes, in: 1...600) {
-                        LabeledContent("Minutes") { Text("\(runMinutes)") }
+                        LabeledContent("Minutes") { Text(verbatim: "\(runMinutes)") }
                     }
                 }
             } else {
@@ -272,7 +272,7 @@ struct LogSessionView: View {
             }
             Stepper(value: $reps, in: 0...200) {
                 LabeledContent {
-                    Text("\(reps)")
+                    Text(verbatim: "\(reps)")
                 } label: {
                     if isHold { Text("Seconds") } else { Text("Reps") }
                 }
@@ -282,7 +282,7 @@ struct LogSessionView: View {
             Picker("Reps left", selection: $reserve) {
                 Text("Not sure").tag(Int?.none)
                 ForEach(0...6, id: \.self) { count in
-                    Text("\(count)").tag(Int?.some(count))
+                    Text(verbatim: "\(count)").tag(Int?.some(count))
                 }
             }
             Button("Add this set") { addSet() }

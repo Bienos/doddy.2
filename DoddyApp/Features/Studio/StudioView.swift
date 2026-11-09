@@ -160,8 +160,8 @@ struct StudioItemView: View {
             }
             if let job = item.job {
                 Section("You asked for") {
-                    Text("\u{201C}\(job.topic)\u{201D}").foregroundStyle(Theme.ink).textSelection(.enabled)
-                    if let details = job.details { Text("\u{201C}\(details)\u{201D}").font(.footnote).foregroundStyle(Theme.secondaryText) }
+                    Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), job.topic)).foregroundStyle(Theme.ink).textSelection(.enabled)
+                    if let details = job.details { Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), details)).font(.footnote).foregroundStyle(Theme.secondaryText) }
                 }
             }
             if !item.sources.isEmpty {

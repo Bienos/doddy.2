@@ -9,9 +9,10 @@ public enum CaseKind: String, Codable, Sendable, CaseIterable {
     case call
 }
 
-/// Where the number came from; shown on the card next to it.
+/// Where the number came from; shown on the card next to it. `places`: Doddy's place search found it
+/// (decision 2026-11-09-restaurant-calls-one-tap).
 public enum CallNumberSource: String, Codable, Sendable, CaseIterable {
-    case contacts, typed, note
+    case contacts, typed, note, places
 }
 
 /// What a fact is. PESEL and address facts are only ever sent when ticked as that kind.

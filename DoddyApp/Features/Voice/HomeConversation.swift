@@ -18,15 +18,6 @@ final class HomeConversation {
 
     private(set) var controller: VoiceSessionController?
 
-    /// The conversation was started on Home by the Action Button, Back Tap or Siri (owner, 9 Nov 2026:
-    /// "only the small island"), so Home's strip is its screen and the voice screen must not open
-    /// over it when the app comes to the front. Cleared when the app goes to the background.
-    private(set) var startedFromShortcut = false
-
-    func shortcutStartSettled() {
-        startedFromShortcut = false
-    }
-
     /// The conversation Home shows while it is connecting or live.
     var live: VoiceSessionController? {
         guard let controller, controller.isLive else { return nil }
@@ -110,7 +101,6 @@ final class HomeConversation {
     func startFromShortcut(store: MemoryStore, profile: ApprovedProfile, greeting: String) async -> Bool {
         if live != nil { return true }
         guard await Self.canStartInPlace() else { return false }
-        startedFromShortcut = true
         await start(store: store, profile: profile, wakeGreeting: greeting)
         return true
     }

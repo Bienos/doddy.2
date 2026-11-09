@@ -248,6 +248,10 @@ public struct ActivityRequest: Equatable, Sendable {
             local.timeZone = draft.timeZone
             let time = VoiceToolReply.localText(draft.at, hasTime: true, calendar: local)
             return ActivityRequest(app: .messages, title: "Call you later from Doddy's number", detail: time, logDetail: time, isLookup: false)
+        case .callPlaces(let draft):
+            // The places' names, never their numbers or the question (decision 2026-11-09-restaurant-calls-one-tap).
+            let names = draft.places.map(\.name).joined(separator: ", ")
+            return ActivityRequest(app: .messages, title: "Call places for you from Doddy's number", detail: names, isLookup: false)
         case .draftInvoice:
             // A draft on screen changes nothing and reads nothing (ADR-677); issuing will log itself.
             return nil

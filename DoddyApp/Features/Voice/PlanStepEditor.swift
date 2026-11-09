@@ -77,8 +77,8 @@ struct PlanStepEditor: View {
             }
         case .timer:
             Section("Timer") {
-                Stepper("\(form.minutes) min", value: $form.minutes, in: 0...1440)
-                Stepper("\(form.seconds) s", value: $form.seconds, in: 0...59, step: 5)
+                Stepper(String(format: NSLocalizedString("%lld min", comment: ""), form.minutes), value: $form.minutes, in: 0...1440)
+                Stepper(String(format: NSLocalizedString("%lld s", comment: ""), form.seconds), value: $form.seconds, in: 0...59, step: 5)
                 TextField("Label", text: $form.label)
             }
         }

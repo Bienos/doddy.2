@@ -45,4 +45,29 @@ final class ThreadAttachmentsTests: XCTestCase {
         XCTAssertEqual(shown, shown.sorted { $0.createdAt < $1.createdAt })
         XCTAssertFalse(shown.contains { $0.id == id(0) })
     }
+
+    func testAFileBeingMadeIsOfferedWhileItIsFresh() {
+        let list = [
+            document(1), document(2, status: .working, age: 60), document(3, status: .working, age: 3_600),
+            document(4, status: .failed), document(5, status: .working, age: 10, keptFor: -1),
+        ]
+        XCTAssertEqual(ThreadAttachments.inProgress(documents: list, thread: [], now: now).map(\.id), [id(2)],
+                       "only a recent working file; a stale one is left to the server to mark interrupted")
+    }
+
+    func testEveryKindOfFileIsOffered() {
+        let kinds: [MadeDocument.Kind] = [.deck, .doc, .spreadsheet, .pdf, .text]
+        let list = kinds.enumerated().map { index, kind in
+            MadeDocument(id: id(index), name: "File \(index)", kind: kind, status: .ready,
+                         createdAt: now.addingTimeInterval(-Double(100 - index)), deleteAfter: now.addingTimeInterval(3_600), sizeBytes: 10)
+        }
+        XCTAssertEqual(ThreadAttachments.shown(documents: list, thread: [], now: now).count, kinds.count)
+    }
+
+    func testAMadeFileInTheThreadIsNotOfferedAsMaking() {
+        let link = URL(string: "https://doddy.example/v1/documents/\(id(1))?exp=1&sig=x")!
+        let bubble = ThreadMessage.file(ThreadDocument(url: link, name: "File 1", kind: "doc"), now: now)
+        XCTAssertTrue(ThreadAttachments.inProgress(documents: [document(1, status: .working)], thread: [bubble], now: now).isEmpty)
+    }
 }
+

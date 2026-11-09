@@ -154,6 +154,24 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testWhatICanDoOpensPhoneCalls() {
+        // Decision 2026-11-09-what-i-can-do: a row opens its feature; Phone calls opens inside the sheet.
+        // UI tests show every feature, so the row is there; its status never claims calls work.
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        app.tapHomeMenuItem("home.capabilities")
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
+        let calls = app.descendants(matching: .any)["capabilities.row.phoneCalls"].firstMatch
+        XCTAssertTrue(app.reveal(calls), "the Phone calls row")
+        // Never claimed to work: "Not tried on a real call yet", or "Needs setup" in a build without a server
+        // address, as here (WhatICanDoTests covers each rule).
+        XCTAssertTrue(calls.label.contains("Not tried on a real call yet") || calls.label.contains("Needs setup"), calls.label)
+        XCTAssertFalse(calls.label.contains("Ready") || calls.label.contains("In testing"), calls.label)
+        calls.tap()
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testPhoneCallsOpenFromTheHomeMenu() {
         // Owner, 9 Nov 2026: Phone calls in Home's ••• menu, the same screen as Settings › Notifications › Phone calls.
         let app = launch(onboardingDone: true)
@@ -168,20 +186,22 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testAskDoddyIsOffByDefaultAndSaysWhyWithoutAnyNetworkCall() {
+    func testMessagesWorkWithoutTurningAnythingOnInSettings() {
+        // Messages is on unless the person turned it off (decision 2026-11-09-messages-on-by-default).
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
         app.buttons["home.ask"].tap()
 
         XCTAssertTrue(app.textFields["ask.input"].waitForExistence(timeout: 5))
+        // The disclosure stays on screen; the "turn it on in Settings" card is gone.
         XCTAssertTrue(app.staticTexts["ask.disclosure"].exists)
-        XCTAssertTrue(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
-        // Nothing to send yet, so Send stays disabled.
+        XCTAssertFalse(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
+        // Nothing typed yet, so Send stays disabled.
         XCTAssertFalse(app.buttons["ask.send"].isEnabled)
     }
 
     @MainActor
-    func testSettingsShowsAskDoddyOffUntilTheUserTurnsItOn() {
+    func testSettingsShowsAskDoddyOnUntilTheUserTurnsItOff() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
@@ -189,11 +209,11 @@ final class LaunchSmokeTests: XCTestCase {
         let consent = app.switches["settings.assistantConsent"]
         // The long Settings form creates rows lazily; scroll until the section is on screen.
         XCTAssertTrue(app.reveal(consent))
-        XCTAssertEqual(consent.value as? String, "0")
+        XCTAssertEqual(consent.value as? String, "1")
         // The status row sits below the toggles, so it may not be built yet.
         let status = app.descendants(matching: .any)["settings.assistantStatus"].firstMatch
         XCTAssertTrue(app.reveal(status))
-        XCTAssertTrue(status.label.contains("Off"), status.label)
+        XCTAssertFalse(status.label.contains("Off"), status.label)
     }
 
     @MainActor
@@ -297,11 +317,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
-        // Ask Doddy starts off, so it is listed under "Not sent right now". Each row reads as one
-        // element (destination and note combined), so the note is checked in the row's label.
+        // Ask Doddy starts on (decision 2026-11-09-messages-on-by-default), so its row says so. Each row reads
+        // as one element (destination and note combined), so the note is checked in the row's label.
         let askRow = app.descendants(matching: .any)["dataFlow.askDoddy"].firstMatch
         XCTAssertTrue(app.reveal(askRow))
-        XCTAssertTrue(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
+        XCTAssertFalse(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
     }
 
     @MainActor

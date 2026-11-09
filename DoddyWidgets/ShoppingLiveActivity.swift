@@ -43,8 +43,8 @@ struct ShoppingLiveActivity: Widget {
             } compactTrailing: {
                 LeftCount(state: context.state).foregroundStyle(.white)
             } minimal: {
-                Text("\(context.state.openCount)").foregroundStyle(.white)
-                    .accessibilityLabel("\(context.state.openCount) left")
+                Text(verbatim: "\(context.state.openCount)").foregroundStyle(.white)
+                    .accessibilityLabel(String(format: NSLocalizedString("%lld left", comment: ""), context.state.openCount))
             }
         }
     }
@@ -58,7 +58,7 @@ private struct LeftCount: View {
             if state.isFinished {
                 Image(systemName: "checkmark").accessibilityLabel("All ticked")
             } else {
-                Text("\(state.openCount) left").monospacedDigit()
+                Text(verbatim: String(format: NSLocalizedString("%lld left", comment: ""), state.openCount)).monospacedDigit()
             }
         }
         .font(.subheadline)
@@ -95,7 +95,7 @@ private struct ShoppingLockScreen: View {
                     ItemButton(listID: listID, item: item, onIsland: false)
                 }
                 if state.moreOpen > 0 {
-                    Text("And \(state.moreOpen) more in Doddy").font(.caption).foregroundStyle(Color("SecondaryText"))
+                    Text(verbatim: String(format: NSLocalizedString("And %lld more in Doddy", comment: ""), state.moreOpen)).font(.caption).foregroundStyle(Color("SecondaryText"))
                 }
             }
         }
