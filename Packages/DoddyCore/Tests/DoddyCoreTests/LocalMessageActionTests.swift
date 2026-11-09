@@ -39,7 +39,7 @@ final class LocalMessageActionTests: XCTestCase {
                 ? #"{"title":"Call Mum"}"# : name == .saveMemory ? #"{"text":"x"}"# : name == .searchMemories ? #"{"query":"x"}"#
                 : name == .readList ? #"{"list":"x"}"# : name == .createList ? #"{"name":"x","items":["y"]}"# : #"{"list":"x","items":["y"]}"#))
                 .offerText(polish: false).lowercased()
-            for claim in ["has been", "was ", "done", " added", "created", "removed", "checked off", "saved note"] {
+            for claim in ["has been", "was ", "done", " added", "created", "removed", "checked off", "note saved", "saved:"] {
                 XCTAssertFalse(text.contains(claim), "\(name.rawValue) offer must not say '\(claim)'")
             }
         }
