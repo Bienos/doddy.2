@@ -212,6 +212,38 @@ final class DoddyAccountModelTests: XCTestCase {
         XCTAssertEqual(store.saved?.refreshToken, "r1")
     }
 
+    /// A run-out access token is refused by every server like a server that doesn't take accounts yet, so
+    /// whoever asks a 401-shaped question (link, probe) asks for a session with time left first.
+    func testFreshSessionRefreshesARunOutTokenFirstAndKeepsAGoodOne() async throws {
+        let good = DoddyAccountSession(accessToken: "a0", refreshToken: "r0", expiresAt: testClock.addingTimeInterval(600), userID: user, email: nil, method: .apple)
+        let quiet = RoutedTransport()
+        let kept = model(quiet, store: MemoryStore(good))
+        let same = await kept.freshSession()
+        XCTAssertEqual(same?.accessToken, "a0")
+        XCTAssertTrue(quiet.requests.isEmpty, "a token with time left is used as it is")
+
+        let runOut = DoddyAccountSession(accessToken: "a0", refreshToken: "r0", expiresAt: testClock.addingTimeInterval(-3_600), userID: user, email: nil, method: .apple)
+        let refreshing = RoutedTransport()
+        refreshing.replies = ["token": reply(access: "a1", refresh: "r1", provider: "apple")]
+        let store = MemoryStore(runOut)
+        let account = model(refreshing, store: store)
+        let fresh = await account.freshSession()
+        XCTAssertEqual(fresh?.accessToken, "a1", "the refreshed token, not the run-out one")
+        XCTAssertEqual(fresh?.userID, user)
+        XCTAssertEqual(store.saved?.accessToken, "a1", "kept, so the next launch starts from it")
+
+        let broken = RoutedTransport()
+        broken.replies = ["token": (400, Data(#"{"error_code":"refresh_token_not_found"}"#.utf8))]
+        let lost = model(broken, store: MemoryStore(runOut))
+        let none = await lost.freshSession()
+        XCTAssertNil(none, "a refresh that no longer works gives no session")
+        XCTAssertFalse(lost.isSignedIn)
+
+        let signedOut = model(RoutedTransport(), store: MemoryStore())
+        let nobody = await signedOut.freshSession()
+        XCTAssertNil(nobody)
+    }
+
     func testARefreshThatNoLongerWorksSignsThePersonOut() async {
         let stale = DoddyAccountSession(accessToken: "a0", refreshToken: "r0", expiresAt: testClock, userID: user, email: nil, method: .email)
         let transport = RoutedTransport()
