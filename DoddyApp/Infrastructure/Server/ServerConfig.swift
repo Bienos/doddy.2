@@ -42,7 +42,11 @@ enum ServerConfig {
 
     static func client(defaults: UserDefaults = .standard) -> DoddyServerClient? {
         baseURL(defaults: defaults).map {
-            DoddyServerClient(transport: ServerHTTPTransport(baseURL: $0), credentials: ServerKeychainStore())
+            // Decision 2026-11-08-required-account: with no token, the Doddy account signs this iPhone in;
+            // only a server not set up for accounts yet still makes an anonymous account.
+            DoddyServerClient(
+                transport: ServerHTTPTransport(baseURL: $0), credentials: ServerKeychainStore(),
+                accountSignIn: { try await DoddyAccountServers.messagingToken() })
         }
     }
 }

@@ -419,3 +419,19 @@
 .lb-chart .lb-col:hover .lb-mark, .lb-chart .lb-col:focus-within .lb-mark { filter: brightness(1.12); }
 .lb-chart .lb-col:hover .lb-col-hl, .lb-chart .lb-col:focus-within .lb-col-hl { opacity: 1; }
 .lb-chart .lb-cell:hover { stroke: var(--reading-ink); }
+
+/* The owner panel (decision 2026-11-09-usage-counts-on-by-default): tiles and tables, in Logbook's style. */
+.owner-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.owner-tiles { list-style: none; padding: 0; margin: 16px 0 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.owner-tile { border: 1px solid var(--rule); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.owner-tile-value { font-size: 1.5rem; font-weight: 700; color: var(--reading-ink); font-variant-numeric: tabular-nums; }
+.owner-tile-label { font-size: 0.8125rem; color: var(--secondary-text); }
+.owner-section { margin: 28px 0; }
+.owner-section h2 { margin-bottom: 8px; }
+.owner-methods { list-style: none; padding: 0; display: flex; gap: 18px; flex-wrap: wrap; }
+.owner-muted { color: var(--secondary-text); font-size: 0.8125rem; }
+.owner-bar { display: inline-block; block-size: 8px; border-radius: 4px; background: var(--reading-ink); opacity: 0.6; vertical-align: middle; }
+.owner-warn td { color: var(--error); }
+/* The owner's tables wrap instead of scrolling sideways; a long relay address breaks anywhere. */
+.owner-section .lb-table-wrap th { white-space: normal; }
+.owner-section .lb-table-wrap td.owner-email { white-space: normal; overflow-wrap: anywhere; min-inline-size: 12ch; }

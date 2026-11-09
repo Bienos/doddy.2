@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
+import type { AccountVerifier } from "./doddyAccount.js";
 import type { AbuseLimits } from "./config.js";
 import type { Db } from "./db.js";
 import type { TextCipher } from "./crypto.js";
@@ -51,6 +52,8 @@ declare module "fastify" {
 
 export interface Deps {
   db: Db;
+  /** Checks a Doddy account's token for `POST /v1/accounts/sign-in` (decision 2026-11-08-required-account). Absent: that route says "not set up". */
+  accounts?: AccountVerifier | null;
   push?: PushSender;
   sms?: SmsSender;
   verifier?: PhoneVerifier;

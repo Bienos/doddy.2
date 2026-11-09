@@ -8,19 +8,17 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false, opening: Bool = false,
+    private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false,
                         listen: Bool = false, firstVisit: Bool = false, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        // Overrides UserDefaults for this launch only. Tests start on Home with the intro animation
-        // and listening disabled unless a case opts into the first-launch animation.
+        // Overrides UserDefaults for this launch only. Tests start on Home with listening on open off.
         app.launchArguments += UITestLaunch.arguments(
-            store: .inMemory, onboardingDone: onboardingDone, backTapSetup: backTapSetup, opening: opening, listen: listen)
+            store: .inMemory, onboardingDone: onboardingDone, backTapSetup: backTapSetup, listen: listen)
         // The Quick start (ADR-324) shows once per install; UserDefaults outlive the in-memory store.
         if !onboardingDone { app.launchArguments += ["-quickStartOffered", "NO"] }
         // Most tests are about someone who has talked to Doddy before; Home's first visit
         // (ADR-326) holds back the Back Tap and Today cards until then.
         app.launchArguments += ["-hadFirstConversation", firstVisit ? "NO" : "YES"]
-        app.launchArguments += ["-firstLaunchIntroSeen", firstVisit ? "NO" : "YES"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         app.launchArguments += extra
         app.launch()
@@ -104,7 +102,7 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testFirstVisitHomeKeepsToTalkingAndLinksToPrivacy() {
+    func testFirstVisitHomeKeepsToTalkingAndShowsWhatICanDo() {
         // ADR-326: before the first conversation, a hint under Talk and no setup cards.
         let app = launch(onboardingDone: true, backTapSetup: "notStarted", firstVisit: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
@@ -117,12 +115,15 @@ final class LaunchSmokeTests: XCTestCase {
         app.buttons["home.more"].tap()
         XCTAssertFalse(app.buttons["home.today"].waitForExistence(timeout: 2), "nothing connected yet, so no Today")
         XCTAssertFalse(app.buttons["home.voice"].exists, "the voice picker waits for the first conversation (ADR-443)")
-        let link = app.buttons["home.dataFlow"]
+        // What leaves this iPhone is on Settings › Privacy only since 9 Nov 2026 (decision 2026-11-09-phone-calls-on-home-menu;
+        // testWhatLeavesThisIPhoneFollowsSettings opens it there). What I can do stays on the menu and points to it.
+        XCTAssertFalse(app.buttons["home.dataFlow"].exists, "moved to Settings › Privacy")
+        let link = app.buttons["home.capabilities"]
         XCTAssertTrue(link.waitForExistence(timeout: 5))
         link.tap()
-        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
-        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForNonExistence(timeout: 5))
 
         // Settings › Voice has the picker from the start.
         app.goToTab("settings")
@@ -150,6 +151,20 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForNonExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testPhoneCallsOpenFromTheHomeMenu() {
+        // Owner, 9 Nov 2026: Phone calls in Home's ••• menu, the same screen as Settings › Notifications › Phone calls.
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        app.tapHomeMenuItem("home.calls")
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForNonExistence(timeout: 5))
+        // The menu still reaches its last row with Phone calls in it (eleven rows fit, ADR-652).
+        app.tapHomeMenuItem("home.capabilities")
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -320,46 +335,15 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Unticked")).firstMatch.exists)
     }
 
+    /// The first launch goes straight to Home (the basketball opening was removed, decision
+    /// 2026-11-09-remove-old-design-leftovers) and never opens a conversation or the microphone.
     @MainActor
-    func testFirstLaunchOpeningCanBeSkippedAndNeverStartsVoice() {
-        let app = launch(onboardingDone: false, backTapSetup: "deferred", opening: true, firstVisit: true)
-        let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
-        XCTAssertTrue(scene.waitForExistence(timeout: 5))
-        XCTAssertTrue(scene.label.contains("Doddy"), scene.label)
-        scene.tap()
-        // A tap jumps to the hand-over; at the tests' slower clock that is under 3 s from the end.
-        XCTAssertTrue(scene.waitForNonExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
-        // Save sits below Doddy and the scenery on Home; it is reachable once the opening is gone.
-        XCTAssertTrue(app.reveal(app.buttons["home.save"]), "the app is usable as soon as the opening is gone")
-        // "Start listening when I open Doddy" is switched off for this launch: no conversation, no microphone.
-        XCTAssertFalse(app.navigationBars["Talk to Doddy"].exists)
+    func testFirstLaunchGoesStraightHomeAndNeverStartsVoice() {
+        let app = launch(onboardingDone: true, firstVisit: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 3))
         XCTAssertFalse(app.staticTexts["Listening"].exists)
         XCTAssertFalse(app.staticTexts["Connecting…"].exists)
-    }
-
-    @MainActor
-    func testFirstLaunchOpeningEndsByItselfAndIsNotRepeatedOnAReturn() {
-        let app = launch(onboardingDone: false, backTapSetup: "deferred", opening: true, firstVisit: true)
-        let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
-        XCTAssertTrue(scene.waitForExistence(timeout: 5))
-        // It fades out on its own after its timeline (OpeningScene.Beat.end, 2.4 s, played
-        // UITestLaunch.openingTimeScale times slower here); the margin is for slow simulators,
-        // since this checks that it ends by itself, not how long it takes.
-        XCTAssertTrue(scene.waitForNonExistence(timeout: 30))
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
-
-        XCUIDevice.shared.press(.home)
-        app.activate()
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
-        XCTAssertFalse(scene.exists, "a quick switch away and back is not an opening")
-    }
-
-    @MainActor
-    func testOpeningOffShowsHomeStraightAway() {
-        let app = launch(onboardingDone: true)
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.descendants(matching: .any)["opening.scene"].exists)
     }
 
     @MainActor

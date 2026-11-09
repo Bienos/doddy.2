@@ -99,7 +99,7 @@ struct NewsSettingsView: View {
                 VStack(alignment: .leading) {
                     Text(model.loaded?.feeds.first { $0.url == url }?.title ?? url)
                     if model.loaded?.feeds.first(where: { $0.url == url })?.failing == true {
-                        Text("Couldn't load this feed last time").font(.footnote).foregroundStyle(Theme.error)
+                        Text("Couldn't load this feed last time. Check its address, or swipe to delete it.").font(.footnote).foregroundStyle(Theme.error)
                     }
                 }
             }

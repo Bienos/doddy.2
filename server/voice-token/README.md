@@ -1,5 +1,7 @@
 # DODDY voice service
 
+**Live** on Vercel as the project `doddy-voice-token`; the app's voice screen uses it. An old copy on Render is unused (`STATUS.md`).
+
 This service verifies Sign in with Apple once, keeps a revocable DODDY voice session, and exchanges
 that session for a provider-scoped credential. Apple and provider credentials stay on the server;
 the app never asks for a provider API key, tester code, or server URL. Voice transcripts, audio,
@@ -33,6 +35,7 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | Name | Purpose |
 |---|---|
 | `APPLE_BUNDLE_ID` | Exact bundle identifier for the app build signing in (for example, the development bundle identifier). |
+| `SUPABASE_URL` | Optional. The Doddy accounts project (`https://<ref>.supabase.co`, decision `2026-11-08-required-account`). With it, `/api/voice-token` also accepts a Doddy account's access token (Apple, Google or a code by email), checked against the project's published keys (`src/doddy-account.js`): no secret is needed. Its limits count per account (`account:<id>`), apart from the Apple voice accounts. Unreadable keys answer 503 `account_check_unavailable`, never 401. Without it, only this server's own Apple sign-in works, as before. |
 | `DODDY_SESSION_SIGNING_KEY` | Stable random secret, at least 32 bytes. Signs short-lived sessions and pseudonymizes Apple subject identifiers. Rotating it invalidates sessions. |
 | `UPSTASH_REDIS_REST_URL` | HTTPS URL for the durable shared session/rate-limit store. |
 | `UPSTASH_REDIS_REST_TOKEN` | Secret for that store. Never log or expose it to the app. |
@@ -51,6 +54,22 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `APPLE_TEAM_ID` | Optional, with the next two: the Apple Developer team ID. Lets "Delete voice account" also revoke Sign in with Apple (ADR-524). |
 | `APPLE_SIGN_IN_KEY_ID` | The key ID of a Sign in with Apple key (Apple Developer › Certificates, Identifiers & Profiles › Keys). |
 | `APPLE_SIGN_IN_PRIVATE_KEY` | That key's `.p8` file contents (PEM; literal `\n` line breaks work). Secret: 1Password only. |
+
+### Revoking Sign in with Apple for a Doddy account (decision `2026-11-09-apple-revoke-for-doddy-accounts`)
+
+A Doddy account (a Supabase user, `SUPABASE_URL` set) made with Sign in with Apple needs the same
+revoke, but it has no voice session. Two more `POST /api/voice-auth` actions take the **Doddy account's
+access token** as the Bearer, checked like `/api/voice-token` checks it (a voice session's token is
+refused). Both need the three `APPLE_*` key settings and `APPLE_BUNDLE_ID` below; without them they
+answer 200 and do nothing.
+
+| Action | Body | When the app sends it | Answer |
+|---|---|---|---|
+| `apple-link` | `identityToken`, `rawNonce`, `authorizationCode` (all from the Apple sheet just used) | right after the sign-in with Apple | `{ linked: true }` once Apple's refresh token is kept, sealed, under `account:<Supabase user id>` for 400 days; `{ linked: false }` when the code wasn't the same Apple person's or Apple refused. Counted against the per-caller sign-in limits. |
+| `apple-revoke` | none | first, when "Delete my Doddy account" runs | `{ appleRevoked, apple }`, `apple` being `revoked`, `failed`, `no_token` or `not_configured`. A revoked or missing token is forgotten; a failed one is kept so asking again can work. Apple failing never stops the deletion. |
+
+`APPLE_BUNDLE_ID` is one value: it must be the bundle ID of the build that signs in (Beta:
+`com.bienos.doddy2.dev`), because Apple issues the one-time code to that app.
 
 ### Revoking Sign in with Apple when an account is deleted (ADR-524)
 

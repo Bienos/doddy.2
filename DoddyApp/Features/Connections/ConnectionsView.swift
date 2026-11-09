@@ -16,9 +16,11 @@ struct ConnectionsView: View {
                 Text("Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.")
                     .foregroundStyle(Theme.secondaryText)
 
-                ForEach(ConnectionGroup.all) { group in
+                // A group whose every switch the build hides (decision 2026-11-07-release-scope) goes with its heading.
+                ForEach(ConnectionGroup.shown(in: ReleaseScopeStore.current)) { group in
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(group.title)
+                        // Looked up when shown, so the heading is in the screens' language.
+                        Text(NSLocalizedString(group.title, comment: ""))
                             .font(.footnote.weight(.semibold))
                             .textCase(.uppercase)
                             .foregroundStyle(Theme.secondaryText)
@@ -74,6 +76,14 @@ struct ConnectionGroup: Identifiable {
         // ADR-510: shown, never sent; the user sends it in their bank app.
         ConnectionGroup(title: "Money", items: [.blik]),
     ]
+
+    /// The groups with the switches the scope shows (decision 2026-11-07-release-scope); a group left with no switch is dropped.
+    static func shown(in scope: ReleaseScope) -> [ConnectionGroup] {
+        all.compactMap { group in
+            let items = group.items.filter { scope.shows($0) }
+            return items.isEmpty ? nil : ConnectionGroup(title: group.title, items: items)
+        }
+    }
 }
 
 /// One function as a card. The state is written out in words, not only colour.
@@ -176,14 +186,14 @@ struct ConnectionSheet: View {
                         }
                     }
 
-                    section("Say something like") {
+                    section(NSLocalizedString("Say something like", comment: "")) {
                         ForEach(info.examples, id: \.self) { example in
                             Text("“\(example)”")
                                 .font(.body.italic())
                         }
                     }
 
-                    section("Doddy can") {
+                    section(NSLocalizedString("Doddy can", comment: "")) {
                         ForEach(info.canDo, id: \.self) { line in
                             HStack(alignment: .firstTextBaseline, spacing: 10) {
                                 Circle()
@@ -195,11 +205,11 @@ struct ConnectionSheet: View {
                         }
                     }
 
-                    section("What leaves your phone") {
+                    section(NSLocalizedString("What leaves your phone", comment: "")) {
                         Text(info.leavesPhone)
                     }
 
-                    section("What stays here") {
+                    section(NSLocalizedString("What stays here", comment: "")) {
                         Text(info.staysHere)
                     }
 
@@ -292,7 +302,9 @@ struct ConnectionSheet: View {
 }
 
 /// Plain-language copy for each function. What it can do and what leaves the phone must match
-/// the code in DoddyCore, DeviceConnections and VoiceSessionController.
+/// the code in DoddyCore, DeviceConnections and VoiceSessionController. Every line goes through
+/// `NSLocalizedString`, so it is collected into the string tables and shown in the screens' language
+/// (decision 2026-11-09-remove-old-design-leftovers, S1; ADR-234: privacy texts get a native review first).
 struct ConnectionInfo {
     let symbol: String
     let examples: [String]
@@ -305,139 +317,139 @@ struct ConnectionInfo {
         case .calendar:
             ConnectionInfo(
                 symbol: "calendar",
-                examples: ["What's on tomorrow?", "Am I free on Thursday afternoon?", "Add dentist on Monday at three"],
+                examples: [NSLocalizedString("What's on tomorrow?", comment: ""), NSLocalizedString("Am I free on Thursday afternoon?", comment: ""), NSLocalizedString("Add dentist on Monday at three", comment: "")],
                 canDo: [
-                    "Read your events for today, tomorrow, the week, or a day you name",
-                    "Add an event, after you tap Add",
-                    "Move, rename or delete one event, change its place or add a note to it, after you tap Change or Delete",
+                    NSLocalizedString("Read your events for today, tomorrow, the week, or a day you name", comment: ""),
+                    NSLocalizedString("Add an event, after you tap Add", comment: ""),
+                    NSLocalizedString("Move, rename or delete one event, change its place or add a note to it, after you tap Change or Delete", comment: ""),
                 ],
-                leavesPhone: "Event titles and times, when Doddy uses them in a conversation.",
-                staysHere: "An event's place is read only to show it on the card when you ask to change it, and notes are only added to. Neither is sent to Doddy's voice. Doddy changes or deletes events only after you tap.")
+                leavesPhone: NSLocalizedString("Event titles and times, when Doddy uses them in a conversation.", comment: ""),
+                staysHere: NSLocalizedString("An event's place is read only to show it on the card when you ask to change it, and notes are only added to. Neither is sent to Doddy's voice. Doddy changes or deletes events only after you tap.", comment: ""))
         case .reminders:
             ConnectionInfo(
                 symbol: "checklist",
-                examples: ["Remind me to call Marta at six", "Add buy milk to my reminders"],
+                examples: [NSLocalizedString("Remind me to call Marta at six", comment: ""), NSLocalizedString("Add buy milk to my reminders", comment: "")],
                 canDo: [
-                    "Add a reminder, after you tap Add",
-                    "Move, complete or delete one open reminder, after you tap",
+                    NSLocalizedString("Add a reminder, after you tap Add", comment: ""),
+                    NSLocalizedString("Move, complete or delete one open reminder, after you tap", comment: ""),
                 ],
-                leavesPhone: "The reminder text and due time, when Doddy adds one.",
-                staysHere: "Doddy reads your open reminders only to find the one you name. Notes on reminders aren't read.")
+                leavesPhone: NSLocalizedString("The reminder text and due time, when Doddy adds one.", comment: ""),
+                staysHere: NSLocalizedString("Doddy reads your open reminders only to find the one you name. Notes on reminders aren't read.", comment: ""))
         case .timers:
             ConnectionInfo(
                 symbol: "timer",
-                examples: ["Set a timer for ten minutes", "Forty-five seconds for the eggs"],
+                examples: [NSLocalizedString("Set a timer for ten minutes", comment: ""), NSLocalizedString("Forty-five seconds for the eggs", comment: "")],
                 canDo: [
-                    "Start a countdown, after you tap Start",
-                    "Ring it like the Clock app's timer, even in Silent mode or a Focus, with the time left, Pause and Stop on the Lock Screen (iOS 26 and later; before that, a notification)",
-                    "Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)",
+                    NSLocalizedString("Start a countdown, after you tap Start", comment: ""),
+                    NSLocalizedString("Ring it like the Clock app's timer, even in Silent mode or a Focus, with the time left, Pause and Stop on the Lock Screen (iOS 26 and later; before that, a notification)", comment: ""),
+                    NSLocalizedString("Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)", comment: ""),
                 ],
-                leavesPhone: "The length and label of a timer, or the time and label of an alarm, when Doddy sets one.",
-                staysHere: "iPhone asks once to allow alarms and timers (on iOS before 26, notifications). Doddy keeps each timer's ring time and label on this iPhone, only to find it again.")
+                leavesPhone: NSLocalizedString("The length and label of a timer, or the time and label of an alarm, when Doddy sets one.", comment: ""),
+                staysHere: NSLocalizedString("iPhone asks once to allow alarms and timers (on iOS before 26, notifications). Doddy keeps each timer's ring time and label on this iPhone, only to find it again.", comment: ""))
         case .contacts:
             ConnectionInfo(
                 symbol: "person.crop.circle",
-                examples: ["What's Marta's number?", "Find Tomek Kowalski", "Whose birthday is this week?"],
+                examples: [NSLocalizedString("What's Marta's number?", comment: ""), NSLocalizedString("Find Tomek Kowalski", comment: ""), NSLocalizedString("Whose birthday is this week?", comment: "")],
                 canDo: [
-                    "Look up a contact by name and show the details on your screen",
-                    "Call, text or email them from that card, after you tap",
-                    "Tell you whose birthday is coming up, from the birthdays on your contact cards",
-                    "Remind you of the birthdays you pick, in Settings, Birthdays",
+                    NSLocalizedString("Look up a contact by name and show the details on your screen", comment: ""),
+                    NSLocalizedString("Call, text or email them from that card, after you tap", comment: ""),
+                    NSLocalizedString("Tell you whose birthday is coming up, from the birthdays on your contact cards", comment: ""),
+                    NSLocalizedString("Remind you of the birthdays you pick, in Settings, Birthdays", comment: ""),
                 ],
-                leavesPhone: "Only the names Doddy finds, and for birthdays the day and month. Numbers, email addresses and birth years stay on your iPhone.",
-                staysHere: "Doddy never calls, texts or emails anyone by itself. Birthday reminders are set on this iPhone only.")
+                leavesPhone: NSLocalizedString("Only the names Doddy finds, and for birthdays the day and month. Numbers, email addresses and birth years stay on your iPhone.", comment: ""),
+                staysHere: NSLocalizedString("Doddy never calls, texts or emails anyone by itself. Birthday reminders are set on this iPhone only.", comment: ""))
         case .messages:
             ConnectionInfo(
                 symbol: "text.bubble",
-                examples: ["Text Marta that I'm running late", "Email Tomek the agenda"],
+                examples: [NSLocalizedString("Text Marta that I'm running late", comment: ""), NSLocalizedString("Email Tomek the agenda", comment: "")],
                 canDo: [
-                    "Draft a text or email, then open it in Messages or Mail for you to check and send",
-                    "Needs Contacts too, to find the person",
+                    NSLocalizedString("Draft a text or email, then open it in Messages or Mail for you to check and send", comment: ""),
+                    NSLocalizedString("Needs Contacts too, to find the person", comment: ""),
                 ],
-                leavesPhone: "The draft and the person's name, when Doddy drafts one.",
-                staysHere: "Doddy never sends a message or email. The number or address is shown only on your screen.")
+                leavesPhone: NSLocalizedString("The draft and the person's name, when Doddy drafts one.", comment: ""),
+                staysHere: NSLocalizedString("Doddy never sends a message or email. The number or address is shown only on your screen.", comment: ""))
         case .maps:
             ConnectionInfo(
                 symbol: "map",
-                examples: ["Show me Mokotów Tower on the map", "Open the Old Town in Maps"],
-                canDo: ["Open a place or address in Apple Maps, after you tap Open in Maps"],
-                leavesPhone: "The place name you asked for, when you open it in Maps.",
-                staysHere: "Doddy doesn't read your location or search for places by itself.")
+                examples: [NSLocalizedString("Show me Mokotów Tower on the map", comment: ""), NSLocalizedString("Open the Old Town in Maps", comment: "")],
+                canDo: [NSLocalizedString("Open a place or address in Apple Maps, after you tap Open in Maps", comment: "")],
+                leavesPhone: NSLocalizedString("The place name you asked for, when you open it in Maps.", comment: ""),
+                staysHere: NSLocalizedString("Doddy doesn't read your location or search for places by itself.", comment: ""))
         case .shortcuts:
             ConnectionInfo(
                 symbol: "square.stack.3d.up",
-                examples: ["Run my morning routine", "Start the movie shortcut", "Open the camera"],
+                examples: [NSLocalizedString("Run my morning routine", comment: ""), NSLocalizedString("Start the movie shortcut", comment: ""), NSLocalizedString("Open the camera", comment: "")],
                 canDo: [
-                    "Run one of your Shortcuts, after you tap Run",
-                    "The Shortcuts app opens for a moment",
+                    NSLocalizedString("Run one of your Shortcuts, after you tap Run", comment: ""),
+                    NSLocalizedString("The Shortcuts app opens for a moment", comment: ""),
                 ],
-                leavesPhone: "The shortcut's name, when you ask Doddy to run it.",
-                staysHere: "Doddy can't see what a shortcut does or whether it finished.")
+                leavesPhone: NSLocalizedString("The shortcut's name, when you ask Doddy to run it.", comment: ""),
+                staysHere: NSLocalizedString("Doddy can't see what a shortcut does or whether it finished.", comment: ""))
         case .presentations:
             // ADR-567: Apple lets no app control Keynote, so Doddy makes the file and the user opens it.
             ConnectionInfo(
                 symbol: "rectangle.on.rectangle.angled",
-                examples: ["Make me five slides about our trip", "Turn my notes on the launch into a presentation"],
+                examples: [NSLocalizedString("Make me five slides about our trip", comment: ""), NSLocalizedString("Turn my notes on the launch into a presentation", comment: "")],
                 canDo: [
-                    "Show every slide on a card first: the title, then each slide's title and points",
-                    "Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens",
-                    "Open the share sheet, so you pick Keynote, Files or someone to send it to",
+                    NSLocalizedString("Show every slide on a card first: the title, then each slide's title and points", comment: ""),
+                    NSLocalizedString("Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens", comment: ""),
+                    NSLocalizedString("Open the share sheet, so you pick Keynote, Files or someone to send it to", comment: ""),
                 ],
-                leavesPhone: "What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs, or OpenAI if you chose it.",
-                staysHere: "The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.")
+                leavesPhone: NSLocalizedString("What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs, or OpenAI if you chose it.", comment: ""),
+                staysHere: NSLocalizedString("The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.", comment: ""))
         case .steps:
             // ADR-568: Motion & Fitness, read only. Not Health.
             ConnectionInfo(
                 symbol: "figure.walk",
-                examples: ["How many steps today?", "How far did I walk yesterday?"],
+                examples: [NSLocalizedString("How many steps today?", comment: ""), NSLocalizedString("How far did I walk yesterday?", comment: "")],
                 canDo: [
-                    "Read one day's steps, walking distance and floors climbed, after you say yes or tap",
-                    "Today and the six days before it, which is what your iPhone keeps",
+                    NSLocalizedString("Read one day's steps, walking distance and floors climbed, after you say yes or tap", comment: ""),
+                    NSLocalizedString("Today and the six days before it, which is what your iPhone keeps", comment: ""),
                 ],
-                leavesPhone: "That day's numbers, when Doddy uses them in a conversation.",
-                staysHere: "Doddy keeps none of it. Steps come from Motion & Fitness, not from the Health app. iPhone asks once for Motion & Fitness.")
+                leavesPhone: NSLocalizedString("That day's numbers, when Doddy uses them in a conversation.", comment: ""),
+                staysHere: NSLocalizedString("Doddy keeps none of it. Steps come from Motion & Fitness, not from the Health app. iPhone asks once for Motion & Fitness.", comment: ""))
         case .photos:
             // ADR-569: counts and times to the voice, pictures on this screen only.
             ConnectionInfo(
                 symbol: "photo.on.rectangle",
-                examples: ["How many photos did I take on Saturday?", "Show me my photos from last week"],
+                examples: [NSLocalizedString("How many photos did I take on Saturday?", comment: ""), NSLocalizedString("Show me my photos from last week", comment: "")],
                 canDo: [
-                    "Count the photos and videos you took on a day or over up to a month, after you say yes or tap",
-                    "Show the newest of them on your screen, with a button to open Photos",
+                    NSLocalizedString("Count the photos and videos you took on a day or over up to a month, after you say yes or tap", comment: ""),
+                    NSLocalizedString("Show the newest of them on your screen, with a button to open Photos", comment: ""),
                 ],
-                leavesPhone: "Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.",
-                staysHere: "The pictures are shown on this screen only. Doddy never changes, deletes or adds anything in your photo library. If you let Doddy see only some photos, it says so.")
+                leavesPhone: NSLocalizedString("Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.", comment: ""),
+                staysHere: NSLocalizedString("The pictures are shown on this screen only. Doddy never changes, deletes or adds anything in your photo library. If you let Doddy see only some photos, it says so.", comment: ""))
         case .camera:
             // ADR-569: iOS's own camera screen; a kept photo becomes a note the user saves.
             ConnectionInfo(
                 symbol: "camera",
-                examples: ["Take a photo", "Open the camera"],
+                examples: [NSLocalizedString("Take a photo", comment: ""), NSLocalizedString("Open the camera", comment: "")],
                 canDo: [
-                    "Open Doddy's camera, after you tap Open camera",
-                    "Put the photo you keep into a new note, with its text read on this iPhone, for you to check and save",
+                    NSLocalizedString("Open Doddy's camera, after you tap Open camera", comment: ""),
+                    NSLocalizedString("Put the photo you keep into a new note, with its text read on this iPhone, for you to check and save", comment: ""),
                 ],
-                leavesPhone: "Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.",
-                staysHere: "The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.")
+                leavesPhone: NSLocalizedString("Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.", comment: ""),
+                staysHere: NSLocalizedString("The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.", comment: ""))
         case .home:
             // Needs the HomeKit entitlement (a paid Apple team): HOME_COMMANDS_STATUS.md.
             ConnectionInfo(
                 symbol: "house",
-                examples: ["Turn off the living room lamp", "Run Good night"],
-                canDo: ["Turn a light, outlet or fan on or off, or run a scene, after you tap Yes on a card naming it"],
-                leavesPhone: "Nothing leaves your iPhone: HomeKit talks to your home from here.",
-                staysHere: "Doddy never controls locks, garage doors, alarms, cameras or doorbells.")
+                examples: [NSLocalizedString("Turn off the living room lamp", comment: ""), NSLocalizedString("Run Good night", comment: "")],
+                canDo: [NSLocalizedString("Turn a light, outlet or fan on or off, or run a scene, after you tap Yes on a card naming it", comment: "")],
+                leavesPhone: NSLocalizedString("Nothing leaves your iPhone: HomeKit talks to your home from here.", comment: ""),
+                staysHere: NSLocalizedString("Doddy never controls locks, garage doors, alarms, cameras or doorbells.", comment: ""))
         case .blik:
             // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
             ConnectionInfo(
                 symbol: "banknote",
-                examples: ["Send Ania 50 zł for the pizza", "Send Tomek 20 zł with BLIK"],
+                examples: [NSLocalizedString("Send Ania 50 zł for the pizza", comment: ""), NSLocalizedString("Send Tomek 20 zł with BLIK", comment: "")],
                 canDo: [
-                    "Show a BLIK phone transfer on your screen: who, their number, how much in złoty, and the title",
-                    "You send it yourself in your bank app; Doddy never sends or pays money",
-                    "Finds the person's number if Contacts is allowed too",
+                    NSLocalizedString("Show a BLIK phone transfer on your screen: who, their number, how much in złoty, and the title", comment: ""),
+                    NSLocalizedString("You send it yourself in your bank app; Doddy never sends or pays money", comment: ""),
+                    NSLocalizedString("Finds the person's number if Contacts is allowed too", comment: ""),
                 ],
-                leavesPhone: "The person's name, the amount and the title you said, as part of the conversation.",
-                staysHere: "Phone numbers are shown only on your screen. Doddy has no access to your bank and can't see whether you sent it.")
+                leavesPhone: NSLocalizedString("The person's name, the amount and the title you said, as part of the conversation.", comment: ""),
+                staysHere: NSLocalizedString("Phone numbers are shown only on your screen. Doddy has no access to your bank and can't see whether you sent it.", comment: ""))
         }
     }
 }

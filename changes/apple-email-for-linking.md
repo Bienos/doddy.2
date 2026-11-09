@@ -1,0 +1,2 @@
+Apple sign-in on the Doddy account now asks Apple for the person's email, so a sign-in with the same verified address by Google, email or Apple can reach one account (decision `2026-11-09-apple-email-for-linking`). Hidden relay addresses stay separate accounts.
+Ran: `scripts/ci.sh --only checks`. Not run: the iPhone build (no Xcode here) and a sign-in on a device. Needs no deploy; a new build ships it.

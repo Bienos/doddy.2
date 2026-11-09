@@ -26,8 +26,14 @@ final class VoiceSessionControllerTests: XCTestCase {
         /// "Listening" marks the first conversation as had (ADR-326); `beginForTesting` reaches it,
         /// so the flag is put back too, or the app's later UI tests would skip Home's first visit.
         private let savedFirstConversation: Any?
+        /// The release scope (decision 2026-11-07-release-scope) hides most features in the shipping
+        /// scope; these tests drive every tool, so they run with everything shown (a Debug build reads
+        /// this key) unless a test asks for the shipping scope.
+        private let savedPreviewEverything: Any?
 
-        init() {
+        init(showEverything: Bool = true) {
+            savedPreviewEverything = UserDefaults.standard.object(forKey: ReleaseScope.previewEverythingKey)
+            UserDefaults.standard.set(showEverything, forKey: ReleaseScope.previewEverythingKey)
             // The card re-checks Settings → Connections at the tap; turned on for this test only.
             var saved: [VoiceConnection: Any?] = [:]
             for connection in Self.switches {
@@ -51,6 +57,7 @@ final class VoiceSessionControllerTests: XCTestCase {
                 UserDefaults.standard.set(value, forKey: connection.preferenceKey)
             }
             UserDefaults.standard.set(savedFirstConversation, forKey: PreferenceKey.hadFirstConversation)
+            UserDefaults.standard.set(savedPreviewEverything, forKey: ReleaseScope.previewEverythingKey)
         }
     }
 
@@ -106,6 +113,24 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.link.results.map(\.id), ["translator-1"])
         XCTAssertTrue(t.link.results.first?.text.hasPrefix("started:") == true)
         XCTAssertTrue(t.link.results.first?.text.contains("what to translate") == true)
+    }
+
+    /// The shipping scope (decision 2026-11-07-release-scope): a tool whose feature the build hides
+    /// runs nothing and shows no card, and the agent hears that it isn't in this version.
+    @MainActor
+    func testHiddenFeaturesToolRunsNothingInTheShippingScope() async {
+        let t = Harness(showEverything: false)
+        defer { t.restore() }
+        XCTAssertEqual(ReleaseScopeStore.current, .shipping)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.startTranslator, id: "translator-2", parameters: #"{"their_language":"es"}"#).value
+
+        XCTAssertNil(t.controller.translator, "the translator never started")
+        XCTAssertNil(t.controller.pendingAction, "no card")
+        XCTAssertEqual(t.link.results.map(\.id), ["translator-2"])
+        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.hidden(VoiceToolName.startTranslator))
     }
 
     // MARK: Declined card runs nothing

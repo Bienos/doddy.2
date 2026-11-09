@@ -12,6 +12,7 @@ import type { ThreadService } from "../messages/service.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
 import { LINK_REAUTH_MS, type SocialSignIn } from "./social.js";
 import type { AccountEraser } from "../account.js";
+import { OwnerPanel } from "./owner.js";
 
 /**
  * The `/v1/web/…` routes (ADR-600). Each route says who may call it:
@@ -78,6 +79,8 @@ export class WebRoutes {
     account?: AccountEraser | null,
     /** This server's device sign-in (ADR-563), so an iPhone can use another account (ADR-819). */
     devices?: { userIdFor(deviceId: unknown): string | null } | null,
+    /** The owner panel (decision 2026-11-09-usage-counts-on-by-default). Without it those routes don't exist. */
+    owner?: OwnerPanel | null,
   ) {
     this.routes = [
       {
@@ -345,6 +348,52 @@ export class WebRoutes {
         : []),
       ...(memory ? memoryRoutes(memory) : []),
       ...(thread ? threadRoutes(thread) : []),
+      // ---------------------------------------------------------------- Owner panel (decision 2026-11-09-usage-counts-on-by-default)
+      // Only the accounts in DODDY_OWNER_ACCOUNTS; anyone else is told there is nothing here.
+      ...(owner
+        ? ([
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/owner$/,
+              template: "GET /v1/web/owner",
+              access: "either",
+              run: async ({ caller }) => {
+                await owner.requireOwner(caller!.userId);
+                return { status: 200, body: { owner: true } };
+              },
+            },
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/owner\/overview$/,
+              template: "GET /v1/web/owner/overview",
+              access: "either",
+              run: async ({ caller, query, now }) => {
+                await owner.requireOwner(caller!.userId);
+                return { status: 200, body: await owner.overview(now, OwnerPanel.period(query.get("days") ?? undefined)) };
+              },
+            },
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/owner\/accounts$/,
+              template: "GET /v1/web/owner/accounts",
+              access: "either",
+              run: async ({ caller, query, now }) => {
+                await owner.requireOwner(caller!.userId);
+                return { status: 200, body: await owner.accounts(now, OwnerPanel.period(query.get("days") ?? undefined)) };
+              },
+            },
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/owner\/accounts\/([A-Za-z0-9-]{1,64})\/logbook$/,
+              template: "GET /v1/web/owner/accounts/:id/logbook",
+              access: "either",
+              run: async ({ caller, params, now }) => {
+                await owner.requireOwner(caller!.userId);
+                return { status: 200, body: await owner.accountLogbook(params[0]!, now) };
+              },
+            },
+          ] satisfies Route[])
+        : []),
     ];
   }
 

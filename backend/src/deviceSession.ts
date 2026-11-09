@@ -88,6 +88,8 @@ export interface DeviceOwnerStore {
   claimDeviceOwner(userId: string, now: number, allowClaim: boolean): Promise<string | null>;
   /** ADR-819: the account this iPhone chose to use instead of its own (Google or Apple on the iPhone). */
   deviceJoin?(deviceUserId: string): Promise<{ user_id: string } | null>;
+  /** Decision 2026-11-08-required-account: true once a Doddy account took over this device's data. */
+  isLinkedUser?(userId: string): Promise<boolean>;
   reserveUsage(checks: readonly { counter: string; period: string; limit: number }[], units: number): Promise<boolean>;
   /** Tokens issued before this many seconds since 1970 no longer work for the user (ADR-709); 0: none. */
   tokenFloor(userId: string): Promise<number>;
@@ -134,6 +136,11 @@ export class DeviceSessionIssuer {
     const parsed = DeviceSessionRequest.safeParse(body);
     if (!parsed.success) throw new AppError("invalid_request");
     const userId = deviceUserId(this.key, parsed.data.deviceId.toLowerCase());
+    // Decision 2026-11-08-required-account: once a Doddy account took over this iPhone's data, the
+    // device id no longer opens it; the iPhone signs in with the account.
+    if (await this.options.store.isLinkedUser?.(userId)) {
+      throw new AppError("account_conflict", { message: "This iPhone's data now belongs to a Doddy account. Sign in with Apple, Google or email." });
+    }
     // ADR-819: an iPhone that signed in to an account with Google or Apple keeps getting that account.
     const joined = await this.options.store.deviceJoin?.(userId);
     if (joined) return this.mint(joined.user_id, now);

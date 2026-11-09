@@ -24,7 +24,7 @@ struct DoddyCaptureLiveActivity: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(verbatim: language == .polish ? "DODDY nagrywa" : "DODDY is recording")
+                        Text(verbatim: language == .polish ? "Doddy nagrywa" : "Doddy is recording")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(Color.islandCream)
                         Text(verbatim: CapturePresentation.status(snapshot, language))

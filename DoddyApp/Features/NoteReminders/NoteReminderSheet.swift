@@ -61,14 +61,17 @@ struct NoteReminderSheet: View {
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
 
-                Picker("Remind me", selection: $atPlace) {
-                    Text("At a time").tag(false)
-                    Text("At a place").tag(true)
+                // Place reminders are hidden in the beta (decision 2026-11-07-release-scope): no picker, and "At a time" only.
+                if ReleaseScopeStore.current.shows(.placeReminders) {
+                    Picker("Remind me", selection: $atPlace) {
+                        Text("At a time").tag(false)
+                        Text("At a place").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("reminder.mode")
                 }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("reminder.mode")
 
-                if atPlace {
+                if atPlace, ReleaseScopeStore.current.shows(.placeReminders) {
                     NotePlacePicker(memoryID: memoryID) { dismiss() }
                 } else {
                     timeChoices
@@ -199,7 +202,8 @@ struct NoteReminderSheet: View {
         return Button { choice = value } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.headline)
+                    // Looked up when shown ("Pick a date and time" is a key; a pick's own title already is translated).
+                    Text(NSLocalizedString(title, comment: "")).font(.headline)
                     if let detail {
                         Text(detail).font(.subheadline).foregroundStyle(Theme.secondaryText)
                     }
@@ -223,7 +227,7 @@ struct NoteReminderSheet: View {
     private var explainer: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                CandidateCharacterView(assetName: "Doddy_waving", size: 140)
+                DoddyMotionView(motion: .wave, height: 140)
                     .frame(maxWidth: .infinity)
                 Text("Doddy needs permission to remind you")
                     .font(.title2.bold())

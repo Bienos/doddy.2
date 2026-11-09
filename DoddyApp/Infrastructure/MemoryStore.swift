@@ -224,7 +224,7 @@ enum UserFacingError {
             case .tooLong(let length, let maximum):
                 return "That's \(length) characters; the limit is \(maximum). Nothing was cut and nothing was saved."
             default:
-                return NSLocalizedString("This note can't be saved as it is.", comment: "")
+                return NSLocalizedString("This note can't be saved as it is. Change the text, then try again.", comment: "")
             }
         }
         if let error = error as? MemoryStoreError {
@@ -234,11 +234,11 @@ enum UserFacingError {
             case .verificationFailed:
                 return NSLocalizedString("The save couldn't be confirmed, so it wasn't counted as saved. Your text is still here.", comment: "")
             case .corruptRecord:
-                return NSLocalizedString("A stored memory couldn't be read. Nothing was deleted.", comment: "")
+                return NSLocalizedString("A stored memory couldn't be read. Nothing was deleted. If it keeps happening, make a backup file in Settings › Doddy's memory.", comment: "")
             }
         }
         if error is DoddyError {
-            return NSLocalizedString("The memory store isn't available on this iPhone right now.", comment: "")
+            return NSLocalizedString("The memory store isn't available on this iPhone right now. Close Doddy and open it again.", comment: "")
         }
         return "Something went wrong and nothing was changed. (\(error.localizedDescription))"
     }

@@ -1,7 +1,8 @@
 import { createServer, type Server } from "node:http";
 import { AccountEraser } from "./account.js";
 import { AssistService } from "./assist.js";
-import { AnyOfSessionVerifier, DevSessionVerifier, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
+import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
+import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
 import { DeviceSessionIssuer } from "./deviceSession.js";
@@ -35,6 +36,7 @@ import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
 import { SocialSignIn, SupabaseUserRemover } from "./web/social.js";
+import { OwnerPanel, SupabaseUserDirectory } from "./web/owner.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -49,6 +51,8 @@ export async function buildApp(
     chatClaude?: ClaudeProvider | null;
     store?: Store;
     verifier?: SessionVerifier;
+    /** Where the Supabase project's signing keys are fetched (tests answer it themselves). */
+    supabaseFetchJson?: FetchJson;
     paymentWallet?: PaymentWallet | null;
     sellerHttp?: SellerHttp;
   } = {},
@@ -65,7 +69,21 @@ export async function buildApp(
   // A person's cut-off second (ADR-709): deleting the account ends every token issued before it, for
   // any verifier this server builds. A verifier handed in by a test is used as it is.
   const floors = new TokenFloors(store);
-  const verifier: SessionVerifier = overrides.verifier ?? new RevocableSessionVerifier(sessionVerifier(config), floors);
+  // Decision 2026-11-08-required-account: one Supabase verifier (one key cache) for every sign-in check,
+  // and a Doddy account that took over an iPhone's earlier data works on that data.
+  const supabase = config.authMode === "supabase" && config.supabaseUrl
+    ? new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl, ...(overrides.supabaseFetchJson ? { fetchJson: overrides.supabaseFetchJson } : {}) })
+    : null;
+  const verifier: SessionVerifier =
+    overrides.verifier ?? new RevocableSessionVerifier(new LinkedAccountVerifier(sessionVerifier(config, supabase), store, floors), floors);
+  const accountLinker = new AccountLinker({
+    store,
+    accounts: supabase,
+    // Proof of the iPhone's earlier data: its own device token, valid and not cut off (ADR-709).
+    devices: config.sessionSigningKey ? new RevocableSessionVerifier(new SignedSessionVerifier(config.sessionSigningKey), floors) : null,
+    floors,
+    log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
+  });
 
   const service = new ConnectedAppsService({
     store,
@@ -182,11 +200,16 @@ export async function buildApp(
     config.web?.social && webAuth
       ? new SocialSignIn(store, webAuth, config.web.social, { appScheme: appScheme(config.appReturnUrl), trustProxy: config.web.trustProxy, log })
       : null;
+  // The owner panel (decision 2026-11-09-usage-counts-on-by-default): only with DODDY_OWNER_ACCOUNTS set. The
+  // accounts' emails and sign-in dates come from Supabase's admin API, with the secret key, when it is set.
+  const ownerDirectory =
+    config.supabaseProjectUrl && config.supabaseSecretKey ? new SupabaseUserDirectory(config.supabaseProjectUrl, config.supabaseSecretKey) : null;
+  const ownerPanel = config.ownerAccounts.length > 0 ? new OwnerPanel(store, config.ownerAccounts, ownerDirectory, config.limits.providerTimeoutMs) : null;
   const web =
     config.web && webAuth
       ? {
           auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions),
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions, ownerPanel),
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;
@@ -201,6 +224,7 @@ export async function buildApp(
     web,
     assist,
     account: accountEraser,
+    accountLinker,
     documents: documentLinks ? { links: documentLinks, store } : null,
     // Health asks the database and names the running commit (Render sets RENDER_GIT_COMMIT).
     health: { ping: () => store.ping(), commit: process.env.RENDER_GIT_COMMIT?.slice(0, 12) || null },
@@ -248,10 +272,10 @@ export async function buildApp(
 }
 
 /** Which sign-ins this server accepts (ADR-526). */
-export function sessionVerifier(config: Config): SessionVerifier {
+export function sessionVerifier(config: Config, prebuilt: SupabaseSessionVerifier | null = null): SessionVerifier {
   if (config.authMode === "dev") return new DevSessionVerifier();
   if (config.authMode === "signed") return new SignedSessionVerifier(config.sessionSigningKey!);
-  const supabase = new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
+  const supabase = prebuilt ?? new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
   // Development only (config enforces it): the owner's minted token still works next to Supabase.
   return config.sessionSigningKey ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.sessionSigningKey), supabase]) : supabase;
 }

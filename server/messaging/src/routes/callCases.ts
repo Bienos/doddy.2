@@ -6,13 +6,16 @@ import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { ackResult, cancelCase, getCase, listCases, setLiveActivityToken } from "../taskCalls/cases.js";
 import type { TaskCallContext } from "../taskCalls/context.js";
-import { approve, caseOwnedBy, createCase, endCall, latestAttempt, liveView, type Refusal } from "../taskCalls/service.js";
+import { approve, caseOwnedBy, createCase, endCall, latestAttempt, liveView, type DialOutcome, type Refusal } from "../taskCalls/service.js";
 import { CALL_ZONE, DAY_END_MINUTES, DAY_START_MINUTES, clockText } from "../taskCalls/hours.js";
 import { startTakeover } from "../taskCalls/takeover.js";
+import { approveTask, cancelTask, createTask, getTask } from "../taskCalls/tasks.js";
 
 const idParam = z.strictObject({ id: z.uuid() });
 const hex64 = z.string().regex(/^[0-9a-f]{64}$/);
 const approveBody = z.strictObject({ digest: hex64, at: z.iso.datetime({ offset: true }).optional() });
+// A task is approved for now only: its places are called one after another from this moment.
+const taskApproveBody = z.strictObject({ digest: hex64 });
 const ackBody = z.strictObject({ attemptId: z.uuid(), resultDigest: hex64 });
 const liveQuery = z.strictObject({ after: z.string().max(40).regex(/^[0-9 :.+\-T]+$/).optional() });
 const liveActivityBody = z.strictObject({ token: z.string().regex(/^[0-9a-f]{64,400}$/), environment: z.enum(["sandbox", "production"]) });
@@ -83,6 +86,47 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
     const { accountId, deviceId } = principal(req);
     const r = await approve(c, accountId, deviceId, p.id, body.digest, body.at);
     if ("refusal" in r) return refusal(reply, r.refusal);
+    return dialReply(reply, r);
+  });
+
+  // Call tasks (decision 2026-11-09-restaurant-calls-one-tap): up to three places, one tap, called in turn until one says yes.
+  app.post("/v1/call-tasks", { preHandler: auth, config: { rateLimit: { max: 20, timeWindow: "1 hour" } } }, async (req, reply) => {
+    const c = configured(reply);
+    if (!c) return;
+    const r = await createTask(c, principal(req).accountId, req.body);
+    if ("refusal" in r) return refusal(reply, r.refusal);
+    return reply.code(201).send(r.preview);
+  });
+
+  app.get("/v1/call-tasks/:id", { preHandler: auth }, async (req, reply) => {
+    const c = configured(reply);
+    const p = c && parse(idParam, req.params, reply);
+    if (!c || !p) return;
+    const task = await getTask(c, principal(req).accountId, p.id);
+    return task ?? reply.code(404).send({ error: "not_found" });
+  });
+
+  app.post("/v1/call-tasks/:id/approve", { preHandler: auth, config: { rateLimit: { max: 20, timeWindow: "1 hour" } } }, async (req, reply) => {
+    const c = configured(reply);
+    const p = c && parse(idParam, req.params, reply);
+    const body = p && parse(taskApproveBody, req.body, reply);
+    if (!c || !p || !body) return;
+    const { accountId, deviceId } = principal(req);
+    const r = await approveTask(c, accountId, deviceId, p.id, body.digest);
+    if ("refusal" in r) return refusal(reply, r.refusal);
+    return dialReply(reply, r);
+  });
+
+  app.post("/v1/call-tasks/:id/cancel", { preHandler: auth }, async (req, reply) => {
+    const c = configured(reply);
+    const p = c && parse(idParam, req.params, reply);
+    if (!c || !p || !emptyBody(req.body, reply)) return;
+    const r = await cancelTask(c, principal(req).accountId, p.id);
+    if (r === "not_found") return reply.code(404).send({ error: "not_found" });
+    return reply.code(204).send();
+  });
+
+  function dialReply(reply: FastifyReply, r: { attemptId: string; dial: DialOutcome }) {
     switch (r.dial.kind) {
       case "dialing": case "scheduled": case "unknown":
         return reply.code(202).send({ attemptId: r.attemptId, state: r.dial.kind });
@@ -93,7 +137,7 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
       default:
         return reply.code(409).send({ error: "not_dialled", state: r.dial.kind, attemptId: r.attemptId });
     }
-  });
+  }
 
   app.get("/v1/call-cases/:id/live", { preHandler: auth, config: { rateLimit: { max: 3000, timeWindow: "1 hour" } } }, async (req, reply) => {
     const c = configured(reply);

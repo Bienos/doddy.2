@@ -121,19 +121,13 @@ enum IslandSceneChecks {
         // Speaking face.
         expect(State(status: .speaking, isMuted: false).islandScene(isStale: false).face == .speaking, "speaking face")
 
-        // "Hey Doddy" waiting (ADR-254) is not a conversation, on every style: not live, no timer,
-        // its own label; a stale one says nothing is listening any more.
-        for style in IslandStyle.allCases {
-            var s = State.wakeListening
-            s.islandStyle = style
-            let scene = s.islandScene(isStale: false)
-            expect(scene.board == style.board && !scene.live, "\(style) wake listening not live")
-            expect(scene.label == "HEY DODDY" && scene.time == .text(""), "\(style) wake label, no timer")
-            expect(scene.title == "Say “Hey Doddy”", "\(style) wake title")
+        // The "Hey Doddy" states went with the wake word (ADR-549): one an older build left behind
+        // reads as ended, so nothing claims to be listening.
+        for old in ["wakeListening", "wakePaused"] {
+            let json = Data("{\"status\":\"\(old)\",\"isMuted\":false}".utf8)
+            let decoded = try? JSONDecoder().decode(State.self, from: json)
+            expect(decoded?.status == .ended && decoded?.isLiveCue == false, "old \(old) reads as ended")
         }
-        let wakeStale = State.wakeListening.islandScene(isStale: true)
-        expect(wakeStale.title == "Not listening — open Doddy" && !wakeStale.live, "wake stale")
-        expect(State.wakePaused.islandScene(isStale: false).title == "“Hey Doddy” paused", "wake paused")
         // The greeting replaces Connecting and Listening only; Muted and Thinking win over it.
         var greeted = State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")
         expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while connecting")
@@ -308,8 +302,6 @@ enum IslandSceneChecks {
         expect(pose(State(status: .speaking, isMuted: false)) == .shrug, "speaking")
         expect(pose(State(status: .listening, isMuted: true)) == .shush, "muted beats listening")
         expect(pose(State(status: .speaking, isMuted: false), stale: true) == .facepalm, "stale")
-        expect(pose(State.wakeListening) == .crosslegged, "hey doddy waiting")
-        expect(pose(State.wakePaused) == .leaning, "hey doddy paused")
         expect(pose(State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves")
         expect(pose(State(status: .listening, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves until you speak")
         // ADR-577: the greeting is his first message, so he waves while he says it too.
@@ -502,10 +494,6 @@ enum IslandSceneChecks {
         expect(DoddyMotion.run.stillFrame == 1 && DoddyMotion.walk.stillFrame == 1, "a loop's still is its first frame")
         expect(DoddyMotion.turn.frames == [1, 2, 3] && DoddyMotion.turn.frame(at: 9) == 3 && DoddyMotion.turn.stillFrame == 3,
                "turn plays 1-3 once and rests turned (ADR-323)")
-        expect(DoddyMotion.sit.frame(at: 0) == 1 && DoddyMotion.sit.frame(at: 9) == 5 && DoddyMotion.sit.stillFrame == 5,
-               "sit ends seated on the box")
-        expect(DoddyMotion.sit.figure.y + DoddyMotion.sit.figure.height == DoddyMotion.idle.figure.y + DoddyMotion.idle.figure.height,
-               "sit and idle stand on the same floor")
         expect(DoddyMotion.idle.frame(at: -1) == 1, "a time before zero")
         expect(DoddyMotion.allCases.filter(\.loops) == [.walk, .run], "only walk and run loop")
         for m in DoddyMotion.allCases {
@@ -537,11 +525,6 @@ enum IslandSceneChecks {
         // Its stale date is the end time, so stale means the time is up, never "still running".
         let due = focus.islandScene(.init(isPaused: false, endsAt: end), isStale: true, now: now)
         expect(due.title == "Time's up" && !due.live, "focus time up")
-
-        let breathing = DoddyToolAttributes(kind: .breathing, startedAt: now, duration: 120)
-        let b = breathing.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now)
-        expect(b.board == .calmTide && b.time == .countdown(end), "breathing")
-        expect(!b.title.contains("in") || b.title == "Breathing", "breathing shows no phase")
 
         // The stopwatch counts up (ADR-652): a ticking clock with no end, never stale.
         let watch = DoddyToolAttributes(kind: .stopwatch, startedAt: now, duration: 0)
@@ -587,7 +570,7 @@ enum IslandSceneChecks {
         let storedTool = Data(#"{"isPaused":false,"remaining":0,"isFinished":false,"islandStyle":"leanIn"}"#.utf8)
         expect((try? JSONDecoder().decode(DoddyToolAttributes.ContentState.self, from: storedTool))?.islandStyle == .wholeDoddy,
                "an older tool style reads as whole doddy")
-        // Focus dribbles and breathing balances (ADR-313); paused waits, done is the fist pump.
+        // Focus dribbles (ADR-313); paused waits, done is the fist pump.
         let wholeFocus = { (s: DoddyToolAttributes.ContentState, stale: Bool) in
             var s = s
             s.islandStyle = .wholeDoddy
@@ -596,11 +579,6 @@ enum IslandSceneChecks {
         expect(wholeFocus(.init(isPaused: false, endsAt: end), false) == .basketballDribble, "focus dribbles")
         expect(wholeFocus(.init(isPaused: true, endsAt: nil, remaining: 300), false) == .crosslegged, "focus paused")
         expect(wholeFocus(.init(isPaused: false, endsAt: end), true) == .fistpump, "focus time up")
-        var breathe = DoddyToolAttributes.ContentState(isPaused: false, endsAt: end)
-        breathe.islandStyle = .wholeDoddy
-        expect(breathing.islandScene(breathe, isStale: false, now: now).pose == .onelegBalance, "breathing balances")
-        breathe.isFinished = true
-        expect(breathing.islandScene(breathe, isStale: false, now: now).pose == .fistpump, "breathing done")
         expect(focus.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).pose == nil,
                "focus without a style keeps its board")
         expect(focus.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).board == .tinyPromise,
@@ -651,6 +629,33 @@ enum IslandSceneChecks {
         // raw values are fixed here.
         expect(DoddyToolAttributes.Kind(rawValue: "timer") == .timer && DoddyToolAttributes.Kind(rawValue: "windDown") == .windDown
                && DoddyToolAttributes.Kind(rawValue: "noteSaved") == .noteSaved, "kind raw values")
+        // Minimal (another app's activity also running): with Whole Doddy a centred time, tick or
+        // symbol is drawn alone, never over his face (8 Nov 2026: a timer's "14:34" behind his face).
+        func whole(_ tool: DoddyToolAttributes, _ state: DoddyToolAttributes.ContentState) -> IslandScene {
+            var s = state
+            s.islandStyle = .wholeDoddy
+            return tool.islandScene(s, isStale: false, now: now)
+        }
+        let minimalCases: [(String, IslandScene)] = [
+            ("timer", whole(timer, .init(isPaused: false, endsAt: end))),
+            ("timer paused", whole(timer, .init(isPaused: true, remaining: 874))),
+            ("timer done", whole(timer, .init(isPaused: false, isFinished: true))),
+            ("wind-down", whole(wind, .init(isPaused: false, endsAt: end))),
+            ("focus", whole(focus, .init(isPaused: false, endsAt: end))),
+            ("stopwatch", whole(watch, .init(isPaused: false, countsFrom: from))),
+        ]
+        for (name, scene) in minimalCases {
+            expect(scene.pose != nil && scene.minimalSignCentred && scene.minimalSign != .none, "\(name): centred minimal sign")
+            expect(!scene.minimalShowsPoseFace, "\(name): no face under the minimal sign")
+        }
+        expect(whole(timer, .init(isPaused: false, endsAt: end)).minimalSign == .countdown(end), "the timer's minimal is its countdown")
+        // A sign at the side keeps his face beside it (reading aloud: the bars on the right).
+        let reading = whole(read, .init(isPaused: false))
+        expect(!reading.minimalSignCentred && reading.minimalShowsPoseFace, "reading keeps his face beside the bars")
+        // A centred board with nothing to show keeps his face (note saved has no minimal sign).
+        expect(whole(saved, .init(isPaused: false, isFinished: true)).minimalShowsPoseFace, "note saved keeps his face")
+        // No style: the board's art, which has no face, as before.
+        expect(!timer.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).minimalShowsPoseFace, "no pose, no face")
         return failures
     }
 }

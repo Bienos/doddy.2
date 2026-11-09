@@ -22,11 +22,7 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     /// "Note saved" in the Dynamic Island for a few seconds after a save (ADR-781). On unless turned off.
     static let savedIsland = "savedIsland"
-    /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
-    static let openingScene = "openingScene"
-    /// The one-time basketball introduction has been shown or skipped on this installation.
-    static let firstLaunchIntroSeen = "firstLaunchIntroSeen"
-    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
+    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). Off unless turned on.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
     /// Settings → Siri and Back Tap: "Talk to Doddy" starts a conversation (default) or only opens the app (`BackTapAction`).
@@ -145,7 +141,6 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Environment(\.dynamicTypeSize) private var textSize
     @Bindable private var router = ShortcutRouter.shared
     @State private var opening = OpeningModel()
@@ -163,13 +158,22 @@ struct RootView: View {
     @AppStorage(PreferenceKey.welcomeReplay) private var welcomeReplay = false
     /// The welcome was finished in this run, so it doesn't show again until a replay is asked for.
     @State private var welcomeDone = false
+    /// The Doddy account (decision 2026-11-08-required-account).
+    @State private var doddyAccount = DoddyAccountModel.shared
 
-    /// The first-launch welcome (ADR-598) is on screen. It covers Home and the opening, and the first-use
+    /// The first-launch welcome (ADR-598) is on screen. It covers Home, and the first-use
     /// introduction waits until it is over. Only read once the store has loaded (`isFirstInstallation`).
     private var welcomeVisible: Bool {
-        !welcomeDone && WelcomeRule.shouldShow(
+        accountRequired || (!welcomeDone && WelcomeRule.shouldShow(
             seen: WelcomePreferences.seen(), firstInstallation: profiles.isFirstInstallation,
-            replayRequested: welcomeReplay, override: WelcomePreferences.override())
+            replayRequested: welcomeReplay, override: WelcomePreferences.override()))
+    }
+
+    /// Decision 2026-11-08-required-account: in a build with Doddy accounts set up, nobody uses Doddy
+    /// signed out. The welcome, whose sheet signs in, stays until they are, including after a sign-out.
+    /// A build without them (and UI tests, `-welcome NO`) is unchanged.
+    private var accountRequired: Bool {
+        doddyAccount.isConfigured && !doddyAccount.isSignedIn && WelcomePreferences.override() != false
     }
 
     private func finishWelcome() {
@@ -230,6 +234,8 @@ struct RootView: View {
                 lockLifted()
             }
         }
+        // Signed in: a server that didn't answer about the account last time is asked again.
+        .task { await DoddyAccountServers.catchUp() }
         .task {
             let notesLoad = LaunchWork.signposter.beginInterval("Notes load")
             await store.reload()
@@ -243,6 +249,8 @@ struct RootView: View {
             WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
                                            notesLoaded: store.hasLoaded && store.loadError == nil)
             await WebMemory.shared.retryConversations(from: ConversationLogStore.shared.logs, language: WebMemory.language())
+            // Logbook (ADR-602): once the notes are read, the days that are due.
+            Logbook.sync(store: store)
             await noteReminders.refreshOnForeground()
             if scenePhase == .active { listeningIndicatorBecameActive() }
             pickUpSharedItem()
@@ -283,6 +291,8 @@ struct RootView: View {
                 // Notes kept on Doddy's server (ADR-603): the same, for a send that failed.
                 WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
                                                notesLoaded: store.hasLoaded && store.loadError == nil)
+                // Logbook (ADR-602): the counts that are due, on unless turned off (decision 2026-11-09-usage-counts-on-by-default).
+                Logbook.sync(store: store)
                 // Quiet hours for a booked call are checked in this iPhone's zone (ADR-754).
                 CallZoneSender.sendIfNeeded()
                 pickUpSharedItem()
@@ -298,6 +308,8 @@ struct RootView: View {
             if phase == .background {
                 // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
                 UnfinishedNoteStore.shared.flush()
+                // Logbook (ADR-602): today so far, at most once an hour.
+                Logbook.sync(store: store)
                 WidgetSync.shared.refresh()
                 AppLock.shared.wentToBackground()
                 QuickActions.install()
@@ -472,22 +484,16 @@ struct RootView: View {
         !hideArt && !(horizontalSizeClass == .regular && DeviceSupport.hasSidebar)
     }
 
-    /// What the opening's rules need to know right now (ADR-225). Read at decision time, so a
-    /// switch changed in Settings counts from the next opening.
+    /// What "Start listening when I open Doddy" needs to know right now (ADR-225). Read at decision
+    /// time, so a switch changed in Settings counts from the next opening.
     private var openingConditions: OpeningConditions {
         OpeningConditions(
-            sceneOn: OpeningPreferences.sceneOn(),
             listenOnOpen: OpeningPreferences.listenOnOpen(),
-            characterArtHidden: UserDefaults.standard.bool(forKey: PreferenceKey.hideCharacterArt),
-            reduceMotion: reduceMotion,
-            voiceOverRunning: voiceOverOn,
             atHome: profiles.route == .home,
             voiceAvailable: store.environment.capabilities.isAvailable(.voiceInput),
             microphoneAllowed: MicrophoneAccess.isAllowed,
             somethingIsOpen: router.isVoicePresented || router.isSetupPresented
-                || router.shownDraft != nil || router.findRequest != nil,
-            firstLaunchIntroPending: profiles.isFirstInstallation
-                && !OpeningPreferences.firstLaunchIntroSeen())
+                || router.shownDraft != nil || router.findRequest != nil)
     }
 
     /// "Before we start" is due (ADR-581). Not over the Face ID lock: it comes after the unlock.
@@ -528,16 +534,6 @@ struct RootView: View {
             tabContent.id(lockEpoch)
             // Motion v2: the one Doddy in the air (flights and fades). Under every sheet and cover.
             DoddyOverlay()
-            // The opening (ADR-225) sits over the ready app and fades away to reveal it; a tap
-            // ends it early. It is removed from the hierarchy entirely once it is done.
-            if let play = opening.play {
-                // No fade at the end: Doddy is already in Home's place, and everything else has faded.
-                OpeningSceneView(
-                    play: play, homeTarget: opening.homeArtBox,
-                    onHandover: { opening.handoverStarted() },
-                    onFinished: { opening.finish() })
-                .zIndex(1)
-            }
             // The first-launch welcome (ADR-598) sits over everything here; the Face ID cover is
             // drawn above all of it by the view that owns this one.
             if welcomeVisible {
@@ -546,11 +542,8 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
-        .environment(opening)
         .tint(Theme.accentText)
         .background(Theme.canvas)
-        // The opening, and Home's ready pose after it, are a story that covers him (Q4).
-        .coversDoddy(opening.play != nil || opening.ready != nil)
         // Every sheet and cover the router presents hides him in the frame it starts.
         .coversDoddy(routerCovers)
         // A tab changed without the tab bar (a link, a shortcut, a reminder): he follows.
@@ -607,21 +600,13 @@ struct RootView: View {
         }
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
             router.isOnboardingShown = !atHome || legalGateUp || accessStepUp
-            // The first time Home is ready and on screen is the launch (OpeningModel decides).
+            // The first time Home is ready and on screen is the launch (OpeningModel decides whether to listen).
             // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-598).
             if !welcomeVisible { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
         }
         .onChange(of: welcomeVisible) { was, now in
-            // The welcome is over: the opening and the introduction go on as they always did.
+            // The welcome is over: listening on open and the introduction go on as they always did.
             if was, !now { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
-        }
-        // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
-        .onChange(of: router.isVoicePresented) { _, presented in
-            if presented { opening.conversationOpened() }
-        }
-        // So does one started on Home (ADR-595).
-        .onChange(of: HomeConversation.shared.live != nil) { _, live in
-            if live { opening.conversationOpened() }
         }
         // Recordings (ADR-588) is a sheet on Home, so a link or intent from any tab comes back to it.
         .onChange(of: router.isRecordingsPresented) { _, presented in

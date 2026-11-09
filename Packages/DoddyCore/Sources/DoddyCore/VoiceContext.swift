@@ -175,7 +175,7 @@ public enum ConversationLogExport {
     public static func plainText(_ logs: [ConversationLog], exportedAt: Date, timeZone: TimeZone = .current) -> String {
         let iso = ISO8601DateFormatter()
         var lines = [
-            "DODDY remembered conversations — exported \(iso.string(from: exportedAt))",
+            "Doddy remembered conversations — exported \(iso.string(from: exportedAt))",
             "\(logs.count) \(logs.count == 1 ? "conversation" : "conversations"). Written down from the conversation's text; no audio is kept.",
             "",
         ]

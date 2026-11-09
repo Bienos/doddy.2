@@ -237,11 +237,19 @@ struct VoiceProviderPicker: View {
 /// restores in the background and sign-out revokes it on DODDY's server.
 struct VoiceAccountSettings: View {
     @State private var session = VoiceAuthSession.shared
+    @State private var doddyAccount = DoddyAccountModel.shared
     @State private var confirmDelete = false
+
+    private var voiceAccountValue: String {
+        if session.isSignedIn { return "Connected" }
+        // Decision 2026-11-08-required-account: the Doddy account also opens voice.
+        if doddyAccount.isSignedIn { return NSLocalizedString("Your Doddy account", comment: "") }
+        return "Sign in when you first use voice"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            StatusRow(title: "Voice account", value: session.isSignedIn ? "Connected" : "Sign in when you first use voice")
+            StatusRow(title: "Voice account", value: voiceAccountValue)
                 .accessibilityIdentifier("settings.voiceAccount")
             if session.isSignedIn {
                 Button("Sign out of voice", role: .destructive) {

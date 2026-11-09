@@ -16,15 +16,23 @@ enum VoiceConfig {
     static let directVoiceKey = "developer.directVoice"
 
     #if DEBUG
-    /// The live ElevenLabs agent's id (public: it is in the repo's docs, and the agent has no
-    /// authentication). A Debug build may connect to it directly, so voice can be tried with a free
-    /// Apple ID, which can't have Sign in with Apple. On by default in Debug; Release and TestFlight
-    /// builds compile this to `false` and always need a DODDY voice account.
+    /// The live ElevenLabs agent's id (public: it is in the repo's docs). A Debug build may connect to
+    /// it directly, so voice can be tried with a free Apple ID, which can't have Sign in with Apple.
+    /// That works only while the agent's authentication is off; it was turned on on 8 Nov 2026, and
+    /// since then ElevenLabs refuses this connection (`directAgentRefused`). On by default in Debug;
+    /// Release and TestFlight builds compile this to `false` and always need a DODDY voice account.
     static let directAgentID = "agent_0501m4et27vyeawrwqfdxxfszfa6"
     static var directVoiceEnabled: Bool { UserDefaults.standard.object(forKey: directVoiceKey) as? Bool ?? true }
+
+    /// The agent refused the developer connection (its authentication is on): the Debug switch
+    /// "Developer: talk without Apple sign-in" goes off, so every later conversation goes through the
+    /// token server like a Release build, and the voice sheet asks for sign-in when there is no voice
+    /// session. Turning the switch on again in Settings tries the developer connection once more.
+    static func directAgentRefused() { UserDefaults.standard.set(false, forKey: directVoiceKey) }
     #else
     static let directAgentID = ""
     static var directVoiceEnabled: Bool { false }
+    static func directAgentRefused() {}
     #endif
 
     /// Settings key of the Debug-only switch "OpenAI without a voice account" (ADR-726).

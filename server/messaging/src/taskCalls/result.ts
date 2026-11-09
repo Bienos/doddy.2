@@ -57,6 +57,8 @@ export interface WriterOutput {
   summary: string;
   nextStep: string;
   kind: "answered" | "ivr" | "voicemail" | "wrong_number" | "no_answer_given";
+  /** Whether the answer to the question means yes or no (decision 2026-11-09-restaurant-calls-one-tap). Absent from older writers. */
+  answer?: "yes" | "no" | "unclear";
   usage?: { inputTokens: number; outputTokens: number };
 }
 

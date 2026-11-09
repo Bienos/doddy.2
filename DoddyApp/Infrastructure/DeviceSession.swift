@@ -72,6 +72,13 @@ enum DeviceSession {
     /// A token typed in Settings (no recorded expiry) is used as it is.
     @discardableResult
     static func ensure(server: URL, now: Date = Date()) async -> Bool {
+        // Decision 2026-11-08-required-account: once the backend takes the Doddy account, the clients get
+        // the account's own token, fresh, where they found the device's; the device ID mints nothing more.
+        switch await DoddyAccountServers.backendToken(for: server) {
+        case .account(let token): return keep(token, server: server)
+        case .unavailable: return false
+        case .deviceSession: break
+        }
         if KeychainSessionStore.read()?.token(for: server) != nil {
             guard let expiry = UserDefaults.standard.object(forKey: expiryKey) as? Date else { return true }
             if expiry.timeIntervalSince(now) > renewBefore { return true }
@@ -81,9 +88,20 @@ enum DeviceSession {
 
     /// The server refused the token (expired, or its key changed): forget it and sign in again.
     static func renew(server: URL) async -> Bool {
+        switch await DoddyAccountServers.backendToken(for: server, afterRefusal: true) {
+        case .account(let token): return keep(token, server: server)
+        case .unavailable: return false
+        case .deviceSession: break
+        }
         KeychainSessionStore.delete()
         UserDefaults.standard.removeObject(forKey: expiryKey)
         return await signIn(server: server)
+    }
+
+    /// The account's token where the backend clients find it; written only when it changed.
+    private static func keep(_ token: String, server: URL) -> Bool {
+        if KeychainSessionStore.read()?.token(for: server) == token { return true }
+        return KeychainSessionStore.save(token, issuedBy: server)
     }
 
     private static func signIn(server: URL) async -> Bool {

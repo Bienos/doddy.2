@@ -32,9 +32,9 @@ test("Claude result writer: request shape, no extra data, refusals (local stand-
   const input = { question: "Czy laptop jest gotowy?", goal: "Sprawdzić laptop.", transcript: [
     { speaker: "doddy" as const, text: "Dzień dobry...", atSecs: 0 }, { speaker: "callee" as const, text: "Tak, gotowy.", atSecs: 4 }] };
   try {
-    reply = message(JSON.stringify({ kind: "answered", answer_line: 1, answer_quote: "Tak, gotowy.", summary: "Laptop jest gotowy.", next_step: "Odbierz laptop." }));
+    reply = message(JSON.stringify({ kind: "answered", answer_line: 1, answer_quote: "Tak, gotowy.", summary: "Laptop jest gotowy.", next_step: "Odbierz laptop.", answer: "yes" }));
     const out = await writer.write(input);
-    assert.deepEqual(out, { kind: "answered", answerLine: 1, answerQuote: "Tak, gotowy.", summary: "Laptop jest gotowy.", nextStep: "Odbierz laptop.", usage: { inputTokens: 400, outputTokens: 60 } });
+    assert.deepEqual(out, { kind: "answered", answerLine: 1, answerQuote: "Tak, gotowy.", summary: "Laptop jest gotowy.", nextStep: "Odbierz laptop.", answer: "yes", usage: { inputTokens: 400, outputTokens: 60 } });
     assert.equal(seen.path, "/v1/messages");
     assert.equal(seen.body.model, "claude-haiku-5-5");
     assert.equal(seen.body.output_config.effort, "low");

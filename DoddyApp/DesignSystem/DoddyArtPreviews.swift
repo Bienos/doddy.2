@@ -45,7 +45,7 @@ import SwiftUI
 }
 
 #Preview("Scenery strips") {
-    let places: [SceneryBackdrop.Place] = [.home, .memory, .coffee, .court, .rooftop]
+    let places: [SceneryBackdrop.Place] = [.home, .coffee, .court, .rooftop]
     ScrollView {
         VStack(spacing: 24) {
             ForEach(places, id: \.self) { place in

@@ -94,6 +94,11 @@ struct IslandScene: Equatable, Sendable {
     var minimalSign: IslandSign
     /// Minimal boards without a face (Tiny Promise) put the sign in the middle.
     var minimalSignCentred = false
+    /// Whether the minimal island (another app's activity is also running) draws Whole Doddy's face.
+    /// Not with a centred sign: the timer, wind-down, focus and stopwatch put their time, tick or
+    /// symbol in the middle of the small bubble, and his face drawn there too covered it (seen on a
+    /// phone on 8 Nov 2026: a timer's "14:34" behind his face).
+    var minimalShowsPoseFace: Bool { pose != nil && !(minimalSignCentred && minimalSign != .none) }
     /// Words on the expanded drawing, in black on its cream shapes.
     var artLabels: [IslandArtLabel] = []
     /// Whole Doddy (ADR-264): drawn instead of the board's art when set.
@@ -260,14 +265,12 @@ extension DoddyVoiceAttributes.ContentState {
         if showsMuted { return .shush }
         let greets = !(greeting ?? "").isEmpty
         switch status {
-        // The greeting after "Hey Doddy" is a wave (ADR-290), also while he says it (ADR-577).
+        // The greeting is a wave (ADR-290), also while he says it (ADR-577).
         case .connecting: return greets ? .wave : .yawnStretch
         case .listening: return greets ? .wave : .listening
         case .thinking: return .kneelingInspect
         case .speaking: return greets ? .wave : .shrug
         case .needsConfirmation: return .reachingHigh
-        case .wakeListening: return .crosslegged
-        case .wakePaused: return .leaning
         case .ended: return .fistpump
         case .failed: return .facepalm
         #if DEBUG
@@ -310,10 +313,9 @@ extension DoddyVoiceAttributes.ContentState {
             face: stale ? .calm : face,
             live: live,
             showsHands: true,
-            // "Hey Doddy" waiting (ADR-254) is not a conversation: no timer, its own label.
-            label: isWakeMode ? islandWord("HEY DODDY") : islandWord("VOICE"),
-            time: isWakeMode ? .text("") : .elapsed,
-            title: stale ? (isWakeMode ? islandWord("Not listening — open Doddy") : islandWord("Lost Doddy — open the app")) : title,
+            label: islandWord("VOICE"),
+            time: .elapsed,
+            title: stale ? islandWord("Lost Doddy — open the app") : title,
             bigTitle: nil,
             subtitle: stale ? islandWord("The app stopped in the background") : islandLine,
             subtitleIsWarning: stale,
@@ -431,7 +433,7 @@ extension IslandAction {
         case .askFirst: IslandWords(label: islandWord("ASK"), title: "Doddy asks first", subtitle: "Say yes, or tap it in Doddy")
         case .access: IslandWords(label: islandWord("ACCESS"), title: "Doddy needs your OK", subtitle: "Allow it or say Not now, in Doddy")
         case .signIn: IslandWords(label: islandWord("ACCOUNT"), title: "Connect an account?", subtitle: "Sign in from Doddy")
-        case .other: IslandWords(label: islandWord("DODDY"), title: "Something to check", subtitle: "Nothing happens until you tap yes")
+        case .other: IslandWords(label: islandWord("CHECK"), title: "Something to check", subtitle: "Nothing happens until you tap yes")
         }
     }
 }
@@ -460,10 +462,9 @@ enum IslandLanguageCode {
 }
 
 extension DoddyToolAttributes {
-    /// The island for the focus timer (Tiny Promise, ADR-241), breathing (Calm Tide, ADR-242)
-    /// and reading a note aloud (Story Spool, ADR-243). `isStale`: iOS says the app has not
-    /// updated it; a focus or breathing activity is given its end time as its stale date, so
-    /// stale there means the time is up.
+    /// The island for the focus timer (Tiny Promise, ADR-241) and reading a note aloud (Story
+    /// Spool, ADR-243). `isStale`: iOS says the app has not updated it; a focus activity is given
+    /// its end time as its stale date, so stale there means the time is up.
     func islandScene(_ state: ContentState, isStale: Bool, now: Date = Date()) -> IslandScene {
         var shown = boardScene(state, isStale: isStale, now: now)
         if state.islandStyle == .wholeDoddy { shown.pose = wholeDoddyPose(state, isStale: isStale) }
@@ -471,7 +472,7 @@ extension DoddyToolAttributes {
     }
 
     /// Whole Doddy's pose for a tool (ADR-299, ADR-313, ADR-780): dribbling while focusing,
-    /// balancing on one leg while breathing, reading lying on his front, kneeling to watch a
+    /// reading lying on his front, kneeling to watch a
     /// timer, stretching sleepily through a wind-down. Done, waiting and lost are the same poses
     /// as in a conversation (fist pump, cross-legged, facepalm); a wind-down ends cross-legged,
     /// not with a fist pump, since it is bedtime.
@@ -481,7 +482,6 @@ extension DoddyToolAttributes {
         if state.isPaused { return .crosslegged }
         switch kind {
         case .focus: return .basketballDribble
-        case .breathing: return .onelegBalance
         case .readAloud: return .bellyReading
         case .stopwatch: return .tiptoe
         case .timer: return .kneelingInspect
@@ -547,14 +547,6 @@ extension DoddyToolAttributes {
             // The same card as the conversation's "Note saved" moment (ADR-240): never the words.
             return scene(.thoughtPocket, 1, label: islandWord("NOTE"), time: .text(islandWord("Saved")), title: "Note saved",
                          subtitle: "Kept in Doddy on this iPhone", compact: .check, minimal: .none)
-        case .breathing:
-            if over {
-                return scene(.calmTide, 1, label: islandWord("BREATHE"), time: .text(islandWord("Done")), title: "Breathing done",
-                             subtitle: "Nicely done", compact: .check, minimal: .none)
-            }
-            let end = state.endsAt ?? now
-            return scene(.calmTide, 0, label: islandWord("BREATHE"), time: .countdown(end), title: "Breathing",
-                         subtitle: "Open Doddy to follow along", compact: .countdown(end), minimal: .none)
         case .readAloud:
             var shown: IslandScene
             if lost {

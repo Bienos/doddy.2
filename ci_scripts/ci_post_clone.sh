@@ -9,7 +9,9 @@
 #      extensions must have the same one. Xcode Cloud numbers its builds (CI_BUILD_NUMBER).
 #   3. Xcode Cloud does not resolve Swift packages by itself: it needs `Package.resolved` in the
 #      project, which a generated project doesn't have. Resolving here writes it.
-#   4. Push notifications (ADR-701). The project's default entitlements have no `aps-environment`,
+#   4. Which commit a TestFlight build was made from (7 Nov 2026 audit): Xcode Cloud's CI_COMMIT goes
+#      into the DODDY_GIT_COMMIT build setting, which Info.plist and Settings › About carry.
+#   5. Push notifications (ADR-701). The project's default entitlements have no `aps-environment`,
 #      so a build from them can never receive a push, however the server is set up. Xcode Cloud's
 #      builds are the ones testers install, so they get Config/Doddy-Push-AppGroup.entitlements.
 #
@@ -85,6 +87,20 @@ if [ -n "${CI_BUILD_NUMBER:-}" ]; then
     "build number $CI_BUILD_NUMBER"
 fi
 
+# 2b. The commit this build is made from: Xcode Cloud's CI_COMMIT, or the checkout's own. Without
+# either (a test run outside a repository) the project keeps `local`. A value that isn't a commit
+# stops the build rather than ship a wrong one.
+commit=${CI_COMMIT:-$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)}
+if [ -n "$commit" ]; then
+  case $commit in
+    *[!0-9a-f]*) echo "ci_post_clone: '$commit' isn't a commit (lowercase hex)" >&2; exit 1 ;;
+  esac
+  if [ ${#commit} -lt 7 ] || [ ${#commit} -gt 40 ]; then
+    echo "ci_post_clone: '$commit' isn't a commit (7 to 40 characters)" >&2
+    exit 1
+  fi
+  set_setting DODDY_GIT_COMMIT local "$commit" "commit $(printf '%s' "$commit" | cut -c1-7)"
+fi
 # 3. The team, when the workflow names one (10 letters and digits).
 if [ -n "${DODDY_TEAM_ID:-}" ]; then
   case $DODDY_TEAM_ID in

@@ -42,12 +42,15 @@ struct DoddyMemorySettingsView: View {
                                   : (profiles.profile.value(.name) ?? NSLocalizedString("Saved", comment: "")))
                 }
                 .accessibilityIdentifier("settings.profile")
-                NavigationLink {
-                    KnowledgeSettingsView()
-                } label: {
-                    Text("What Doddy knows")
+                // The learning loop waits for the beta's result (decision 2026-11-07-release-scope, M6): hidden with its row.
+                if ReleaseScopeStore.current.shows(.learning) {
+                    NavigationLink {
+                        KnowledgeSettingsView()
+                    } label: {
+                        Text("What Doddy knows")
+                    }
+                    .accessibilityIdentifier("settings.knowledge")
                 }
-                .accessibilityIdentifier("settings.knowledge")
                 NavigationLink {
                     MemoriesSettingsView()
                 } label: {
@@ -70,6 +73,8 @@ struct ConnectionsSettingsView: View {
     @State private var connections = ConnectionController()
 
     private var activityLog: ActivityLogStore { .shared }
+    /// Each row below is a feature's way in; a hidden one has no row (decision 2026-11-07-release-scope).
+    private var scope: ReleaseScope { ReleaseScopeStore.current }
 
     var body: some View {
         Form {
@@ -94,72 +99,92 @@ struct ConnectionsSettingsView: View {
                 .accessibilityIdentifier("settings.connections")
                 // Connections uses its own controller; re-read when coming back from it.
                 .onAppear { Task { await connections.refresh() } }
-                NavigationLink {
-                    OnlineAccountsScreen()
-                } label: {
-                    Text("Online accounts")
+                if scope.shows(.onlineAccounts) {
+                    NavigationLink {
+                        OnlineAccountsScreen()
+                    } label: {
+                        Text("Online accounts")
+                    }
+                    .accessibilityIdentifier("settings.onlineAccounts")
                 }
-                .accessibilityIdentifier("settings.onlineAccounts")
                 // ADR-641: parcels checked with InPost by the number you add; off until you turn it on.
-                NavigationLink {
-                    ParcelsView()
-                } label: {
-                    Text("Parcels (InPost)")
+                if scope.shows(.parcels) {
+                    NavigationLink {
+                        ParcelsView()
+                    } label: {
+                        Text("Parcels (InPost)")
+                    }
+                    .accessibilityIdentifier("settings.parcels")
                 }
-                .accessibilityIdentifier("settings.parcels")
                 // ADR-640: your inFakt key, kept in this iPhone's Keychain.
-                NavigationLink {
-                    InFaktSettingsView()
-                } label: {
-                    Text("Invoices (inFakt)")
+                if scope.shows(.invoices) {
+                    NavigationLink {
+                        InFaktSettingsView()
+                    } label: {
+                        Text("Invoices (inFakt)")
+                    }
+                    .accessibilityIdentifier("settings.invoices")
                 }
-                .accessibilityIdentifier("settings.invoices")
                 // ADR-735: USDC for pages that ask for payment. Off until the server has a wallet and the person turns it on.
-                NavigationLink {
-                    PaymentsScreen()
-                } label: {
-                    Text("Payments")
+                // Hidden in the beta with its voice tool. Home's "a payment wasn't confirmed" banner stays in every build.
+                if scope.shows(.payments) {
+                    NavigationLink {
+                        PaymentsScreen()
+                    } label: {
+                        Text("Payments")
+                    }
+                    .accessibilityIdentifier("settings.payments")
                 }
-                .accessibilityIdentifier("settings.payments")
                 // ADR-600: sign in to Doddy on the web with a code from this iPhone.
-                NavigationLink {
-                    WebSignInScreen()
-                } label: {
-                    Text("Doddy on the web")
+                if scope.shows(.doddyWeb) {
+                    NavigationLink {
+                        WebSignInScreen()
+                    } label: {
+                        Text("Doddy on the web")
+                    }
+                    .accessibilityIdentifier("settings.web")
                 }
-                .accessibilityIdentifier("settings.web")
-                NavigationLink {
-                    AskDoddySettingsView()
-                } label: {
-                    StatusRow(title: NSLocalizedString("Ask Doddy (typed questions)", comment: ""),
-                              value: assistantConsent ? NSLocalizedString("On", comment: "") : NSLocalizedString("Off", comment: ""))
+                // `Feature.` spelled out: `.messages` is also a `VoiceConnection`, so `shows(.messages)` is ambiguous.
+                if scope.shows(Feature.messages) {
+                    NavigationLink {
+                        AskDoddySettingsView()
+                    } label: {
+                        StatusRow(title: NSLocalizedString("Ask Doddy (typed questions)", comment: ""),
+                                  value: assistantConsent ? NSLocalizedString("On", comment: "") : NSLocalizedString("Off", comment: ""))
+                    }
+                    .accessibilityIdentifier("settings.askDoddy")
                 }
-                .accessibilityIdentifier("settings.askDoddy")
             }
             // Sport mode (ADR-621 to 625): Apple Health, read only, and the training plan, each on its own page.
-            Section {
-                NavigationLink {
-                    HealthConnectionView()
-                } label: {
-                    StatusRow(title: "Apple Health",
-                              value: appleHealthOn ? NSLocalizedString("On", comment: "") : NSLocalizedString("Off", comment: ""))
+            if scope.shows(.health) || scope.shows(.trainingPlan) {
+                Section {
+                    if scope.shows(.health) {
+                        NavigationLink {
+                            HealthConnectionView()
+                        } label: {
+                            StatusRow(title: "Apple Health",
+                                      value: appleHealthOn ? NSLocalizedString("On", comment: "") : NSLocalizedString("Off", comment: ""))
+                        }
+                        .accessibilityIdentifier("connections.appleHealth")
+                    }
+                    if scope.shows(.trainingPlan) {
+                        NavigationLink {
+                            TrainingPlanView()
+                        } label: {
+                            StatusRow(title: NSLocalizedString("Training plan", comment: ""), value: trainingPlanSummary)
+                        }
+                        .accessibilityIdentifier("connections.trainingPlan")
+                        // ADR-642: sets, weight and how it felt, kept on this iPhone only if you say yes.
+                        NavigationLink {
+                            TrainingLogView()
+                        } label: {
+                            Text("Training log")
+                        }
+                        .accessibilityIdentifier("connections.trainingLog")
+                    }
+                } header: {
+                    Text("Sport and health")
                 }
-                .accessibilityIdentifier("connections.appleHealth")
-                NavigationLink {
-                    TrainingPlanView()
-                } label: {
-                    StatusRow(title: NSLocalizedString("Training plan", comment: ""), value: trainingPlanSummary)
-                }
-                .accessibilityIdentifier("connections.trainingPlan")
-                // ADR-642: sets, weight and how it felt, kept on this iPhone only if you say yes.
-                NavigationLink {
-                    TrainingLogView()
-                } label: {
-                    Text("Training log")
-                }
-                .accessibilityIdentifier("connections.trainingLog")
-            } header: {
-                Text("Sport and health")
             }
             Section {
                 NavigationLink {
@@ -193,16 +218,21 @@ struct ConnectionsSettingsView: View {
 }
 
 /// Settings › Notifications (ADR-633): everything that can reach the user without opening Doddy.
+/// A row whose feature the build hides is left out (decision 2026-11-07-release-scope).
 struct NotificationsSettingsView: View {
+    private var scope: ReleaseScope { ReleaseScopeStore.current }
+
     var body: some View {
         Form {
             Section {
-                NavigationLink {
-                    UpdatesSettingsView()
-                } label: {
-                    Text("Notifications and texts")
+                if scope.shows(.updates) {
+                    NavigationLink {
+                        UpdatesSettingsView()
+                    } label: {
+                        Text("Notifications and texts")
+                    }
+                    .accessibilityIdentifier("settings.updates")
                 }
-                .accessibilityIdentifier("settings.updates")
                 NavigationLink {
                     RoutinesSettingsView()
                 } label: {
@@ -217,24 +247,30 @@ struct NotificationsSettingsView: View {
                     Text("Alarms")
                 }
                 .accessibilityIdentifier("settings.alarms")
-                NavigationLink {
-                    BirthdaysView()
-                } label: {
-                    Text("Birthdays")
+                if scope.shows(.birthdays) {
+                    NavigationLink {
+                        BirthdaysView()
+                    } label: {
+                        Text("Birthdays")
+                    }
+                    .accessibilityIdentifier("settings.birthdays")
                 }
-                .accessibilityIdentifier("settings.birthdays")
-                NavigationLink {
-                    NewsSettingsView()
-                } label: {
-                    Text("Daily news")
+                if scope.shows(.dailyNews) {
+                    NavigationLink {
+                        NewsSettingsView()
+                    } label: {
+                        Text("Daily news")
+                    }
+                    .accessibilityIdentifier("settings.news")
                 }
-                .accessibilityIdentifier("settings.news")
-                NavigationLink {
-                    CallsSettingsView()
-                } label: {
-                    Text("Phone calls")
+                if scope.shows(.phoneCalls) {
+                    NavigationLink {
+                        CallsSettingsView()
+                    } label: {
+                        Text("Phone calls")
+                    }
+                    .accessibilityIdentifier("settings.calls")
                 }
-                .accessibilityIdentifier("settings.calls")
             }
         }
         .settingsPage()

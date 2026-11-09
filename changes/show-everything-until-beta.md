@@ -1,0 +1,2 @@
+Release and TestFlight builds show every feature again (owner, 8 Nov: "don't hide anything, the beta comes later"). `ReleaseScopeStore.current` returns `.everything` outside Debug; `ReleaseScope.shipping` stays for the beta (decision `2026-11-08-show-everything-until-beta`). A merge ships to Xcode Cloud.
+Ran: `scripts/ci.sh --only checks`. Not compiled here (no Xcode); the hosted Mac job builds it.

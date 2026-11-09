@@ -1,4 +1,5 @@
 import DoddyCore
+import DoddyDesignTokens
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -39,12 +40,13 @@ struct ListShareCard: Transferable, Sendable {
     }
 }
 
-/// The picture itself: fixed light colours, so it looks the same wherever it is sent.
+/// The picture itself: the tokens' light colours in every appearance, so it looks the same
+/// wherever it is sent.
 struct ListShareCardView: View {
     let card: ListShareCard
-    private let paper = Color(red: 0xFF / 255, green: 0xF7 / 255, blue: 0xE9 / 255)
-    private let ink = Color(red: 0x17 / 255, green: 0x17 / 255, blue: 0x15 / 255)
-    private let secondary = Color(red: 0x65 / 255, green: 0x5F / 255, blue: 0x56 / 255)
+    private let paper = Color.fixed(UploadedColorRole.canvas.hex(.light))
+    private let ink = Color.fixed(UploadedColorRole.readingInk.hex(.light))
+    private let secondary = Color.fixed(UploadedColorRole.secondaryText.hex(.light))
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {

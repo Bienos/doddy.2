@@ -11,6 +11,7 @@ import {
   verify as verifySignature,
 } from "node:crypto";
 import { isIP } from "node:net";
+import { AccountCheckUnavailable, authenticateDoddyAccount } from "./doddy-account.js";
 
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_KEYS_URL = "https://appleid.apple.com/auth/keys";
@@ -21,6 +22,13 @@ const MAX_AUTHORIZATION_CODE_LENGTH = 1_024;
 const MAX_APPLE_TOKEN_LENGTH = 4_096;
 const ACCESS_TOKEN_SECONDS = 600;
 const REFRESH_TOKEN_SECONDS = 30 * 24 * 60 * 60;
+/**
+ * How long Apple's refresh token for a Doddy account is kept, sealed (decision
+ * 2026-11-09-apple-revoke-for-doddy-accounts). Longer than a voice session: a Doddy account has no
+ * 30-day session, and the token is only useful on the day the account is deleted. Each new sign-in
+ * with Apple replaces it with a fresh one, which restarts this clock.
+ */
+const APPLE_LINK_SECONDS = 400 * 24 * 60 * 60;
 const NONCE_TTL_SECONDS = 600;
 const MAX_BODY_BYTES = 24_000;
 const STORE_TIMEOUT_MS = 2_000;
@@ -258,6 +266,11 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       return typeof value === "string" ? value : null;
     },
 
+    /** Forgets the sealed Apple token alone (a Doddy account's, once Apple has revoked it). */
+    async deleteAppleToken(userId) {
+      await exec([["DEL", key("apple-token", userId)]]);
+    },
+
     async deleteAccount(userId) {
       const script = `
         local sessions = redis.call('SMEMBERS', KEYS[1])
@@ -284,6 +297,11 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
 /**
  * POST actions: sign-in (Apple identity token + raw nonce), refresh (opaque refresh token),
  * sign-out (bearer access token), delete-account (bearer access token).
+ *
+ * Two more are for a Doddy account (a Supabase user, decision 2026-11-09-apple-revoke-for-doddy-accounts)
+ * and take its access token, not a voice session: `apple-link` (right after Sign in with Apple, keeps
+ * Apple's refresh token sealed) and `apple-revoke` (before the account is deleted, tells Apple to end
+ * the link). Neither touches the voice account.
  */
 export async function handleVoiceAuthRequest(request, env, deps = {}) {
   const now = deps.now ?? Date.now;
@@ -299,7 +317,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
   const body = await readBody(request);
   if (!body) return finish(400, "invalid_request");
   action = body.action;
-  if (!["sign-in", "refresh", "sign-out", "delete-account"].includes(action)) return finish(400, "unknown_action");
+  if (!["sign-in", "refresh", "sign-out", "delete-account", "apple-link", "apple-revoke"].includes(action)) return finish(400, "unknown_action");
 
   let store;
   let signingKey;
@@ -384,6 +402,59 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       if (rotated?.reused) return finish(401, "session_expired", undefined, {}, { reuse: true });
       if (!rotated) return finish(401, "session_expired");
       return finish(200, null, sessionReply(signingKey, prior.userId, prior.sessionId, nextToken, now()));
+    }
+
+    if (action === "apple-link" || action === "apple-revoke") {
+      let account;
+      try {
+        account = await (deps.authenticateDoddyAccount ?? authenticateDoddyAccount)(
+          request, env, { ...(deps.accountFetch ? { fetch: deps.accountFetch } : {}), now: now() });
+      } catch (error) {
+        // The project's keys couldn't be read: "try again", never "signed out".
+        if (error instanceof AccountCheckUnavailable) return finish(503, "account_check_unavailable");
+        throw error;
+      }
+      if (!account) return finish(401, "session_expired");
+      // Without the owner's Sign in with Apple key there is nothing to keep or revoke (ADR-524).
+      if (!appleRevocationConfigured(env)) {
+        return finish(200, null, action === "apple-link" ? { linked: false } : { appleRevoked: false, apple: "not_configured" },
+          {}, { apple: "not_configured" });
+      }
+      if (action === "apple-link") {
+        if (typeof body.identityToken !== "string" || typeof body.rawNonce !== "string"
+            || typeof body.authorizationCode !== "string"
+            || body.identityToken.length > 18_000 || !/^[A-Za-z0-9_-]{40,64}$/.test(body.rawNonce)
+            || body.authorizationCode.length < 1 || body.authorizationCode.length > MAX_AUTHORIZATION_CODE_LENGTH) {
+          return finish(400, "invalid_request");
+        }
+        // Each call can reach Apple, so it counts against the same per-caller limits as a sign-in.
+        const signIns = signInLimits(env);
+        if (!signIns || typeof store.hitSignInLimits !== "function") return finish(503, "server_not_configured");
+        const turn = await store.hitSignInLimits(hmac(signingKey, `apple-link:${account.userId}`),
+          signIns.perHour, signIns.perDay, now());
+        if (!turn.allowed) {
+          return finish(429, "rate_limited", undefined, { "retry-after": String(turn.retryAfterSeconds) }, { limit: turn.limit });
+        }
+        // The code must belong to the same Apple person as the identity token the app just used, so
+        // a code from another Apple account is never kept (the same rule as the voice sign-in).
+        const claims = await (deps.verifyAppleIdentityToken ?? verifyAppleIdentityToken)(
+          body.identityToken, body.rawNonce, env.APPLE_BUNDLE_ID.trim(), { fetch: deps.fetch ?? fetch, now: now() });
+        if (!claims) return finish(401, "apple_sign_in_failed");
+        const appleToken = await (deps.exchangeAppleAuthorizationCode ?? exchangeAppleAuthorizationCode)(
+          body.authorizationCode, env, { fetch: deps.fetch ?? fetch, now: now(), expectedSub: claims.sub });
+        // The account works without it; deleting it later just can't revoke at Apple.
+        if (!appleToken) return finish(200, null, { linked: false }, {}, { apple: "not_linked" });
+        await store.setAppleToken(account.userId, sealAppleToken(appleToken, signingKey), APPLE_LINK_SECONDS);
+        return finish(200, null, { linked: true }, {}, { apple: "linked" });
+      }
+      // apple-revoke: Apple first, then forget the token. A failed revoke keeps it, so asking again can work.
+      const sealed = await store.getAppleToken(account.userId);
+      const appleToken = sealed ? openAppleToken(sealed, signingKey) : null;
+      const apple = !appleToken ? "no_token"
+        : await (deps.revokeAppleToken ?? revokeAppleToken)(appleToken, env, { fetch: deps.fetch ?? fetch, now: now() })
+          ? "revoked" : "failed";
+      if (apple !== "failed" && sealed) await store.deleteAppleToken(account.userId);
+      return finish(200, null, { appleRevoked: apple === "revoked", apple }, {}, { apple });
     }
 
     const access = await authenticateVoiceSession(request, env, { store, signingKey, now: now() });

@@ -413,135 +413,6 @@
         }
       }
     },
-    "BREATHE": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ODDECH"
-          }
-        }
-      }
-    },
-    "Breathing": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atemübung"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respiración"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respiration"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disanje"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respirazione"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "深呼吸"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oddychanie"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respiração"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "呼吸练习"
-          }
-        }
-      }
-    },
-    "Breathing done": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atemübung beendet"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respiración hecha"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respiration terminée"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disanje završeno"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respirazione terminata"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "深呼吸が終わりました"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oddychanie zakończone"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respiração concluída"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "呼吸练习完成"
-          }
-        }
-      }
-    },
     "CALENDAR": {
       "extractionState": "manual",
       "localizations": {
@@ -560,6 +431,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "APARAT"
+          }
+        }
+      }
+    },
+    "CHECK": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SPRAWDŹ"
           }
         }
       }
@@ -1477,28 +1359,6 @@
         }
       }
     },
-    "HEY DODDY": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HEJ DODDY"
-          }
-        }
-      }
-    },
-    "Hey Doddy is on": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„Hej Doddy” jest włączone"
-          }
-        }
-      }
-    },
     "It opens only on your tap": {
       "extractionState": "manual",
       "localizations": {
@@ -1894,47 +1754,6 @@
         }
       }
     },
-    "Listening on this iPhone for “Hey Doddy” only": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Listening on this iPad for “Hey Doddy” only"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Listening on this iPhone for “Hey Doddy” only"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Na tym iPadzie słucham tylko „Hej Doddy”"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Na tym iPhonie słucham tylko „Hej Doddy”"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Live, Doddy can hear you": {
       "extractionState": "manual",
       "localizations": {
@@ -2307,65 +2126,6 @@
         }
       }
     },
-    "Nicely done": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gut gemacht"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bien hecho"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bien joué"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dobro obavljeno"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ben fatto"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "うまくいきました"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dobra robota"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muito bem"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "做得好"
-          }
-        }
-      }
-    },
     "No reminders coming up.": {
       "extractionState": "manual",
       "localizations": {
@@ -2432,28 +2192,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic w tym tygodniu"
-          }
-        }
-      }
-    },
-    "Not listening right now": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Teraz nie słucham"
-          }
-        }
-      }
-    },
-    "Not listening — open Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie słucham — otwórz Doddy’ego"
           }
         }
       }
@@ -2992,65 +2730,6 @@
         }
       }
     },
-    "Open Doddy to follow along": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy öffnen, um mitzulesen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre Doddy para seguirlo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre Doddy pour suivre"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otvori Doddyja da pratiš"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apri Doddy per seguire"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyを開いて進行を見る"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otwórz Doddy’ego, żeby śledzić"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abra o Doddy para acompanhar"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开 Doddy 跟着进行"
-          }
-        }
-      }
-    },
     "Open Doddy to read it again": {
       "extractionState": "manual",
       "localizations": {
@@ -3434,13 +3113,13 @@
         }
       }
     },
-    "Pause DODDY Recording": {
+    "Pause Doddy Recording": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wstrzymaj nagrywanie DODDY"
+            "value": "Wstrzymaj nagrywanie w Doddym"
           }
         }
       }
@@ -3898,13 +3577,13 @@
         }
       }
     },
-    "Record with DODDY": {
+    "Record with Doddy": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nagrywaj z DODDY"
+            "value": "Nagrywaj z Doddym"
           }
         }
       }
@@ -4027,13 +3706,13 @@
         }
       }
     },
-    "Resume DODDY Recording": {
+    "Resume Doddy Recording": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wznów nagrywanie DODDY"
+            "value": "Wznów nagrywanie w Doddym"
           }
         }
       }
@@ -4229,17 +3908,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiedz „tak” albo stuknij w Doddym"
-          }
-        }
-      }
-    },
-    "Say “Hey Doddy”": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Powiedz „Hej Doddy”"
           }
         }
       }
@@ -4638,13 +4306,13 @@
         }
       }
     },
-    "Start DODDY Recording": {
+    "Start Doddy Recording": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zacznij nagrywanie DODDY"
+            "value": "Zacznij nagrywanie w Doddym"
           }
         }
       }
@@ -4730,72 +4398,13 @@
         }
       }
     },
-    "Stop DODDY Recording": {
+    "Stop Doddy Recording": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zatrzymaj nagrywanie DODDY"
-          }
-        }
-      }
-    },
-    "Stop listening": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nicht mehr zuhören"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dejar de escuchar"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arrêter d’écouter"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prestani slušati"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Smetti di ascoltare"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聞き取りを停止"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przestań słuchać"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar de escutar"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "停止聆听"
+            "value": "Zatrzymaj nagrywanie w Doddym"
           }
         }
       }
@@ -5720,17 +5329,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "łącznie"
-          }
-        }
-      }
-    },
-    "“Hey Doddy” paused": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„Hej Doddy” wstrzymane"
           }
         }
       }

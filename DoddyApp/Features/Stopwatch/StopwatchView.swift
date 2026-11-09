@@ -7,6 +7,8 @@ import SwiftUI
 struct StopwatchView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// The clock's size grows with Dynamic Type (it was a fixed 56 pt).
+    @ScaledMetric(relativeTo: .largeTitle) private var clockSize: CGFloat = 56
     @State private var label = ""
     private var stopwatch: StopwatchController { .shared }
 
@@ -79,7 +81,9 @@ struct StopwatchView: View {
                         Text(Stopwatch.clock(watch.elapsed(at: Date()))).monospacedDigit()
                     }
                 }
-                .font(.system(size: 56, weight: .medium))
+                .font(.system(size: clockSize, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .foregroundStyle(Color.islandCream)
                 .accessibilityIdentifier("stopwatch.time")
                 // The user's own line as typed; otherwise our words, which are translated.
