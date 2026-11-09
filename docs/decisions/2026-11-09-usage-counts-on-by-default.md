@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Decided by:** owner, 9 Nov 2026. Asked "what should the owner panel show?", the answer was "sumy + historia kazdego konta ale narazie nie przejmuj sie. ppolityka etc usun to z tego na koinec zrobimy nowa" (totals and each account's history; don't worry for now; the privacy policy etc. comes at the end, we'll write a new one). Asked "who is counted?", the answer was "Włączone domyślnie" (on by default). Earlier the same day: "I użytkownicy też będą mogli dostać dane tej analityki… czy ja mogę mieć… na bazie wszystkich użytkowników" (users get their own analytics, and the owner gets it across all users).
-- **Status:** accepted. The iPhone half ships with the pull request that adds this file; the owner panel follows in its own pull request.
+- **Status:** accepted. The iPhone half ships with the pull request that adds this file; the admin dashboard follows in its own pull request.
 - **Replaces:**
   - Logbook rule 2 (`docs/product/WEB_LOGBOOK.md`, ADR-602): "Off until the person turns it on in the app" becomes **on unless the person turns it off**. Turning it off still deletes what the server holds.
   - Logbook rule 7: "There is no admin view of anyone's Logbook" becomes **the owner sees every account's counts and their totals**. One person still sees only their own Logbook.
@@ -20,7 +20,7 @@
    - asks the server to delete the days it holds, and says "deleted" only after the server confirmed (DOD-08);
    - if the server can't be reached, asks again at the next sync.
 3. **What the person is told.** The switch's footer and the web page say that Doddy's team can see the counts with the account. A switch that shared data without saying so would be a hidden transfer.
-4. **The owner panel** (next pull request): totals across all accounts, and each account's days with its sign-in method, email and dates. It is owner-only, with an allow-list of account ids set on the server, never in the repository. Only one person sees their own Logbook page.
+4. **The admin dashboard** (own pull request): a separate page at `/admin`, outside the workspace menu, in its own code chunk. It shows totals across all accounts, what works and what doesn't, who is active, retention, and each account with its sign-in method, email, dates and own days. It is owner-only, with an allow-list of account ids set on the server (`DODDY_OWNER_ACCOUNTS`), never in the repository; everyone else is told "not found". Only one person sees their own Logbook page. Owner's words, 9 Nov: "osobny dashboard jako admin... tylko ja mam dostęp", "weź te analityki ładniej pokaż... powymyślaj co jeszcze się przyda".
 5. **The privacy policy is rewritten at the end** (owner). Until then:
    - the published draft says "The app has no analytics", which is no longer true;
    - App Store and outside testers must wait for the new policy and the matching App Store privacy answers ("Usage Data, linked to you, analytics");

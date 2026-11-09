@@ -36,6 +36,7 @@ import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
 import { SocialSignIn, SupabaseUserRemover } from "./web/social.js";
+import { OwnerPanel, SupabaseUserDirectory } from "./web/owner.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -199,11 +200,16 @@ export async function buildApp(
     config.web?.social && webAuth
       ? new SocialSignIn(store, webAuth, config.web.social, { appScheme: appScheme(config.appReturnUrl), trustProxy: config.web.trustProxy, log })
       : null;
+  // The owner panel (decision 2026-11-09-usage-counts-on-by-default): only with DODDY_OWNER_ACCOUNTS set. The
+  // accounts' emails and sign-in dates come from Supabase's admin API, with the secret key, when it is set.
+  const ownerDirectory =
+    config.supabaseProjectUrl && config.supabaseSecretKey ? new SupabaseUserDirectory(config.supabaseProjectUrl, config.supabaseSecretKey) : null;
+  const ownerPanel = config.ownerAccounts.length > 0 ? new OwnerPanel(store, config.ownerAccounts, ownerDirectory, config.limits.providerTimeoutMs) : null;
   const web =
     config.web && webAuth
       ? {
           auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions),
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions, ownerPanel),
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;

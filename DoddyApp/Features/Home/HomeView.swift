@@ -48,13 +48,15 @@ struct HomeView: View {
     /// Translate (ADR-215): the start sheet, and what the user chose on it.
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
-    @State private var showDataFlow = false
     @State private var showCapabilities = false
     @State private var showToday = false
     /// Tasks handed to Doddy (ADR-570): the list and each result card.
     @State private var showErrands = false
     /// The stories behind what the person follows (ADR-656).
     @State private var showFollowing = false
+    /// Phone calls (owner, 9 Nov 2026): calling Doddy, Doddy calling you and calls Doddy makes for you,
+    /// from Home's menu as well as Settings › Notifications › Phone calls.
+    @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
     @State private var showVoicePicker = false
@@ -119,8 +121,8 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
-            .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
@@ -167,7 +169,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -243,9 +245,16 @@ struct HomeView: View {
                     Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                         .accessibilityIdentifier("home.tasks")
                 }
+                // Phone calls (owner, 9 Nov 2026): the same screen as Settings › Notifications › Phone calls, which
+                // leads to Calls for you. It says itself when the server or the phone line isn't set up yet.
+                if scope.shows(.phoneCalls) {
+                    Button { showCalls = true } label: { Label("Phone calls", systemImage: "phone") }
+                        .accessibilityIdentifier("home.calls")
+                }
                 // Focus counts down, the stopwatch counts up (ADR-652). One row for both: the menu
                 // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
                 // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
+                // Phone calls took a row on 9 Nov 2026; What leaves this iPhone moved to Settings › Privacy only, to make room.
                 Menu {
                     Button { tool = .focus } label: {
                         if FocusController.shared.session.map({ !$0.isOver }) ?? false {
@@ -313,8 +322,8 @@ struct HomeView: View {
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
-                Button { showDataFlow = true } label: { Label("What leaves this iPhone", systemImage: "lock.shield") }
-                    .accessibilityIdentifier("home.dataFlow")
+                // What leaves this iPhone left this menu on 9 Nov 2026 (owner, decision 2026-11-09-phone-calls-on-home-menu)
+                // to make room for Phone calls; it is on Settings › Privacy, as it has been since ADR-580.
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -1082,13 +1091,14 @@ private struct UnfinishedNoteCard: View {
     }
 }
 
-/// Settings › Privacy › What leaves this iPhone, opened from Home's footer (ADR-326).
-private struct DataFlowSheet: View {
+/// Home › ••• › Phone calls (owner, 9 Nov 2026): the Settings screen in a sheet with Done, so it opens
+/// from Home without leaving it. Calls for you is a row on that screen.
+private struct HomeCallsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            DataFlowView()
+            CallsSettingsView()
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { dismiss() }
@@ -1097,3 +1107,4 @@ private struct DataFlowSheet: View {
         }
     }
 }
+

@@ -164,6 +164,15 @@ public final class DoddyAccountModel {
         return try await refreshed(from: current).accessToken
     }
 
+    /// The signed-in session with an access token that has time left, refreshed first when needed.
+    /// Nil when signed out or when the refresh didn't work (`accessToken()` says why). Ask this before a
+    /// question whose `401` would be read as an answer: an expired token is refused like a server that
+    /// doesn't take accounts yet.
+    public func freshSession() async -> DoddyAccountSession? {
+        guard (try? await accessToken()) != nil else { return nil }
+        return session
+    }
+
     /// A server refused the access token: get a new one now, once.
     public func refreshAfterRefusal() async throws(DoddyAccountError) -> String {
         guard client != nil else { throw .notConfigured }

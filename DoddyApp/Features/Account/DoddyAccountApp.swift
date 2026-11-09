@@ -62,8 +62,11 @@ enum DoddyAccountServers {
     /// and the messaging server signs this iPhone in to the account. Each answer decides how that
     /// server is used from now on; "try again later" leaves it as it was, for `catchUp`.
     static func bringEarlierData(_ session: DoddyAccountSession) async {
-        await linkBackend(session)
-        await signInMessaging(session)
+        // A kept session's access token runs out after about an hour. Sent expired, the backend answers 401,
+        // which reads as "doesn't take accounts yet" (and is remembered) or "nothing to link". Refresh first.
+        guard let fresh = await DoddyAccountModel.shared.freshSession(), fresh.userID == session.userID else { return }
+        await linkBackend(fresh)
+        await signInMessaging(fresh)
     }
 
     /// At launch, signed in: a server that didn't answer before is asked again.
@@ -187,6 +190,8 @@ enum DoddyAccountServers {
         let model = DoddyAccountModel.shared
         guard model.isSignedIn else { return }
         // Only a backend that takes the account knows its sign-in, so only it can delete that.
+        // An answer remembered from a launch with a run-out token is asked again before it refuses anything.
+        if let backend = DeviceSession.serverURL(), use(.backend, backend) != .account { await catchUp() }
         guard let backend = DeviceSession.serverURL(), use(.backend, backend) == .account else {
             model.message = NSLocalizedString("Doddy's server isn't set up for Doddy accounts yet, so it can't delete yours. Nothing was deleted. Try again later.", comment: "")
             return

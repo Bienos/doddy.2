@@ -7,6 +7,7 @@
 import { logbookEn, logbookPl } from "./logbookMessages.js";
 import { chatEn, chatPl } from "./chatMessages.js";
 import { memoryEn, memoryPl } from "./memoryMessages.js";
+import { adminEn, adminPl } from "./adminMessages.js";
 
 const en = {
   "app.name": "Doddy",
@@ -206,6 +207,7 @@ const en = {
   "crash.body": "Nothing was changed. Reload the page to try again.",
   "crash.reload": "Reload",
   ...logbookEn,
+  ...adminEn,
   ...memoryEn,
   ...chatEn,
 } as const;
@@ -411,6 +413,7 @@ const pl: Messages = {
   "crash.body": "Nic nie zostało zmienione. Odśwież stronę, żeby spróbować ponownie.",
   "crash.reload": "Odśwież",
   ...logbookPl,
+  ...adminPl,
   ...memoryPl,
   ...chatPl,
 };

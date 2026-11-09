@@ -102,7 +102,7 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testFirstVisitHomeKeepsToTalkingAndLinksToPrivacy() {
+    func testFirstVisitHomeKeepsToTalkingAndShowsWhatICanDo() {
         // ADR-326: before the first conversation, a hint under Talk and no setup cards.
         let app = launch(onboardingDone: true, backTapSetup: "notStarted", firstVisit: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
@@ -115,12 +115,15 @@ final class LaunchSmokeTests: XCTestCase {
         app.buttons["home.more"].tap()
         XCTAssertFalse(app.buttons["home.today"].waitForExistence(timeout: 2), "nothing connected yet, so no Today")
         XCTAssertFalse(app.buttons["home.voice"].exists, "the voice picker waits for the first conversation (ADR-443)")
-        let link = app.buttons["home.dataFlow"]
+        // What leaves this iPhone is on Settings › Privacy only since 9 Nov 2026 (decision 2026-11-09-phone-calls-on-home-menu;
+        // testWhatLeavesThisIPhoneFollowsSettings opens it there). What I can do stays on the menu and points to it.
+        XCTAssertFalse(app.buttons["home.dataFlow"].exists, "moved to Settings › Privacy")
+        let link = app.buttons["home.capabilities"]
         XCTAssertTrue(link.waitForExistence(timeout: 5))
         link.tap()
-        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
-        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForNonExistence(timeout: 5))
 
         // Settings › Voice has the picker from the start.
         app.goToTab("settings")
@@ -148,6 +151,20 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForNonExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testPhoneCallsOpenFromTheHomeMenu() {
+        // Owner, 9 Nov 2026: Phone calls in Home's ••• menu, the same screen as Settings › Notifications › Phone calls.
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        app.tapHomeMenuItem("home.calls")
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForNonExistence(timeout: 5))
+        // The menu still reaches its last row with Phone calls in it (eleven rows fit, ADR-652).
+        app.tapHomeMenuItem("home.capabilities")
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
     }
 
     @MainActor

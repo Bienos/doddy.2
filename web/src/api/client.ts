@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { LogbookDeleted, LogbookView } from "../logbook/schema.js";
+import { OwnerAccounts, OwnerFlag, OwnerOverview } from "../owner/schema.js";
 import { ChatContext, ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../memory/schema.js";
 import { AccountDeleted, AccountKind, CurrentSession, DocumentList, ErrorBody, IdentityList, ReceiptList, SessionList, SignedOut, SignedUp, SignInOptions, type SocialProvider, ThreadView, ToolsCatalog, Unlinked } from "./schemas.js";
 
@@ -141,6 +142,24 @@ export const api = {
   receipts: (signal?: AbortSignal) => json(ReceiptList, "/v1/tools/receipts", { signal }).then((r) => r.receipts),
   /** The days the iPhone has sent for Logbook (ADR-602), and whether it is on. */
   logbook: (signal?: AbortSignal) => json(LogbookView, "/v1/web/logbook", { signal }),
+  /**
+   * Whether this account sees the owner panel (decision 2026-11-09-usage-counts-on-by-default). The
+   * server says "not found" to everyone else, and to a server without the panel; both read as no.
+   */
+  isOwner: (signal?: AbortSignal) =>
+    json(OwnerFlag, "/v1/web/owner", { signal })
+      .then(() => true)
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && error.code === "not_found") return false;
+        throw error;
+      }),
+  /** Totals across every account over the last `days` days. Owner only. */
+  ownerOverview: (days: number, signal?: AbortSignal) => json(OwnerOverview, `/v1/web/owner/overview?days=${days}`, { signal }),
+  /** Every account with its sign-in details and its counts over the last `days` days. Owner only. */
+  ownerAccounts: (days: number, signal?: AbortSignal) => json(OwnerAccounts, `/v1/web/owner/accounts?days=${days}`, { signal }),
+  /** One account's own Logbook days, as that person's page reads them. Owner only. */
+  ownerAccountLogbook: (userId: string, signal?: AbortSignal) =>
+    json(LogbookView, `/v1/web/owner/accounts/${encodeURIComponent(userId)}/logbook`, { signal }),
   /** Deletes every stored Logbook day. Logbook stays as it was (on or off). */
   deleteLogbook: () => json(LogbookDeleted, "/v1/web/logbook", { method: "DELETE" }),
   /** Everything stored for Logbook, as the server's JSON file. Saved through a download. */
