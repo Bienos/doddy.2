@@ -52,6 +52,19 @@ final class VoiceStartupSnapshotTests: XCTestCase {
         XCTAssertTrue(hidden.lists.isEmpty)
     }
 
+    func testAListCutKeepsTheNewestListsInScreenOrder() async throws {
+        let db = try DoddyDatabase.inMemory()
+        let repo = SQLiteMemoryRepository(database: db)
+        let lists = SQLiteListRepository(database: db)
+        for i in 0..<(VoiceStartupSnapshot.listsLimit + 5) {
+            _ = try await lists.create(name: "List \(i)", items: [], source: .typed)
+        }
+        let snapshot = try await repo.voiceStartupSnapshot(excluding: [])
+        XCTAssertTrue(snapshot.listsTruncated)
+        XCTAssertEqual(snapshot.lists.map(\.name), (5..<(VoiceStartupSnapshot.listsLimit + 5)).map { "List \($0)" },
+                       "the five oldest are cut, the newest stay, oldest first")
+    }
+
     func testLargePrivateSetDoesNotExceedSQLiteVariableLimitAndEmptyIsHonest() async throws {
         let repo = try SQLiteMemoryRepository.inMemory()
         let ids = Set((0..<1500).map { _ in UUID() })
