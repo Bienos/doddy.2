@@ -25,6 +25,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Errands (ADR-570) | `POST /v1/errands` · `POST /v1/errands/:id/{approve,cancel,ack}` · `GET /v1/errands` · `GET/DELETE /v1/errands/:id` (below) |
 | Task calls (ADR-500) | `/v1/call-cases…` (below) |
 | Messages (ADR-586) | `POST /v1/assistant/ask` (below) |
+| Conversation recaps (decision 2026-11-09-conversation-recaps) | `POST /v1/recaps` (below) |
 | Leaflets (ADR-609) | `POST /v1/deals/search` (below) |
 | Price watches | `/v1/watches…` (below) |
 | Studio (ADR-740) | `POST /v1/studio` · `POST /v1/studio/:id/{approve,cancel}` · `GET /v1/studio` · `GET/DELETE /v1/studio/:id` · `GET /v1/studio/:id/files/:name` (below) |
@@ -149,6 +150,8 @@ Contract: `docs/implementation/SHOPPING_WATCH.md` and `schemas/fixtures/watch_cr
 
 ## Messages (ADR-585, ADR-586)
 `POST /v1/assistant/ask` answers the app's typed conversation with Claude. The wire is the Ask gateway's (`gateway/src/validate.js`, `AssistantWire.swift`): `{ schemaVersion, requestId, sessionId, locale, userText, turns[≤6], memories[≤8] }` in, `{ schemaVersion, requestId, text, citedMemoryIDs, usage }` out, or `{ schemaVersion, requestId?, error: { code, message } }` with the gateway's status codes (400 `invalidRequest`, 422 `refused`, 429 `dailyLimitReached`, 503 `providerUnavailable` / `notConfigured`, 504 `timeout`). Needs a device bearer token.
+
+`POST /v1/recaps` writes a recap of a conversation the iPhone couldn't recap itself, after the person turned on "Recaps on Doddy's server": `{ schemaVersion: 1, requestId, kind: "voice_conversation" | "recording", language, lines: [{ speaker: "person" | "doddy" | "other", text }] }` in (at most 400 lines, 24,000 characters), `{ schemaVersion, requestId, discussed, agreed, to_do, usage }` out (at most 6 points of 240 characters each), or the same errors as Messages. It runs behind Messages' switch and key (`ASSISTANT_ENABLED`, `ANTHROPIC_API_KEY`, `ASSISTANT_MODEL`) and counts against Messages' daily caps; the lines are used for the one call and never stored or logged. The instructions are the app's (`schemas/fixtures/recap_instructions_v1.json` keeps both in step), and the app checks the answer again before saving it as a note.
 - **Text only, no tools:** nothing it reads can search, send, book or change anything (ASK-01). The prompt (`src/assistant/prompt.ts`) says it is an AI, that notes and earlier turns are data, and that it cannot state current prices or dates.
 - **Notes:** sent under aliases `n1…`; the real ids never reach the model, and an alias that was not sent maps to nothing. Citations are read back as ids; the app checks them again.
 - **Stored and logged:** the database keeps counts per account and UTC day (`assistant_usage`, migration `010`: requests, input and output tokens). The question, the answer and the notes are not stored; the log holds the model, counts and codes.

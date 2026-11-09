@@ -44,6 +44,9 @@ public struct DataFlowState: Equatable, Sendable {
     public var newsWriterProvider: String?
     /// The person saved their own inFakt key in this iPhone's Keychain (ADR-640).
     public var inFaktKeySaved: Bool
+    /// "Remember what we talked about" is on and the person let Doddy's server write recaps this iPhone can't
+    /// (decision 2026-11-09-conversation-recaps).
+    public var recapsOnServer: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -56,8 +59,10 @@ public struct DataFlowState: Equatable, Sendable {
         newsWriterProvider: String? = nil,
         webNotesKept: Bool = false, webConversationsKept: Bool = false,
         inFaktKeySaved: Bool = false,
-        textsToDoddyOn: Bool = false
+        textsToDoddyOn: Bool = false,
+        recapsOnServer: Bool = false
     ) {
+        self.recapsOnServer = recapsOnServer
         self.textsToDoddyOn = textsToDoddyOn
         self.inFaktKeySaved = inFaktKeySaved
         self.webNotesKept = webNotesKept
@@ -346,6 +351,16 @@ public enum DataFlow {
                     : state.messagingServerSet
                         ? "Your messaging server passes it to Anthropic and keeps only counts, not words. The conversation itself stays on this iPhone."
                         : "No messaging server is set, so typed questions can't be sent."),
+            DataFlowRow(
+                id: "recaps", destination: "Your Doddy messaging server and Anthropic (recaps)",
+                what: "The text of a conversation with Doddy, to write a short recap of what was discussed, when this iPhone can't write it itself.",
+                when: "Only after a conversation ends, with \"Remember what we talked about\" and \"Recaps on Doddy's server\" both on. Never a Private conversation.",
+                isActive: state.recapsOnServer && state.messagingServerSet,
+                note: !state.recapsOnServer
+                    ? "Recaps are written on this iPhone or not at all, so nothing goes there."
+                    : state.messagingServerSet
+                        ? "Your messaging server passes the text to Anthropic for this one recap and keeps only counts, not words. The recap is saved as a note on this iPhone."
+                        : "No messaging server is set, so recaps can't be written there."),
         ]
     }
 
@@ -364,6 +379,8 @@ public enum DataFlow {
         var parts: [String] = []
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
+        // Decision 2026-11-09-conversation-recaps: only when this iPhone can't write a recap itself.
+        if active.contains("recaps") { parts.append("Anthropic (recaps of conversations this iPhone can't write)") }
         // ADR-603: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
         if active.contains("webMemory") { parts.append("Anthropic (questions you ask on the web about what you keep on Doddy's server)") }
         if active.contains("messagingServer") {
@@ -405,6 +422,7 @@ public enum DataFlow {
         "watches": "the shops' pages, read by your messaging server (prices you watch)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "Anthropic (Ask Doddy, through your messaging server)",
+        "recaps": "Anthropic (recaps of conversations, through your messaging server)",
         "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",
     ]
 

@@ -5,7 +5,8 @@ import Foundation
 /// 2026-11-09-conversation-recaps):
 /// - calls Doddy made for the person, recapped by the rules from the brief and the answer card
 ///   (`CallCaseRecap`), never the transcript (step 2);
-/// - conversations with Doddy, written by Apple's model on this iPhone (`OnDeviceRecapWriter`, step 3a).
+/// - conversations with Doddy, written by Apple's model on this iPhone (`OnDeviceRecapWriter`, step 3a), or,
+///   when it can't and the person said yes, by Doddy's server (`ServerRecapClient`, step 3b).
 ///
 /// A recap is saved once: its key goes into `RecapLedger` only after `MemoryStore.save` read the note
 /// back, so a failed save is tried again next time and a note the person deleted never comes back.
@@ -24,6 +25,11 @@ enum RecapKeeper {
 
     static func isOn(_ defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: RecapSettings.rememberKey) as? Bool ?? RecapSettings.rememberDefault
+    }
+
+    /// The person's yes to Doddy's server writing a recap this iPhone can't (off until given).
+    static func serverYes(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.object(forKey: RecapSettings.serverWriterKey) as? Bool ?? RecapSettings.serverWriterDefault
     }
 
     static func since(_ defaults: UserDefaults = .standard) -> Date? {
@@ -93,21 +99,26 @@ enum RecapKeeper {
         let decision = RecapPolicy.decide(kind: .voiceConversation, rememberOn: isOn(defaults), isPrivate: isPrivate,
                                           wordsFromPerson: RecapPolicy.wordCount(personWords),
                                           onDeviceAvailable: OnDeviceRecapWriter.isAvailable(languageCode: language),
-                                          // The server writer and its yes come in step 3b.
-                                          serverYes: false)
+                                          serverYes: serverYes(defaults))
         guard case .recap(let writer) = decision else {
             if case .skip(let why) = decision { return .skipped(why) }
             return .refused
         }
         let key = "voice_conversation:\(Int64((startedAt.timeIntervalSince1970 * 1000).rounded()))"
-        guard writer == .onDevice, !ledger(defaults).contains(key),
+        guard writer == .onDevice || writer == .server, !ledger(defaults).contains(key),
               RecapPolicy.endedAfterSwitchOn(endedAt, since: since(defaults)) else { return .notNew }
         let recap: ConversationRecap
         let text: String
         do {
-            let answer = try await OnDeviceRecapWriter.write(kind: .voiceConversation, lines: lines, languageCode: language)
+            let answer: Data
+            if writer == .onDevice {
+                answer = try await OnDeviceRecapWriter.write(kind: .voiceConversation, lines: lines, languageCode: language)
+            } else {
+                answer = try await ServerRecapClient(server: ServerConfig.client())
+                    .write(kind: .voiceConversation, lines: lines, languageCode: language)
+            }
             recap = try RecapModelIO.read(answer, kind: .voiceConversation, with: nil, endedAt: endedAt,
-                                          writtenBy: .onDevice, conversation: RecapModelIO.plainText(lines))
+                                          writtenBy: writer, conversation: RecapModelIO.plainText(lines))
             text = try RecapMemoryText.text(recap, labels: labels(for: recap))
         } catch {
             return .refused

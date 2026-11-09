@@ -61939,6 +61939,17 @@
         }
       }
     },
+    "Recaps on Doddy's server": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowania na serwerze Doddy’ego"
+          }
+        }
+      }
+    },
     "Receipt ID: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -100471,6 +100482,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przy urazie albo bólu, który trening mógłby pogorszyć, niech najpierw obejrzy to fizjoterapeuta lub lekarz. Doddy nie leczy urazów i nie układa planów rehabilitacji."
+          }
+        }
+      }
+    },
+    "With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "With “Recaps on Doddy's server” on, when this iPad can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy „Podsumowania na serwerze Doddy’ego” są włączone, a ten iPad nie może sam napisać podsumowania, tekst rozmowy trafia do Twojego serwera wiadomości Doddy’ego i do Anthropic tylko na potrzeby tego jednego podsumowania. Zapisują wyłącznie liczby, nie słowa. Gdy to jest wyłączone, takie rozmowy nie dostają podsumowania."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy „Podsumowania na serwerze Doddy’ego” są włączone, a ten iPhone nie może sam napisać podsumowania, tekst rozmowy trafia do Twojego serwera wiadomości Doddy’ego i do Anthropic tylko na potrzeby tego jednego podsumowania. Zapisują wyłącznie liczby, nie słowa. Gdy to jest wyłączone, takie rozmowy nie dostają podsumowania."
+                }
+              }
+            }
           }
         }
       }

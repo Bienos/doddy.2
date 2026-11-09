@@ -17,6 +17,7 @@ import { AnthropicStudioApi, parseSkills } from "../studio/model.js";
 import { modelLabel } from "../studio/models.js";
 import type { AssistantDeps } from "../assistant/deps.js";
 import { ClaudeAssistantResponder } from "../assistant/responder.js";
+import { ClaudeRecapWriter } from "../assistant/recap.js";
 import { PoliteFetcher } from "../deals/fetcher.js";
 import type { DealsDeps } from "../deals/service.js";
 import { CeidgClient } from "../registry/ceidg.js";
@@ -113,6 +114,9 @@ export function providersFrom(config: Config) {
     settings: as,
     responder: as.enabled && config.anthropicApiKey
       ? new ClaudeAssistantResponder(config.anthropicApiKey, { model: as.model, effort: as.effort })
+      : undefined,
+    recapWriter: as.enabled && config.anthropicApiKey
+      ? new ClaudeRecapWriter(config.anthropicApiKey, { model: as.model })
       : undefined,
   };
   // Studio (ADR-740): the model API only with an Anthropic key, the switch on (STUDIO_ENABLED, default 0) and Doddy's
