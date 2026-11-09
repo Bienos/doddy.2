@@ -1,12 +1,24 @@
 import DoddyCore
 import SwiftUI
 
-/// Plain list of what is actually built, from the capability catalog.
+/// Home › ••• › What I can do (decision 2026-11-09-what-i-can-do): the opening paragraph, then each feature this
+/// build shows, in plain words, with an honest status worked out in DoddyCore (`WhatICanDo`). A row opens its
+/// feature where there is one: calls inside this sheet, the rest from Home through `open` once the sheet has gone.
 struct CapabilitiesSheet: View {
+    /// Opens a feature that lives on Home (Messages, Tasks, leaflets, notes and lists) after this sheet closes.
+    var open: ((DoddyAbility) -> Void)? = nil
+
     @Environment(\.appEnvironment) private var environment
     @Environment(\.dismiss) private var dismiss
     /// The ink storyboard has played (ADR-380).
     @State private var inkPlayed = false
+
+    private var language: NotificationLanguage { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) }
+
+    private var rows: [AbilityRow] {
+        WhatICanDo.rows(catalog: environment.capabilities, scope: ReleaseScopeStore.current,
+                        serverConfigured: ServerConfig.baseURL() != nil, language: language)
+    }
 
     var body: some View {
         NavigationStack {
@@ -16,18 +28,27 @@ struct CapabilitiesSheet: View {
                     PanelStoryView(story: .ink, played: $inkPlayed, height: 220)
                         .frame(maxWidth: .infinity)
                         .listRowBackground(Color.clear)
-                    Text(CapabilityIntroduction.text(for: environment.capabilities))
+                    Text(CapabilityIntroduction.text(for: environment.capabilities, language: language))
                         .accessibilityIdentifier("capabilities.introduction")
                 }
-                KeysExampleSection()
                 Section("What's built") {
-                    ForEach(Capability.allCases, id: \.self) { capability in
-                        StatusRow(
-                            title: capability.displayName,
-                            value: StatusCopy.text(for: environment.capabilities.status(of: capability)))
+                    ForEach(rows) { row in
+                        abilityRow(row)
                     }
                 }
+                // What leaves this iPhone left Home's menu on 9 Nov 2026; the paragraph above points to it, and so does this.
+                Section {
+                    NavigationLink {
+                        DataFlowView()
+                    } label: {
+                        Label("What leaves this iPhone", systemImage: "lock.shield")
+                    }
+                    .accessibilityIdentifier("capabilities.dataFlow")
+                }
+                KeysExampleSection()
             }
+            .scrollContentBackground(.hidden)
+            .background(Theme.canvas)
             .navigationTitle("What I can do")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -36,6 +57,70 @@ struct CapabilitiesSheet: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func abilityRow(_ row: AbilityRow) -> some View {
+        let id = "capabilities.row.\(row.ability.rawValue)"
+        switch row.ability {
+        case .phoneCalls:
+            NavigationLink { CallsSettingsView() } label: { AbilityRowView(row: row) }
+                .accessibilityIdentifier(id)
+        case .callsForYou:
+            NavigationLink { CallCasesView() } label: { AbilityRowView(row: row) }
+                .accessibilityIdentifier(id)
+        case .notes, .lists, .messages, .tasks, .leaflets:
+            if let open {
+                Button {
+                    open(row.ability)
+                    dismiss()
+                } label: {
+                    HStack {
+                        AbilityRowView(row: row)
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(id)
+            } else {
+                AbilityRowView(row: row)
+                    .accessibilityIdentifier(id)
+            }
+        case .talk, .reminders, .translator:
+            // Talking and reminders happen in a conversation on Home; the translator starts from Home's menu.
+            AbilityRowView(row: row)
+                .accessibilityIdentifier(id)
+        }
+    }
+}
+
+/// One feature: its name, what Doddy does, what stays with the person, and the status in words (never colour alone).
+private struct AbilityRowView: View {
+    let row: AbilityRow
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(row.title)
+                .font(.headline)
+                .foregroundStyle(Theme.ink)
+            Text(row.does)
+                .font(.body)
+                .foregroundStyle(Theme.ink)
+            Text(row.youControl)
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            Text(row.statusText)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(row.status == .ready ? Theme.confirmed : Theme.accentText)
+                .padding(.top, 2)
+        }
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }
 

@@ -154,6 +154,21 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testWhatICanDoOpensPhoneCalls() {
+        // Decision 2026-11-09-what-i-can-do: a row opens its feature; Phone calls opens inside the sheet.
+        // UI tests show every feature, so the row is there; its status never claims calls work.
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        app.tapHomeMenuItem("home.capabilities")
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
+        let calls = app.descendants(matching: .any)["capabilities.row.phoneCalls"].firstMatch
+        XCTAssertTrue(app.reveal(calls), "the Phone calls row")
+        XCTAssertTrue(calls.label.contains("Not tried on a real call yet"), calls.label)
+        calls.tap()
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testPhoneCallsOpenFromTheHomeMenu() {
         // Owner, 9 Nov 2026: Phone calls in Home's ••• menu, the same screen as Settings › Notifications › Phone calls.
         let app = launch(onboardingDone: true)

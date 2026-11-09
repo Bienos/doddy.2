@@ -49,6 +49,8 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @State private var showCapabilities = false
+    /// A feature tapped in What I can do, opened once that sheet has gone (decision 2026-11-09-what-i-can-do).
+    @State private var abilityToOpen: DoddyAbility?
     @State private var showToday = false
     /// Tasks handed to Doddy (ADR-570): the list and each result card.
     @State private var showErrands = false
@@ -126,7 +128,7 @@ struct HomeView: View {
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
-            .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
+            .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
             // A finished call's push, tapped (ADR-730): Files, where Calls lists the recaps.
             .sheet(isPresented: Binding(get: { router.isCallRecapsPresented }, set: { router.isCallRecapsPresented = $0 })) { FilesSheet() }
@@ -645,6 +647,20 @@ struct HomeView: View {
     // MARK: Actions
 
     private var canTalk: Bool { store.environment.capabilities.isAvailable(.voiceInput) }
+
+    /// What I can do's rows that open something on Home. Calls open inside that sheet; talking and reminders
+    /// happen in a conversation, so their rows open nothing.
+    private func openAbility() {
+        guard let ability = abilityToOpen else { return }
+        abilityToOpen = nil
+        switch ability {
+        case .notes, .lists: selectedTab = .memories
+        case .messages: showAsk = true
+        case .tasks: showErrands = true
+        case .leaflets: showDeals = true
+        case .talk, .reminders, .phoneCalls, .callsForYou, .translator: break
+        }
+    }
 
     /// Which features this build shows (decision 2026-11-07-release-scope). Read each time, so the Debug toggle shows on the next draw.
     private var scope: ReleaseScope { ReleaseScopeStore.current }
