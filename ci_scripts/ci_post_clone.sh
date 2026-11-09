@@ -141,7 +141,23 @@ if [ -z "${DODDY_SKIP_RESOLVE:-}" ]; then
   # so Xcode Cloud calls it out of date. It is only a copy of this fresh checkout: drop it here
   # (the repository keeps it for the package's own tests) and let the resolver write a complete one.
   rm -f Packages/DoddyCore/Package.resolved
-  xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
+  # GitHub's release downloads sometimes answer 504 (build 21, 9 Nov 2026: LiveKit's
+  # RustLiveKitFFI.xcframework.zip). That is not a problem in the project, so try again a few times
+  # before giving up. A real failure (a bad pin, a missing package) fails every attempt and still
+  # stops the build.
+  attempt=1
+  max_attempts=${DODDY_RESOLVE_ATTEMPTS:-5}
+  delay=${DODDY_RESOLVE_DELAY:-15}
+  until xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy; do
+    if [ "$attempt" -ge "$max_attempts" ]; then
+      echo "ci_post_clone: package resolution failed after $attempt attempts" >&2
+      exit 1
+    fi
+    echo "ci_post_clone: package resolution failed (attempt $attempt of $max_attempts), retrying in ${delay}s"
+    sleep "$delay"
+    attempt=$((attempt + 1))
+    delay=$((delay * 2))
+  done
   echo "ci_post_clone: resolved files:"
   find . -name Package.resolved -not -path "./.build/*" 2>/dev/null | head
 fi
