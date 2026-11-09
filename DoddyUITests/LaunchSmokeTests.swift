@@ -163,7 +163,10 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
         let calls = app.descendants(matching: .any)["capabilities.row.phoneCalls"].firstMatch
         XCTAssertTrue(app.reveal(calls), "the Phone calls row")
-        XCTAssertTrue(calls.label.contains("Not tried on a real call yet"), calls.label)
+        // Never claimed to work: "Not tried on a real call yet", or "Needs setup" in a build without a server
+        // address, as here (WhatICanDoTests covers each rule).
+        XCTAssertTrue(calls.label.contains("Not tried on a real call yet") || calls.label.contains("Needs setup"), calls.label)
+        XCTAssertFalse(calls.label.contains("Ready") || calls.label.contains("In testing"), calls.label)
         calls.tap()
         XCTAssertTrue(app.navigationBars["Phone calls"].waitForExistence(timeout: 5))
     }
