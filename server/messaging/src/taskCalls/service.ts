@@ -7,6 +7,7 @@
 //   - every gate (kill switch, hours, destination, limits, agent drift) runs again at dial time.
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
+import { rememberCallbackRoute } from "../callbacks.js";
 import { sameBytes } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
 import { briefSchema, checkBriefContent, type Brief, type ContentRefusal } from "./brief.js";
@@ -275,6 +276,8 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
       [attemptId, a.account_id, plus(now, ms(24 * 60)), plus(now, ms(2)), ["twilio_call", "twilio_transcription", "elevenlabs_voice"]]);
     await c.query("INSERT INTO call_dial_log (destination_hash, caller_phone_hash, caller_account_hash, dialed_at) VALUES ($1, $2, $3, $4)",
       [a.destination_hash, callerPhone, callerAccount, now]);
+    // A call-back from this number reaches this user (decision 2026-11-09-call-backs-and-contact-calls).
+    await rememberCallbackRoute(c, a.destination_hash, a.account_id, now);
     return { kind: "claimed" as const, payload, accountId: a.account_id };
   });
   if (claim.kind !== "claimed") return claim;

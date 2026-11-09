@@ -235,9 +235,11 @@ talking, not open the app. I don't want to hold it."
   conversation, so one started in the app opens up too once you leave it.
 - **The greeting stays while he says it:** "Hey Pat, what's up?" and the wave, instead of
   "Speaking" and the shrug, until you first speak.
-- **Tapping the island** (or the Open pill) brings Doddy forward with the conversation's screen,
-  which takes the running conversation (`ShortcutRouter.showConversationStartedElsewhere`); with the
-  Face ID lock, after the unlock.
+- **Tapping the island** (or the Open pill) brings Doddy forward on Home, which shows the running
+  conversation (`TalkInIsland` hands it to `HomeConversation`, ADR-595); the rest of the app stays
+  usable while he talks. Since 9 Nov 2026 the transcript sheet is no longer put over the app each
+  time it comes forward (it was `ShortcutRouter.showConversationStartedElsewhere`); the island's
+  Show, Home's Transcript button and a card that needs a yes open it. Not run on a phone.
 
 **On the iPhone (owner).**
 1. Open Doddy once and start a conversation from Home, so voice is set up and the microphone allowed.

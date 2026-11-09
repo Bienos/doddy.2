@@ -169,7 +169,9 @@ public enum AskFirst {
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
              // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
-             .callMeLater:
+             // call_places: the card shows every place, its number and where it came from, the exact
+             // opening line and question; the one tap approves exactly that task's digest.
+             .callMeLater, .callPlaces:
             return .ownPayloadCard
         case .textMe:
             // A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,

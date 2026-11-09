@@ -111,7 +111,7 @@ struct MakeBackupView: View {
                         Toggle("Include photos", isOn: $includePhotos)
                         Toggle("Include voice memos", isOn: $includeRecordings)
                     } footer: {
-                        Text("At least \(BackupLimits.minimumPassphraseLength) characters. Write it down somewhere safe: if it's lost, this backup can't be opened by anyone, Doddy included.")
+                        Text(verbatim: String(format: NSLocalizedString("At least %lld characters. Write it down somewhere safe: if it's lost, this backup can't be opened by anyone, Doddy included.", comment: ""), BackupLimits.minimumPassphraseLength))
                     }
                     if let problem { Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error) } }
                     Section {
@@ -235,7 +235,8 @@ struct RestoreBackupView: View {
                     Section("This adds to this iPhone") {
                         Text(summary(plan))
                         if plan.notes.alreadyHere + plan.notes.keptOnPhone > 0 {
-                            Text("\(plan.notes.alreadyHere + plan.notes.keptOnPhone) notes are already here and stay as they are.")
+                            Text(verbatim: String(format: NSLocalizedString("%lld notes are already here and stay as they are.", comment: ""),
+                                                 plan.notes.alreadyHere + plan.notes.keptOnPhone))
                                 .font(.footnote).foregroundStyle(Theme.secondaryText)
                         }
                     }

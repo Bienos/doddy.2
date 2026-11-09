@@ -284,12 +284,21 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "Web research and code execution at Anthropic aren't zero-retention, so Anthropic keeps that work under its normal retention. The server keeps the job and the files, encrypted, until you delete them in Studio. The notification has no words from the job."
                     : "No messaging server is set, so Studio can't make anything."),
+            // 9 Nov 2026: "tell me when the file is done", a notification when a file Doddy is making is ready.
+            DataFlowRow(
+                id: "fileReady", destination: "Your Doddy messaging server and Apple (one notification)",
+                what: "The private link of a file Doddy is making for you (a deck, document, spreadsheet, PDF or text) and the language the notification is written in. Never the file, its words or its name. The messaging server uses the link only to ask Doddy's own server whether the file is done.",
+                when: "Only after you said yes to a file Doddy makes, and only until it is done (the server stops asking after 15 minutes).",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "The server keeps the link, encrypted, until the file is done or for at most a day. The notification has fixed words and nothing from the file. It reaches you only if notifications are on."
+                    : "No messaging server is set, so no notification comes when a file is ready."),
             // ADR-500..507 (docs/decisions/calls.md): a call Doddy places for the user, from Settings › Notifications ›
             // Phone calls › Calls for you. Read from CallBriefDraft.requestBody, CallCasesModel and server/messaging/src/
             // taskCalls (payload, twiml, worker, cases, writer), review of 4 Nov 2026.
             DataFlowRow(
                 id: "callCases", destination: "Your Doddy messaging server, Twilio, ElevenLabs and Anthropic (calls Doddy places for you)",
-                what: "A call you set up in Settings › Notifications › Phone calls › Calls for you. When you prepare its card, the brief goes to the server: the name and Polish phone number of whom Doddy calls, who the call is for, the goal, the one question, and only the facts you ticked (a PESEL or an address only if you tick it as that kind). Unticked facts never leave. Nothing is dialled until you approve the card. Then the server has Twilio ring the number and ElevenLabs speak as Doddy, so ElevenLabs also hears the other person. Twilio transcribes both sides while the call runs (the server asks for Twilio's Google engine) and is told not to record it. Anthropic's Claude reads the call's transcript, with your question and goal, to write the answer card, where the server is set up for that. If you tap Take over, the server rings your own verified number. The server also gets a token so it can update the call's Live Activity (phase and times, never words).",
+                what: "A call you set up in Settings › Notifications › Phone calls › Calls for you, or that you ask Doddy for in a conversation (up to three places Doddy found, on one card, with your first name from About you and no facts). When you prepare its card, the brief goes to the server: the name and Polish phone number of whom Doddy calls, who the call is for, the goal, the one question, and only the facts you ticked (a PESEL or an address only if you tick it as that kind). Unticked facts never leave. Nothing is dialled until you approve the card. Then the server has Twilio ring the number and ElevenLabs speak as Doddy, so ElevenLabs also hears the other person. Twilio transcribes both sides while the call runs (the server asks for Twilio's Google engine) and is told not to record it. Anthropic's Claude reads the call's transcript, with your question and goal, to write the answer card, where the server is set up for that. If you tap Take over, the server rings your own verified number. The server also gets a token so it can update the call's Live Activity (phase and times, never words). For places from a conversation, the server calls them one at a time after your one tap and stops at the first clear yes; if the card says so, it texts the answer, with the place's name and the words it quoted, to your own verified number through Twilio.",
                 when: "When you prepare a call's card (nothing is dialled), when you approve it (the call is placed between 8:00 and 23:00 Warsaw time and lasts at most 5 minutes, plus a few seconds to say goodbye), and while it runs (this iPhone reads the live lines from the server).",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
@@ -389,6 +398,7 @@ public enum DataFlow {
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "studio": "Anthropic (Studio, through your messaging server)",
+        "fileReady": "Apple (a notification that a file is ready, through your messaging server)",
         "callCases": "Twilio, ElevenLabs and Anthropic (calls Doddy places for you, through your messaging server)",
         "updates": "Apple and Twilio (notifications and texts from Doddy, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",

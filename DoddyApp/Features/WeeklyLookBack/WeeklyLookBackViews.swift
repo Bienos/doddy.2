@@ -85,7 +85,7 @@ struct WeeklyLookBackView: View {
                 Text(String(format: NSLocalizedString("Notes saved: %lld", comment: ""), week.noteCount))
                     .font(.headline)
                 ForEach(Array(week.notes.enumerated()), id: \.offset) { _, text in
-                    Text("“\(text)”").lineLimit(2)
+                    Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), text)).lineLimit(2)
                 }
             }
         }
@@ -99,7 +99,7 @@ struct WeeklyLookBackView: View {
                     .font(.headline)
                 ForEach(week.doneByApp.indices, id: \.self) { index in
                     let row = week.doneByApp[index]
-                    Text("\(row.app.title(.current)): \(row.count)")
+                    Text(verbatim: "\(row.app.title(.current)): \(row.count)")
                 }
             }
         }
@@ -108,7 +108,7 @@ struct WeeklyLookBackView: View {
                 Text("Coming up this week")
                     .font(.headline)
                 ForEach(events, id: \.start) { event in
-                    Text("\(event.title) · \(event.start.formatted(date: .abbreviated, time: event.allDay ? .omitted : .shortened))")
+                    Text(verbatim: "\(event.title) · \(event.start.formatted(date: .abbreviated, time: event.allDay ? .omitted : .shortened))")
                 }
             }
         }

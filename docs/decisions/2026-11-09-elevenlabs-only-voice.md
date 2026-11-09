@@ -20,7 +20,7 @@ Two voices meant two privacy stories, two consent paths, a picker nobody asked f
 - Older app builds with OpenAI chosen can't talk until they update or switch to ElevenLabs.
 - Public pages: Privacy and Terms (en, pl) and the homepage FAQ line (all languages) no longer offer OpenAI as the voice. The privacy page keeps OpenAI as the language model behind ElevenLabs. The versions in `LegalAcceptance.swift` are not raised: the change removes a way data could go, and `docs/legal/LEGAL_PAGES_OWNER_CHECKLIST.md` leaves that call to the owner.
 - `voice-agent/session.json` lost its `openai_realtime` block and `scripts/voice_agent_spec.py` its `openai` command.
-- Owner step left: Vercel, after the merge (`docs/OWNER_QUEUE.md` item 28).
+- Owner step left: Vercel, after the merge (`docs/OWNER_QUEUE.md` item 30).
 - Eight draft app languages lose the few changed sentences (they show English there); Polish was updated.
 
 ## Evidence

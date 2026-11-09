@@ -9,6 +9,7 @@ import { abuseLimits } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import type { NoteSource } from "../inbox.js";
+import { log } from "../log.js";
 import { isAllowedNumber } from "../phoneCountries.js";
 import { formatClock, isValidTimeZone, QUIET_HOURS_DEFAULT } from "../quietHours.js";
 import { cancelScheduledCalls } from "../scheduledCalls.js";
@@ -174,6 +175,8 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       [callId, status,
         outcome.kind === "accepted" ? outcome.callSid : null,
         outcome.kind === "accepted" ? null : outcome.code]);
+    // The provider's code (e.g. twilio_21215) is the only way to tell why "Call me now" failed; ids and codes only.
+    if (outcome.kind !== "accepted") log("outbound call", { id: callId, state: status, code: outcome.code });
     // Refused by the provider: no call was placed, so it doesn't use up the server's day. (An unknown outcome might be
     // ringing, so that one stays counted.) The account's own count stays, as before.
     if (status === "failed") {

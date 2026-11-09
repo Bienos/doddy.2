@@ -117,7 +117,7 @@ struct TranslatorScreen: View {
                         }
                     }
                     if let said = session.latest(.toOther) {
-                        Text("Doddy said to them: \(said.text)")
+                        Text(verbatim: String(format: NSLocalizedString("Doddy said to them: %@", comment: ""), said.text))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
@@ -262,16 +262,19 @@ struct TranslatorScreen: View {
                 }
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Exact: \(facts.joined(separator: ", "))")
+            .accessibilityLabel(String(format: NSLocalizedString("Exact: %@", comment: ""), facts.joined(separator: ", ")))
         }
     }
 
     private var statusText: String {
-        if controller.holdToTalk { return controller.heldSide == nil ? "Hold a button to talk" : "Listening" }
+        // Every word goes through the catalog: a plain String in Text(_:) is shown as written, in English.
+        if controller.holdToTalk {
+            return controller.heldSide == nil ? NSLocalizedString("Hold a button to talk", comment: "") : NSLocalizedString("Listening", comment: "")
+        }
         switch controller.phase {
         case .speaking: return NSLocalizedString("Doddy is speaking", comment: "")
         case .thinking: return NSLocalizedString("Translating", comment: "")
-        case .listening: return controller.isMuted ? "Paused" : "Listening"
+        case .listening: return controller.isMuted ? NSLocalizedString("Paused", comment: "") : NSLocalizedString("Listening", comment: "")
         default: return NSLocalizedString("Connecting", comment: "")
         }
     }
@@ -293,7 +296,7 @@ struct TranslatorEndCard: View {
             Text(summary.headline).font(.subheadline).foregroundStyle(Theme.secondaryText)
             Text("Nothing from this conversation is kept on this iPhone, and Doddy won't bring it up later. No notes were saved and nothing was added anywhere. ElevenLabs ran the translation and may keep its own recording, as in Settings › Privacy.")
                 .font(.footnote)
-            Text("Want something from it? Only on your tap, until \(summary.expiresAt.formatted(date: .omitted, time: .shortened)). After that the text is gone.")
+            Text(verbatim: String(format: NSLocalizedString("Want something from it? Only on your tap, until %@. After that the text is gone.", comment: ""), summary.expiresAt.formatted(date: .omitted, time: .shortened)))
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
             Button {
@@ -305,14 +308,14 @@ struct TranslatorEndCard: View {
             .accessibilityIdentifier("translator.copy")
             if copied {
                 // Review H10: copied with .localOnly and an expiry, so say where and until when.
-                Text("Copied on this iPhone only, not to your other devices. The clipboard lets it go at \(summary.expiresAt.formatted(date: .omitted, time: .shortened)).")
+                Text(verbatim: String(format: NSLocalizedString("Copied on this iPhone only, not to your other devices. The clipboard lets it go at %@.", comment: ""), summary.expiresAt.formatted(date: .omitted, time: .shortened)))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
             if !summary.facts.isEmpty {
                 switch controller.translatorFactsSaved {
                 case .success(let text)?:
-                    Label("Saved as a note: “\(text)”", systemImage: "checkmark.circle")
+                    Label(String(format: NSLocalizedString("Saved as a note: “%@”", comment: ""), text), systemImage: "checkmark.circle")
                         .font(.footnote)
                         .foregroundStyle(Theme.confirmed)
                 case .failure(let error)?:
@@ -337,7 +340,7 @@ struct TranslatorEndCard: View {
             HStack { Text("Save the facts as a note"); Spacer(); Image(systemName: "square.and.arrow.down") }
         }
         .buttonStyle(SecondaryButtonStyle())
-        .accessibilityHint("Saves only: \(summary.facts.joined(separator: ", ")).")
+        .accessibilityHint(String(format: NSLocalizedString("Saves only: %@.", comment: ""), summary.facts.joined(separator: ", ")))
         .accessibilityIdentifier("translator.saveFacts")
     }
 

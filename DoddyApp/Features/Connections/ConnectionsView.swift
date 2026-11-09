@@ -105,7 +105,7 @@ struct ConnectionCard: View {
                 Text(connection.title)
                     .font(.headline)
                     .foregroundStyle(Theme.ink)
-                Text("“\(info.examples[0])”")
+                Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), info.examples[0]))
                     .font(.subheadline.italic())
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.leading)
@@ -119,7 +119,7 @@ struct ConnectionCard: View {
         .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.separator, lineWidth: 1))
         .contentShape(RoundedRectangle(cornerRadius: 20))
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Shows what Doddy can do with \(connection.title).")
+        .accessibilityHint(String(format: NSLocalizedString("Shows what Doddy can do with %@.", comment: ""), connection.title))
     }
 }
 
@@ -188,7 +188,7 @@ struct ConnectionSheet: View {
 
                     section(NSLocalizedString("Say something like", comment: "")) {
                         ForEach(info.examples, id: \.self) { example in
-                            Text("“\(example)”")
+                            Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), example))
                                 .font(.body.italic())
                         }
                     }
@@ -243,7 +243,7 @@ struct ConnectionSheet: View {
             Button {
                 Task { await turnOn() }
             } label: {
-                Label("Turn on \(title)", systemImage: "checkmark")
+                Label(String(format: NSLocalizedString("Turn on %@", comment: ""), title), systemImage: "checkmark")
             }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(isWorking)
@@ -258,7 +258,7 @@ struct ConnectionSheet: View {
             .buttonStyle(SecondaryButtonStyle(tint: Theme.error))
             .accessibilityIdentifier("connection.turnOff")
         case .blocked:
-            Text("Doddy is switched on, but iPhone doesn't allow \(title) for Doddy any more.")
+            Text(verbatim: String(format: NSLocalizedString("Doddy is switched on, but iPhone doesn't allow %@ for Doddy any more.", comment: ""), title))
                 .foregroundStyle(Theme.secondaryText)
             Button("Open iPhone Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }

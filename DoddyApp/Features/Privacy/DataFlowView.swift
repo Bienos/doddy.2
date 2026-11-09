@@ -19,7 +19,7 @@ extension DataFlowState {
             // typed one) and has a session with it or has made the device ID that signs in (ADR-721). Nothing
             // typed is needed: since ADR-563 the phone signs itself in to the built-in server.
             doddyServerSet: DeviceSession.isServerInUse(),
-            askDoddyOn: flag(PreferenceKey.assistantConsent, default: false),
+            askDoddyOn: flag(PreferenceKey.assistantConsent, default: PreferenceKey.assistantConsentDefault),
             askDoddyUsesNotes: flag(PreferenceKey.assistantUseNotes, default: true),
             // Same rule as ServerConfig: the built-in address, or a valid one entered in Settings.
             messagingServerSet: ServerConfig.baseURL(defaults: defaults) != nil,
@@ -43,7 +43,7 @@ struct DataFlowView: View {
     // Redraws this screen when the development server address changes; a shipped build has no such address (ADR-720).
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     #endif
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
+    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = PreferenceKey.assistantConsentDefault
     @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAll = false
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""

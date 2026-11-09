@@ -342,7 +342,8 @@ private struct DuplicateNoticeView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("You saved this already, \(DateText.full(record.capturedAt)).", systemImage: "doc.on.doc")
+            Label(String(format: NSLocalizedString("You saved this already, %@.", comment: ""), DateText.full(record.capturedAt)),
+                  systemImage: "doc.on.doc")
                 .font(.subheadline.weight(.medium))
             Text(record.currentText).font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(3)
             NavigationLink(value: record.id) {

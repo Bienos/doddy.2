@@ -5,7 +5,7 @@ import type { AddressInfo } from "node:net";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, test } from "node:test";
-import { ASSIST_SYSTEM, AssistService, buildInput, buildSchema, validateAssistRequest } from "../src/assist.js";
+import { ASSIST_SOURCES, ASSIST_SYSTEM, AssistService, buildInput, buildSchema, validateAssistRequest } from "../src/assist.js";
 import { DevSessionVerifier, SignedSessionVerifier } from "../src/auth.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { type Limits, testLimits } from "../src/config.js";
@@ -533,4 +533,14 @@ test("new guest sessions are limited per network per hour and per day for the se
   assert.equal((await from("2001:db8:1:2::a", 5)).status, 200);
   const serviceFull = await from("2001:db8:9:9::a", 6);
   assert.equal(serviceFull.status, 429);
+});
+
+test("every source a note on the iPhone can have is accepted, as listed in schemas/memory.schema.json", () => {
+  const schema = JSON.parse(readFileSync(join(process.cwd(), "..", "schemas", "memory.schema.json"), "utf8"));
+  const own: string[] = schema.properties.source.enum.filter((s: string) => s !== "sample_fixture");
+  assert.deepEqual([...ASSIST_SOURCES].sort(), [...own].sort());
+  for (const source of own) {
+    assert.ok(validateAssistRequest(ask({ memories: [{ id: NOTE_1, text: "A note", source }] })), source);
+  }
+  assert.equal(validateAssistRequest(ask({ memories: [{ id: NOTE_1, text: "A note", source: "sample_fixture" }] })), null);
 });

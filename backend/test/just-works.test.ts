@@ -6,7 +6,7 @@ import { afterEach, test } from "node:test";
 import { SignedSessionVerifier } from "../src/auth.js";
 import { ConfigError, loadConfig } from "../src/config.js";
 import { DeviceSessionIssuer, deviceUserId } from "../src/deviceSession.js";
-import { DocumentLinks } from "../src/documents.js";
+import { DocumentLinks, serveDocument } from "../src/documents.js";
 import { AppError, ProviderError } from "../src/errors.js";
 import { AnthropicClaudeProvider, fileIdsOf, fileName, MockClaudeProvider } from "../src/tools/claude.js";
 import { Store } from "../src/store.js";
@@ -419,6 +419,42 @@ test("document links: signed, expiring, and bound to one ID", () => {
   other.pathname = "/v1/documents/abcdefghijklmnopqrstuvwy";
   assert.equal(links.verify(other, now), null);
   assert.equal(new DocumentLinks(Buffer.alloc(32, 8), "https://api.doddy.test").verify(url, now), null);
+});
+
+test("document status: JSON only, no file bytes, same signed link, gone for a bad link", async () => {
+  const links = new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test");
+  const now = new Date("2026-10-21T00:00:00Z");
+  const rows: Record<string, { status: "working" | "ready" | "failed"; name: string; mime: string; body: Buffer | null }> = {
+    abcdefghijklmnopqrstuvwx: { status: "working", name: "a.pdf", mime: "application/pdf", body: null },
+    abcdefghijklmnopqrstuvwy: { status: "ready", name: "b.pdf", mime: "application/pdf", body: Buffer.from("%PDF-secret") },
+    abcdefghijklmnopqrstuvwz: { status: "failed", name: "c.pdf", mime: "application/pdf", body: null },
+  };
+  const store = { getDocument: async (id: string) => rows[id] ?? null } as unknown as Parameters<typeof serveDocument>[4];
+  const ask = async (id: string, extra = "&status=1", at = now) => {
+    const url = new URL(links.link(id, now) + extra);
+    const chunks: Buffer[] = [];
+    let code = 0;
+    let type = "";
+    const res = {
+      writeHead: (c: number, h: Record<string, string | number>) => { code = c; type = String(h["content-type"]); },
+      end: (b?: string | Buffer) => { if (b) chunks.push(Buffer.from(b)); },
+    } as unknown as Parameters<typeof serveDocument>[1];
+    const returned = await serveDocument({} as Parameters<typeof serveDocument>[0], res, url, links, store, at);
+    return { code, returned, type, text: Buffer.concat(chunks).toString("utf8") };
+  };
+  assert.deepEqual(JSON.parse((await ask("abcdefghijklmnopqrstuvwx")).text), { status: "working" });
+  const ready = await ask("abcdefghijklmnopqrstuvwy");
+  assert.deepEqual(JSON.parse(ready.text), { status: "ready" });
+  assert.match(ready.type, /^application\/json/);
+  assert.ok(!ready.text.includes("PDF-secret"), "no file bytes in a status reply");
+  assert.deepEqual(JSON.parse((await ask("abcdefghijklmnopqrstuvwz")).text), { status: "failed" });
+  const unknown = await ask("abcdefghijklmnopqrstuvww");
+  assert.equal(unknown.code, 404);
+  assert.deepEqual(JSON.parse(unknown.text), { status: "gone" });
+  // An expired link is "gone", never a status.
+  assert.equal((await ask("abcdefghijklmnopqrstuvwy", "&status=1", new Date("2026-10-29T00:00:00Z"))).code, 404);
+  // Without the flag the file is served as before.
+  assert.equal((await ask("abcdefghijklmnopqrstuvwy", "")).text, "%PDF-secret");
 });
 
 void on;

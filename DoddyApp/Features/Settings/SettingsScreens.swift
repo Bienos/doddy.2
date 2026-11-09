@@ -658,7 +658,7 @@ struct PrivacyDetailsView: View {
 /// account.
 struct AskDoddySettingsView: View {
     @Environment(MemoryStore.self) private var store
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
+    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = PreferenceKey.assistantConsentDefault
     @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
     @State private var showAssistantConsent = false
 

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, test } from "node:test";
 import { DEV_IDENTITIES } from "../src/auth.js";
 import { loadConfig } from "../src/config.js";
 import { AppError, ProviderError } from "../src/errors.js";
-import { MEMORY_MAX_NOTES } from "../src/memory/contract.js";
+import { MEMORY_MAX_NOTES, NOTE_SOURCES } from "../src/memory/contract.js";
 import { MemoryCipher } from "../src/memory/crypto.js";
 import { fold, queryTerms } from "../src/memory/search.js";
 import { type ClaudeProvider, ClaudeRefusal, MockClaudeProvider, type StructuredInput } from "../src/tools/claude.js";
@@ -187,6 +189,17 @@ test("notes are encrypted at rest: the stored bytes hold none of the text, and a
   const other = new MemoryCipher(Buffer.alloc(32, 77));
   assert.throws(() => other.decrypt(row.ciphertext, `${ID_A}:note:${uuid(1)}`));
   assert.throws(() => new MemoryCipher(Buffer.alloc(32, 5)).decrypt(row.ciphertext, `${ID_A}:note:${uuid(2)}`), "another row's address");
+});
+
+test("a snapshot takes every source a note on the iPhone can have, as listed in schemas/memory.schema.json", async () => {
+  // Before 9 Nov 2026 one note Doddy took on a phone call ("noted_by_doddy") made the whole snapshot fail.
+  const schema = JSON.parse(readFileSync(join(process.cwd(), "..", "schemas", "memory.schema.json"), "utf8"));
+  const own: string[] = schema.properties.source.enum.filter((s: string) => s !== "sample_fixture");
+  assert.deepEqual([...NOTE_SOURCES].sort(), [...own].sort());
+  rig = await startWeb();
+  await turnOn(rig);
+  const res = await putNotes(rig, own.map((source, i) => note(i + 1, `Note ${i + 1}`, { source })));
+  assert.deepEqual(res.body, { count: own.length }, res.text);
 });
 
 const BAD_SNAPSHOTS: [string, () => unknown][] = [

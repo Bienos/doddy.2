@@ -179,11 +179,14 @@ else
 fi
 run_step "Screen fixture data up to date (ADR-821)" python3 -I scripts/gen_screen_fixture_data.py --check
 run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I tools/gen_web_assets.py --check
+run_step "Site colour tokens match the app" python3 -I tools/gen_site_tokens.py --check
+run_step "One scripts/regen.sh run brings every generated file up to date" scripts/test_regen.sh
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
+run_step "Vercel builds a project whenever it can't tell nothing changed (9 Nov 2026)" scripts/test_vercel_ignore_command.sh
 run_step "Which Vercel statuses are replaced on pull requests (decision 2026-11-09-vercel-blocked-status)" scripts/test_vercel_blocked_status.sh
 run_step "Privacy manifest declares every required-reason API (7 Nov audit)" scripts/test_check_privacy_manifest.sh
 run_step "The Mac job's package-pin step never blocks without pins (7 Nov audit)" scripts/test_ci_package_pins.sh

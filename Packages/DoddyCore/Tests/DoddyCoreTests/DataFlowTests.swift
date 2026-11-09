@@ -512,6 +512,10 @@ final class DataFlowCallsAndUpdatesTests: XCTestCase {
                      "Anthropic's Claude reads the call's transcript", "If you tap Take over", "never words"] {
             XCTAssertTrue(calls.what.contains(part), part)
         }
+        // From a conversation (decision 2026-11-09-restaurant-calls-one-tap): one card for up to three places, and the text it may send.
+        for part in ["in a conversation", "up to three places", "one at a time after your one tap", "to your own verified number"] {
+            XCTAssertTrue(calls.what.contains(part), part)
+        }
         XCTAssertTrue(calls.when.contains("When you prepare a call's card (nothing is dialled)"))
         XCTAssertTrue(calls.when.contains("between 8:00 and 23:00 Warsaw time"))
         XCTAssertTrue(calls.when.contains("at most 5 minutes"))

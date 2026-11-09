@@ -661,6 +661,58 @@
     },
     {
       "type": "function",
+      "name": "call_places",
+      "description": "Have Doddy phone up to three places (restaurants, shops, offices) for the user and ask them one question, for example 'find an Italian restaurant in the centre and check if they have a table for two at 7', 'zadzwoń do trzech fryzjerów i zapytaj o wolny termin jutro'. First find the places and their phone numbers with find_places (never guess a number); pass the best ones, at most three, in the order to call them: place_names and place_phones, the same number of each, matched by position. Polish numbers only. Give question as one short yes-or-no question in Polish, exactly as Doddy should ask it, and goal as one sentence saying what the user wants. Doddy says it's an AI calling for the user, asks the question, and never books, pays or agrees to anything. The card shows every place, its number, the question and whether the result comes back by text; nothing is dialled until the user taps. After the tap Doddy calls the places one at a time and stops at the first clear yes. Before this tool runs, say only one short line, for example 'Check the places on screen.' The result starts with 'started' (the first call is being dialled; the answer comes later as a notification, and a text if chosen, never to you), 'declined', 'failed' (nobody was called; the reason follows) or 'unknown'. Never say anyone answered or that anything is booked. After 'unknown', never call this tool again unless the user asks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "place_names": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "One place's name as the search gave it, e.g. 'Trattoria Roma'."
+            },
+            "description": "The places to call, best first, at most three."
+          },
+          "place_phones": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "That place's phone number as the search gave it, e.g. '22 123 45 67'."
+            },
+            "description": "One phone number for each name, in the same order."
+          },
+          "question": {
+            "type": "string",
+            "description": "One short yes-or-no question in Polish, asked word for word at every place, e.g. 'Czy mają Państwo wolny stolik dla dwóch osób dziś o 19:00'. At most 200 characters."
+          },
+          "goal": {
+            "type": "string",
+            "description": "What the user wants, in one sentence, e.g. 'Znaleźć stolik na randkę dziś o 19.' Shown on the card, never said on the call. At most 160 characters."
+          },
+          "text_result": {
+            "type": "boolean",
+            "description": "true (the default) to text the result to the user's own number as well as the notification; false if they said not to."
+          }
+        },
+        "required": [
+          "place_names",
+          "place_phones",
+          "question",
+          "goal"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": true,
+        "ask": "tap",
+        "speak_before": "force",
+        "timeout_secs": 90,
+        "elevenlabs_tool_id": "not_synced"
+      }
+    },
+    {
+      "type": "function",
       "name": "lost_wallet",
       "description": "Show the user the official steps to take after their wallet, ID card, bank cards, driving licence or passport is lost or stolen, in Poland or abroad. Use it as soon as the user says something like 'I lost my wallet', 'my cards were stolen', 'zgubiłem portfel' or 'ukradli mi dowód'. Doddy can't block a card, cancel an ID card or reserve a PESEL number for anyone: the app shows a checklist, most urgent first, and each step's button opens an official page (gov.pl, or the banks' Dokumenty Zastrzeżone) or dials the card-blocking line +48 828 828 828 only when the user taps it. Pass only what the user said was lost; if you don't know what was in the wallet, ask one short question first, for example 'Were your bank cards and ID card in it?' (Polish: 'Czy były w nim karty i dowód?'). Never ask for, write down or repeat a card number, PESEL, ID number, PIN or password. The result starts with 'shown' (the checklist is on the screen; nothing was done for the user) and lists the steps: go through them one at a time, in a calm, plain voice. Before this tool runs, say only one short line, for example 'I'll put the steps on your screen.' (Polish: 'Pokażę ci kroki na ekranie.'). Never say a card is blocked, a document cancelled or a PESEL reserved: only the user can see that. If the user is in danger now, tell them to call 112 first.",
       "parameters": {
@@ -1574,7 +1626,7 @@
     {
       "type": "function",
       "name": "make_document",
-      "description": "Use this for any deck, slides or presentation unless the user asks for Keynote by name (then make_presentation), and for Word, Excel, PDF or long text. Have Claude make a finished file for the user with Claude's own skills: a deck (PowerPoint), a doc (Word), a spreadsheet (Excel), a PDF, or text (a blog post, article, speech or long email, as Markdown). Ask for the title and what it should cover if the user didn't say; one short question is enough. Pass material copied from this conversation when the user refers to it. It takes one to three minutes in the background; the result starts with 'started:' and a button to open the file is on the user's screen at once. Say so in one sentence, for example 'On it, the deck's on your screen in a minute or two.' Never read out a link. Ask: yes/tap.",
+      "description": "Use this for any deck, slides or presentation unless the user asks for Keynote by name (then make_presentation), and for Word, Excel, PDF or long text. Have Claude make a finished file for the user with Claude's own skills: a deck (PowerPoint), a doc (Word), a spreadsheet (Excel), a PDF, or text (a blog post, article, speech or long email, as Markdown). Ask for the title and what it should cover if the user didn't say; one short question is enough. Pass material copied from this conversation when the user refers to it. For a report, guide or list about real places, products, events or facts, run web_search first and pass what it returned as material; never make it from memory alone. It takes one to three minutes in the background; the result starts with 'started:' and a button to open the file is on the user's screen at once. Say so in one sentence, for example 'On it, the deck's on your screen in a minute or two.' Never read out a link. Ask: yes/tap.",
       "parameters": {
         "type": "object",
         "properties": {

@@ -734,6 +734,8 @@ struct VoiceView: View {
             blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
         case .callLater(_, let draft, let to, let quietHours):
             callLaterContent(draft, to: to, quietHours: quietHours, controller: controller)
+        case .callTask(_, let preview):
+            callTaskContent(preview)
         case .presentation(_, let draft):
             PresentationCardContent(draft: draft)
         case .home(_, let command):
@@ -1179,6 +1181,7 @@ struct VoiceView: View {
         case .home: (NSLocalizedString("Yes", comment: ""), NSLocalizedString("No", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
+        case .callTask: (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
         // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
@@ -1197,6 +1200,58 @@ struct VoiceView: View {
         case .leaveBy: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .ingredients(_, _, _, _, let items, _):
             (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
+        }
+    }
+
+    /// "Call these places for you?" (decision 2026-11-09-restaurant-calls-one-tap): every place, its number and
+    /// where it came from, the exact opening line and question, what Doddy won't do, and how the answer
+    /// comes back. The one tap approves exactly this.
+    @ViewBuilder
+    private func callTaskContent(_ preview: CallTaskPreview) -> some View {
+        Text(preview.places.count == 1 ? NSLocalizedString("Call this place for you?", comment: "")
+                                       : NSLocalizedString("Call these places for you?", comment: ""))
+            .font(.headline)
+        ForEach(Array(preview.places.enumerated()), id: \.offset) { index, place in
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: "\(index + 1). \(place.callee.name)")
+                    .font(.body.weight(.semibold))
+                Text(verbatim: place.callee.phone)
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+        }
+        Text("Numbers from Doddy's place search.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        if let first = preview.places.first {
+            Text("Doddy says:")
+                .font(.footnote.weight(.semibold))
+            Text(verbatim: first.openingLine)
+                .font(.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+                .accessibilityIdentifier("voice.callTask.opening")
+            ForEach(first.forbidden, id: \.self) { line in
+                Label { Text(verbatim: line) } icon: { Image(systemName: "hand.raised") }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        if preview.places.count > 1 {
+            Text("One at a time, in this order. Doddy stops at the first yes.")
+                .font(.footnote)
+        }
+        Text(preview.textResult ? NSLocalizedString("You get a notification and a text with the answer.", comment: "")
+                                : NSLocalizedString("You get a notification with the answer.", comment: ""))
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        if preview.callableNow == false {
+            Label("It's outside calling hours (8:00 to 23:00), so the first call can't start now.", systemImage: "moon")
+                .font(.footnote)
         }
     }
 

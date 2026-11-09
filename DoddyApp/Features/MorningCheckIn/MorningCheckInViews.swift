@@ -52,7 +52,7 @@ struct MorningCheckInView: View {
                             Text("Nothing left on your lists.").foregroundStyle(Theme.secondaryText)
                         }
                         ForEach(briefing.lists, id: \.listID) { list in
-                            Text("\(list.name) · \(list.openCount) to go")
+                            Text(verbatim: String(format: NSLocalizedString("%@ · %lld to go", comment: ""), list.name, list.openCount))
                         }
                     }
                     .accessibilityIdentifier("checkin.lists")

@@ -1,0 +1,2 @@
+"Call me now" (`POST /v1/calls/outbound`): when Twilio refuses or doesn't confirm the call, the server now logs `outbound call` with the call id, state and provider code (e.g. `twilio_21215`), like scheduled calls already did. No number is logged. Found when the owner's two taps on 9 Nov 2026 returned 502 with no reason in the Render logs.
+Ran: `server/messaging` full suite against local Postgres, 864 pass.

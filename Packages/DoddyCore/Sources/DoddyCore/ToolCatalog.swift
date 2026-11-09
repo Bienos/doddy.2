@@ -22,8 +22,9 @@ public struct ToolDescriptor: Equatable, Sendable {
         /// A text from Doddy's own number to the user's verified number (ADR-750 U2), through
         /// Doddy's messaging server. Never to anyone else.
         case sendText
-        /// A call from Doddy's own number to the user's verified number at a time they approved
-        /// (ADR-754), placed by Doddy's messaging server. Never to anyone else.
+        /// A call placed by Doddy's messaging server from Doddy's own number: to the user's verified
+        /// number at a time they approved (ADR-754), or to up to three places the user approved on one
+        /// card (decision 2026-11-09-restaurant-calls-one-tap).
         case placeCall
         /// Changes the conversation itself (translator mode, the plan card).
         case session
@@ -156,6 +157,7 @@ public enum ToolCatalog {
         // The card shows the time and the exact reason Doddy will say; the server checks the same
         // approval hash when it books the call and again when it places it (ADR-754).
         .init(VoiceToolName.callMeLater, .placeCall, .card),
+        .init(VoiceToolName.callPlaces, .placeCall, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).

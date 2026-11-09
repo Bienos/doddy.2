@@ -45,7 +45,9 @@ python3 -I scripts/voice_agent_spec.py check --agent task-call   # voice-agent/t
 ```
 
 Generated files (string catalogs, site pages, blog, web assets, tokens) are never edited or merged by hand: run
-`scripts/regen.sh`, then `scripts/ci.sh --only checks`.
+`scripts/regen.sh`, then `scripts/ci.sh --only checks`. One `regen.sh` run is enough: `tools/build_site_i18n.py` runs
+last, because it translates the English pages that `build_blog.py` and `build_day.py` write; `scripts/test_regen.sh`
+(in the `checks` group) checks that.
 
 ### Gateway (Node, no network, no keys)
 

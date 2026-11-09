@@ -74,7 +74,8 @@ struct WallpaperView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("wallpaper.share")
-                    Text("Made for this iPhone's screen: \(picture.width) × \(picture.height) pixels.")
+                    Text(verbatim: String(format: NSLocalizedString("Made for this iPhone's screen: %lld × %lld pixels.", comment: ""),
+                                             picture.width, picture.height))
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                 } else {
                     Button {
