@@ -158,6 +158,35 @@ final class DoddyAccountModelTests: XCTestCase {
         let account = model(transport)
         await account.signInWithApple(identityToken: "apple.jwt", rawNonce: "nonce")
         XCTAssertEqual(account.session?.method, .apple)
+        XCTAssertEqual(account.signInCount, 1)
+    }
+
+    /// TestFlight build 20 (9 Nov 2026): a session kept from before (the welcome shown again, or a
+    /// reinstall, which keeps the Keychain) made a new Apple sign-in invisible to the welcome, which
+    /// watched `isSignedIn`. Every kept sign-in counts, signed in before or not; a refresh doesn't.
+    func testEverySignInCountsEvenWhenAlreadySignedInButARefreshDoesNot() async throws {
+        let kept = DoddyAccountSession(accessToken: "a0", refreshToken: "r0", expiresAt: testClock, userID: user, email: nil, method: .apple)
+        let transport = RoutedTransport()
+        transport.replies = ["token": reply(access: "a1", refresh: "r1", provider: "apple")]
+        let account = model(transport, store: MemoryStore(kept))
+        XCTAssertTrue(account.isSignedIn, "already signed in at launch")
+        XCTAssertEqual(account.signInCount, 0, "a session restored at launch isn't a new sign-in")
+
+        await account.signInWithApple(identityToken: "apple.jwt", rawNonce: "nonce")
+        XCTAssertTrue(account.isSignedIn)
+        XCTAssertEqual(account.session?.accessToken, "a1")
+        XCTAssertEqual(account.signInCount, 1, "signing in again while signed in still counts")
+
+        transport.replies = ["token": reply(access: "a2", refresh: "r2", provider: "apple")]
+        _ = try await account.refreshAfterRefusal()
+        XCTAssertEqual(account.session?.accessToken, "a2")
+        XCTAssertEqual(account.signInCount, 1, "a refresh is not a sign-in")
+
+        let refusing = MemoryStore()
+        refusing.refuses = true
+        let unkept = model(transport, store: refusing)
+        await unkept.signInWithApple(identityToken: "apple.jwt", rawNonce: "nonce")
+        XCTAssertEqual(unkept.signInCount, 0, "a sign-in the iPhone couldn't keep doesn't count")
     }
 
     func testAFreshTokenIsUsedAsItIsAndAStaleOneIsRefreshedOnceForEveryCaller() async throws {

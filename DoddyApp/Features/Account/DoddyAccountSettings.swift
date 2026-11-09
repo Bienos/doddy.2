@@ -59,7 +59,8 @@ struct DoddyAccountSettingsSection: View {
         }
     }
 
-    private static func methodTitle(_ method: DoddyAccountMethod) -> String {
+    /// Also the welcome's line for someone who is already signed in (`SignInSheet`).
+    static func methodTitle(_ method: DoddyAccountMethod) -> String {
         switch method {
         case .apple: NSLocalizedString("Signed in with Apple", comment: "")
         case .google: NSLocalizedString("Signed in with Google", comment: "")
