@@ -241,12 +241,12 @@ describe("the ledger against real Postgres", { skip: dbSkip }, () => {
   test("deleting the account removes the link but keeps the spend", async () => {
     const { app } = await testApp(db, {});
     const a = await newAccount(app);
-    await recordCost(db, { accountId: a.accountId, model: "claude-haiku-5-5", feature: "assistant", outcome: "success", usage: { inputTokens: 1_000_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 } });
+    await recordCost(db, { accountId: a.accountId, model: "claude-haiku-5-5", feature: "assistant", outcome: "success", usage: { inputTokens: 90_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 } });
     await db.query("DELETE FROM accounts WHERE id = $1", [a.accountId]);
     const top = await topAccountsByCost(db, range);
     assert.equal(top.length, 1);
     assert.deepEqual([top[0]!.accountId, top[0]!.calls], [null, 1]);
-    assert.ok(Math.abs(top[0]!.costUsd - 0.1) < 1e-9);
+    assert.ok(Math.abs(top[0]!.costUsd - 0.009) < 1e-9);
   });
 
   test("addTokens still counts when the usage has no ledger detail (a fake responder), and writes no row", async () => {
