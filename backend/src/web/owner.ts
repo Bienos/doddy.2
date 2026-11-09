@@ -114,6 +114,33 @@ export interface UsageTotals {
   tools: Record<string, Outcomes>;
 }
 
+/** Who used Doddy recently, counted by account (a day of zeros the iPhone sent is not use). */
+export interface Engagement {
+  /** Accounts that used Doddy today, in the last 7 days and in the last 30 days. */
+  today: number;
+  week: number;
+  month: number;
+  /** The average of accounts per day over the period, to one decimal. */
+  dailyAverage: number;
+}
+
+export interface ConversationShape {
+  lengths: { under_1: number; "1_3": number; "3_5": number; "5_10": number };
+  ended: { you: number; doddy: number; quiet: number; dropped: number };
+  languages: Record<string, number>;
+  /** Conversations by weekday (Monday first) and the phone's local hour: 7 rows of 24. */
+  heatmap: number[][];
+}
+
+/** Of the accounts that joined in one week, how many used Doddy in that week and each one after. */
+export interface Cohort {
+  /** The Monday the week starts on. */
+  week: string;
+  size: number;
+  /** `active[k]`: how many used Doddy in week k after joining (0 is the week they joined). */
+  active: number[];
+}
+
 export interface OwnerAccount {
   /** This server's user id: the key for the account's own Logbook. */
   userId: string;
@@ -129,6 +156,10 @@ export interface OwnerAccount {
   /** The latest day this account's iPhone sent, and when it last sent one. */
   lastDay: string | null;
   lastSentAt: string | null;
+  /** The latest day with any use. */
+  lastActiveDay: string | null;
+  /** Conversations on each of the last 14 days, oldest first. */
+  trend: number[];
   period: UsageTotals;
 }
 
@@ -152,9 +183,30 @@ export interface OwnerOverview {
     activeByDay: { day: string; accounts: number }[];
     totals: UsageTotals;
   };
+  engagement: Engagement;
+  conversations: ConversationShape;
+  errands: { handedOver: number; finished: number; stopped: number };
+  /** New accounts in the period, and how many of them used Doddy within 7 days of joining. */
+  activation: { joined: number; activated: number };
+  /** The last 8 weeks, oldest first. */
+  cohorts: Cohort[];
 }
 
 const DAY_MS = 86_400_000;
+const TREND_DAYS = 14;
+const COHORT_WEEKS = 8;
+
+/** The Monday of the week a day (YYYY-MM-DD, read as a calendar day) is in. */
+function mondayOf(day: string): string {
+  const ms = Date.parse(`${day}T00:00:00Z`);
+  const weekday = (new Date(ms).getUTCDay() + 6) % 7; // Monday 0
+  return isoDay(ms - weekday * DAY_MS);
+}
+
+/** Monday 0 … Sunday 6. */
+function weekdayOf(day: string): number {
+  return (new Date(Date.parse(`${day}T00:00:00Z`)).getUTCDay() + 6) % 7;
+}
 export const OWNER_PERIODS = [7, 30, 90, 365] as const;
 
 /** Was anything used that day? A day the iPhone sent with only zeros is not use. */
@@ -188,11 +240,16 @@ function add(totals: UsageTotals, day: DaySummary): void {
 export class OwnerPanel {
   private readonly owners: ReadonlySet<string>;
 
+  /** The account list as last read, kept briefly: the overview and the list of accounts both ask, and each refresh would too. */
+  private cached: { at: number; users: DirectoryUser[] } | null = null;
+
   constructor(
     private readonly store: Store,
     owners: readonly string[],
     private readonly directory: UserDirectory | null,
     private readonly timeoutMs = 10_000,
+    /** How long a successful read of the account list is reused. 0: always ask. */
+    private readonly directoryTtlMs = 60_000,
   ) {
     this.owners = new Set(owners.map((id) => id.toLowerCase()));
   }
@@ -216,8 +273,19 @@ export class OwnerPanel {
   }
 
   async overview(now: Date, periodDays: number): Promise<OwnerOverview> {
+    const today = isoDay(now.getTime());
     const since = isoDay(now.getTime() - (periodDays - 1) * DAY_MS);
-    const [directory, states, rows] = await Promise.all([this.listDirectory(), this.store.logbookStates(), this.store.allLogbookDays(since)]);
+    // Engagement and the cohorts look further back than the period: the last 30 days and 8 whole weeks.
+    const cohortFrom = isoDay(now.getTime() - (COHORT_WEEKS * 7 + 6) * DAY_MS);
+    const fetchFrom = [since, cohortFrom, isoDay(now.getTime() - 29 * DAY_MS)].sort()[0]!;
+    const [directory, links, states, rows] = await Promise.all([
+      this.listDirectory(),
+      this.store.accountUsers(),
+      this.store.logbookStates(),
+      this.store.allLogbookDays(fetchFrom),
+    ]);
+    const userFor = new Map(links.map((link) => [link.subject.toLowerCase(), link.user_id]));
+
     const byMethod: Record<string, number> = {};
     const newByDay = new Map<string, number>();
     for (const user of directory ?? []) {
@@ -226,22 +294,86 @@ export class OwnerPanel {
       const created = user.createdAt ? isoDay(Date.parse(user.createdAt)) : null;
       if (created && created >= since) newByDay.set(created, (newByDay.get(created) ?? 0) + 1);
     }
+
     const totals = emptyTotals();
-    const active = new Map<string, Set<string>>();
+    const shape: ConversationShape = {
+      lengths: { under_1: 0, "1_3": 0, "3_5": 0, "5_10": 0 },
+      ended: { you: 0, doddy: 0, quiet: 0, dropped: 0 },
+      languages: {},
+      heatmap: Array.from({ length: 7 }, () => Array<number>(24).fill(0)),
+    };
+    const errands = { handedOver: 0, finished: 0, stopped: 0 };
+    const activeOn = new Map<string, Set<string>>(); // day -> accounts that used Doddy
+    const activeDays = new Map<string, string[]>(); // account -> days it used Doddy (for activation and cohorts)
     const sending = new Set<string>();
     for (const row of rows) {
       const day = parse(row.summary);
       if (!day) continue;
+      if (used(day)) {
+        const accounts = activeOn.get(row.day) ?? new Set<string>();
+        accounts.add(row.user_id);
+        activeOn.set(row.day, accounts);
+        const list = activeDays.get(row.user_id) ?? [];
+        list.push(row.day);
+        activeDays.set(row.user_id, list);
+      }
+      if (row.day < since) continue;
       sending.add(row.user_id);
       add(totals, day);
-      if (used(day)) {
-        const users = active.get(row.day) ?? new Set<string>();
-        users.add(row.user_id);
-        active.set(row.day, users);
-      }
+      const c = day.conversations;
+      for (const key of Object.keys(shape.lengths) as (keyof ConversationShape["lengths"])[]) shape.lengths[key] += c.lengths[key];
+      for (const key of Object.keys(shape.ended) as (keyof ConversationShape["ended"])[]) shape.ended[key] += c.ended[key];
+      for (const [language, n] of Object.entries(c.languages)) shape.languages[language] = (shape.languages[language] ?? 0) + n;
+      const weekday = weekdayOf(row.day);
+      c.by_hour.forEach((n, hour) => {
+        shape.heatmap[weekday]![hour]! += n;
+      });
+      errands.handedOver += day.errands.handed_over;
+      errands.finished += day.errands.finished;
+      errands.stopped += day.errands.stopped;
     }
-    // activeDays across everyone counts account-days, which is what "days of use" means here.
+
     const days = Array.from({ length: periodDays }, (_, i) => isoDay(now.getTime() - (periodDays - 1 - i) * DAY_MS));
+    const activeByDay = days.map((day) => ({ day, accounts: activeOn.get(day)?.size ?? 0 }));
+    const within = (back: number) => {
+      const from = isoDay(now.getTime() - (back - 1) * DAY_MS);
+      const accounts = new Set<string>();
+      for (const [day, users] of activeOn) if (day >= from && day <= today) for (const user of users) accounts.add(user);
+      return accounts.size;
+    };
+    const engagement: Engagement = {
+      today: activeOn.get(today)?.size ?? 0,
+      week: within(7),
+      month: within(30),
+      dailyAverage: Math.round((activeByDay.reduce((sum, d) => sum + d.accounts, 0) / periodDays) * 10) / 10,
+    };
+
+    // Activation and cohorts need to know when each account joined, so they need the account list.
+    let joined = 0;
+    let activated = 0;
+    const mondays = Array.from({ length: COHORT_WEEKS }, (_, i) => mondayOf(isoDay(now.getTime() - (COHORT_WEEKS - 1 - i) * 7 * DAY_MS)));
+    const cohortUsers = new Map<string, string[]>(mondays.map((m) => [m, []]));
+    for (const user of directory ?? []) {
+      if (!user.createdAt) continue;
+      const created = isoDay(Date.parse(user.createdAt));
+      const userId = userFor.get(user.id) ?? user.id;
+      if (created >= since) {
+        joined += 1;
+        const limit = isoDay(Date.parse(`${created}T00:00:00Z`) + 7 * DAY_MS);
+        if ((activeDays.get(userId) ?? []).some((d) => d >= created && d <= limit)) activated += 1;
+      }
+      cohortUsers.get(mondayOf(created))?.push(userId);
+    }
+    const cohorts: Cohort[] = mondays.map((week, index) => {
+      const users = cohortUsers.get(week) ?? [];
+      const weeksSince = mondays.length - 1 - index;
+      const active = Array.from({ length: weeksSince + 1 }, (_, k) => {
+        const target = isoDay(Date.parse(`${week}T00:00:00Z`) + k * 7 * DAY_MS);
+        return users.filter((userId) => (activeDays.get(userId) ?? []).some((d) => mondayOf(d) === target)).length;
+      });
+      return { week, size: users.length, active };
+    });
+
     return {
       generatedAt: now.toISOString(),
       periodDays,
@@ -255,13 +387,19 @@ export class OwnerPanel {
         on: states.filter((s) => s.enabled).length,
         off: states.filter((s) => !s.enabled).length,
         sending: sending.size,
-        activeByDay: days.map((day) => ({ day, accounts: active.get(day)?.size ?? 0 })),
+        activeByDay,
         totals,
       },
+      engagement,
+      conversations: shape,
+      errands,
+      activation: { joined, activated },
+      cohorts: directory ? cohorts : [],
     };
   }
 
   async accounts(now: Date, periodDays: number): Promise<{ generatedAt: string; periodDays: number; directory: boolean; accounts: OwnerAccount[] }> {
+    const today = isoDay(now.getTime());
     const since = isoDay(now.getTime() - (periodDays - 1) * DAY_MS);
     const kept = isoDay(now.getTime() - LOGBOOK_KEPT_DAYS * DAY_MS);
     const [directory, links, states, rows] = await Promise.all([
@@ -283,6 +421,8 @@ export class OwnerPanel {
       logbook: "never",
       lastDay: null,
       lastSentAt: null,
+      lastActiveDay: null,
+      trend: Array<number>(TREND_DAYS).fill(0),
       period: emptyTotals(),
     });
     for (const user of directory ?? []) {
@@ -299,9 +439,12 @@ export class OwnerPanel {
       if (!account.lastDay || row.day > account.lastDay) account.lastDay = row.day;
       const sent = new Date(Number(row.received_at)).toISOString();
       if (!account.lastSentAt || sent > account.lastSentAt) account.lastSentAt = sent;
-      if (row.day >= since) {
-        const day = parse(row.summary);
-        if (day) add(account.period, day);
+      const day = parse(row.summary);
+      if (day) {
+        if (used(day) && (!account.lastActiveDay || row.day > account.lastActiveDay)) account.lastActiveDay = row.day;
+        if (row.day >= since) add(account.period, day);
+        const back = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${row.day}T00:00:00Z`)) / DAY_MS);
+        if (back >= 0 && back < TREND_DAYS) account.trend[TREND_DAYS - 1 - back]! += day.conversations.count;
       }
       accounts.set(row.user_id, account);
     }
@@ -321,10 +464,14 @@ export class OwnerPanel {
 
   private async listDirectory(): Promise<DirectoryUser[] | null> {
     if (!this.directory) return null;
+    if (this.cached && Date.now() - this.cached.at < this.directoryTtlMs) return this.cached.users;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      return await this.directory.list(controller.signal);
+      const users = await this.directory.list(controller.signal);
+      // Only a read that worked is kept: a failure is asked again at the next request.
+      this.cached = users ? { at: Date.now(), users } : null;
+      return users;
     } finally {
       clearTimeout(timer);
     }

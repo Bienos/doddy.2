@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { signOut } = useSession();
   const demo = useDemoMode();
   const owner = useOwner();
-  const sections = owner ? [...SECTIONS.slice(0, -1), { path: "/owner", label: "nav.owner" as MessageKey }, SECTIONS[SECTIONS.length - 1]!] : SECTIONS;
+  const sections = owner ? [...SECTIONS.slice(0, -1), { path: "/admin", label: "nav.owner" as MessageKey }, SECTIONS[SECTIONS.length - 1]!] : SECTIONS;
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -99,7 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   };
 
-  const wide = location.pathname.startsWith("/logbook") || location.pathname.startsWith("/owner");
+  const wide = location.pathname.startsWith("/logbook");
   // The chat fills the window under the header, like ChatGPT (ADR-604).
   const chat = location.pathname.startsWith("/chat");
 

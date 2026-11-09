@@ -27,6 +27,23 @@ export type UsageTotals = z.output<typeof UsageTotals>;
 
 export const OwnerFlag = z.object({ owner: z.literal(true) }).strict();
 
+const Lengths = z.object({ under_1: count, "1_3": count, "3_5": count, "5_10": count }).strict();
+const Endings = z.object({ you: count, doddy: count, quiet: count, dropped: count }).strict();
+
+export const ConversationShape = z
+  .object({
+    lengths: Lengths,
+    ended: Endings,
+    languages: z.record(z.string(), count),
+    /** Monday first, then the phone's local hour: 7 rows of 24. */
+    heatmap: z.array(z.array(count).length(24)).length(7),
+  })
+  .strict();
+export type ConversationShape = z.output<typeof ConversationShape>;
+
+export const Cohort = z.object({ week: Day, size: count, active: z.array(count) }).strict();
+export type Cohort = z.output<typeof Cohort>;
+
 export const OwnerOverview = z
   .object({
     generatedAt: z.string(),
@@ -48,6 +65,11 @@ export const OwnerOverview = z
         totals: UsageTotals,
       })
       .strict(),
+    engagement: z.object({ today: count, week: count, month: count, dailyAverage: z.number().min(0) }).strict(),
+    conversations: ConversationShape,
+    errands: z.object({ handedOver: count, finished: count, stopped: count }).strict(),
+    activation: z.object({ joined: count, activated: count }).strict(),
+    cohorts: z.array(Cohort),
   })
   .strict();
 export type OwnerOverview = z.output<typeof OwnerOverview>;
@@ -64,6 +86,9 @@ export const OwnerAccount = z
     logbook: z.enum(["on", "off", "never"]),
     lastDay: Day.nullable(),
     lastSentAt: z.string().nullable(),
+    lastActiveDay: Day.nullable(),
+    /** Conversations on each of the last 14 days, oldest first. */
+    trend: z.array(count).length(14),
     period: UsageTotals,
   })
   .strict();

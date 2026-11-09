@@ -12,27 +12,100 @@
       "createdAt": "2026-10-01T08:00:00Z",
       "lastSignInAt": "2026-10-22T07:00:00Z",
       "logbook": "on",
-      "lastDay": "2026-10-21",
+      "lastDay": "2026-10-22",
       "lastSentAt": "2026-10-22T10:00:00.000Z",
+      "lastActiveDay": "2026-10-21",
+      "trend": [
+        3,
+        4,
+        3,
+        1,
+        4,
+        3,
+        3,
+        1,
+        3,
+        3,
+        3,
+        0,
+        2,
+        0
+      ],
       "period": {
-        "activeDays": 1,
-        "conversations": 2,
-        "seconds": 300,
-        "notes": 2,
-        "listItems": 2,
-        "errands": 0,
+        "activeDays": 20,
+        "conversations": 52,
+        "seconds": 12490,
+        "notes": 22,
+        "listItems": 20,
+        "errands": 12,
         "tools": {
+          "draft_message": {
+            "done": 15,
+            "declined": 3,
+            "unsure": 0,
+            "failed": 1,
+            "undone": 0
+          },
+          "web_search": {
+            "done": 7,
+            "declined": 1,
+            "unsure": 0,
+            "failed": 1,
+            "undone": 0
+          },
           "get_weather": {
-            "done": 2,
+            "done": 10,
+            "declined": 1,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "save_memory": {
+            "done": 8,
+            "declined": 1,
+            "unsure": 0,
+            "failed": 1,
+            "undone": 0
+          },
+          "set_timer": {
+            "done": 10,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "read_calendar": {
+            "done": 7,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 2,
+            "undone": 0
+          },
+          "search_memories": {
+            "done": 6,
+            "declined": 2,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "create_reminder": {
+            "done": 7,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "add_to_list": {
+            "done": 12,
             "declined": 0,
             "unsure": 0,
             "failed": 1,
             "undone": 0
           },
-          "create_reminder": {
-            "done": 1,
-            "declined": 1,
-            "unsure": 0,
+          "send_email": {
+            "done": 4,
+            "declined": 0,
+            "unsure": 4,
             "failed": 0,
             "undone": 0
           }
@@ -43,36 +116,207 @@
       "userId": "00000000-0000-4000-8000-00000000000b",
       "accountId": "00000000-0000-4000-8000-00000000000b",
       "email": "tomek@example.com",
-      "name": "Tomek",
+      "name": "Tomek Nowak",
       "method": "google",
-      "createdAt": "2026-10-20T12:00:00Z",
+      "createdAt": "2026-10-12T12:00:00Z",
       "lastSignInAt": "2026-10-21T18:00:00Z",
       "logbook": "on",
       "lastDay": "2026-10-22",
       "lastSentAt": "2026-10-22T10:00:00.000Z",
+      "lastActiveDay": "2026-10-22",
+      "trend": [
+        0,
+        0,
+        0,
+        4,
+        3,
+        0,
+        3,
+        0,
+        4,
+        1,
+        1,
+        0,
+        0,
+        2
+      ],
       "period": {
-        "activeDays": 2,
-        "conversations": 4,
-        "seconds": 600,
-        "notes": 4,
-        "listItems": 4,
-        "errands": 0,
+        "activeDays": 7,
+        "conversations": 18,
+        "seconds": 4047,
+        "notes": 3,
+        "listItems": 1,
+        "errands": 4,
         "tools": {
-          "get_weather": {
-            "done": 4,
+          "search_memories": {
+            "done": 2,
             "declined": 0,
             "unsure": 0,
-            "failed": 2,
+            "failed": 1,
+            "undone": 0
+          },
+          "draft_message": {
+            "done": 5,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
             "undone": 0
           },
           "create_reminder": {
+            "done": 5,
+            "declined": 1,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "send_email": {
             "done": 2,
-            "declined": 2,
+            "declined": 0,
+            "unsure": 2,
+            "failed": 0,
+            "undone": 0
+          },
+          "web_search": {
+            "done": 3,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "set_timer": {
+            "done": 3,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "get_weather": {
+            "done": 5,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "read_calendar": {
+            "done": 2,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 1,
+            "undone": 0
+          },
+          "save_memory": {
+            "done": 2,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "add_to_list": {
+            "done": 1,
+            "declined": 1,
             "unsure": 0,
             "failed": 0,
             "undone": 0
           }
         }
+      }
+    },
+    {
+      "userId": "00000000-0000-4000-8000-0000000000c3",
+      "accountId": "00000000-0000-4000-8000-0000000000c3",
+      "email": "kasia@example.com",
+      "name": null,
+      "method": "email",
+      "createdAt": "2026-10-14T17:05:00Z",
+      "lastSignInAt": "2026-10-19T18:00:00Z",
+      "logbook": "on",
+      "lastDay": "2026-10-22",
+      "lastSentAt": "2026-10-22T10:00:00.000Z",
+      "lastActiveDay": "2026-10-19",
+      "trend": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "period": {
+        "activeDays": 2,
+        "conversations": 2,
+        "seconds": 491,
+        "notes": 3,
+        "listItems": 1,
+        "errands": 0,
+        "tools": {
+          "get_weather": {
+            "done": 2,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "set_timer": {
+            "done": 1,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          },
+          "draft_message": {
+            "done": 1,
+            "declined": 0,
+            "unsure": 0,
+            "failed": 0,
+            "undone": 0
+          }
+        }
+      }
+    },
+    {
+      "userId": "00000000-0000-4000-8000-0000000000c4",
+      "accountId": "00000000-0000-4000-8000-0000000000c4",
+      "email": "x7k2p9q4@privaterelay.appleid.com",
+      "name": null,
+      "method": "apple",
+      "createdAt": "2026-10-20T20:00:00Z",
+      "lastSignInAt": "2026-10-20T20:00:00Z",
+      "logbook": "never",
+      "lastDay": null,
+      "lastSentAt": null,
+      "lastActiveDay": null,
+      "trend": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "period": {
+        "activeDays": 0,
+        "conversations": 0,
+        "seconds": 0,
+        "notes": 0,
+        "listItems": 0,
+        "errands": 0,
+        "tools": {}
       }
     }
   ]

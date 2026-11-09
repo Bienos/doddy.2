@@ -3,10 +3,11 @@
   "periodDays": 30,
   "directory": true,
   "accounts": {
-    "total": 2,
+    "total": 4,
     "byMethod": {
-      "apple": 1,
-      "google": 1
+      "apple": 2,
+      "google": 1,
+      "email": 1
     },
     "newByDay": [
       {
@@ -87,7 +88,7 @@
       },
       {
         "day": "2026-10-12",
-        "count": 0
+        "count": 1
       },
       {
         "day": "2026-10-13",
@@ -95,7 +96,7 @@
       },
       {
         "day": "2026-10-14",
-        "count": 0
+        "count": 1
       },
       {
         "day": "2026-10-15",
@@ -132,9 +133,9 @@
     ]
   },
   "logbook": {
-    "on": 2,
+    "on": 3,
     "off": 0,
-    "sending": 2,
+    "sending": 3,
     "activeByDay": [
       {
         "day": "2026-09-23",
@@ -170,83 +171,83 @@
       },
       {
         "day": "2026-10-01",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-02",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-03",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-04",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-05",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-06",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-07",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-08",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-09",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-10",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-11",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-12",
-        "accounts": 0
+        "accounts": 2
       },
       {
         "day": "2026-10-13",
-        "accounts": 0
+        "accounts": 2
       },
       {
         "day": "2026-10-14",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-15",
-        "accounts": 0
+        "accounts": 3
       },
       {
         "day": "2026-10-16",
-        "accounts": 0
+        "accounts": 1
       },
       {
         "day": "2026-10-17",
-        "accounts": 0
+        "accounts": 2
       },
       {
         "day": "2026-10-18",
-        "accounts": 0
+        "accounts": 2
       },
       {
         "day": "2026-10-19",
-        "accounts": 0
+        "accounts": 3
       },
       {
         "day": "2026-10-20",
-        "accounts": 1
+        "accounts": 0
       },
       {
         "day": "2026-10-21",
@@ -258,28 +259,387 @@
       }
     ],
     "totals": {
-      "activeDays": 3,
-      "conversations": 6,
-      "seconds": 900,
-      "notes": 6,
-      "listItems": 6,
-      "errands": 0,
+      "activeDays": 29,
+      "conversations": 72,
+      "seconds": 17028,
+      "notes": 28,
+      "listItems": 22,
+      "errands": 16,
       "tools": {
+        "draft_message": {
+          "done": 21,
+          "declined": 3,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
+        "web_search": {
+          "done": 10,
+          "declined": 1,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
         "get_weather": {
-          "done": 6,
+          "done": 17,
+          "declined": 1,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        },
+        "save_memory": {
+          "done": 10,
+          "declined": 1,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
+        "set_timer": {
+          "done": 14,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        },
+        "read_calendar": {
+          "done": 9,
           "declined": 0,
           "unsure": 0,
           "failed": 3,
           "undone": 0
         },
-        "create_reminder": {
-          "done": 3,
-          "declined": 3,
+        "search_memories": {
+          "done": 8,
+          "declined": 2,
           "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
+        "create_reminder": {
+          "done": 12,
+          "declined": 1,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        },
+        "add_to_list": {
+          "done": 13,
+          "declined": 1,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
+        "send_email": {
+          "done": 6,
+          "declined": 0,
+          "unsure": 6,
           "failed": 0,
           "undone": 0
         }
       }
     }
-  }
+  },
+  "engagement": {
+    "today": 1,
+    "week": 3,
+    "month": 3,
+    "dailyAverage": 1
+  },
+  "conversations": {
+    "lengths": {
+      "under_1": 8,
+      "1_3": 24,
+      "3_5": 10,
+      "5_10": 30
+    },
+    "ended": {
+      "you": 43,
+      "doddy": 22,
+      "quiet": 3,
+      "dropped": 4
+    },
+    "languages": {
+      "pl": 51,
+      "en": 21
+    },
+    "heatmap": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        3,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        4,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        3,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        3,
+        0,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        1,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0
+      ]
+    ]
+  },
+  "errands": {
+    "handedOver": 16,
+    "finished": 16,
+    "stopped": 0
+  },
+  "activation": {
+    "joined": 4,
+    "activated": 3
+  },
+  "cohorts": [
+    {
+      "week": "2026-08-31",
+      "size": 0,
+      "active": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "week": "2026-09-07",
+      "size": 0,
+      "active": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "week": "2026-09-14",
+      "size": 0,
+      "active": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "week": "2026-09-21",
+      "size": 0,
+      "active": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "week": "2026-09-28",
+      "size": 1,
+      "active": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "week": "2026-10-05",
+      "size": 0,
+      "active": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "week": "2026-10-12",
+      "size": 2,
+      "active": [
+        2,
+        2
+      ]
+    },
+    {
+      "week": "2026-10-19",
+      "size": 1,
+      "active": [
+        0
+      ]
+    }
+  ]
 }

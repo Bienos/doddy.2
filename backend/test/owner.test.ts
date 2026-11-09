@@ -22,7 +22,7 @@ const TODAY = "2026-10-22"; // the rig's clock
 const DAY = 86_400_000;
 const iso = (offsetDays: number) => new Date(Date.parse(`${TODAY}T00:00:00Z`) + offsetDays * DAY).toISOString().slice(0, 10);
 
-function day(date: string, conversations: number, tools: Record<string, Record<string, number>> = {}) {
+function day(date: string, conversations: number, tools: Record<string, Record<string, number>> = {}, over: Record<string, unknown> = {}) {
   return {
     schema: "doddy.logbook.day.v1",
     day: date,
@@ -40,6 +40,7 @@ function day(date: string, conversations: number, tools: Record<string, Record<s
     lists: { added_voice: 0, added_typed: 2, ticked: 0 },
     errands: { handed_over: 0, finished: 0, stopped: 0, minutes: 0, searches: 0, pages: 0 },
     translator: { sessions: 0, minutes: 0 },
+    ...over,
   };
 }
 
@@ -166,4 +167,148 @@ test("Supabase's admin list is read page by page with the secret key, and a fail
     throw new Error("offline");
   });
   assert.equal(await broken.list(new AbortController().signal), null);
+});
+
+// ------------------------------------------------------------------ the dashboard's own numbers
+
+const U3 = "00000000-0000-4000-8000-0000000000c3";
+const U4 = "00000000-0000-4000-8000-0000000000c4";
+/** A user the dev tokens don't stand for: its days go straight into the store, as the iPhone's PUT would. */
+async function sendFor(r: WebRig, user: string, ...days: ReturnType<typeof day>[]) {
+  await r.store.setLogbookEnabled(user, true, Date.parse(`${TODAY}T10:00:00Z`));
+  for (const d of days) assert.equal(await r.store.putLogbookDay(user, d.day, JSON.stringify(d), Date.parse(`${TODAY}T10:00:00Z`)), true);
+}
+const person = (id: string, email: string, createdAt: string): DirectoryUser => ({ id, email, name: null, method: "google", createdAt, lastSignInAt: null });
+
+test("engagement counts accounts that used Doddy today, this week and this month, from days of real use only", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory([]) } });
+  // A day the iPhone sent with nothing in it at all: no conversations, no tools, no notes, no list items.
+  const nothing = day(iso(-8), 0, {}, {
+    notes: { by_source: { voice: 0, typed: 0, shared: 0, imported: 0 }, by_kind: {}, edited: 0 },
+    lists: { added_voice: 0, added_typed: 0, ticked: 0 },
+  });
+  await send(rig, USER_A, day(iso(0), 1), day(iso(-5), 1), day(iso(-12), 1), nothing);
+  await send(rig, USER_B, day(iso(0), 2), day(iso(-20), 1));
+  await sendFor(rig, U3, day(iso(-25), 1));
+
+  const o = (await rig.call("GET", "/v1/web/owner/overview?days=30", { token: USER_A })).body;
+  assert.deepEqual(o.engagement, { today: 2, week: 2, month: 3, dailyAverage: 0.2 });
+  // The day of zeros (iso(-8)) is not use: one account on iso(-12), none on iso(-8).
+  const at = (offset: number) => o.logbook.activeByDay.find((d: { day: string }) => d.day === iso(offset)).accounts;
+  assert.equal(at(-8), 0);
+  assert.equal(at(-12), 1);
+});
+
+test("the shape of conversations: lengths, endings, languages, and when people talk by weekday and hour", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory([]) } });
+  const thursday = day(iso(0), 3, {}, {
+    conversations: {
+      count: 3,
+      seconds: 700,
+      by_hour: Array.from({ length: 24 }, (_, h) => (h === 8 ? 1 : h === 20 ? 2 : 0)),
+      lengths: { under_1: 1, "1_3": 1, "3_5": 0, "5_10": 1 },
+      ended: { you: 2, doddy: 1, quiet: 0, dropped: 0 },
+      languages: { pl: 2, en: 1 },
+      ways_in: { app: 0, back_tap: 0, action_button: 0, widget: 0, siri: 0, island: 0 },
+    },
+    errands: { handed_over: 2, finished: 1, stopped: 1, minutes: 5, searches: 3, pages: 2 },
+  });
+  const wednesday = day(iso(-1), 1, {}, {
+    conversations: {
+      count: 1,
+      seconds: 200,
+      by_hour: Array.from({ length: 24 }, (_, h) => (h === 9 ? 1 : 0)),
+      lengths: { under_1: 0, "1_3": 0, "3_5": 1, "5_10": 0 },
+      ended: { you: 0, doddy: 0, quiet: 1, dropped: 0 },
+      languages: {},
+      ways_in: { app: 0, back_tap: 0, action_button: 0, widget: 0, siri: 0, island: 0 },
+    },
+  });
+  await send(rig, USER_A, wednesday, thursday);
+
+  const c = (await rig.call("GET", "/v1/web/owner/overview?days=7", { token: USER_A })).body;
+  assert.deepEqual(c.conversations.lengths, { under_1: 1, "1_3": 1, "3_5": 1, "5_10": 1 });
+  assert.deepEqual(c.conversations.ended, { you: 2, doddy: 1, quiet: 1, dropped: 0 });
+  assert.deepEqual(c.conversations.languages, { pl: 2, en: 1 });
+  assert.equal(c.conversations.heatmap.length, 7);
+  assert.ok(c.conversations.heatmap.every((row: number[]) => row.length === 24));
+  assert.equal(c.conversations.heatmap[3][8], 1, "Thursday 08:00");
+  assert.equal(c.conversations.heatmap[3][20], 2, "Thursday 20:00");
+  assert.equal(c.conversations.heatmap[2][9], 1, "Wednesday 09:00");
+  assert.equal(c.conversations.heatmap.flat().reduce((sum: number, n: number) => sum + n, 0), 4);
+  assert.deepEqual(c.errands, { handedOver: 2, finished: 1, stopped: 1 });
+});
+
+test("activation: of the accounts that joined in the period, how many used Doddy within a week; and weekly cohorts", async () => {
+  const users = [
+    person(ID_A, "a@example.com", "2026-10-20T09:00:00Z"), // used on the 22nd: activated
+    person(ID_B, "b@example.com", "2026-10-02T09:00:00Z"), // used on the 2nd itself: activated
+    person(U3, "c@example.com", "2026-09-28T09:00:00Z"), // only used on the 27th, before joining: not activated
+    person(U4, "d@example.com", "2026-10-21T09:00:00Z"), // never used
+  ];
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(users) } });
+  await send(rig, USER_A, day(iso(0), 1));
+  await send(rig, USER_B, day(iso(0), 1), day("2026-10-02", 1));
+  await sendFor(rig, U3, day("2026-09-27", 1));
+
+  const o = (await rig.call("GET", "/v1/web/owner/overview?days=30", { token: USER_A })).body;
+  assert.deepEqual(o.activation, { joined: 4, activated: 2 });
+  assert.equal(o.cohorts.length, 8);
+  assert.deepEqual(o.cohorts.map((c: { week: string }) => c.week), ["2026-08-31", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19"]);
+  const week = (monday: string) => o.cohorts.find((c: { week: string }) => c.week === monday);
+  // Joined the week of the 19th: A and D. A used Doddy that week; D didn't.
+  assert.deepEqual(week("2026-10-19"), { week: "2026-10-19", size: 2, active: [1] });
+  // Joined the week of 28 Sep: B and C. B used it that week and again three weeks later; C never after joining.
+  assert.deepEqual(week("2026-09-28"), { week: "2026-09-28", size: 2, active: [1, 0, 0, 1] });
+  assert.deepEqual(week("2026-10-05"), { week: "2026-10-05", size: 0, active: [0, 0, 0] });
+});
+
+test("no cohorts or activation without Supabase's account list, because nobody's join date is known", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(null) } });
+  await send(rig, USER_A, day(iso(0), 1));
+  const o = (await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body;
+  assert.deepEqual(o.cohorts, []);
+  assert.deepEqual(o.activation, { joined: 0, activated: 0 });
+  assert.equal(o.engagement.today, 1, "engagement still comes from Logbook");
+});
+
+test("each account carries its last day of use and its conversations over the last 14 days", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
+  await send(rig, USER_B, day(iso(-2), 1), day(iso(0), 3), day(iso(-1), 0));
+  const res = (await rig.call("GET", "/v1/web/owner/accounts?days=30", { token: USER_A })).body;
+  const tomek = res.accounts.find((a: { email: string }) => a.email === "tomek@example.com");
+  assert.equal(tomek.lastActiveDay, iso(0));
+  assert.equal(tomek.trend.length, 14);
+  assert.equal(tomek.trend[13], 3, "today is last");
+  assert.equal(tomek.trend[12], 0);
+  assert.equal(tomek.trend[11], 1);
+  const owner = res.accounts.find((a: { email: string }) => a.email === "owner@example.com");
+  assert.equal(owner.lastActiveDay, null);
+  assert.deepEqual(owner.trend, Array(14).fill(0));
+});
+
+test("the account list is read once for a minute, and a failed read is asked again", async () => {
+  let reads = 0;
+  let fail = false;
+  const counting: UserDirectory = {
+    list: async () => {
+      reads += 1;
+      return fail ? null : people;
+    },
+  };
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: counting } });
+  await rig.call("GET", "/v1/web/owner/overview", { token: USER_A });
+  await rig.call("GET", "/v1/web/owner/accounts", { token: USER_A });
+  await rig.call("GET", "/v1/web/owner/overview?days=7", { token: USER_A });
+  assert.equal(reads, 1, "one read serves the overview, the accounts and a new period");
+  assert.equal((await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body.directory, true);
+  await rig.close();
+
+  reads = 0;
+  fail = true;
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: counting } });
+  assert.equal((await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body.directory, false);
+  fail = false;
+  assert.equal((await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body.directory, true, "a failure wasn't kept");
+  assert.equal(reads, 2);
 });
