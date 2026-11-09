@@ -435,6 +435,17 @@
         }
       }
     },
+    "CHECK": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SPRAWDŹ"
+          }
+        }
+      }
+    },
     "Call": {
       "extractionState": "manual",
       "localizations": {
@@ -3102,13 +3113,13 @@
         }
       }
     },
-    "Pause DODDY Recording": {
+    "Pause Doddy Recording": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wstrzymaj nagrywanie DODDY"
+            "value": "Wstrzymaj nagrywanie w Doddym"
           }
         }
       }
@@ -3566,13 +3577,13 @@
         }
       }
     },
-    "Record with DODDY": {
+    "Record with Doddy": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nagrywaj z DODDY"
+            "value": "Nagrywaj z Doddym"
           }
         }
       }
@@ -3695,13 +3706,13 @@
         }
       }
     },
-    "Resume DODDY Recording": {
+    "Resume Doddy Recording": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wznów nagrywanie DODDY"
+            "value": "Wznów nagrywanie w Doddym"
           }
         }
       }
@@ -4295,13 +4306,13 @@
         }
       }
     },
-    "Start DODDY Recording": {
+    "Start Doddy Recording": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zacznij nagrywanie DODDY"
+            "value": "Zacznij nagrywanie w Doddym"
           }
         }
       }
@@ -4387,13 +4398,13 @@
         }
       }
     },
-    "Stop DODDY Recording": {
+    "Stop Doddy Recording": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zatrzymaj nagrywanie DODDY"
+            "value": "Zatrzymaj nagrywanie w Doddym"
           }
         }
       }
