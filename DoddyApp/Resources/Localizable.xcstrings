@@ -9999,6 +9999,17 @@
         }
       }
     },
+    "Call them": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń"
+          }
+        }
+      }
+    },
     "Call them as you would on the phone. Say \"koniec próby\" for tips.": {
       "extractionState": "manual",
       "localizations": {
@@ -10006,6 +10017,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mów tak, jak w prawdziwej rozmowie. Powiedz „koniec próby”, aby dostać wskazówki."
+          }
+        }
+      }
+    },
+    "Call these places for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwonić do tych miejsc w Twoim imieniu?"
+          }
+        }
+      }
+    },
+    "Call this place for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwonić do tego miejsca w Twoim imieniu?"
           }
         }
       }
@@ -23128,6 +23161,17 @@
         }
       }
     },
+    "Doddy says:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy mówi:"
+          }
+        }
+      }
+    },
     "Doddy starts in English until you pick another language. A change shows the next time you open Doddy: close it first, then open it again.": {
       "extractionState": "manual",
       "localizations": {
@@ -24800,6 +24844,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie umawiaj"
+          }
+        }
+      }
+    },
+    "Don't call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie dzwoń"
           }
         }
       }
@@ -34655,6 +34710,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jest w plikach tymczasowych Doddy’ego, dopóki iOS ich nie wyczyści. Zapisz ją w Keynote albo w Plikach, żeby ją zachować."
+          }
+        }
+      }
+    },
+    "It's outside calling hours (8:00 to 23:00), so the first call can't start now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest poza godzinami dzwonienia (8:00–23:00), więc pierwsza rozmowa nie może zacząć się teraz."
           }
         }
       }
@@ -50965,6 +51031,17 @@
         }
       }
     },
+    "Number from Doddy's place search": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer z wyszukiwania miejsc Doddy’ego"
+          }
+        }
+      }
+    },
     "Number from a note": {
       "extractionState": "manual",
       "localizations": {
@@ -51005,6 +51082,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Numer wpisany ręcznie, źródło: %@"
+          }
+        }
+      }
+    },
+    "Numbers from Doddy's place search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numery z wyszukiwania miejsc Doddy’ego."
           }
         }
       }
@@ -51706,6 +51794,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Raz w tygodniu przez cztery tygodnie, tylko dopóki z któregoś nie skorzystasz. Tylko jeśli powiadomienia są już włączone."
+          }
+        }
+      }
+    },
+    "One at a time, in this order. Doddy stops at the first yes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po kolei, w tej kolejności. Doddy kończy na pierwszym „tak”."
           }
         }
       }
@@ -99261,6 +99360,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "你在三个不同的日子按这个顺序做了这些事。保存后，你可以按名称向 Doddy 请求。每一步每次都仍会先问你。"
+          }
+        }
+      }
+    },
+    "You get a notification and a text with the answer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedź dostaniesz w powiadomieniu i SMS-ie."
+          }
+        }
+      }
+    },
+    "You get a notification with the answer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedź dostaniesz w powiadomieniu."
           }
         }
       }

@@ -260,6 +260,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A call from Doddy's number to the user's verified number at a later time (ADR-754). Shown
     /// on a card with the time and the exact reason; booked only on the user's tap.
     case callMeLater(CallLaterDraft)
+    /// Up to three places, one card, one tap; called one after another until one says yes
+    /// (decision 2026-11-09-restaurant-calls-one-tap). Placed by Doddy's messaging server.
+    case callPlaces(CallTaskDraft)
     /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-568).
@@ -424,6 +427,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .textMe(body: body)
         case VoiceToolName.callMeLater:
             return parseCallMeLater(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.callPlaces:
+            return parseCallPlaces(args, name: name)
         case VoiceToolName.makePresentation:
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:
@@ -705,7 +710,8 @@ public enum VoiceTextLimits {
 
 /// Links that open other apps. The user always taps; these links never send a message or place a
 /// call themselves. The one way Doddy places a call is a call case the user approved on its card
-/// (ADR-500, superseding ADR-065 for that case only); the voice conversation can't start one.
+/// (ADR-500, superseding ADR-065 for that case only); from a conversation, only through
+/// `call_places` and its own one-tap card (decision 2026-11-09-restaurant-calls-one-tap).
 public enum OpenLinks {
     public static func map(place: String) -> URL? {
         URL(string: "https://maps.apple.com/?q=\(encode(place))")

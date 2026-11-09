@@ -2933,5 +2933,16 @@
   "Logbook": "Dziennik",
   "Counting stopped. The counts already on Doddy's server will be deleted when it can be reached.": "Liczenie wyłączone. Liczby, które są już na serwerze Doddy’ego, zostaną usunięte, gdy serwer będzie dostępny.",
   "Counting stopped. Doddy's server deleted the counts it held.": "Liczenie wyłączone. Serwer Doddy’ego usunął zapisane liczby.",
-  "On unless you turn it off. Doddy counts how you use him: conversations, what he did for you, notes and list items saved. Never the words of your conversations or notes. The counts go to Doddy's server, where you see them in Logbook on the web and Doddy's team can see them with your account. Turning this off stops counting and deletes the counts on the server.": "Włączone, dopóki tego nie wyłączysz. Doddy liczy, jak z niego korzystasz: rozmowy, to, co dla ciebie zrobił, zapisane notatki i pozycje list. Nigdy treści rozmów ani notatek. Liczby trafiają na serwer Doddy’ego: widzisz je w Dzienniku w przeglądarce, a zespół Doddy’ego widzi je razem z twoim kontem. Wyłączenie zatrzymuje liczenie i usuwa liczby z serwera."
+  "On unless you turn it off. Doddy counts how you use him: conversations, what he did for you, notes and list items saved. Never the words of your conversations or notes. The counts go to Doddy's server, where you see them in Logbook on the web and Doddy's team can see them with your account. Turning this off stops counting and deletes the counts on the server.": "Włączone, dopóki tego nie wyłączysz. Doddy liczy, jak z niego korzystasz: rozmowy, to, co dla ciebie zrobił, zapisane notatki i pozycje list. Nigdy treści rozmów ani notatek. Liczby trafiają na serwer Doddy’ego: widzisz je w Dzienniku w przeglądarce, a zespół Doddy’ego widzi je razem z twoim kontem. Wyłączenie zatrzymuje liczenie i usuwa liczby z serwera.",
+  "Call this place for you?": "Zadzwonić do tego miejsca w Twoim imieniu?",
+  "Call these places for you?": "Zadzwonić do tych miejsc w Twoim imieniu?",
+  "Numbers from Doddy's place search.": "Numery z wyszukiwania miejsc Doddy’ego.",
+  "Doddy says:": "Doddy mówi:",
+  "One at a time, in this order. Doddy stops at the first yes.": "Po kolei, w tej kolejności. Doddy kończy na pierwszym „tak”.",
+  "You get a notification and a text with the answer.": "Odpowiedź dostaniesz w powiadomieniu i SMS-ie.",
+  "You get a notification with the answer.": "Odpowiedź dostaniesz w powiadomieniu.",
+  "It's outside calling hours (8:00 to 23:00), so the first call can't start now.": "Jest poza godzinami dzwonienia (8:00–23:00), więc pierwsza rozmowa nie może zacząć się teraz.",
+  "Call them": "Zadzwoń",
+  "Don't call": "Nie dzwoń",
+  "Number from Doddy's place search": "Numer z wyszukiwania miejsc Doddy’ego"
 }
