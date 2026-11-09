@@ -56,4 +56,4 @@ Before this change the paragraph was English in every language, and it pointed t
 iPhone", a path that doesn't exist.
 
 ## Not reviewed yet
-The Polish has not been read by a second bilingual reviewer (§3.8). The owner approves the words before merge.
+The Polish has not been read by a second bilingual reviewer (§3.8). The owner approved the words on 9 Nov 2026 ("narazie ok", OK for now).

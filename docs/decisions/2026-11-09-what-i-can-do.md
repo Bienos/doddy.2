@@ -1,8 +1,8 @@
 # "What I can do" lists features in plain words, with an honest status each, and opens them
 
 - **Date:** 2026-11-09
-- **Decided by:** owner. Asked in the session of #270 for What I can do to stay on Home's menu and to describe features "carefully", following the brand guidelines. The owner approves the words before merge.
-- **Status:** proposed, owner approval of the copy pending
+- **Decided by:** owner. Asked in the session of #270 for What I can do to stay on Home's menu and to describe features "carefully", following the brand guidelines. The owner approved the words before merge.
+- **Status:** accepted. The owner approved the copy on 9 Nov 2026 ("narazie ok": OK for now, so expect changes later); applied in #273
 - **Replaces:** the "What's built" list of engineering capability names (ADR-195, ADR-548's catalog list)
 
 ## Why
