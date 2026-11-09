@@ -97,6 +97,10 @@ contact_policy:
   call_recipients: allowlist_only
   approval: exact_payload_hash
   unknown_inbound_calls: fixed_message_no_ai
+  # Owner, 9 Nov 2026 (decision 2026-11-09-call-backs-and-contact-calls): a caller Doddy dialled on a user's behalf
+  # is put through to that user's verified number, Doddy's number as caller ID, no AI and no recording. Matched by a
+  # keyed hash of the number, kept while the account exists. Everyone else still hears the fixed message.
+  callback_inbound_calls: forwarded_to_the_user_doddy_called_for_no_ai
   unknown_text_outcome: never_resent_lookup_at_provider
   recording: off
   text_max_length: 640

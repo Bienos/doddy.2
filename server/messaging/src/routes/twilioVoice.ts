@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { FastifyBaseLogger, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import type { Deps } from "../app.js";
+import { callbackTarget, forwardDoneTwiml, forwardTwiml } from "../callbacks.js";
 import { openSession } from "../calls.js";
 import type { Db } from "../db.js";
 import { scheduleDeletion } from "../providerRecords.js";
@@ -10,8 +11,9 @@ import { sayAndHangUp } from "../voiceTwiml.js";
 import { formValue, verifiedTwilioForm } from "./twilioAuth.js";
 
 // Calls reach Doddy's server before any AI (ADR-750). Twilio posts here; the server decides who
-// is handed to the phone agent, through ElevenLabs register-call. Everyone else hears one fixed
-// sentence and the call ends.
+// is handed to the phone agent, through ElevenLabs register-call. Someone Doddy called on a user's
+// behalf is put through to that user (decision 2026-11-09-call-backs-and-contact-calls). Everyone else
+// hears one fixed sentence and the call ends.
 
 /** What the calls feature needs before it answers with the phone agent instead of a fixed line. */
 export function callsAvailable(deps: Pick<Deps,
@@ -64,13 +66,42 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
     }
   }
 
+  /**
+   * The TwiML that puts a call-back through to the user Doddy called this caller for, or undefined when there is no
+   * such user. Doddy's number (the one they called) is the caller ID, so the user's number is never shown. Logged
+   * without either number.
+   */
+  async function forwardCallback(log: FastifyBaseLogger, from: string, to: string): Promise<string | undefined> {
+    if (!deps.cipher || !deps.publicBaseUrl || !/^\+[1-9][0-9]{6,14}$/.test(to)) return undefined;
+    try {
+      const target = await callbackTarget(db, deps.cipher, from);
+      if (!target) return undefined;
+      log.info({ event: "callback_forwarded" }, "call-back put through to the user");
+      return forwardTwiml(target, to, `${deps.publicBaseUrl}/webhooks/twilio/callback-done`);
+    } catch (err) {
+      log.error({ err: { message: (err as Error).message } }, "call-back lookup failed");
+      return undefined;
+    }
+  }
+
+  // After a call-back's dial: an unanswered one hears why, then the call ends.
+  app.post("/webhooks/twilio/callback-done", async (req, reply) => {
+    const form = verified(req, reply);
+    if (!form) return;
+    return reply.type("text/xml").send(forwardDoneTwiml(formValue(form.DialCallStatus)));
+  });
+
   // Someone calls Doddy's number.
   app.post("/webhooks/twilio/voice", async (req, reply) => {
     const form = verified(req, reply);
     if (!form) return;
     const twiml = (xml: string) => reply.type("text/xml").send(xml);
-    if (!callsAvailable(deps).inbound) return twiml(sayAndHangUp("not_set_up"));
     const from = formValue(form.From);
+    if (!callsAvailable(deps).inbound) {
+      // Call-backs need no phone agent, only the number they were called for.
+      const forwarded = await forwardCallback(req.log, from, formValue(form.To));
+      return twiml(forwarded ?? sayAndHangUp("not_set_up"));
+    }
     const callSid = formValue(form.CallSid);
     let row: { account_id: string; inbound_enabled: boolean | null } | undefined;
     try {
@@ -84,6 +115,8 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
     }
     // Logged with the reason only: never the caller's number.
     if (!row) {
+      const forwarded = await forwardCallback(req.log, from, formValue(form.To));
+      if (forwarded) return twiml(forwarded);
       req.log.info({ event: "call_refused", reason: "unknown_caller" }, "call refused");
       return twiml(sayAndHangUp("unknown_caller"));
     }
