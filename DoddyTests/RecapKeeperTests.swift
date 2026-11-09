@@ -98,4 +98,48 @@ final class RecapKeeperTests: XCTestCase {
         let saved6 = await RecapKeeper.rememberCalls([call], store: store, defaults: defaults)
         XCTAssertEqual(saved6, 1)
     }
+
+    // MARK: - Conversations with Doddy (step 3a)
+
+    private func lines(_ words: Int) -> [RecapModelIO.Line] {
+        [.init(speaker: .person, text: Array(repeating: "słowo", count: words).joined(separator: " ")),
+         .init(speaker: .doddy, text: "Jasne.")]
+    }
+
+    @MainActor
+    func testAConversationIsNotRecappedWhileOffPrivateOrShort() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        let off = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start, isPrivate: false,
+                                                      store: store, defaults: defaults)
+        XCTAssertEqual(off, .skipped(.switchedOff))
+
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        let hidden = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start, isPrivate: true,
+                                                         store: store, defaults: defaults)
+        XCTAssertEqual(hidden, .skipped(.privateConversation))
+        let short = await RecapKeeper.recapConversation(lines: lines(RecapRules.minimumWordsFromPerson - 1), startedAt: start,
+                                                        endedAt: start, isPrivate: false, store: store, defaults: defaults)
+        XCTAssertEqual(short, .skipped(.tooShort))
+        XCTAssertTrue(store.memories.isEmpty)
+    }
+
+    @MainActor
+    func testWithoutAppleIntelligenceAndWithoutTheServerThereIsNoRecap() async throws {
+        try XCTSkipIf(OnDeviceRecapWriter.isAvailable(languageCode: RecapKeeper.languageCode),
+                      "this device can write recaps itself")
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        let outcome = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                          isPrivate: false, store: store, defaults: defaults)
+        XCTAssertEqual(outcome, .skipped(.noWriter))
+        XCTAssertTrue(store.memories.isEmpty)
+    }
+
+    @MainActor
+    func testTheModelsAnswerIsTakenFromAroundItsJSON() {
+        XCTAssertEqual(OnDeviceRecapWriter.json(in: "```json\n{\"discussed\": []}\n```"), "{\"discussed\": []}")
+        XCTAssertEqual(OnDeviceRecapWriter.json(in: "no json"), "no json")
+    }
 }

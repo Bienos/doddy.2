@@ -2,8 +2,10 @@ import DoddyCore
 import Foundation
 
 /// Saves recaps as notes while "Remember what we talked about" is on (decision
-/// 2026-11-09-conversation-recaps). Step 2: calls Doddy made for the person, recapped by the rules from
-/// the brief and the answer card (`CallCaseRecap`), never the transcript.
+/// 2026-11-09-conversation-recaps):
+/// - calls Doddy made for the person, recapped by the rules from the brief and the answer card
+///   (`CallCaseRecap`), never the transcript (step 2);
+/// - conversations with Doddy, written by Apple's model on this iPhone (`OnDeviceRecapWriter`, step 3a).
 ///
 /// A recap is saved once: its key goes into `RecapLedger` only after `MemoryStore.save` read the note
 /// back, so a failed save is tried again next time and a note the person deleted never comes back.
@@ -66,11 +68,67 @@ enum RecapKeeper {
         return saved
     }
 
+    /// The language a recap is written in: the iPhone's, as the conversation usually is (Polish when unknown).
+    static var languageCode: String { Locale.current.language.languageCode?.identifier ?? "pl" }
+
+    enum ConversationOutcome: Equatable {
+        case saved
+        case skipped(RecapPolicy.Skip)
+        /// This conversation already has its recap, or ended before the switch was turned on.
+        case notNew
+        /// The model's answer broke a recap rule, or the model failed: nothing saved.
+        case refused
+        /// The note couldn't be saved and read back: nothing claimed, nothing marked.
+        case notSaved
+    }
+
+    /// After a conversation with Doddy ends: a recap note, written on this iPhone, if the switch is on, the
+    /// conversation isn't Private and the person said enough. `startedAt` identifies the conversation, so
+    /// it is recapped once.
+    @discardableResult
+    static func recapConversation(lines: [RecapModelIO.Line], startedAt: Date, endedAt: Date, isPrivate: Bool,
+                                  store: MemoryStore, defaults: UserDefaults = .standard) async -> ConversationOutcome {
+        let personWords = lines.filter { $0.speaker == .person }.map(\.text).joined(separator: " ")
+        let language = languageCode
+        let decision = RecapPolicy.decide(kind: .voiceConversation, rememberOn: isOn(defaults), isPrivate: isPrivate,
+                                          wordsFromPerson: RecapPolicy.wordCount(personWords),
+                                          onDeviceAvailable: OnDeviceRecapWriter.isAvailable(languageCode: language),
+                                          // The server writer and its yes come in step 3b.
+                                          serverYes: false)
+        guard case .recap(let writer) = decision else {
+            if case .skip(let why) = decision { return .skipped(why) }
+            return .refused
+        }
+        let key = "voice_conversation:\(Int64((startedAt.timeIntervalSince1970 * 1000).rounded()))"
+        guard writer == .onDevice, !ledger(defaults).contains(key),
+              RecapPolicy.endedAfterSwitchOn(endedAt, since: since(defaults)) else { return .notNew }
+        let recap: ConversationRecap
+        let text: String
+        do {
+            let answer = try await OnDeviceRecapWriter.write(kind: .voiceConversation, lines: lines, languageCode: language)
+            recap = try RecapModelIO.read(answer, kind: .voiceConversation, with: nil, endedAt: endedAt,
+                                          writtenBy: .onDevice, conversation: RecapModelIO.plainText(lines))
+            text = try RecapMemoryText.text(recap, labels: labels(for: recap))
+        } catch {
+            return .refused
+        }
+        do {
+            _ = try await store.save(text: text, category: .other, source: .conversationRecap, capturedAt: recap.endedAt)
+            defaults.set(ledger(defaults).adding(key).stored, forKey: RecapSettings.ledgerKey)
+            return .saved
+        } catch {
+            return .notSaved
+        }
+    }
+
     static func labels(for recap: ConversationRecap) -> RecapMemoryText.Labels {
         let date = recap.endedAt.formatted(date: .abbreviated, time: .shortened)
-        let title: String = if let with = recap.with {
+        let title: String = switch (recap.kind, recap.with) {
+        case (.voiceConversation, _):
+            String(format: NSLocalizedString("Conversation with Doddy, %@", comment: "Recap note title: when"), date)
+        case (_, let with?):
             String(format: NSLocalizedString("Call with %@, %@", comment: "Recap note title: who, when"), with, date)
-        } else {
+        case (_, nil):
             String(format: NSLocalizedString("Call, %@", comment: "Recap note title: when"), date)
         }
         let writtenBy: String = switch recap.writtenBy {

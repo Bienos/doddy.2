@@ -1265,6 +1265,12 @@ final class VoiceSessionController {
         // Logbook (ADR-602): its times, how it ended and its language, never its words; not a private one.
         Logbook.conversationEnded(startedAt: log.startedAt, endedAt: log.endedAt, ended: log.ended,
                                   language: WebMemory.language(), isPrivate: isPrivate)
+        // A recap note of what was discussed, written on this iPhone, only with "Remember what we talked
+        // about" on and never for a Private conversation (decision 2026-11-09-conversation-recaps).
+        let recapLines = kept.map { RecapModelIO.Line(speaker: $0.fromUser ? .person : .doddy, text: $0.text) }
+        let memories = store
+        Task { await RecapKeeper.recapConversation(lines: recapLines, startedAt: log.startedAt, endedAt: log.endedAt,
+                                                   isPrivate: isPrivate, store: memories) }
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         logs.append(log)
     }

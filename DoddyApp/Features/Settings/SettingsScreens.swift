@@ -552,7 +552,7 @@ struct KnowledgeSettingsView: View {
                     set: { RecapKeeper.setRemember($0); rememberRecaps = $0 }))
                     .accessibilityIdentifier("settings.rememberRecaps")
             } footer: {
-                Text("After a call Doddy makes for you, a short recap goes into your notes: what was asked, the answer and what's left to do. Never the transcript, and nothing from before you turn this on. You can edit or delete each recap like any note.")
+                Text("After a conversation with Doddy, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.")
             }
         }
         .settingsPage()
