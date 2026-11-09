@@ -7613,6 +7613,17 @@
         }
       }
     },
+    "Apple or Google": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple lub Google"
+          }
+        }
+      }
+    },
     "Apple sign-in didn’t finish. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -7631,17 +7642,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apple, Face ID, Google lub e-mail"
-          }
-        }
-      }
-    },
-    "Apple, Google or email": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple, Google lub e-mail"
           }
         }
       }
@@ -22177,13 +22177,13 @@
         }
       }
     },
-    "Doddy needs an account. There's no password: Apple, Google or a code sent by email.": {
+    "Doddy needs an account. There's no password: sign in with Apple or Google.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy potrzebuje konta. Bez hasła: Apple, Google albo kod wysłany e-mailem."
+            "value": "Doddy potrzebuje konta. Bez hasła: zaloguj się przez Apple albo Google."
           }
         }
       }

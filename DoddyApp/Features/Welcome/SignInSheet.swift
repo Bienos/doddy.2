@@ -3,9 +3,12 @@ import SwiftUI
 
 /// The sign-in sheet pinned to the bottom of the welcome (ADR-598, ADR-599).
 ///
-/// **With Doddy accounts set up in this build** (decision 2026-11-08-required-account): Apple, Google
-/// or a code sent by email, all three real (`DoddyAccountModel`), and no way past without one. The
-/// welcome stays until the person is signed in (`RootView.accountRequired`).
+/// **With Doddy accounts set up in this build** (decision 2026-11-08-required-account): Apple or
+/// Google (`DoddyAccountModel`), and no way past without one. The welcome stays until the person is
+/// signed in (`RootView.accountRequired`). Email is off for now (`offersEmail`, decision
+/// 2026-11-09-email-sign-in-off-for-now). Every kept sign-in ends the welcome (`signInCount`), and a
+/// person who is already signed in when it shows (Settings › "Show the welcome again", or a reinstall,
+/// which keeps the Keychain) gets "Continue" instead of the sign-in buttons.
 ///
 /// **Without them** (today's builds, and UI tests), as before: Sign in with Apple is the voice
 /// account's sign-in (`AppleAccountSignInButton`, `VoiceAuthSession`) and a finished sign-in moves on;
@@ -17,6 +20,10 @@ import SwiftUI
 struct SignInSheet: View {
     static let collapsedHeight: CGFloat = 138
     static let expandedHeight: CGFloat = 446
+    /// Email sign-in is off for now (owner, 9 Nov 2026): the account service still emails a link to
+    /// a web page instead of the code the form asks for, so it can't be finished in the app. Turning
+    /// it back on is this line, once the email template sends the code (`EmailCodeForm` is kept).
+    static let offersEmail = false
 
     @Binding var expanded: Bool
     let provider: SignInProviding
@@ -74,7 +81,9 @@ struct SignInSheet: View {
         .animation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.86), value: expanded)
         .sensoryFeedback(.impact(weight: .light), trigger: expanded)
         .onChange(of: account.isSignedIn) { _, now in if now, !doddyAccount.isConfigured { signedIn() } }
-        .onChange(of: doddyAccount.isSignedIn) { _, now in if now { emailOpen = false; signedIn() } }
+        // Each kept sign-in, not "signed in" turning true: a sign-in made while a session was already
+        // kept left that true, and the welcome never closed (TestFlight build 20).
+        .onChange(of: doddyAccount.signInCount) { _, _ in emailOpen = false; signedIn() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("welcome.sheet")
     }
@@ -118,7 +127,7 @@ struct SignInSheet: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Get in").font(.headline)
                     Group {
-                        if doddyAccount.isConfigured { Text("Apple, Google or email") } else { Text("Apple, Face ID, Google or email") }
+                        if doddyAccount.isConfigured { Text("Apple or Google") } else { Text("Apple, Face ID, Google or email") }
                     }
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
                 }
@@ -139,28 +148,46 @@ struct SignInSheet: View {
         if doddyAccount.isConfigured { accountContent } else { withoutAccountsContent }
     }
 
-    /// With Doddy accounts: Apple, Google and email, the same size and weight, and no way past
-    /// without one of them.
+    /// With Doddy accounts: Apple and Google, the same size and weight, and no way past without one of
+    /// them. Already signed in (the welcome shown again, or a reinstall): which account, and Continue.
     private var accountContent: some View {
         VStack(spacing: 10) {
             Text("Your turn")
                 .font(.title3.weight(.bold))
                 .padding(.bottom, 4)
                 .accessibilityAddTraits(.isHeader)
-            if emailOpen {
+            if let session = doddyAccount.session {
+                Text(verbatim: DoddyAccountSettingsSection.methodTitle(session.method))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("welcome.account.signedIn")
+                Button(action: signedIn) {
+                    Text("Continue")
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .foregroundStyle(Theme.canvas)
+                        .background(Capsule().fill(Theme.ink))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("welcome.continue")
+            } else if emailOpen && Self.offersEmail {
                 EmailCodeForm(account: doddyAccount, back: {
                     doddyAccount.changeEmail()
                     emailOpen = false
                 })
             } else {
-                AppleAccountSignInButton(provider: voiceProvider, usesContinueTitle: true, height: 52,
-                                         isCapsule: true, adaptsToDarkAppearance: true)
-                    .accessibilityIdentifier("welcome.apple")
-                googleButton { Task { await doddyAccount.signInWithGoogle() } }
-                emailButton {
-                    doddyAccount.message = nil
-                    emailOpen = true
+                Group {
+                    AppleAccountSignInButton(provider: voiceProvider, usesContinueTitle: true, height: 52,
+                                             isCapsule: true, adaptsToDarkAppearance: true)
+                        .accessibilityIdentifier("welcome.apple")
+                    googleButton { Task { await doddyAccount.signInWithGoogle() } }
+                    if Self.offersEmail {
+                        emailButton {
+                            doddyAccount.message = nil
+                            emailOpen = true
+                        }
+                    }
                 }
+                .disabled(doddyAccount.isWorking)
             }
             if doddyAccount.isWorking {
                 ProgressView().accessibilityIdentifier("welcome.account.working")
@@ -172,15 +199,14 @@ struct SignInSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.updatesFrequently)
                     .accessibilityIdentifier("welcome.account.message")
-            } else if !emailOpen {
-                Text("Doddy needs an account. There's no password: Apple, Google or a code sent by email.")
+            } else if !emailOpen && !doddyAccount.isSignedIn {
+                Text("Doddy needs an account. There's no password: sign in with Apple or Google.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .disabled(doddyAccount.isWorking)
         .font(.body.weight(.semibold))
     }
 

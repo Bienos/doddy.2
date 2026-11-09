@@ -50,6 +50,11 @@ public final class DoddyAccountModel {
     /// A plain sentence about the last thing that didn't work, or nil.
     public var message: String?
     public private(set) var emailStep: EmailStep = .enterEmail
+    /// How many sign-ins this model has kept since launch: one more for each one, never for a refresh.
+    /// The welcome ends on each one. Watching `isSignedIn` instead missed a sign-in made while a session
+    /// was already kept (the welcome shown again from Settings, or after a reinstall, which keeps the
+    /// Keychain): it stayed true, so the welcome never closed (TestFlight build 20, 9 Nov 2026).
+    public private(set) var signInCount = 0
 
     /// False in a build with no Doddy accounts set up (no project in Info.plist): nobody can sign in.
     public var isConfigured: Bool { client != nil }
@@ -209,6 +214,7 @@ public final class DoddyAccountModel {
         }
         session = signedIn
         message = nil
+        signInCount += 1
         await afterSignIn?(signedIn)
         return true
     }
