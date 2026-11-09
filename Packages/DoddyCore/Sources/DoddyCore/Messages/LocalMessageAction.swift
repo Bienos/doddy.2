@@ -49,8 +49,19 @@ public struct LocalMessageAction: Equatable, Sendable {
             return AskCard(title: polish ? "Utworzyć listę?" : "Create this list?", lines: [draft.list] + draft.items,
                            confirmLabel: polish ? "Utwórz" : "Create list")
         case .createReminder(let draft):
-            let lines = [draft.title] + [draft.due?.localText, draft.notes, draft.repeats?.text].compactMap { $0 }
+            let due = draft.due.map { ReminderText.due($0) } ?? (polish ? "Bez terminu" : "No due date")
+            let lines = [draft.title, due] + [draft.notes, draft.repeats?.text].compactMap { $0 }
             return AskCard(title: polish ? "Dodać przypomnienie?" : "Add this reminder?", lines: lines, confirmLabel: polish ? "Dodaj" : "Add")
+        case .searchMemories(let query):
+            return AskCard(title: polish ? "Przeszukać notatki?" : "Search your saved notes?", lines: [query], confirmLabel: polish ? "Tak, szukaj" : "Yes, search")
+        case .readList(let name):
+            return AskCard(title: polish ? "Odczytać listę?" : "Read this list?", lines: [name], confirmLabel: polish ? "Tak, odczytaj" : "Yes, read it")
+        case .addToList(let draft):
+            return AskCard(title: polish ? "Dodać do listy „\(draft.list)”?" : "Add to \(draft.list)?", lines: draft.items, confirmLabel: polish ? "Dodaj" : "Add")
+        case .checkOff(let draft):
+            return AskCard(title: polish ? "Oznaczyć jako zrobione na liście „\(draft.list)”?" : "Check off on \(draft.list)?", lines: draft.items, confirmLabel: polish ? "Oznacz jako zrobione" : "Check off")
+        case .removeFromList(let draft):
+            return AskCard(title: polish ? "Usunąć z listy „\(draft.list)”?" : "Remove from \(draft.list)?", lines: draft.items, confirmLabel: polish ? "Usuń" : "Remove")
         case .needsClarification(_, let clarification):
             return AskCard(title: polish ? "Doprecyzuj termin" : "Clarify the date or time", lines: [clarification.question], confirmLabel: "")
         default:
