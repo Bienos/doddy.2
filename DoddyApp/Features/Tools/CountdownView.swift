@@ -10,6 +10,8 @@ struct CountdownView: View {
     let purpose: CountdownSession.Purpose
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// The clock's size grows with Dynamic Type (it was a fixed 44 pt).
+    @ScaledMetric(relativeTo: .largeTitle) private var clockSize: CGFloat = 44
     @State private var minutes: Int
     @State private var label = ""
     @State private var starting = false
@@ -115,7 +117,9 @@ struct CountdownView: View {
                                 .monospacedDigit()
                         }
                     }
-                    .font(.system(size: 44, weight: .medium))
+                    .font(.system(size: clockSize, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(Color.islandCream)
                     .accessibilityIdentifier("countdown.timeLeft")
                     Text(session.label ?? (session.isPaused ? "Ready when you are" : (isWindDown ? "Phone down when it ends" : "Counting down")))
