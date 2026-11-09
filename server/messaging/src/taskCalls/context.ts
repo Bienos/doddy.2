@@ -29,6 +29,8 @@ export interface TaskCallDeps {
   settings: TaskCallSettings;
   writer?: ResultWriter;
   liveActivity?: LiveActivityPusher;
+  /** The daily caps on texts (SMS_DAILY_PER_ACCOUNT / SMS_DAILY_PER_SERVER) for a task's result text. Absent: the defaults. */
+  smsCaps?: { perAccount: number; perServer: number };
   /** For tests: a fixed clock. Every task-call time written to the database comes from here. */
   now?: () => Date;
 }
@@ -45,6 +47,7 @@ export interface TaskCallContext {
   push?: PushSender;
   writer?: ResultWriter;
   liveActivity?: LiveActivityPusher;
+  smsCaps?: { perAccount: number; perServer: number };
   now: () => Date;
   say: SayVoice;
   drift: DriftCache;
@@ -59,7 +62,7 @@ export function taskCallContext(
   const now = deps.now ?? (() => new Date());
   return {
     db, cipher, keys: caseKeys(cipher), telephony: deps.telephony, voice: deps.voice, config: deps.config,
-    settings: deps.settings, publicBaseUrl, push, writer: deps.writer, liveActivity: deps.liveActivity, now,
+    settings: deps.settings, publicBaseUrl, push, writer: deps.writer, liveActivity: deps.liveActivity, smsCaps: deps.smsCaps, now,
     say: { voice: deps.settings.sayVoice, language: "pl-PL" },
     drift: new DriftCache(deps.voice, deps.config.agentId, now, log),
     log,
