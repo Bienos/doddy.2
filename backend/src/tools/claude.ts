@@ -112,13 +112,32 @@ export interface ClaudeFile {
   summary: string;
 }
 
+/**
+ * Where a provider's copies of a person's document are written down, durably, before anything else can
+ * go wrong. Ids only: never a name or any content.
+ */
+export interface ProviderFileLedger {
+  /** A copy exists at the provider. Written down before the call returns. */
+  track(fileId: string): Promise<void>;
+  /** The provider confirmed the copy is gone. */
+  confirmed(fileId: string): Promise<void>;
+  /** Deleting it did not work now; it stays owed. */
+  failed(fileId: string): Promise<void>;
+}
+
 export interface ClaudeProvider {
   readonly mode: "mock" | "live";
   isConfigured(): boolean;
   /** Quick answer, summary or short writing. */
   ask(args: AskClaudeArgs, signal: AbortSignal): Promise<{ text: string }>;
-  /** One finished file. Slow (often one to three minutes); run in the background. */
-  makeDocument(args: MakeDocumentArgs, signal: AbortSignal): Promise<ClaudeFile>;
+  /**
+   * One finished file. Slow (often one to three minutes); run in the background. `files` is told of
+   * every copy Claude makes at the provider the moment it is seen, so a deletion still owed survives a
+   * crash, a restart and the person's account being erased.
+   */
+  makeDocument(args: MakeDocumentArgs, signal: AbortSignal, files?: ProviderFileLedger): Promise<ClaudeFile>;
+  /** Deletes one copy at the provider: `removed` once it is gone (or was already), else `failed` to try again later. */
+  deleteFile(id: string, signal: AbortSignal): Promise<"removed" | "failed">;
   /**
    * One JSON answer constrained to `schema` (structured output), for Ask Doddy (ADR-587). Throws
    * `ClaudeRefusal` when the model declines and `ProviderError` for everything else that fails.
@@ -209,7 +228,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     return { text };
   }
 
-  async makeDocument(args: MakeDocumentArgs, signal: AbortSignal): Promise<ClaudeFile> {
+  async makeDocument(args: MakeDocumentArgs, signal: AbortSignal, files?: ProviderFileLedger): Promise<ClaudeFile> {
     const info = KIND_INFO[args.kind];
     if (info.skill === null) {
       const response = await this.messages(
@@ -226,44 +245,69 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
       return { name: fileName(args.title, info.ext), mime: info.mime, bytes: Buffer.from(text, "utf8"), summary: "" };
     }
 
-    const skills = [{ type: "anthropic", skill_id: info.skill, version: "latest" }];
-    const tools = [{ type: "code_execution_20250825", name: "code_execution" }];
-    const messages: { role: "user" | "assistant"; content: unknown }[] = [
-      {
-        role: "user",
-        content: userContent(`Make a ${info.label} titled "${args.title}".\n${args.request}`, args.material, `Save it as one .${info.ext} file.`),
-      },
-    ];
-    let response = await this.messages({ model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { skills }, tools, messages }, signal);
-    const fileIds = new Set(fileIdsOf(response.content));
-    for (let i = 0; i < MAX_PAUSE_TURNS && response.stop_reason === "pause_turn"; i++) {
-      const containerId = response.container?.id;
-      if (!containerId) throw new ProviderError("malformed_provider_result");
-      messages.push({ role: "assistant", content: response.content });
-      response = await this.messages(
-        { model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { id: containerId, skills }, tools, messages },
-        signal,
-      );
-      for (const id of fileIdsOf(response.content)) fileIds.add(id);
-    }
-    if (response.stop_reason === "pause_turn") throw new ProviderError("provider_timeout");
-
-    // The file Doddy wants: the last one with the right extension, else the last one made.
-    const candidates = [...fileIds];
-    let chosen: { id: string; name: string; mime: string } | null = null;
-    for (const id of candidates.reverse()) {
-      const meta = await this.fileMeta(id, signal);
-      if (!chosen) chosen = meta;
-      if (meta.name.toLowerCase().endsWith(`.${info.ext}`)) {
-        chosen = meta;
-        break;
+    // Every copy made at the provider is written down as soon as it is seen and deleted in `finally`,
+    // whatever fails in between (a download, a timeout, a pause that never ends). A deletion that does
+    // not work stays owed in the ledger, where the hourly sweep and an account erasure keep at it.
+    const fileIds = new Set<string>();
+    const note = async (ids: readonly string[]) => {
+      for (const id of ids) {
+        if (fileIds.has(id)) continue;
+        fileIds.add(id);
+        // A ledger that can't write must not lose the document: the delete below still runs.
+        await files?.track(id).catch(() => {});
       }
+    };
+    try {
+      const skills = [{ type: "anthropic", skill_id: info.skill, version: "latest" }];
+      const tools = [{ type: "code_execution_20250825", name: "code_execution" }];
+      const messages: { role: "user" | "assistant"; content: unknown }[] = [
+        {
+          role: "user",
+          content: userContent(`Make a ${info.label} titled "${args.title}".\n${args.request}`, args.material, `Save it as one .${info.ext} file.`),
+        },
+      ];
+      let response = await this.messages({ model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { skills }, tools, messages }, signal);
+      await note(fileIdsOf(response.content));
+      for (let i = 0; i < MAX_PAUSE_TURNS && response.stop_reason === "pause_turn"; i++) {
+        const containerId = response.container?.id;
+        if (!containerId) throw new ProviderError("malformed_provider_result");
+        messages.push({ role: "assistant", content: response.content });
+        response = await this.messages(
+          { model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { id: containerId, skills }, tools, messages },
+          signal,
+        );
+        await note(fileIdsOf(response.content));
+      }
+      if (response.stop_reason === "pause_turn") throw new ProviderError("provider_timeout");
+
+      // The file Doddy wants: the last one with the right extension, else the last one made.
+      const candidates = [...fileIds];
+      let chosen: { id: string; name: string; mime: string } | null = null;
+      for (const id of candidates.reverse()) {
+        const meta = await this.fileMeta(id, signal);
+        if (!chosen) chosen = meta;
+        if (meta.name.toLowerCase().endsWith(`.${info.ext}`)) {
+          chosen = meta;
+          break;
+        }
+      }
+      if (!chosen) throw new ProviderError("malformed_provider_result");
+      const bytes = await this.fileContent(chosen.id, signal);
+      return { name: fileName(args.title, info.ext), mime: info.mime, bytes, summary: textOf(response.content).slice(0, 300) };
+    } finally {
+      await this.releaseFiles([...fileIds], files);
     }
-    if (!chosen) throw new ProviderError("malformed_provider_result");
-    const bytes = await this.fileContent(chosen.id, signal);
-    // Best effort: Doddy keeps its own copy for a week; Anthropic's copy isn't needed.
-    for (const id of fileIds) void this.deleteFile(id).catch(() => {});
-    return { name: fileName(args.title, info.ext), mime: info.mime, bytes, summary: textOf(response.content).slice(0, 300) };
+  }
+
+  /** Deletes the copies and tells the ledger what the provider confirmed. Never throws: the ledger keeps what is owed. */
+  private async releaseFiles(ids: readonly string[], files: ProviderFileLedger | undefined): Promise<void> {
+    await Promise.allSettled(
+      ids.map(async (id) => {
+        // Not tied to the job's signal: a job that timed out still has copies to delete.
+        const result = await this.deleteFile(id, AbortSignal.timeout(10_000));
+        await (result === "removed" ? files?.confirmed(id) : files?.failed(id));
+      }),
+    );
   }
 
   /**
@@ -318,8 +362,18 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     return bytes;
   }
 
-  private async deleteFile(id: string): Promise<void> {
-    await this.fetchImpl(`${this.baseUrl}/v1/files/${encodeURIComponent(id)}`, { method: "DELETE", headers: this.headers(), signal: AbortSignal.timeout(10_000) });
+  /**
+   * `DELETE /v1/files/{id}`: 200 `file_deleted` means gone, and 404 means it already was. Anything else
+   * (429, 5xx, a refused key, no answer) is not a confirmation: it stays owed and is tried again.
+   */
+  async deleteFile(id: string, signal: AbortSignal): Promise<"removed" | "failed"> {
+    try {
+      const response = await this.fetchImpl(`${this.baseUrl}/v1/files/${encodeURIComponent(id)}`, { method: "DELETE", headers: this.headers(), signal });
+      await response.body?.cancel().catch(() => {});
+      return response.ok || response.status === 404 ? "removed" : "failed";
+    } catch {
+      return "failed";
+    }
   }
 
   private async send(path: string, init: RequestInit & { signal: AbortSignal }): Promise<Response> {
@@ -410,6 +464,10 @@ export class MockClaudeProvider implements ClaudeProvider {
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     const info = KIND_INFO[args.kind];
     return { name: fileName(args.title, info.ext), mime: info.mime, bytes: Buffer.from(`DEMO ${info.label}: ${args.title}`), summary: `DEMO ${info.label}.` };
+  }
+  /** Demo documents make no copy at a provider, so there is nothing to delete. */
+  async deleteFile(): Promise<"removed" | "failed"> {
+    return "removed";
   }
   /** Demo: a short answer that cites the first note it was offered, if any. */
   async structured(input: StructuredInput): Promise<StructuredResult> {

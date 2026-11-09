@@ -103,6 +103,13 @@ export const KEPT_ON_ERASE = ["cleanups", "device_owner", "token_floor"] as cons
 /** The `cleanups.provider` of a Supabase Auth user owed a removal (a linked Google or Apple sign-in, ADR-818). */
 export const SUPABASE_AUTH_CLEANUP = "supabase_auth";
 
+/**
+ * The `cleanups.provider` of a copy of a person's document at Anthropic (`connection_id` is the file id,
+ * nothing else about it). Written when the file is first seen, removed only when the provider confirms
+ * the deletion, and kept through account erasure until then (`KEPT_ON_ERASE`).
+ */
+export const ANTHROPIC_FILE_CLEANUP = "anthropic_file";
+
 /** A device session token lives 30 days at most; a cut-off older than this covers no live token any more (ADR-709). */
 const TOKEN_FLOOR_KEPT_DAYS = 31;
 

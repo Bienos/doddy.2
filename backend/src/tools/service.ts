@@ -5,7 +5,7 @@ import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
 import { AccessRequestSchema, type AppAccess, isAppsTool, toolsForAccess, translateAppsCall } from "./apps.js";
 import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
-import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
+import { ANTHROPIC_FILE_CLEANUP, CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
 import {
   bindsTimeZone,
@@ -40,6 +40,7 @@ import {
   CLAUDE_SECTION_ID,
   type ClaudeProvider,
   type ClaudeToolName,
+  type ProviderFileLedger,
   claudeCard,
   DOCUMENT_TIMEOUT_MS,
   fileName,
@@ -453,6 +454,7 @@ export class CloudToolsService {
     const ended = await this.store.expireAttempts(now, toolkits);
     const retry = await this.store.cleanupsToRetry(toolkits, now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
     await this.removeQueued([...ended, ...retry]);
+    await this.sweepDocumentFiles();
   }
 
   /** Removes connections a failed completion left at the provider; a failure stays queued and visible. */
@@ -1063,7 +1065,7 @@ export class CloudToolsService {
       const name = fileName(doc.title, info.ext);
       const id = await this.store.startDocument(userId, name, info.mime, now);
       const url = this.deps.documentLinks!.link(id, new Date(now));
-      const job = this.makeDocumentInBackground(id, doc, claude).finally(() => {
+      const job = this.makeDocumentInBackground(userId, id, doc, claude).finally(() => {
         slot?.();
         this.background.delete(job);
       });
@@ -1104,9 +1106,9 @@ export class CloudToolsService {
     };
   }
 
-  private async makeDocumentInBackground(id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
+  private async makeDocumentInBackground(userId: string, id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
     try {
-      const file = await claude.makeDocument(args, AbortSignal.timeout(DOCUMENT_TIMEOUT_MS));
+      const file = await claude.makeDocument(args, AbortSignal.timeout(DOCUMENT_TIMEOUT_MS), this.fileLedger(userId));
       await this.store.finishDocument(id, file.name, file.mime, file.bytes);
       this.deps.log?.({ level: "info", event: "document_ready", kind: args.kind, bytes: file.bytes.length });
     } catch (error) {
@@ -1114,6 +1116,46 @@ export class CloudToolsService {
       // Content-free: the kind and the error class only.
       this.deps.log?.({ level: "error", event: "document_failed", kind: args.kind, code: error instanceof ProviderError ? error.code : "internal", ...providerLog(error) });
     }
+  }
+
+  /**
+   * Copies Claude makes at Anthropic for this person's document are owed a deletion from the moment they
+   * exist: the id is written to `cleanups` (ids only) before anything else can fail, and leaves it only
+   * when Anthropic confirms. It survives a restart and the person's account being erased (ADR-674).
+   */
+  private fileLedger(userId: string): ProviderFileLedger {
+    return {
+      track: (fileId) => this.store.queueCleanup(fileId, userId, ANTHROPIC_FILE_CLEANUP, this.now()),
+      confirmed: (fileId) => this.store.finishCleanup(fileId),
+      failed: (fileId) => this.store.failCleanup(fileId, "remote_cleanup_failed"),
+    };
+  }
+
+  /**
+   * Deletes the copies still owed at Anthropic. Only rows older than a document job can run
+   * (`DOCUMENT_TIMEOUT_MS`, plus a minute), so a job still working is never raced. Logs counts only.
+   */
+  private async sweepDocumentFiles(): Promise<void> {
+    const claude = this.deps.claude;
+    if (!claude?.isConfigured()) return;
+    const due = await this.store.cleanupsToRetry(
+      [ANTHROPIC_FILE_CLEANUP], this.now() - DOCUMENT_TIMEOUT_MS - 60_000, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    let removed = 0;
+    for (const { connectionId } of due) {
+      let result: "removed" | "failed";
+      try {
+        result = await claude.deleteFile(connectionId, this.timeout());
+      } catch {
+        result = "failed";
+      }
+      if (result === "removed") {
+        await this.store.finishCleanup(connectionId);
+        removed++;
+      } else {
+        await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+      }
+    }
+    if (due.length > 0) this.deps.log?.({ level: due.length > removed ? "warn" : "info", event: "document_files_swept", due: due.length, removed, failed: due.length - removed });
   }
 
   // ---------------------------------------------------------------- helpers
