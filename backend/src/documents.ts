@@ -46,6 +46,9 @@ export class DocumentLinks {
 export async function serveDocument(req: IncomingMessage, res: ServerResponse, url: URL, links: DocumentLinks, store: Store, now: Date): Promise<number> {
   const id = links.verify(url, now);
   const row = id ? await store.getDocument(id) : null;
+  // `?status=1` (file-ready push, 9 Nov 2026): only whether it is still being made, ready or failed, as JSON and with no
+  // file bytes, so a poller doesn't download a deck to learn it is ready. The same signed link; no new permission.
+  if (url.searchParams.get("status") === "1") return documentStatus(res, row?.status ?? null);
   if (!row) return page(res, 404, "This link doesn't work any more", "Doddy keeps files for a week. Ask him to make it again.", false);
   if (row.status === "working") return page(res, 200, "Doddy is still making this", "Claude is working on it. This page checks again every ten seconds.", true);
   if (row.status === "failed" || !row.body) return page(res, 200, "This one didn't work", "Claude couldn't finish the file. Ask Doddy to try again.", false);
@@ -78,4 +81,19 @@ function page(res: ServerResponse, status: number, title: string, line: string, 
   });
   res.end(html);
   return status;
+}
+
+/** `{ status }` for a document link: working, ready, failed, or gone (a link that no longer works). */
+function documentStatus(res: ServerResponse, status: "working" | "ready" | "failed" | null): number {
+  const body = JSON.stringify({ status: status ?? "gone" });
+  const code = status === null ? 404 : 200;
+  res.writeHead(code, {
+    "content-type": "application/json; charset=utf-8",
+    "content-length": Buffer.byteLength(body),
+    "cache-control": "private, no-store",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer",
+  });
+  res.end(body);
+  return code;
 }
