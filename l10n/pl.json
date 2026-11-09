@@ -3199,7 +3199,7 @@
   "thought saved": "zapisana myśl",
   "thoughts saved": "zapisane myśli",
   "Remember what we talked about": "Pamiętaj, o czym rozmawialiśmy",
-  "After a call Doddy makes for you, a short recap goes into your notes: what was asked, the answer and what's left to do. Never the transcript, and nothing from before you turn this on. You can edit or delete each recap like any note.": "Po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: o co pytał, jaka była odpowiedź i co zostało do zrobienia. Nigdy zapis rozmowy i nic sprzed włączenia tej opcji. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę.",
+  "After a conversation with Doddy, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.": "Po rozmowie z Doddym i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy podsumowuje ten iPhone, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę.",
   "A recap of this call is in your notes": "Podsumowanie tej rozmowy jest w Twoich notatkach",
   "Call with %@, %@": "Rozmowa: %@, %@",
   "Call, %@": "Rozmowa, %@",
@@ -3207,5 +3207,6 @@
   "Recap written on this iPhone.": "Podsumowanie napisane na tym iPhonie.",
   "Recap written by Claude on Doddy's server.": "Podsumowanie napisane przez Claude’a na serwerze Doddy’ego.",
   "Discussed": "Omówione",
-  "Agreed": "Ustalone"
+  "Agreed": "Ustalone",
+  "Conversation with Doddy, %@": "Rozmowa z Doddym, %@"
 }
