@@ -25,7 +25,8 @@ struct TalkToDoddyIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         #if !DODDY_WIDGET_EXTENSION
-        ShortcutRouter.shared.talkToDoddyInvoked()
+        // Back Tap, Siri and the App Shortcut start on Home, under the small island (owner, 9 Nov 2026).
+        if ShortcutRouter.shared.talkToDoddyInvoked(startOnHome: true) { await TalkInIsland.startOnHome() }
         #endif
         return .result()
     }

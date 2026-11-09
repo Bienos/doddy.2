@@ -140,7 +140,7 @@ struct AppearanceSettingsView: View {
 /// ADR-633.
 struct VoiceSettingsView: View {
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
-    @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = true
+    @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = false
     #if DEBUG
     @AppStorage(VoiceConfig.directVoiceKey) private var directVoice = true
     #endif

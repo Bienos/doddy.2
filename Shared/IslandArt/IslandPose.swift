@@ -54,9 +54,14 @@ enum IslandPose: String, CaseIterable, Sendable {
 
     /// The pose whose face compact and minimal show: at 24 pt only a face reads, and only four
     /// poses show it clearly. Eyes closed (from the stretch) while Doddy waits or is paused.
+    /// While a conversation is on (the greeting wave, connecting, thinking, speaking, a card that
+    /// waits, a plan that runs) it is always the smiling "listening" face (owner, 9 Nov 2026, decision
+    /// `2026-11-09-small-island-call-bars`): the half smile with a raised brow that showed after the Action
+    /// Button was a different Doddy every time the pose changed. The islands of the focus timer,
+    /// reading aloud and the rest keep the face they had.
     var facePose: IslandPose {
         switch self {
-        case .listening: .listening
+        case .listening, .wave, .shrug, .kneelingInspect, .reachingHigh, .tiptoe, .yawnStretch: .listening
         case .shush: .shush
         case .crosslegged, .leaning: .yawnStretch
         default: .crosslegged
