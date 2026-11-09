@@ -2854,5 +2854,11 @@
   "You were signed out. Sign in again to keep using Doddy.": "Nastąpiło wylogowanie. Zaloguj się ponownie, żeby dalej korzystać z Doddy’ego.",
   "Doddy couldn't reach the sign-in service. Check your connection and try again.": "Doddy nie mógł połączyć się z usługą logowania. Sprawdź połączenie i spróbuj ponownie.",
   "The sign-in service had a problem. Try again in a moment.": "Usługa logowania ma problem. Spróbuj ponownie za chwilę.",
-  "This iPhone couldn't keep your sign-in, so you aren't signed in. Try again.": "Ten iPhone nie mógł zachować logowania, więc logowanie się nie udało. Spróbuj ponownie."
+  "This iPhone couldn't keep your sign-in, so you aren't signed in. Try again.": "Ten iPhone nie mógł zachować logowania, więc logowanie się nie udało. Spróbuj ponownie.",
+  "Count how I use Doddy": "Licz, jak używam Doddy’ego",
+  "Last sent": "Ostatnio wysłane",
+  "Logbook": "Dziennik",
+  "Counting stopped. The counts already on Doddy's server will be deleted when it can be reached.": "Liczenie wyłączone. Liczby, które są już na serwerze Doddy’ego, zostaną usunięte, gdy serwer będzie dostępny.",
+  "Counting stopped. Doddy's server deleted the counts it held.": "Liczenie wyłączone. Serwer Doddy’ego usunął zapisane liczby.",
+  "On unless you turn it off. Doddy counts how you use him: conversations, what he did for you, notes and list items saved. Never the words of your conversations or notes. The counts go to Doddy's server, where you see them in Logbook on the web and Doddy's team can see them with your account. Turning this off stops counting and deletes the counts on the server.": "Włączone, dopóki tego nie wyłączysz. Doddy liczy, jak z niego korzystasz: rozmowy, to, co dla ciebie zrobił, zapisane notatki i pozycje list. Nigdy treści rozmów ani notatek. Liczby trafiają na serwer Doddy’ego: widzisz je w Dzienniku w przeglądarce, a zespół Doddy’ego widzi je razem z twoim kontem. Wyłączenie zatrzymuje liczenie i usuwa liczby z serwera."
 }

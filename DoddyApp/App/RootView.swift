@@ -254,6 +254,8 @@ struct RootView: View {
             WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
                                            notesLoaded: store.hasLoaded && store.loadError == nil)
             await WebMemory.shared.retryConversations(from: ConversationLogStore.shared.logs, language: WebMemory.language())
+            // Logbook (ADR-602): once the notes are read, the days that are due.
+            Logbook.sync(store: store)
             await noteReminders.refreshOnForeground()
             if scenePhase == .active { listeningIndicatorBecameActive() }
             pickUpSharedItem()
@@ -294,6 +296,8 @@ struct RootView: View {
                 // Notes kept on Doddy's server (ADR-603): the same, for a send that failed.
                 WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
                                                notesLoaded: store.hasLoaded && store.loadError == nil)
+                // Logbook (ADR-602): the counts that are due, on unless turned off (decision 2026-11-09-usage-counts-on-by-default).
+                Logbook.sync(store: store)
                 // Quiet hours for a booked call are checked in this iPhone's zone (ADR-754).
                 CallZoneSender.sendIfNeeded()
                 pickUpSharedItem()
@@ -309,6 +313,8 @@ struct RootView: View {
             if phase == .background {
                 // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
                 UnfinishedNoteStore.shared.flush()
+                // Logbook (ADR-602): today so far, at most once an hour.
+                Logbook.sync(store: store)
                 WidgetSync.shared.refresh()
                 AppLock.shared.wentToBackground()
                 QuickActions.install()
