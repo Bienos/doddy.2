@@ -224,9 +224,10 @@ struct RootView: View {
                 lockEngaged()
                 return
             }
-            // Unlocked with a conversation from Talk in the Island running (ADR-577): its screen
-            // waited for Face ID, because a full-screen cover would sit above the lock.
-            if VoiceSessionController.runningConversation != nil { router.showConversationStartedElsewhere() }
+            // Unlocked with a conversation from Talk in the Island running (ADR-577): Home shows it
+            // (it holds it, ADR-595); nothing is put over the app. A card that waits for the user
+            // opens the transcript by itself, after the unlock.
+            if HomeConversation.shared.needsYou { presentTranscriptIfNeeded() }
             guard lockCovered, !reduceMotion, !hideArt else { lockCovered = false; lockLifted(); return }
             Task {
                 try? await Task.sleep(for: .seconds(AppLockView.doorTime))
@@ -260,13 +261,13 @@ struct RootView: View {
         .onChange(of: scenePhase, initial: true) { _, phase in
             // MV5: today's welcome (once a day; a hop in place first after three days away).
             if phase == .active { DoddyDirector.shared.appBecameActive() }
-            // A conversation started without opening Doddy (Talk in the Island, ADR-577): tapping
-            // its island brings him forward, and the conversation's screen comes with him. Also
-            // on the first screen, when iOS started Doddy in the background for that conversation.
-            // Not over the Face ID lock: then it comes after the unlock (the lock's onChange above).
-            // (The welcome, if it is up, holds back the opening: see `welcomeVisible`.)
-            if phase == .active, !AppLock.shared.isLocked, VoiceSessionController.runningConversation != nil {
-                router.showConversationStartedElsewhere()
+            // A conversation started without opening Doddy (Talk in the Island, ADR-577): opening
+            // Doddy during it shows it on Home (`TalkInIsland` hands it to `HomeConversation`) and
+            // the app stays usable: Messages, notes, lists. The transcript sheet is no longer put
+            // over the app each time it comes forward; the island's Show, the Transcript button and
+            // a card that needs the user (`needsYou`) still open it.
+            if phase == .active, !AppLock.shared.isLocked, HomeConversation.shared.needsYou {
+                presentTranscriptIfNeeded()
             }
         }
         .onChange(of: scenePhase) { _, phase in
