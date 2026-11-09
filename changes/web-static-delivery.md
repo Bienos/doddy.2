@@ -1,0 +1,3 @@
+Web app delivery: the backend's static handler (`backend/src/web/static.ts`) now keeps built files in memory (revalidated by size and modified time), sends an `ETag` and answers `If-None-Match` with `304`, and serves brotli or gzip for text files of 1 KB or more when the client accepts them (`Vary: Accept-Encoding`). Hashed-asset caching, `no-cache` for the page, the CSP and all other headers are unchanged; private API responses still use `no-store`.
+Ran: `cd backend && npm test` build plus `static-delivery.test.js` and `web.test.js` (38 pass). Not run: edge/proxy behaviour in production (Render/Vercel may already compress; check `curl -sI --compressed` against the live origin before assuming a gain).
+Deploy: ships with the next backend deploy; no config or migration.
