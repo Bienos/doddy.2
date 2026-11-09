@@ -18,6 +18,15 @@ final class HomeConversation {
 
     private(set) var controller: VoiceSessionController?
 
+    /// The conversation was started on Home by the Action Button, Back Tap or Siri (owner, 9 Nov 2026:
+    /// "only the small island"), so Home's strip is its screen and the voice screen must not open
+    /// over it when the app comes to the front. Cleared when the app goes to the background.
+    private(set) var startedFromShortcut = false
+
+    func shortcutStartSettled() {
+        startedFromShortcut = false
+    }
+
     /// The conversation Home shows while it is connecting or live.
     var live: VoiceSessionController? {
         guard let controller, controller.isLive else { return nil }
@@ -95,7 +104,18 @@ final class HomeConversation {
         return auth.hasVoiceAccess(for: provider) && VoiceProviderConsent.isGranted(for: provider)
     }
 
-    private func start(store: MemoryStore, profile: ApprovedProfile) async {
+    /// The Action Button, Back Tap or Siri with Doddy on screen: the conversation starts here, like a
+    /// tap on Doddy, with the shortcut's greeting. False when it can't start in place (the account
+    /// or voice-data gate isn't passed), so the caller opens the voice screen as before.
+    func startFromShortcut(store: MemoryStore, profile: ApprovedProfile, greeting: String) async -> Bool {
+        if live != nil { return true }
+        guard await Self.canStartInPlace() else { return false }
+        startedFromShortcut = true
+        await start(store: store, profile: profile, wakeGreeting: greeting)
+        return true
+    }
+
+    private func start(store: MemoryStore, profile: ApprovedProfile, wakeGreeting: String? = nil) async {
         // One conversation at a time (ADR-496): one starting or live elsewhere is the one Home shows.
         if let running = VoiceSessionController.runningConversation {
             controller = running
@@ -103,6 +123,6 @@ final class HomeConversation {
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
-        await controller.start(VoiceConfig.connectionMode, profile: profile)
+        await controller.start(VoiceConfig.connectionMode, profile: profile, wakeGreeting: wakeGreeting)
     }
 }

@@ -265,9 +265,17 @@ struct RootView: View {
             // on the first screen, when iOS started Doddy in the background for that conversation.
             // Not over the Face ID lock: then it comes after the unlock (the lock's onChange above).
             // (The welcome, if it is up, holds back the opening: see `welcomeVisible`.)
-            if phase == .active, !AppLock.shared.isLocked, VoiceSessionController.runningConversation != nil {
+            // Not for one the Action Button, Back Tap or Siri started on Home: its screen is Home's
+            // strip over the island (owner, 9 Nov 2026). Going to the background ends that exemption.
+            if phase == .background { HomeConversation.shared.shortcutStartSettled() }
+            if phase == .active, !AppLock.shared.isLocked, VoiceSessionController.runningConversation != nil,
+               !HomeConversation.shared.startedFromShortcut {
                 router.showConversationStartedElsewhere()
             }
+        }
+        // Home is where that conversation shows.
+        .onChange(of: HomeConversation.shared.startedFromShortcut) { _, started in
+            if started { selectedTab = .home }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {

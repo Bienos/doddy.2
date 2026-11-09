@@ -6,8 +6,9 @@ import UIKit
 /// While Doddy talks on Home (owner, 22 Oct 2026, ADR-596; redrawn 27 Oct, ADR-654; a thin strip
 /// since 29 Oct, ADR-665): iOS doesn't show Doddy's own island while Doddy is on screen, so Home
 /// draws a black strip over the Dynamic Island, the island's own height, that grows out to both
-/// sides, with his voice drawn in it as a dense aurora of orange lines (mock-up "G1 Gęsta") on
-/// each side of the camera. While he hears you it is 260 pt wide with a clear, calm line and a
+/// sides. Since 9 Nov 2026 it is drawn like the iPhone's call island: his smiling face left of
+/// the camera and his voice as seven round orange-to-rose bars right of it (before, a dense aurora
+/// of fine lines, mock-up "G1 Gęsta"). While he hears you it is 260 pt wide with a clear, calm line and a
 /// faint glow; while he talks it springs out to 330 pt, pulses in his rhythm and glows; while he
 /// is muted it is 260 pt, grey and still. It hangs nothing below the island (ADR-665: the 56 pt
 /// block of ADR-654 was not what the owner meant). Drawn only on iPhones with a Dynamic Island
@@ -140,43 +141,42 @@ struct IslandExtension: View {
             layer.fill(shape, with: .color(.black))
         }
 
-        // His voice: a dense row of thin orange columns on each side of the camera, strongest a
-        // little way out from it and fading to nothing at the strip's ends.
+        // Like the iPhone's call island (owner, 9 Nov 2026): his smiling face in the left wing, his
+        // voice as seven round bars in the right wing, orange to amber to rose.
         let inset: CGFloat = 12
         let cameraHalf = cameraWidth / 2 + 4
         let wing = width / 2 - inset - cameraHalf
         guard wing > 0 else { return }
-        let bandHeight = stripHeight - 10
-        let columns = Int((width - 2 * inset) / 3.6)
-        let columnWidth: CGFloat = 2.6
+
+        // The face, centred in the left wing.
+        let faceSize: CGFloat = 26
+        let faceCentre = CGPoint(x: rect.midX - cameraHalf - wing / 2, y: rect.midY)
+        let faceRect = CGRect(x: faceCentre.x - faceSize / 2, y: faceCentre.y - faceSize / 2, width: faceSize, height: faceSize)
+        var faceLayer = context
+        if f.look == .quiet { faceLayer.opacity = 0.6 }
+        faceLayer.draw(faceLayer.resolve(Image("WholeDoddy_face_listening")), in: faceRect)
+
+        // The bars, centred in the right wing: the middle ones tallest.
+        let bars = 7
+        let barWidth: CGFloat = 3.4
+        let barGap: CGFloat = 3.4
+        let span = CGFloat(bars) * barWidth + CGFloat(bars - 1) * barGap
+        let bandHeight = stripHeight - 12
+        let startX = rect.midX + cameraHalf + wing / 2 - span / 2
         context.drawLayer { layer in
             layer.clip(to: shape)
-            layer.blendMode = .plusLighter
             if f.look != .quiet {
-                layer.addFilter(.shadow(color: glow.opacity(0.55), radius: 4, x: 0, y: 0))
+                layer.addFilter(.shadow(color: glow.opacity(0.4), radius: 3, x: 0, y: 0))
             }
-            for i in 0...columns {
-                let x = rect.minX + inset + CGFloat(i) * 3.6
-                let fromCamera = abs(x - rect.midX) - cameraHalf
-                guard fromCamera >= 0 else { continue }
-                let d = Double(min(1, fromCamera / wing))
-                let envelope = pow(max(0, sin(Double.pi * (0.25 + 0.75 * d))), 1.1)
-                let u = Double((x - rect.minX) / width)
-                let noise = 0.5 + 0.25 * sin(u * 49 + f.time * 3.1) + 0.25 * sin(u * 116 - f.time * 4.3)
-                let columnHeight = bandHeight * CGFloat((0.12 + 0.88 * f.level) * envelope * noise)
-                guard columnHeight > 0.5 else { continue }
-                let column = CGRect(x: x - columnWidth / 2, y: rect.midY - columnHeight / 2, width: columnWidth, height: columnHeight)
+            for i in 0..<bars {
+                let u = Double(i) / Double(bars - 1)
+                let envelope = 0.45 + 0.55 * sin(Double.pi * (0.1 + 0.8 * u))
+                let noise = 0.6 + 0.25 * sin(Double(i) * 2.3 + f.time * 5.1) + 0.15 * sin(Double(i) * 4.1 - f.time * 7.3)
+                let barHeight = max(barWidth, bandHeight * CGFloat(min(1, (0.12 + 0.88 * f.level) * envelope * noise)))
+                let x = startX + CGFloat(i) * (barWidth + barGap)
+                let bar = CGRect(x: x, y: rect.midY - barHeight / 2, width: barWidth, height: barHeight)
                 let colour = f.look == .quiet ? Color(white: 0.62) : warm(u)
-                layer.fill(
-                    Path(column),
-                    with: .linearGradient(
-                        Gradient(stops: [
-                            .init(color: colour.opacity(0), location: 0),
-                            .init(color: colour.opacity(0.85), location: 0.5),
-                            .init(color: colour.opacity(0), location: 1),
-                        ]),
-                        startPoint: CGPoint(x: x, y: column.minY),
-                        endPoint: CGPoint(x: x, y: column.maxY)))
+                layer.fill(Capsule(style: .continuous).path(in: bar), with: .color(colour))
             }
         }
     }

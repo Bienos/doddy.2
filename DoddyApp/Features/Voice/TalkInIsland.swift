@@ -95,7 +95,7 @@ enum TalkInIsland {
             return .done
         case .showInApp:
             noteShortcutRan()
-            ShortcutRouter.shared.talkButtonOpenedApp()
+            await startOnHome()
             return .done
         case .openApp:
             noteShortcutRan()
@@ -114,6 +114,23 @@ enum TalkInIsland {
                 return .tell(error.localizedDescription)
             }
         }
+    }
+
+    /// Doddy is on screen (owner, 9 Nov 2026: "only the small island"): start the conversation on
+    /// Home, where its strip over the island is the screen, instead of opening the voice screen.
+    /// Anything that needs a screen (voice screen already up, Face ID lock, no store, the account or
+    /// voice-data gate) falls back to the voice screen as before.
+    static func startOnHome() async {
+        let router = ShortcutRouter.shared
+        guard !router.isVoicePresented, AppLockGate.allows(.startConversation), let store = IntentStores.store else {
+            router.talkButtonOpenedApp()
+            return
+        }
+        let profiles = IntentStores.profiles
+        if let profiles, !profiles.hasLoaded { await profiles.load() }
+        let profile = profiles?.profile ?? .empty
+        let started = await HomeConversation.shared.startFromShortcut(store: store, profile: profile, greeting: greeting(for: profile))
+        if !started { router.talkButtonOpenedApp() }
     }
 
     /// The older "Talk in the Island" control: always the island; a problem is only said.

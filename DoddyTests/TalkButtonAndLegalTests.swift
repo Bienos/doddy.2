@@ -56,9 +56,9 @@ final class TalkButtonAndLegalTests: XCTestCase {
         XCTAssertFalse(LegalAcceptanceStore.isNeeded)
     }
 
-    func testTheIslandSwitchIsOnUntilTurnedOff() {
+    func testTheIslandSwitchIsOffUntilTurnedOn() {
         XCTAssertEqual(PreferenceKey.islandExpands, LaunchPreferencesMigration.islandExpandsKey)
         XCTAssertEqual(PreferenceKey.talkLaunchMode, TalkLaunchMode.preferenceKey)
-        XCTAssertTrue(LaunchPreferencesMigration.islandExpands(nil))
+        XCTAssertFalse(LaunchPreferencesMigration.islandExpands(nil))
     }
 }

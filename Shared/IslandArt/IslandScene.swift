@@ -140,8 +140,9 @@ extension IslandScene {
         return 0.75 + 0.25 * strength
     }
 
-    /// How many lines the small island's aurora has.
-    static let auroraColumnCount = 21
+    /// How many bars the small island's voice has: a few round bars like the iPhone's own call
+    /// island (owner, 9 Nov 2026), not Home's fine lines.
+    static let auroraColumnCount = 7
 
     /// How strongly the aurora is drawn, 0 to 1: calm while he hears you (Home's listening level),
     /// steady while he talks with no beat (Doddy on screen, Reduce Motion, before the first beat),
@@ -169,12 +170,14 @@ extension IslandScene {
         let phase = voiceBeat.map(Double.init)
         return (0..<n).map { k in
             let u = Double(k) / Double(n - 1)
-            let envelope = pow(max(0, sin(Double.pi * (0.06 + 0.88 * u))), 1.1)
+            // Bars like a call: the middle ones tallest, the outer ones short.
+            let envelope = 0.45 + 0.55 * sin(Double.pi * (0.1 + 0.8 * u))
             let noise: Double
             if waves == .speaking, let t = phase {
-                noise = 0.5 + 0.25 * sin(u * 49 + t * 1.7) + 0.25 * sin(u * 116 - t * 2.3)
+                let kk = Double(k)
+                noise = 0.6 + 0.25 * sin(kk * 2.3 + t * 1.7) + 0.15 * sin(kk * 4.1 - t * 2.9)
             } else {
-                noise = 0.75 + 0.25 * sin(u * 12)
+                noise = 0.8 + 0.2 * sin(Double(k) * 1.7)
             }
             let height = min(1, max(0.06, (0.12 + 0.88 * level) * envelope * noise))
             return IslandAuroraColumn(height: height, colour: Self.warm(u))
