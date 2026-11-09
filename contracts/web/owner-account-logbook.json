@@ -1,0 +1,211 @@
+{
+  "enabled": true,
+  "keptDays": 365,
+  "updatedAt": "2026-10-22T10:00:00.000Z",
+  "days": [
+    {
+      "schema": "doddy.logbook.day.v1",
+      "day": "2026-10-20",
+      "conversations": {
+        "count": 1,
+        "seconds": 150,
+        "by_hour": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "lengths": {
+          "under_1": 0,
+          "1_3": 1,
+          "3_5": 0,
+          "5_10": 0
+        },
+        "ended": {
+          "you": 1,
+          "doddy": 0,
+          "quiet": 0,
+          "dropped": 0
+        },
+        "languages": {
+          "pl": 1
+        },
+        "ways_in": {
+          "app": 0,
+          "back_tap": 0,
+          "action_button": 0,
+          "widget": 0,
+          "siri": 0,
+          "island": 0
+        }
+      },
+      "tools": {
+        "get_weather": {
+          "done": 1,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
+        "create_reminder": {
+          "done": 1,
+          "declined": 1,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      "notes": {
+        "by_source": {
+          "voice": 1,
+          "typed": 1,
+          "shared": 0,
+          "imported": 0
+        },
+        "by_kind": {
+          "fact": 2
+        },
+        "edited": 0
+      },
+      "lists": {
+        "added_voice": 1,
+        "added_typed": 1,
+        "ticked": 0
+      },
+      "errands": {
+        "handed_over": 0,
+        "finished": 0,
+        "stopped": 0,
+        "minutes": 0,
+        "searches": 0,
+        "pages": 0
+      },
+      "translator": {
+        "sessions": 0,
+        "minutes": 0
+      }
+    },
+    {
+      "schema": "doddy.logbook.day.v1",
+      "day": "2026-10-22",
+      "conversations": {
+        "count": 3,
+        "seconds": 450,
+        "by_hour": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "lengths": {
+          "under_1": 0,
+          "1_3": 3,
+          "3_5": 0,
+          "5_10": 0
+        },
+        "ended": {
+          "you": 3,
+          "doddy": 0,
+          "quiet": 0,
+          "dropped": 0
+        },
+        "languages": {
+          "pl": 3
+        },
+        "ways_in": {
+          "app": 0,
+          "back_tap": 0,
+          "action_button": 0,
+          "widget": 0,
+          "siri": 0,
+          "island": 0
+        }
+      },
+      "tools": {
+        "get_weather": {
+          "done": 3,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
+        "create_reminder": {
+          "done": 1,
+          "declined": 1,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      "notes": {
+        "by_source": {
+          "voice": 1,
+          "typed": 1,
+          "shared": 0,
+          "imported": 0
+        },
+        "by_kind": {
+          "fact": 2
+        },
+        "edited": 0
+      },
+      "lists": {
+        "added_voice": 1,
+        "added_typed": 1,
+        "ticked": 0
+      },
+      "errands": {
+        "handed_over": 0,
+        "finished": 0,
+        "stopped": 0,
+        "minutes": 0,
+        "searches": 0,
+        "pages": 0
+      },
+      "translator": {
+        "sessions": 0,
+        "minutes": 0
+      }
+    }
+  ]
+}

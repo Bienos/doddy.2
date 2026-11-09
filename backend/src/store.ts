@@ -1154,6 +1154,37 @@ export class Store {
     return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
   }
 
+  // ------------------------------------------------------------ Owner panel (decision 2026-11-09-usage-counts-on-by-default)
+  // Read only, and only for the owner panel (`web/owner.ts`), which checks the caller first.
+
+  /** Every user's Logbook days from `since` on, oldest first. */
+  async allLogbookDays(since: string): Promise<(LogbookDayRow & { user_id: string })[]> {
+    return (
+      await this.db.query<LogbookDayRow & { user_id: string }>(
+        "SELECT user_id, day, summary, received_at FROM logbook_days WHERE day >= $1 ORDER BY day, user_id",
+        [since],
+      )
+    ).rows;
+  }
+
+  /** Every user's Logbook switch, as the iPhone last set it. */
+  async logbookStates(): Promise<{ user_id: string; enabled: boolean; changed_at: number }[]> {
+    return (await this.db.query<{ user_id: string; enabled: boolean; changed_at: number }>("SELECT user_id, enabled, changed_at FROM logbook_state")).rows;
+  }
+
+  /**
+   * Which of this server's users each Doddy account (a Supabase user id, `subject`) is: an account
+   * that took over an iPhone's earlier data, or one made on the web. An account in neither is its
+   * own user id.
+   */
+  async accountUsers(): Promise<{ subject: string; user_id: string }[]> {
+    return (
+      await this.db.query<{ subject: string; user_id: string }>(
+        "SELECT subject, user_id FROM account_links UNION SELECT identity_id AS subject, user_id FROM web_identities",
+      )
+    ).rows;
+  }
+
   // ------------------------------------------------------------ Kept memory (ADR-603)
 
   /** Both switches are off until the iPhone turns them on. A user with no row has both off. */

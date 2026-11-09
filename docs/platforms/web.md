@@ -11,7 +11,11 @@ A signed-in workspace in the browser for the same account the iPhone uses on Dod
 - **Activity:** the server's receipts.
 - **Signed-in browsers**, each with Sign out.
 - A **language** switch: Polish by default, or English.
-- **Logbook** (ADR-602, `docs/product/WEB_LOGBOOK.md`): how a person uses Doddy, in two tabs, At a glance (the week as a receipt) and Closer look (7, 30, 90 days or a year; kept 1 year). The server keeps and serves the days the iPhone sends (`backend/src/web/logbook.ts`, `/v1/web/logbook*`, off until the iPhone turns it on), but **the iPhone can't send any yet** (not built), so the page opens on "Logbook is off" and shows made-up example numbers only when asked, marked Example; the menu keeps its Example marker until `IPHONE_SENDS_LOGBOOK` is flipped. `LOGBOOK_ENABLED` in `web/src/logbook/config.ts` hides the page.
+- **Logbook** (ADR-602, `docs/product/WEB_LOGBOOK.md`): how a person uses Doddy, in two tabs, At a glance (the week as a receipt) and Closer look (7, 30, 90 days or a year; kept 1 year). The server keeps and serves the days the iPhone sends (`backend/src/web/logbook.ts`, `/v1/web/logbook*`). Since 9 Nov the iPhone sends them, **on by default** (decision `2026-11-09-usage-counts-on-by-default`), and `IPHONE_SENDS_LOGBOOK` is true. `LOGBOOK_ENABLED` in `web/src/logbook/config.ts` hides the page.
+- **Owner panel** (`/owner`, decision `2026-11-09-usage-counts-on-by-default`): for the accounts in `DODDY_OWNER_ACCOUNTS` only; anyone else gets "not found" and has no menu entry.
+  - **What it shows:** totals of every account's Logbook days (accounts, how they sign in, Logbook on or off, conversations, minutes, notes, list items, tasks, every tool with done, no, not sure and didn't work); each account with its email, sign-in method and dates, and that account's own days.
+  - **Where the data comes from:** emails and sign-in dates from Supabase's admin API with `SUPABASE_SECRET_KEY`; without it, the panel says so and shows Logbook's counts only.
+  - **Code and tests:** `backend/src/web/owner.ts`, `/v1/web/owner*`; `web/src/pages/OwnerPage.tsx`, `web/src/owner/`. Fixtures come from `npm run fixtures:owner` in `backend/`.
 
 - **Memory** (ADR-603, `docs/product/CLOUD_MEMORY.md`): the notes and conversations a person chose to keep on Doddy's server, as text, kept for a year, encrypted with a server-held key; read, searched, downloaded and deleted from the browser, and the chat (below), where Claude (`DODDY_CHAT_MODEL`, default `claude-haiku-5-5`) answers from them and cites its sources. **The iPhone's sending is written and compiles in the hosted Mac job, but hasn't run on a device**, so the page opens on "nothing is kept" and is marked Soon in the menu (`IPHONE_SYNCS_MEMORY` in `web/src/memory/config.ts`). The server needs `DODDY_MEMORY_KEY`, or it says "not set up".
 
@@ -93,7 +97,7 @@ curl -s -X POST localhost:8787/v1/web/link-codes -H "authorization: Bearer $TOKE
 | Command | What |
 |---|---|
 | `npm test` in `backend/` | All backend tests; `test/web.test.ts` is the web part (sign-in, isolation, CSRF, expiry, revocation, documents, pages, logs) |
-| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 143 tests (8 Nov 2026, run after merging `main`; the type-check passes too) |
+| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 149 tests (9 Nov 2026, with the owner panel; the type-check passes too) |
 | `npm run build` in `backend/` and `web/`, then `npm run e2e` in `web/` | Playwright: the real backend (mock providers, in-memory database) serving the built app, Chromium at desktop and phone width |
 | `DODDY_SCREENS=<folder> npx playwright test e2e/screens.spec.ts` in `web/` | Screenshots in light and dark, for a person to look at |
 | `scripts/ci.sh --core-only`, or `--only backend,node` | All of the above (the web steps are in the `node` group). The end-to-end run is SKIPPED (not PASS) where there's no Playwright Chromium (`PLAYWRIGHT_BROWSERS_PATH`), as in the hosted Linux `node` job |

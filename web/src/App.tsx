@@ -14,6 +14,7 @@ import { MEMORY_ENABLED } from "./memory/config.js";
 import { CHAT_ENABLED } from "./chat/suggestions.js";
 import { ChatPage } from "./pages/ChatPage.js";
 import { LogbookPage } from "./pages/LogbookPage.js";
+import { OwnerPage } from "./pages/OwnerPage.js";
 import { MemoryPage } from "./pages/MemoryPage.js";
 import { NotFoundPage } from "./pages/NotFoundPage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
@@ -56,6 +57,8 @@ export function App() {
         {CHAT_ENABLED ? <Route path="/chat" element={<ChatPage />} /> : null}
         {/* Ask Doddy became the chat (ADR-604); old links still land there. */}
         {CHAT_ENABLED ? <Route path="/ask" element={<Navigate to="/chat" replace />} /> : null}
+        {/* The owner panel (decision 2026-11-09-usage-counts-on-by-default): the server answers owners only. */}
+        <Route path="/owner" element={<OwnerPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
