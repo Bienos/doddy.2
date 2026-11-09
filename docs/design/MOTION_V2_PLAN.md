@@ -120,7 +120,7 @@ Imported sets checked by eye: `WholeDoddy_*` (17), `UploadedDoddy_*` (5), `Doddy
 | Slide-through, surface dip, weight response, drag-lean, lean into travel | Transforms of the current picture | Q7 |
 | Size change (1.0× ↔ 1.4×) | Transform. The `WholeDoddy_*` and `DoddyMotion_*` sets are 300 × 450 px at @3x: a 134 pt figure needs about 400 px of figure, so they would be upscaled about 15 % and look soft. The originals (1024 × 1536) can be re-exported larger with `tools/whole_doddy/build_imagesets.py`, which cuts and downscales only. | Needs larger exports (Q11) |
 | Face turning toward travel | `DoddyMotion_turn_1…3` (front, three-quarter, side) | Partial |
-| Pupils moving on their own; "eyes first" on every reaction | None in the app. The pack's numbering in `docs/design/DODDY_VIDEO_ASSET_PROMPTS.md` (004 expressions, 010 props, 011 fx, 012 walk…) places an **eye-direction sheet at 008**, heads only. It was never imported and couldn't be checked from here. | **Drawn from MV7** on the front-facing pictures (ADR-560): the sheet was opened, it is a 3 × 3 grid of heads, cut into eight looks |
+| Pupils moving on their own; "eyes first" on every reaction | None in the app. The pack's numbering in `docs/archive/design/DODDY_VIDEO_ASSET_PROMPTS.md` (004 expressions, 010 props, 011 fx, 012 walk…) places an **eye-direction sheet at 008**, heads only. It was never imported and couldn't be checked from here. | **Drawn from MV7** on the front-facing pictures (ADR-560): the sheet was opened, it is a 3 × 3 grid of heads, cut into eight looks |
 | Blink; slow 280 ms blink (thinking, evening welcome) | As above: a **blink sequence at 007** (open, half closed, closed, half closed), heads only | **Drawn from MV7** (ADR-560) |
 | Eyes closed in contentment (head rub, stretch hold) | `WholeDoddy_yawn_stretch` has closed eyes but a yawn and raised arms | **Missing** as a calm face |
 | Squint on touch | none | **Missing** |
@@ -287,7 +287,7 @@ App code read:
 
 Design and art:
 - `Packages/DoddyCore/Sources/DoddyDesignTokens/` and its tests
-- `docs/design/CANONICAL_DESIGN_DIRECTION.md`, `UPLOADED_MEMORY_ASSETS.md`, `DODDY_VIDEO_ASSET_PROMPTS.md`
+- `docs/design/CANONICAL_DESIGN_DIRECTION.md`, `UPLOADED_MEMORY_ASSETS.md`, `docs/archive/design/DODDY_VIDEO_ASSET_PROMPTS.md`
 - `design/website-what-can-doddy-do/README.md` (pack provenance)
 - ADR-225, 264, 299, 308, 313, 323, 336, 361, 380, 430 and 457 in `DECISIONS.md`
 - Every Doddy image set in `DoddyApp/Resources/Assets.xcassets`, viewed as contact sheets

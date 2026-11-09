@@ -1,3 +1,7 @@
+> **Archived 9 Nov 2026** (decision `docs/decisions/2026-11-09-remove-old-design-leftovers.md`): these are the
+> prompts the owner's numbered pack was made from, kept as a record of what each number holds. They are not
+> instructions: character art comes only from the pack itself, never generated or redrawn (CLAUDE.md, 11 Oct).
+
 # Doddy video asset kit — image-generation prompts
 
 **Status:** proposed working document. Nothing here is approved brand art. Outputs from these prompts are **concept / reference art** until an owner or illustrator reviews them and redraws production files.
