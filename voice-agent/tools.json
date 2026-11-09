@@ -634,7 +634,7 @@
     {
       "type": "function",
       "name": "text_me",
-      "description": "Send a text message (SMS) from Doddy's own phone number to the user's own number, the one they verified in Doddy's Settings. Use it only when the user asks Doddy to text them something, for example 'text me the parcel code' or 'send me that address by SMS'. It can never text anyone else; to message someone else, use draft_message. Write the text in the user's language, short, with exactly what they asked for, and never a password, PIN or card number. The card shows it word for word and nothing is sent until the user taps Send. Before this tool runs, say only one short line, for example 'Confirm on screen to send this text.' The result starts with 'delivered' (the carrier reported it reached the phone), 'sent' (Twilio accepted it; delivery isn't confirmed), 'queued' (Doddy's server has it; not sent yet), 'declined', 'failed' (nothing was sent; the reason follows) or 'unknown'. Say the text arrived only when the result starts with 'delivered'. After 'unknown', never call this tool again unless the user asks.",
+      "description": "Send a text message (SMS) from Doddy's own phone number to the user's own number, the one they verified in Doddy's Settings. Use it only when the user asks Doddy to text them something, for example 'text me the parcel code' or 'send me that address by SMS'. It can never text anyone else; to message someone else, use draft_message. Write the text in the user's language, short, with exactly what they asked for, and never a password, PIN or card number. It is sent at once, with no card to tap, but only to the user's own verified number and only while they have turned on Texts from Doddy; the same text is never sent twice in a row. Before this tool runs, say only one short line, for example 'Sending you that now.' The result starts with 'delivered' (the carrier reported it reached the phone), 'sent' (Twilio accepted it; delivery isn't confirmed), 'queued' (Doddy's server has it; not sent yet), 'failed' (nothing was sent; the reason follows) or 'unknown'. Say the text arrived only when the result starts with 'delivered'. After 'unknown', never call this tool again unless the user asks.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -642,7 +642,7 @@
         },
         "required": ["body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7901m57kexstfma8fsdzdxvjj9jc"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7901m57kexstfma8fsdzdxvjj9jc"}
     },
     {
       "type": "function",

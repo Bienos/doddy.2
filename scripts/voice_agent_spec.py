@@ -39,6 +39,9 @@ PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search"
                   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
 # Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-619).
 RUNS_NOW_MODES = {"start_translator", "stop_translator"}
+# A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
+# decision docs/decisions/2026-11-09-restaurant-calls-one-tap.md). Only on the phone; never to anyone else.
+RUNS_NOW_OWN_TEXT = {"text_me"}
 APP_INSTRUCTIONS = SPEC / "instructions.md"
 
 
@@ -229,8 +232,10 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: x_doddy.ask must be one of {sorted(ASK)} (ASK-01)")
         if (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
             errors.append(f"tool {name}: x_doddy.ask 'tap' and confirm_on_screen go together (ASK-01)")
-        if runs_now and name not in PUBLIC_LOOKUPS | RUNS_NOW_MODES:
-            errors.append(f"tool {name}: only the public lookups {sorted(PUBLIC_LOOKUPS)} and translator start/stop may run without asking (ADR-575, ADR-619)")
+        if runs_now and name not in PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT:
+            errors.append(f"tool {name}: only the public lookups {sorted(PUBLIC_LOOKUPS)}, translator start/stop and text_me may run without asking (ADR-575, ADR-619, decision 2026-11-09-restaurant-calls-one-tap)")
+        if runs_now and name in RUNS_NOW_OWN_TEXT and x.get("runs_on") != "phone":
+            errors.append(f"tool {name}: a text without a card runs only on the phone, after the app checks Texts from Doddy")
         if not runs_now and x.get("speak_before") != "force":
             errors.append(f"tool {name}: ASK-01 needs speak_before 'force', so Doddy says what it will do before the tool runs")
         if not runs_now and x.get("ask") and (not isinstance(x.get("timeout_secs"), int) or x["timeout_secs"] < 60):
