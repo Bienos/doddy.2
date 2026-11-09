@@ -110,7 +110,8 @@ final class ListeningIndicatorModel {
 
     func refresh() {
         indicator = ListeningIndicator.current(ListeningStop.snapshot())
-        isHidden = ShortcutRouter.shared.isVoicePresented
+        // Home shows its own End control while he talks, so the pill steps aside there too (owner, 9 Nov 2026).
+        isHidden = ShortcutRouter.shared.isVoicePresented || HomeConversation.shared.live != nil
         ListeningIndicatorWindow.shared.update()
     }
 

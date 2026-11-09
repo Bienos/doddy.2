@@ -463,11 +463,10 @@ struct HomeView: View {
     /// Mute or Unmute, and the words of the conversation are one tap away on Transcript.
     private func liveStatus(_ live: VoiceSessionController) -> some View {
         VStack(spacing: 12) {
-            ReadyDot()
-                .padding(.top, 14)
             Text(greeting)
                 .font(.largeTitle.weight(.bold)).tracking(-1)
                 .multilineTextAlignment(.center)
+                .padding(.top, 14)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("home.liveStatus")
             Text("Tap Doddy to finish")
@@ -480,11 +479,10 @@ struct HomeView: View {
 
     private var restStatus: some View {
         VStack(spacing: 12) {
-            ReadyDot()
-                .padding(.top, 14)
             Text(greeting)
                 .font(.largeTitle.weight(.bold)).tracking(-1)
                 .multilineTextAlignment(.center)
+                .padding(.top, 14)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("home.greeting")
             Group {
@@ -949,21 +947,6 @@ private struct Hop {
     var lift: CGFloat = 0
     var stretchX: CGFloat = 1
     var stretchY: CGFloat = 1
-}
-
-/// The orange dot under Doddy: a slow pulse that says he's there. Still under Reduce Motion.
-private struct ReadyDot: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        Circle()
-            .fill(Theme.orangeCue)
-            .frame(width: 12, height: 12)
-            .phaseAnimator(reduceMotion ? [false] : [false, true]) { dot, up in
-                dot.scaleEffect(up ? 1.3 : 1).opacity(up ? 0.65 : 1)
-            } animation: { _ in .easeInOut(duration: 1.2) }
-            .accessibilityHidden(true)
-    }
 }
 
 /// Buttons on the new Home shrink a touch while pressed.
