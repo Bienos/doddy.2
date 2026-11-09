@@ -123,3 +123,18 @@ Replaces "**Never** push to `main` … merge, approve, or add the `owner-approve
 
 ## Vercel is not blocked (owner, 9 Nov 2026)
 Never tell the owner that Vercel or their Vercel account is blocked. The live team `doddyyyy` works (Hobby plan, billing active, production deployments `READY`). The red "Account is blocked." statuses (`Vercel – doddy`, `Vercel – doddy-gateway`, `Vercel – doddy-voice-token`) on pull requests come from an **old** Vercel account that still has this repository connected; disconnecting it is `docs/OWNER_QUEUE.md` 14. On `claude/…` branches a workflow replaces them with "Skipped" within seconds (decision `docs/decisions/2026-11-09-vercel-blocked-status.md`); on `main` the live team's own status replaces them. They are not required checks: read the commit status again before treating one as a failure, and call it "the old Vercel account's status", never "Vercel is blocked".
+
+---
+
+# What an agent must remember about the project now (9 Nov 2026; appended by a docs review)
+Append-only like the rest of this file. This is the stable part; what is live and open today is only in `STATUS.md` and `docs/OWNER_QUEUE.md`, so read those first and trust them over this section when they differ.
+
+- **Accounts are on.** `Config/Doddy-Info.plist` names the Supabase project, so every build asks for a Doddy account. The welcome offers Apple and Google; email codes are hidden (`docs/decisions/2026-11-09-email-sign-in-off-for-now.md`). Google fails until the owner finishes `docs/OWNER_QUEUE.md` 25: say that, don't debug it in the app.
+- **Every build shows every feature until the beta** (owner, 8 Nov: "don't hide anything, the beta comes later"). Don't put `ReleaseScope.shipping` back in `ReleaseScopeStore.current` unless the owner says the beta starts.
+- **Messages (Ask Doddy) and Logbook usage counts are on by default.** The privacy policy and App Store answers don't say so yet (`docs/OWNER_QUEUE.md` 26): never write "privacy guaranteed" about them.
+- **The live voice agent** (ElevenLabs main agent) is changed only when the owner asks, for exactly what they asked, and the change is logged in `voice-agent/README.md`. `make_something`, `text_me`, `pay_for_page` and `call_places` are in the repo, not on the live agent.
+- **Nothing merged since 20 Oct is recorded as seen on a device.** Say "compiled in CI" or "not compiled", never "works on the phone". A session without Swift or Xcode writes "not compiled" for every Swift change.
+- **Reading live services is fine; guessing which account to read is not.** Render's connector needs the workspace the owner names (`Patryk's workspace`, `docs/OWNER_QUEUE.md` 1). Ask once, don't pick one.
+- **Docs are part of done.** When code changes what a page says, fix the page in the same pull request: the platform page (`docs/platforms/`), `BUILD_AND_TEST.md`, the folder's README, `voice-agent/README.md` for tools. Counts (tests, tools, migrations, ADRs) are read from the code, never copied from an older page.
+- **A docs review** (when the owner asks to "update everything") means: re-read `STATUS.md`, fold every `changes/*.md` into it and delete the notes, correct `README.md`, `docs/platforms/`, `docs/OWNER_QUEUE.md` and the READMEs of the parts against the code, run `scripts/ci.sh --only checks`, and list what could not be run. It does not edit `DECISIONS.md`, old decision files or the append-only rules.
+- **Still owner-only:** deploys, Render, Supabase, Vercel, ElevenLabs, Twilio, App Store Connect and Apple Developer settings, spending limits, the privacy policy wording.
