@@ -753,39 +753,6 @@ struct VoiceView: View {
             Text("A BLIK transfer for you to send")
                 .font(.headline)
             blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
-        case .text(_, let draft):
-            // ADR-750 U2: exactly the text the approval covers, and who it goes to.
-            Text("Send this text to you?")
-                .font(.headline)
-            Text(String(format: NSLocalizedString("From Doddy's number to your number ending %@", comment: ""), draft.recipientEnding))
-                .foregroundStyle(Theme.secondaryText)
-            Text(draft.body)
-                .font(.body)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
-                .accessibilityIdentifier("voice.text.body")
-            if draft.segments > 1 {
-                Label(String(format: NSLocalizedString("Sent as %lld SMS parts", comment: ""), draft.segments), systemImage: "square.stack")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-            }
-            if let sent = VoiceSessionController.queuedTexts[draft.approvalHash], sent.timeIntervalSinceNow > -24 * 3600 {
-                Label(String(format: NSLocalizedString("You already sent this exact text at %@. Sending again sends it a second time.", comment: ""),
-                             sent.formatted(date: .omitted, time: .shortened)),
-                      systemImage: "exclamationmark.triangle")
-                    .font(.footnote)
-            }
-            if VoiceSessionController.unconfirmedTexts.contains(draft.approvalHash) {
-                Label("Doddy couldn't confirm an earlier try of this exact text. Sending again while Doddy is open won't send it twice.",
-                      systemImage: "exclamationmark.triangle")
-                    .font(.footnote)
-            }
-            Text("Twilio carries the text. Doddy's server keeps it encrypted only until it's sent, and sends exactly this.")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
         case .callLater(_, let draft, let to, let quietHours):
             callLaterContent(draft, to: to, quietHours: quietHours, controller: controller)
         case .presentation(_, let draft):
@@ -1232,7 +1199,6 @@ struct VoiceView: View {
         case .camera: (NSLocalizedString("Open camera", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .home: (NSLocalizedString("Yes", comment: ""), NSLocalizedString("No", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
-        case .text: (NSLocalizedString("Send text", comment: ""), NSLocalizedString("Don't send", comment: ""))
         case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
         // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))

@@ -88,8 +88,9 @@ public enum SMSSegments {
     private static let extended = Set("^{}\\[~]|€\u{000C}".unicodeScalars)
 }
 
-/// A text the agent proposed, from Doddy's number to the user's own verified number. Nothing is
-/// sent until the user taps Send on the card; the approval then covers exactly `body` and `to`.
+/// A text the agent asked for, from Doddy's number to the user's own verified number. Sent at once
+/// while Texts from Doddy is on (decision 2026-11-09-restaurant-calls-one-tap); the approval hash
+/// covers exactly `body` and `to`, and the server checks it before queueing and before Twilio.
 public struct ApprovedTextDraft: Equatable, Sendable {
     public let body: String
     /// The user's verified number in E.164, as Doddy's server holds it.
@@ -107,6 +108,21 @@ public struct ApprovedTextDraft: Equatable, Sendable {
 
     /// What the server checks before it queues the text and again before Twilio gets it.
     public var approvalHash: String { ApprovalHash.text(to: to, body: body) }
+}
+
+/// A text sent without a card (decision 2026-11-09-restaurant-calls-one-tap) is never sent twice in a row
+/// by accident: exactly the same text to the same number within `window` of the last one queued is
+/// refused. A repeat after an unknown outcome is left to the server, which sends one approval hash at
+/// most once.
+public enum TextRepeat {
+    public static let window: TimeInterval = 10 * 60
+
+    /// True when `hash` was queued less than `window` before `now`.
+    public static func sentMomentsAgo(_ hash: String, queued: [String: Date], now: Date) -> Bool {
+        guard let last = queued[hash] else { return false }
+        let age = now.timeIntervalSince(last)
+        return age >= 0 && age < window
+    }
 }
 
 /// Whether a text can be proposed at all: the user verified their number in the app, agreed to
@@ -139,13 +155,19 @@ extension VoiceToolReply {
 
     public static let textDeclined = "declined: the user chose not to send this text. Nothing was sent."
 
+    /// The same text went to the same number a moment ago (`TextRepeat`): sent once, not twice.
+    public static let textSentMomentsAgo = """
+        failed: Doddy sent exactly this text to the user a few minutes ago, so it didn't send it again. \
+        Nothing new was sent. If they want it once more, they can ask again in a few minutes.
+        """
+
     public static let textNoServer =
         "failed: Doddy's server isn't set up in this version of the app, so Doddy can't send texts yet. Nothing was sent."
 
     public static let textOffline =
         "failed: Doddy couldn't reach its server, so nothing was sent. The user can try again when they're online."
 
-    /// Before the card: the server couldn't say which number is the user's.
+    /// Before sending: the server couldn't say which number is the user's.
     public static func textCheckFailed(_ error: ServerError?) -> String {
         switch error {
         case .offline?: textOffline
@@ -154,7 +176,7 @@ extension VoiceToolReply {
         }
     }
 
-    /// After the tap, an answer that means the text certainly wasn't queued (a timeout or a
+    /// After sending, an answer that means the text certainly wasn't queued (a timeout or a
     /// server error is `textUnknown` instead).
     public static func textNotSent(_ error: ServerError?) -> String {
         switch error {
@@ -176,7 +198,7 @@ extension VoiceToolReply {
     public static func textNotReady(_ readiness: TextReadiness) -> String {
         switch readiness {
         case .ready:
-            return "failed: something went wrong before the card was shown. Nothing was sent."
+            return "failed: something went wrong before the text could be sent. Nothing was sent."
         case .noPhone:
             return "failed: the user hasn't verified their phone number in Settings, Notifications and texts, so Doddy has no number to text. Nothing was sent."
         case .textsOff:
@@ -192,7 +214,7 @@ extension VoiceToolReply {
         case "sms_not_enabled":
             "texts aren't switched on for the user's verified number, or it replied STOP."
         case "approval_mismatch":
-            "the user's number changed after the card was shown, so the approval didn't match."
+            "the user's number changed while the text was being sent, so the approval didn't match."
         case "daily_limit":
             "Doddy has already sent the most texts allowed for today."
         case "server_daily_limit":
@@ -240,7 +262,7 @@ extension VoiceToolReply {
     private static func failureReason(_ code: String?) -> String {
         switch code {
         case "twilio_21610": "the user's number has replied STOP to Doddy's texts."
-        case "approval_mismatch": "the text or the number changed after the card was shown, so Doddy didn't send it."
+        case "approval_mismatch": "the text or the number changed before it was sent, so Doddy didn't send it."
         case let code?: "Twilio refused the text (\(code))."
         case nil: "Twilio refused the text."
         }
