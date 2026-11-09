@@ -1,6 +1,6 @@
 # "What can Doddy do?" — website page mockups
 
-**Status: design proposal, awaiting the owner's choice. Nothing here is live.** No production page was built, `site/` is untouched, nothing was deployed. The mockups are HTML files rendered to PNG with headless Chromium so they can be reviewed at real sizes (1440 px desktop, 390 px phone).
+**Status: built.** The owner chose Direction A; `site/what-can-doddy-do/` is generated from it by `tools/build_day.py` and is live on doddy.lol (ADR-468 to 470, ADR-548). The text below is the original proposal; what was not built is listed in `site/README.md`. The mockups are HTML files rendered to PNG with headless Chromium so they can be reviewed at real sizes (1440 px desktop, 390 px phone).
 
 Brief: a new tab on doddy.lol that shows what it feels like to have Doddy in your pocket, through everyday situations, without explaining the technology. Three directions, twelve mockups, one recommendation, then stop for approval.
 
@@ -22,7 +22,7 @@ Brief: a new tab on doddy.lol that shows what it feels like to have Doddy in you
 
 The live site at https://www.doddy.lol/ is the repository's `site/` folder, served as is. A fetch on 2026-10-13 differed from `site/index.html` in two copy lines only (which voice provider is named first). So the design language was read from the source, not guessed:
 
-- **Light-only "editorial notebook"**: paper `#FFF7E9`, ink `#171715`, orange cue `#F58A24`, secondary text `#655F56`, quiet surface `#F5EAD8`, separator `#DFD5C6`, accent text `#A64B00`, confirmed green `#326746`, error `#A3342E` (`site/tokens.css`, generated from the app's `CandidateTokens.swift`). The mockups use these tokens and no others.
+- **Light-only "editorial notebook"**: paper `#FFF7E9`, ink `#171715`, orange cue `#FF6A00` (`#F58A24` when these mockups were made; ADR-556 changed it), secondary text `#655F56`, quiet surface `#F5EAD8`, separator `#DFD5C6`, accent text `#A64B00`, confirmed green `#326746`, error `#A3342E` (`site/tokens.css`, generated from the app's `CandidateTokens.swift`). The mockups use these tokens and no others.
 - **Type**: Bricolage Grotesque for headings (the brand speaking), Caveat only for Doddy's own lines and the wordmark, the system face for reading. Both web fonts load from Google Fonts on the live site; the mockups link them the same way. No font binaries are committed.
 - **Patterns the mockups reuse unchanged**: the sticky nav with the handwritten wordmark and the ink "Join early access" button; the faintly ruled hero paper; the tilted device frame; the taped paper card around the film; the rotated "scraps"; the film's chapter buttons; pills ("iPhone app, in early testing", "In testing"); paper panels with 36 px radius and the warm corner glow; the join panel with the waitlist form; the "Later, maybe" block; the footer.
 - **Navigation today**: How it works · Meet Doddy · Take a shot · Blog · Privacy, plus the button. Below 820 px the links are hidden; there is no phone menu at all. The blog marks its tab with `aria-current="page"` (ink text, orange underline), which the new page reuses.
