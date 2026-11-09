@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Decided by:** owner. Asked for: "doddy should send sms from his numbers on his own right … why not remove them [the call limits] and let doddy like find number and call restirant get info and then send message me or notfication in app with result and or like used booking servie instead if available". Then "ok" to the three choices below, as proposed in the same session.
-- **Status:** accepted. Steps 1 and 2 (the server side) applied in the pull request that adds this file; steps 3 to 5 to follow.
+- **Status:** accepted. Steps 1 and 2 (the server side) applied in #265; step 3 (texts without a tap) in the pull request that changes this line; steps 4 and 5 to follow.
 - **Replaces:** for the steps below only, parts of ADR-500 to 507 (`docs/decisions/calls.md`: one callee per approval, "ask" only, never commits) and of ADR-752 (`text_me` needs a tap).
 
 ## Why
@@ -28,7 +28,7 @@ The owner's example: "Find an Italian restaurant in Warsaw city centre for a dat
 ## Steps
 1. Place search keeps the listing's phone number when it looks like one (`listingPhone` in `backend/src/tools/websearch.ts`). Whether Doddy may dial it is still decided by the messaging server's allowlist (`taskCalls/phone.ts`).
 2. Messaging server: a task of up to 3 places under one digest; places are called one after another and the task stops at the first yes; a structured yes/no answer; the result by push and by text to the person's own number (`server/messaging/src/taskCalls/tasks.ts`, migration `022_call_tasks.sql`). The "book" kind, on its own task-call agent with its own pinned prompt, is a later step: it needs that agent created on ElevenLabs, which only the owner can do.
-3. App: `text_me` to the person's own number without a card when "Texts from Doddy" is on; the rules file and its tests follow.
+3. App: `text_me` to the person's own number without a card when "Texts from Doddy" is on; the rules file and its tests follow. Exactly the same text isn't sent again within 10 minutes (`TextRepeat` in DoddyCore), and it still waits while driving: it leaves the iPhone, which the car rule of 11 Oct 2026 keeps for after the drive.
 4. App: a voice tool that proposes a task from the conversation, the one-tap card, and the result in Messages.
 5. Booking links: the place search or a web search keeps a place's booking page, and Doddy offers it before calling.
 

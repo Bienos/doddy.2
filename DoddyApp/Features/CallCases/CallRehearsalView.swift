@@ -4,7 +4,8 @@ import SwiftUI
 /// Rehearse the call first (owner backlog #20/#116, ADR-507): Doddy plays the person who answers,
 /// in Polish, through the OpenAI voice with no tools. Nobody is called and nothing is saved.
 /// Afterwards: "Doddy calls" (back to the approval) or "I'll call myself" (the script on screen).
-/// Not compiled or heard on a device yet.
+/// Without the OpenAI voice consent the session refuses to start, and the same consent step as the
+/// voice screen (`VoiceAccessGate`) opens first. Not heard on a device yet.
 struct CallRehearsalView: View {
     enum Choice { case doddyCalls, callMyself }
 
@@ -13,6 +14,7 @@ struct CallRehearsalView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var session = CallRehearsalSession()
+    @State private var askingConsent = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,15 +54,15 @@ struct CallRehearsalView: View {
 
             VStack(spacing: 10) {
                 switch session.state {
-                case .idle, .ended, .failed:
+                case .idle, .ended, .needsConsent, .failed:
                     if case .failed(let message) = session.state {
                         Text(message).font(.footnote).foregroundStyle(Theme.error).multilineTextAlignment(.center)
                     }
                     Button {
-                        Task { await session.start(preview: preview) }
+                        Task { await startOrAskConsent() }
                     } label: {
                         Group {
-                            if session.state == .idle {
+                            if session.state == .idle || session.state == .needsConsent {
                                 Label("Start the rehearsal", systemImage: "mic.fill")
                             } else {
                                 Label("Rehearse again", systemImage: "mic.fill")
@@ -109,5 +111,24 @@ struct CallRehearsalView: View {
         }
         .onDisappear { Task { await session.stop() } }
         .interactiveDismissDisabled(session.isRunning)
+        .sheet(isPresented: $askingConsent) {
+            NavigationStack {
+                VoiceAccessGate(provider: CallRehearsal.provider) {
+                    askingConsent = false
+                    Task { await startOrAskConsent() }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { askingConsent = false }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Starts the rehearsal; if the session says the OpenAI voice consent is missing, opens that step.
+    private func startOrAskConsent() async {
+        await session.start(preview: preview)
+        if session.state == .needsConsent { askingConsent = true }
     }
 }

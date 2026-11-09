@@ -79,9 +79,6 @@ final class VoiceSessionController {
         case leaveBy(toolCallID: String, plan: LeaveByPlan)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
-        /// "Send this text to you?" (ADR-750 U2): from Doddy's number to the user's own verified
-        /// number, exactly `draft.body`. The tap approves that text for that number only.
-        case text(toolCallID: String, draft: ApprovedTextDraft)
         /// "Call you later?" (ADR-754): from Doddy's number to the user's own verified number `to`,
         /// at `draft.at`, saying `draft.reason` first. The tap approves that with the card's
         /// quiet-hours switch (`callLaterAllowQuiet`).
@@ -110,7 +107,7 @@ final class VoiceSessionController {
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
-                 .presentation(let id, _), .camera(let id), .home(let id, _), .text(let id, _), .callLater(let id, _, _, _):
+                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _):
                 id
             }
         }
@@ -1728,12 +1725,6 @@ final class VoiceSessionController {
             let record = await runConfirmedCloud(call, approvalID: approvalID, app: asked[id]?.app ?? .gmail)
             writeResults[id] = WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
             await reply(id, record.reply)
-        case .text(let id, let draft):
-            textSending = true
-            let result = await sendApprovedText(draft)
-            textSending = false
-            writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
-            await reply(id, result.reply)
         case .callLater(let id, let draft, let to, let quietHours):
             callBooking = true
             let result = await bookCall(draft, to: to, quietHours: quietHours, allowQuietHours: callLaterAllowQuiet)
@@ -1953,7 +1944,6 @@ final class VoiceSessionController {
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .blik(let id, _, _, _): await reply(id, VoiceToolReply.blikDeclined)
-        case .text(let id, _): await reply(id, VoiceToolReply.textDeclined)
         case .callLater(let id, _, _, _):
             callLaterAllowQuiet = false
             await reply(id, VoiceToolReply.callDeclined)
@@ -2518,9 +2508,8 @@ final class VoiceSessionController {
         // A spoken yes answers a read only (ADR-483); an ask that needs a tap (ADR-716) says nothing of "yes".
         case .ask(_, _, let needsTap, _, _): return needsTap ? .other : .askFirst
         case .cloudRead: return .askFirst
-        // A text from Doddy's number, or a call booked for later (ADR-752, ADR-754): not "a text you send yourself",
-        // so the island says only that something waits for a tap.
-        case .memory, .plan, .bulk, .undo, .parking, .home, .text, .callLater: return .other
+        // A call booked for later (ADR-754): the island says only that something waits for a tap.
+        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater: return .other
         }
     }
 
@@ -3973,8 +3962,9 @@ final class VoiceSessionController {
         return client
     }
 
-    /// Asks Doddy's server which number is the user's and whether texts are on before the card is
-    /// shown. Nothing is sent here; the card waits for the tap.
+    /// Asks Doddy's server which number is the user's and whether texts are on, then sends the text at
+    /// once: to the user's own verified number only, with no card (owner, 9 Nov 2026, decision
+    /// 2026-11-09-restaurant-calls-one-tap). Exactly the same text sent a few minutes ago isn't sent again.
     private func proposeText(_ body: String, toolCallID: String) async {
         guard let client = Self.messagingClient() else {
             await reply(toolCallID, VoiceToolReply.textNoServer, isError: true)
@@ -3996,11 +3986,22 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.textNotReady(readiness))
             return
         }
-        propose(.text(toolCallID: toolCallID, draft: ApprovedTextDraft(body: body, to: to)), toolCallID: toolCallID)
+        let draft = ApprovedTextDraft(body: body, to: to)
+        guard !TextRepeat.sentMomentsAgo(draft.approvalHash, queued: Self.queuedTexts, now: Date()) else {
+            await reply(toolCallID, VoiceToolReply.textSentMomentsAgo)
+            return
+        }
+        // On disk before the text leaves, as for a confirmed card: a crash mid-send shows "Not sure" (ADR-321).
+        markStarted(toolCallID)
+        textSending = true
+        let result = await sendApprovedText(draft)
+        textSending = false
+        writeResults[toolCallID] = WriteResult(reply: result.reply, attempted: result.attempted)
+        await reply(toolCallID, result.reply)
     }
 
-    /// After the tap: the text and the approval hash of exactly what the card showed go to the
-    /// server, which checks the hash against the number it holds before queueing. Then a few
+    /// The text and the approval hash of exactly that text and number go to the server, which checks
+    /// the hash against the number it holds before queueing. Then a few
     /// seconds of status, so the reply says what is known and no more (DOD-08).
     private func sendApprovedText(_ draft: ApprovedTextDraft) async -> (reply: String, attempted: Bool) {
         guard let client = Self.messagingClient() else { return (VoiceToolReply.textNoServer, false) }
@@ -4992,7 +4993,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .text, .callLater: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only
