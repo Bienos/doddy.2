@@ -1,0 +1,2 @@
+Texts to the user's contacts from Doddy's number, step 1 of decision `2026-11-09-texts-to-contacts`: the rule (contacts only, number read from Contacts by the app, one tap per text bound to number and text, no signature, 50 a day) in `doddy_rules.yaml` and DoddyCore `ContactText`. Nothing sends a text to a contact yet; the server route, card and voice tool are steps 2 to 4.
+Ran: make test-core (2,796 tests, 0 failures, Linux). Not run: server tests (no change there yet).
