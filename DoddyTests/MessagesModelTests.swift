@@ -52,7 +52,8 @@ final class MessagesModelTests: XCTestCase {
         model.send(using: service, policy: policy, locale: "en")
         await settle(model)
 
-        let second = try XCTUnwrap(await client.requests.last)
+        let requests = await client.requests
+        let second = try XCTUnwrap(requests.last)
         let sent = second.recentTurns.map(\.text).joined(separator: "\n")
         XCTAssertFalse(sent.contains("secret-item"), "a list read on the phone is not sent to the model")
         XCTAssertFalse(sent.contains("Shopping"), "nor is the offer's payload")
