@@ -413,8 +413,17 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
 
     await consent(h, true);
     outbound.next = [{ kind: "rejected", code: "twilio_21215" }];
-    const refused = await call("POST", "/v1/calls/outbound", h);
+    const lines: string[] = [];
+    const realLog = console.log;
+    console.log = (line: unknown) => { lines.push(String(line)); };
+    let refused;
+    try { refused = await call("POST", "/v1/calls/outbound", h); } finally { console.log = realLog; }
     assert.equal(refused.statusCode, 502);
+    // The refusal's code is logged with the call id, and never the number.
+    const logged = lines.map((l) => { try { return JSON.parse(l); } catch { return {}; } }).find((l) => l.msg === "outbound call");
+    assert.deepEqual({ id: logged?.id, state: logged?.state, code: logged?.code },
+      { id: refused.json().callId, state: "failed", code: "twilio_21215" });
+    assert.equal(lines.some((l) => l.includes("500000021")), false);
     assert.deepEqual((await db.query("SELECT status, error_code FROM calls WHERE id = $1", [refused.json().callId])).rows[0],
       { status: "failed", error_code: "twilio_21215" });
   });
