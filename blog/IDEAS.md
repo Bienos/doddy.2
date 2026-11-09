@@ -47,7 +47,7 @@ write a post before its "Ready when" is true.
 - **Shows:** The brand clash, why the redraw won (white sneakers, warm orange on paper), and the
   rule that the character never gets in the way of the task.
 - **Evidence:** ADR-056, `docs/design/BRAND_GUIDELINES.md`, the pose SVGs on the site.
-- **Ready when:** now. Only use art from `site/assets/poses/`.
+- **Ready when:** now. Only use art from the owner's pack (`site/assets/day/poses/`); the v1.3 SVGs this idea would show were deleted on 9 Nov 2026 and are in git history.
 
 ### 6. "One morning in Warsaw: making Doddy's first film"
 - **Opening:** "75 seconds, one city and a stick figure."

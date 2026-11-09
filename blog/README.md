@@ -38,8 +38,9 @@ The blog follows the same honesty contract as the code (`CLAUDE.md`, `README.md`
 
 ## Look
 
-Banners, card thumbnails and spot drawings use only the approved light poses in
-`site/assets/poses/` (copies of `design/interface-v1.2/assets/`). The notebook paper, tape, glow and
+Banners, card thumbnails and spot drawings use only poses from the owner's pack in
+`site/assets/day/poses/` (by name, e.g. `banner_pose: wave` or `{{doddy belly_reading "…"}}`); the v1.3
+SVGs in `site/assets/poses/` were deleted on 9 Nov 2026 (decision `2026-11-09-remove-old-design-leftovers`). The notebook paper, tape, glow and
 doodles are CSS and inline SVG. Don't generate new pictures of Doddy for the blog.
 
 ## Front matter
