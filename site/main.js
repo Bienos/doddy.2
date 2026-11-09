@@ -58,27 +58,6 @@ new IntersectionObserver(([entry]) => {
   else video.pause();
 }, { threshold: 0.4 }).observe(player);
 
-// ---------- Voice: step through the app's real status words while the section is on screen ----------
-const voiceStates = [...document.querySelectorAll(".voice-states li")];
-let voiceTimer = null;
-function showVoiceState(i) {
-  voiceStates.forEach((li, j) => li.classList.toggle("now", j === i));
-}
-const voiceSection = document.querySelector(".voice");
-if (!voiceSection || voiceStates.length === 0) {
-  // No voice section on this page (ADR-482).
-} else if (reduceMotion.matches) {
-  showVoiceState(1);
-} else {
-  new IntersectionObserver(([entry]) => {
-    clearInterval(voiceTimer);
-    if (!entry.isIntersecting) return;
-    let i = 0;
-    showVoiceState(i);
-    voiceTimer = setInterval(() => { i = (i + 1) % voiceStates.length; showVoiceState(i); }, 1400);
-  }, { threshold: 0.4 }).observe(voiceSection);
-}
-
 // ---------- Waitlist ----------
 const form = document.querySelector(".waitlist");
 const email = form.querySelector("#email");

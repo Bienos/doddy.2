@@ -1,23 +1,24 @@
 # Brand and design index
 
-One map of every brand/design source in this repo. **Status: reference only.** Nothing here is an owner-approved production identity yet; precedence is defined in `CANONICAL_DESIGN_DIRECTION.md`.
+One map of every brand and design source in this repo. **Current (9 Nov 2026):** Brand Guidelines V2.2 is the brand reference (ADR-556); the design is what the app shows now plus the folders ADR-548 names. Sections 2 to 4 below are the October history and are kept as written.
 
 ## 1. Where things are
 
 | Area | Location | Role |
 |---|---|---|
-| Working UI reference ("Pocket Notebook", v1.2) | `design/interface-v1.2/` (`docs/`, `assets/` SVGs, `previews/`, 42-screen `index.html`) | **Primary visual reference** for the native shell |
-| iOS asset candidates | `design/ios-ready-asset-catalog/DoddyCharacter.xcassets` | Generated PNG exports of the v1.2 character; rights/fidelity unconfirmed |
-| Design decision records | `docs/design/` (`CANONICAL_DESIGN_DIRECTION`, `BRAND_AND_CHARACTER`, `ASSET_FONT_AND_RIGHTS_HANDOFF`, `GAPS_AND_DECISIONS`, `SCREEN_TO_IMPLEMENTATION_MAP`) | Precedence, rights, open gaps |
-| Visual comparison | `VISUAL_REVIEW/` | Pocket Notebook vs Quiet Companion vs Tiny Investigation |
-| Brand guidelines v1.3 — original archives | `reference/original_archives/DODDY_BRAND_SYSTEM_v1.3.zip`, `…_v1.3_COMPLETE.zip` | **Source of truth** for the v1.3 pack (hashes in `reference/ARCHIVE_CHECKSUMS.md`) |
-| Brand guidelines v1.3 — readable extracts | `reference/brand_v1.3_unpacked/{v1.3,v1.3_COMPLETE}/` | PDF (57 pp), PPTX (57 slides), markdown specs and token JSON only. Images, SVGs, GIFs and mockups stay inside the zips |
-| Character, voice, personality | `reference/original_archives/DODDY_Character_Bible_v1_Complete.zip`; `reference/character_evals/` | Behaviour/voice reference |
+| Brand guidelines | `design/brand-v2.2/` (PDF and provenance README); what was adopted: `docs/design/BRAND_V2_2_REVIEW.md` | **First reference** for colour, type, motion and how Doddy speaks (ADR-556) |
+| Character art | The owner's `DODDY-Numbered-Video-Assets-v01` pack, imported as `UploadedDoddy_*` and `WholeDoddy_*` (and the strips, eyes and scenery cut from it); provenance and hashes in `docs/design/UPLOADED_MEMORY_ASSETS.md` | **The only character art** for new work (owner, 11 Oct) |
+| App design | What the app shows now: Home as the calm "I'm here" screen (ADR-545, bar per ADR-633, persistent Doddy per ADR-552) and the memory-journey screens | ADR-548 |
+| Dynamic Island | `design/dynamic-island-v4/` | ADR-548, ADR-653 |
+| Motion | `design/motion-v2/` | ADR-554 |
+| Website | `design/website-what-can-doddy-do/`, `design/website-homepage-vision/g-sort-thursday.html` | ADR-548 |
+| Design decision records | `docs/design/` (`CANONICAL_DESIGN_DIRECTION`, `BRAND_AND_CHARACTER`, `ASSET_FONT_AND_RIGHTS_HANDOFF`, `GAPS_AND_DECISIONS`, `SCREEN_TO_IMPLEMENTATION_MAP` are imported pack files, kept unchanged and hash-checked) | Precedence, rights, open gaps; where they name Pocket Notebook as current, ADR-548 supersedes them |
+| Brand guidelines v1.3 (history) | `reference/original_archives/DODDY_BRAND_SYSTEM_v1.3.zip`, `…_v1.3_COMPLETE.zip` (hashes in `reference/ARCHIVE_CHECKSUMS.md`) | History only (ADR-056) |
+| Character, voice, personality | `reference/original_archives/DODDY_Character_Bible_v1_Complete.zip`; `reference/character_evals/` | Behaviour and voice reference |
 | Research | `reference/original_archives/DODDY_Deep_Research_2026-10-08.zip`, `…First_Useful_Product_Research_2026.zip`; `reference/compiled_research/` | Evidence, not binding |
-| Historical candidate brand assets | `assets/brand_candidate/` | **Do not mix** with v1.2 tokens without approval |
-| Code tokens | `Packages/DoddyCore/Sources/DoddyDesignTokens/CandidateTokens.swift` (+ tests), `DoddyApp/DesignSystem/` | Candidate values used by the M0 shell |
+| Code tokens | `Packages/DoddyCore/Sources/DoddyDesignTokens/`: `UploadedTokens.swift` (what the app's `Theme` reads) and `CandidateTokens.swift` (what the site and Doddy Web are generated from, with the V2.2 orange) | The only place colour values live |
 
-The extracts under `reference/brand_v1.3_unpacked/` are copies from the zips; if they ever differ, the zips win.
+**Deleted, in git history:** `design/interface-v1.2/` (Pocket Notebook), `design/ios-ready-asset-catalog/`, `VISUAL_REVIEW/` (ADR-548); `reference/brand_v1.3_unpacked/` (readable copies of the two v1.3 zips) and `assets/brand_candidate/` (the historical candidate art), on 9 Nov 2026 (decision `docs/decisions/2026-11-09-remove-old-design-leftovers.md`). The zips still hold everything the extracts had.
 
 ## 2. Decision: brand master = `v1.3_COMPLETE` (owner, 2026-10-08, in chat) — **superseded**
 

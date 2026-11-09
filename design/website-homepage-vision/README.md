@@ -1,6 +1,6 @@
 # Homepage vision (only the chosen option is kept)
 
-**20 Oct 2026 (ADR-548):** options A to F and H were deleted on the owner's instruction; only `g-sort-thursday.html` (round 3, chosen) and its shared CSS and screenshots remain. The text below is the original brief and mentions the deleted files; read them with `git show f7eedf0:design/website-homepage-vision/<file>`.
+**20 Oct 2026 (ADR-548):** options A to F and H were deleted on the owner's instruction; only `g-sort-thursday.html` (round 3, chosen), its `agent.css` and screenshots remain. **9 Nov 2026:** `notebook.css`, `vision.css` and `icons.svg.partial`, which only the deleted options loaded (G inlines its icons), were deleted too (decision `docs/decisions/2026-11-09-remove-old-design-leftovers.md`). The text below is the original brief and mentions the deleted files; read them with `git show f7eedf0:design/website-homepage-vision/<file>`.
 
 # Homepage vision: round 3 (G, H), round 2 (D, E, F), round 1 (A, B, C)
 

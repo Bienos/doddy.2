@@ -98,33 +98,6 @@ struct MemoryTextEditor: View {
     }
 }
 
-struct MemoryRow: View {
-    let record: MemoryRecord
-    var matchedTerms: [String] = []
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "note.text")
-                .foregroundStyle(Theme.secondaryText)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(record.currentText)
-                    .lineLimit(3)
-                Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))\(record.userEdited ? " · corrected" : "")")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                if !matchedTerms.isEmpty {
-                    Text("Matched: \(matchedTerms.joined(separator: ", "))")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.accentText)
-                }
-            }
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
-    }
-}
-
 struct ProblemView: View {
     let message: String
     /// Doddy's facepalm beside the message (ADR-299), for a whole screen that failed (a save,
