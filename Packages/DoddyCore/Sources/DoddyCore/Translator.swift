@@ -291,7 +291,8 @@ public struct TranslatorSetup: Equatable, Sendable {
 
     /// What the agent hears about the mode, in the `translator_start` variable or the tool reply.
     public var agentDescription: String {
-        let theirs = other.map { "\($0.englishName) (\($0.code))" } ?? "not known yet: detect it when they speak"
+        let theirs = other.map { "\($0.englishName) (\($0.code))" }
+            ?? "not known yet: the first language you hear that isn't \(owner.englishName) is theirs"
         switch kind {
         case .faceToFace:
             return "face to face. The user speaks \(owner.englishName) (\(owner.code)); the other person speaks \(theirs)."
@@ -308,11 +309,48 @@ public enum TranslatorPrompt {
 
     public static func render(_ preset: TranslatorSetup?) -> String {
         guard let preset else { return "none" }
+        // 9 Nov 2026 (owner: "słyszy obcego i od razu tłumaczy na polski"): the conversation log showed
+        // Doddy calling start_translator again, being refused and talking about it in English instead of
+        // translating. The mode is already on here, the opening line was the disclosure, and the user
+        // started it to have what is said next translated, so nothing is asked first.
         var text = "Translator mode is on from the start: \(preset.agentDescription)"
+        text += " It is already on: never call start_translator, and never talk about the mode."
         if preset.kind == .faceToFace, let other = preset.other {
-            text += " When the app says so, first say exactly this to them, in \(other.englishName): \"\(other.hello)\""
+            text += " Your first message was the AI translator disclosure to them, in \(other.englishName): \"\(other.hello)\" Don't say it again."
         }
+        text += " Don't ask the user what to translate. From the first word, " + preset.directions
         return text
+    }
+
+    /// What Doddy says first in a conversation opened for translating (`{{opening_line}}`): the
+    /// disclosure in their language when it is known, otherwise one short line in the owner's.
+    public static func openingLine(_ setup: TranslatorSetup) -> String {
+        let polish = setup.owner.code == "pl"
+        switch (setup.kind, setup.other) {
+        case (.faceToFace, let other?):
+            return other.hello
+        case (.faceToFace, nil):
+            return polish ? "Tłumaczę. Mów albo daj mówić drugiej osobie." : "I'm translating. Speak, or let the other person speak."
+        case (.listen, _):
+            return polish ? "Słucham i tłumaczę na polski." : "Listening. I'll translate into \(setup.owner.englishName)."
+        }
+    }
+}
+
+extension TranslatorSetup {
+    /// Which way each line goes, said plainly for the agent. With their language unknown, the user's
+    /// own first words go into English (or Polish for an English speaker) until the other person speaks.
+    var directions: String {
+        let owner = self.owner.englishName
+        switch (kind, other) {
+        case (.listen, _):
+            return "translate everything you hear into \(owner) for the user, one short line at a time, as soon as each sentence ends. Say nothing else."
+        case (.faceToFace, let other?):
+            return "translate every turn as soon as it ends: \(owner) into \(other.englishName), \(other.englishName) into \(owner). Say only the translation."
+        case (.faceToFace, nil):
+            let fallback = self.owner == TranslatorLanguages.english ? TranslatorLanguages.named("pl")! : TranslatorLanguages.english
+            return "translate every turn as soon as it ends. When the other person speaks, say the AI translator disclosure once in their language, then translate what they said into \(owner). When the user speaks \(owner), translate it into the other person's language; until you have heard it, into \(fallback.englishName) (say the \(fallback.englishName) disclosure once first). Say only the translation."
+        }
     }
 }
 
@@ -379,9 +417,13 @@ extension VoiceToolRequest {
 /// While translator mode is on, the app runs no tool: no notes, reminders, calendar, contacts,
 /// accounts or web. Only stop_translator is answered.
 public enum TranslatorPolicy {
+    /// stop_translator, and start_translator, which is answered "already on" (`translatorAlreadyOn`)
+    /// so the agent keeps translating instead of explaining a refusal.
     public static func allows(_ request: VoiceToolRequest) -> Bool {
-        if case .stopTranslator = request { return true }
-        return false
+        switch request {
+        case .stopTranslator, .startTranslator: return true
+        default: return false
+        }
     }
 }
 
@@ -395,7 +437,7 @@ extension VoiceToolReply {
             // ADR-619: it started without asking, so the user may not have said what yet.
             lines.append(Self.askWhatToTranslate(setup.owner))
         case (.faceToFace, nil):
-            lines.append("Their language isn't known yet. Tell the user in one short sentence, in \(setup.owner.englishName), to let them say something first. When they first speak, say the AI translator disclosure to them in their language before anything else, then translate.")
+            lines.append("Their language isn't known yet. Say nothing now; " + setup.directions)
         case (.listen, _):
             lines.append("Say nothing to anyone else. Translate each thing you hear into \(setup.owner.englishName) for the user, one short line at a time.")
         }
@@ -407,6 +449,12 @@ extension VoiceToolReply {
     static func askWhatToTranslate(_ owner: TranslatorLanguage) -> String {
         "If the user hasn't said yet what to translate, ask them once, in \(owner.englishName), in one short line, what to translate"
             + (owner.code == "pl" ? " (for example \"Co mam przetłumaczyć?\")" : "") + "; then only translate."
+    }
+
+    /// start_translator while the mode is on: nothing changes, and the agent goes on translating.
+    public static func translatorAlreadyOn(_ setup: TranslatorSetup) -> String {
+        "started: translator mode is already on, \(setup.agentDescription) Nothing changed. Don't mention it and don't call start_translator again; "
+            + setup.directions
     }
 
     public static let translatorDeclined = "declined: the user chose not to start translating. Nothing changed; talk normally."

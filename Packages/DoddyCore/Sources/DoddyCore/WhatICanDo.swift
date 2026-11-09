@@ -225,3 +225,33 @@ public enum WhatICanDo {
         }
     }
 }
+
+extension WhatICanDo {
+    /// "Say, for example": one thing a person could ask, shown on the feature's scene in What I can do
+    /// (owner, 9 Nov 2026: show the features more vividly). An example of asking, never the person's data
+    /// and never a claim that it was done. Messages is typed, so its example is something to type.
+    public static func example(_ ability: DoddyAbility, _ language: NotificationLanguage) -> String {
+        let polish = language == .polish
+        switch ability {
+        case .talk: return polish ? "Ile to 15% z 240 zł?" : "What’s 15% of 240?"
+        case .notes: return polish ? "Zapisz: rower stoi na poziomie −2." : "Note: the bike is on level −2."
+        case .lists: return polish ? "Dopisz mleko i chleb do zakupów." : "Add milk and bread to the shopping list."
+        case .reminders: return polish ? "Przypomnij mi jutro o 8, żeby zadzwonić do mamy." : "Remind me at 8 tomorrow to call Mum."
+        case .messages: return polish ? "Co jest na tym zdjęciu?" : "What’s in this photo?"
+        case .phoneCalls: return polish ? "Zadzwoń do mnie za godzinę." : "Call me in an hour."
+        case .callsForYou: return polish ? "Zadzwoń do serwisu i zapytaj, czy laptop jest gotowy." : "Ring the repair shop and ask if my laptop is ready."
+        case .tasks: return polish ? "Porównaj loty do Lizbony w maju." : "Compare flights to Lisbon in May."
+        case .leaflets: return polish ? "Gdzie w tym tygodniu jest najtańsze masło?" : "Where’s butter cheapest this week?"
+        case .translator: return polish ? "Tłumacz, rozmawiam z kimś po hiszpańsku." : "Translate, I’m talking to someone in Spanish."
+        }
+    }
+
+    /// "Say" or "Type", over the example.
+    public static func exampleLead(_ ability: DoddyAbility, _ language: NotificationLanguage) -> String {
+        let typed = ability == .messages
+        switch language {
+        case .polish: return typed ? "Napisz na przykład" : "Powiedz na przykład"
+        case .english: return typed ? "Type, for example" : "Say, for example"
+        }
+    }
+}
