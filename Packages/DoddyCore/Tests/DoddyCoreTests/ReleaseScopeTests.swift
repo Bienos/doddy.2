@@ -57,7 +57,8 @@ final class ReleaseScopeTests: XCTestCase {
     func testShippingKeepsTheProductAndHidesTheRest() {
         let scope = ReleaseScope.shipping
         // Shown: what the beta promises (V1_SCOPE.md).
-        for feature in [Feature.messages, .photosAndCamera] {
+        // The translator is shown too (owner, 8 Nov 2026: decision 2026-11-08-translator-in-beta).
+        for feature in [Feature.messages, .photosAndCamera, .translator] {
             XCTAssertTrue(scope.shows(feature), "\(feature)")
         }
         for tool in ReleaseScope.coreTools {
@@ -65,7 +66,7 @@ final class ReleaseScopeTests: XCTestCase {
         }
         // Hidden: every server feature, every vendor, every permission the beta doesn't ask for.
         for feature in [Feature.deals, .errands, .onlineAccounts, .phoneCalls, .callCases, .recordings, .homeKit,
-                        .translator, .planCard, .voiceProviderPicker, .parking, .leaveBy, .placeReminders] {
+                        .planCard, .voiceProviderPicker, .parking, .leaveBy, .placeReminders] {
             XCTAssertFalse(scope.shows(feature), "\(feature)")
         }
         for tool in CloudToolName.all {
@@ -73,7 +74,8 @@ final class ReleaseScopeTests: XCTestCase {
         }
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.findDeals), .deals)
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.handOverErrand), .errands)
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.startTranslator), .translator)
+        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.startTranslator), "the translator runs in the beta")
+        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.stopTranslator))
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.proposePlan), .planCard)
         // Merged into main after the list was first written (8 Nov): placed, and hidden in the beta.
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.makeSomething), .studio)

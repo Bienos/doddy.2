@@ -267,11 +267,14 @@ struct TranslatorScreen: View {
     }
 
     private var statusText: String {
-        if controller.holdToTalk { return controller.heldSide == nil ? "Hold a button to talk" : "Listening" }
+        // Every word goes through the catalog: a plain String in Text(_:) is shown as written, in English.
+        if controller.holdToTalk {
+            return controller.heldSide == nil ? NSLocalizedString("Hold a button to talk", comment: "") : NSLocalizedString("Listening", comment: "")
+        }
         switch controller.phase {
         case .speaking: return NSLocalizedString("Doddy is speaking", comment: "")
         case .thinking: return NSLocalizedString("Translating", comment: "")
-        case .listening: return controller.isMuted ? "Paused" : "Listening"
+        case .listening: return controller.isMuted ? NSLocalizedString("Paused", comment: "") : NSLocalizedString("Listening", comment: "")
         default: return NSLocalizedString("Connecting", comment: "")
         }
     }
