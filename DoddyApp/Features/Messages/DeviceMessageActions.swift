@@ -98,6 +98,10 @@ final class DeviceMessageActions: LocalMessageActionExecuting {
                 }
             default: return stopped
             }
+        } catch ListError.notFound {
+            return .failed(text("Nic nie zmieniono. Nie znaleziono jednoznacznej, dostępnej listy o tej nazwie. Podaj jej dokładną nazwę.", "Nothing changed. No unambiguous, available list has that name. Give its exact name."))
+        } catch ListError.nameTaken {
+            return .failed(text("Nie utworzono listy. Ta nazwa jest już zajęta. Podaj inną nazwę.", "List not created. That name is already taken. Give another name."))
         } catch {
             // A repository may have committed before its verification failed. Never imply no write
             // happened and never leave a retry button for an uncertain write.

@@ -1,9 +1,25 @@
 import DoddyCore
+import SwiftUI
 import XCTest
 @testable import Doddy
 
 /// Real in-memory SQLite; no cloud model, microphone or EventKit writes.
 final class DeviceMessageActionsTests: XCTestCase {
+    @MainActor
+    func testProposalCardRendersWithoutExecutingAnything() throws {
+        let action = try XCTUnwrap(LocalMessageAction.make(name: "create_list", parametersJSON: #"{"name":"Weekend shopping","items":["Oat milk","Eggs","Bread"]}"#))
+        var calls = 0
+        let view = LocalMessageActionCard(action: action, busy: false, confirm: { calls += 1 }, dismiss: {})
+            .padding(20).frame(width: 393).background(Theme.canvas)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 3
+        let image = try XCTUnwrap(renderer.uiImage)
+        XCTAssertEqual(calls, 0)
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "Messages-local-action-card-synthetic-data"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
     @MainActor
     func testTextWritesUseTheSameStoreAndPrivateReadsStayOut() async throws {
         let defaults = UserDefaults.standard
