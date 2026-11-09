@@ -117,7 +117,10 @@ public struct GatewayAssistantClient: AssistantClient {
         // A plan offer that is not one of the five goals is dropped the same way; days and minutes the screen
         // doesn't offer become the screen's own defaults (ADR-626).
         let planAsk = wire.plan.flatMap { PlanAsk.make(goalName: $0.goal, daysPerWeek: $0.daysPerWeek, minutesPerSession: $0.minutesPerSession) }
-        return AssistantReply(text: wire.text, citedMemoryIDs: cited, proposal: proposal, planAsk: planAsk)
+        let localAction = request.localActions == nil ? nil : wire.localAction.flatMap {
+            LocalMessageAction.make(name: $0.name, parametersJSON: $0.parametersJSON)
+        }
+        return AssistantReply(text: wire.text, citedMemoryIDs: cited, proposal: proposal, planAsk: planAsk, localAction: localAction)
     }
 
     static func error(from response: GatewayHTTPResponse) -> AssistantError {

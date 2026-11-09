@@ -1,0 +1,3 @@
+Messages can propose saving/finding notes, creating/reading/changing lists and adding reminders. Exact-payload cards require a tap; native storage receipts decide the result. Account/lock/consent/switch checks and one-shot execution prevent stale or repeated actions.
+Decision: 2026-11-09-messages-local-actions. The server change must be deployed before this capability works in a shipped app; old servers continue plain chat. No live deployment or agent change was made.
+Validation results are recorded in the pull request. Physical-device EventKit/notification and live-model selection checks remain outstanding.

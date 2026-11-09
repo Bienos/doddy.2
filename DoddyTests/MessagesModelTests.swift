@@ -11,6 +11,48 @@ import XCTest
 // the server. Also run on Linux by scripts/test_messages_model.sh.
 
 final class MessagesModelTests: XCTestCase {
+    @MainActor
+    func testLocalActionNeedsATapIsConsumedOnceAndPersistsOnlyNativeReceipt() async throws {
+        let action = try XCTUnwrap(LocalMessageAction.make(name: "save_memory", parametersJSON: #"{"text":"Keep exactly"}"#))
+        let (model, repo, _, service) = await loaded(client: ScriptedClient([.local(action)]))
+        model.draft = "Save this"
+        model.send(using: service, policy: AssistantPolicy(consentGranted: true, includeNotes: false, localActionsEnabled: true), locale: "en")
+        await settle(model)
+        let id = try XCTUnwrap(model.localActions.keys.first)
+        XCTAssertFalse(model.messages.last!.text.contains("Already saved"), "model wording is not a receipt")
+        let executor = RecordingLocalActions(outcome: .unknown("Check Notes before asking again"))
+        XCTAssertEqual(executor.calls, 0)
+        async let first: Void = model.confirmLocalAction(id, using: executor)
+        async let second: Void = model.confirmLocalAction(id, using: executor)
+        _ = await (first, second)
+        XCTAssertEqual(executor.calls, 1)
+        XCTAssertTrue(model.localActions.isEmpty)
+        XCTAssertEqual(model.messages.last?.text, "Check Notes before asking again")
+        let saved = await repo.all()
+        XCTAssertEqual(saved.last?.text, model.messages.last?.text)
+    }
+
+    @MainActor
+    func testClosedOrDifferentAccountCannotConfirmPendingAction() async throws {
+        let action = try XCTUnwrap(LocalMessageAction.make(name: "save_memory", parametersJSON: #"{"text":"Keep exactly"}"#))
+        let repo = FakeThread()
+        let account = MessageActionAccountScope()
+        let model = MessagesModel(repository: repo, actionScope: { account.value })
+        await model.load()
+        let service = AssistantService(recall: NoNotes(), client: ScriptedClient([.local(action), .local(action)]), backoff: [])
+        let policy = AssistantPolicy(consentGranted: true, includeNotes: false, localActionsEnabled: true)
+        model.draft = "Save"; model.send(using: service, policy: policy, locale: "en"); await settle(model)
+        let id = try XCTUnwrap(model.localActions.keys.first)
+        account.value = "bob"
+        let executor = RecordingLocalActions(outcome: .completed("Saved"))
+        await model.confirmLocalAction(id, using: executor)
+        XCTAssertEqual(executor.calls, 0)
+        model.draft = "Save"; model.send(using: service, policy: policy, locale: "en"); await settle(model)
+        model.cancel()
+        XCTAssertTrue(model.localActions.isEmpty)
+        await model.confirmLocalAction(id, using: executor)
+        XCTAssertEqual(executor.calls, 0)
+    }
     private let on = AssistantPolicy(consentGranted: true, includeNotes: false)
     private let t0 = Date(timeIntervalSince1970: 1_792_000_000)
 
@@ -422,6 +464,7 @@ private struct NoNotes: RecallService {
 
 private actor ScriptedClient: AssistantClient {
     enum Step {
+        case local(LocalMessageAction)
         case reply(String)
         /// An answer that also offers a file (ADR-606).
         case offer(String, AssistantProposal)
@@ -441,6 +484,7 @@ private actor ScriptedClient: AssistantClient {
         requests.append(request)
         guard !steps.isEmpty else { throw AssistantError.providerUnavailable }
         switch steps.removeFirst() {
+        case .local(let action): return AssistantReply(text: "Already saved (untrusted)", localAction: action)
         case .reply(let text): return AssistantReply(text: text)
         case .offer(let text, let proposal): return AssistantReply(text: text, proposal: proposal)
         case .offerPlan(let text, let ask): return AssistantReply(text: text, planAsk: ask)
@@ -514,3 +558,19 @@ private actor FakeSync: ThreadSyncClient {
         deletes += 1
     }
 }
+
+@MainActor
+private final class RecordingLocalActions: LocalMessageActionExecuting {
+    var calls = 0
+    let outcome: LocalMessageActionOutcome
+    init(outcome: LocalMessageActionOutcome) { self.outcome = outcome }
+    func execute(_ action: LocalMessageAction, stillAuthorised: @escaping @MainActor () -> Bool) async -> LocalMessageActionOutcome {
+        guard stillAuthorised() else { return .failed("Stopped") }
+        calls += 1
+        await Task.yield()
+        return outcome
+    }
+}
+
+@MainActor
+private final class MessageActionAccountScope { var value: String? = "alice" }

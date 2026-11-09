@@ -4,6 +4,21 @@ import XCTest
 /// Messages asks the messaging server (ADR-586): the wire is the gateway's, errors are `AssistantError`s, and a
 /// question that may have reached the server without an answer is "took too long", never "offline".
 final class ServerAssistantClientTests: XCTestCase {
+    func testStrictOldServerGetsOneLegacyRetryButTimeoutNeverDoes() async throws {
+        let req = AssistantRequest(sessionID: UUID(), userText: "Save note", requestID: id, localActions: .init())
+        let (old, transport, _) = client([failure(400, "invalidRequest"), answer()])
+        _ = try await old.respond(req)
+        let sent = await transport.sent
+        XCTAssertEqual(sent.count, 2)
+        let first = try JSONSerialization.jsonObject(with: XCTUnwrap(sent[0].body)) as! [String: Any]
+        let second = try JSONSerialization.jsonObject(with: XCTUnwrap(sent[1].body)) as! [String: Any]
+        XCTAssertNotNil(first["localActions"]); XCTAssertNil(second["localActions"])
+        let (slow, slowTransport, _) = client([failure(504, "timeout"), answer()])
+        let failure = await error { try await slow.respond(req) }
+        XCTAssertEqual(failure, .timeout)
+        let slowSent = await slowTransport.sent
+        XCTAssertEqual(slowSent.count, 1)
+    }
     private let id = UUID(uuidString: "6f1c1f5e-3b0a-4c55-9d0e-0a1b2c3d4e51")!
 
     private func request(_ text: String = "Kiedy mam dentystę?") -> AssistantRequest {
