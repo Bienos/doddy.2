@@ -2,10 +2,25 @@ import { describe, expect, test } from "vitest";
 import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, ToolsCatalog } from "../src/api/schemas.js";
 import { LogbookDeleted, LogbookView } from "../src/logbook/schema.js";
 import { ChatContext, ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../src/memory/schema.js";
+import { OwnerAccounts, OwnerFlag, OwnerOverview } from "../src/owner/schema.js";
 import { fixture } from "./fakeServer.js";
 
 /** The server writes these files from its own replies (backend: npm run fixtures:web / fixtures). */
 describe("the page reads what the server actually sends", () => {
+  test("the owner panel (backend: npm run fixtures:owner)", () => {
+    expect(OwnerFlag.parse(fixture("web/owner-flag")).owner).toBe(true);
+    const overview = OwnerOverview.parse(fixture("web/owner-overview"));
+    expect(overview.accounts.total).toBe(4);
+    expect(overview.logbook.activeByDay).toHaveLength(30);
+    expect(overview.conversations.heatmap).toHaveLength(7);
+    expect(overview.cohorts).toHaveLength(8);
+    expect(overview.activation).toEqual({ joined: 4, activated: 3 });
+    const accounts = OwnerAccounts.parse(fixture("web/owner-accounts"));
+    expect(accounts.accounts.map((a) => a.email).sort()).toEqual(["kasia@example.com", "owner@example.com", "tomek@example.com", "x7k2p9q4@privaterelay.appleid.com"]);
+    expect(accounts.accounts.every((a) => a.trend.length === 14)).toBe(true);
+    expect(LogbookView.parse(fixture("web/owner-account-logbook")).days.length).toBeGreaterThan(5);
+  });
+
   test("web sign-in and sessions", () => {
     expect(CurrentSession.parse(fixture("web/session-signed-in")).session.current).toBe(true);
     expect(CurrentSession.parse(fixture("web/session-current")).session.browser).toBe("chrome");

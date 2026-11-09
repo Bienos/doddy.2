@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router";
+import { lazy, Suspense } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import { useSession } from "./auth/session.js";
 import { AppShell } from "./components/AppShell.js";
 import { DoddyFigure } from "./components/Brand.js";
@@ -19,10 +20,14 @@ import { NotFoundPage } from "./pages/NotFoundPage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
 import { SignInPage } from "./pages/SignInPage.js";
 
+/** The admin dashboard is its own chunk, fetched only when /admin is opened (decision 2026-11-09-usage-counts-on-by-default). */
+const AdminPage = lazy(() => import("./pages/AdminPage.js"));
+
 /** Every page needs a session; without one, the sign-in page shows at whatever address was opened. */
 export function App() {
   const { state, recheck } = useSession();
   const { t } = useI18n();
+  const location = useLocation();
 
   if (state.status === "checking") {
     return (
@@ -42,6 +47,20 @@ export function App() {
     );
   }
   if (state.status === "signedOut") return <SignInPage />;
+  // Outside the workspace menu and shell: its own page, for the owner's accounts only.
+  if (location.pathname === "/admin") {
+    return (
+      <Suspense
+        fallback={
+          <main id="main" className="centered">
+            <Loading />
+          </main>
+        }
+      >
+        <AdminPage />
+      </Suspense>
+    );
+  }
 
   return (
     <AppShell>

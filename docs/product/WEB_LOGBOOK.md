@@ -160,7 +160,7 @@ Limits to keep in mind: the device sign-in is "first device owns the server" whi
 - **Stored:** one row of counts per day, for 1 year (owner, 22 Oct evening; decision 3), in the backend's Postgres. Confirm the Supabase project's region before launch, and only then let the page say where it is kept.
 - **Personal even without words:** the hour-by-hour pattern shows when someone is awake and busy. Only that person can see it, and the page says what it holds.
 - **Before launch:** `docs/legal/PRIVACY_POLICY_DRAFT.md` currently says the app has no analytics; it must describe Logbook (what, where, how long, how to delete) and get the legal review `doddy_rules.yaml` requires (`legal_review_required_before_launch`).
-- **Owner panel:** totals across all accounts and each account's days, owner-only (decision 2026-11-09-usage-counts-on-by-default). The switch and the page say that Doddy's team can see the counts.
+- **Owner panel:** totals across all accounts and each account's days, owner-only (decision 2026-11-09-usage-counts-on-by-default): the admin dashboard at `/admin` in Doddy Web (`docs/platforms/web.md`), `backend/src/web/owner.ts`. The switch and the page say that Doddy's team can see the counts.
 
 ## Build plan
 

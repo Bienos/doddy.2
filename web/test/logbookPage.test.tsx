@@ -44,8 +44,10 @@ describe("Logbook, At a glance", () => {
     const nav = screen.getByRole("navigation", { name: "Workspace" });
     expect(within(nav).getByRole("link", { name: "Logbook" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("tab", { name: /At a glance/ })).toHaveAttribute("aria-selected", "true");
-    // The session check, the health check and the Logbook read: no writes.
-    await waitFor(() => expect(seen.map((s) => `${s.method} ${s.path}`).sort()).toEqual(["GET /v1/health", "GET /v1/web/logbook", "GET /v1/web/session"]));
+    // The session check, the health check, the menu's owner check and the Logbook read: no writes.
+    await waitFor(() =>
+      expect(seen.map((s) => `${s.method} ${s.path}`).sort()).toEqual(["GET /v1/health", "GET /v1/web/logbook", "GET /v1/web/owner", "GET /v1/web/session"]),
+    );
   });
 
   test("the week is printed as a receipt, from the example's numbers", async () => {

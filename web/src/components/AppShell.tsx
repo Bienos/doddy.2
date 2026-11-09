@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { NavLink, useLocation } from "react-router";
+import { api } from "../api/client.js";
 import { useSession } from "../auth/session.js";
 import { useI18n } from "../i18n/i18n.js";
 import { IPHONE_SENDS_LOGBOOK, LOGBOOK_ENABLED } from "../logbook/config.js";
@@ -43,11 +44,32 @@ function useDemoMode(): boolean {
   return demo;
 }
 
+/**
+ * Whether this account sees the owner panel (decision 2026-11-09-usage-counts-on-by-default). Asked
+ * once; anything but the server's yes leaves the menu as it was.
+ */
+function useOwner(): boolean {
+  const [owner, setOwner] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    api
+      .isOwner(controller.signal)
+      .then((yes) => {
+        if (!controller.signal.aborted) setOwner(yes);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+  return owner;
+}
+
 /** The website's header: the wordmark, the sections in one row, Sign out; a Menu sheet on small screens. */
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const { signOut } = useSession();
   const demo = useDemoMode();
+  const owner = useOwner();
+  const sections = owner ? [...SECTIONS.slice(0, -1), { path: "/admin", label: "nav.owner" as MessageKey }, SECTIONS[SECTIONS.length - 1]!] : SECTIONS;
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -98,7 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </NavLink>
           <nav id={navId} className={`nav-menu ${open ? "is-open" : ""}`} aria-label={t("nav.label")}>
             <ul className="nav-links">
-              {SECTIONS.map((section) => (
+              {sections.map((section) => (
                 <li key={section.path}>
                   <NavLink to={section.path} end={section.path === "/"} className={({ isActive }) => `nav-link ${isActive ? "is-active" : ""}`}>
                     {t(section.label)}
