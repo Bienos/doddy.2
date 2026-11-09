@@ -1,3 +1,0 @@
-Web end-to-end tests: the console check lets only the menu's owner check (`GET /v1/web/owner`) answer 404, which the server does on purpose for everyone but an owner (#266 made every page load log one); and the Logbook test's receipt counts the days inside the week the page shows, so it no longer fails on a Monday or a Tuesday.
-Ran: `PLAYWRIGHT_CHROMIUM=/opt/pw-browsers/chromium npm run e2e --prefix web` 18 passed, 4 skipped (10 failed before; on a Monday). `npm run typecheck --prefix web`. Not run: the GitHub workflows don't run this suite; on other weekdays (the expectation is computed from the date).
-Tests only: nothing to deploy, nothing ships.

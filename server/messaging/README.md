@@ -16,7 +16,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Updates | `POST /v1/updates` `{text ≤640, channels:[push,sms], sendAt?, idempotencyKey}` · `GET/DELETE /v1/updates/:id` (the GET includes `lookup` for a text whose outcome was unknown) |
 | Texts to Doddy (U3, ADR-753) | `GET/PUT /v1/texts/settings` `{inboundEnabled?, language?, consentTextVersion?}`: the switch needs the consent wording the user agreed to; texts arrive through `POST /webhooks/twilio/sms`. `GET /v1/phone/history`: the user's call and text status rows and waiting notes, as JSON. `GET /v1/call-notes` now says each note's `source` (call or text). |
 | Approved texts (U2, ADR-752) | `POST /v1/texts` `{body ≤640, approvalHash, idempotencyKey}`: a text the user approved on a card, to their own verified number only. `approvalHash` is `src/approval.ts` over that number and the exact text; any difference is `409 approval_mismatch`. 20 per account per day, 300 across the server. Its status is read with `GET /v1/updates/:id`. |
-| Twilio webhooks | `POST /webhooks/twilio/sms` (STOP/START) · `POST /webhooks/twilio/status` (delivery receipts) · `POST /webhooks/twilio/voice` (someone calls Doddy) · `POST /webhooks/twilio/voice/outbound/:callId` (the user answered Doddy's call) · `POST /webhooks/twilio/call-status` (how a call went), all signature-checked |
+| Twilio webhooks | `POST /webhooks/twilio/sms` (STOP/START) · `POST /webhooks/twilio/status` (delivery receipts) · `POST /webhooks/twilio/voice` (someone calls Doddy) · `POST /webhooks/twilio/voice/outbound/:callId` (the user answered Doddy's call) · `POST /webhooks/twilio/call-status` (how a call went) · `POST /webhooks/twilio/callback-done` (after a call-back is put through), all signature-checked |
 | Calls (S2, app) | `GET/PUT /v1/calls/settings` (inbound on/off, outbound consent `calls-v1`, the iPhone's `timeZone`; the GET also says `quietHours` and the `timeZone` the server holds) · `PUT/DELETE /v1/calls/pin` · `POST /v1/calls/outbound` ("call me now") · `GET /v1/calls` |
 | Calls booked for later (U4, ADR-754) | `POST /v1/calls/scheduled` `{at (UTC, YYYY-MM-DDTHH:MM:SSZ), reason ≤200, timeZone, allowQuietHours, language, approvalHash, idempotencyKey}`: `approvalHash` is `src/approval.ts` over the verified number, `at`, the exact reason and the quiet-hours choice. 1 minute to 7 days ahead, 10 waiting, at most 3 calls in any hour and 10 in any day that holds it (made and booked, before and after). A repeat of the same key answers with the first request's call (409 `already_done` once it is over); the same time and reason already waiting is 409 `already_booked`. · `GET /v1/calls/scheduled` (the last 20, with the reason while it is kept) · `DELETE /v1/calls/scheduled/:id` (only while waiting) |
 | Memory on calls (opt-in) | `PUT /v1/memory-copy` `{enabled}` (off deletes every copy) · `PUT /v1/memory-copy/snapshot` (replaces the copy) |
@@ -27,11 +27,15 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Messages (ADR-586) | `POST /v1/assistant/ask` (below) |
 | Leaflets (ADR-609) | `POST /v1/deals/search` (below) |
 | Price watches | `/v1/watches…` (below) |
+| File-ready push (owner, 9 Nov 2026) | `POST /v1/file-watches` `{url, language: pl\|en}` → `201 {id}`: the app registers the signed link of a file Doddy's backend is making; only a link on `DOCUMENTS_ORIGIN` is accepted and it is stored encrypted. The worker asks the backend's `?status=1` about every 12 s and queues one push with no words when the file is ready or failed; dropped after 15 minutes, at most 10 open. Without `MEMORY_ENCRYPTION_KEY` or `DOCUMENTS_ORIGIN`: `503 file_watch_disabled`. Code: `src/fileWatches.ts`, `src/routes/fileWatches.ts`, migration `023_file_watches.sql`; doc `docs/implementation/FILE_READY_PUSH.md` |
 | Studio (ADR-740) | `POST /v1/studio` · `POST /v1/studio/:id/{approve,cancel}` · `GET /v1/studio` · `GET/DELETE /v1/studio/:id` · `GET /v1/studio/:id/files/:name` (below) |
 | News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` · `POST /v1/news/feed` (the stories behind the follows sent with the request, as cards, nothing stored; ADR-656) |
-| Health | `GET /healthz` |
+| Health | `GET /healthz`: `{ok: true}` after a `SELECT 1` on the database, `503 {ok: false}` when that fails |
 
 All `/v1` routes except account creation need `Authorization: Bearer <deviceToken>`.
+
+## Migrations
+`migrations/` holds `001`..`024`, applied in name order at startup (there is no `011`). `017` exists twice, `017_calls_through_server.sql` and `017_studio.sql`: two branches took it and both merged, and it is the one number allowed to repeat. Merged migrations are frozen: `test/migrationsFrozen.test.ts` fails when one is renamed, reordered or removed, or when a new file sorts before an applied one. A new migration takes the next free number (`025`) and appends its name to that test's list in the same commit.
 
 ## Rules built in
 - SMS goes out only to a **verified** number with **explicit in-app consent** and no STOP since. Consent is re-checked when the message is actually sent.
@@ -64,7 +68,7 @@ Accounts are free and anonymous, so the server caps what any one address, accoun
 - **Route:** every call to Doddy's Twilio number reaches this server first (`src/routes/twilioVoice.ts`).
   - The server decides who reaches the "Doddy (phone)" agent and connects them with ElevenLabs `register-call`.
   - The number stays on Doddy's Twilio account and is **not** imported into ElevenLabs.
-- **Who:** only a verified number whose owner turned calls on reaches the agent. Everyone else, including withheld numbers, hears one fixed sentence (Polish, then English, saying Doddy is an AI) and the call ends. No AI runs for them, and the log keeps only the reason, never the number.
+- **Who:** only a verified number whose owner turned calls on reaches the agent. Everyone else, including withheld numbers, hears one fixed sentence (Polish, then English, saying Doddy is an AI) and the call ends, except a call-back (below). No AI runs for them, and the log keeps only the reason, never the number.
 - **When something is missing:**
   - No phone agent configured: a fixed "not connected yet" sentence.
   - The agent can't be reached: "I can't talk right now", and the call is recorded as failed.
@@ -82,6 +86,7 @@ Accounts are free and anonymous, so the server caps what any one address, accoun
   - Twilio rings from `DODDY_PHONE_NUMBER`, and the session opens only when the user answers, once per call (consent is checked again then);
   - a timeout or Twilio server error is recorded as `unknown` and never redialled;
   - Twilio's status callbacks record ringing, answered, completed, busy, no answer, failed or canceled, and a status never moves backwards.
+- **Call-backs** (decision `2026-11-09-call-backs-and-contact-calls`, `src/callbacks.ts`, migration `024_callback_routes.sql`): a number Doddy dialled for a user in a task call, calling Doddy's number back, is told it is an AI and put through to that user's verified number, with Doddy's number as caller ID (the user's number is never shown). The route is a keyed hash of the dialled number, written in the transaction that claims the dial; an unanswered call-back tells the caller so (`/webhooks/twilio/callback-done`). Nothing is recorded or transcribed. It works without a phone agent. Every other stranger still hears the fixed sentence. Needs the Twilio number's "A call comes in" pointed at this server.
 - **Recording:** none. No TwiML or Twilio request asks to record, and TwiML that would record is refused.
 - **Agent setup:** run `node scripts/setup-phone-agent.mjs --dry-run` to see the requests, then run it for real after deploy. It prints the Twilio settings to use. The full steps are in `docs/integrations/PHONE_NUMBER_SETUP.md`, section "Unit U1".
 

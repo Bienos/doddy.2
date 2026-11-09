@@ -1,4 +1,0 @@
-iPhone: Doddy accounts are on (decision `2026-11-08-required-account`, the last step of 4b). `Config/Doddy-Info.plist` names the Supabase project `doddy-gateway` (`https://sliondswemhneuzehpoq.supabase.co`) and its publishable key, both public by design. From the build with this change, everyone signs in with Apple, Google or a code by email before using Doddy. Emptying the two values turns accounts off again in the next build.
-- UI-test launches with a per-test database (`-memoryTestID`) now count as test runs too, so no UI test sees accounts (the same rule as `AppLanguageStore`).
-- Merge only after the Supabase sign-in settings are done (`docs/OWNER_QUEUE.md`, row 23): at least Email with the code template and a working email sender, or the new build asks for a sign-in nobody can finish.
-Ran: `scripts/ci.sh --only checks` (the capability guard's secrets check included). Not compiled here (no Xcode); the hosted Mac job builds it.

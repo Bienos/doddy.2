@@ -26,7 +26,7 @@ mode 6.
 
 ```sh
 make test-core                 # the Swift package's tests; on Linux the Makefile adds the SQLite flags
-scripts/ci.sh --only checks    # pack integrity, guards, voice agent specs, generated files up to date, CI scripts' own tests
+scripts/ci.sh --only checks    # pack integrity, guards, voice agent specs, every generated file up to date, CI scripts' own tests
 scripts/ci.sh --core-only      # every Linux group: checks, swift, backend, node, messaging
 # or a Swift package test by hand (both flags on Linux only):
 swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
@@ -48,6 +48,15 @@ Generated files (string catalogs, site pages, blog, web assets, tokens) are neve
 `scripts/regen.sh`, then `scripts/ci.sh --only checks`. One `regen.sh` run is enough: `tools/build_site_i18n.py` runs
 last, because it translates the English pages that `build_blog.py` and `build_day.py` write; `scripts/test_regen.sh`
 (in the `checks` group) checks that.
+
+Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 21 in
+`DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
+SQL files, in the `messaging` group). Renaming, reordering or removing a merged migration, or adding a server file
+that sorts before an applied one, fails CI; a new migration appends its name to the list in the same commit.
+
+Doddy Web's browser tests (`npm run e2e --prefix web`: the real backend in mock mode and Chromium) run in
+`scripts/ci.sh --only node` only where a Playwright Chromium is installed (`PLAYWRIGHT_BROWSERS_PATH`). The hosted
+`node` job has none, so CI lists them SKIPPED, never passed; run them by hand (`docs/platforms/web.md`, "Test").
 
 ### Gateway (Node, no network, no keys)
 
@@ -88,6 +97,11 @@ and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds c
 - Linux groups, each `scripts/ci.sh --only <group>`: `checks` (Python generators, guards, specs; always),
   `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
+  Besides the generators' `--check` modes, `checks` runs the CI scripts' own tests: `scripts/test_regen.sh` (one
+  `scripts/regen.sh` run leaves every generated file up to date), `scripts/test_vercel_ignore_command.sh` (the
+  Vercel ignore step builds whenever it can't tell nothing changed), `scripts/test_vercel_blocked_status.sh`,
+  `scripts/test_xcode_cloud_post_clone.sh`, `scripts/test_ci_package_pins.sh` and the path-selection tests, and
+  `tools/gen_site_tokens.py --check` (the site's colour tokens match the app's).
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
 - `ios-build` (macOS; named `ci` until ADR-811; runner image `macos-26` and Xcode 26.6 pinned):
   `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
@@ -103,17 +117,27 @@ and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds c
   7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
   test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
-  2.19.0). `Config/Package.resolved` is meant to lock every package they pull in too, but **it isn't committed
-  yet** (7 Nov 2026). Until it is, `make project`, `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` print
-  that there are no pins, and CI records "App package versions match Config/Package.resolved" as SKIPPED. Each
-  Mac run keeps what it resolved as the `app-package-resolved` artifact; committing that file as
-  `Config/Package.resolved` turns the check on, and from then on CI fails if resolution changes it. To move
-  versions later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
-  `docs/decisions/2026-11-07-reproducible-app-builds.md`).
+  2.19.0), and `Config/Package.resolved` is committed: it pins all 7 packages they pull in (LiveKit, ElevenLabs,
+  GRDB, swift-crypto, swift-asn1, livekit-ffi-xcframework, webrtc-xcframework) to exact commits. `make project`,
+  `make project-iphone`, `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project,
+  and the Mac job records "App package versions match Config/Package.resolved": it fails if Xcode's resolution
+  differs. Each Mac run keeps what it resolved as the `app-package-resolved` artifact. To move versions: `make
+  update-packages` on a Mac, then commit `Config/Package.resolved` (decision
+  `docs/decisions/2026-11-07-reproducible-app-builds.md`). The file was written by hand from what Xcode printed
+  (`changes/pin-app-packages.md`); that Xcode Cloud accepts it (it refuses an out-of-date file) isn't recorded yet.
 - The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a
   download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
   binary frameworks gave on 8 Nov 2026 (`xcodebuild` exit 74). Any other error is not retried, and the step
-  still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
+  still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers. When every package
+  resolved, `scripts/ci.sh` writes `build/packages-ok`, and the workflow saves the packages (the checkouts and
+  LiveKit's binary frameworks in DerivedData's `SourcePackages`) as a cache, keyed by `project.yml` and
+  `Config/Package.resolved`, which the next run restores instead of downloading them again. The job's limit is
+  100 minutes (it was 75): a push to `main` runs the whole UI suite, the native island test and the Release
+  build, which took 70 to 75 minutes on 8 Nov 2026.
+- Xcode Cloud (`ci_scripts/ci_post_clone.sh`) retries package resolution up to 6 times, waiting 30 s, 60 s, 90 s,
+  120 s and 150 s (`DODDY_RESOLVE_ATTEMPTS` changes the count), and writes the commit it builds (`CI_COMMIT`,
+  or the checkout's own) into the build as `DODDY_GIT_COMMIT`; Settings › About shows its first seven
+  characters. The Mac job's cache does not help it.
 - Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
   Release-only error shows up before Xcode Cloud archives.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
@@ -129,7 +153,7 @@ Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-onl
 **Timings measured 7 Nov 2026** (49 finished runs, `docs/engineering/AUDIT_2026-11-07.md`): a run takes 50
 minutes at the median, 59 at the 90th percentile. The Mac job takes about 34 minutes, 28 of them UI tests (the
 motion, art and memory-journey classes about 20, the smoke classes about 8). The Linux groups finish well
-before it. Older measurements (1 Nov, before the Linux groups split, ADR-684) are in the git history of this file.
+before it. Pushes to `main` run longer: 70 to 75 minutes on 8 Nov 2026 (see the Mac job's limit above). Older measurements (1 Nov, before the Linux groups split, ADR-684) are in the git history of this file.
 
 **Cost:** the repository is public, so standard hosted Actions runners are free (ADR-543). If it goes private
 again, a Mac run costs about $2 to $3 (about $0.062 a minute in October 2026).
@@ -145,7 +169,7 @@ Mac build.
 ## Layout
 
 ```
-DoddyApp/                    the iPhone and iPad app (SwiftUI): App/, Features/ (one folder per feature, 60 of them;
+DoddyApp/                    the iPhone and iPad app (SwiftUI): App/, Features/ (one folder per feature, 61 of them;
                              the map is docs/platforms/iphone.md), DesignSystem/, Infrastructure/, Intents/, Resources/
                              (string catalogs generated from l10n/, asset catalog, PrivacyInfo.xcprivacy)
 Shared/                      code built into the app and its extensions: Live Activity, island art, widget snapshot, intents

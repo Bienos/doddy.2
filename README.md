@@ -6,7 +6,7 @@ Doddy is an app for iPhone and iPad that you talk to. You say what you need in a
 
 This repository holds everything: the iPhone app, the servers behind it, Doddy Web (a browser version for the same account), the website [www.doddy.lol](https://www.doddy.lol) and all the documents.
 
-> **Where things stand (7 Nov 2026, checked against `main` again on 8 Nov).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone, but it is not on TestFlight or the App Store yet. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
+> **Where things stand (9 Nov 2026, checked against `main`).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone and through TestFlight (Doddy Beta), but it is not on the App Store. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
 
 ## How Doddy works
 
@@ -18,7 +18,7 @@ Three promises shape the whole app. They are written down in [docs/trust/](docs/
 
 ## What Doddy can do today
 
-This is what the code on `main` does (7 Nov 2026, checked against `main` again on 8 Nov, after the open pull requests were merged). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
+This is what the code on `main` does (9 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
 
 - **Talk.** Tap Doddy on Home and talk. He listens only after a tap ("Start listening when I open Doddy" stays off unless you turn it on). The voice runs on ElevenLabs, or on OpenAI if you choose it in Settings › Voice; while you talk, your voice goes to that company.
 - **Remember.** Notes and lists live in a database on the phone. Doddy asks before keeping anything. You can find notes by their words or their meaning, correct them, delete them, export them, and back them up to an encrypted file.
@@ -26,14 +26,15 @@ This is what the code on `main` does (7 Nov 2026, checked against `main` again o
 - **With help from the servers.** Web, news and place searches; a typed chat in Messages answered by Claude; Gmail, Outlook, Google Calendar, Drive, Notion and Todoist once you connect them, and other online apps you add yourself; documents and slide decks; this week's shop leaflets; longer tasks that run in the background; research briefs and infographics (Studio). Some of these are off on the server until they are switched on, Studio among them.
 - **Around the phone.** Home Screen and Lock Screen widgets, Doddy in the Dynamic Island while he talks, Siri and Shortcuts, the Action Button, and "Save to Doddy" in the Share menu.
 - **Languages.** The app's screens are in Polish by default, with English and eight more languages to choose from. The eight are machine translations no native speaker has checked yet.
-- **Doddy Web.** In a browser, sign in with a code from your iPhone (or with Google or Apple, once you have linked them to your account and the server is set up for it) to see the documents Doddy made, your connected apps, his activity and a chat. Logbook, Memory and Messages are ready on the server, but the iPhone doesn't send them yet.
+- **Your Doddy account.** Everyone signs in with Apple or Google before using Doddy (a code sent by email is built but hidden for now). Google works only once the owner finishes its setup (the owner queue says what is left).
+- **Doddy Web.** In a browser, sign in with Apple or Google (the same sign-in opens the same account as the iPhone) or with a code from your iPhone to see the documents Doddy made, your connected apps, his activity and a chat. The iPhone sends the Logbook (usage counts, never words), on by default and switchable off in Settings; Memory and Messages are sent only if you turn that on. The owner has a separate admin page.
 - **The website** [www.doddy.lol](https://www.doddy.lol) explains Doddy in ten languages and has an early-access list.
 
 **Not done yet:**
-- On the welcome screen only Sign in with Apple works; the other sign-in buttons aren't connected.
-- Calling Doddy's phone number, texts and calls from it, and Doddy phoning a business for you, are written but not live: their voice agents haven't been created, and the phone-number features are merged but off.
-- Invoices can't be sent to inFakt or KSeF. Doddy can't pay for anything you can use: paying for a web page in USDC is merged but off by default, on a test network only (the BLIK transfer card was removed on 5 Nov, ADR-810).
-- The app isn't on TestFlight yet. The Apple Watch and Mac apps are paused.
+- Google sign-in fails until the owner registers a return address with Google; today only Sign in with Apple gets you in.
+- Calls and texts are written but not seen end to end: Doddy phoning a restaurant for you, calling you later, call-backs to Doddy's number, and texts to your own number. Calling Doddy's own phone number is merged but off, and Studio is off on the server.
+- Invoices can't be sent to inFakt or KSeF. Doddy can't pay for anything you can use: paying for a web page in USDC is merged but off by default, on a test network only. The BLIK transfer draft (a card you send from your bank app, never a payment by Doddy) is back since 7 Nov.
+- The app isn't on the App Store. Every build shows every feature until the beta; the beta list that hides the rest is kept ready. The Apple Watch and Mac apps are paused.
 
 ## How the parts fit together
 
@@ -106,9 +107,9 @@ GitHub Actions checks every pull request: Linux jobs for the checks, the package
 ## Working on Doddy
 
 - **Coding agents (Claude Code, Codex):** read the last section of [AGENTS.md](AGENTS.md), "Current working rules — read this section first". It wins over everything older in that file.
-- **Branches:** start from `main`, one topic per branch and pull request. Changes reach `main` only through pull requests, and the owner reviews and merges them.
+- **Branches:** start from `main`, one topic per branch and pull request. Changes reach `main` only through pull requests; an agent squash-merges its own pull request once the required checks are green and every review thread is resolved (AGENTS.md, "Merging").
 - **Before you change a platform,** read its page: [iPhone and iPad](docs/platforms/iphone.md), [Web](docs/platforms/web.md), [how the code is split](docs/platforms/README.md).
-- **Records:** a decision gets its own file in [`docs/decisions/`](docs/decisions/README.md); what a pull request changed gets a short note in [`changes/`](changes/README.md). Older decisions, ADR-001 to ADR-812, are in [DECISIONS.md](DECISIONS.md): search it by number, it is too big to read.
+- **Records:** a decision gets its own file in [`docs/decisions/`](docs/decisions/README.md); what a pull request changed gets a short note in [`changes/`](changes/README.md). Older decisions, ADR-001 to ADR-828, are in [DECISIONS.md](DECISIONS.md): search it by number, it is too big to read.
 - **Never** commit a key or password. Secrets live in 1Password; [`secrets/manifest.json`](secrets/manifest.json) lists their names only ([how](docs/security/SECRETS_1PASSWORD.md)).
 
 ## Where to read more

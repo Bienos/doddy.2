@@ -11,9 +11,10 @@
 | [LiveKit FFI](https://github.com/livekit/livekit-ffi-xcframework) (via LiveKit) | 0.13.1 (exact in LiveKit 2.19.0's `Package.swift`) | Apache-2.0 | Prebuilt LiveKit library that the LiveKit SDK links |
 
 LiveKit's manifest also names swift-protobuf (its own tests only) and swift-docc-plugin (its documentation only). Neither
-is linked into the app. `Config/Package.resolved` is meant to lock every Swift package the app resolves
-(`docs/decisions/2026-11-07-reproducible-app-builds.md`), but it is not in the repository yet (7 Nov 2026). Until a Mac
-run commits it, the versions come from the exact pins above.
+is linked into the app. `Config/Package.resolved` (committed) locks every Swift package the app resolves to an exact
+commit: seven remote packages, the six in the table above plus swift-asn1 1.7.3 (swift-crypto's dependency)
+(`docs/decisions/2026-11-07-reproducible-app-builds.md`). DoddyCore is a local package and isn't pinned there. The
+Mac CI job fails when Xcode resolves something else.
 
 Everything else is Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`, `AVFAudio`, system SQLite). No analytics,
 no crash reporting, no fonts. Of these packages, the ElevenLabs voice session (while it is open) is the only network
