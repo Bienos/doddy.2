@@ -10,7 +10,7 @@ import { principal, requireDevice } from "../auth.js";
 import type { Db } from "../db.js";
 import { searchDeals, type DealsDeps } from "../deals/service.js";
 import { CHAINS } from "../deals/types.js";
-import { addUsage, reserve } from "../deals/usage.js";
+import { addUsage, recordDealsCost, reserve } from "../deals/usage.js";
 
 export const SearchBody = z.strictObject({
   items: z.array(z.string().trim().min(1).max(60)).min(1).max(12),
@@ -44,6 +44,7 @@ export const dealsRoutes = (deps: { db: Db; deals?: DealsDeps }): FastifyPluginA
     reply.raw.once("close", () => { if (!reply.raw.writableFinished) controller.abort(); });
     const { response, stats } = await searchDeals(deals, body, controller.signal);
     await addUsage(deps.db, accountId, stats).catch((err: Error) => req.log.error({ err: { message: err.message } }, "deals usage not recorded"));
+    await recordDealsCost(deps.db, accountId, deals.model?.model, stats);
     req.log.info({
       items: body.items.length, chains: stats.chains, statuses: stats.statuses, offers: stats.offers, checks: stats.checks,
       pagesRead: stats.pagesRead, inputTokens: stats.inputTokens, outputTokens: stats.outputTokens, picked: stats.picked, ms: stats.ms,

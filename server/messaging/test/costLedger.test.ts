@@ -260,3 +260,121 @@ describe("the ledger against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await db.query("SELECT error_code FROM provider_cost_events")).rows[0].error_code, "http_429");
   });
 });
+
+// ---------- the news digest writer and the errand run ----------
+import { buildDigest, LEDGER_FEATURE_WRITER, overlapKey, type NewsDeps } from "../src/news/digest.js";
+import type { NewsItem } from "../src/news/feeds.js";
+import { ClaudeDigestWriter, type DigestWriter, type WriterCall, type WriterInput } from "../src/news/writer.js";
+
+const story = (title: string, url: string): NewsItem => ({ title, url, source: "BBC", summary: "", publishedAt: new Date(Date.now() - 2 * 3_600_000).toISOString() });
+
+describe("the news digest writer reaches the ledger", { skip: dbSkip }, () => {
+  let db: Db;
+  before(async () => { db = await freshDb(); });
+  after(async () => { await db?.end(); });
+  beforeEach(async () => { await db.query("DELETE FROM provider_cost_events"); });
+
+  class ReportingWriter implements DigestWriter {
+    readonly provider = "anthropic" as const;
+    constructor(private readonly call: WriterCall | "throw") {}
+    async write(input: WriterInput, report?: (c: WriterCall) => void) {
+      if (this.call === "throw") { report?.({ provider: "anthropic", model: "claude-haiku-5-5", outcome: "failure", attempts: 2, errorCode: "http_529" }); throw new Error("api down"); }
+      report?.(this.call);
+      return input.candidates.slice(0, 1).map((c) => ({ id: c.id, line: `AI: ${c.title}` }));
+    }
+  }
+  async function digestFor(writer: DigestWriter) {
+    const feeds = { async fetchFeed() { return { title: "Feed", items: [story("Chip export rules tighten", "https://bbc.co.uk/t1")] }; } };
+    const news: NewsDeps = { feeds, writer };
+    const { app } = await testApp(db, { news });
+    const r = await app.inject({ method: "POST", url: "/v1/accounts" });
+    const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    const put = await app.inject({ method: "PUT", url: "/v1/news/settings", headers: { authorization: `Bearer ${deviceToken}` },
+      payload: { enabled: true, sendTime: "08:00", timezone: "Europe/Warsaw", channels: [], language: "en", topics: [{ catalogId: "technology" }], feeds: [] } });
+    assert.equal(put.statusCode, 200);
+    await buildDigest(db, news, accountId, "manual");
+    return accountId;
+  }
+
+  test("the per-account writer call is its own feature, with retries and an overlap key; no story text", async () => {
+    const accountId = await digestFor(new ReportingWriter({
+      provider: "anthropic", model: "claude-haiku-5-5", outcome: "success", attempts: 2, providerRequestId: "req_news",
+      usage: { inputTokens: 300, outputTokens: 40, cacheReadTokens: 0, cacheWriteTokens: 0 },
+    }));
+    const { rows } = await db.query("SELECT * FROM provider_cost_events ORDER BY id");
+    assert.deepEqual(rows.map((r) => [r.feature, r.outcome, r.account_id]), [[LEDGER_FEATURE_WRITER, "retry", accountId], [LEDGER_FEATURE_WRITER, "success", accountId]]);
+    assert.match(rows[1].ref_id, /^news:en:[0-9a-f]{16}$/);
+    assert.equal(rows[1].provider_request_id, "req_news");
+    assert.ok(!JSON.stringify(rows).includes("Chip export"), "no story text in the ledger");
+  });
+
+  test("a failed writer call is a failure row with unknown usage", async () => {
+    await digestFor(new ReportingWriter("throw"));
+    const { rows } = await db.query("SELECT outcome, usage_known, error_code, attempts FROM provider_cost_events ORDER BY id");
+    assert.deepEqual(rows, [{ outcome: "retry", usage_known: false, error_code: null, attempts: 1 }, { outcome: "failure", usage_known: false, error_code: "http_529", attempts: 2 }]);
+  });
+
+  test("the overlap key is the same for the same public story set and differs otherwise", () => {
+    const c = (h: string) => ({ urlHash: Buffer.from(h, "hex") });
+    assert.equal(overlapKey("en", [c("aa"), c("bb")]), overlapKey("en", [c("bb"), c("aa")]));
+    assert.notEqual(overlapKey("en", [c("aa")]), overlapKey("en", [c("aa"), c("bb")]));
+    assert.notEqual(overlapKey("en", [c("aa")]), overlapKey("pl", [c("aa")]));
+  });
+});
+
+describe("the Claude news writer reports its call (no database)", () => {
+  test("usage keeps cache counters; a retried call reports its attempts; a failure reports no usage", async () => {
+    const api = await standIn([
+      { status: 529, body: { type: "error", error: { type: "overloaded_error", message: "busy" } } },
+      { status: 200, requestId: "req_w", body: message({ input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 7, cache_creation_input_tokens: 3 }, JSON.stringify({ items: [] })) },
+    ]);
+    try {
+      const writer = new ClaudeDigestWriter("test-key", { baseURL: api.baseURL });
+      const calls: WriterCall[] = [];
+      await writer.write({ language: "en", topics: [], candidates: [] }, (c) => calls.push(c));
+      assert.deepEqual(calls, [{ provider: "anthropic", model: "claude-haiku-5-5", outcome: "success", attempts: 2, providerRequestId: "req_w",
+        usage: { inputTokens: 10, outputTokens: 5, cacheReadTokens: 7, cacheWriteTokens: 3, cacheWrite1hTokens: 0 } }]);
+    } finally {
+      api.close();
+    }
+    const down = await standIn([{ status: 500, body: { type: "error", error: { type: "api_error", message: "x" } } }]);
+    try {
+      const writer = new ClaudeDigestWriter("test-key", { baseURL: down.baseURL });
+      const calls: WriterCall[] = [];
+      await assert.rejects(writer.write({ language: "en", topics: [], candidates: [] }, (c) => calls.push(c)));
+      assert.equal(calls.length, 1);
+      assert.deepEqual([calls[0]!.outcome, calls[0]!.attempts, calls[0]!.errorCode, calls[0]!.usage], ["failure", 2, "http_500", undefined]);
+    } finally {
+      down.close();
+    }
+  });
+});
+
+import { recordDealsCost } from "../src/deals/usage.js";
+import { addModelUsage, type ModelUsage } from "../src/deals/types.js";
+
+describe("leaflet searches", () => {
+  test("usage totals keep the cache counters only once one is reported", () => {
+    const total: ModelUsage = { inputTokens: 0, outputTokens: 0 };
+    addModelUsage(total, { inputTokens: 5, outputTokens: 1 });
+    assert.deepEqual(total, { inputTokens: 5, outputTokens: 1 });
+    addModelUsage(total, { inputTokens: 5, outputTokens: 1, cacheReadTokens: 100, cacheWriteTokens: 0 });
+    assert.deepEqual(total, { inputTokens: 10, outputTokens: 2, cacheReadTokens: 100, cacheWriteTokens: 0 });
+  });
+
+  test("a search writes one deals_vision row with cache counters; one with no model call writes none", { skip: dbSkip }, async () => {
+    const db = await freshDb();
+    try {
+      const { app } = await testApp(db, {});
+      const r = await app.inject({ method: "POST", url: "/v1/accounts" });
+      const { accountId } = r.json() as { accountId: string };
+      await recordDealsCost(db, accountId, "claude-haiku-5-5", { inputTokens: 1000, outputTokens: 100, cacheReadTokens: 4000, cacheWriteTokens: 0 });
+      await recordDealsCost(db, accountId, "claude-haiku-5-5", { inputTokens: 0, outputTokens: 0 });
+      await recordDealsCost(db, accountId, undefined, { inputTokens: 5, outputTokens: 5 });
+      const { rows } = await db.query("SELECT feature, cache_read_tokens FROM provider_cost_events");
+      assert.deepEqual(rows, [{ feature: "deals_vision", cache_read_tokens: "4000" }]);
+    } finally {
+      await db.end();
+    }
+  });
+});

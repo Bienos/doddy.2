@@ -6,6 +6,7 @@
 // - A model without a price below has a NULL cost and `cost_basis = 'unknown_model'`, never an invented price.
 // - Cache reads and writes are counted apart from plain input, because they are priced apart.
 // - Recording is best effort: a ledger failure is logged by code and never fails the user's request.
+import { AsyncLocalStorage } from "node:async_hooks";
 import type { Db } from "./db.js";
 import { log } from "./log.js";
 
@@ -79,6 +80,9 @@ export function costUsd(model: string, u: TokenUsage): number | null {
     + w5m * t.input * 1.25 + w1h * t.input * 2) / 1_000_000;
 }
 
+/** Anthropic web search: $10 per 1,000 searches on top of tokens (pricing page, 9 Nov 2026). Web fetch has no extra charge. */
+export const WEB_SEARCH_USD = 0.01;
+
 export type CostOutcome = "success" | "refused" | "unparsed" | "failure" | "retry";
 
 export interface CostEvent {
@@ -93,6 +97,8 @@ export interface CostEvent {
   errorCode?: string | null;
   /** Undefined: the provider reported nothing, so the ledger stores "unknown". */
   usage?: TokenUsage;
+  /** Web searches made in the call or run; billed per search on top of tokens. */
+  webSearches?: number;
   occurredAt?: Date;
 }
 
@@ -104,18 +110,19 @@ const idOrNull = (v: string | null | undefined) => (v && ID.test(v) ? v : null);
 export async function recordCost(db: Db, e: CostEvent): Promise<boolean> {
   try {
     const known = e.usage !== undefined;
-    const cost = known ? costUsd(e.model, e.usage!) : null;
+    const tokenCost = known ? costUsd(e.model, e.usage!) : null;
+    const cost = tokenCost === null ? null : tokenCost + Math.max(0, e.webSearches ?? 0) * WEB_SEARCH_USD;
     const basis = !known ? "unknown_usage" : cost === null ? "unknown_model" : "list_price";
     await db.query(
       `INSERT INTO provider_cost_events
          (occurred_at, account_id, provider, model, feature, provider_request_id, ref_id, outcome, attempts, error_code,
-          usage_known, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, cost_usd, cost_basis, price_version)
-       VALUES (COALESCE($1, now()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+          usage_known, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, web_searches, cost_usd, cost_basis, price_version)
+       VALUES (COALESCE($1, now()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
       [e.occurredAt ?? null, e.accountId, e.provider ?? "anthropic", e.model.slice(0, 64), e.feature,
         idOrNull(e.providerRequestId), idOrNull(e.refId), e.outcome, Math.max(1, e.attempts ?? 1), e.errorCode ? e.errorCode.slice(0, 40) : null,
         known, known ? e.usage!.inputTokens : null, known ? e.usage!.outputTokens : null,
         known ? e.usage!.cacheReadTokens : null, known ? e.usage!.cacheWriteTokens : null,
-        cost, basis, cost === null ? null : PRICE_VERSION]);
+        e.webSearches === undefined ? null : Math.max(0, Math.trunc(e.webSearches)), cost, basis, cost === null ? null : PRICE_VERSION]);
     return true;
   } catch (err) {
     log("cost ledger write failed", { feature: e.feature, code: (err as { code?: string }).code ?? (err as Error).name });
@@ -127,6 +134,44 @@ export async function recordCost(db: Db, e: CostEvent): Promise<boolean> {
 export async function recordRetries(db: Db, base: Omit<CostEvent, "outcome" | "usage" | "attempts">, attempts: number): Promise<void> {
   for (let i = 1; i < attempts; i++) await recordCost(db, { ...base, outcome: "retry", attempts: i, providerRequestId: null });
 }
+
+// ---------- counting the SDK's hidden retries ----------
+
+export interface AttemptCounter { attempts: number; /** The provider's request id from the latest response. */ requestId?: string }
+const attemptCounter = new AsyncLocalStorage<AttemptCounter>();
+/** Pass as the Anthropic client's `fetch`: every HTTP attempt made inside `countAttempts` is counted, and the
+ * latest response's request id kept (the SDK's own helpers do not all expose it). */
+export const countingFetch: typeof fetch = async (input, init) => {
+  const c = attemptCounter.getStore();
+  if (c) c.attempts++;
+  const res = await fetch(input, init);
+  const id = res.headers.get("request-id");
+  if (c && id) c.requestId = id;
+  return res;
+};
+
+/**
+ * Runs one provider call and tells `fn` how many HTTP attempts it has made so far (the SDK retries inside the
+ * call). An error that escapes is marked with the count, which `attemptsOf` reads back.
+ */
+export async function countAttempts<T>(fn: (counter: AttemptCounter) => Promise<T>): Promise<T> {
+  const counter: AttemptCounter = { attempts: 0 };
+  try {
+    return await attemptCounter.run(counter, () => fn(counter));
+  } catch (err) {
+    if (err && typeof err === "object") (err as { doddyAttempts?: number }).doddyAttempts = Math.max(1, counter.attempts);
+    throw err;
+  }
+}
+
+export const attemptsOf = (err: unknown): number => {
+  const a = (err as { doddyAttempts?: unknown } | null)?.doddyAttempts;
+  return typeof a === "number" && a >= 1 ? a : 1;
+};
+export const requestIdOf = (err: unknown): string | undefined => {
+  const r = (err as { requestID?: unknown } | null)?.requestID;
+  return typeof r === "string" ? r : undefined;
+};
 
 /** The error class and HTTP status of a failed call as a short code, never the message (which may echo input). */
 export function errorCode(err: unknown): string {

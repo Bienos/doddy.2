@@ -1,9 +1,8 @@
 // The one model call behind Messages (ADR-586): Claude answers a typed question in the person's
 // language, from the notes the app sent or from general knowledge, with no tools. Behind an interface so
 // tests drive the route with a fake. Logs carry counts and codes only, never words.
-import { AsyncLocalStorage } from "node:async_hooks";
 import Anthropic from "@anthropic-ai/sdk";
-import { baseModel, usageFromAnthropic, type TokenUsage } from "../costLedger.js";
+import { type AttemptCounter, baseModel, countAttempts, countingFetch, usageFromAnthropic, type TokenUsage } from "../costLedger.js";
 import { answerJsonSchema, answerSchema, buildInput, buildInstructions, readPlanOffer, readProposal, type PlanOffer, type Proposal } from "./prompt.js";
 import { fileText, type AssistRequest } from "./request.js";
 
@@ -50,24 +49,6 @@ export function cacheEligible(model: string, text: string): boolean {
   return min !== undefined && Math.floor(text.length / 5) >= min;
 }
 
-/** Per-call counting of HTTP attempts (the SDK retries inside `create`), so retries can reach the ledger. */
-const attemptCounter = new AsyncLocalStorage<{ attempts: number }>();
-const countingFetch: typeof fetch = (input, init) => {
-  const c = attemptCounter.getStore();
-  if (c) c.attempts++;
-  return fetch(input, init);
-};
-
-/** Marks an error with how many attempts were made; read by `attemptsOf`. */
-export const attemptsOf = (err: unknown): number => {
-  const a = (err as { doddyAttempts?: unknown } | null)?.doddyAttempts;
-  return typeof a === "number" && a >= 1 ? a : 1;
-};
-export const requestIdOf = (err: unknown): string | undefined => {
-  const r = (err as { requestID?: unknown } | null)?.requestID;
-  return typeof r === "string" ? r : undefined;
-};
-
 type AttachmentBlock = Anthropic.ImageBlockParam | Anthropic.DocumentBlockParam;
 
 /** The photo or file sent with this question, as the API's own blocks. The request schema has already checked it. */
@@ -95,16 +76,10 @@ export class ClaudeAssistantResponder implements AssistantResponder {
   }
 
   async answer(req: AssistRequest, signal: AbortSignal): Promise<AssistOutcome> {
-    const counter = { attempts: 0 };
-    try {
-      return await attemptCounter.run(counter, () => this.ask(req, signal, counter));
-    } catch (err) {
-      if (err && typeof err === "object") (err as { doddyAttempts?: number }).doddyAttempts = Math.max(1, counter.attempts);
-      throw err;
-    }
+    return countAttempts((counter) => this.ask(req, signal, counter));
   }
 
-  private async ask(req: AssistRequest, signal: AbortSignal, counter: { attempts: number }): Promise<AssistOutcome> {
+  private async ask(req: AssistRequest, signal: AbortSignal, counter: AttemptCounter): Promise<AssistOutcome> {
     const { input, aliasToId } = buildInput(req);
     const instructions = buildInstructions(req.locale);
     const response = await this.client.messages.create({
@@ -125,7 +100,7 @@ export class ClaudeAssistantResponder implements AssistantResponder {
       inputTokens: response.usage?.input_tokens ?? 0,
       outputTokens: response.usage?.output_tokens ?? 0,
     };
-    const requestId = (response as { _request_id?: string | null })._request_id ?? undefined;
+    const requestId = (response as { _request_id?: string | null })._request_id ?? counter.requestId;
     const detail: CallDetail = {
       model: this.model, attempts: Math.max(1, counter.attempts),
       ...(requestId ? { providerRequestId: requestId } : {}), ...(usageFromAnthropic(response.usage) ? { usage: usageFromAnthropic(response.usage)! } : {}),

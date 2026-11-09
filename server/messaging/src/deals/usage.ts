@@ -1,6 +1,7 @@
 // The daily caps behind the leaflet search (SHOPPING.md §2). Counts per account and UTC day, nothing else:
 // no item, page or offer is stored. A request is reserved before anything is fetched, so a flood can't spend
 // more than the caps, and an attempt that fails still counts (the caps bound spend, not success).
+import { recordCost } from "../costLedger.js";
 import { inTransaction, type Db } from "../db.js";
 import { takeServerSlots, type ServerCaps } from "../serverUsage.js";
 
@@ -33,4 +34,18 @@ export async function addUsage(db: Db, accountId: string, spent: { pagesRead: nu
     `UPDATE deals_usage SET pages_read = pages_read + $2, input_tokens = input_tokens + $3, output_tokens = output_tokens + $4
      WHERE account_id = $1 AND day = (now() AT TIME ZONE 'utc')::date`,
     [accountId, n(spent.pagesRead), n(spent.inputTokens), n(spent.outputTokens)]);
+}
+
+/**
+ * One cost-ledger row for a whole leaflet search (migration 026): the tokens the page reader and the pick used,
+ * with the cache counters. A search that made no model call writes nothing. A call that threw is swallowed by the
+ * chain reader before it gets here, so failed leaflet reads are not in the ledger (documented gap).
+ */
+export async function recordDealsCost(db: Db, accountId: string, model: string | undefined,
+  stats: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }): Promise<void> {
+  if (!model || stats.inputTokens + stats.outputTokens + (stats.cacheReadTokens ?? 0) + (stats.cacheWriteTokens ?? 0) === 0) return;
+  await recordCost(db, {
+    accountId, model, feature: "deals_vision", outcome: "success",
+    usage: { inputTokens: stats.inputTokens, outputTokens: stats.outputTokens, cacheReadTokens: stats.cacheReadTokens ?? 0, cacheWriteTokens: stats.cacheWriteTokens ?? 0 },
+  });
 }

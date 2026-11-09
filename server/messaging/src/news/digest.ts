@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { recordCost, recordRetries } from "../costLedger.js";
 import type { TextCipher } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
 import { log } from "../log.js";
@@ -9,7 +10,7 @@ import type { NewsItem } from "./feeds.js";
 import { shortlist, type TopicItems } from "./rank.js";
 import { localDate, nextRunAt } from "./schedule.js";
 import { cached, searchQuery, type FeedSource, type NewsSearch } from "./sources.js";
-import { shorten, validateLines, type DigestWriter } from "./writer.js";
+import { shorten, validateLines, type DigestWriter, type WriterCall } from "./writer.js";
 
 export interface NewsDeps {
   feeds: FeedSource;
@@ -19,6 +20,26 @@ export interface NewsDeps {
   cipher?: TextCipher;
   /** Texts queued per UTC day, per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
   smsCaps?: { perAccount: number; perServer: number };
+}
+
+/** The ledger's name for the per-account writer call. Its own tag (not the generic news one) so the owner can measure
+ * how often different accounts' writer calls could have shared one public summary (research item 11). */
+export const LEDGER_FEATURE_WRITER = "news_digest_writer";
+
+/**
+ * A short fingerprint of which public stories (and which language) a writer call saw: the same fingerprint on two
+ * calls means their model input shared the same story set. A hash of public story ids only, with no topic or
+ * account in it; stored as the ledger row's ref_id.
+ */
+export function overlapKey(language: string, candidates: { urlHash: Buffer }[]): string {
+  const ids = candidates.map((c) => c.urlHash.toString("hex")).sort();
+  return `news:${language}:${createHash("sha256").update(ids.join(",")).digest("hex").slice(0, 16)}`;
+}
+
+async function recordWriterCall(db: Db, accountId: string, c: WriterCall, refId: string) {
+  const base = { accountId, provider: c.provider, model: c.model, feature: LEDGER_FEATURE_WRITER, refId };
+  await recordRetries(db, base, c.attempts);
+  await recordCost(db, { ...base, outcome: c.outcome, attempts: c.attempts, errorCode: c.errorCode, providerRequestId: c.providerRequestId, usage: c.usage });
 }
 
 export const MAX_TOPICS = 10;
@@ -71,10 +92,11 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
     let picks: { candidate: (typeof candidates)[number]; line: string }[] = [];
     let aiWritten = false;
     if (news.writer) {
+      let call: WriterCall | undefined;
       try {
         picks = validateLines(await news.writer.write({
           language: settings.language, topics: topics.map((t) => t.label), candidates,
-        }), candidates);
+        }, (c) => { call = c; }), candidates);
         aiWritten = picks.length > 0;
       } catch (err) {
         // A code only (writer_*, or the HTTP status), never story text or keys.
@@ -82,6 +104,8 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
           : `writer_error${typeof (err as { status?: unknown })?.status === "number" ? `_${(err as { status: number }).status}` : ""}`;
         log("news writer failed, plain headlines used", { code });
         picks = []; // fall back to plain headlines below
+      } finally {
+        if (call) await recordWriterCall(db, accountId, call, overlapKey(settings.language, candidates));
       }
     }
     if (picks.length === 0) picks = candidates.slice(0, 3).map((c) => ({ candidate: c, line: shorten(c.title, 140) }));

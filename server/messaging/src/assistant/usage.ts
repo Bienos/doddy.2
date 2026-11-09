@@ -1,9 +1,9 @@
 // The daily caps behind Messages (ADR-586). Counts per account and UTC day, nothing else: no question,
 // answer or note is stored. A request is counted before the model is called, so a flood cannot spend
 // more than the cap, and an attempt that fails still counts (the cap bounds spend, not success).
-import { errorCode, recordCost, recordRetries } from "../costLedger.js";
+import { attemptsOf, errorCode, recordCost, recordRetries, requestIdOf } from "../costLedger.js";
 import { inTransaction, type Db } from "../db.js";
-import { attemptsOf, CALL_DETAIL, requestIdOf, type CallDetail } from "./responder.js";
+import { CALL_DETAIL, type CallDetail } from "./responder.js";
 import { takeServerSlots, type ServerCaps } from "../serverUsage.js";
 
 export type Reservation = "ok" | "account_cap" | "server_cap" | "new_account_cap";

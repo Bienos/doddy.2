@@ -201,7 +201,19 @@ export interface ChainAdapter {
 
 export type ImageMediaType = "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 export interface PageImage { data: Buffer; mediaType: ImageMediaType; width: number; height: number }
-export interface ModelUsage { inputTokens: number; outputTokens: number }
+export interface ModelUsage {
+  inputTokens: number; outputTokens: number;
+  /** Cache counters the provider reported (the cost ledger prices them apart). Absent when none were reported. */
+  cacheReadTokens?: number; cacheWriteTokens?: number;
+}
+
+/** Adds one reply's usage to a running total, keeping the cache counters (only once any was reported). */
+export function addModelUsage(total: ModelUsage, u: ModelUsage): void {
+  total.inputTokens += u.inputTokens;
+  total.outputTokens += u.outputTokens;
+  if (u.cacheReadTokens !== undefined) total.cacheReadTokens = (total.cacheReadTokens ?? 0) + u.cacheReadTokens;
+  if (u.cacheWriteTokens !== undefined) total.cacheWriteTokens = (total.cacheWriteTokens ?? 0) + u.cacheWriteTokens;
+}
 export type ModelReply<T> =
   | { kind: "ok"; output: T; usage: ModelUsage }
   | { kind: "refused"; usage: ModelUsage }

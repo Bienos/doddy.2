@@ -34,6 +34,8 @@ CREATE TABLE provider_cost_events (
   output_tokens      bigint CHECK (output_tokens >= 0),
   cache_read_tokens  bigint CHECK (cache_read_tokens >= 0),
   cache_write_tokens bigint CHECK (cache_write_tokens >= 0),
+  -- Web searches billed on top of tokens ($10 per 1,000); counted in cost_usd. NULL: not applicable or unknown.
+  web_searches       integer CHECK (web_searches >= 0),
   cost_usd           numeric(14, 8) CHECK (cost_usd >= 0),
   cost_basis         text NOT NULL CHECK (cost_basis IN ('list_price', 'unknown_model', 'unknown_usage')),
   price_version      text,

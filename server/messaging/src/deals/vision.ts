@@ -2,6 +2,7 @@
 // could be the person's items, in a fixed schema. The model's output is a proposal: the code parses every
 // price itself and drops a product whose price it can't parse, so nothing it couldn't read becomes a price.
 // Images are held in memory for the one call and never stored.
+import { usageFromAnthropic } from "../costLedger.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
@@ -400,7 +401,11 @@ export class AnthropicDealsModel implements DealsModelApi {
       if (err instanceof Anthropic.APIError) throw err;
       return { kind: "unparsed" }; // the reply didn't fit the schema
     }
-    const usage: ModelUsage = { inputTokens: response.usage?.input_tokens ?? 0, outputTokens: response.usage?.output_tokens ?? 0 };
+    const tokens = usageFromAnthropic(response.usage);
+    const usage: ModelUsage = {
+      inputTokens: response.usage?.input_tokens ?? 0, outputTokens: response.usage?.output_tokens ?? 0,
+      ...(tokens && (tokens.cacheReadTokens > 0 || tokens.cacheWriteTokens > 0) ? { cacheReadTokens: tokens.cacheReadTokens, cacheWriteTokens: tokens.cacheWriteTokens } : {}),
+    };
     if (response.stop_reason === "refusal") return { kind: "refused", usage };
     if (response.stop_reason === "max_tokens" || !response.parsed_output) return { kind: "unparsed", usage };
     return { kind: "ok", output: response.parsed_output as T, usage };
