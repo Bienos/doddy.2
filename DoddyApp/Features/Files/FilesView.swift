@@ -166,9 +166,13 @@ final class MadeDocumentsModel {
         FileManager.default.temporaryDirectory.appendingPathComponent("MadeByDoddy", isDirectory: true)
     }
 
-    func refresh() async {
-        try? FileManager.default.removeItem(at: Self.folder)
-        downloadProblem = nil
+    /// `clearingDownloads` is false for the quiet refresh Messages makes while a file is being made, so a file the
+    /// person has open in Quick Look is not deleted under them.
+    func refresh(clearingDownloads: Bool = true) async {
+        if clearingDownloads {
+            try? FileManager.default.removeItem(at: Self.folder)
+            downloadProblem = nil
+        }
         // No session: nothing was ever made for this iPhone, and no sign-in is started just to look.
         guard let client = MadeDocumentsClientFactory.make() else {
             load = .noAccount
@@ -187,6 +191,12 @@ final class MadeDocumentsModel {
         } catch {
             load = .failed(Self.text(for: error))
         }
+    }
+
+    /// Doddy is making a file for this person right now (as of the last refresh).
+    func isMaking(now: Date) -> Bool {
+        guard case .ready(let list) = load else { return false }
+        return !ThreadAttachments.inProgress(documents: list.documents, thread: [], now: now).isEmpty
     }
 
     /// Downloads a ready file and returns where it is, for Quick Look. Nil after a problem, which is shown.

@@ -230,6 +230,10 @@ const schema = z.object({
   // Of the server's requests, what accounts still new may use together (ADR-702).
   ASSISTANT_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(100000).default(DEFAULT_NEW_ACCOUNT_POOL.assistant),
 
+  // File-ready pushes (9 Nov 2026): the public address of Doddy's backend (where `/v1/documents/<id>` links live), for
+  // example https://doddy-yaci.onrender.com. Only links on this origin may be watched. Unset: the feature is off.
+  DOCUMENTS_ORIGIN: z.url().regex(/^https:\/\/[^/?#]+\/?$/).optional(),
+
   // Studio (ADR-740, docs/implementation/STUDIO.md): research a topic, then make files from it. Off by
   // default; "1" also needs ANTHROPIC_API_KEY, MEMORY_ENCRYPTION_KEY and STUDIO_SKILLS.
   STUDIO_ENABLED: z.enum(["0", "1"]).default("0"),
@@ -385,6 +389,8 @@ export interface Config {
   /** CEIDG (ADR-685): only with a token; the base is checked to be CEIDG's own host when the client is made. */
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
+  /** Where Doddy's backend serves file links (`DOCUMENTS_ORIGIN`, no trailing slash); null turns file-ready pushes off. */
+  documentsOrigin: string | null;
   assistantSettings: AssistantSettings;
   studioSettings: StudioSettings;
 }
@@ -496,6 +502,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     dealsSearchShops: e.DEALS_SEARCH_SHOPS,
     ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
+    documentsOrigin: e.DOCUMENTS_ORIGIN ? e.DOCUMENTS_ORIGIN.replace(/\/$/, "") : null,
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",
       model: e.ASSISTANT_MODEL,

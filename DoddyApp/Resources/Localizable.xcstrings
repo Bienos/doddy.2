@@ -211,6 +211,29 @@
         }
       }
     },
+    "%@ · kept on this iPhone for a week": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ · kept on this iPad for a week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ · kept on this iPhone for a week"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%@ · seen %@": {
       "extractionState": "manual",
       "localizations": {
