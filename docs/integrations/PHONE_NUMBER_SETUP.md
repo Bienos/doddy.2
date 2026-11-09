@@ -180,6 +180,8 @@ Calls reach the messaging server first (ADR-750). It lets your number through to
    - **Call status changes:** `https://<address>/webhooks/twilio/call-status`
 7. **On your iPhone, Settings → Phone calls:** set a PIN, turn on **Answer calls from my number** and **Doddy may call me**. **Let Doddy use my memories on calls** is optional.
 
+**Call-backs (9 Nov 2026, decision `2026-11-09-call-backs-and-contact-calls`):** once "A call comes in" points at the server, someone Doddy called on your behalf who calls this number back is put through to your verified number, with Doddy's number as caller ID. They hear "Tu Doddy, asystent AI. Łączę z osobą, w której imieniu dzwonił Doddy." first. If `TASK_CALL_FROM_NUMBER` is another number, point its "A call comes in" here too (a number on a Twilio subaccount isn't supported yet: the server checks the main account's signature).
+
 ### The U1 checks
 Send Claude what you saw and heard. Never send the PIN, keys or the tool secret.
 
