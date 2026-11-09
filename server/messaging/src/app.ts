@@ -31,6 +31,7 @@ import { studioRoutes } from "./routes/studio.js";
 import { fileWatchContext, type FileWatchContext, type FileWatchDeps } from "./fileWatches.js";
 import { studioContext, type StudioContext, type StudioDeps } from "./studio/context.js";
 import { assistantRoutes } from "./routes/assistant.js";
+import { screenRoutes } from "./routes/screen.js";
 import { dealsRoutes } from "./routes/deals.js";
 import { registryRoutes } from "./routes/registry.js";
 import type { CeidgClient } from "./registry/ceidg.js";
@@ -205,6 +206,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(studioRoutes(deps, studioCtx));
   await app.register(fileWatchRoutes(deps, fileWatchCtx));
   await app.register(assistantRoutes(deps));
+  await app.register(screenRoutes(deps));
   await app.register(dealsRoutes(deps));
   await app.register(registryRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));

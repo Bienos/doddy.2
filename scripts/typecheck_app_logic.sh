@@ -139,6 +139,8 @@ files=(
   DoddyApp/Features/Voice/VoiceConfig.swift
   DoddyApp/Infrastructure/ActivityLogStore.swift
   Shared/Share/ShareInboxFile.swift
+  # Screen sharing with Doddy (decision 2026-11-09-doddy-looks-at-the-screen): the App Group files only.
+  Shared/Screen/ScreenShareFiles.swift
   # SiriNoteLookup picks Doddy's pose for an answer (ADR-313); IslandRect is stubbed above.
   Shared/IslandArt/IslandPose.swift
   # Motion v2: the one Doddy's director, kept free of SwiftUI so it is compiled here.

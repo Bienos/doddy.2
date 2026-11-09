@@ -70,7 +70,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyShare DoddyNotificationContent DoddyWatch DoddyWatchWidgets DoddyMac DoddyMacWidgets Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyShare DoddyScreen DoddyNotificationContent DoddyWatch DoddyWatchWidgets DoddyMac DoddyMacWidgets Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import Analytics'
@@ -347,6 +347,15 @@ if [ -f "$health_file" ]; then
 fi
 if grep -RInE "$camera_and_library_never" "${dirs[@]}" project.yml Config | code_only; then
   echo "FAIL: a capture session or a write to the photo library; Doddy only reads the library and uses iOS's camera screen (ADR-569)." >&2; status=1
+fi
+# Decision 2026-11-09-doddy-looks-at-the-screen: the screen is read only by the broadcast extension, which the
+# person starts from iOS's own sheet (iOS shows it is running). No in-app screen recorder anywhere, and the
+# extension and its shared file code have no network and no database: the app sends a picture only after a yes.
+if grep -RInE --include='*.swift' 'RPScreenRecorder|RPBroadcastSampleHandler' "${dirs[@]}" | code_only | grep -vE '^DoddyScreen/'; then
+  echo "FAIL: screen capture outside DoddyScreen/; only the broadcast extension the person starts may see the screen (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' 'URLSession|URLRequest|NWConnection|DatabaseQueue|DatabasePool|import DoddyPersistence|import GRDB' DoddyScreen Shared/Screen | code_only; then
+  echo "FAIL: the screen-sharing extension may not use the network or a database; it only leaves one picture in the App Group (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
 fi
 if grep -RInE "$location_tracking" "${dirs[@]}" project.yml | code_only; then
   echo "FAIL: \"Always\" or background location is not allowed; place reminders use \"While Using\" only." >&2; status=1
