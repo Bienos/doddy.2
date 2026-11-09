@@ -127,7 +127,9 @@ struct MessagesView: View {
         .foregroundStyle(Theme.ink)
         .task { await model.load() }
         // Only once Ask Doddy is on: opening Messages with it off makes no call to Doddy's server.
-        .task(id: consent) { if consent { await files.refresh() } }
+        // The files list belongs to the person (their own session, as the Files sheet reads it), so it doesn't wait for
+        // Ask Doddy. It keeps looking while Messages is open: a file takes a minute or two to make.
+        .task { await keepFilesFresh() }
         .quickLookPreview($preview)
         .task { await ErrandsModel.shared.load() }
         // A failed read shows no cards here; the calls themselves are in Settings › Phone calls.
@@ -314,10 +316,27 @@ struct MessagesView: View {
         }
     }
 
-    /// The server's ready files that are not already bubbles above (read while Ask Doddy is on).
+    /// The server's ready files that are not already bubbles above (the person's own list, read with their session).
     private var madeDocuments: [MadeDocument] {
         guard case .ready(let list) = files.load else { return [] }
         return ThreadAttachments.shown(documents: list.documents, thread: model.messages, now: Date())
+    }
+
+    /// Files Doddy is making now: shown at once, so "On it" by voice has something to point at.
+    private var makingDocuments: [MadeDocument] {
+        guard case .ready(let list) = files.load else { return [] }
+        return ThreadAttachments.inProgress(documents: list.documents, thread: model.messages, now: Date())
+    }
+
+    /// Reads the files list when Messages opens, then every few seconds while one is being made and slowly otherwise,
+    /// until the screen closes. Quiet: it never deletes a file that is open in Quick Look.
+    private func keepFilesFresh() async {
+        await files.refresh()
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(files.isMaking(now: Date()) ? 6 : 30))
+            guard !Task.isCancelled else { return }
+            await files.refresh(clearingDownloads: false)
+        }
     }
 
     /// Files Doddy made on this iPhone in a voice conversation and kept for a week (the deck from `make_presentation`).
@@ -332,7 +351,8 @@ struct MessagesView: View {
     private var attachments: some View {
         let local = localFiles
         let made = madeDocuments
-        if !local.isEmpty || !made.isEmpty {
+        let making = makingDocuments
+        if !local.isEmpty || !made.isEmpty || !making.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Files Doddy made for you")
                     .font(.footnote)
@@ -367,6 +387,14 @@ struct MessagesView: View {
                     .buttonStyle(.plain)
                     .disabled(files.downloading != nil)
                     .accessibilityIdentifier("messages.attachment")
+                }
+                ForEach(making) { document in
+                    // Not tappable until it is ready; the row says Doddy is still making it.
+                    MadeDocumentRow(document: document, downloading: false)
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .accessibilityIdentifier("messages.attachmentMaking")
                 }
                 if let problem = files.downloadProblem ?? LocalMadeFilesStore.shared.problem {
                     Label(problem, systemImage: "exclamationmark.triangle")
