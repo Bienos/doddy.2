@@ -52,5 +52,5 @@ The project has moved; the table below (2026-10-09) describes the first one.
 | Live check | Before the key: wrong code → `500 server_not_configured`. After the key and a production redeploy (2026-10-10, `dpl_6CbRFEZxwEJ3xU9Xo6ozmWCPPDaS`): wrong code → `401 {"error":"invalid_access_code"}`, `GET` → `405`. A real token (owner's access code from the app) is **not yet verified** |
 | Previews | Behind Vercel Authentication (SSO), so only production is usable by the app |
 | Ignored Build Step | Project setting (2026-10-10): `git diff HEAD^ HEAD --quiet -- .` (run in `server/voice-token`). A push that changes nothing under `server/voice-token/` skips the build, preview and production alike, so other work doesn't use up the Hobby plan's 100 deployments/day. Change the server's code to get a new deployment, or redeploy from the dashboard |
-| Agent authentication | Still **off**. Turn on only after the app works in "Private (token server)" mode |
+| Agent authentication | **On since 8 Nov 2026** (owner's go). Only signed conversation tokens from this server start a conversation; a Debug build's direct connection is refused. Not yet tried end to end on a phone: the ElevenLabs account had run out of credits (OWNER_QUEUE 4) |
 

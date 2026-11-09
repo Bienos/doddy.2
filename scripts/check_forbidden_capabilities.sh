@@ -3,8 +3,8 @@
 #  - the app's own networking lives in four files: the voice token client (DODDY's session and the
 #    provider-token requests, all to the token server; ADR-494), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
-#    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
-#    (ADR-265), whose WebSocket lives in one file in Features/Voice, the exchange-rate client
+#    ADR-148); the ElevenLabs SDK does the voice connection (OpenAI Realtime, which had its own
+#    WebSocket file, was removed on 9 Nov 2026), the exchange-rate client
 #    (ADR-300), which downloads only the ECB's public rates file, and the Open Food Facts client
 #    (ADR-631), which asks only the address DoddyCore builds from a checked barcode, and the InPost
 #    tracking client (ADR-641), which asks only the address DoddyCore builds from a checked parcel number;
@@ -77,7 +77,6 @@ anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import A
 sharing_dir=DoddyApp/Features/Sharing
 sharing_only='import CloudKit|CKContainer|CKDatabase|UICloudSharingController'
 token_client=DoddyApp/Features/Voice/VoiceTokenClient.swift
-openai_voice=DoddyApp/Features/Voice/OpenAIRealtimeSession.swift
 network_file=DoddyApp/Infrastructure/URLSessionTransport.swift
 assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
@@ -170,8 +169,8 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$vat_register_client:" -e "^$voice_auth:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client, $off_client, $inpost_client and $vat_register_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$vat_register_client:" -e "^$voice_auth:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $rates_client, $off_client, $inpost_client and $vat_register_client." >&2; status=1
 fi
 # The Keychain only where a token or key already lives (ADR-640).
 if grep -RInE --include='*.swift' "$keychain_only" "${dirs[@]}" | code_only | grep -vE "$keychain_files"; then
@@ -224,19 +223,21 @@ if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_onl
   echo "FAIL: password, passkey or credential-provider APIs; only Sign in with Apple is allowed (ADR-494)." >&2; status=1
 fi
 # ASK-01 (ADR-483): a tool without a way to ask first fails here. Only the public lookups of
-# ADR-575 (web, weather, Wikipedia, news, places, sums, conversions) and translator start and
-# stop (ADR-619, run on the phone) may run at once.
+# ADR-575 (web, weather, Wikipedia, news, places, sums, conversions), translator start and
+# stop (ADR-619, run on the phone) and text_me to the user's own number (decision
+# 2026-11-09-restaurant-calls-one-tap, run on the phone) may run at once.
 if ! python3 -I - voice-agent/tools.json <<'PY'
 import json, sys
 PUBLIC = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
           "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
-MODES = {"start_translator", "stop_translator"}
+MODES = {"start_translator", "stop_translator", "text_me"}
 bad = []
 for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
     x = t.get("x_doddy", {})
     if x.get("ask") == "runs_now":
         # ADR-575: public lookups run at once; they may never be a change.
         # ADR-619: translator start and stop run at once, on the phone, with no card.
+        # Decision 2026-11-09-restaurant-calls-one-tap: text_me to the user's own number too.
         name = t.get("name")
         if x.get("confirm_on_screen") or not (name in PUBLIC or (name in MODES and x.get("runs_on") == "phone")):
             bad.append(name)
@@ -248,7 +249,7 @@ if bad:
     sys.exit(1)
 PY
 then
-  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen), except ADR-575's public lookups and ADR-619's translator start and stop." >&2; status=1
+  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen), except ADR-575's public lookups, ADR-619's translator start and stop and text_me to the user's own number." >&2; status=1
 fi
 voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
 if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then
@@ -491,5 +492,5 @@ if [ -d server/messaging/src/studio ]; then
     echo "FAIL: the Studio worker declares a tool beyond web search, web fetch and code execution (ADR-740): $extra" >&2; status=1
   fi
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client, the InPost client and the VAT register client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, HomeKit only in HomeKitClient (lights, outlets, fans and scenes of those; no triggers, cameras, locks, garage doors or alarms), photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution; the errands worker declares only web search and web fetch and the Studio worker only those and code execution; payments (x402): Coinbase only in the wallet adapter, seller HTTPS only in the address-checking client, wallet signing only from the payments service, and no wallet or signing code in the app."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the ECB rates client, the Open Food Facts client, the InPost client and the VAT register client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, HomeKit only in HomeKitClient (lights, outlets, fans and scenes of those; no triggers, cameras, locks, garage doors or alarms), photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution; the errands worker declares only web search and web fetch and the Studio worker only those and code execution; payments (x402): Coinbase only in the wallet adapter, seller HTTPS only in the address-checking client, wallet signing only from the payments service, and no wallet or signing code in the app."
 exit "$status"

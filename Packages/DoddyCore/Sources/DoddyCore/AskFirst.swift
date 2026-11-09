@@ -22,6 +22,11 @@ import Foundation
 // words searched for leave the phone. Everything that reads the user's own data or changes anything
 // still asks first.
 //
+// A second exception since 9 Nov 2026 (owner: "doddy should send sms from his numbers on his own", decision
+// 2026-11-09-restaurant-calls-one-tap): `text_me` goes at once. It can only reach the user's own verified number,
+// and only while they have turned on Texts from Doddy; the server still checks the approval hash of exactly that
+// text and number. Texts to anyone else are impossible, not just asked about.
+//
 // This file is the rule as code, so it is tested on Linux: which ask each tool needs (`AskFirst`),
 // what counts as a spoken yes (`SpokenYes`), and the one check the app makes before running a
 // tool (`AskLedger.mayRun`).
@@ -163,9 +168,15 @@ public enum AskFirst {
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
-             // The card shows the exact text, or the time and the exact reason; the tap approves exactly that (ADR-752, ADR-754).
-             .textMe, .callMeLater:
+             // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
+             // call_places: the card shows every place, its number and where it came from, the exact
+             // opening line and question; the one tap approves exactly that task's digest.
+             .callMeLater, .callPlaces:
             return .ownPayloadCard
+        case .textMe:
+            // A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
+            // decision 2026-11-09-restaurant-calls-one-tap). It can reach no one else (contact_policy.text_recipients).
+            return .runsNow
         case .lostWallet:
             // ADR-692: the checklist is its own card. Showing it reads and changes nothing; each
             // step's page or number opens only on the person's tap on that step.

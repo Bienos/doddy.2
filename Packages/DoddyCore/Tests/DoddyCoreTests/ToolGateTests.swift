@@ -52,8 +52,9 @@ final class ToolGateTests: XCTestCase {
         }
         XCTAssertEqual(decide(VoiceToolName.findDeals, #"{"items":["masło"]}"#), .hidden(.deals))
         XCTAssertEqual(decide(VoiceToolName.handOverErrand, "{}", translator: true, pauseAll: true, on: false), .hidden(.errands))
-        XCTAssertEqual(decide(VoiceToolName.startTranslator, "{}"), .hidden(.translator), "translator mode can't start")
-        XCTAssertEqual(decide(VoiceToolName.stopTranslator, "{}", translator: true), .hidden(.translator))
+        // The translator is shown in the beta (decision 2026-11-08-translator-in-beta): its tools are never hidden.
+        XCTAssertNotEqual(decide(VoiceToolName.startTranslator, "{}"), .hidden(.translator), "translator mode can start")
+        XCTAssertEqual(decide(VoiceToolName.stopTranslator, "{}", translator: true), .run, "and stop")
         XCTAssertEqual(decide(VoiceToolName.proposePlan, "{}"), .hidden(.planCard), "the plan card is hidden before .plan")
         XCTAssertEqual(decide(CloudToolName.draftEmail, Self.draft), .hidden(.onlineAccounts))
         XCTAssertEqual(decide(VoiceToolName.controlHome, #"{"action":"off","name":"Lamp"}"#, on: false), .hidden(.homeKit), "hidden before its switch")

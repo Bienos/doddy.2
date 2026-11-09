@@ -82,8 +82,8 @@ final class TalkLaunchTests: XCTestCase {
         XCTAssertEqual(LaunchPreferencesMigration.migrate(once), once)
     }
 
-    func testTheIslandOpensUpByDefault() {
-        XCTAssertTrue(LaunchPreferencesMigration.islandExpands(nil))
-        XCTAssertFalse(LaunchPreferencesMigration.islandExpands(false))
+    func testTheIslandStaysSmallByDefault() {
+        XCTAssertFalse(LaunchPreferencesMigration.islandExpands(nil))
+        XCTAssertTrue(LaunchPreferencesMigration.islandExpands(true))
     }
 }

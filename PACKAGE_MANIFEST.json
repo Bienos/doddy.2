@@ -1,7 +1,7 @@
 {
   "name": "DODDY V2 All-in-One Design + Claude Code Build Pack",
   "created": "2026-10-08",
-  "file_count": 70,
+  "file_count": 62,
   "files": [
     {
       "path": "AGENTS.md",
@@ -27,46 +27,6 @@
       "path": "READ_ME_FIRST.md",
       "sha256": "79c64a935b23e0c4709506086fbba641d26a7cd127785763578d9330c75d4870",
       "bytes": 3726
-    },
-    {
-      "path": "assets/brand_candidate/BRAND_SOURCE_LIMITATIONS.md",
-      "sha256": "b8157b267e100de7c726e42c5db9ea49f2864021b5b2bd7b714476f7d3befb87",
-      "bytes": 2071
-    },
-    {
-      "path": "assets/brand_candidate/README.md",
-      "sha256": "170eea6c8aa4f63aae7b1b8a6da8b221d3257aa6cbe3c49b5627fee40a9dad6f",
-      "bytes": 547
-    },
-    {
-      "path": "assets/brand_candidate/doddy_face_mark_candidate.svg",
-      "sha256": "0693562e8c50de181faba00fc2870aa951e3e51b382d35cc2353565b6396da06",
-      "bytes": 677
-    },
-    {
-      "path": "assets/brand_candidate/doddy_master_front_candidate.svg",
-      "sha256": "170a54f00a4f6df899c5d6716ff65da2fb1258ea2ae45a425f34f75c27551567",
-      "bytes": 3622
-    },
-    {
-      "path": "assets/brand_candidate/doddy_master_front_dark_candidate.svg",
-      "sha256": "1558cbc6bde0d249520633164bc4d0c825eabbfce2550e83a53e07d19ef9caf6",
-      "bytes": 3669
-    },
-    {
-      "path": "assets/brand_candidate/doddy_tokens_candidate.json",
-      "sha256": "417754b61fb050b9ef19aa7062cefb5360c5f12a5ec59eb58140caad15301737",
-      "bytes": 1640
-    },
-    {
-      "path": "assets/brand_candidate/expression_happy_candidate.svg",
-      "sha256": "06ae9b64ca8626cfebf0e4b2c5ba6a1cc57f9e6bb78860ceda5bf4b0bc0206d1",
-      "bytes": 2850
-    },
-    {
-      "path": "assets/brand_candidate/expression_neutral_candidate.svg",
-      "sha256": "06ae9b64ca8626cfebf0e4b2c5ba6a1cc57f9e6bb78860ceda5bf4b0bc0206d1",
-      "bytes": 2850
     },
     {
       "path": "docs/00_START_HERE/DECISIONS_AND_STATUS.md",
@@ -95,8 +55,8 @@
     },
     {
       "path": "docs/architecture/MEMORY_AND_DATA.md",
-      "sha256": "61528a21b16d77e49f192d8b5b1ccd0beb4e3aa50ec78632e819602340d9fde5",
-      "bytes": 4196
+      "sha256": "72f85dae3c28398101f6078edaaa32dd0cccc8ed051d97923a6fa7b8114aa9c9",
+      "bytes": 4404
     },
     {
       "path": "docs/architecture/TOOLS_AND_ACTIONS.md",
@@ -335,8 +295,8 @@
     },
     {
       "path": "schemas/memory.schema.json",
-      "sha256": "4fbd596818e7b706a518574ea19ac3a388b3df06c42c5582e2b27c33f8f0c822",
-      "bytes": 1494
+      "sha256": "0b9c64c48a97b6e721178569152e920836ae1f71ba5528c6315f8c5de4a3a60e",
+      "bytes": 1524
     },
     {
       "path": "schemas/telemetry.schema.json",

@@ -190,39 +190,6 @@ private struct MemorySortMenu: View {
     }
 }
 
-/// One chip per tag in use (ADR-333), most used first. Selecting the active chip again clears it.
-struct MemoryTagRow: View {
-    let tags: [(tag: String, count: Int)]
-    @Binding var selection: String?
-    let active: String?
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(tags, id: \.tag) { item in
-                    let isOn = active == item.tag
-                    Button {
-                        selection = isOn ? nil : item.tag
-                    } label: {
-                        Text("#\(item.tag) \(item.count)")
-                            .font(.subheadline)
-                            .padding(.horizontal, 14)
-                            .frame(minHeight: 44)
-                            .background(isOn ? Theme.ink : Theme.quietSurface, in: Capsule())
-                            .foregroundStyle(isOn ? Theme.canvas : Theme.ink)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(String(format: NSLocalizedString("Tag %@, %lld notes", comment: ""), item.tag, item.count))
-                    .accessibilityAddTraits(isOn ? .isSelected : [])
-                }
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(NSLocalizedString("Show notes with one tag", comment: ""))
-        .accessibilityIdentifier("memories.tags")
-    }
-}
-
 /// "All" plus one chip per type in use, with counts. Selecting the active chip again clears it.
 struct MemoryTypeFilterRow: View {
     let choices: [(category: MemoryCategory, count: Int)]

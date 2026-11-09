@@ -185,7 +185,8 @@
 }
 .post-card--green { --wash: var(--confirmed); }
 .post-card--ink { --wash: var(--reading-ink); }
-.post-thumb img { position: absolute; left: 50%; bottom: -14%; width: 92%; translate: -50% 0; transition: transform 300ms cubic-bezier(.2,.8,.2,1); }
+/* The pack poses are 2:3 (the v1.3 SVGs were square): sized by height so his head stays in the frame. */
+.post-thumb img { position: absolute; left: 50%; bottom: -6%; height: 104%; width: auto; translate: -50% 0; transition: transform 300ms cubic-bezier(.2,.8,.2,1); }
 .post-card:hover .post-thumb img { transform: translateY(-4px) rotate(-2deg); }
 .post-thumb .d-sparkle-sm { width: 20px; top: 14px; right: 16px; }
 @media (prefers-reduced-motion: reduce) { .post-card:hover .post-thumb img { transform: none; } }

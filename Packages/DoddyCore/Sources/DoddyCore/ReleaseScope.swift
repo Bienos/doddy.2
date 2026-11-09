@@ -16,8 +16,6 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case translator
     /// Several changes on one card, `propose_plan` (ADR-204).
     case planCard
-    /// ElevenLabs or OpenAI Realtime, chosen on Home and in Settings › Voice (ADR-442, ADR-546).
-    case voiceProviderPicker
 
     // Memory, beyond notes and lists
     /// "Close in meaning" results from on-device embeddings (ADR-227).
@@ -144,10 +142,12 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .studio: [VoiceToolName.makeSomething]
         case .payments: [PaymentToolName.payForPage]
         case .lostWallet: [VoiceToolName.lostWallet]
-        case .voiceProviderPicker, .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
+        case .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
              .recordings, .sharedLists, .shoppingModeLockScreen, .placeReminders, .eveningWrapUp, .weeklyLookBack,
-             .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .callCases, .parcels:
+             .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .parcels:
             []
+        // Calls Doddy makes for the user, started from a conversation (decision 2026-11-09-restaurant-calls-one-tap).
+        case .callCases: [VoiceToolName.callPlaces]
         }
     }
 
@@ -202,11 +202,12 @@ public struct ReleaseScope: Equatable, Sendable {
     /// The v1 beta (`docs/product/V1_SCOPE.md`, `PRZEGLAD_FUNKCJI_2026-11-07.md` §6): the
     /// conversation, memory, Apple Calendar, Reminders and Contacts, timers, alarms, the stopwatch,
     /// sums, the weather and Wikipedia, photo notes and camera, Face ID, backup and export, Messages
-    /// behind its own consent. Everything that needs a server the beta doesn't keep, a vendor, a
-    /// permission the beta doesn't ask for, or that has never run on a phone, is hidden. The list
-    /// is the owner's to change: edit it here, and the tests say what the agent must lose.
+    /// behind its own consent, and the translator (owner, 8 Nov 2026: decision 2026-11-08-translator-in-beta).
+    /// Everything that needs a server the beta doesn't keep, a vendor, a permission the beta doesn't
+    /// ask for, or that has never run on a phone, is hidden. The list is the owner's to change: edit
+    /// it here, and the tests say what the agent must lose.
     public static let shipping = ReleaseScope(hidden: [
-        .translator, .planCard, .voiceProviderPicker,
+        .planCard,
         .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning, .recordings, .sharedLists,
         .shoppingModeLockScreen, .placeReminders,
         .leaveBy, .parking, .birthdays, .eveningWrapUp, .weeklyLookBack, .weeklyPlan, .steps,
@@ -217,6 +218,16 @@ public struct ReleaseScope: Equatable, Sendable {
 
     /// The Debug-only preference that shows everything on the owner's phone. A Release build never reads it.
     public static let previewEverythingKey = "releaseScope.previewEverything"
+
+    /// A Debug build shows every feature until the switch is turned off (owner, 8 Nov 2026, decision
+    /// 2026-11-08-debug-shows-every-feature). A Release or TestFlight build is always `shipping`.
+    public static let debugShowsEverythingByDefault = true
+
+    /// The scope of a Debug build, from the preference: nil (never set) or true shows everything,
+    /// false shows what the beta ships.
+    public static func debug(showEverything: Bool?) -> ReleaseScope {
+        (showEverything ?? debugShowsEverythingByDefault) ? .everything : .shipping
+    }
 
     public func shows(_ feature: Feature) -> Bool { !hidden.contains(feature) }
 

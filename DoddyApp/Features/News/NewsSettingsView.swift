@@ -45,7 +45,7 @@ struct NewsSettingsView: View {
                 StatusRow(title: "Next", value: next)
             }
         } footer: {
-            Text("Once a day, in your current time zone (\(TimeZone.current.identifier)).")
+            Text(verbatim: String(format: NSLocalizedString("Once a day, in your current time zone (%@).", comment: ""), TimeZone.current.identifier))
         }
 
         Section("Send it as") {
@@ -99,7 +99,7 @@ struct NewsSettingsView: View {
                 VStack(alignment: .leading) {
                     Text(model.loaded?.feeds.first { $0.url == url }?.title ?? url)
                     if model.loaded?.feeds.first(where: { $0.url == url })?.failing == true {
-                        Text("Couldn't load this feed last time").font(.footnote).foregroundStyle(Theme.error)
+                        Text("Couldn't load this feed last time. Check its address, or swipe to delete it.").font(.footnote).foregroundStyle(Theme.error)
                     }
                 }
             }
@@ -131,13 +131,15 @@ struct NewsSettingsView: View {
             Section("Recent") {
                 ForEach(model.digests) { digest in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("\(DateText.full(digest.createdDate))\(digest.aiWritten ? " · written by AI" : "") · \(digest.deliveryText)")
+                        Text(verbatim: DateText.full(digest.createdDate)
+                             + (digest.aiWritten ? NSLocalizedString(" · written by AI", comment: "") : "")
+                             + " · \(digest.deliveryText)")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         ForEach(digest.items, id: \.url) { item in
                             if let url = URL(string: item.url) {
                                 Link(destination: url) {
-                                    Text("\(item.line) ") + Text(item.source).foregroundStyle(Theme.secondaryText)
+                                    Text(verbatim: item.line + " ") + Text(item.source).foregroundStyle(Theme.secondaryText)
                                 }
                             }
                         }

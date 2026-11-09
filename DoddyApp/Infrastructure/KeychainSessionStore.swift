@@ -78,3 +78,39 @@ enum KeychainSessionStore {
         DeviceSession.typedServerURL()
     }
 }
+
+/// Decision 2026-11-08-required-account: the signed-in Doddy account (its access and refresh tokens and
+/// who it is), in the Keychain on this device only, never in backups or UserDefaults. Only
+/// `DoddyAccountModel` reads and writes it, and only a kept session counts as signed in.
+struct DoddyAccountKeychain: DoddyAccountSessionStore {
+    private static let service = "com.bienos.doddy2.doddy-account"
+    private static let account = "session"
+
+    private var query: [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: Self.service,
+         kSecAttrAccount as String: Self.account]
+    }
+
+    func load() -> DoddyAccountSession? {
+        var read = query
+        read[kSecReturnData as String] = true
+        read[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(read as CFDictionary, &item) == errSecSuccess, let data = item as? Data else { return nil }
+        return try? JSONDecoder().decode(DoddyAccountSession.self, from: data)
+    }
+
+    func save(_ session: DoddyAccountSession) -> Bool {
+        guard let data = try? JSONEncoder().encode(session) else { return false }
+        SecItemDelete(query as CFDictionary)
+        var add = query
+        add[kSecValueData as String] = data
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
+    }
+
+    func delete() {
+        SecItemDelete(query as CFDictionary)
+    }
+}

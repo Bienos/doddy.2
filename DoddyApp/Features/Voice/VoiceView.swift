@@ -13,7 +13,6 @@ struct VoiceView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Back from iPhone Settings, the access card looks at iOS's answer again (ADR-578).
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
     @State private var authSession = VoiceAuthSession.shared
@@ -34,8 +33,6 @@ struct VoiceView: View {
     /// "What leaves this iPhone", opened from the note under the transcript.
     @State private var showDataFlow = false
 
-    private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
-
     /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
     /// Debug builds may go straight to the agent without a DODDY voice account (ADR-551).
     private var mode: VoiceConnectionMode { VoiceConfig.connectionMode }
@@ -46,7 +43,7 @@ struct VoiceView: View {
                 if let controller {
                     session(controller)
                 } else {
-                    VoiceAccessGate(provider: provider) {
+                    VoiceAccessGate {
                         Task { await beginConversation() }
                     }
                 }
@@ -86,7 +83,7 @@ struct VoiceView: View {
             // and keeps it going after the sheet closes (ADR-595), as the gate's button already does.
             await Task { @MainActor in
                 await authSession.restore()
-                if (authSession.isSignedIn || VoiceConfig.talksWithoutAccount(for: provider)) && VoiceProviderConsent.isGranted(for: provider) {
+                if authSession.hasVoiceAccess() && VoiceProviderConsent.isGranted() {
                     await beginConversation()
                 }
             }.value
@@ -182,17 +179,6 @@ struct VoiceView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         statusHeader(controller)
 
-                        // ADR-265/442: the copy below names ElevenLabs; say plainly when it isn't.
-                        if controller.provider == .openAIRealtime {
-                            Label {
-                                Text(verbatim: "OpenAI Realtime \(controller.openAIModel.shortName) runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.")
-                            } icon: {
-                                Image(systemName: "waveform.badge.mic")
-                            }
-                                .font(.footnote)
-                                .foregroundStyle(Theme.secondaryText)
-                                .accessibilityIdentifier("voice.openAITest")
-                        }
                         if controller.audioPausedByOtherApp && controller.isLive {
                             Label("Another app has Doddy's audio. He can't hear you until it lets go.", systemImage: "pause.circle")
                                 .font(.footnote)
@@ -214,16 +200,9 @@ struct VoiceView: View {
 
                         if controller.isPrivate {
                             Label {
-                                // Names the voice that runs this conversation (engineering audit, 7 Nov 2026):
-                                // the one text named OpenAI first though ElevenLabs is the default.
-                                Group {
-                                    if controller.provider == .openAIRealtime {
-                                        Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
-                                    } else {
-                                        Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
-                                    }
-                                }
-                                .font(.footnote)
+                                // Names the voice that runs this conversation (engineering audit, 7 Nov 2026).
+                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                    .font(.footnote)
                             } icon: {
                                 Image(systemName: "eye.slash.fill")
                             }
@@ -753,41 +732,10 @@ struct VoiceView: View {
             Text("A BLIK transfer for you to send")
                 .font(.headline)
             blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
-        case .text(_, let draft):
-            // ADR-750 U2: exactly the text the approval covers, and who it goes to.
-            Text("Send this text to you?")
-                .font(.headline)
-            Text(String(format: NSLocalizedString("From Doddy's number to your number ending %@", comment: ""), draft.recipientEnding))
-                .foregroundStyle(Theme.secondaryText)
-            Text(draft.body)
-                .font(.body)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
-                .accessibilityIdentifier("voice.text.body")
-            if draft.segments > 1 {
-                Label(String(format: NSLocalizedString("Sent as %lld SMS parts", comment: ""), draft.segments), systemImage: "square.stack")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-            }
-            if let sent = VoiceSessionController.queuedTexts[draft.approvalHash], sent.timeIntervalSinceNow > -24 * 3600 {
-                Label(String(format: NSLocalizedString("You already sent this exact text at %@. Sending again sends it a second time.", comment: ""),
-                             sent.formatted(date: .omitted, time: .shortened)),
-                      systemImage: "exclamationmark.triangle")
-                    .font(.footnote)
-            }
-            if VoiceSessionController.unconfirmedTexts.contains(draft.approvalHash) {
-                Label("Doddy couldn't confirm an earlier try of this exact text. Sending again while Doddy is open won't send it twice.",
-                      systemImage: "exclamationmark.triangle")
-                    .font(.footnote)
-            }
-            Text("Twilio carries the text. Doddy's server keeps it encrypted only until it's sent, and sends exactly this.")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
         case .callLater(_, let draft, let to, let quietHours):
             callLaterContent(draft, to: to, quietHours: quietHours, controller: controller)
+        case .callTask(_, let preview):
+            callTaskContent(preview)
         case .presentation(_, let draft):
             PresentationCardContent(draft: draft)
         case .home(_, let command):
@@ -1232,8 +1180,8 @@ struct VoiceView: View {
         case .camera: (NSLocalizedString("Open camera", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .home: (NSLocalizedString("Yes", comment: ""), NSLocalizedString("No", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
-        case .text: (NSLocalizedString("Send text", comment: ""), NSLocalizedString("Don't send", comment: ""))
         case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
+        case .callTask: (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
         // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
@@ -1252,6 +1200,58 @@ struct VoiceView: View {
         case .leaveBy: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .ingredients(_, _, _, _, let items, _):
             (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
+        }
+    }
+
+    /// "Call these places for you?" (decision 2026-11-09-restaurant-calls-one-tap): every place, its number and
+    /// where it came from, the exact opening line and question, what Doddy won't do, and how the answer
+    /// comes back. The one tap approves exactly this.
+    @ViewBuilder
+    private func callTaskContent(_ preview: CallTaskPreview) -> some View {
+        Text(preview.places.count == 1 ? NSLocalizedString("Call this place for you?", comment: "")
+                                       : NSLocalizedString("Call these places for you?", comment: ""))
+            .font(.headline)
+        ForEach(Array(preview.places.enumerated()), id: \.offset) { index, place in
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: "\(index + 1). \(place.callee.name)")
+                    .font(.body.weight(.semibold))
+                Text(verbatim: place.callee.phone)
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+        }
+        Text("Numbers from Doddy's place search.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        if let first = preview.places.first {
+            Text("Doddy says:")
+                .font(.footnote.weight(.semibold))
+            Text(verbatim: first.openingLine)
+                .font(.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+                .accessibilityIdentifier("voice.callTask.opening")
+            ForEach(first.forbidden, id: \.self) { line in
+                Label { Text(verbatim: line) } icon: { Image(systemName: "hand.raised") }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        if preview.places.count > 1 {
+            Text("One at a time, in this order. Doddy stops at the first yes.")
+                .font(.footnote)
+        }
+        Text(preview.textResult ? NSLocalizedString("You get a notification and a text with the answer.", comment: "")
+                                : NSLocalizedString("You get a notification with the answer.", comment: ""))
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        if preview.callableNow == false {
+            Label("It's outside calling hours (8:00 to 23:00), so the first call can't start now.", systemImage: "moon")
+                .font(.footnote)
         }
     }
 

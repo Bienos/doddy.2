@@ -52,8 +52,6 @@
   <script src="/i18n.js" defer></script>
   <!-- i18n:dictionary --><script src="/i18n/pl.js" defer></script><!-- /i18n:dictionary -->
   <script src="/main.js" defer></script>
-  <script src="/court.js" defer></script>
-  <script src="/memory.js" defer></script>
   <script src="/analytics.js" defer></script>
   <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
        /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
@@ -105,7 +103,6 @@
           <li><a href="#asks">Czego prosisz</a></li>
           <li><a href="/pl/what-can-doddy-do/">Co potrafi Doddy?</a></li>
           <li><a href="#meet">Poznaj Doddy’ego</a></li>
-          <li><a href="#play">Graj</a></li>
           <li><a href="/pl/blog/">Blog</a></li>
           <li><a href="#privacy">Prywatność</a></li>
         </ul>
@@ -120,7 +117,6 @@
           <li><a href="#asks">Czego prosisz</a></li>
           <li><a href="/pl/what-can-doddy-do/" class="menu-new">Co potrafi Doddy? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">Poznaj Doddy’ego</a></li>
-          <li><a href="#play">Graj</a></li>
           <li><a href="/pl/blog/">Blog</a></li>
           <li><a href="#privacy">Prywatność</a></li>
         </ul>
@@ -215,46 +211,6 @@
       </div>
     </section>
 
-    <section class="film" id="film" aria-labelledby="film-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="film-title" class="display-m">Pewnego poranka w Warszawie.</h2>
-          <p>Krótkie wideo o Doddym, piłce, której nigdy do końca nie odkłada, i jednym bardzo zdeterminowanym gołębiu. 1 min 15 s, najlepiej z dźwiękiem.</p>
-        </div>
-        <div class="film-stage">
-          <div class="film-card">
-            <span class="tape t1" aria-hidden="true"></span>
-            <span class="tape t2" aria-hidden="true"></span>
-            <div class="player">
-              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Wideo marki Doddy, 1 minuta 15 sekund">
-                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
-              </video>
-              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>Podgląd, wyciszony</span>
-              <button class="cover" type="button" aria-label="Odtwórz wideo z dźwiękiem">
-                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
-                <span class="cover-label" aria-hidden="true"><span class="cover-title">Obejrzyj wideo</span>1:15 · z dźwiękiem</span>
-              </button>
-            </div>
-          </div>
-          <div class="film-doddy" aria-hidden="true">
-            <p class="says">To ja.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
-          </div>
-        </div>
-        <ol class="chapters" aria-label="Przejdź do momentu w wideo">
-          <li><button type="button" data-seek="0"><span class="t">0:00</span>Plac przy zamku</button></li>
-          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>Wielkie pytanie</button></li>
-          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Wszystkie języki naraz</button></li>
-          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>Pytanie do miejscowego</button></li>
-          <li><button type="button" data-seek="38"><span class="t">0:38</span>Gołąb</button></li>
-          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>Złamane serce przy bramce</button></li>
-          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>Zamknięte</button></li>
-          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
-        </ol>
-        <p class="caption film-caption">Wideo marki. Opowieść o Doddym, a nie demo aplikacji.</p>
-      </div>
-    </section>
-
     <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
     <section class="vs-section" aria-labelledby="vs-title">
       <div class="wrap">
@@ -313,54 +269,6 @@
     </section>
 
     <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
-    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
-      <div class="wrap play-head">
-        <div>
-          <p class="pill"><span class="dot" aria-hidden="true"></span>Podczas czekania</p>
-          <h2 id="play-intro-title" class="display-m">Dwie gry. Piłka, której nigdy nie puszcza.</h2>
-        </div>
-        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
-      </div>
-    </section>
-
-    <section class="court" id="shoot" aria-labelledby="play-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="play-title" class="display-m">Oddaj rzut</h2>
-          <p>Doddy nigdy do końca nie odkłada piłki. Naciśnij w dowolnym miejscu na boisku, odciągnij i puść, żeby rzucić. Albo pozwól, żeby Doddy spróbował.</p>
-        </div>
-        <div class="court-panel">
-          <canvas id="court" width="800" height="520" role="img" aria-label="Gra w koszykówkę: Doddy rzuca piłką do kosza. Użyj przycisku „Rzuć za mnie”, żeby rzucić."></canvas>
-          <div class="court-bar">
-            <p class="court-score" aria-live="polite">Kosze <strong id="made">0</strong> z <strong id="shots">0</strong> rzutów</p>
-            <button class="button small" id="auto-shot" type="button">Rzuć za mnie</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="memory" id="remember" aria-labelledby="remember-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="remember-title" class="display-m">Zapamiętaj to</h2>
-          <p>Sześć drobiazgów, dwanaście kart. Odwracaj po dwie i znajdź pary. Doddy radzi sobie z tym lepiej niż reszta z nas.</p>
-        </div>
-        <div class="court-panel memory-panel">
-          <div class="memory-stage">
-            <div class="memory-grid" id="memory-grid" role="group" aria-label="Gra w pamięć"></div>
-            <div class="memory-doddy">
-              <p class="memory-bubble" id="memory-bubble" aria-live="polite">Odwróć dwie. Znajdź parę.</p>
-              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
-            </div>
-          </div>
-          <div class="court-bar">
-            <p class="court-score">Pary <strong id="memory-pairs">0</strong> z 6 · Ruchy <strong id="memory-moves">0</strong></p>
-            <button class="button small" id="memory-restart" type="button">Nowa gra</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="privacy" id="privacy" aria-labelledby="privacy-title">
       <div class="wrap">
         <div class="privacy-panel">
@@ -373,8 +281,8 @@
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
-              <h3>Bez konta</h3>
-              <p>Bez rejestracji, bez e-maila, bez hasła. Otwórz aplikację i zacznij.</p>
+              <h3>Jedno logowanie</h3>
+              <p>Zaloguj się przez Apple albo Google. Żadnego hasła do zapamiętania.</p>
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
@@ -387,7 +295,7 @@
               <p>Usuń jedną notatkę albo wszystkie. Od razu znikną z wyszukiwania.</p>
             </li>
           </ul>
-          <p class="privacy-note">Doddy to AI, nie osoba. Niektóre rzeczy, które włączysz, wysyłają dane poza telefon: rozmowy głosowe (OpenAI, a jeśli zmienisz głos, ElevenLabs), wyszukiwania pogody i Wikipedii (nazwa miejsca lub hasła), rozmowy i pamięć podczas rozmów (serwer Doddy, Twilio i ElevenLabs), wspólne listy (Twój iCloud) oraz połączone konta, np. Gmail czy Todoist (przez serwer Doddy). Reszta zostaje na Twoim iPhonie. Wszystko to jest w testach.</p>
+          <p class="privacy-note">Doddy to AI, nie osoba. Niektóre rzeczy, które włączysz, wysyłają dane poza telefon: rozmowy głosowe (ElevenLabs), wyszukiwania pogody i Wikipedii (nazwa miejsca lub hasła), rozmowy i pamięć podczas rozmów (serwer Doddy, Twilio i ElevenLabs), wspólne listy (Twój iCloud) oraz połączone konta, np. Gmail czy Todoist (przez serwer Doddy). Reszta zostaje na Twoim iPhonie. Wszystko to jest w testach.</p>
         </div>
       </div>
     </section>
@@ -445,7 +353,7 @@
               <p id="answers-status" class="status" role="status" aria-live="polite"></p>
             </form>
             <ul class="join-facts" aria-label="Co znaczy wczesny dostęp">
-              <li><b>Bez konta.</b> Otwórz aplikację i zacznij.</li>
+              <li><b>Jedno logowanie.</b> Apple albo Google, i zaczynasz.</li>
               <li><b>Twoje notatki są zapisane na iPhonie.</b> Głos, rozmowy, wspólne listy, e-mail, kalendarz i pliki opuszczają go tylko wtedy, gdy je włączysz.</li>
               <li><b>Usuń, kiedy chcesz.</b> Twój e-mail, notatki, wszystko.</li>
             </ul>

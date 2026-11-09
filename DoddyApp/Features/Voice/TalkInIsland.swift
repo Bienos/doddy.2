@@ -95,7 +95,7 @@ enum TalkInIsland {
             return .done
         case .showInApp:
             noteShortcutRan()
-            ShortcutRouter.shared.talkButtonOpenedApp()
+            await startOnHome()
             return .done
         case .openApp:
             noteShortcutRan()
@@ -114,6 +114,23 @@ enum TalkInIsland {
                 return .tell(error.localizedDescription)
             }
         }
+    }
+
+    /// Doddy is on screen (owner, 9 Nov 2026: "only the small island"): start the conversation on
+    /// Home, where its strip over the island is the screen, instead of opening the voice screen.
+    /// Anything that needs a screen (voice screen already up, Face ID lock, no store, the account or
+    /// voice-data gate) falls back to the voice screen as before.
+    static func startOnHome() async {
+        let router = ShortcutRouter.shared
+        guard !router.isVoicePresented, AppLockGate.allows(.startConversation), let store = IntentStores.store else {
+            router.talkButtonOpenedApp()
+            return
+        }
+        let profiles = IntentStores.profiles
+        if let profiles, !profiles.hasLoaded { await profiles.load() }
+        let profile = profiles?.profile ?? .empty
+        let started = await HomeConversation.shared.startFromShortcut(store: store, profile: profile, greeting: greeting(for: profile))
+        if !started { router.talkButtonOpenedApp() }
     }
 
     /// The older "Talk in the Island" control: always the island; a problem is only said.
@@ -164,11 +181,9 @@ enum TalkInIsland {
             throw refused("microphone not allowed", needsApp: NSLocalizedString("Doddy needs the microphone. Open Doddy and start a conversation once to allow it.", comment: ""))
         }
         // The same account and voice-data gate as the voice screen (`VoiceView`).
-        let provider = VoiceProvider.effective(
-            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
         let auth = VoiceAuthSession.shared
         await auth.restore()
-        guard auth.isSignedIn || VoiceConfig.talksWithoutAccount(for: provider), VoiceProviderConsent.isGranted(for: provider) else {
+        guard auth.hasVoiceAccess(), VoiceProviderConsent.isGranted() else {
             throw refused("voice not set up", needsApp: NSLocalizedString("Open Doddy and start a conversation once to set up his voice. After that this works without opening him.", comment: ""))
         }
 
@@ -184,6 +199,9 @@ enum TalkInIsland {
         }
         let controller = VoiceSessionController(store: store)
         started = controller
+        // Home shows the conversation from here on (ADR-595), so opening Doddy during it leaves the
+        // app usable (Messages, notes) with Doddy talking, instead of a sheet covering it.
+        HomeConversation.shared.hold(controller)
         await controller.start(VoiceConfig.connectionMode, profile: profile,
                                wakeGreeting: greeting(for: profile), withoutOpeningApp: true)
         switch controller.phase {
@@ -196,11 +214,9 @@ enum TalkInIsland {
         default:
             break
         }
-        // Doddy came to the front while it started: iOS doesn't show his island over him, so show
-        // the conversation instead of leaving it without a screen.
-        if UIApplication.shared.applicationState == .active, VoiceSessionController.runningConversation != nil {
-            ShortcutRouter.shared.showConversationStartedElsewhere()
-        }
+        // Doddy came to the front while it started: iOS doesn't show his island over him, but Home
+        // holds the conversation and shows it, so nothing is put over the app. The transcript sheet
+        // comes up by itself only when a card needs the user (`HomeConversation.needsYou`).
     }
 
     private static func refused(_ check: String, needsApp message: String) -> StartProblem {

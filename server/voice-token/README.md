@@ -10,10 +10,10 @@ notes, profile data, and conversation prompts are not sent to this service for c
 The app calls two routes:
 
 - `POST /api/voice-auth`: Apple identity-token verification, refresh-token rotation, sign-out, and
-  DODDY voice-session deletion. The selected provider must be configured before a voice account
+  DODDY voice-session deletion. ElevenLabs must be configured before a voice account
   session can be created.
 - `POST /api/voice-token`: validates an active DODDY session and returns an ElevenLabs conversation
-  token or OpenAI Realtime client secret.
+  token. ElevenLabs is the only voice (9 Nov 2026); a request that names OpenAI gets `400 unknown_provider`.
 
 Access tokens last 10 minutes and stay in app memory. Opaque refresh tokens rotate on use and last
 30 days; the app stores the current refresh token and Apple user identifier in the iOS Keychain with
@@ -41,11 +41,6 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `UPSTASH_REDIS_REST_TOKEN` | Secret for that store. Never log or expose it to the app. |
 | `ELEVENLABS_API_KEY` | Owner-held ElevenLabs API credential. |
 | `ELEVENLABS_AGENT_ID` | The DODDY agent ID configured by the owner. |
-| `OPENAI_API_KEY` | Owner-held OpenAI API credential, if OpenAI voice is enabled. |
-| `OPENAI_REALTIME_MODEL` | Optional server default, used when the app names no model. |
-| `OPENAI_ALLOWED_MODELS` | Optional comma-separated list of the model ids the app may ask for. Empty means both `gpt-realtime-2.1` and `gpt-realtime-2.1-mini`, because the app's voice picker offers both in every build (ADR-712). Set it to `gpt-realtime-2.1-mini` to refuse the pricier one. A list that doesn't parse makes OpenAI requests answer `500 server_not_configured`. |
-| `OPENAI_OPEN_ACCESS` | Optional, off when unset. `1`, `true` or `on` lets an OpenAI request through with no voice account (ADR-726). Those requests share one limit bucket under the normal per-hour, per-day and global caps, so a stranger can use up the allowance, which also blocks you. ElevenLabs is never opened by it. Remove it and redeploy to close the door again. |
-| `OPENAI_REALTIME_VOICE` | Optional server default voice. |
 | `DODDY_TOKENS_PER_HOUR` | Optional shared per-account issuance limit; defaults to `30`. |
 | `DODDY_TOKENS_PER_DAY` | Optional per-account issuance limit per UTC day, on top of the hourly one; defaults to `150` (ADR-712). |
 | `DODDY_GLOBAL_TOKENS_PER_HOUR` | Optional shared global issuance limit; defaults to `100`. |
@@ -54,6 +49,22 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `APPLE_TEAM_ID` | Optional, with the next two: the Apple Developer team ID. Lets "Delete voice account" also revoke Sign in with Apple (ADR-524). |
 | `APPLE_SIGN_IN_KEY_ID` | The key ID of a Sign in with Apple key (Apple Developer › Certificates, Identifiers & Profiles › Keys). |
 | `APPLE_SIGN_IN_PRIVATE_KEY` | That key's `.p8` file contents (PEM; literal `\n` line breaks work). Secret: 1Password only. |
+
+### Revoking Sign in with Apple for a Doddy account (decision `2026-11-09-apple-revoke-for-doddy-accounts`)
+
+A Doddy account (a Supabase user, `SUPABASE_URL` set) made with Sign in with Apple needs the same
+revoke, but it has no voice session. Two more `POST /api/voice-auth` actions take the **Doddy account's
+access token** as the Bearer, checked like `/api/voice-token` checks it (a voice session's token is
+refused). Both need the three `APPLE_*` key settings and `APPLE_BUNDLE_ID` below; without them they
+answer 200 and do nothing.
+
+| Action | Body | When the app sends it | Answer |
+|---|---|---|---|
+| `apple-link` | `identityToken`, `rawNonce`, `authorizationCode` (all from the Apple sheet just used) | right after the sign-in with Apple | `{ linked: true }` once Apple's refresh token is kept, sealed, under `account:<Supabase user id>` for 400 days; `{ linked: false }` when the code wasn't the same Apple person's or Apple refused. Counted against the per-caller sign-in limits. |
+| `apple-revoke` | none | first, when "Delete my Doddy account" runs | `{ appleRevoked, apple }`, `apple` being `revoked`, `failed`, `no_token` or `not_configured`. A revoked or missing token is forgotten; a failed one is kept so asking again can work. Apple failing never stops the deletion. |
+
+`APPLE_BUNDLE_ID` is one value: it must be the bundle ID of the build that signs in (Beta:
+`com.bienos.doddy2.dev`), because Apple issues the one-time code to that app.
 
 ### Revoking Sign in with Apple when an account is deleted (ADR-524)
 
@@ -113,8 +124,7 @@ agent IDs are cleared on launch; the old tester code Keychain item is deleted.
 - With the defaults a handful of accounts can still use the hourly global budget (30 per account,
   100 for everyone). Lower `DODDY_TOKENS_PER_HOUR` or raise `DODDY_GLOBAL_TOKENS_PER_HOUR` to move
   that; it is the owner's choice of cost against convenience.
-- Request sizes, method, provider, model (against the allowlist above), upstream timeout, and provider
-  response shape are checked. The OpenAI client secret lasts 120 seconds.
+- Request sizes, method, provider, upstream timeout, and provider response shape are checked.
 - No content, credentials, Apple subject, or user/account identifier is written to application logs.
 - The server has no in-memory session or rate-limit fallback.
 

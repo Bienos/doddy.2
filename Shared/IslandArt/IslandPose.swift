@@ -15,8 +15,6 @@ enum IslandPose: String, CaseIterable, Sendable {
     case bellyReading = "belly_reading"
     /// The focus timer (ADR-313): dribbling, busy with one thing.
     case basketballDribble = "basketball_dribble"
-    /// Breathing (ADR-313): balancing on one leg.
-    case onelegBalance = "oneleg_balance"
     /// "Pause all connections" is on (ADR-323): crouching, lying low.
     case sneakyCrouch = "sneaky_crouch"
     /// Notes hidden from widgets or the watch (ADR-331): turned away, not looking. Frame 5 of
@@ -48,7 +46,6 @@ enum IslandPose: String, CaseIterable, Sendable {
         case .wave: (58, 100, 341, 548)
         case .bellyReading: (17, 196, 384, 413)
         case .basketballDribble: (34, 83, 375, 467)
-        case .onelegBalance: (10, 78, 389, 531)
         case .sneakyCrouch: (77, 89, 338, 524)
         case .turnedAway: (112, 118, 287, 564)
         }
@@ -57,9 +54,14 @@ enum IslandPose: String, CaseIterable, Sendable {
 
     /// The pose whose face compact and minimal show: at 24 pt only a face reads, and only four
     /// poses show it clearly. Eyes closed (from the stretch) while Doddy waits or is paused.
+    /// While a conversation is on (the greeting wave, connecting, thinking, speaking, a card that
+    /// waits, a plan that runs) it is always the smiling "listening" face (owner, 9 Nov 2026, decision
+    /// `2026-11-09-small-island-call-bars`): the half smile with a raised brow that showed after the Action
+    /// Button was a different Doddy every time the pose changed. The islands of the focus timer,
+    /// reading aloud and the rest keep the face they had.
     var facePose: IslandPose {
         switch self {
-        case .listening: .listening
+        case .listening, .wave, .shrug, .kneelingInspect, .reachingHigh, .tiptoe, .yawnStretch: .listening
         case .shush: .shush
         case .crosslegged, .leaning: .yawnStretch
         default: .crosslegged
@@ -149,11 +151,8 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
     case turn
     /// 019: a burst, a star jump, a crouch, a wave. Once, when a note is saved.
     case pop
-    /// 013: four breaths, standing. Once on Home, then he sits.
+    /// 013: four breaths, standing. The persistent Doddy breathes with it (motion v2, ADR-554).
     case idle
-    /// 017: he sits down on a box (ADR-323). Once on Home after the idle breaths; then he stays
-    /// on the box for that launch.
-    case sit
     /// 016: hand up, open, waving (ADR-380). Once: Home's first visit of a morning, the morning
     /// check-in and other hellos; then it rests on the open-hand wave.
     case wave
@@ -167,7 +166,6 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .turn: Array(1...3)
         case .pop: Array(1...4)
         case .idle: Array(1...4)
-        case .sit: Array(1...5)
         case .wave: Array(1...5)
         }
     }
@@ -182,7 +180,6 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .jump, .pop: 0.12
         case .turn: 0.16
         case .idle: 0.3
-        case .sit: 0.22
         case .wave: 0.14
         }
     }
@@ -201,7 +198,6 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .turn: (103, 115, 298, 564)
         case .pop: (34, 142, 365, 579)
         case .idle: (97, 112, 303, 564)
-        case .sit: (37, 123, 362, 564)
         case .wave: (53, 117, 347, 564)
         }
         return IslandRect(x: box.0 / 400, y: box.1 / 600, width: (box.2 - box.0) / 400, height: (box.3 - box.1) / 600)
@@ -221,9 +217,6 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
 /// The pack's storyboards, played as cross-faded panels (ADR-299, ADR-380). Panels are cropped
 /// from the pack only (`tools/whole_doddy/cut_panels.py`, `cut_storyboards.py`).
 enum PanelStory: String, CaseIterable, Hashable, Sendable {
-    /// 038: a notebook's page turns and Doddy waves. No screen shows it now (the welcome's `StorybookView`
-    /// was removed, 20 Oct); the preview gallery does.
-    case page
     /// 037: Doddy steps out of a phone onto the desk. The Back Tap guide.
     case phone
     /// 039: Doddy draws a door and walks through. The Face ID lock.
@@ -236,9 +229,9 @@ enum PanelStory: String, CaseIterable, Hashable, Sendable {
     var panelCount: Int { self == .keys ? 6 : 4 }
 
     func assetName(_ panel: Int) -> String {
-        self == .page ? "Storybook_page_\(panel)" : "Story_\(rawValue)_\(panel)"
+        "Story_\(rawValue)_\(panel)"
     }
 
     /// Seconds each panel holds before the next fades in.
-    var hold: Double { self == .page ? 1.1 : 0.9 }
+    var hold: Double { 0.9 }
 }

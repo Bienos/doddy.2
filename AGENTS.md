@@ -113,3 +113,13 @@ New behaviour has tests; the `scripts/ci.sh` groups the change can reach have ru
 
 ## Accounts (owner, 8 Nov 2026)
 Every user signs in with a Doddy account, using Apple, Google or a code sent by email; nobody uses Doddy without one. This replaces "no mandatory account" under "Project defaults" above. Design and order of work: `docs/decisions/2026-11-08-required-account.md`.
+
+## Merging (owner, 8 Nov 2026)
+Replaces "**Never** push to `main` … merge, approve, or add the `owner-approved` … labels. The owner merges (squash)." under "Branches and pull requests" above. Decision: `docs/decisions/2026-11-08-agents-merge-their-own-pull-requests.md`.
+- An agent squash-merges **its own** pull request once the required checks (`core`, `ios-build`, `sensitive-paths`) are green and every review thread is resolved. Never merge on red; never skip, disable or loosen a test to get green; never get around the `main` ruleset.
+- When `sensitive-paths` names your files, add `owner-approved` yourself, after the description says why each named file changes.
+- A merge ships: Vercel builds production from `main` (the site and the voice token server, `STATUS.md`) and Xcode Cloud builds it. Say in the description what the merge will ship. Merging this way is allowed; every other change under "Live systems and data" (Render, the live voice agents, settings in any console) still waits for the owner's instruction.
+- Still never: push straight to `main`, force-push a branch you didn't create, merge another person's or agent's pull request unless the owner asks, or add `full-ui-tests`.
+
+## Vercel is not blocked (owner, 9 Nov 2026)
+Never tell the owner that Vercel or their Vercel account is blocked. The live team `doddyyyy` works (Hobby plan, billing active, production deployments `READY`). The red "Account is blocked." statuses (`Vercel – doddy`, `Vercel – doddy-gateway`, `Vercel – doddy-voice-token`) on pull requests come from an **old** Vercel account that still has this repository connected; disconnecting it is `docs/OWNER_QUEUE.md` 14. On `claude/…` branches a workflow replaces them with "Skipped" within seconds (decision `docs/decisions/2026-11-09-vercel-blocked-status.md`); on `main` the live team's own status replaces them. They are not required checks: read the commit status again before treating one as a failure, and call it "the old Vercel account's status", never "Vercel is blocked".

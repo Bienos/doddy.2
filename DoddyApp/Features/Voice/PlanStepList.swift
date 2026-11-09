@@ -32,7 +32,7 @@ struct PlanStepList: View {
                                 Label("Demo — nothing real will be created", systemImage: "theatermasks")
                                     .font(.footnote)
                             }
-                            Text("\(prepared.preview.title) · \(request?.app.title ?? "")")
+                            Text(verbatim: "\(prepared.preview.title) · \(request?.app.title ?? "")")
                                 .font(.body)
                                 .foregroundStyle(Theme.ink)
                             ForEach(Array(prepared.preview.lines.enumerated()), id: \.offset) { _, line in
@@ -41,7 +41,7 @@ struct PlanStepList: View {
                                     .foregroundStyle(Theme.secondaryText)
                             }
                         } else {
-                            Text("\(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
+                            Text(verbatim: "\(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
                                 .font(.body)
                                 .foregroundStyle(Theme.ink)
                             if let detail = request?.detail {
@@ -71,7 +71,7 @@ struct PlanStepList: View {
                 }
                 .buttonStyle(.borderless)
                 .frame(minHeight: 44)
-                .accessibilityLabel("Change step \(step.number)")
+                .accessibilityLabel(String(format: NSLocalizedString("Change step %lld", comment: ""), step.number))
                 .accessibilityIdentifier("\(idPrefix).change\(step.number)")
             }
         }

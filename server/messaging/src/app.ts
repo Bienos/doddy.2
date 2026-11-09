@@ -26,7 +26,9 @@ import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
 import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
 import { errandRoutes } from "./routes/errands.js";
 import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
+import { fileWatchRoutes } from "./routes/fileWatches.js";
 import { studioRoutes } from "./routes/studio.js";
+import { fileWatchContext, type FileWatchContext, type FileWatchDeps } from "./fileWatches.js";
 import { studioContext, type StudioContext, type StudioDeps } from "./studio/context.js";
 import { assistantRoutes } from "./routes/assistant.js";
 import { dealsRoutes } from "./routes/deals.js";
@@ -45,6 +47,8 @@ declare module "fastify" {
     errandContext: ErrandContext | null;
     /** The Studio context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     studioContext: StudioContext | null;
+    /** The file-ready push context (null without MEMORY_ENCRYPTION_KEY or DOCUMENTS_ORIGIN); tests run worker passes on it. */
+    fileWatchContext: FileWatchContext | null;
     /** The price-watch context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     watchContext: WatchContext | null;
   }
@@ -93,6 +97,8 @@ export interface Deps {
   errandLog?: (msg: string, extra?: object) => void;
   /** Studio (ADR-740): settings and the model API (needs an Anthropic key and Doddy's skills). Needs `cipher` too. */
   studio?: StudioDeps;
+  /** File-ready pushes (9 Nov 2026): the backend's address and, in tests, a fake fetch and clock. Needs `cipher` too. */
+  fileWatches?: FileWatchDeps;
   /** Where Studio log lines go (tests capture them); default: the request logger. */
   studioLog?: (msg: string, extra?: object) => void;
   /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
@@ -175,6 +181,9 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const studioCtx = studioContext(deps.db, deps.studio, deps.cipher, deps.push,
     deps.studioLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("studioContext", studioCtx ?? null);
+  const fileWatchCtx = fileWatchContext(deps.db, deps.fileWatches, deps.cipher, deps.push,
+    deps.studioLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("fileWatchContext", fileWatchCtx ?? null);
   const watchCtx = watchContext(deps.db, deps.watches, deps.cipher, deps.push,
     deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("watchContext", watchCtx ?? null);
@@ -194,6 +203,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));
   await app.register(studioRoutes(deps, studioCtx));
+  await app.register(fileWatchRoutes(deps, fileWatchCtx));
   await app.register(assistantRoutes(deps));
   await app.register(dealsRoutes(deps));
   await app.register(registryRoutes(deps));

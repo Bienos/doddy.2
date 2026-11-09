@@ -67,7 +67,7 @@ final class ProfileExportTests: XCTestCase {
 
     func testPlainTextListsEachAnswerWithWhenItWasSaved() {
         let text = ProfileExport.plainText(profile, style: style, exportedAt: exportedAt)
-        XCTAssertTrue(text.hasPrefix("DODDY profile and settings — exported 2025-10-09T08:53:20Z"))
+        XCTAssertTrue(text.hasPrefix("Doddy profile and settings — exported 2025-10-09T08:53:20Z"))
         XCTAssertTrue(text.contains("What to call you: Patryk"))
         XCTAssertTrue(text.contains("Current focus: Moving flat in November\n  Saved 2025-09-27T19:06:40Z after your review (revision 2)"))
         XCTAssertTrue(text.contains("Used in voice conversations: yes"))

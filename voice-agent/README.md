@@ -3,7 +3,9 @@
 **In short:** this folder holds what Doddy's voice agents are told and which tools they have. There are three ElevenLabs agents: the main agent the app talks to (the files in this folder, 107 tools), the phone agent for Doddy's phone number (`phone/`, 3 tools) and the agent that calls a business for the user (`task-call/`, no tools). The last two are not created yet.
 Check all three with `python3 -I scripts/voice_agent_spec.py check`, adding `--agent phone` or `--agent task-call`; `scripts/ci.sh --only checks` runs all three.
 Editing these files doesn't change a live agent. The live agents are changed only by the owner, or on the owner's separate instruction. Most of this page is a dated log of what was applied to the live main agent, mostly newest first.
-**Newest recorded read of the live main agent:** 2 Nov 2026, about 22:10 UTC, after `lost_wallet` was added (entry below), `agtvrsn_0401m6f4z169efmrdjy87wc4ys6k`, 104 tools: 103 of the 107 here, plus `draft_blik_transfer` (removed from the spec on 5 Nov, below). Not on the live agent: `make_something`, `pay_for_page`, `text_me` and `call_me_later` (each below). `hand_over_errand` and `check_errands` are live (27 Oct entry below) but still say `not_synced` in `tools.json`. Nothing on the live agent was read after 2 Nov.
+**Read again on 9 Nov 2026 (read-only; nothing changed):** `agtvrsn_2901m6zx72khevps44mpwp9rbw7v`, authentication on. The live system prompt is a much shorter prompt than `instructions.md` (about 19,000 characters against 53,000): it has no "# Claude (ask_claude, make_document)" section, and mentions `make_document` only under "Shared tool rules › Routing" ("Decks and long files → make_document") and in "Working a task" ("Background work exists only through hand_over_errand and make_document"). The live `make_document` tool (`tool_2101m5f15tckfy0v74g5gyaqm3td`) has its older description with no search-first sentence, and ElevenLabs counts one call of it in total. So a repo sentence about "the # Claude section" does not apply to the live agent as written; the live edit is one sentence in "Routing" and one at the end of the tool's description (`docs/OWNER_QUEUE.md` item 29).
+**Changed on 9 Nov 2026 (owner: "you do it"):** the live `make_document` tool description gained one sentence (search first for a report about real places, products, events or facts; never from memory alone); the system prompt gained one sentence in "Shared tool rules › Routing" saying the same. **Both are live since 9 Nov 2026** (owner: "you publish"). The connector can only stage a prompt edit, and `agents_update` with a `version_description` created a version without the draft (prompt still 22,841 characters), so the same prompt was written with `agents_update_prompt_settings` (only the `prompt` field): version `agtvrsn_0501m706dw6tfyj8frbt6g06m3y4`, 23,453 characters (22,841 + the 612-character sentence, checked by length, not byte for byte), model, voice, language and the 108 tools unchanged. The editor may still show the staged draft; it holds the same text. The repo's `tools.json` has the tool sentence word for word; `instructions.md` has the longer bullet under "# Claude".
+**Newest recorded read of the live main agent:** 9 Nov 2026, about 10:20 UTC, after `call_me_later` was attached (entry below), `agtvrsn_2901m6zx72khevps44mpwp9rbw7v`, 105 tools: 104 of the 107 here, plus `draft_blik_transfer` (removed from the spec on 5 Nov, below). Not on the live agent: `make_something`, `pay_for_page` and `text_me` (each below). `hand_over_errand` and `check_errands` are live (27 Oct entry below) but still say `not_synced` in `tools.json`. Nothing on the live agent was read after 2 Nov.
 
 Owner decision 2026-10-09 (ADR-058): Doddy runs on **ElevenLabs Agents**, but everything that
 defines Doddy is kept here in **OpenAI Realtime** form, so moving to OpenAI Realtime later means
@@ -19,7 +21,7 @@ adding one adapter, not rewriting the app or the agent.
 
 **`make_something` (Studio, ADR-740, ADR-742) is in `tools.json` and `instructions.md` only; it is NOT on the live ElevenLabs agent** (`elevenlabs_tool_id` is `not_synced`, and its prompt lines were not applied). The agent is changed only on the owner's separate instruction, and Studio is off on the server by default. An app build that has it answers the tool; the live agent never calls it.
 
-**OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
+**OpenAI Realtime voice: removed on 9 Nov 2026** (decision `2026-11-09-elevenlabs-only-voice`). The app, the voice picker and the token server's OpenAI path are gone; ElevenLabs is the only voice. The notes below about OpenAI describe what existed (ADR-265, ADR-442, ADR-546) and are kept as history.
 **Repository spec trimmed, 1 Nov 2026 (owner-approved trim from the audit of 1 Nov). NOT applied to the live agent: the live ElevenLabs agent was not read, compared or changed; syncing waits for the owner's separate instruction. Until then this folder's prompt and 66 tool descriptions are not what the live agent runs.**
 - **What:** the per-tool ASK-01 endings (55 descriptions) and the sentences copied into many descriptions (switched off or not connected, Settings, Online accounts; "never say it was done… 'unknown'"; the result-prefix lists; "If the result starts with DEMO DATA") are gone from `tools.json`. Each rule is said once in `instructions.md`: ASK-01 in "Always ask first", the rest in "Online account rules". A tool keeps its own nuances (its switch's name, 'not allowed' and 'empty' results, `hand_over_errand`'s one yes) and gets one short tag: "Ask: yes/tap." (`x_doddy.ask` `yes_or_tap`), "Ask: tap only." (`tap`) or "Runs at once." (`runs_now`); the ASK-01 section says what each tag means. `stop_translator` (runs at once) had carried the read tools' ask-first text by mistake; it now says "Runs at once.". Only description strings changed: no name, parameter, `x_doddy`, `speak_before` or setting.
 - **How much:** the tools as the model sees them (no `x_doddy`, compact JSON) 132,292 → 105,483 characters (about 33.1k → 26.4k tokens at 4 characters a token); `instructions.md` 52,360 → 53,740 bytes; about 6.4k tokens less on every turn. `tools.json` 165,990 → 139,025 bytes.
@@ -45,7 +47,7 @@ Every tool asks first (ASK-01, `x_doddy.ask`): a read, or a request to Claude, w
 | Tasks and leaflets | `hand_over_errand`, `check_errands`, `find_deals` | The app asks; the messaging server (`doddy-messaging`) does the work |
 | Studio (not on the live agent) | `make_something`: a research brief (PDF) and an infographic, made in the background | The app asks; the messaging server does the work. Off on the server by default (ADR-740) |
 | Invoices and a lost wallet | `draft_invoice` (fills the invoice card, sends nothing), `lost_wallet` (a checklist of what to do, the app can't block a card) | The app |
-| Texts, calls and payments (not on the live agent) | `text_me` and `call_me_later` (a text or a booked call from Doddy's own number to the person's own verified number), `pay_for_page` (proposes paying for one page; off unless the server's owner sets a wallet, test network only) | The app asks; `text_me` and `call_me_later` go to the messaging server. `pay_for_page` is answered by the app with the server's terms and a Face ID |
+| Texts, calls and payments (`call_me_later` live since 9 Nov 2026; the others not on the live agent) | `text_me` and `call_me_later` (a text or a booked call from Doddy's own number to the person's own verified number), `pay_for_page` (proposes paying for one page; off unless the server's owner sets a wallet, test network only) | The app asks; `text_me` and `call_me_later` go to the messaging server. `pay_for_page` is answered by the app with the server's terms and a Face ID |
 | Web, news, places, Claude | `web_search`, `news_search`, `find_places`, `ask_claude`, `make_document` (any deck or document except Keynote) | The app asks; Doddy's phone backend (`doddy`) runs them |
 | Gmail | `check_email`, `read_email`, `draft_email`, `draft_email_reply`, `send_email`, `reply_to_email`, `forward_email`, `change_email`, `trash_email` | Doddy's phone backend, once the user connects the account |
 | Outlook mail | `check_outlook_email`, `read_outlook_email`, `draft_outlook_email`, `send_outlook_email`, `reply_outlook_email`, `forward_outlook_email`, `move_outlook_email`, `mark_outlook_email` | Doddy's phone backend, once connected |
@@ -55,7 +57,16 @@ Every tool asks first (ASK-01, `x_doddy.ask`): a read, or a request to Claude, w
 
 The app's routing is `VoiceToolRequest.parse` and `CloudToolName` in DoddyCore. `check` fails if a phone tool has no Swift source that names it. Tools that were on the live agent and were detached because the app couldn't run them: `upcoming_renewals` and `add_to_diary` (19 Oct, ADR-544; not in `tools.json`, no app handler). `pay_for_page`, `text_me` and `call_me_later` were detached then too; they are back in `tools.json` with app handlers, but still not on the live agent.
 
-## Changes to the live main agent, 20 Oct to 2 Nov 2026 (newest first)
+## Changes to the live main agent, 20 Oct to 9 Nov 2026 (newest first)
+
+**Applied to the live agent 9 Nov 2026, about 10:20 UTC (`call_me_later`, ADR-754; owner: "zrób to", after being told "Doddy, call me" by voice needs the tool on the agent, and that the agent is changed only on their word).**
+- **Why:** the owner asked Doddy by voice to call them (conversations `conv_4401m6zw3e3peg1vf2rc8efxhy9v`, `conv_6501m6zw86xhfxk9tz5wfbt81g65`, 9 Nov about 10:02 and 10:04 UTC); the agent had no calling tool and said it couldn't. The messaging server already serves booked calls (`GET /v1/calls/scheduled` answered 200 in its log at 10:00 UTC), so no deploy was needed.
+- **Read right before saving:** `agtvrsn_5201m6xmg5wcf0prdxf923k5b3et`, 104 tools, model `gpt-6-luna`. **Rollback:** that version.
+- **The tool:** `call_me_later` already existed in the workspace as client tool `tool_6901m57key8nftdsvny3qd3n5kr7` (read 9 Nov: description, parameters, 90 s, speak first forced, the same as `tools.json`). It was not changed.
+- **Saved:** `agtvrsn_2901m6zx72khevps44mpwp9rbw7v`, `tool_ids` only: the 104 live ids unchanged and in order, plus `call_me_later` (105). No prompt, model or other setting was sent; the read-back shows the prompt as before and `gpt-6-luna`. The prompt's "Unsupported" line already says "Unless a tool provides it", so it was left as the owner wrote it.
+- **What it does:** "zadzwoń do mnie o szóstej" shows a card in the app; nothing is booked until the tap; the messaging server rings the verified number at that time. It can't call right now (from two minutes ahead); for now the person taps Call me now under Home › ••• › Phone calls. App builds that hide phone calls (`ReleaseScope.shipping`, the beta) refuse the tool, so in TestFlight Doddy says it can't.
+- **Not yet seen working:** no booked call had been placed when this was written.
+
 
 **Applied to the live agent 2 Nov 2026, about 22:10 UTC (ADR-692, `lost_wallet`; owner: "add lost_wallet to the live agent", after the question about it on PR #176).**
 - **Read first, and again right before saving, unchanged between the two:** `agtvrsn_5301m6et97fde7ysr5q2em33x62h`, 103 tools, model `gpt-6-luna`. That version was saved by someone else after the 1 Nov `draft_invoice` change (`agtvrsn_7901m6bqz362eah8t83pghsbdj3e`); this change did not touch it. **Rollback:** `agtvrsn_5301m6et97fde7ysr5q2em33x62h`.
@@ -363,7 +374,7 @@ Both lines are merged now, so the spec has them all.
 
 **How the app really connects (ADR-265):** `VoiceSessionController` talks to a `LiveVoiceLink`
 (`DoddyApp/Features/Voice/LiveVoiceLink.swift`). The ElevenLabs SDK's `Conversation` conforms to it
-with small shims, and `OpenAIRealtimeSession` (same folder) is the other one. No app type implements
+with small shims; it was the only one after `OpenAIRealtimeSession` was removed (9 Nov 2026). No app type implements
 `RealtimeVoiceSession`, the app doesn't use `RealtimeConversationState`, and there is no
 `ElevenLabsRealtimeSession`. The table below is the mapping such an adapter would use; it isn't built.
 
@@ -384,7 +395,7 @@ ElevenLabs SDK → event mapping for that adapter:
 ElevenLabs does not expose speech-start/stop events, so `userSpeechStarted/Stopped` only come
 from the OpenAI adapter; the screen works without them.
 
-## OpenAI Realtime: what is built and what isn't (ADR-265)
+## OpenAI Realtime: what was built (ADR-265). Removed 9 Nov 2026; history only
 
 1. **Built:** a token server that mints short-lived client secrets (`server/voice-token`; the API key never ships in the app).
 2. **Built, for testing:** `OpenAIRealtimeSession` in the app: a WebSocket to OpenAI (not WebRTC). The app

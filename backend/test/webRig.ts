@@ -28,6 +28,7 @@ import { type DeleteCall, type PostJson, SocialSignIn, SupabaseUserRemover } fro
 import { AccountEraser } from "../src/account.js";
 import type { FetchJson } from "../src/auth.js";
 import { WebStatic } from "../src/web/static.js";
+import { OwnerPanel, type UserDirectory } from "../src/web/owner.js";
 import { Clock, USER_A } from "./helpers.js";
 
 /**
@@ -92,6 +93,8 @@ export async function startWeb(
     };
     /** Real device sign-in (`POST /v1/session/device`, ADR-563) with this key, `open` sign-up: the first device owns the server. */
     devices?: Buffer;
+    /** The owner panel (decision 2026-11-09-usage-counts-on-by-default): these accounts see it. Absent: no panel. */
+    owner?: { accounts: string[]; directory?: UserDirectory | null };
   } = {},
 ): Promise<WebRig> {
   const store = await Store.memory();
@@ -168,7 +171,7 @@ export async function startWeb(
     service,
     tools,
     verifier,
-    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread, social, account, deviceSessions), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
+    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread, social, account, deviceSessions, o.owner ? new OwnerPanel(store, o.owner.accounts, o.owner.directory ?? null) : null), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
     documents: { links: documentLinks, store },
     deviceSessions,
     appReturnUrl: common.appReturnUrl,

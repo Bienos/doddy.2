@@ -52,8 +52,6 @@
   <script src="/i18n.js" defer></script>
   <!-- i18n:dictionary --><script src="/i18n/hr.js" defer></script><!-- /i18n:dictionary -->
   <script src="/main.js" defer></script>
-  <script src="/court.js" defer></script>
-  <script src="/memory.js" defer></script>
   <script src="/analytics.js" defer></script>
   <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
        /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
@@ -105,7 +103,6 @@
           <li><a href="#asks">Što tražiš</a></li>
           <li><a href="/hr/what-can-doddy-do/">Što Doddy može?</a></li>
           <li><a href="#meet">Upoznaj Doddyja</a></li>
-          <li><a href="#play">Igraj</a></li>
           <li><a href="/hr/blog/">Blog</a></li>
           <li><a href="#privacy">Privatnost</a></li>
         </ul>
@@ -120,7 +117,6 @@
           <li><a href="#asks">Što tražiš</a></li>
           <li><a href="/hr/what-can-doddy-do/" class="menu-new">Što Doddy može? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">Upoznaj Doddyja</a></li>
-          <li><a href="#play">Igraj</a></li>
           <li><a href="/hr/blog/">Blog</a></li>
           <li><a href="#privacy">Privatnost</a></li>
         </ul>
@@ -215,46 +211,6 @@
       </div>
     </section>
 
-    <section class="film" id="film" aria-labelledby="film-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="film-title" class="display-m">Jednog jutra u Varšavi.</h2>
-          <p>Kratak video o Doddyju, lopti koju nikad sasvim ne spušta i jednom vrlo odlučnom golubu. 1 minuta i 15 sekundi, najbolje sa zvukom.</p>
-        </div>
-        <div class="film-stage">
-          <div class="film-card">
-            <span class="tape t1" aria-hidden="true"></span>
-            <span class="tape t2" aria-hidden="true"></span>
-            <div class="player">
-              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddyjev brend video, 1 minuta i 15 sekundi">
-                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
-              </video>
-              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>Pregled, bez zvuka</span>
-              <button class="cover" type="button" aria-label="Pusti video sa zvukom">
-                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
-                <span class="cover-label" aria-hidden="true"><span class="cover-title">Pogledaj video</span>1:15 · sa zvukom</span>
-              </button>
-            </div>
-          </div>
-          <div class="film-doddy" aria-hidden="true">
-            <p class="says">To sam ja.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
-          </div>
-        </div>
-        <ol class="chapters" aria-label="Preskoči na trenutak u videu">
-          <li><button type="button" data-seek="0"><span class="t">0:00</span>Trg dvorca</button></li>
-          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>Veliko pitanje</button></li>
-          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Svi jezici odjednom</button></li>
-          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>Pitanje za mještanina</button></li>
-          <li><button type="button" data-seek="38"><span class="t">0:38</span>Golub</button></li>
-          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>Slomljeno srce kod kapije</button></li>
-          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>Zatvoreno</button></li>
-          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
-        </ol>
-        <p class="caption film-caption">Brend video. Priča o Doddyju, a ne demonstracija aplikacije.</p>
-      </div>
-    </section>
-
     <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
     <section class="vs-section" aria-labelledby="vs-title">
       <div class="wrap">
@@ -313,54 +269,6 @@
     </section>
 
     <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
-    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
-      <div class="wrap play-head">
-        <div>
-          <p class="pill"><span class="dot" aria-hidden="true"></span>Dok čekaš</p>
-          <h2 id="play-intro-title" class="display-m">Dvije igre. Lopta koju nikad ne ispušta.</h2>
-        </div>
-        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
-      </div>
-    </section>
-
-    <section class="court" id="shoot" aria-labelledby="play-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="play-title" class="display-m">Šutiraj</h2>
-          <p>Doddy loptu nikad sasvim ne spušta. Pritisni bilo gdje na terenu, povuci unazad i pusti za bacanje. Ili pusti Doddyja da proba.</p>
-        </div>
-        <div class="court-panel">
-          <canvas id="court" width="800" height="520" role="img" aria-label="Košarka: Doddy baca loptu u koš. Za bacanje koristi gumb „Šutiraj za mene“."></canvas>
-          <div class="court-bar">
-            <p class="court-score" aria-live="polite">Koševi <strong id="made">0</strong> od <strong id="shots">0</strong> šutova</p>
-            <button class="button small" id="auto-shot" type="button">Šutiraj za mene</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="memory" id="remember" aria-labelledby="remember-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="remember-title" class="display-m">Zapamti to</h2>
-          <p>Šest sitnica, dvanaest kartica. Okreći po dvije kartice i pronađi parove. Doddy je u tome bolji od nas ostalih.</p>
-        </div>
-        <div class="court-panel memory-panel">
-          <div class="memory-stage">
-            <div class="memory-grid" id="memory-grid" role="group" aria-label="Kartice pamćenja"></div>
-            <div class="memory-doddy">
-              <p class="memory-bubble" id="memory-bubble" aria-live="polite">Okreni dvije. Pronađi par.</p>
-              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
-            </div>
-          </div>
-          <div class="court-bar">
-            <p class="court-score">Parovi <strong id="memory-pairs">0</strong> od 6 · Potezi <strong id="memory-moves">0</strong></p>
-            <button class="button small" id="memory-restart" type="button">Nova igra</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="privacy" id="privacy" aria-labelledby="privacy-title">
       <div class="wrap">
         <div class="privacy-panel">
@@ -373,8 +281,8 @@
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
-              <h3>Bez računa</h3>
-              <p>Bez prijave, bez e-pošte, bez lozinke. Otvori aplikaciju i počni.</p>
+              <h3>Jedna prijava</h3>
+              <p>Prijavi se putem Applea ili Googlea. Nema lozinke za pamćenje.</p>
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
@@ -387,7 +295,7 @@
               <p>Izbriši jednu bilješku ili sve. Odmah nestaju iz pretrage.</p>
             </li>
           </ul>
-          <p class="privacy-note">Doddy je AI, a ne osoba. Neke stvari koje uključiš šalju podatke izvan telefona: glasovni razgovori (OpenAI, ili ElevenLabs ako promijeniš glas), pretraživanja vremena i Wikipedije (naziv mjesta ili pojmovi za pretragu), pozivi i memorija u pozivima (Doddyjev poslužitelj, Twilio i ElevenLabs), zajedničke liste (tvoj iCloud) i povezani računi poput Gmaila ili Todoista (preko Doddyjeva poslužitelja). Sve ostalo ostaje na tvom iPhoneu. Sve je to u testiranju.</p>
+          <p class="privacy-note">Doddy je AI, a ne osoba. Neke stvari koje uključiš šalju podatke izvan telefona: glasovni razgovori (ElevenLabs), pretraživanja vremena i Wikipedije (naziv mjesta ili pojmovi za pretragu), pozivi i memorija u pozivima (Doddyjev poslužitelj, Twilio i ElevenLabs), zajedničke liste (tvoj iCloud) i povezani računi poput Gmaila ili Todoista (preko Doddyjeva poslužitelja). Sve ostalo ostaje na tvom iPhoneu. Sve je to u testiranju.</p>
         </div>
       </div>
     </section>
@@ -445,7 +353,7 @@
               <p id="answers-status" class="status" role="status" aria-live="polite"></p>
             </form>
             <ul class="join-facts" aria-label="Što znači rani pristup">
-              <li><b>Bez računa.</b> Otvori aplikaciju i počni.</li>
+              <li><b>Jedna prijava.</b> Apple ili Google, i kreni.</li>
               <li><b>Tvoje bilješke spremljene su na tvom iPhoneu.</b> Glas, pozivi, zajedničke liste, e-pošta, kalendar i datoteke napuštaju ga samo kad ih uključiš.</li>
               <li><b>Briši kad god želiš.</b> Tvoju e-poštu, bilješke, sve.</li>
             </ul>

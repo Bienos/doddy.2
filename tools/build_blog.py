@@ -8,9 +8,9 @@ having no build step on Vercel: the generated HTML is committed.
 
 Front matter may add `tldr:` (a list, shown as a box above the post), `keywords:`, `og_image:` (the
 share picture, a path under site/), and a banner:
-`banner_pose` (an approved pose name, e.g. waving), `banner_says` (Doddy's line in handwriting),
+`banner_pose` (a pose from the owner's pack in site/assets/day/poses, e.g. wave), `banner_says` (Doddy's line in handwriting),
 `banner_card_title` / `banner_card_text` / `banner_card_buttons` ("Not now | Add"; a confirm card) and `banner_tint` (orange, green or ink).
-In the body, a line `{{doddy reading "caption"}}` adds a small spot illustration, and a line
+In the body, a line `{{doddy belly_reading "caption"}}` adds a small spot illustration, and a line
 `![alt text](/assets/blog/x.webp "caption")` adds a full-width figure (the file must exist in site/).
 Markdown support is deliberately small: #/##/### headings, paragraphs, - and 1. lists (one level),
 > quotes, | tables |, ---, **bold**, *italic*, `code`, [links](url) and HTML comments (dropped).
@@ -42,15 +42,17 @@ TELEGRAM = "https://t.me/+u-YA6P_MISFjYWE0"
 ANALYTICS = ('<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>\n'
              '  <script src="/_vercel/insights/script.js" defer></script>\n'
              '  <script src="/analytics.js" defer></script>')
-POSES = ROOT / "site" / "assets" / "poses"
+POSES = ROOT / "site" / "assets" / "day" / "poses"
 TINTS = ("orange", "green", "ink")
 
 
-def pose(name: str) -> str:
-    """URL of an approved light pose from site/assets/poses (design/interface-v1.2 copies)."""
-    if not (POSES / f"doddy-pose-{name}-light-v1.3-r1.svg").is_file():
-        sys.exit(f"unknown Doddy pose '{name}'; see site/assets/poses/")
-    return f"/assets/poses/doddy-pose-{name}-light-v1.3-r1.svg"
+def pose(name: str, big: bool = False) -> str:
+    """URL of a pose from the owner's pack (site/assets/day/poses, 640 x 960 and a 320 px copy),
+    the only character art the site uses (CLAUDE.md, 11 Oct; the v1.3 SVGs went on 9 Nov 2026)."""
+    file = f"{name}.webp" if big else f"{name}-320.webp"
+    if not (POSES / file).is_file():
+        sys.exit(f"unknown Doddy pose '{name}'; see site/assets/day/poses/")
+    return f"/assets/day/poses/{file}"
 
 
 # Hand-drawn doodles in Doddy's line style (ink, round caps) with the orange cue. Decorative only.
@@ -115,10 +117,10 @@ def markdown(src: str) -> str:
             out.append(f'<figure class="post-figure"><img src="{html.escape(src)}" alt="{html.escape(html.unescape(m.group(1)))}" '
                        f'loading="lazy" decoding="async">{caption}</figure>')
             i += 1
-        elif m := re.fullmatch(r'\{\{doddy ([a-z-]+)(?: "([^"]*)")?\}\}\s*', line):
+        elif m := re.fullmatch(r'\{\{doddy ([a-z_-]+)(?: "([^"]*)")?\}\}\s*', line):
             caption = f'<figcaption class="says-small">{html.escape(m.group(2))}</figcaption>' if m.group(2) else ""
             side = "left" if sum(1 for o in out if o.startswith("<figure class=\"spot")) % 2 else "right"
-            out.append(f'<figure class="spot spot--{side}"><img src="{pose(m.group(1))}" width="512" height="512" '
+            out.append(f'<figure class="spot spot--{side}"><img src="{pose(m.group(1))}" width="640" height="960" '
                        f'alt="">{caption}</figure>')
             i += 1
         elif m := re.match(r"(#{1,3})\s+(.*)", line):
@@ -317,7 +319,7 @@ def banner(p: dict) -> str:
             <div class="banner-copy">
               <p class="says banner-says">{says}{SCRIBBLE}</p>{ARROW.format(cls="d-arrow")}{card}
             </div>
-            <div class="banner-stage"><span class="banner-glow"></span><img class="banner-pose" src="{pose(p['banner_pose'])}" width="512" height="512" alt=""></div>
+            <div class="banner-stage"><span class="banner-glow"></span><img class="banner-pose" src="{pose(p['banner_pose'], big=True)}" width="640" height="960" alt=""></div>
             <span class="banner-tag">Illustration</span>
           </div>
         </figure>"""
@@ -326,7 +328,7 @@ def banner(p: dict) -> str:
 def index_page(posts: list[dict]) -> str:
     if posts:
         cards = "\n".join(f"""        <li class="post-card post-card--{p.get('banner_tint', 'orange')}">
-          <a class="post-thumb" href="/blog/{p['slug']}/" aria-hidden="true" tabindex="-1">{SPARKLE.format(cls="d-sparkle-sm")}<img src="{pose(p.get('banner_pose', 'waving'))}" width="512" height="512" loading="lazy" alt=""></a>
+          <a class="post-thumb" href="/blog/{p['slug']}/" aria-hidden="true" tabindex="-1">{SPARKLE.format(cls="d-sparkle-sm")}<img src="{pose(p.get('banner_pose', 'wave'))}" width="640" height="960" loading="lazy" alt=""></a>
           <div class="post-card-text">
           <p class="post-meta"><time datetime="{p['date']}">{nice_date(p['day'])}</time> · {p['minutes']} min read</p>
           <h2><a href="/blog/{p['slug']}/">{html.escape(p['title'])}</a></h2>
@@ -356,8 +358,8 @@ def index_page(posts: list[dict]) -> str:
                 <li>Never guess a code</li>
               </ul>
             </div>
-            <div class="banner-stage"><span class="banner-glow"></span><img class="banner-pose" src="{pose('reading')}" width="512" height="512" alt=""></div>
-            <img class="head-wave" src="{pose('waving')}" width="512" height="512" alt="">
+            <div class="banner-stage"><span class="banner-glow"></span><img class="banner-pose" src="{pose('belly_reading', big=True)}" width="640" height="960" alt=""></div>
+            <img class="head-wave" src="{pose('wave')}" width="640" height="960" alt="">
           </div>
         </figure>
       </div>

@@ -41,7 +41,7 @@ struct AboutYouSettingsView: View {
                     .accessibilityIdentifier("settings.shareProfileWithVoice")
             } footer: {
                 // At the point of decision: what turning it on sends, and where (ADR-580 rule 5).
-                Text("On: these answers go to ElevenLabs, or OpenAI if you chose it, at the start of each conversation. Off: they stay on this iPhone.")
+                Text("On: these answers go to ElevenLabs at the start of each conversation. Off: they stay on this iPhone.")
             }
             Section {
                 ShareLink(
@@ -140,7 +140,7 @@ struct AppearanceSettingsView: View {
 /// ADR-633.
 struct VoiceSettingsView: View {
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
-    @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = true
+    @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = false
     #if DEBUG
     @AppStorage(VoiceConfig.directVoiceKey) private var directVoice = true
     #endif
@@ -151,10 +151,6 @@ struct VoiceSettingsView: View {
                 PersonalityLinkRow()
             }
             Section {
-                // One voice provider in the beta (decision 2026-11-07-release-scope, V1 decision 5): the picker is hidden with the feature.
-                if ReleaseScopeStore.current.shows(.voiceProviderPicker) {
-                    VoiceProviderPicker(idPrefix: "settings")
-                }
                 Toggle(isOn: $listenOnOpen) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Auto-start voice")
@@ -195,9 +191,10 @@ struct VoiceSettingsView: View {
     }
 
     private var connectionText: String {
-        VoiceSessionKeychain.refreshToken() == nil
-            ? NSLocalizedString("Sign in on first use", comment: "")
-            : NSLocalizedString("Doddy voice account", comment: "")
+        if VoiceSessionKeychain.refreshToken() != nil { return NSLocalizedString("Doddy voice account", comment: "") }
+        // Decision 2026-11-08-required-account: the Doddy account also opens voice.
+        if DoddyAccountModel.shared.isSignedIn { return NSLocalizedString("Your Doddy account", comment: "") }
+        return NSLocalizedString("Sign in on first use", comment: "")
     }
 }
 
@@ -565,8 +562,8 @@ struct PrivacySettingsView: View {
     /// The privacy summary that used to be at the bottom of Home (ADR-326).
     private var privacySummary: String {
         memoryCopyOn
-            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
-            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
+            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
+            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
     }
 
     var body: some View {
@@ -642,7 +639,7 @@ struct PrivacySettingsView: View {
 struct PrivacyDetailsView: View {
     var body: some View {
         ScrollView {
-            Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, or OpenAI if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. When you sign in with Apple, its identity token is sent to Doddy’s server for verification. Voice requests use a short-lived Doddy session credential; this server does not receive your voice, transcripts, notes or profile details for token requests. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri \u{201C}Ask Doddy what I saved\u{201D} (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to your Doddy messaging server, which passes them to Anthropic. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs, or OpenAI if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to ElevenLabs, or OpenAI if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.")
+            Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs. When you sign in with Apple, its identity token is sent to Doddy’s server for verification. Voice requests use a short-lived Doddy session credential; this server does not receive your voice, transcripts, notes or profile details for token requests. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you ask Siri \u{201C}Ask Doddy what I saved\u{201D} (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to your Doddy messaging server, which passes them to Anthropic. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to ElevenLabs during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.")
                 .font(.callout)
                 .padding(20)
                 .frame(maxWidth: 700, alignment: .leading)
@@ -661,7 +658,7 @@ struct PrivacyDetailsView: View {
 /// account.
 struct AskDoddySettingsView: View {
     @Environment(MemoryStore.self) private var store
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
+    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = PreferenceKey.assistantConsentDefault
     @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
     @State private var showAssistantConsent = false
 
@@ -749,8 +746,9 @@ struct AdvancedSettingsView: View {
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     @State private var showStudio = false
     #if DEBUG
-    /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope). Only a Debug build has the toggle or reads the key.
-    @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = false
+    /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope); on until turned off
+    /// (decision 2026-11-08-debug-shows-every-feature). Only a Debug build has the toggle or reads the key.
+    @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = ReleaseScope.debugShowsEverythingByDefault
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
@@ -821,7 +819,7 @@ struct AdvancedSettingsView: View {
                       value: previewEverything ? "0" : "\(ReleaseScope.shipping.hidden.count) of \(Feature.allCases.count)")
             StatusRow(title: "Voice tools kept", value: "\(ReleaseScopeStore.current.hiddenTools.isEmpty ? ToolCatalog.all.count : ToolCatalog.all.count - ReleaseScope.shipping.hiddenTools.count) of \(ToolCatalog.all.count)")
         } footer: {
-            Text("Off: this build shows what the beta ships (docs/implementation/RELEASE_SCOPE.md). On: every feature, as before. A hidden feature's data stays; only its ways in go. Takes effect on the next screen and the next conversation.")
+            Text("On (the default in a Debug build): every feature. Off: what the beta ships, as a Release or TestFlight build always shows (docs/implementation/RELEASE_SCOPE.md). A hidden feature's data stays; only its ways in go. Takes effect on the next screen and the next conversation.")
         }
     }
 

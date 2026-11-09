@@ -11,6 +11,7 @@ import { decryptPayload, dialAttempt, endCall, inputAad, liveAad, resultAad, STA
 import { endHalfJoined } from "./takeover.js";
 import { onStatus, queueConversationDeletion } from "./webhooks.js";
 import type { CallPayload } from "./payload.js";
+import { advanceTask, expireTasks } from "./tasks.js";
 
 const LIVE = "state IN ('dialing','ringing','connecting','in_progress') OR (state = 'unknown' AND settled_at IS NULL)";
 const RESULT_LEASE_MS = 5 * 60_000;
@@ -37,6 +38,7 @@ export async function runTaskCallPasses(ctx: TaskCallContext, state: { lastSweep
   await run("costs", () => settleCosts(ctx));
   await run("deletions", () => runDeletions(ctx));
   await run("expire", () => expire(ctx));
+  await run("expireTasks", () => expireTasks(ctx));
   if (Date.now() - state.lastSweep > 3 * 3600_000) {
     state.lastSweep = Date.now();
     await run("orphans", () => sweepOrphans(ctx));
@@ -205,6 +207,8 @@ async function buildAndStore(ctx: TaskCallContext, r: ResultRow) {
          VALUES ($1, $2, 'model', $3, $4, $5, $6, 'token', $7, $7) ON CONFLICT DO NOTHING`,
         [r.attempt_id, r.account_id, ...modelCost(writer.usage), now]);
     }
+    // A place of a task moves the task on (next place, or the end with its own push and text); decision 2026-11-09-restaurant-calls-one-tap.
+    if (await advanceTask(c, ctx, { accountId: r.account_id, caseId: r.case_id, attemptId: r.attempt_id, result, writer })) return;
     if (!isRetryableOutcome(result.outcome) || r.attempt_no >= 3) {
       await c.query("UPDATE call_cases SET state = 'finished', updated_at = $2 WHERE id = $1 AND state = 'active'", [r.case_id, now]);
     }

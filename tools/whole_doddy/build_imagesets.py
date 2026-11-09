@@ -80,14 +80,12 @@ def main(pack, cuts, root, strips=None):
         frame = Image.open(os.path.join(cuts, f"talking_{i}.png")).convert("RGBA")
         scaled_set(app, f"VoiceDoddy_talking_{i}", frame, (200, 300))
 
-    # 8. Storybook: the four panels of 038's page turn.
-    for i in range(1, 5):
-        photo_set(app, f"Storybook_page_{i}", Image.open(os.path.join(cuts, f"page_{i}.jpg")))
+    # 8. Storybook (038's page turn): removed with the welcome's storybook; no screen showed it.
 
-    # 4. Scenery: day and night of each place (the night picture is the dark appearance).
+    # 4. Scenery: day and night of each place (the night picture is the dark appearance). The
+    # memory library (031/032) is no longer used: Memories has no scenery.
     world = os.path.join(pack, "world")
     for name, day, night in (("home", "022_world_home_day_v01", "023_world_home_night_v01"),
-                             ("memory", "031_world_memory_day_v01", "032_world_memory_night_v01"),
                              ("coffee", "028_world_coffee_day_v01", "029_world_coffee_night_v01")):
         photo_set(app, f"Scenery_{name}", Image.open(os.path.join(world, f"{day}.png")),
                   Image.open(os.path.join(world, f"{night}.png")), width=780)
@@ -121,14 +119,14 @@ STRIPS = [
     ("turn", "018_doddy_turn_v01", 605, [], range(1, 4)),
     ("pop", "019_doddy_pop_v01", 640, ["--min-fraction", "0"], range(1, 5)),
     ("idle", "013_doddy_idle_v01", 760, [], range(1, 5)),
-    # ADR-323: he sits down on a box after the idle breaths.
-    ("sit", "017_doddy_sit_v01", 582, [], range(1, 6)),
+    # 017 (sitting down on a box, ADR-323) is no longer used: Home doesn't sit since ADR-545.
 ]
 
 
 def build_313(pack, strips, app, widgets):
-    # Focus and breathing islands: two more poses from 01-transparent-poses.
-    for name in ("basketball_dribble", "oneleg_balance"):
+    # The focus island: one more pose from 01-transparent-poses. (oneleg_balance was the
+    # breathing island's, removed with breathing, ADR-550.)
+    for name in ("basketball_dribble",):
         pose = Image.open(os.path.join(pack, f"poses/doddy_{name}_v02.png")).convert("RGBA")
         for catalog in (app, widgets):
             scaled_set(catalog, f"WholeDoddy_{name}", pose, (200, 300))

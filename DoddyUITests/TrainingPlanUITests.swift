@@ -12,7 +12,7 @@ final class TrainingPlanUITests: XCTestCase {
     func testSafetyQuestionsThenKeepAndDeleteAPlan() {
         let app = XCUIApplication()
         app.launchArguments += UITestLaunch.arguments(store: .inMemory)
-        app.launchArguments += ["-hadFirstConversation", "YES", "-firstLaunchIntroSeen", "YES"]
+        app.launchArguments += ["-hadFirstConversation", "YES"]
         app.launch()
         XCTAssertTrue(app.waitForTab("home", timeout: 5))
         app.goToTab("settings")

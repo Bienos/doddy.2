@@ -104,8 +104,8 @@ final class ToolLiveActivity {
     private func staleDate(for state: DoddyToolAttributes.ContentState) -> Date? {
         if state.isFinished || state.isPaused && kind != .readAloud { return nil }
         switch kind {
-        // Countdowns (focus, breathing, timer, wind-down): stale at the end means "time's up".
-        case .focus, .breathing, .timer, .windDown: return state.endsAt
+        // Countdowns (focus, timer, wind-down): stale at the end means "time's up".
+        case .focus, .timer, .windDown: return state.endsAt
         case .readAloud: return Date().addingTimeInterval(Self.heartbeatStaleAfter)
         // Nothing ends it, so it is never stale (ADR-652).
         case .stopwatch: return nil

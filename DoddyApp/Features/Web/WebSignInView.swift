@@ -51,6 +51,9 @@ struct WebSignInView: View {
 
             // ADR-603: notes and conversations kept on Doddy's server, off unless turned on here.
             WebMemorySection()
+
+            // ADR-602: Logbook's counts, on unless turned off here (decision 2026-11-09-usage-counts-on-by-default).
+            LogbookSection()
         }
         .navigationTitle("Doddy on the web")
         .task {

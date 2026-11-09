@@ -45,7 +45,9 @@ python3 -I scripts/voice_agent_spec.py check --agent task-call   # voice-agent/t
 ```
 
 Generated files (string catalogs, site pages, blog, web assets, tokens) are never edited or merged by hand: run
-`scripts/regen.sh`, then `scripts/ci.sh --only checks`.
+`scripts/regen.sh`, then `scripts/ci.sh --only checks`. One `regen.sh` run is enough: `tools/build_site_i18n.py` runs
+last, because it translates the English pages that `build_blog.py` and `build_day.py` write; `scripts/test_regen.sh`
+(in the `checks` group) checks that.
 
 ### Gateway (Node, no network, no keys)
 
@@ -108,11 +110,19 @@ and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds c
   `Config/Package.resolved` turns the check on, and from then on CI fails if resolution changes it. To move
   versions later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
   `docs/decisions/2026-11-07-reproducible-app-builds.md`).
+- The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a
+  download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
+  binary frameworks gave on 8 Nov 2026 (`xcodebuild` exit 74). Any other error is not retried, and the step
+  still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
 - Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
   Release-only error shows up before Xcode Cloud archives.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
   is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths) and
   doesn't carry the owner's `owner-approved` label. Adding the label reruns it.
+- `Vercel blocked status` (`.github/workflows/vercel-blocked-status.yml`, decision
+  `2026-11-09-vercel-blocked-status`): an old Vercel account still connected to the repository marks every push
+  "Account is blocked."; on `claude/…` branches, which the live team doesn't build (ADR-498), this replaces that
+  red with "Skipped". It never touches `main` or any other Vercel message (`scripts/vercel_blocked_status.sh`).
 
 Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs.
 

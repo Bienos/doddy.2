@@ -33,7 +33,7 @@ struct DoddyShortcuts: AppShortcutsProvider {
                 "Record with \(.applicationName)",
                 "Start recording in \(.applicationName)",
             ],
-            shortTitle: "Record with DODDY",
+            shortTitle: "Record with Doddy",
             systemImageName: "record.circle")
         // Free text can't be part of a phrase, so Siri asks "What should Doddy keep?".
         AppShortcut(

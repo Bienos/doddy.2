@@ -1154,6 +1154,37 @@ export class Store {
     return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
   }
 
+  // ------------------------------------------------------------ Owner panel (decision 2026-11-09-usage-counts-on-by-default)
+  // Read only, and only for the owner panel (`web/owner.ts`), which checks the caller first.
+
+  /** Every user's Logbook days from `since` on, oldest first. */
+  async allLogbookDays(since: string): Promise<(LogbookDayRow & { user_id: string })[]> {
+    return (
+      await this.db.query<LogbookDayRow & { user_id: string }>(
+        "SELECT user_id, day, summary, received_at FROM logbook_days WHERE day >= $1 ORDER BY day, user_id",
+        [since],
+      )
+    ).rows;
+  }
+
+  /** Every user's Logbook switch, as the iPhone last set it. */
+  async logbookStates(): Promise<{ user_id: string; enabled: boolean; changed_at: number }[]> {
+    return (await this.db.query<{ user_id: string; enabled: boolean; changed_at: number }>("SELECT user_id, enabled, changed_at FROM logbook_state")).rows;
+  }
+
+  /**
+   * Which of this server's users each Doddy account (a Supabase user id, `subject`) is: an account
+   * that took over an iPhone's earlier data, or one made on the web. An account in neither is its
+   * own user id.
+   */
+  async accountUsers(): Promise<{ subject: string; user_id: string }[]> {
+    return (
+      await this.db.query<{ subject: string; user_id: string }>(
+        "SELECT subject, user_id FROM account_links UNION SELECT identity_id AS subject, user_id FROM web_identities",
+      )
+    ).rows;
+  }
+
   // ------------------------------------------------------------ Kept memory (ADR-603)
 
   /** Both switches are off until the iPhone turns them on. A user with no row has both off. */
@@ -1467,7 +1498,9 @@ export class Store {
         [input.identityId, input.userId, input.provider, input.now],
       );
       if (inserted.rowCount === 1) {
-        await tx.query("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, $2, $3)", [input.userId, input.provider, input.now]);
+        // The account's id can be the Supabase user's own (decision 2026-11-09-web-sign-in-same-account), so a
+        // person who unlinked that sign-in and signs in with it again meets the account they made before.
+        await tx.query("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO NOTHING", [input.userId, input.provider, input.now]);
         return { userId: input.userId, created: true };
       }
       const owner = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM web_identities WHERE identity_id = $1", [input.identityId]);

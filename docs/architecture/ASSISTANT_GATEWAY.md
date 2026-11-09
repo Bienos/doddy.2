@@ -46,7 +46,7 @@ Errors: `{schemaVersion, requestId?, error:{code,message,retryAfterSeconds?}}`, 
 ## Egress audit (acceptance A-16)
 | Data | Leaves the device? | To whom | Controls / evidence |
 |---|---|---|---|
-| Question, ≤6 earlier chat turns | Yes, only when the user asks | Gateway → OpenAI | Ask Doddy is off until the user confirms a disclosure dialog (`settings.assistantConsent`); gateway & Swift tests pin the field list |
+| Question, ≤6 earlier chat turns | Yes, only when the user asks | Gateway → OpenAI | Ask Doddy is on unless the user turns it off in Settings (`settings.assistantConsent`; was off until a disclosure dialog was confirmed, changed 9 Nov 2026, `2026-11-09-messages-on-by-default`); the disclosure stays on the Messages screen; gateway & Swift tests pin the field list |
 | Matching saved notes (≤5) | Only if "Use relevant saved notes" is on **and** the note matched the question | Gateway → OpenAI | Selector tests; the answer lists which notes were sent; no bulk upload; sample fixtures never sent |
 | Real note ids / session id / request id / device id | Notes ids, session id: gateway only. **Not** forwarded to OpenAI (notes are aliased `n1…`) | Gateway | test "real memory ids … are not sent to the provider" |
 | Invite code, random install id | Yes, at registration only; never in `/api/assist` bodies | Gateway | Keychain, `ThisDeviceOnly`; test "approved fields only" |

@@ -3,7 +3,7 @@ import XCTest
 
 /// One owner of the audio session (ADR-695): who may take it from whom, and when it may be switched off.
 final class AudioSessionPolicyTests: XCTestCase {
-    private let listeners: [AudioUse] = [.conversation, .callRehearsal, .captureRecording, .memoRecording, .dictation]
+    private let listeners: [AudioUse] = [.conversation, .captureRecording, .memoRecording, .dictation]
     private let players: [AudioUse] = [.memoPlayback, .recordingPlayback, .readAloud, .voicePreview]
 
     func testEveryUseIsEitherListeningOrPlaying() {
@@ -28,7 +28,6 @@ final class AudioSessionPolicyTests: XCTestCase {
         XCTAssertEqual(AudioSessionPolicy.claim(.conversation, active: [.dictation]), .refused(by: .dictation))
         XCTAssertEqual(AudioSessionPolicy.claim(.conversation, active: [.memoRecording]), .refused(by: .memoRecording))
         XCTAssertEqual(AudioSessionPolicy.claim(.conversation, active: [.captureRecording]), .refused(by: .captureRecording))
-        XCTAssertEqual(AudioSessionPolicy.claim(.conversation, active: [.callRehearsal]), .refused(by: .callRehearsal))
     }
 
     func testNothingTakesTheMicrophoneFromAnythingThatListens() {

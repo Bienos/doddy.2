@@ -52,8 +52,6 @@
   <script src="/i18n.js" defer></script>
   <!-- i18n:dictionary --><script src="/i18n/fr.js" defer></script><!-- /i18n:dictionary -->
   <script src="/main.js" defer></script>
-  <script src="/court.js" defer></script>
-  <script src="/memory.js" defer></script>
   <script src="/analytics.js" defer></script>
   <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
        /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
@@ -105,7 +103,6 @@
           <li><a href="#asks">Ce que tu demandes</a></li>
           <li><a href="/fr/what-can-doddy-do/">Que peut faire Doddy ?</a></li>
           <li><a href="#meet">Rencontre Doddy</a></li>
-          <li><a href="#play">Jouer</a></li>
           <li><a href="/fr/blog/">Blog</a></li>
           <li><a href="#privacy">Confidentialité</a></li>
         </ul>
@@ -120,7 +117,6 @@
           <li><a href="#asks">Ce que tu demandes</a></li>
           <li><a href="/fr/what-can-doddy-do/" class="menu-new">Que peut faire Doddy ? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">Rencontre Doddy</a></li>
-          <li><a href="#play">Jouer</a></li>
           <li><a href="/fr/blog/">Blog</a></li>
           <li><a href="#privacy">Confidentialité</a></li>
         </ul>
@@ -215,46 +211,6 @@
       </div>
     </section>
 
-    <section class="film" id="film" aria-labelledby="film-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="film-title" class="display-m">Un matin à Varsovie.</h2>
-          <p>Une courte vidéo sur Doddy, un ballon qu’il ne pose jamais tout à fait et un pigeon très déterminé. 1 minute 15, idéalement avec le son.</p>
-        </div>
-        <div class="film-stage">
-          <div class="film-card">
-            <span class="tape t1" aria-hidden="true"></span>
-            <span class="tape t2" aria-hidden="true"></span>
-            <div class="player">
-              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Vidéo de marque Doddy, 1 minute 15 secondes">
-                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
-              </video>
-              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>Aperçu, sans son</span>
-              <button class="cover" type="button" aria-label="Lire la vidéo avec le son">
-                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
-                <span class="cover-label" aria-hidden="true"><span class="cover-title">Regarder la vidéo</span>1:15 · avec le son</span>
-              </button>
-            </div>
-          </div>
-          <div class="film-doddy" aria-hidden="true">
-            <p class="says">C’est moi.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
-          </div>
-        </div>
-        <ol class="chapters" aria-label="Aller à un moment de la vidéo">
-          <li><button type="button" data-seek="0"><span class="t">0:00</span>Place du Château</button></li>
-          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>Une grande question</button></li>
-          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Toutes les langues à la fois</button></li>
-          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>Demander à un habitant</button></li>
-          <li><button type="button" data-seek="38"><span class="t">0:38</span>Le pigeon</button></li>
-          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>Chagrin à la porte</button></li>
-          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>Fermé</button></li>
-          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
-        </ol>
-        <p class="caption film-caption">Vidéo de marque. Une histoire sur Doddy, pas une démo de l’app.</p>
-      </div>
-    </section>
-
     <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
     <section class="vs-section" aria-labelledby="vs-title">
       <div class="wrap">
@@ -313,54 +269,6 @@
     </section>
 
     <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
-    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
-      <div class="wrap play-head">
-        <div>
-          <p class="pill"><span class="dot" aria-hidden="true"></span>En attendant</p>
-          <h2 id="play-intro-title" class="display-m">Deux jeux. Un ballon qu'il ne lâche jamais.</h2>
-        </div>
-        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
-      </div>
-    </section>
-
-    <section class="court" id="shoot" aria-labelledby="play-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="play-title" class="display-m">Tenter un tir</h2>
-          <p>Doddy ne pose jamais tout à fait le ballon. Appuie n’importe où sur le terrain, tire vers l’arrière et relâche pour lancer. Ou laisse Doddy tenter.</p>
-        </div>
-        <div class="court-panel">
-          <canvas id="court" width="800" height="520" role="img" aria-label="Jeu de basket : Doddy lance le ballon vers le panier. Utilise le bouton « Tirer pour moi » pour lancer."></canvas>
-          <div class="court-bar">
-            <p class="court-score" aria-live="polite">Paniers <strong id="made">0</strong> sur <strong id="shots">0</strong> tirs</p>
-            <button class="button small" id="auto-shot" type="button">Tirer pour moi</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="memory" id="remember" aria-labelledby="remember-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="remember-title" class="display-m">Retiens-le</h2>
-          <p>Six petites choses, douze cartes. Retourne deux cartes à la fois et trouve les paires. Doddy s’en sort mieux que nous tous.</p>
-        </div>
-        <div class="court-panel memory-panel">
-          <div class="memory-stage">
-            <div class="memory-grid" id="memory-grid" role="group" aria-label="Jeu de mémoire"></div>
-            <div class="memory-doddy">
-              <p class="memory-bubble" id="memory-bubble" aria-live="polite">Retourne deux cartes. Trouve la paire.</p>
-              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
-            </div>
-          </div>
-          <div class="court-bar">
-            <p class="court-score">Paires <strong id="memory-pairs">0</strong> sur 6 · Coups <strong id="memory-moves">0</strong></p>
-            <button class="button small" id="memory-restart" type="button">Nouvelle partie</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="privacy" id="privacy" aria-labelledby="privacy-title">
       <div class="wrap">
         <div class="privacy-panel">
@@ -373,8 +281,8 @@
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
-              <h3>Pas de compte</h3>
-              <p>Pas d’inscription, pas d’e-mail, pas de mot de passe. Ouvre l’app et commence.</p>
+              <h3>Une seule connexion</h3>
+              <p>Connecte-toi avec Apple ou Google. Aucun mot de passe à retenir.</p>
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
@@ -387,7 +295,7 @@
               <p>Supprime une note ou toutes. Elles disparaissent de la recherche tout de suite.</p>
             </li>
           </ul>
-          <p class="privacy-note">Doddy est une IA, pas une personne. Certaines fonctions que tu actives envoient des données hors du téléphone : conversations vocales (OpenAI, ou ElevenLabs si tu changes de voix), recherches météo et Wikipédia (un nom de lieu ou des mots-clés), appels et mémoire pendant les appels (serveur de Doddy, Twilio et ElevenLabs), listes partagées (ton iCloud) et comptes connectés comme Gmail ou Todoist (via le serveur de Doddy). Tout le reste reste sur ton iPhone. Tout cela est en test.</p>
+          <p class="privacy-note">Doddy est une IA, pas une personne. Certaines fonctions que tu actives envoient des données hors du téléphone : conversations vocales (ElevenLabs), recherches météo et Wikipédia (un nom de lieu ou des mots-clés), appels et mémoire pendant les appels (serveur de Doddy, Twilio et ElevenLabs), listes partagées (ton iCloud) et comptes connectés comme Gmail ou Todoist (via le serveur de Doddy). Tout le reste reste sur ton iPhone. Tout cela est en test.</p>
         </div>
       </div>
     </section>
@@ -445,7 +353,7 @@
               <p id="answers-status" class="status" role="status" aria-live="polite"></p>
             </form>
             <ul class="join-facts" aria-label="Ce que signifie l'accès anticipé">
-              <li><b>Pas de compte.</b> Ouvre l'app et commence.</li>
+              <li><b>Une seule connexion.</b> Apple ou Google, et c'est parti.</li>
               <li><b>Tes notes sont enregistrées sur ton iPhone.</b> La voix, les appels, les listes partagées, l'e-mail, l'agenda et les fichiers ne le quittent que si tu les actives.</li>
               <li><b>Supprime quand tu veux.</b> Ton e-mail, tes notes, tout.</li>
             </ul>

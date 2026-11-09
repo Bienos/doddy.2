@@ -134,7 +134,7 @@ struct CallsSettingsView: View {
             if s.memoryCopy.enabled {
                 StatusRow(title: "Copied to the server", value: "\(s.memoryCopy.count) memories")
                 if case .failed(let error) = MemoryCopySync.shared.status {
-                    Label("Last update failed: \(error)", systemImage: "exclamationmark.triangle")
+                    Label(String(format: NSLocalizedString("Last update failed: %@", comment: ""), error), systemImage: "exclamationmark.triangle")
                         .foregroundStyle(Theme.error)
                 }
             }

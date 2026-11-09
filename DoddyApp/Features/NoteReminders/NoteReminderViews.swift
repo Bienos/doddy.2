@@ -67,22 +67,24 @@ struct NoteReminderSection: View {
                     Text(ReminderFormat.summary(reminder))
                         .font(.headline)
                     if repeating, let next = reminder.nextFire(after: .now) {
-                        Text("Next \(ReminderFormat.dateTime(next, timeZoneID: zone))")
+                        Text(verbatim: String(format: NSLocalizedString("Next %@", comment: ""), ReminderFormat.dateTime(next, timeZoneID: zone)))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
                     if let firstSetFor = reminder.firstSetFor {
-                        Text("First set for \(ReminderFormat.dateTime(firstSetFor, timeZoneID: zone))")
+                        Text(verbatim: String(format: NSLocalizedString("First set for %@", comment: ""),
+                                             ReminderFormat.dateTime(firstSetFor, timeZoneID: zone)))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
                     if let lastDone = reminder.lastDoneAt, reminder.snoozedUntil == nil {
-                        Label("Done this time on \(ReminderFormat.dateTime(lastDone, timeZoneID: zone))", systemImage: "checkmark")
+                        Label(String(format: NSLocalizedString("Done this time on %@", comment: ""), ReminderFormat.dateTime(lastDone, timeZoneID: zone)),
+                              systemImage: "checkmark")
                             .font(.footnote)
                             .foregroundStyle(Theme.confirmed)
                     }
                     if let place = reminder.place {
-                        Text("Within \(place.radiusMeters) m, each time, until you mark it Done.")
+                        Text(verbatim: String(format: NSLocalizedString("Within %lld m, each time, until you mark it Done.", comment: ""), place.radiusMeters))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
@@ -163,7 +165,7 @@ struct NoteReminderReceiptView: View {
                     .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
             case .inAppOnly(let reminder):
-                Label("Saved in Doddy for \(ReminderFormat.short(reminder)).", systemImage: "bell.slash")
+                Label(String(format: NSLocalizedString("Saved in Doddy for %@.", comment: ""), ReminderFormat.short(reminder)), systemImage: "bell.slash")
                     .font(.headline)
                 // Said from iOS's answer now, not assumed (review F9): after "Not now" iOS was never
                 // asked, so notifications aren't "off".
@@ -249,7 +251,7 @@ struct DueRemindersView: View {
                     } else {
                         Text(record.currentText).lineLimit(4)
                     }
-                    Text("You asked to see this again · \(ReminderFormat.short(reminder))")
+                    Text(verbatim: String(format: NSLocalizedString("You asked to see this again · %@", comment: ""), ReminderFormat.short(reminder)))
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -263,7 +265,7 @@ struct DueRemindersView: View {
                 .buttonStyle(PrimaryButtonStyle())
                 Menu {
                     ForEach(NoteReminderStore.snoozeChoices(now: .now), id: \.self) { option in
-                        Button("\(Self.title(option.choice)) · \(option.date.formatted(date: .omitted, time: .shortened))") {
+                        Button(Self.title(option.choice) + " · " + option.date.formatted(date: .omitted, time: .shortened)) {
                             Task { await reminders.snooze(reminderID: reminder.id, until: option.date) }
                         }
                     }

@@ -132,6 +132,6 @@ public enum LaunchPreferencesMigration {
         return Values(backTapAction: BackTapAction.conversation.rawValue, islandExpands: values.islandExpands ?? false)
     }
 
-    /// The island-expansion switch as stored, on by default.
-    public static func islandExpands(_ stored: Bool?) -> Bool { stored ?? true }
+    /// The island-expansion switch as stored, off by default (owner, 9 Nov 2026: only the small island).
+    public static func islandExpands(_ stored: Bool?) -> Bool { stored ?? false }
 }

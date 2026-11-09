@@ -1,4 +1,5 @@
 import DoddyCore
+import DoddyDesignTokens
 import SwiftUI
 import UIKit
 
@@ -113,7 +114,12 @@ struct IslandExtension: View {
         }
     }
 
-    private static let orange = (r: 236.0, g: 128.0, b: 63.0)
+    /// The brand orange from the tokens (`Theme.orangeCue`). The island is always black, so it has
+    /// one appearance; amber and rose are the strip's own voice colours (ADR-654).
+    private static let orange: (r: Double, g: Double, b: Double) = {
+        let hex = UploadedColorRole.orangeCue.hex(.dark)
+        return (Double(hex.red), Double(hex.green), Double(hex.blue))
+    }()
     private static let amber = (r: 255.0, g: 176.0, b: 102.0)
     private static let rose = (r: 229.0, g: 82.0, b: 107.0)
 

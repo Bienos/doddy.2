@@ -11,7 +11,7 @@ final class ListeningPrivacyTests: XCTestCase {
 
     func testOnlyWhatIsActuallyOpenCounts() {
         XCTAssertEqual(MicrophoneSnapshot().open, [])
-        XCTAssertEqual(MicrophoneSnapshot(conversation: .muted).open, [.conversation], "muted may still capture (OpenAI test voice)")
+        XCTAssertEqual(MicrophoneSnapshot(conversation: .muted).open, [.conversation], "muted may still capture")
         XCTAssertEqual(MicrophoneSnapshot(voiceMemoRecording: true).open, [.voiceMemo])
     }
 

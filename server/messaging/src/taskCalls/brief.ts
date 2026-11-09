@@ -14,7 +14,8 @@ export const briefSchema = z.strictObject({
   callee: z.strictObject({
     name: text(80),
     phone: z.string().min(3).max(40),
-    source: z.enum(["contacts", "typed", "note"]),
+    // "places": found by Doddy's place search (decision 2026-11-09-restaurant-calls-one-tap); the card says so.
+    source: z.enum(["contacts", "typed", "note", "places"]),
     // Shown on the card next to the number ("Kontakty: Serwis Laptop"); never sent to a provider.
     sourceLabel: text(80).optional(),
   }),

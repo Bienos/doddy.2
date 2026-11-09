@@ -18,7 +18,7 @@ export const MemoryOverview = z.object({
 });
 export type MemoryOverview = z.infer<typeof MemoryOverview>;
 
-export const NoteSource = z.enum(["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file"]);
+export const NoteSource = z.enum(["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy", "conversation_recap"]);
 
 export const NoteView = z.object({
   id: z.string(),

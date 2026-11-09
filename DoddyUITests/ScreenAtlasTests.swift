@@ -105,8 +105,9 @@ final class ScreenAtlasTests: XCTestCase {
             self.menu(app, ["home.timers", "home.stopwatch"]) && self.tap(app.buttons["stopwatch.start"], app)
                 && self.see(app.buttons["stopwatch.pause"])
         }
-        visit("2-home-15-what-leaves-this-iphone") { app in self.menu(app, ["home.dataFlow"]) }
-        visit("2-home-16-voice-picker") { app in self.menu(app, ["home.voice"]) }
+        // What leaves this iPhone left Home's menu on 9 Nov 2026 (it is 4-settings-16); Phone calls took its place.
+        visit("2-home-15-phone-calls") { app in self.menu(app, ["home.calls"]) }
+        // 2-home-16-voice-picker went with the voice picker on 9 Nov 2026; the numbers after it are unchanged.
         visit("2-home-17-recordings") { app in
             self.tap(app.buttons["home.files"], app, 10) && self.tap(app.buttons["files.recordings"], app)
                 && self.see(app.buttons["recordings.record"])
@@ -313,8 +314,7 @@ final class ScreenAtlasTests: XCTestCase {
             store: store, onboardingDone: onboardingDone, appearance: appearance, language: language, welcome: welcome,
             legalAccepted: legalAccepted)
         // As LaunchSmokeTests: someone who has talked to Doddy before, unless the visit is a first one.
-        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", firstVisit ? "NO" : "YES",
-                                "-firstLaunchIntroSeen", firstVisit ? "NO" : "YES"]
+        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", firstVisit ? "NO" : "YES"]
         // A key in `extra` replaces the same key set above (UITestLaunch's -memoriesShowsLists NO).
         var arguments = app.launchArguments
         for key in extra where key.hasPrefix("-") {

@@ -50,8 +50,8 @@ Every gap is a visible `<span class="ph" data-ph="ID">` on the page: `[OWNER: â€
 
 ### Retention
 - [ ] **R1** ElevenLabs retention for recordings and transcripts at release. P `#voice-kept`, `#retention`. **Today the live agent keeps recordings with no time limit** (STATUS.md, read 20 Oct; ADR-057 accepted that for the owner's own phone only). The page says so.
-- [ ] **R2** OpenAI retention for Realtime voice. P `#voice-kept`, `#retention`. The app itself says it "isn't verified in this build" (`DataFlow`).
-- [ ] **R3** How a user asks for ElevenLabs/OpenAI recordings and transcripts to be deleted. P `#voice-kept`, `#deleting`. No app function deletes them.
+- [x] ~~**R2** OpenAI retention for Realtime voice.~~ Withdrawn 9 Nov 2026: OpenAI voice was removed (decision `2026-11-09-elevenlabs-only-voice`), and the placeholder and the OpenAI rows are out of both privacy pages. OpenAI's role as the model behind ElevenLabs stays under D1 and D2.
+- [ ] **R3** How a user asks for ElevenLabs recordings and transcripts (and what its model provider keeps) to be deleted. P `#voice-kept`, `#deleting`. No app function deletes them.
 - [ ] **R4** Waitlist retention. P `#website`, `#retention`. No period in the code; deletion on request through `/admin/`.
 - [ ] **R5** Server log retention at Vercel (site, voice sign-in) and Render. P `#website`, `#retention`.
 - [ ] **R6** Retention of account and connection records on Doddy's server (`backend/`), and how a user deletes them. P `#retention`. There is no account-delete route in `backend/src/http.ts`; the page says "write to us" (C2) instead.

@@ -94,7 +94,7 @@ function safeDecrypt(ctx: TaskCallContext, blob: Buffer, aad: string): unknown {
 
 export async function listCases(ctx: TaskCallContext, accountId: string) {
   const { rows } = await ctx.db.query(
-    `SELECT c.id AS "caseId", c.state, c.created_at AS "createdAt",
+    `SELECT c.id AS "caseId", c.state, c.created_at AS "createdAt", c.task_id AS "taskId", c.task_position AS "taskPosition",
        (SELECT r.outcome FROM call_results r JOIN call_attempts a ON a.id = r.attempt_id WHERE a.case_id = c.id ORDER BY a.attempt_no DESC LIMIT 1) AS outcome
      FROM call_cases c WHERE c.account_id = $1 ORDER BY c.created_at DESC LIMIT 30`, [accountId]);
   return rows;
@@ -161,6 +161,10 @@ export async function cancelCase(ctx: TaskCallContext, accountId: string, caseId
       [caseId, now]);
     await purgePayload(c, accountId, caseId, "cancelled", "cancelled", now);
     await c.query("UPDATE call_cases SET state = 'cancelled', updated_at = $2 WHERE id = $1 AND state IN ('awaiting_approval', 'active')", [caseId, now]);
+    // Cancelling one place of a task stops the task: no later place is called on its approval.
+    await c.query(
+      `UPDATE call_tasks SET state = 'cancelled', updated_at = $2
+       WHERE id = (SELECT task_id FROM call_cases WHERE id = $1) AND state IN ('awaiting_approval', 'active')`, [caseId, now]);
     return "ok" as const;
   });
 }
