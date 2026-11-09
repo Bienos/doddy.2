@@ -11,8 +11,8 @@ After a shortcut the voice screen opened, the island could expand wide, the face
 ## Decision
 - Doddy on screen: the Action Button, Back Tap and Siri start the conversation on Home (like a tap on Doddy) with the shortcut greeting; Home's strip over the island is the only screen. The voice screen opens only when something needs it (gate not passed, Face ID lock, screen already up, a card, a failure).
 - Doddy in the background: only the compact Live Activity island; no expansion by default (`islandExpands` defaults to off; Settings toggle still exists).
-- Face on the compact, minimal and Home strip islands during a conversation: always `WholeDoddy_face_listening`; muted keeps the shush face.
-- Waves: seven round bars (Home strip: right of the camera, face on the left), orange → amber → rose. The expanded island is unchanged.
+- Face on the compact and minimal islands during a conversation: always `WholeDoddy_face_listening`; muted keeps the shush face.
+- Waves: seven round bars, orange → amber → rose, on the Live Activity compact island only. Home's strip keeps its look (owner, 9 Nov: "w home powinno być jak przed tem"). The expanded island is unchanged.
 
 ## Consequences
 - Card-arrival expansions of the island are also off by default (same switch).
