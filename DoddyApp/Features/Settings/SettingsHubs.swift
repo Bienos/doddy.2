@@ -69,7 +69,7 @@ struct DoddyMemorySettingsView: View {
 struct ConnectionsSettingsView: View {
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @AppStorage(HealthConnectionView.preferenceKey) private var appleHealthOn = false
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
+    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = PreferenceKey.assistantConsentDefault
     @State private var connections = ConnectionController()
 
     private var activityLog: ActivityLogStore { .shared }

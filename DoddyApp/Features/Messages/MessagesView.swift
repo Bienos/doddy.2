@@ -4,7 +4,7 @@ import SwiftUI
 import UIKit
 
 /// Messages (ADR-585): the typed conversation with Doddy, saved on this iPhone until the user deletes it.
-/// Opt-in like before (Settings → Ask Doddy). Every answer says whether it comes from the user's saved
+/// On unless the person turns it off (Settings → Ask Doddy; decision 2026-11-09-messages-on-by-default). Every answer says whether it comes from the user's saved
 /// notes (with the notes shown) or is a general answer that is not from their notes. What each line may
 /// claim is decided by `ThreadRules`; this view only draws it.
 ///
@@ -18,7 +18,7 @@ struct MessagesView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage(PreferenceKey.assistantConsent) private var consent = false
+    @AppStorage(PreferenceKey.assistantConsent) private var consent = PreferenceKey.assistantConsentDefault
     @AppStorage(PreferenceKey.assistantUseNotes) private var useNotes = true
     @State private var model: MessagesModel
     @State private var confirmingDelete = false
