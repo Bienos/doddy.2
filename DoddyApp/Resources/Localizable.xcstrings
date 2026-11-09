@@ -9752,6 +9752,17 @@
         }
       }
     },
+    "Both ways": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W obie strony"
+          }
+        }
+      }
+    },
     "Bread for the weekend": {
       "extractionState": "manual",
       "localizations": {
@@ -34212,6 +34223,17 @@
         }
       }
     },
+    "Into your language": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na Twój język"
+          }
+        }
+      }
+    },
     "Invoice card example": {
       "extractionState": "manual",
       "localizations": {
@@ -58579,6 +58601,17 @@
         }
       }
     },
+    "Pick the languages and start. Doddy stays quiet until someone speaks, then translates straight away.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz języki i zacznij. Doddy milczy, dopóki ktoś nie zacznie mówić, a potem od razu tłumaczy."
+          }
+        }
+      }
+    },
     "Pick the people whose birthday Doddy should remind you of, at 9:00 on the day. Read from Contacts on this iPhone; nothing is sent anywhere or added to Calendar.": {
       "extractionState": "manual",
       "localizations": {
@@ -60479,61 +60512,13 @@
         }
       }
     },
-    "Put the phone on the table between you. Their half of the screen faces them, and Doddy first tells them, in their language, that he's an AI translator.": {
+    "Put the phone between you. Their half of the screen faces them and shows, in their language, that this is an AI translation.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leg das Telefon zwischen euch auf den Tisch. Ihre Hälfte des Bildschirms zeigt zu ihnen, und Doddy sagt ihnen zuerst in ihrer Sprache, dass er ein KI-Übersetzer ist."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pon el teléfono sobre la mesa entre los dos. Su mitad de la pantalla mira hacia la otra persona, y Doddy le dice primero, en su idioma, que es un traductor de IA."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pose le téléphone sur la table entre vous. Leur moitié de l’écran est tournée vers eux, et Doddy leur dit d’abord, dans leur langue, qu’il est un traducteur IA."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stavi telefon na stol između vas. Njihova polovica zaslona okrenuta je prema njima, a Doddy im prvo kaže, na njihovu jeziku, da je AI prevoditelj."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Metti il telefono sul tavolo tra di voi. La loro metà dello schermo è rivolta verso di loro, e Doddy prima dice loro, nella loro lingua, che è un traduttore IA."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電話を二人の間のテーブルに置いてください。相手側の画面半分が相手に向き、Doddyはまず相手の言語で、自分がAI翻訳者であることを伝えます。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Połóż telefon na stole między wami. Ich połowa ekranu jest zwrócona do nich, a Doddy najpierw mówi im w ich języku, że jest tłumaczem SI."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coloque o telefone na mesa entre vocês. A metade da tela da outra pessoa fica virada para ela, e o Doddy primeiro diz a ela, no idioma dela, que é um tradutor de IA."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "把手机放在你们之间的桌子上。屏幕的另一半朝向对方，Doddy 会先用对方的语言告诉对方，他是 AI 翻译。"
+            "value": "Połóż telefon między wami. Ich połowa ekranu jest zwrócona do nich i pokazuje w ich języku, że to tłumaczenie AI."
           }
         }
       }
@@ -77377,6 +77362,17 @@
         }
       }
     },
+    "Swap languages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamień języki"
+          }
+        }
+      }
+    },
     "Swimming": {
       "extractionState": "manual",
       "localizations": {
@@ -77811,65 +77807,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa w wyspie"
-          }
-        }
-      }
-    },
-    "Talk in their language": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In ihrer Sprache sprechen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hablar en su idioma"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parler dans leur langue"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Govori na njihovu jeziku"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parla nella loro lingua"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相手の言語で話す"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mów w ich języku"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Falar no idioma da pessoa"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用对方的语言说"
           }
         }
       }
@@ -96649,65 +96586,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pilnowane do: %@"
-          }
-        }
-      }
-    },
-    "Way": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Art"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moyen"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Način"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modo"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "方法"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sposób"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modo"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "方式"
           }
         }
       }
