@@ -39,7 +39,7 @@ final class FileWatchClientTests: XCTestCase {
         let transport = Recording(status: 201)
         _ = try await DoddyServerClient(transport: transport, credentials: Credentials()).watchFile(link: link, language: "de")
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(transport.requests.first?.body)) as? [String: String])
-        XCTAssertEqual(json?["language"], "en")
+        XCTAssertEqual(json["language"], "en")
     }
 
     func testEveryAnswerIsNamedAndNoneIsCalledWatchingExceptA201() async throws {
