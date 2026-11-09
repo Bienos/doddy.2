@@ -33,7 +33,7 @@ import { prepareImage, readPage, readScreen, screenBatches, type Mechanic, type 
 import {
   CHAIN_NAMES, isReadChain, LINK_ONLY_URLS, READ_CHAINS, type Chain, type ChainAdapter, type ChainRow, type ChainStatus,
   type Condition, type DataProduct, type DealsModelApi, type DealsResponse, type DealsSettings, type LeafletInfo, type LeafletPage, type PageImage,
-  type LinkChain, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion, type ReadChain, type UnitPrice,
+  addModelUsage, type LinkChain, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion, type ReadChain, type UnitPrice,
 } from "./types.js";
 
 export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka, delikatesy, leclerc, maxizoo, komfort, ccc, lewiatan, natura, action, deichmann, zooplus };
@@ -63,6 +63,8 @@ export interface DealsDeps {
 export interface SearchInput { items: string[]; chains?: Chain[]; language: string }
 
 export interface SearchStats {
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
   chains: number;
   statuses: Partial<Record<ChainStatus, number>>;
   offers: number;
@@ -422,7 +424,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
         for (const b of batch) sent.add(key(b.job.li, b.job.page.number));
         try {
           const r = await env.model!.screenPages!({ images: batch.map((b) => b.image), chain, queries: env.queries }, signal);
-          if (r.usage) { usage.inputTokens += r.usage.inputTokens; usage.outputTokens += r.usage.outputTokens; }
+          if (r.usage) addModelUsage(usage, r.usage);
           if (r.kind !== "ok") { reasons.add(`screen_${r.kind}`); fallback.push(...batch.map((b) => b.job)); return; }
           const hits = readScreen(r.output, batch.length, env.queries.length);
           batch.forEach((b, i) => {
@@ -475,7 +477,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
       sent.add(key(job.li, job.page.number));
       try {
         const r = await readPage(env.model!, image, { chain, queries: env.queries, signal });
-        if (r.usage) { usage.inputTokens += r.usage.inputTokens; usage.outputTokens += r.usage.outputTokens; }
+        if (r.usage) addModelUsage(usage, r.usage);
         if (r.kind === "ok") { reads.set(key(job.li, job.page.number), r.products); promos.set(key(job.li, job.page.number), r.promotions); }
         else { unread++; reasons.add(`read_${r.kind}`); }
       } catch {
@@ -700,7 +702,7 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
     }));
   }));
   const usage: ModelUsage = { inputTokens: 0, outputTokens: 0 };
-  for (const r of results) { usage.inputTokens += r.usage.inputTokens; usage.outputTokens += r.usage.outputTokens; }
+  for (const r of results) addModelUsage(usage, r.usage);
 
   // The code's candidates per item, best first; then the model may say which of the top ones are the item.
   const all = results.flatMap((r) => r.candidates);
@@ -719,7 +721,7 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
       const r = await pickWithModel(deps.model, queries, top.map((l) => l.map((c) => ({
         id: c.id, chain: CHAIN_NAMES[c.chain], name: c.offer.product, ...(c.offer.size ? { size: `${c.offer.size.value} ${c.offer.size.unit}` } : {}),
       }))), controller.signal);
-      if (r.usage) { usage.inputTokens += r.usage.inputTokens; usage.outputTokens += r.usage.outputTokens; }
+      if (r.usage) addModelUsage(usage, r.usage);
       if (r.outcome === "ok") {
         chosen = top.map((l, i) => (r.picks[i] ? l.filter((c) => r.picks[i]!.has(c.id)) : perItem[i]!));
         picked = "model";

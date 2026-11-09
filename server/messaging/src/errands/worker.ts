@@ -8,6 +8,7 @@
 //   - drafts older than 10 minutes are deleted; content of finished errands that the app never
 //     acknowledged is deleted 30 days after they finished, with receipts.
 // The push never carries words from the errand, not even its title.
+import { recordCost } from "../costLedger.js";
 import type pg from "pg";
 import { sameBytes } from "../crypto.js";
 import { inTransaction } from "../db.js";
@@ -162,6 +163,15 @@ async function finish(ctx: ErrandContext, e: Claimed, outcome: ResearchOutcome):
     await c.query(`UPDATE errands SET state = 'failed', failure = $10, ${set} WHERE id = $1`, [...stats, outcome.code]);
     await push(c, ctx, e.account_id, e.id, "failed", e.language, now);
     return "failed";
+  });
+  // The cost ledger (migration 026): one row for the whole run, with the cache counters and searches. A run that
+  // failed with nothing counted may still have been billed (a thrown call), so its usage is unknown, not zero.
+  const zero = u.inputTokens + u.cacheWriteTokens + u.cacheReadTokens + u.outputTokens === 0;
+  await recordCost(ctx.db, {
+    accountId: e.account_id, model: outcome.model, feature: "errand", refId: e.id,
+    outcome: outcome.kind === "done" ? "success" : "failure",
+    errorCode: outcome.kind === "failed" ? outcome.code : outcome.kind === "cancelled" ? "cancelled" : undefined,
+    usage: outcome.kind !== "done" && zero ? undefined : u, webSearches: outcome.searches,
   });
   // Cost visibility: ids and counts only.
   ctx.log("errand finished", {

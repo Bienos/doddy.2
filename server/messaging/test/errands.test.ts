@@ -303,6 +303,26 @@ describe("errands against real Postgres", { skip: dbSkip }, () => {
     await w.app.close();
   });
 
+  test("the cost ledger gets one row per run: the account, the cache counters and searches, no words; a failed run with nothing counted is unknown usage", async () => {
+    await db.query("DELETE FROM provider_cost_events");
+    const w = await world();
+    const ok = await handOver(w);
+    await researchNext(w.ctx);
+    const bad = await handOver(w);
+    w.researcher!.steps.push(async () => ({ kind: "failed", code: "interrupted", ...stats, usage: { inputTokens: 0, cacheWriteTokens: 0, cacheReadTokens: 0, outputTokens: 0 }, searches: 0 }));
+    await researchNext(w.ctx);
+    const { rows } = await db.query("SELECT * FROM provider_cost_events ORDER BY id");
+    assert.equal(rows.length, 2);
+    const [done, failed] = rows;
+    assert.deepEqual([done.feature, done.outcome, done.ref_id, done.model], ["errand", "success", ok.id, "claude-opus-5-5"]);
+    assert.deepEqual([done.input_tokens, done.cache_read_tokens, done.cache_write_tokens, done.output_tokens, done.web_searches], ["12000", "40000", "3000", "2500", 7]);
+    // Opus 5.5: 12000 x $4 + 2500 x $20 + 40000 x $0.20 + 3000 x $5 per million, plus 7 searches at $0.01.
+    assert.ok(Math.abs(Number(done.cost_usd) - ((48000 + 50000 + 8000 + 15000) / 1e6 + 0.07)) < 1e-6);
+    assert.equal(done.account_id, (await row(ok.id)).account_id);
+    assert.deepEqual([failed.ref_id, failed.outcome, failed.usage_known, failed.input_tokens, failed.error_code], [bad.id, "failure", false, null, "interrupted"]);
+    assert.ok(!JSON.stringify(rows).includes("Rzym"), "no errand words in the ledger");
+  });
+
   test("a failed run: its code, a push with no words in the errand's language, words kept until deleted", async () => {
     const w = await world();
     await pushToken(w);

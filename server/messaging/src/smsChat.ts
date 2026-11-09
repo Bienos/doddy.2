@@ -10,7 +10,7 @@ import { randomUUID } from "node:crypto";
 import type { Db } from "./db.js";
 import type { AssistantDeps } from "./assistant/deps.js";
 import { LIMITS } from "./assistant/request.js";
-import { addTokens, reserve } from "./assistant/usage.js";
+import { addTokens, recordAssistantFailure, reserve } from "./assistant/usage.js";
 import type { TextCipher } from "./crypto.js";
 import type { SmsCaps } from "./config.js";
 import { enqueue, IdempotencyConflict, SmsDailyLimit } from "./outbox.js";
@@ -176,6 +176,8 @@ export async function handleSmsChat(deps: SmsChatDeps, from: string, body: strin
     });
     return "answered";
   } catch (err) {
+    // A failed call is a ledger row too (usage unknown, never invented).
+    await recordAssistantFailure(db, accountId, responder.model, err).catch(() => {});
     await send(SMS_CHAT_COPY.unavailable);
     log("sms chat provider error", { accountId, timedOut: controller.signal.aborted, kind: String((err as { name?: unknown }).name) });
     return "unavailable";

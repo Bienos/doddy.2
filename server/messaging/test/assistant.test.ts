@@ -411,7 +411,8 @@ describe("the Claude responder (local stand-in for the API)", () => {
       assert.deepEqual(sent.body.output_config.format.schema.required, ["answer", "sources", "proposal", "plan"]);
       assert.equal(sent.body.tools, undefined, "no tools: nothing can be searched, sent or changed");
       for (const banned of ["temperature", "top_p", "top_k"]) assert.equal(sent.body[banned], undefined, banned);
-      assert.match(sent.body.system, /You have no tools/);
+      assert.ok(Array.isArray(sent.body.system), "the instructions are a block, so they can carry the cache marker");
+      assert.match(sent.body.system[0].text, /You have no tools/);
       assert.ok(!JSON.stringify(sent.body).includes(ID1), "note ids never leave the server");
 
       next = message(JSON.stringify({ answer: "Dwie rzeczy.", sources: ["n9", "n2", "n1"] }));

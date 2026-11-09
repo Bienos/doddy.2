@@ -19,6 +19,8 @@ import { newStudioLoopState, runStudioPasses, stopStudioRuns } from "./studio/wo
 import type { WatchContext } from "./watches/context.js";
 import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
 
+import { idlePollFromEnv, runAdaptiveLoop, WakeBus, type IdlePollConfig, type PassResult } from "./idlePoll.js";
+import { startWakeListener } from "./wake.js";
 import { log } from "./log.js";
 
 export { log };
@@ -48,7 +50,17 @@ export interface WorkerDeps {
   scheduledCalls?: Omit<ScheduledCallDeps, "db" | "cipher" | "now">;
   /** Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off. */
   phoneAgentVoice?: TaskVoice;
+  /** Idle back-off of the queue loops (idlePoll.ts). Default: from IDLE_POLL_* in the environment, else 2 s up to 30 s. */
+  idlePoll?: IdlePollConfig;
+  /** Wake-ups for the queue loops; tests pass their own. Default: one bus fed by the database's LISTEN. */
+  wake?: WakeBus;
+  /** false: don't open the LISTEN connection (the loops then use the short fallback cap). Default true. */
+  listen?: boolean;
+  /** Called after every pass of an adaptive loop, for measuring. */
+  onPass?: (loop: "dispatch" | "errand" | "studio") => void;
 }
+
+interface Poll { config: IdlePollConfig; bus: WakeBus; onPass?: WorkerDeps["onPass"] }
 
 /**
  * Independent loops until `shouldStop()`: one sends queued updates every ~2 s (plus hourly tidying), one builds
@@ -58,14 +70,22 @@ export interface WorkerDeps {
  * numbers. Safe to run more than once at a time: every job is claimed with FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean): Promise<void> {
-  const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop), deletionLoop(db, deps, shouldStop),
+  const poll: Poll = { config: deps.idlePoll ?? idlePollFromEnv(), bus: deps.wake ?? new WakeBus(), onPass: deps.onPass };
+  const listener = deps.listen === false ? undefined : startWakeListener(db, poll.bus, log, shouldStop);
+  // The dispatch, errand and studio loops back off while idle and wake on a notification. The scheduled-call and
+  // task-call loops stay on their fixed intervals: their timing is the product (dial times, the goodbye at a call's limit).
+  const loops = [dispatchLoop(db, deps, shouldStop, poll), digestLoop(db, deps.news, shouldStop), deletionLoop(db, deps, shouldStop),
     callLoop(db, deps, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
   else if (deps.phoneAgentVoice) loops.push(conversationDeletionLoop(db, deps.phoneAgentVoice, shouldStop));
-  if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
-  if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop));
+  if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop, poll));
+  if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop, poll));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
-  await Promise.all(loops);
+  try {
+    await Promise.all(loops);
+  } finally {
+    await listener?.stop();
+  }
 }
 
 /**
@@ -73,17 +93,23 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
  * deletes expired drafts and keeps deleting copies left at Anthropic. On shutdown, running jobs stop
  * and are stored as `interrupted`.
  */
-async function studioLoop(ctx: StudioContext, shouldStop: () => boolean) {
+async function studioLoop(ctx: StudioContext, shouldStop: () => boolean, poll: Poll) {
   const state = newStudioLoopState();
-  while (!shouldStop()) {
-    try {
-      const counts = await runStudioPasses(ctx, state);
-      if (Object.keys(counts).length) log("studio passes", counts);
-    } catch (err) {
-      log("studio passes failed", { error: (err as Error).message });
-    }
-    await pause(2000, shouldStop);
-  }
+  await runAdaptiveLoop({
+    topic: "studio", shouldStop, config: poll.config, bus: poll.bus,
+    pass: async (): Promise<PassResult> => {
+      poll.onPass?.("studio");
+      let counts: Record<string, number> = {};
+      try {
+        counts = await runStudioPasses(ctx, state);
+        if (Object.keys(counts).length) log("studio passes", counts);
+      } catch (err) {
+        log("studio passes failed", { error: (err as Error).message });
+      }
+      // A job running here keeps the short interval (its cancel and slot handling); an idle loop backs off.
+      return { busy: Object.keys(counts).length > 0 || state.runs.size > 0 };
+    },
+  });
   await stopStudioRuns(state);
 }
 
@@ -118,17 +144,22 @@ async function watchLoop(ctx: WatchContext, shouldStop: () => boolean) {
  * time limit) and tidies expired drafts and unacknowledged results. Its own loop, so a long run never
  * holds back pushes. On shutdown, running errands stop and are stored as `interrupted`.
  */
-async function errandLoop(ctx: ErrandContext, shouldStop: () => boolean) {
+async function errandLoop(ctx: ErrandContext, shouldStop: () => boolean, poll: Poll) {
   const state = newErrandLoopState();
-  while (!shouldStop()) {
-    try {
-      const counts = await runErrandPasses(ctx, state);
-      if (Object.keys(counts).length) log("errand passes", counts);
-    } catch (err) {
-      log("errand passes failed", { error: (err as Error).message });
-    }
-    await pause(2000, shouldStop);
-  }
+  await runAdaptiveLoop({
+    topic: "errand", shouldStop, config: poll.config, bus: poll.bus,
+    pass: async (): Promise<PassResult> => {
+      poll.onPass?.("errand");
+      let counts: Record<string, number> = {};
+      try {
+        counts = await runErrandPasses(ctx, state);
+        if (Object.keys(counts).length) log("errand passes", counts);
+      } catch (err) {
+        log("errand passes failed", { error: (err as Error).message });
+      }
+      return { busy: Object.keys(counts).length > 0 || state.runs.size > 0 };
+    },
+  });
   await stopErrandRuns(state);
 }
 
@@ -165,33 +196,46 @@ async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
 
 async function dispatchLoop(
   db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; limits?: Pick<AbuseLimits, "allowedCountryCodes"> },
-  shouldStop: () => boolean,
+  shouldStop: () => boolean, poll: Poll,
 ) {
   let lastTidy = 0;
-  while (!shouldStop()) {
-    try {
-      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher, allowedCountryCodes: deps.limits?.allowedCountryCodes });
-      // Texts whose outcome is unknown are looked up at Twilio a little later (DOD-09).
-      await reconcileUnknownSms(db, deps.sms);
-      if (Date.now() - lastTidy > 3_600_000) {
-        lastTidy = Date.now();
-        // Expired sessions are already refused by findSession; this only reclaims space.
-        const sessions = await purgeExpiredSessions(db);
-        await pruneCounters(db); // daily counts older than two days (ADR-702)
-        const pruned = await pruneNewsCache(db);
-        const deletions = await pruneDeletions(db);
-        const reasons = await pruneCallReasons(db);
-        if (sessions || pruned || deletions || reasons) {
-          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons });
+  await runAdaptiveLoop({
+    topic: "dispatch", shouldStop, config: poll.config, bus: poll.bus,
+    pass: async (): Promise<PassResult> => {
+      poll.onPass?.("dispatch");
+      try {
+        const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher, allowedCountryCodes: deps.limits?.allowedCountryCodes });
+        // Texts whose outcome is unknown are looked up at Twilio a little later (DOD-09).
+        const looked = await reconcileUnknownSms(db, deps.sms);
+        if (Date.now() - lastTidy > 3_600_000) {
+          lastTidy = Date.now();
+          // Expired sessions are already refused by findSession; this only reclaims space.
+          const sessions = await purgeExpiredSessions(db);
+          await pruneCounters(db); // daily counts older than two days (ADR-702)
+          const pruned = await pruneNewsCache(db);
+          const deletions = await pruneDeletions(db);
+          const reasons = await pruneCallReasons(db);
+          if (sessions || pruned || deletions || reasons) {
+            log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons });
+          }
         }
+        if (r.processed || r.reaped) log("dispatch pass", r);
+        if (r.processed) return { busy: true, again: true }; // more may be due
+        return { busy: r.reaped > 0 || looked > 0, dueInMs: await nextQueuedInMs(db) };
+      } catch (err) {
+        log("dispatch pass failed", { error: (err as Error).message });
+        return { busy: false };
       }
-      if (r.processed || r.reaped) log("dispatch pass", r);
-      if (r.processed) continue; // more may be due
-    } catch (err) {
-      log("dispatch pass failed", { error: (err as Error).message });
-    }
-    await sleep(2000);
-  }
+    },
+  });
+}
+
+/** Milliseconds until the next message that was queued for later is due, or null when none is. */
+async function nextQueuedInMs(db: Db): Promise<number | null> {
+  const { rows } = await db.query<{ ms: string | null }>(
+    "SELECT (EXTRACT(EPOCH FROM (min(send_at) - now())) * 1000)::text AS ms FROM outbound_messages WHERE state = 'queued'");
+  const ms = rows[0]?.ms;
+  return ms === null || ms === undefined ? null : Math.max(0, Number(ms));
 }
 
 /** Once a minute, the due deletions of Doddy's records at Twilio. */

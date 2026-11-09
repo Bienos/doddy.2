@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
+import { countAttempts, countingFetch, errorCode, requestIdOf, usageFromAnthropic, type CostOutcome, type TokenUsage } from "../costLedger.js";
 import type { Candidate } from "./rank.js";
 
 export interface WriterInput {
@@ -11,10 +12,23 @@ export interface WriterInput {
 
 export interface DigestLine { id: string; line: string }
 
+/** What the cost ledger needs from one writer call: counts, ids and a code, never text. */
+export interface WriterCall {
+  provider: "anthropic" | "openai";
+  model: string;
+  outcome: CostOutcome;
+  attempts: number;
+  providerRequestId?: string;
+  errorCode?: string;
+  /** Absent when the provider reported none (a failed call): unknown, not zero. */
+  usage?: TokenUsage;
+}
+
 export interface DigestWriter {
   /** Who receives the stories; the app names it in its privacy text (ADR-197). */
   readonly provider: "anthropic" | "openai";
-  write(input: WriterInput): Promise<DigestLine[]>;
+  /** `report`, when given, is called once per call, also when the call fails, so its cost can be recorded. */
+  write(input: WriterInput, report?: (call: WriterCall) => void): Promise<DigestLine[]>;
 }
 
 export const MAX_ITEMS = 5;
@@ -51,31 +65,43 @@ export class ClaudeDigestWriter implements DigestWriter {
 
   constructor(apiKey: string, options: { model?: string; baseURL?: string } = {}) {
     this.model = options.model ?? "claude-haiku-5-5";
-    this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 1, timeout: 60_000 });
+    this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 1, timeout: 60_000, fetch: countingFetch });
   }
 
   private readonly model: string;
 
-  async write(input: WriterInput): Promise<DigestLine[]> {
-    let response;
-    try {
-      response = await this.client.messages.parse({
-        model: this.model,
-        max_tokens: 4000,
-        // Picking and phrasing a handful of headlines is a simple task.
-        output_config: { effort: "low", format: zodOutputFormat(Output) },
-        system: SYSTEM,
-        messages: [{ role: "user", content: storiesPayload(input) }],
+  async write(input: WriterInput, report?: (call: WriterCall) => void): Promise<DigestLine[]> {
+    return countAttempts(async (counter) => {
+      const base = { provider: "anthropic" as const, model: this.model };
+      let response;
+      try {
+        response = await this.client.messages.parse({
+          model: this.model,
+          max_tokens: 4000,
+          // Picking and phrasing a handful of headlines is a simple task.
+          output_config: { effort: "low", format: zodOutputFormat(Output) },
+          system: SYSTEM,
+          messages: [{ role: "user", content: storiesPayload(input) }],
+        });
+      } catch (err) {
+        // A failed call reports no usage; whether Anthropic billed it is not known.
+        report?.({ ...base, outcome: "failure", attempts: Math.max(1, counter.attempts), errorCode: errorCode(err), providerRequestId: requestIdOf(err) ?? counter.requestId });
+        if (err instanceof Anthropic.APIError) throw err; // network / HTTP errors keep their type
+        // parse() throws when the reply isn't valid JSON (e.g. an empty refusal).
+        throw new Error("writer_unparsed");
+      }
+      const usage = usageFromAnthropic(response.usage);
+      const requestId = counter.requestId;
+      const seen = (outcome: CostOutcome) => report?.({
+        ...base, outcome, attempts: Math.max(1, counter.attempts),
+        ...(requestId ? { providerRequestId: requestId } : {}), ...(usage ? { usage } : {}),
       });
-    } catch (err) {
-      if (err instanceof Anthropic.APIError) throw err; // network / HTTP errors keep their type
-      // parse() throws when the reply isn't valid JSON (e.g. an empty refusal).
-      throw new Error("writer_unparsed");
-    }
-    if (response.stop_reason === "refusal") throw new Error("writer_refusal");
-    if (response.stop_reason === "max_tokens") throw new Error("writer_truncated");
-    if (!response.parsed_output) throw new Error("writer_unparsed");
-    return response.parsed_output.items;
+      if (response.stop_reason === "refusal") { seen("refused"); throw new Error("writer_refusal"); }
+      if (response.stop_reason === "max_tokens") { seen("unparsed"); throw new Error("writer_truncated"); }
+      if (!response.parsed_output) { seen("unparsed"); throw new Error("writer_unparsed"); }
+      seen("success");
+      return response.parsed_output.items;
+    });
   }
 }
 

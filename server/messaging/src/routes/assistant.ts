@@ -11,7 +11,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type { Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { AssistRequest, LIMITS, WIRE_MESSAGE, WIRE_STATUS, type WireCode } from "../assistant/request.js";
-import { addTokens, reserve } from "../assistant/usage.js";
+import { addTokens, recordAssistantFailure, reserve } from "../assistant/usage.js";
 
 export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const auth = requireDevice(deps.db);
@@ -52,7 +52,7 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
     try {
       const outcome = await responder.answer(body, controller.signal);
       if (outcome.kind !== "ok") {
-        if (outcome.usage) await addTokens(deps.db, principal(req).accountId, outcome.usage).catch(() => {});
+        if (outcome.usage) await addTokens(deps.db, principal(req).accountId, outcome.usage, outcome.kind).catch(() => {});
         req.log.warn({ model: responder.model, outcome: outcome.kind }, "assistant gave no answer");
         return fail(outcome.kind === "refused" ? "refused" : "providerUnavailable", body.requestId);
       }
@@ -68,6 +68,8 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
         ...(outcome.plan ? { plan: outcome.plan } : {}),
       };
     } catch (err) {
+      // A timeout is a failure with unknown usage; a call the person stopped is recorded too (it may still be billed).
+      await recordAssistantFailure(deps.db, principal(req).accountId, responder.model, err).catch(() => {});
       if (timedOut) return fail("timeout", body.requestId);
       if (controller.signal.aborted) return reply; // the person stopped it; nobody is listening
       const e = err as { status?: unknown; name?: unknown };
