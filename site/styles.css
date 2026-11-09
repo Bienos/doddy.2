@@ -100,7 +100,6 @@ h3 {
   font-size: 0.875rem; font-weight: 600; color: var(--secondary-text);
 }
 .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange-cue); }
-.pill.warn { border-color: var(--accent-text); color: var(--accent-text); background: transparent; }
 
 /* ---------- Controls ---------- */
 
@@ -264,12 +263,8 @@ h3 {
   .js .film-card, .play-dot, .chapters button { transition: none; }
 }
 
-/* ---------- Problem ---------- */
+/* ---------- Scraps ---------- */
 
-.problem { padding: 0 0 clamp(56px, 8vw, 104px); }
-.problem-grid { display: grid; gap: 24px 64px; align-items: start; }
-@media (min-width: 900px) { .problem-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.problem .display-m { max-width: 14ch; margin: 0; }
 .scraps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; align-content: start; }
 .scraps li {
   padding: 10px 16px;
@@ -290,28 +285,6 @@ h3 {
 
 
 
-
-/* ---------- Voice ---------- */
-
-.voice { padding: clamp(56px, 8vw, 104px) 0; border-top: 1px solid var(--separator); }
-.voice-grid { display: grid; gap: 48px; align-items: center; }
-.voice-grid > div { min-width: 0; }
-.voice-grid > div > p:not(.pill) { max-width: 32rem; }
-@media (min-width: 900px) { .voice-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.voice-art { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 16px; align-items: end; }
-.voice-pose { grid-row: span 2; align-self: end; }
-.voice-states { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.voice-states li {
-  padding: 6px 12px; border-radius: 999px; font-size: 0.875rem; font-weight: 600;
-  border: 1px solid var(--separator); color: var(--secondary-text);
-  transition: background 250ms ease, color 250ms ease, border-color 250ms ease;
-}
-.voice-states li.now { background: var(--reading-ink); border-color: var(--reading-ink); color: var(--canvas); }
-.voice-card { padding: 18px; background: var(--paper); border: 1px solid var(--separator); border-radius: 22px; box-shadow: var(--lift); }
-.voice-q { font-weight: 700; margin: 0 0 4px; }
-.voice-quote { color: var(--secondary-text); margin: 0 0 14px; }
-.voice-btn { display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 14px; font-weight: 600; font-size: 0.9375rem; }
-.voice-btn.primary { background: var(--reading-ink); color: var(--canvas); margin-bottom: 4px; }
 
 /* ---------- Privacy (light paper panel) ---------- */
 
@@ -410,7 +383,7 @@ h3 {
 }
 
 /* Where Doddy overlaps a phone screen, a thin canvas-coloured halo keeps his lines readable in both themes. */
-.hero-pose img, .step-pose img { filter: drop-shadow(0 0 1.5px var(--canvas)) drop-shadow(0 0 1.5px var(--canvas)) drop-shadow(0 0 1px var(--canvas)); }
+.hero-pose img { filter: drop-shadow(0 0 1.5px var(--canvas)) drop-shadow(0 0 1.5px var(--canvas)) drop-shadow(0 0 1px var(--canvas)); }
 
 /* On narrow screens the greeting would sit on the phone's text; the hero copy already introduces Doddy. */
 @media (max-width: 959px) {
@@ -419,12 +392,6 @@ h3 {
 
 /* ---------- v3 additions ---------- */
 
-/* Warm light behind the hero phone. */
-.hero-glow {
-  position: absolute; z-index: -1; left: 50%; top: 46%; width: 130%; aspect-ratio: 1; translate: -42% -50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-cue) 22%, transparent), color-mix(in srgb, var(--orange-cue) 6%, transparent) 60%, transparent);
-  pointer-events: none;
-}
 
 
 /* Footer links */
@@ -536,8 +503,6 @@ h3 {
   text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: var(--orange-cue);
 }
 
-.button.quiet { background: transparent; color: var(--reading-ink); box-shadow: inset 0 0 0 1.5px var(--separator); }
-.button.quiet:hover { box-shadow: inset 0 0 0 1.5px var(--reading-ink); }
 /* Languages (ADR-460). Language menu in the header, a plain list in the footer. */
 .lang-menu { position: relative; font-size: 0.875rem; }
 .lang-menu > summary {
@@ -637,8 +602,7 @@ h3 {
 }
 
 
-/* The pack's poses are 2:3 where the v1.3 SVGs were square: the hero, the steps and the join panel make room. */
-.step-pose { width: 28%; max-width: 110px; bottom: 6px; }
+/* The pack's poses are 2:3 where the v1.3 SVGs were square: the hero and the join panel make room. */
 .sketch img { max-width: 170px; }
 .join-pose { max-width: 200px; }
 @media (max-width: 859px) { .join-pose { max-width: 150px; } }
