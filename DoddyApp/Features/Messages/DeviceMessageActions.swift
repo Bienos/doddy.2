@@ -77,7 +77,7 @@ final class DeviceMessageActions: LocalMessageActionExecuting {
                 let changed = action.name == .checkOff
                     ? try await store.setDone(items, done: true, listID: list.id)
                     : try await store.removeFromList(items, listID: list.id)
-                return .completed(text("Lista „\(list.name)”. \(action.name == .checkOff ? "Odznaczono" : "Usunięto"): ", "List “\(list.name)”. \(action.name == .checkOff ? "Checked off" : "Removed"): ") + changed.map(\.text).joined(separator: ", "))
+                return .completed(text("Lista „\(list.name)”. \(action.name == .checkOff ? "Oznaczono jako zrobione" : "Usunięto"): ", "List “\(list.name)”. \(action.name == .checkOff ? "Checked off" : "Removed"): ") + changed.map(\.text).joined(separator: ", "))
             case .createReminder(let draft):
                 if devices.access(for: .reminders) == .notDetermined { _ = await devices.request(.reminders) }
                 guard permitted(action, current) else { return stopped }
