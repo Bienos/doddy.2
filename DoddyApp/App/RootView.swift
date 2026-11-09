@@ -73,8 +73,10 @@ enum PreferenceKey {
     /// How many unconfirmed payments the person said they checked, and the server's last count (ADR-736).
     static let paymentsAcknowledgedUnresolved = "paymentsAcknowledgedUnresolved"
     static let paymentsLastUnresolved = "paymentsLastUnresolved"
-    /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-587). Off by default.
+    /// Ask Doddy (Messages): questions go to Doddy's server and Anthropic (ADR-587). On unless the person turns it off in
+    /// Settings › Ask Doddy (owner, 9 Nov 2026, `2026-11-09-messages-on-by-default`); a saved choice, on or off, always wins.
     static let assistantConsent = "assistantConsent"
+    static let assistantConsentDefault = true
     static let assistantUseNotes = "assistantUseNotes"
     /// Development setting: https origin of the Doddy messaging server (`server/messaging`).
     static let messagingServerURL = "messagingServerURL"
