@@ -24,7 +24,7 @@ const NONCE = "A".repeat(43);
 const SIGNING_KEY = "session-signing-secret-for-tests-000000000000";
 const ENV = {
   APPLE_BUNDLE_ID: "com.bienos.doddy2.dev", DODDY_SESSION_SIGNING_KEY: SIGNING_KEY,
-  OPENAI_API_KEY: "openai-test-server-secret", ELEVENLABS_API_KEY: "elevenlabs-test-server-secret",
+  ELEVENLABS_API_KEY: "elevenlabs-test-server-secret",
   ELEVENLABS_AGENT_ID: "agent_test",
   // Vercel sets this itself; the caller's address is only trusted from Vercel's header (ADR-712).
   VERCEL: "1",
@@ -133,7 +133,7 @@ function request(action, body = {}, authorization, headers = { "x-vercel-forward
       ...headers,
       ...(authorization ? { authorization: `Bearer ${authorization}` } : {}),
     },
-    body: JSON.stringify({ action, ...(action === "sign-in" ? { provider: "openai" } : {}), ...body }),
+    body: JSON.stringify({ action, ...(action === "sign-in" ? { provider: "elevenlabs" } : {}), ...body }),
   });
 }
 
@@ -199,10 +199,18 @@ test("missing durable store or signing key fails closed", async () => {
 test("missing selected provider configuration fails before creating a DODDY account", async () => {
   const store = fakeStore();
   const missing = await run(request("sign-in", { identityToken: "id", rawNonce: NONCE }), {
-    store, environment: { ...ENV, OPENAI_API_KEY: "" },
+    store, environment: { ...ENV, ELEVENLABS_API_KEY: "" },
   });
   assert.equal(missing.response.status, 503);
   assert.deepEqual(missing.body, { error: "server_not_configured" });
+  assert.equal(store.sessions.size, 0);
+});
+
+test("a sign-in that names OpenAI is refused: ElevenLabs is the only voice (9 Nov 2026)", async () => {
+  const store = fakeStore();
+  const { response, body } = await run(request("sign-in", { identityToken: "id", rawNonce: NONCE, provider: "openai" }), { store });
+  assert.equal(response.status, 400);
+  assert.deepEqual(body, { error: "invalid_request" });
   assert.equal(store.sessions.size, 0);
 });
 

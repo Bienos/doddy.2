@@ -892,7 +892,7 @@ private final class FakeDevices: DeviceConnecting {
     }
 }
 
-/// Stands in for the ElevenLabs or OpenAI conversation: keeps every tool result sent.
+/// Stands in for the ElevenLabs conversation: keeps every tool result sent.
 private final class FakeLink: LiveVoiceLink, @unchecked Sendable {
     struct Sent: Equatable {
         let id: String

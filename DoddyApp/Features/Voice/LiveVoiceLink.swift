@@ -1,9 +1,9 @@
 import ElevenLabs
 import LiveKit
 
-/// What `VoiceSessionController` needs from a live conversation, whichever provider runs it
-/// (ADR-265). The names are the ElevenLabs SDK's own, so its `Conversation` conforms with two
-/// small shims and the ElevenLabs path is unchanged; `OpenAIRealtimeSession` is the other one.
+/// What `VoiceSessionController` needs from a live conversation (ADR-265). The names are the
+/// ElevenLabs SDK's own, so its `Conversation` conforms with two small shims. It was a protocol
+/// because OpenAI Realtime was a second provider; that is gone (9 Nov 2026) and ElevenLabs is the only one.
 @MainActor
 protocol LiveVoiceLink: AnyObject {
     func sendToolResult(for toolCallId: String, result: String, isError: Bool) async throws

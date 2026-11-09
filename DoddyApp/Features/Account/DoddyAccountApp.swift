@@ -275,12 +275,12 @@ enum DoddyAccountServers {
 }
 
 extension VoiceAuthSession {
-    /// Whether a conversation may start, as far as accounts go (the provider's consent is asked
+    /// Whether a conversation may start, as far as accounts go (the voice-data consent is asked
     /// separately): the Doddy account, this iPhone's own voice account, or (Debug builds only,
     /// ADR-551) the developer's direct connection. The one rule for the voice screen, its gate, Home
     /// and the Dynamic Island.
-    func hasVoiceAccess(for provider: VoiceProvider) -> Bool {
-        isSignedIn || DoddyAccountModel.shared.isSignedIn || VoiceConfig.talksWithoutAccount(for: provider)
+    func hasVoiceAccess() -> Bool {
+        isSignedIn || DoddyAccountModel.shared.isSignedIn || VoiceConfig.talksWithoutAccount
     }
 }
 

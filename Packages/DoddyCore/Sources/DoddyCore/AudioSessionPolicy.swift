@@ -9,10 +9,8 @@ import Foundation
 
 /// Everything in Doddy that uses the audio session.
 public enum AudioUse: String, CaseIterable, Sendable {
-    /// A voice conversation with Doddy (ElevenLabs or OpenAI), the translator included.
+    /// A voice conversation with Doddy (ElevenLabs), the translator included.
     case conversation
-    /// Rehearsing a call Doddy will make (ADR-500).
-    case callRehearsal
     /// A DODDY Capture recording (ADR-579).
     case captureRecording
     /// A voice memo being recorded (ADR-230).
@@ -31,7 +29,7 @@ public enum AudioUse: String, CaseIterable, Sendable {
     /// It listens. Only one of these may run at a time; the others only play.
     public var usesMicrophone: Bool {
         switch self {
-        case .conversation, .callRehearsal, .captureRecording, .memoRecording, .dictation: true
+        case .conversation, .captureRecording, .memoRecording, .dictation: true
         case .memoPlayback, .recordingPlayback, .readAloud, .voicePreview: false
         }
     }
@@ -48,7 +46,7 @@ public enum AudioClaim: Equatable, Sendable {
 public enum AudioSessionPolicy {
     /// When several are in the way, the one named first here is the one the refusal names.
     public static let precedence: [AudioUse] = [
-        .conversation, .callRehearsal, .captureRecording, .memoRecording, .dictation,
+        .conversation, .captureRecording, .memoRecording, .dictation,
         .memoPlayback, .recordingPlayback, .readAloud, .voicePreview,
     ]
 

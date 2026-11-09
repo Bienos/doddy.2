@@ -16,8 +16,6 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case translator
     /// Several changes on one card, `propose_plan` (ADR-204).
     case planCard
-    /// ElevenLabs or OpenAI Realtime, chosen on Home and in Settings › Voice (ADR-442, ADR-546).
-    case voiceProviderPicker
 
     // Memory, beyond notes and lists
     /// "Close in meaning" results from on-device embeddings (ADR-227).
@@ -144,7 +142,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .studio: [VoiceToolName.makeSomething]
         case .payments: [PaymentToolName.payForPage]
         case .lostWallet: [VoiceToolName.lostWallet]
-        case .voiceProviderPicker, .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
+        case .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
              .recordings, .sharedLists, .shoppingModeLockScreen, .placeReminders, .eveningWrapUp, .weeklyLookBack,
              .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .parcels:
             []
@@ -209,7 +207,7 @@ public struct ReleaseScope: Equatable, Sendable {
     /// ask for, or that has never run on a phone, is hidden. The list is the owner's to change: edit
     /// it here, and the tests say what the agent must lose.
     public static let shipping = ReleaseScope(hidden: [
-        .planCard, .voiceProviderPicker,
+        .planCard,
         .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning, .recordings, .sharedLists,
         .shoppingModeLockScreen, .placeReminders,
         .leaveBy, .parking, .birthdays, .eveningWrapUp, .weeklyLookBack, .weeklyPlan, .steps,

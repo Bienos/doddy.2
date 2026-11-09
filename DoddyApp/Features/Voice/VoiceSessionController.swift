@@ -7,10 +7,9 @@ import Observation
 import UIKit
 import os
 
-/// One voice conversation with the ElevenLabs agent, or with OpenAI Realtime when Home's test
-/// switch says so (ADR-265; same prompt, notes and tools, see `LiveVoiceLink`). State shown in the
-/// UI comes only from real provider events (connected, listening, speaking, disconnected), never
-/// from timers.
+/// One voice conversation with the ElevenLabs agent (the only voice since 9 Nov 2026; OpenAI Realtime
+/// was removed). State shown in the UI comes only from real provider events (connected, listening,
+/// speaking, disconnected), never from timers.
 /// Tool calls are proposals. Lookups run on the phone. Anything that changes data, starts
 /// something, or opens another app waits for the user's tap, and Doddy never sends a message.
 /// At start the app hands the agent the saved notes and the last few conversations (dynamic
@@ -476,10 +475,6 @@ final class VoiceSessionController {
     /// The conversation Home's island extension is reading the loudness of his voice from
     /// (ADR-655), kept so the meter is detached from it even after `conversation` is cleared.
     @ObservationIgnored private var meteredConversation: (any LiveVoiceLink)?
-    /// Who runs the conversation now (Home's voice switch, read when it starts; ADR-265, ADR-442).
-    private(set) var provider: VoiceProvider = .elevenLabs
-    /// The OpenAI model of the conversation being started or open (only meaningful when `provider` is OpenAI).
-    private(set) var openAIModel: OpenAIRealtimeModel = .default
     /// When the current start began (the press or tap); a repeat press reads it (ADR-579).
     private(set) var startedAt: Date?
     /// The last start without opening Doddy failed because iOS refused the island or the
@@ -574,7 +569,7 @@ final class VoiceSessionController {
     }
 
     /// Test seam only: a tool call from the provider. The start it arrived in is taken now, as the
-    /// ElevenLabs and OpenAI callbacks do, and the returned task runs it.
+    /// ElevenLabs callbacks do, and the returned task runs it.
     @discardableResult
     func receiveToolCallForTesting(name: String, id: String, parameters: String) -> Task<Void, Never> {
         let attempt = startAttempt
@@ -706,9 +701,7 @@ final class VoiceSessionController {
             fail(reason)
             return
         }
-        let consentProvider = VoiceProvider.effective(
-            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
-        guard VoiceProviderConsent.isGranted(for: consentProvider) else {
+        guard VoiceProviderConsent.isGranted() else {
             fail("Open Talk to Doddy to review voice data sharing before starting a conversation.")
             return
         }
@@ -760,7 +753,7 @@ final class VoiceSessionController {
         // the rest of the context below overlaps with the wait for the server instead of adding to
         // it. Only ElevenLabs through the token server, after consent and the microphone check.
         var earlyToken: Task<Result<String, VoiceTokenError>, Never>?
-        if consentProvider == .elevenLabs, case .tokenServer(let endpoint) = mode {
+        if case .tokenServer(let endpoint) = mode {
             earlyToken = Task { () -> Result<String, VoiceTokenError> in
                 do throws(VoiceTokenError) {
                     return .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
@@ -837,16 +830,6 @@ final class VoiceSessionController {
                 afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish,
                 firstConversation: isFirstConversation),
         ]
-        // ElevenLabs is the default (ADR-546); a choice in the voice picker wins.
-        let tokenServerSet: Bool
-        if case .tokenServer = mode { tokenServerSet = true } else { tokenServerSet = false }
-        provider = VoiceProvider.effective(
-            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: tokenServerSet)
-        openAIModel = OpenAIRealtimeModel(stored: UserDefaults.standard.string(forKey: OpenAIRealtimeModel.preferenceKey))
-        if provider == .openAIRealtime {
-            await startOpenAI(mode, variables: variables)
-            return
-        }
         var config = ConversationConfig(dynamicVariables: variables, userId: Self.userID())
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
         // are sent; the agent must allow these TTS overrides (ADR-105).
@@ -1029,7 +1012,7 @@ final class VoiceSessionController {
         VoiceConfig.directAgentRefused()
         let auth = VoiceAuthSession.shared
         switch DeveloperVoiceConnection.afterRefusal(
-            tokenServer: VoiceConfig.connectionMode(for: .elevenLabs),
+            tokenServer: VoiceConfig.connectionMode,
             signedIn: auth.isSignedIn || auth.hasSavedSession
         ) {
         case .retry(let next):
@@ -1043,33 +1026,6 @@ final class VoiceSessionController {
         }
     }
 
-    // MARK: OpenAI Realtime (testing, ADR-265)
-
-    /// The bundled copy of voice-agent/ (prompt, tools, session), the same spec the live
-    /// ElevenLabs agent is synced from, so both providers get the same Doddy.
-    private struct OpenAISpec {
-        let template: String
-        let tools: Data
-        let session: Data
-        /// Tools ElevenLabs runs on its servers (place lookup, weather, Wikipedia); not available here.
-        let webTools: Set<String>
-
-        static func bundled() -> OpenAISpec? {
-            guard let instructionsURL = Bundle.main.url(forResource: "instructions", withExtension: "md"),
-                  let toolsURL = Bundle.main.url(forResource: "tools", withExtension: "json"),
-                  let sessionURL = Bundle.main.url(forResource: "session", withExtension: "json"),
-                  let template = try? String(contentsOf: instructionsURL, encoding: .utf8),
-                  let tools = try? Data(contentsOf: toolsURL),
-                  let session = try? Data(contentsOf: sessionURL),
-                  let catalog = try? RealtimeToolCatalog.decode(tools)
-            else { return nil }
-            return OpenAISpec(template: template, tools: tools, session: session,
-                              webTools: Set(catalog.filter { $0.runsOn == .web }.map(\.name)))
-        }
-    }
-
-    /// Web tools of the running OpenAI conversation (empty for ElevenLabs, which runs them itself).
-    private var openAIWebTools: Set<String> = []
     /// Counts starts and ends, so a start that was ended and replaced while it waited (for the
     /// token server or the provider) never opens a second microphone (review H1). `AttemptRef`
     /// reads it, so it is fileprivate.
@@ -1084,113 +1040,6 @@ final class VoiceSessionController {
     /// The conversation starting or live anywhere in the app, if any: the voice screen shows it
     /// instead of starting a second.
     static var runningConversation: VoiceSessionController? { gate.running { $0.isBusy } }
-
-    /// Same start as ElevenLabs from here on: same notes, conversations, lists and profile
-    /// (`variables`), same tools and cards. Needs the token server: the OpenAI key stays there.
-    private func startOpenAI(_ mode: VoiceConnectionMode, variables: [String: String]) async {
-        let attempt = startAttempt
-        guard case .tokenServer(let endpoint) = mode else {
-            // Only the developer connection gets here (ADR-551); it reaches ElevenLabs only (ADR-633).
-            fail(NSLocalizedString("OpenAI's voice needs a Doddy voice account (Sign in with Apple). The developer connection only reaches ElevenLabs.", comment: ""))
-            return
-        }
-        guard let spec = OpenAISpec.bundled() else {
-            fail("This build is missing Doddy's voice spec, so OpenAI's voice can't start. Switch Home to ElevenLabs.")
-            return
-        }
-        let sessionUpdate: String
-        do {
-            let instructions = try RealtimeInstructions.render(spec.template, variables: variables)
-            // Patient turn-taking: .high answered on the first pause and cut people off (owner, 5 Nov).
-            // The language is the user's choice, else Polish when the phone is set to Polish.
-            let phoneIsPolish = Locale.preferredLanguages.first?.hasPrefix("pl") == true
-            let languageCode = ConversationLanguage.stored().overrideCode ?? (phoneIsPolish ? "pl" : nil)
-            sessionUpdate = try OpenAIRealtimeWire.sessionUpdate(instructions: instructions, toolsJSON: spec.tools, eagerness: .low, languageCode: languageCode)
-        } catch {
-            fail("Doddy's prompt couldn't be prepared for OpenAI (\(error)). Switch Home to ElevenLabs.")
-            return
-        }
-        // The same opening the ElevenLabs agent gets (ADR-254: the shortcut greeting or his usual one).
-        let greetingLine = variables[WakeGreeting.variableName]
-            ?? OpenAIRealtimeWire.greetingLine(sessionJSON: spec.session, languageCode: ConversationLanguage.stored().overrideCode)
-
-        let grant: OpenAIRealtimeGrant
-        do throws(VoiceTokenError) {
-            grant = try await VoiceTokenClient(endpoint: endpoint).fetchOpenAIGrant(model: openAIModel)
-        } catch {
-            if attempt == startAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
-            return
-        }
-        // Closed (or closed and started again) while the secret was being fetched: don't open
-        // the microphone for this attempt.
-        guard attempt == startAttempt, phase == .connecting else { return }
-
-        openAIWebTools = spec.webTools
-        let ref = AttemptRef(self, attempt: attempt)
-        let session = OpenAIRealtimeSession(grant: grant) { event in ref.value?.applyOpenAI(event) }
-        // Set first, so End while connecting closes it and the first tool call can be answered.
-        conversation = session
-        do {
-            try await session.start(sessionUpdate: sessionUpdate, greeting: OpenAIRealtimeWire.greeting(greetingLine))
-        } catch {
-            if conversation === session { conversation = nil }
-            if attempt == startAttempt, isLive { fail("Couldn't connect to OpenAI's voice. Check your internet connection and try again. (\(error.localizedDescription))") }
-            return
-        }
-        guard attempt == startAttempt, isLive else {
-            await session.endConversation()
-            if conversation === session { conversation = nil }
-            return
-        }
-        watchAudioInterruptions()
-        Self.audioLog.notice("openai conversation started. \(Self.describeAudioSession(), privacy: .public)")
-    }
-
-    private static func openAITokenMessage(_ error: VoiceTokenError) -> String {
-        VoiceTokenServer.message(for: error)
-    }
-
-    /// OpenAI's events, already in Realtime terms (`RealtimeEvent`), onto the same screen state.
-    private func applyOpenAI(_ event: RealtimeEvent) {
-        guard isLive else { return }
-        switch event {
-        case .sessionReady:
-            if phase == .connecting { phase = .listening }
-        case .userSpeechStarted, .responseDone:
-            phase = .listening
-        case .userSpeechStopped, .responseStarted:
-            phase = .thinking
-        case .audioStarted:
-            apply(.speaking)
-        case .userTranscript(let text):
-            append(text, fromUser: true)
-        case .assistantTranscript(let text):
-            append(text, fromUser: false)
-        case .assistantTranscriptCorrected(let original, let corrected):
-            correct(original, to: corrected)
-        case .functionCall(let call):
-            // The start this call belongs to, read now: the task below may run after End and a new Start.
-            let attempt = startAttempt
-            Task { await handleOpenAICall(call, attempt: attempt) }
-        case .error(let message):
-            fail(message)
-            Task { await stop() }
-        case .ended:
-            disconnected(.agent)
-        }
-    }
-
-    /// Into the same tool handling as ElevenLabs. Web tools get a plain "not here" so Doddy says
-    /// so instead of making up an answer.
-    private func handleOpenAICall(_ call: RealtimeFunctionCall, attempt: Int) async {
-        if openAIWebTools.contains(call.name) {
-            callOwners.record(call.callID, attempt: attempt)
-            await reply(call.callID, "Weather and Wikipedia don't work with the OpenAI voice. Tell the user that in one sentence, and that switching Home to ElevenLabs brings them back.", isError: true)
-            return
-        }
-        await handle(ClientToolCallEvent(toolName: call.name, toolCallId: call.callID, parametersData: call.argumentsData, eventId: 0, expectsResponse: true),
-                     attempt: attempt)
-    }
 
     /// Keeps the conversation going when the user opens another app that plays or records sound
     /// (ADR-207). The SDK's default call session is not mixable, so another app starting its own
@@ -1408,7 +1257,7 @@ final class VoiceSessionController {
         guard let startedAt else { return }
         self.startedAt = nil
         let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
-        let log = ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept, voiceProvider: provider.rawValue, ended: sessionEnd?.code)
+        let log = ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept, voiceProvider: "elevenlabs", ended: sessionEnd?.code)
         // Doddy's server keeps it as text for a year, only if the person turned that on in Settings › Doddy on
         // the web, and never a private conversation (ADR-603). That is separate from what this iPhone remembers.
         let isPrivate = self.isPrivate
@@ -2342,7 +2191,7 @@ final class VoiceSessionController {
     }
 
     /// Listen only: Doddy's spoken translation on or off. Only the playback on this iPhone changes
-    /// (LiveKit's local volume for the agent's track, or the OpenAI player's volume); the provider
+    /// (LiveKit's local volume for the agent's track); the provider
     /// still makes the audio. Read back; if there is no voice yet, it is applied when Doddy first speaks.
     func setReadAloud(_ on: Bool) {
         readsAloud = on

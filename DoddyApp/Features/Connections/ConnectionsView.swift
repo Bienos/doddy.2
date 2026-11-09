@@ -37,7 +37,7 @@ struct ConnectionsView: View {
                     }
                 }
 
-                Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs, are always on, and don't work when Home's voice is OpenAI.")
+                Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs and are always on.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -395,7 +395,7 @@ struct ConnectionInfo {
                     NSLocalizedString("Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens", comment: ""),
                     NSLocalizedString("Open the share sheet, so you pick Keynote, Files or someone to send it to", comment: ""),
                 ],
-                leavesPhone: NSLocalizedString("What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs, or OpenAI if you chose it.", comment: ""),
+                leavesPhone: NSLocalizedString("What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs.", comment: ""),
                 staysHere: NSLocalizedString("The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.", comment: ""))
         case .steps:
             // ADR-568: Motion & Fitness, read only. Not Health.

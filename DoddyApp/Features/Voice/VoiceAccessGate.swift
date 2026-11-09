@@ -2,14 +2,13 @@ import AuthenticationServices
 import DoddyCore
 import SwiftUI
 
-/// First voice use has two explicit steps: DODDY account sign-in, then consent for the selected
-/// provider. Neither step is required for local notes or other local features.
+/// First voice use has two explicit steps: DODDY account sign-in, then consent for sending voice data
+/// to ElevenLabs. Neither step is required for local notes or other local features.
 struct VoiceAccessGate: View {
-    let provider: VoiceProvider
     let onContinue: () -> Void
     @State private var session = VoiceAuthSession.shared
     /// A Doddy account, a DODDY voice account, or (Debug builds only, ADR-551) the developer's direct connection.
-    private var accessReady: Bool { session.hasVoiceAccess(for: provider) }
+    private var accessReady: Bool { session.hasVoiceAccess() }
 
     var body: some View {
         ScrollView {
@@ -39,20 +38,20 @@ struct VoiceAccessGate: View {
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
-                AppleAccountSignInButton(provider: provider)
+                AppleAccountSignInButton()
                     .accessibilityIdentifier("voice.auth.appleSignIn")
             } else {
                 // Short on purpose (decision 2026-11-09-voice-consent-in-setup): most people agree in the
                 // first-run "Let Doddy get ready" step and never see this. It shows only for someone who
-                // skipped that, used Doddy before it existed, or switched provider. The button is the
+                // skipped that or used Doddy before it existed. The button is the
                 // agreement: nothing is sent until it is tapped.
-                Text(VoiceConsentCopy.gateSummary(provider))
+                Text(VoiceConsentCopy.gateSummary())
                     .font(.body)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("voice.auth.providerConsent")
                 DisclosureGroup("What's sent") {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(VoiceConsentCopy.details(provider))
+                        Text(VoiceConsentCopy.details())
                         Text("Apple sign-in and microphone access are separate. You can use notes without enabling voice, and you can change this provider’s consent in Settings.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
@@ -65,7 +64,7 @@ struct VoiceAccessGate: View {
                 .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
                 .accessibilityIdentifier("voice.auth.consentDetails")
                 Button("Agree and talk") {
-                    VoiceProviderConsent.grant(for: provider)
+                    VoiceProviderConsent.grant()
                     onContinue()
                 }
                 .buttonStyle(.borderedProminent)
@@ -95,22 +94,25 @@ struct VoiceAccessGate: View {
 }
 
 /// What agreeing to send voice says, in one place for the first-run step and the Talk fallback, so the
-/// two can't drift apart. Format strings so the provider's name is filled in and Polish still applies.
+/// two can't drift apart. Format strings with the voice's name filled in (ElevenLabs, the only voice since
+/// 9 Nov 2026), so the Polish lines keep applying.
 enum VoiceConsentCopy {
-    static func setupTitle(_ provider: VoiceProvider) -> String {
-        String(format: NSLocalizedString("Send my voice to %@", comment: "First-run tick box"), provider.shortName)
+    private static let voiceName = "ElevenLabs"
+
+    static func setupTitle() -> String {
+        String(format: NSLocalizedString("Send my voice to %@", comment: "First-run tick box"), voiceName)
     }
 
-    static func setupReason(_ provider: VoiceProvider) -> String {
-        String(format: NSLocalizedString("So Doddy can answer when you talk. %@ runs Doddy’s voice. Nothing is sent until you start a conversation.", comment: ""), provider.shortName)
+    static func setupReason() -> String {
+        String(format: NSLocalizedString("So Doddy can answer when you talk. %@ runs Doddy’s voice. Nothing is sent until you start a conversation.", comment: ""), voiceName)
     }
 
-    static func gateSummary(_ provider: VoiceProvider) -> String {
-        String(format: NSLocalizedString("Doddy’s voice runs through %@. Your voice and this conversation go to them so Doddy can answer.", comment: ""), provider.shortName)
+    static func gateSummary() -> String {
+        String(format: NSLocalizedString("Doddy’s voice runs through %@. Your voice and this conversation go to them so Doddy can answer.", comment: ""), voiceName)
     }
 
-    static func details(_ provider: VoiceProvider) -> String {
-        String(format: NSLocalizedString("Your voice and each conversation are sent to %@ so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.", comment: ""), provider.shortName)
+    static func details() -> String {
+        String(format: NSLocalizedString("Your voice and each conversation are sent to %@ so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.", comment: ""), voiceName)
     }
 }
 
@@ -125,7 +127,6 @@ enum VoiceConsentCopy {
 /// and white on dark backgrounds, no smaller than the other sign-in buttons. A rounder corner is
 /// allowed to match the other buttons.
 struct AppleAccountSignInButton: View {
-    let provider: VoiceProvider
     /// "Continue with Apple" next to other "Continue with…" buttons; "Sign in with Apple" alone.
     var usesContinueTitle = false
     var height: CGFloat = 50
@@ -195,7 +196,7 @@ struct AppleAccountSignInButton: View {
         let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
         Task { await session.finishAppleSignIn(identityToken: identityToken, rawNonce: rawNonce,
                                                authorizationCode: authorizationCode,
-                                               userID: credential.user, provider: provider) }
+                                               userID: credential.user) }
         self.rawNonce = nil
     }
 }

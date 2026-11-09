@@ -224,28 +224,7 @@ final class CallCaseTests: XCTestCase {
         XCTAssertFalse(CallPhase.ringing.canTakeOver)
     }
 
-    // MARK: Rehearsal and self-call script
-
-    func testRehearsalIsToolLessAndFilledFromThePreview() throws {
-        let preview = try JSONDecoder().decode(CallPreview.self, from: Data(Self.previewJSON.utf8))
-        let text = try CallRehearsal.instructions(from: preview)
-        XCTAssertTrue(text.contains("Serwis Laptop"))
-        XCTAssertTrue(text.contains("Czy laptop jest gotowy?"))
-        XCTAssertFalse(text.contains("{{"))
-        XCTAssertTrue(text.contains("You are an AI, not a person"))
-        let tools = try JSONSerialization.jsonObject(with: CallRehearsal.toolsJSON) as! [String: [Any]]
-        XCTAssertEqual(tools["tools"]?.count, 0)
-    }
-
-    /// The rehearsal runs on OpenAI, so the app asks for that provider's consent, and the banner
-    /// says where the voice goes instead of only "nothing is saved" (7 Nov audit).
-    func testRehearsalNamesTheProviderItSendsTheVoiceTo() {
-        XCTAssertEqual(CallRehearsal.provider, .openAIRealtime)
-        XCTAssertTrue(CallRehearsal.banner.contains(CallRehearsal.provider.shortName))
-        XCTAssertTrue(CallRehearsal.banner.contains("OpenAI"))
-        XCTAssertTrue(CallRehearsal.banner.contains("nikt nie dzwoni"))
-        XCTAssertFalse(CallRehearsal.banner.contains("nic nie jest zapisywane"), "the old wording said nothing at all is saved")
-    }
+    // MARK: Self-call script
 
     func testSelfCallScript() throws {
         let preview = try JSONDecoder().decode(CallPreview.self, from: Data(Self.previewJSON.utf8))

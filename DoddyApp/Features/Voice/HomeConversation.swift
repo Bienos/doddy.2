@@ -88,11 +88,9 @@ final class HomeConversation {
 
     /// The same check the voice screen makes before it starts by itself (`VoiceView`).
     static func canStartInPlace() async -> Bool {
-        let provider = VoiceProvider.effective(
-            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
         let auth = VoiceAuthSession.shared
         await auth.restore()
-        return auth.hasVoiceAccess(for: provider) && VoiceProviderConsent.isGranted(for: provider)
+        return auth.hasVoiceAccess() && VoiceProviderConsent.isGranted()
     }
 
     /// The Action Button, Back Tap or Siri with Doddy on screen: the conversation starts here, like a

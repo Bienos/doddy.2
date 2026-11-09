@@ -87,7 +87,7 @@
           <h2 id="short">W skrócie</h2>
           <ul>
             <li><strong>Twoje notatki zostają na iPhonie.</strong> Wychodzą poza niego tylko przy funkcjach opisanych niżej, z których większość włączasz sam.</li>
-            <li><strong>Rozmowa głosowa wysyła sporo.</strong> Twój głos, rozmowa i zapisane notatki (poza oznaczonymi jako prywatne) trafiają do usługi głosowej: domyślnie ElevenLabs albo OpenAI, jeśli je wybierzesz. ElevenLabs przechowuje nagranie i zapis rozmowy.</li>
+            <li><strong>Rozmowa głosowa wysyła sporo.</strong> Twój głos, rozmowa i zapisane notatki (poza oznaczonymi jako prywatne) trafiają do usługi głosowej, ElevenLabs. ElevenLabs przechowuje nagranie i zapis rozmowy.</li>
             <li><strong>Doddy najpierw pyta</strong>, zanim zajrzy do kalendarza, kontaktów, zdjęć, poczty itp., a zanim coś zmieni lub wyśle, stukasz w kartę. Publiczne wyszukiwania (pogoda, internet, wiadomości, miejsca) działają bez pytania i wysyłają tylko szukane słowa.</li>
             <li><strong>Apple Health tylko do odczytu i tylko wtedy, gdy je włączysz.</strong> Doddy pokazuje Twój tydzień na iPhonie i niczego z niego nie zachowuje. Krótkie podsumowanie tygodnia opuszcza iPhone’a tylko za Twoją zgodą, osobną dla Wiadomości i dla głosu (zob. <a class="text-link" href="#health">Apple Health</a>).</li>
             <li><strong>Bez reklam, bez sprzedaży danych, bez śledzenia.</strong> Aplikacja nie ma kodu analitycznego, raportowania awarii ani reklam. Strona internetowa liczy wizyty (zob. <a class="text-link" href="#website">Strona internetowa</a>).</li>
@@ -168,7 +168,7 @@
           <p>Głos Doddy’ego i część tego, co Doddy pisze, tworzą usługi AI innych firm. Ta część mówi, które to usługi, co dostają i kiedy.</p>
 
           <h3 id="voice-provider">Kto obsługuje głos</h3>
-          <p>Domyślnie głos Doddy’ego obsługuje <strong>ElevenLabs</strong>: zamienia Twoją mowę na tekst, układa odpowiedź za pomocą dużego modelu językowego i ją wypowiada. W Ustawieniach › Głos możesz zamiast tego wybrać <strong>OpenAI</strong> (jego głos Realtime). Rozmowę dostaje tylko wybrana usługa. Aplikacja pyta Cię, zanim pierwszy raz przekaże Twój głos każdej z nich; w Ustawieniach › Głos można to pytanie przywrócić (w aplikacji: „Ask again before sharing voice”).</p>
+          <p>Głos Doddy’ego obsługuje <strong>ElevenLabs</strong>: zamienia Twoją mowę na tekst, układa odpowiedź za pomocą dużego modelu językowego i ją wypowiada. To jedyna usługa głosowa, nie ma innej do wyboru. Aplikacja pyta Cię, zanim pierwszy raz przekaże Twój głos do ElevenLabs; w Ustawieniach › Głos można to pytanie przywrócić (w aplikacji: „Ask again before sharing voice”).</p>
           <p>Model językowy za ElevenLabs: działający agent głosowy korzysta z modelu OpenAI (sprawdzone 24 października 2026), więc Twoją rozmowę przetwarza też OpenAI za pośrednictwem ElevenLabs. <span class="ph" data-ph="D2">[WŁAŚCICIEL: potwierdzić, jakiego modelu używa działający agent głosowy w dniu premiery, i rolę tego dostawcy]</span></p>
 
           <h3 id="voice-sent">Co jest wysyłane w rozmowie</h3>
@@ -189,7 +189,6 @@
           <h3 id="voice-kept">Co przechowują usługi głosowe</h3>
           <ul>
             <li><strong>ElevenLabs</strong> przechowuje nagranie i zapis każdej prowadzonej przez siebie rozmowy. Obecne ustawienia Doddy’ego w ElevenLabs przechowują je bez limitu czasu. <span class="ph" data-ph="R1">[WŁAŚCICIEL: okres przechowywania nagrań i zapisów w dniu premiery]</span></li>
-            <li><strong>OpenAI:</strong> nie sprawdziliśmy, jak długo OpenAI przechowuje dźwięk i zapis rozmowy. <span class="ph" data-ph="R2">[WŁAŚCICIEL: okres przechowywania w OpenAI dla głosu Realtime]</span></li>
             <li>Rozmowa <strong>prywatna</strong> oznacza, że nic z niej nie zostaje na Twoim iPhonie. Usługa głosowa i tak ją prowadzi i przechowuje własną kopię, jak wyżej.</li>
             <li>Usuwanie danych w aplikacji nie usuwa tego, co usługa głosowa już ma. <span class="ph" data-ph="R3">[WŁAŚCICIEL: jak poprosić o usunięcie nagrań i zapisów rozmów]</span></li>
           </ul>
@@ -199,7 +198,7 @@
 
           <h3 id="lookups">Wyszukiwania, które działają bez pytania</h3>
           <ul>
-            <li><strong>Pogoda i Wikipedia</strong> (gdy głosem jest ElevenLabs): zapytanie w imieniu Doddy’ego wysyła ElevenLabs. Nazwa miejsca i jego współrzędne trafiają do Open-Meteo, szukane słowa do Wikipedii. Sama aplikacja się z nimi nie łączy. Z głosem OpenAI te funkcje nie działają.</li>
+            <li><strong>Pogoda i Wikipedia:</strong> zapytanie w imieniu Doddy’ego wysyła ElevenLabs. Nazwa miejsca i jego współrzędne trafiają do Open-Meteo, szukane słowa do Wikipedii. Sama aplikacja się z nimi nie łączy.</li>
             <li><strong>Wyszukiwanie w internecie, wiadomości i miejsc:</strong> szukane słowa trafiają na serwer Doddy’ego, który wyszukuje je przez Monid, płatną usługę wyszukiwania, i dostawców, z których ona korzysta (Search1API dla internetu i wiadomości, LiteScrape dla miejsc). Nie logujesz się do żadnej z nich, a serwer Doddy’ego nie przechowuje szukanych słów.</li>
             <li><strong>Obliczenia oraz przeliczanie jednostek i walut</strong> odbywają się na iPhonie. Przy walutach aplikacja pobiera publiczny dzienny plik kursów Europejskiego Banku Centralnego (najczęściej co sześć godzin); nie są przy tym wysyłane żadne dane o Tobie.</li>
           </ul>
@@ -304,7 +303,6 @@
             <tbody>
               <tr><td>ElevenLabs</td><td>Głos Doddy’ego (domyślny); zapytania o pogodę i do Wikipedii</td><td>Twój głos, rozmowę i to, co wymienia <a class="text-link" href="#voice-sent">punkt 4</a></td></tr>
               <tr><td>OpenAI (przez ElevenLabs)</td><td>Model językowy za głosem</td><td>Rozmowę, tak jak przekazuje ją ElevenLabs</td></tr>
-              <tr><td>OpenAI</td><td>Głos Doddy’ego, jeśli go wybierzesz</td><td>To samo co ElevenLabs</td></tr>
               <tr><td>Anthropic</td><td>Claude na serwerze Doddy’ego; Ask Doddy, jeśli go włączysz; przekazane sprawy</td><td>Prośbę i materiał do niej, po Twoim „tak”; pisane pytania (i pasujące notatki, jeśli pozwolisz) przy Ask Doddy; podsumowanie tygodnia z Apple Health, które wyślesz w Wiadomościach</td></tr>
               <tr><td>Composio</td><td>Łączenie kont online</td><td>Tokeny logowania do kont, które połączysz; zatwierdzone przez Ciebie zapytania</td></tr>
               <tr><td>Google, Microsoft, Notion, Todoist</td><td>Twoje własne konta</td><td>Zatwierdzone przez Ciebie zapytania (masz z nimi własną umowę)</td></tr>
@@ -341,7 +339,6 @@
               <tr><td>Zapamiętane rozmowy</td><td>Ostatnie 10, dopóki ich nie zapomnisz</td></tr>
               <tr><td>Co zrobił Doddy</td><td>30 dni lub 300 pozycji</td></tr>
               <tr><td>Nagrania i zapisy rozmów w ElevenLabs</td><td>Bez limitu czasu w obecnych ustawieniach <span class="ph" data-ph="R1">[WŁAŚCICIEL: okres przechowywania w dniu premiery]</span></td></tr>
-              <tr><td>Dźwięk i zapisy rozmów w OpenAI</td><td><span class="ph" data-ph="R2">[WŁAŚCICIEL: okres przechowywania w OpenAI]</span></td></tr>
               <tr><td>Sesje logowania do głosu</td><td>Tokeny logowania ważne 30 dni, odnawiane przy użyciu; zapisy konta do czasu usunięcia konta głosowego</td></tr>
               <tr><td>Serwer Doddy’ego: zgody na działania</td><td>Usuwane dzień po wygaśnięciu</td></tr>
               <tr><td>Serwer Doddy’ego: potwierdzenia wykonania</td><td>90 dni, najwyżej 200 najnowszych na konto</td></tr>
@@ -371,7 +368,7 @@
           </table></div>
           <p>Czego aplikacja nie usunie:</p>
           <ul>
-            <li>nagrań i zapisów rozmów, które już są w ElevenLabs lub OpenAI, ani tego, co przechowują ich dostawcy modeli <span class="ph" data-ph="R3">[WŁAŚCICIEL: jak poprosić o ich usunięcie]</span>;</li>
+            <li>nagrań i zapisów rozmów, które już są w ElevenLabs, ani tego, co przechowuje jego dostawca modelu <span class="ph" data-ph="R3">[WŁAŚCICIEL: jak poprosić o ich usunięcie]</span>;</li>
             <li>zapisów serwera Doddy’ego związanych z wyszukiwaniem, Claude’em i kontami online: nie ma jeszcze przycisku do ich usunięcia. Napisz na <span class="ph" data-ph="C2">[WŁAŚCICIEL: adres e-mail w sprawach prywatności]</span>;</li>
             <li>kopii zapasowych iPhone’a lub iCloud ani plików, które sam wyeksportowałeś lub zapisałeś jako kopię;</li>
             <li>tego, co inne firmy przechowują na Twoich kontach u nich (Google, Microsoft, Notion, Todoist, Apple).</li>

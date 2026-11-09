@@ -104,9 +104,9 @@ private struct ConversationLogRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(log.startedAt.formatted(date: .abbreviated, time: .shortened))
                 .font(.headline)
-            // Which voice ran it, for comparing the two in testing (ADR-265). Older logs have none.
-            if let voice = log.voiceProvider {
-                Text(verbatim: "Voice: \(VoiceProvider(stored: voice).shortName)")
+            // Which voice ran it. Older logs have none, and some from before 9 Nov 2026 say OpenAI.
+            if let voice = log.voiceName {
+                Text(verbatim: "Voice: \(voice)")
                     .font(.caption)
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -137,8 +137,8 @@ private struct ConversationLogDetailView: View {
             Section {
                 StatusRow(title: "Started", value: log.startedAt.formatted(date: .abbreviated, time: .shortened))
                 StatusRow(title: "Ended", value: log.endedAt.formatted(date: .omitted, time: .shortened))
-                if let voice = log.voiceProvider {
-                    StatusRow(title: "Voice", value: VoiceProvider(stored: voice).shortName)
+                if let voice = log.voiceName {
+                    StatusRow(title: "Voice", value: voice)
                 }
                 StatusRow(title: "Next conversation", value: isSentNextTime ? "Brought up" : "Not brought up")
             }
@@ -178,5 +178,5 @@ private struct ConversationLogDetailView: View {
 }
 
 private enum ConversationLogDeleteCopy {
-    static let message = NSLocalizedString("It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and the voice provider (OpenAI or ElevenLabs) may keep its own record as described in Settings › Privacy.", comment: "")
+    static let message = NSLocalizedString("It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs may keep its own record as described in Settings › Privacy.", comment: "")
 }

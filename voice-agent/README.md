@@ -21,7 +21,7 @@ adding one adapter, not rewriting the app or the agent.
 
 **`make_something` (Studio, ADR-740, ADR-742) is in `tools.json` and `instructions.md` only; it is NOT on the live ElevenLabs agent** (`elevenlabs_tool_id` is `not_synced`, and its prompt lines were not applied). The agent is changed only on the owner's separate instruction, and Studio is off on the server by default. An app build that has it answers the tool; the live agent never calls it.
 
-**OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
+**OpenAI Realtime voice: removed on 9 Nov 2026** (decision `2026-11-09-elevenlabs-only-voice`). The app, the voice picker and the token server's OpenAI path are gone; ElevenLabs is the only voice. The notes below about OpenAI describe what existed (ADR-265, ADR-442, ADR-546) and are kept as history.
 **Repository spec trimmed, 1 Nov 2026 (owner-approved trim from the audit of 1 Nov). NOT applied to the live agent: the live ElevenLabs agent was not read, compared or changed; syncing waits for the owner's separate instruction. Until then this folder's prompt and 66 tool descriptions are not what the live agent runs.**
 - **What:** the per-tool ASK-01 endings (55 descriptions) and the sentences copied into many descriptions (switched off or not connected, Settings, Online accounts; "never say it was done… 'unknown'"; the result-prefix lists; "If the result starts with DEMO DATA") are gone from `tools.json`. Each rule is said once in `instructions.md`: ASK-01 in "Always ask first", the rest in "Online account rules". A tool keeps its own nuances (its switch's name, 'not allowed' and 'empty' results, `hand_over_errand`'s one yes) and gets one short tag: "Ask: yes/tap." (`x_doddy.ask` `yes_or_tap`), "Ask: tap only." (`tap`) or "Runs at once." (`runs_now`); the ASK-01 section says what each tag means. `stop_translator` (runs at once) had carried the read tools' ask-first text by mistake; it now says "Runs at once.". Only description strings changed: no name, parameter, `x_doddy`, `speak_before` or setting.
 - **How much:** the tools as the model sees them (no `x_doddy`, compact JSON) 132,292 → 105,483 characters (about 33.1k → 26.4k tokens at 4 characters a token); `instructions.md` 52,360 → 53,740 bytes; about 6.4k tokens less on every turn. `tools.json` 165,990 → 139,025 bytes.
@@ -374,7 +374,7 @@ Both lines are merged now, so the spec has them all.
 
 **How the app really connects (ADR-265):** `VoiceSessionController` talks to a `LiveVoiceLink`
 (`DoddyApp/Features/Voice/LiveVoiceLink.swift`). The ElevenLabs SDK's `Conversation` conforms to it
-with small shims, and `OpenAIRealtimeSession` (same folder) is the other one. No app type implements
+with small shims; it was the only one after `OpenAIRealtimeSession` was removed (9 Nov 2026). No app type implements
 `RealtimeVoiceSession`, the app doesn't use `RealtimeConversationState`, and there is no
 `ElevenLabsRealtimeSession`. The table below is the mapping such an adapter would use; it isn't built.
 
@@ -395,7 +395,7 @@ ElevenLabs SDK → event mapping for that adapter:
 ElevenLabs does not expose speech-start/stop events, so `userSpeechStarted/Stopped` only come
 from the OpenAI adapter; the screen works without them.
 
-## OpenAI Realtime: what is built and what isn't (ADR-265)
+## OpenAI Realtime: what was built (ADR-265). Removed 9 Nov 2026; history only
 
 1. **Built:** a token server that mints short-lived client secrets (`server/voice-token`; the API key never ships in the app).
 2. **Built, for testing:** `OpenAIRealtimeSession` in the app: a WebSocket to OpenAI (not WebRTC). The app

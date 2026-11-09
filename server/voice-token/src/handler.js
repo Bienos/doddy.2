@@ -1,15 +1,13 @@
 // Doddy voice token server. It exchanges a valid DODDY voice session for a short-lived
-// ElevenLabs conversation token or OpenAI Realtime client secret. Provider keys never ship in app.
+// ElevenLabs conversation token. The provider key never ships in the app.
 //
-// A body of {"provider":"openai","model":"…"} (ADR-265, default voice since ADR-442) asks for a
-// one-conversation OpenAI Realtime client secret instead; the model must be on the allowlist. The secret carries only the model and voice; Doddy's prompt,
-// notes and tools go from the phone straight to OpenAI, never through this server.
+// ElevenLabs is the only voice (owner decision, 9 Nov 2026: OpenAI voice removed). A body that names
+// any other provider, including the old {"provider":"openai"} an earlier app build sends, gets a 400.
 //
 // Web-standard (Request -> Response), so the same handler runs on Vercel, Supabase Edge,
 // Cloudflare Workers or Node. Logs are content-free: outcome, provider, upstream status, ms.
 
 const ELEVENLABS_TOKEN_URL = "https://api.elevenlabs.io/v1/convai/conversation/token";
-const OPENAI_CLIENT_SECRET_URL = "https://api.openai.com/v1/realtime/client_secrets";
 const UPSTREAM_TIMEOUT_MS = 10_000;
 import {
   authenticateVoiceSession, DEFAULT_TOKENS_PER_DAY, limitSetting, sessionStoreFromEnv, VoiceAuthStoreUnavailable,
@@ -19,26 +17,6 @@ import { AccountCheckUnavailable, authenticateDoddyAccount } from "./doddy-accou
 const DEFAULT_TOKENS_PER_HOUR = 30;
 const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
 
-// How long the phone has to open the OpenAI connection with the secret (the session itself
-// may then run longer). Short, because the secret is a bearer credential.
-const OPENAI_SECRET_SECONDS = 120;
-export const OPENAI_DEFAULT_MODEL = "gpt-realtime-2.1-mini";
-/**
- * The models the app may ask for unless OPENAI_ALLOWED_MODELS says otherwise. Anything else is
- * refused, so a client can't pick a pricier one. Both stay on by default because the app's voice
- * picker offers both in every build (ADR-712); the owner narrows it with the setting.
- */
-export const OPENAI_ALLOWED_MODELS = Object.freeze(["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]);
-export const OPENAI_DEFAULT_VOICE = "marin";
-
-/** The one shared limit bucket for OpenAI requests made without a voice account (ADR-726). */
-export const OPEN_ACCESS_BUCKET = "open-access-openai";
-
-/** True only for the exact words "1", "true" or "on" in OPENAI_OPEN_ACCESS; anything else is off. */
-function openAccessEnabled(env) {
-  return ["1", "true", "on"].includes(String(env.OPENAI_OPEN_ACCESS ?? "").trim().toLowerCase());
-}
-
 /**
  * @typedef {object} Env
  * @property {string} [ELEVENLABS_API_KEY]  server-only secret
@@ -46,10 +24,6 @@ function openAccessEnabled(env) {
  * @property {string} [DODDY_TOKENS_PER_HOUR] per DODDY account; default 30
  * @property {string} [DODDY_TOKENS_PER_DAY] per DODDY account per UTC day; default 150
  * @property {string} [DODDY_GLOBAL_TOKENS_PER_HOUR] global shared limit; default 100
- * @property {string} [OPENAI_ALLOWED_MODELS] comma-separated model ids the app may ask for; default both gpt-realtime-2.1 and gpt-realtime-2.1-mini
- * @property {string} [OPENAI_API_KEY]        server-only secret; only needed for the OpenAI test voice
- * @property {string} [OPENAI_REALTIME_MODEL] used when the app names no model; default "gpt-realtime-2.1-mini"
- * @property {string} [OPENAI_REALTIME_VOICE] default "marin"
  */
 
 /**
@@ -80,14 +54,6 @@ export async function handleTokenRequest(request, env, deps = {}) {
     return finish(400, "unknown_provider");
   }
   const { provider } = requested;
-  if (provider === "openai") {
-    const allowedModels = allowedOpenAIModels(env.OPENAI_ALLOWED_MODELS);
-    // A setting that doesn't parse fails closed rather than leaving some other list in force.
-    if (allowedModels === null) return finish(500, "server_not_configured", { provider });
-    if (requested.model !== undefined && !allowedModels.includes(requested.model)) {
-      return finish(400, "unknown_model", { provider });
-    }
-  }
 
   let store;
   let session;
@@ -105,20 +71,14 @@ export async function handleTokenRequest(request, env, deps = {}) {
     if (error instanceof VoiceAuthStoreUnavailable) return finish(503, "server_not_configured", { provider });
     return finish(503, "server_not_configured", { provider });
   }
-  // Owner decision (ADR-726): with OPENAI_OPEN_ACCESS on, an OpenAI request needs no voice account.
-  // It is off unless the owner sets it. Without a session the request counts against one shared
-  // bucket, so the per-hour, per-day and global limits below still cap what strangers can spend.
-  // A valid session is still used as before. ElevenLabs always needs a session.
-  const openAccess = !session && provider === "openai" && openAccessEnabled(env);
-  if (!session && !openAccess) return finish(401, "session_expired", { provider });
-  const userId = session ? session.userId : OPEN_ACCESS_BUCKET;
+  // Every voice request needs a Doddy account session.
+  if (!session) return finish(401, "session_expired", { provider });
+  const userId = session.userId;
 
   const perHour = limitSetting(env.DODDY_TOKENS_PER_HOUR, DEFAULT_TOKENS_PER_HOUR);
   const perDay = limitSetting(env.DODDY_TOKENS_PER_DAY, DEFAULT_TOKENS_PER_DAY);
   const globalPerHour = limitSetting(env.DODDY_GLOBAL_TOKENS_PER_HOUR, DEFAULT_GLOBAL_TOKENS_PER_HOUR);
-  const providerConfigured = provider === "openai"
-    ? Boolean(env.OPENAI_API_KEY)
-    : Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_AGENT_ID);
+  const providerConfigured = Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_AGENT_ID);
   if (!providerConfigured || perHour === null || perDay === null || globalPerHour === null || !store.hitLimits) {
     return finish(500, "server_not_configured", { provider });
   }
@@ -134,9 +94,7 @@ export async function handleTokenRequest(request, env, deps = {}) {
     return finish(429, "rate_limited", { provider, limit: decision.limit }, undefined, { "retry-after": String(decision.retryAfterSeconds) });
   }
 
-  return provider === "openai"
-    ? openAISecret(env, fetchImpl, finish, requested.model)
-    : elevenLabsToken(env, fetchImpl, finish);
+  return elevenLabsToken(env, fetchImpl, finish);
 }
 
 async function elevenLabsToken(env, fetchImpl, finish) {
@@ -166,53 +124,6 @@ async function elevenLabsToken(env, fetchImpl, finish) {
   return finish(200, null, { provider: "elevenlabs" }, { token });
 }
 
-/**
- * The models the app may ask for: the default list when the setting is empty, otherwise exactly the
- * comma-separated ids in it. Each id must look like a model id; anything else makes the whole
- * setting invalid (null), so a typo can't quietly allow or block the wrong thing.
- */
-function allowedOpenAIModels(raw) {
-  if (raw === undefined || raw === null || String(raw).trim() === "") return OPENAI_ALLOWED_MODELS;
-  const ids = String(raw).split(",").map((id) => id.trim()).filter((id) => id !== "");
-  if (ids.length === 0 || !ids.every((id) => /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(id))) return null;
-  return [...new Set(ids)];
-}
-
-/** A short-lived OpenAI Realtime client secret with model and voice set (ADR-265, ADR-442). */
-async function openAISecret(env, fetchImpl, finish, requestedModel) {
-  const model = requestedModel ?? (env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_MODEL);
-  const voice = env.OPENAI_REALTIME_VOICE || OPENAI_DEFAULT_VOICE;
-  const fields = { provider: "openai", model };
-
-  const upstream = await callUpstream(fetchImpl, OPENAI_CLIENT_SECRET_URL, {
-    method: "POST",
-    headers: { authorization: `Bearer ${env.OPENAI_API_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({
-      expires_after: { anchor: "created_at", seconds: OPENAI_SECRET_SECONDS },
-      session: { type: "realtime", model, audio: { output: { voice } } },
-    }),
-  });
-  if (upstream.failed) return finish(upstream.status, upstream.error, fields);
-
-  const response = upstream.response;
-  if (!response.ok) {
-    // 429 = rate limit or no quota left on the OpenAI project.
-    const status = response.status === 429 ? 503 : 502;
-    return finish(status, response.status === 429 ? "voice_busy" : "upstream_failed", {
-      ...fields,
-      upstreamStatus: response.status,
-    });
-  }
-
-  const body = await response.json().catch(() => undefined);
-  const token = body?.value;
-  if (typeof token !== "string" || token.length === 0) {
-    return finish(502, "upstream_bad_response", { ...fields, upstreamStatus: response.status });
-  }
-  const usedModel = typeof body?.session?.model === "string" ? body.session.model : model;
-  return finish(200, null, fields, { token, provider: "openai", model: usedModel });
-}
-
 async function callUpstream(fetchImpl, url, init) {
   try {
     const response = await fetchImpl(url, { ...init, signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
@@ -224,9 +135,9 @@ async function callUpstream(fetchImpl, url, init) {
 }
 
 /**
- * `{provider: "elevenlabs"}` (no body, as every app build before ADR-265 sends), `{provider:
- * "openai", model?}`, or null when the body names something else or isn't JSON (a build from
- * before ADR-549 that asks for `{provider: "picovoice"}` gets a 400). A `model` that isn't a string is returned as-is so the caller refuses it.
+ * `{provider: "elevenlabs"}` (no body, or a body that names it), or null when the body names
+ * anything else or isn't JSON: a build from before 9 Nov 2026 that asks for `{provider: "openai"}`,
+ * or from before ADR-549 for `{provider: "picovoice"}`, gets a 400.
  * @param {Request} request
  */
 async function requestedProvider(request) {
@@ -254,8 +165,8 @@ async function requestedProvider(request) {
     return null;
   }
   const provider = body?.provider ?? "elevenlabs";
-  if (provider !== "elevenlabs" && provider !== "openai") return null;
-  return { provider, model: body?.model === undefined || body?.model === null ? undefined : body.model };
+  if (provider !== "elevenlabs") return null;
+  return { provider };
 }
 
 function concat(chunks, size) {

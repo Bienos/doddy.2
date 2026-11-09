@@ -66,7 +66,7 @@ final class ReleaseScopeTests: XCTestCase {
         }
         // Hidden: every server feature, every vendor, every permission the beta doesn't ask for.
         for feature in [Feature.deals, .errands, .onlineAccounts, .phoneCalls, .callCases, .recordings, .homeKit,
-                        .planCard, .voiceProviderPicker, .parking, .leaveBy, .placeReminders] {
+                        .planCard, .parking, .leaveBy, .placeReminders] {
             XCTAssertFalse(scope.shows(feature), "\(feature)")
         }
         for tool in CloudToolName.all {

@@ -335,7 +335,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
     if (action === "sign-in") {
       if (typeof body.identityToken !== "string" || typeof body.rawNonce !== "string"
           || body.identityToken.length > 18_000 || !/^[A-Za-z0-9_-]{40,64}$/.test(body.rawNonce)
-          || (body.provider !== "openai" && body.provider !== "elevenlabs")
+          || body.provider !== "elevenlabs"
           || typeof env.APPLE_BUNDLE_ID !== "string" || !env.APPLE_BUNDLE_ID.trim()) {
         return finish(400, "invalid_request");
       }
@@ -689,10 +689,10 @@ function validStoredSession(value, record) {
 }
 
 function voiceProviderConfigured(provider, env) {
-  return provider === "openai"
-    ? typeof env.OPENAI_API_KEY === "string" && env.OPENAI_API_KEY.trim().length > 0
-    : typeof env.ELEVENLABS_API_KEY === "string" && env.ELEVENLABS_API_KEY.trim().length > 0
-      && typeof env.ELEVENLABS_AGENT_ID === "string" && env.ELEVENLABS_AGENT_ID.trim().length > 0;
+  // ElevenLabs is the only voice (9 Nov 2026), so `provider` is always "elevenlabs" by the time it gets here.
+  return provider === "elevenlabs"
+    && typeof env.ELEVENLABS_API_KEY === "string" && env.ELEVENLABS_API_KEY.trim().length > 0
+    && typeof env.ELEVENLABS_AGENT_ID === "string" && env.ELEVENLABS_AGENT_ID.trim().length > 0;
 }
 
 /**

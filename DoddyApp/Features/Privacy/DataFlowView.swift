@@ -28,9 +28,6 @@ extension DataFlowState {
             morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey),
             siriReadsNotes: flag(PreferenceKey.siriReadsNotes, default: true),
             sharedLists: SharedListsController.shared.links.count,
-            // ElevenLabs is the default (ADR-546); a choice in Settings wins.
-            voiceProvider: VoiceProvider.effective(
-                stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true),
             learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice),
             webNotesKept: defaults.bool(forKey: WebMemoryModel.notesKey),
             webConversationsKept: defaults.bool(forKey: WebMemoryModel.conversationsKey),
@@ -57,7 +54,6 @@ struct DataFlowView: View {
     @AppStorage(WebMemoryModel.notesKey) private var webNotesKept = false
     @AppStorage(WebMemoryModel.conversationsKey) private var webConversationsKept = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
 
     /// The @AppStorage values above redraw this screen when a switch changes; the state itself is
     /// read by `DataFlowState.current()`, which Settings' Privacy rows use too (ADR-447).

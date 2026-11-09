@@ -86,13 +86,13 @@ final class VoiceAuthSession {
     }
 
     func finishAppleSignIn(identityToken: String, rawNonce: String, authorizationCode: String? = nil,
-                           userID: String, provider: VoiceProvider) async {
+                           userID: String) async {
         isLoading = true
         message = nil
         defer { isLoading = false }
         do {
             let reply = try await VoiceAuthAPI.shared.signIn(identityToken, rawNonce: rawNonce,
-                                                             authorizationCode: authorizationCode, provider: provider.rawValue)
+                                                             authorizationCode: authorizationCode, provider: "elevenlabs")
             save(reply, userID: userID)
         } catch {
             lastFailure = (error as? VoiceAuthFailure) ?? .rejected
@@ -290,15 +290,20 @@ enum AppleSignInNonce {
     }
 }
 
+/// The person's yes to sending voice data to ElevenLabs. ElevenLabs is the only voice (9 Nov 2026), so
+/// there is one consent. Its key is the one that was kept for ElevenLabs before, so a yes already given
+/// still counts. The old OpenAI consent has no use any more; `reset` removes it too.
 enum VoiceProviderConsent {
-    static func key(for provider: VoiceProvider) -> String { "voice.providerConsent.\(provider.rawValue).v1" }
-    static func isGranted(for provider: VoiceProvider) -> Bool {
-        UserDefaults.standard.bool(forKey: key(for: provider))
+    static let key = "voice.providerConsent.elevenlabs.v1"
+    private static let retiredOpenAIKey = "voice.providerConsent.openai.v1"
+    static func isGranted() -> Bool {
+        UserDefaults.standard.bool(forKey: key)
     }
-    static func grant(for provider: VoiceProvider) {
-        UserDefaults.standard.set(true, forKey: key(for: provider))
+    static func grant() {
+        UserDefaults.standard.set(true, forKey: key)
     }
     static func reset() {
-        for provider in VoiceProvider.allCases { UserDefaults.standard.removeObject(forKey: key(for: provider)) }
+        UserDefaults.standard.removeObject(forKey: key)
+        UserDefaults.standard.removeObject(forKey: retiredOpenAIKey)
     }
 }

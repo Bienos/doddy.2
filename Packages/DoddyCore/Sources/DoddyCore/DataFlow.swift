@@ -37,8 +37,6 @@ public struct DataFlowState: Equatable, Sendable {
     public var siriReadsNotes: Bool
     /// Lists shared through iCloud, by this user or with them (ADR-263).
     public var sharedLists: Int
-    /// Who runs the live voice: the voice picker's choice, or its default, ElevenLabs (ADR-265, ADR-546).
-    public var voiceProvider: VoiceProvider
     /// Settings → What I've learned → "Use in voice conversations" (ADR-440).
     public var learnedSharedWithVoice: Bool
     /// Who writes the daily news on the messaging server, as it reported it
@@ -54,7 +52,6 @@ public struct DataFlowState: Equatable, Sendable {
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
         morningCheckInOn: Bool = false,
         siriReadsNotes: Bool = false, sharedLists: Int = 0,
-        voiceProvider: VoiceProvider = .elevenLabs,
         learnedSharedWithVoice: Bool = false,
         newsWriterProvider: String? = nil,
         webNotesKept: Bool = false, webConversationsKept: Bool = false,
@@ -69,7 +66,6 @@ public struct DataFlowState: Equatable, Sendable {
         self.newsWriterProvider = newsWriterProvider
         self.morningCheckInOn = morningCheckInOn
         self.sharedLists = sharedLists
-        self.voiceProvider = voiceProvider
         self.rememberConversations = rememberConversations
         self.shareProfileWithVoice = shareProfileWithVoice
         self.tokenServerSet = tokenServerSet
@@ -132,30 +128,15 @@ public enum DataFlow {
         var ask = "Typed questions, with a photo or file you attach to one (not kept)"
         if state.askDoddyUsesNotes { ask += ", and the saved notes that match them" }
 
-        let openAIVoice = state.voiceProvider == .openAIRealtime
         return [
             DataFlowRow(
                 id: "elevenlabs", destination: "ElevenLabs (Doddy's voice)",
                 what: sentence(voice),
-                when: openAIVoice
-                    ? "Only while a conversation is open, and not while Home's voice switch says OpenAI."
-                    : "Only while a conversation is open.",
-                // When OpenAI Realtime was chosen (and the token server is set), nothing goes to
-                // ElevenLabs for voice, and the row says so instead of claiming it.
-                isActive: !(openAIVoice && state.tokenServerSet),
+                when: "Only while a conversation is open.",
+                isActive: true,
                 note: "ElevenLabs keeps a recording and transcript of each conversation. Notes you mark Private are never sent."),
             DataFlowRow(
-                id: "openaiVoice", destination: "OpenAI (Doddy's voice)",
-                what: sentence(voice),
-                when: "Only while a conversation is open and Home's voice switch says OpenAI.",
-                isActive: openAIVoice && state.tokenServerSet,
-                note: !openAIVoice
-                    ? "Home's voice switch says ElevenLabs, so nothing goes to OpenAI for voice."
-                    : state.tokenServerSet
-                        ? "Weather and Wikipedia don't work with this voice. How long OpenAI keeps the audio and transcript isn't verified in this build."
-                        : "OpenAI voice needs the token server, so nothing goes there yet."),
-            DataFlowRow(
-                id: "translator", destination: openAIVoice && state.tokenServerSet ? "OpenAI (translator mode)" : "ElevenLabs (translator mode)",
+                id: "translator", destination: "ElevenLabs (translator mode)",
                 what: "The other person's voice too, and everything said while translating. Opened from Translate on Home, your notes, conversations and profile aren't sent. Started in a conversation, what Doddy already had in it stays there, and he is told never to repeat it to them.",
                 when: "Only while translator mode is on.", isActive: true,
                 note: "Listen only hears whoever is near you. Nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes of the end."),
@@ -232,8 +213,8 @@ public enum DataFlow {
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "A short-lived Doddy session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
-                when: "When you sign in or refresh your session, and when a conversation requests a provider connection credential.", isActive: state.tokenServerSet,
-                note: state.tokenServerSet ? "Provider credentials stay on Doddy's server. Your voice and any approved conversation context go directly to the selected provider." : "Voice isn't set up yet."),
+                when: "When you sign in or refresh your session, and when a conversation requests an ElevenLabs connection credential.", isActive: state.tokenServerSet,
+                note: state.tokenServerSet ? "Provider credentials stay on Doddy's server. Your voice and any approved conversation context go directly to ElevenLabs." : "Voice isn't set up yet."),
             // ADR-563: the phone signs itself in to the built-in server with a random device ID, so there is a
             // Doddy server for every ordinary user once an online feature has been used, with no address typed
             // (ADR-721). Before that nothing has been sent, and the row says so instead of "no server is set".
@@ -382,7 +363,6 @@ public enum DataFlow {
         let active = Set(rows(state).filter(\.isActive).map(\.id))
         var parts: [String] = []
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
-        if active.contains("openaiVoice") { parts.append("OpenAI (voice)") }
         if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
         // ADR-603: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
         if active.contains("webMemory") { parts.append("Anthropic (questions you ask on the web about what you keep on Doddy's server)") }
@@ -404,7 +384,6 @@ public enum DataFlow {
     /// `notInNetworkSummary` (DataFlowTests), so a new row can't be left out by accident.
     static let networkNames: [String: String] = [
         "elevenlabs": "ElevenLabs (while talking)",
-        "openaiVoice": "OpenAI (while talking)",
         "iCloudSharing": "iCloud (lists you share)",
         "lookups": "Open-Meteo and Wikipedia (looked up by ElevenLabs)",
         "exchangeRates": "the European Central Bank (exchange rates; nothing about you)",
@@ -429,7 +408,7 @@ public enum DataFlow {
         "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",
     ]
 
-    /// Covered by another name (translator mode goes to whichever service runs the voice, which is
+    /// Covered by another name (translator mode goes to ElevenLabs, which is
     /// named), or not sent by the app (a backup file goes where you save it).
     // webSignIn: the same Doddy server the doddyServer row already names.
     static let notInNetworkSummary: Set<String> = ["translator", "backup", "webSignIn"]
