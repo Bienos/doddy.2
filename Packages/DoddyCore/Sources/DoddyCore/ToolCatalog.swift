@@ -22,8 +22,9 @@ public struct ToolDescriptor: Equatable, Sendable {
         /// A text from Doddy's own number to the user's verified number (ADR-750 U2), through
         /// Doddy's messaging server. Never to anyone else.
         case sendText
-        /// A call from Doddy's own number to the user's verified number at a time they approved
-        /// (ADR-754), placed by Doddy's messaging server. Never to anyone else.
+        /// A call placed by Doddy's messaging server from Doddy's own number: to the user's verified
+        /// number at a time they approved (ADR-754), or to up to three places the user approved on one
+        /// card (decision 2026-11-09-restaurant-calls-one-tap).
         case placeCall
         /// Changes the conversation itself (translator mode, the plan card).
         case session
@@ -33,7 +34,9 @@ public struct ToolDescriptor: Equatable, Sendable {
     public enum Approval: String, Sendable, CaseIterable {
         /// A public lookup that reads nothing of the user's and changes nothing (`AskFirst.publicLookups`):
         /// runs when the agent calls it (owner, 21 Oct 2026, ADR-575). Also translator mode's start
-        /// and stop, which read and send nothing (owner, 24 Oct 2026, ADR-619).
+        /// and stop, which read and send nothing (owner, 24 Oct 2026, ADR-619), and a text to the
+        /// user's own verified number while Texts from Doddy is on (owner, 9 Nov 2026, decision
+        /// 2026-11-09-restaurant-calls-one-tap).
         case runsNow
         /// Changes nothing: the app shows what it will do and runs it on a tap or the user's own
         /// spoken yes (`AskFirst.Need.yesFirst`).
@@ -149,10 +152,13 @@ public enum ToolCatalog {
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // Sent by Doddy, so the card shows the exact text and the tap approves exactly that
         // text; the server checks the same approval hash (ADR-750 U2).
-        .init(VoiceToolName.textMe, .sendText, .card),
+        // Decision 2026-11-09-restaurant-calls-one-tap (owner, 9 Nov 2026): to the user's own verified number only,
+        // at once while Texts from Doddy is on, no card; never the same text twice in a row (`TextRepeat`).
+        .init(VoiceToolName.textMe, .sendText, .runsNow),
         // The card shows the time and the exact reason Doddy will say; the server checks the same
         // approval hash when it books the call and again when it places it (ADR-754).
         .init(VoiceToolName.callMeLater, .placeCall, .card),
+        .init(VoiceToolName.callPlaces, .placeCall, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).

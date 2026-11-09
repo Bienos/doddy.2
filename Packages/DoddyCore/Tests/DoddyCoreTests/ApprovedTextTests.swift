@@ -106,19 +106,38 @@ final class ApprovedTextTests: XCTestCase {
 
     // MARK: Where it runs
 
-    func testItNeedsACardAndIsNeverAPlanStep() throws {
+    func testItRunsAtOnceOnThePhoneAndIsNeverAPlanStep() throws {
+        // Decision 2026-11-09-restaurant-calls-one-tap (owner, 9 Nov 2026): no card, only to the user's own
+        // verified number while Texts from Doddy is on; the server still checks the approval hash.
         let tool = try XCTUnwrap(ToolCatalog.descriptor(VoiceToolName.textMe))
         XCTAssertEqual(tool.effect, .sendText)
-        XCTAssertEqual(tool.approval, .card)
+        XCTAssertEqual(tool.approval, .runsNow)
+        XCTAssertEqual(AskFirst.need(for: .textMe(body: "Kod 4417")), .runsNow)
+        XCTAssertFalse(AskFirst.needsTap(AskFirst.need(for: .textMe(body: "Kod 4417"))))
         XCTAssertEqual(tool.runsOn, .phone)
         XCTAssertFalse(tool.planEligible, "a plan card doesn't show the exact text with its own approval")
         XCTAssertFalse(tool.isCloud)
         XCTAssertEqual(ToolCatalog.all.filter { $0.effect == .sendText }.map(\.name), [VoiceToolName.textMe])
     }
 
+    func testTheSameTextIsNotSentTwiceInARow() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let hash = ApprovedTextDraft(body: "Kod 4417", to: "+48600100200").approvalHash
+        XCTAssertFalse(TextRepeat.sentMomentsAgo(hash, queued: [:], now: now), "never sent: send")
+        XCTAssertTrue(TextRepeat.sentMomentsAgo(hash, queued: [hash: now.addingTimeInterval(-60)], now: now), "a minute ago: not again")
+        XCTAssertTrue(TextRepeat.sentMomentsAgo(hash, queued: [hash: now.addingTimeInterval(-(TextRepeat.window - 1))], now: now))
+        XCTAssertFalse(TextRepeat.sentMomentsAgo(hash, queued: [hash: now.addingTimeInterval(-TextRepeat.window)], now: now), "after the window: send")
+        let other = ApprovedTextDraft(body: "Kod 4418", to: "+48600100200").approvalHash
+        XCTAssertFalse(TextRepeat.sentMomentsAgo(other, queued: [hash: now], now: now), "another text: send")
+        XCTAssertTrue(VoiceToolReply.textSentMomentsAgo.hasPrefix("failed:"))
+        XCTAssertEqual(ActivityEntry.outcome(of: VoiceToolReply.textSentMomentsAgo, isLookup: false).0, .notDone)
+    }
+
     func testNotWhileDrivingNotWhilePausedNotInTranslatorMode() {
         let request = VoiceToolRequest.textMe(body: "Hi")
-        guard case .refuse = CarProfile.decision(for: request) else { return XCTFail("car") }
+        // It leaves the iPhone, so not while driving (owner, 2026-10-11), even without a card.
+        guard case .refuse(let reason) = CarProfile.decision(for: request) else { return XCTFail("car") }
+        XCTAssertFalse(reason.contains("tap"), "the reason is that it leaves the iPhone, not a tap")
         XCTAssertTrue(ConnectionPause.applies(to: request))
         XCTAssertEqual(
             ToolGate.decide(toolName: VoiceToolName.textMe, request: request, translatorOn: false, pauseAll: true, isOn: { _ in true }),

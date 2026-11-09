@@ -14,7 +14,7 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 5. During the call the app shows the live transcript, a big **Przejmij** (rings the user's phone; pressing 1 joins the call) and **Zakończ**. The Lock Screen shows the phase and the time only.
 6. After the call: an answer card with the reply quoted from the transcript, a confidence flag with reasons, warnings about anything Doddy said that needs a look, the transcript, a next step, the cost, and receipts for what the servers deleted. The transcript is saved on the iPhone first; then the server deletes its copies.
 7. Failed calls (no answer, busy, voicemail, phone menu, wrong number, technical failure) get an honest card and "Zadzwoń ponownie o …" with times that fit the calling hours.
-8. Rehearsal: the user practises with Doddy playing the receptionist, then picks "Doddy dzwoni" or "Dzwonię sam" (the script on screen and the number to dial).
+8. Rehearsal: the user practises with Doddy playing the receptionist, then picks "Doddy dzwoni" or "Dzwonię sam" (the script on screen and the number to dial). The rehearsal runs on the OpenAI voice, so it starts only after that voice's consent, the same step as Talk to Doddy (`CallRehearsalSession` refuses without it), and its banner says the voice goes to OpenAI (7 Nov 2026 engineering audit).
 
 ## Code
 | Part | Where |
@@ -38,7 +38,7 @@ Decision `docs/decisions/2026-11-09-restaurant-calls-one-tap.md`, step 2. **Serv
 - At the end: one content-free push (the same kind as a single call's, so the app opens the recap) and, if the card said so and the person has consented to texts, one text to their own number with the place's name and the quoted answer. The briefs of places never called are deleted, with receipts.
 - A place of a task can't be approved on its own (`part_of_task`); cancelling one place cancels the task.
 - Tests: `server/messaging/test/callTasks.test.ts` (9).
-- **Before the app can use it:** DoddyCore's `CallNumberSource` must learn `places`, or an older app can't read such a case's preview (step 4 of the decision).
+- **The app's side (step 4, 9 Nov 2026):** the voice tool `call_places` (up to three places and their numbers from `find_places`, one question, a goal, `text_result`) asks Doddy's server for the task's card (`createCallTask`) and shows it in the conversation: every place, its number, "Numbers from Doddy's place search", the exact opening line, what Doddy won't do, and how the answer comes back. "Call them" approves the task's digest (`approveCallTask`); "Don't call" cancels it on the server. The tool's reply is only "started", never an answer; the answers reach the user through the existing Calls for you sync. DoddyCore's `CallNumberSource` has `places`. **Not compiled here** (no Xcode): `VoiceSessionController.swift`, `VoiceView.swift`, `CallCaseView.swift`; DoddyCore's rules are tested on Linux (`CallTaskTests`). Not on the live ElevenLabs agent (`not_synced`); the OpenAI voice takes it from the app.
 
 ## Verified here (Linux, 2026-10-18)
 - Server: `npm run typecheck` and `npm test` against a throwaway Postgres 16: **115 tests pass** (call cases: payload binding, every limit, kill switch, agent drift, webhooks and their signatures, takeover, answer card, costs, deletion receipts, retry after voicemail; plus config).

@@ -184,6 +184,7 @@ run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_b
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
+run_step "Which Vercel statuses are replaced on pull requests (decision 2026-11-09-vercel-blocked-status)" scripts/test_vercel_blocked_status.sh
 run_step "Privacy manifest declares every required-reason API (7 Nov audit)" scripts/test_check_privacy_manifest.sh
 run_step "The Mac job's package-pin step never blocks without pins (7 Nov audit)" scripts/test_ci_package_pins.sh
 if python3 -I -c "import yaml" 2>/dev/null; then

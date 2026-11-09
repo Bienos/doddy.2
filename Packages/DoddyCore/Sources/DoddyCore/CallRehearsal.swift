@@ -6,9 +6,13 @@ import Foundation
 // sam" (this script on screen, and the number to dial themselves).
 
 public enum CallRehearsal {
-    /// Names who hears the voice (engineering audit, 7 Nov 2026): "nothing is saved" alone hid that OpenAI
-    /// processes the audio, which the consent gate in CallRehearsalSession now also asks about.
-    public static let banner = "Próba: nikt nie dzwoni, nic nie jest zapisywane. Doddy udaje osobę, która odbiera. OpenAI przetwarza twój głos."
+    /// The rehearsal always runs on the OpenAI voice, whatever the user picked for conversations, so
+    /// it needs that provider's voice consent (`VoiceProviderConsent` in the app) before the
+    /// microphone opens, and its banner names it (7 Nov 2026 engineering audit).
+    public static let provider: VoiceProvider = .openAIRealtime
+
+    /// Shown above the rehearsal. "Nothing is saved" is true of Doddy only; the audio goes to the provider.
+    public static let banner = "Próba: nikt nie dzwoni, a Doddy nic z niej nie zapisuje. Doddy udaje osobę, która odbiera. Twój głos i ta rozmowa trafiają do \(provider.shortName), które prowadzi głos próby."
 
     /// Instructions for the tool-less realtime session. Placeholders are filled from the preview.
     public static let instructionsTemplate = """

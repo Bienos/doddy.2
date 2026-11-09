@@ -146,8 +146,10 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .lostWallet: [VoiceToolName.lostWallet]
         case .voiceProviderPicker, .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
              .recordings, .sharedLists, .shoppingModeLockScreen, .placeReminders, .eveningWrapUp, .weeklyLookBack,
-             .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .callCases, .parcels:
+             .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .parcels:
             []
+        // Calls Doddy makes for the user, started from a conversation (decision 2026-11-09-restaurant-calls-one-tap).
+        case .callCases: [VoiceToolName.callPlaces]
         }
     }
 

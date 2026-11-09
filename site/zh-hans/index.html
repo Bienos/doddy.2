@@ -52,8 +52,6 @@
   <script src="/i18n.js" defer></script>
   <!-- i18n:dictionary --><script src="/i18n/zh-hans.js" defer></script><!-- /i18n:dictionary -->
   <script src="/main.js" defer></script>
-  <script src="/court.js" defer></script>
-  <script src="/memory.js" defer></script>
   <script src="/analytics.js" defer></script>
   <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
        /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
@@ -105,7 +103,6 @@
           <li><a href="#asks">你的请求</a></li>
           <li><a href="/zh-hans/what-can-doddy-do/">Doddy 能做什么？</a></li>
           <li><a href="#meet">认识 Doddy</a></li>
-          <li><a href="#play">玩</a></li>
           <li><a href="/zh-hans/blog/">博客</a></li>
           <li><a href="#privacy">隐私</a></li>
         </ul>
@@ -120,7 +117,6 @@
           <li><a href="#asks">你的请求</a></li>
           <li><a href="/zh-hans/what-can-doddy-do/" class="menu-new">Doddy 能做什么？ <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">认识 Doddy</a></li>
-          <li><a href="#play">玩</a></li>
           <li><a href="/zh-hans/blog/">博客</a></li>
           <li><a href="#privacy">隐私</a></li>
         </ul>
@@ -215,46 +211,6 @@
       </div>
     </section>
 
-    <section class="film" id="film" aria-labelledby="film-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="film-title" class="display-m">华沙的一个清晨。</h2>
-          <p>一部关于 Doddy 的视频，讲的是一只他总也放不下的球，还有一只非常执着的鸽子。时长 1 分 15 秒，最好开着声音看。</p>
-        </div>
-        <div class="film-stage">
-          <div class="film-card">
-            <span class="tape t1" aria-hidden="true"></span>
-            <span class="tape t2" aria-hidden="true"></span>
-            <div class="player">
-              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddy 品牌视频，时长 1 分 15 秒">
-                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
-              </video>
-              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>预览，静音播放</span>
-              <button class="cover" type="button" aria-label="带声音播放视频">
-                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
-                <span class="cover-label" aria-hidden="true"><span class="cover-title">观看视频</span>1:15 · 带声音</span>
-              </button>
-            </div>
-          </div>
-          <div class="film-doddy" aria-hidden="true">
-            <p class="says">这就是我。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
-          </div>
-        </div>
-        <ol class="chapters" aria-label="跳转到视频中的某一段">
-          <li><button type="button" data-seek="0"><span class="t">0:00</span>城堡广场</button></li>
-          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>一个大问题</button></li>
-          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>同时说所有语言</button></li>
-          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>问当地人</button></li>
-          <li><button type="button" data-seek="38"><span class="t">0:38</span>那只鸽子</button></li>
-          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>大门口的心碎</button></li>
-          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>已关门</button></li>
-          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
-        </ol>
-        <p class="caption film-caption">品牌视频。讲的是 Doddy 的故事，不是应用演示。</p>
-      </div>
-    </section>
-
     <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
     <section class="vs-section" aria-labelledby="vs-title">
       <div class="wrap">
@@ -313,54 +269,6 @@
     </section>
 
     <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
-    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
-      <div class="wrap play-head">
-        <div>
-          <p class="pill"><span class="dot" aria-hidden="true"></span>等待时</p>
-          <h2 id="play-intro-title" class="display-m">两个游戏。一个他从不放下的球。</h2>
-        </div>
-        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
-      </div>
-    </section>
-
-    <section class="court" id="shoot" aria-labelledby="play-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="play-title" class="display-m">来投一球</h2>
-          <p>Doddy 总也放不下那颗球。在球场任意位置按下，向后拉，松手即可投篮。也可以让 Doddy 来试。</p>
-        </div>
-        <div class="court-panel">
-          <canvas id="court" width="800" height="520" role="img" aria-label="篮球小游戏：Doddy 把球投向篮筐。按“帮我投篮”按钮即可投篮。"></canvas>
-          <div class="court-bar">
-            <p class="court-score" aria-live="polite">投中 <strong id="made">0</strong> 球，共 <strong id="shots">0</strong> 次投篮</p>
-            <button class="button small" id="auto-shot" type="button">帮我投篮</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="memory" id="remember" aria-labelledby="remember-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="remember-title" class="display-m">记住它</h2>
-          <p>六件小事，十二张卡片。每次翻两张，找出配对。Doddy 在这件事上比我们所有人都厉害。</p>
-        </div>
-        <div class="court-panel memory-panel">
-          <div class="memory-stage">
-            <div class="memory-grid" id="memory-grid" role="group" aria-label="记忆卡片"></div>
-            <div class="memory-doddy">
-              <p class="memory-bubble" id="memory-bubble" aria-live="polite">翻两张，找出一对。</p>
-              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
-            </div>
-          </div>
-          <div class="court-bar">
-            <p class="court-score">已配对 <strong id="memory-pairs">0</strong> / 6 对 · 步数 <strong id="memory-moves">0</strong></p>
-            <button class="button small" id="memory-restart" type="button">再玩一局</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="privacy" id="privacy" aria-labelledby="privacy-title">
       <div class="wrap">
         <div class="privacy-panel">
@@ -373,8 +281,8 @@
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
-              <h3>无需账户</h3>
-              <p>无需注册，无需邮箱，无需密码。打开应用就能开始。</p>
+              <h3>登录一次就好</h3>
+              <p>用 Apple 或 Google 登录。无需记住任何密码。</p>
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
@@ -387,7 +295,7 @@
               <p>可以删除一条笔记或全部笔记。它们会立即从搜索中消失。</p>
             </li>
           </ul>
-          <p class="privacy-note">Doddy 是 AI，不是真人。你打开的一些功能会把数据发出手机：语音对话（OpenAI，若你更改语音则是 ElevenLabs）、天气和维基百科查询（地名或搜索词）、通话及通话中的记忆（Doddy 的服务器、Twilio 和 ElevenLabs）、共享列表（你的 iCloud），以及 Gmail 或 Todoist 等已连接的账户（经由 Doddy 的服务器）。其他一切都留在你的 iPhone 上。这些全部都在测试阶段。</p>
+          <p class="privacy-note">Doddy 是 AI，不是真人。你打开的一些功能会把数据发出手机：语音对话（ElevenLabs，若你更改语音则是 OpenAI）、天气和维基百科查询（地名或搜索词）、通话及通话中的记忆（Doddy 的服务器、Twilio 和 ElevenLabs）、共享列表（你的 iCloud），以及 Gmail 或 Todoist 等已连接的账户（经由 Doddy 的服务器）。其他一切都留在你的 iPhone 上。这些全部都在测试阶段。</p>
         </div>
       </div>
     </section>
@@ -445,7 +353,7 @@
               <p id="answers-status" class="status" role="status" aria-live="polite"></p>
             </form>
             <ul class="join-facts" aria-label="抢先体验是什么意思">
-              <li><b>无需账户。</b> 打开应用就能开始。</li>
+              <li><b>登录一次就好。</b> 用 Apple 或 Google，然后开始。</li>
               <li><b>你的笔记保存在 iPhone 上。</b> 语音、通话、共享列表、邮件、日历和文件，只有在你打开后才会离开 iPhone。</li>
               <li><b>随时删除。</b> 你的邮件、笔记，全部。</li>
             </ul>

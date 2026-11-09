@@ -26,7 +26,7 @@ const SITE_HEADERS = {
 const PUBLIC_PATHS = [
   "/", "/index.html", "/fr/", "/de/index.html", "/zh-hans/", "/pt-br/", "/privacy/", "/terms/", "/blog/", "/blog/hello-doddy/",
   "/what-can-doddy-do/", "/sitemap.xml", "/styles.css", "/api/waitlist", "/api/waitlist-answers", "/api/waitlist-admin", "/api/waitlist-export",
-  "/assets/poses/doddy-pose-reading-light-v1.3-r1.svg",
+  "/assets/day/poses/wave.webp",
 ];
 const ADMIN_PATHS = ["/admin", "/admin/", "/admin/index.html", "/admin/admin.js", "/admin/admin.css", "/admin/anything/else"];
 
@@ -37,7 +37,7 @@ test("every public path keeps exactly the headers it had, with one Content-Secur
     for (const [key, value] of Object.entries(SITE_HEADERS)) assert.equal(headers[key], value, `${path}: ${key}`);
     assert.deepEqual(Object.keys(headers).filter((key) => !(key in SITE_HEADERS)), path.startsWith("/assets/") ? ["Cache-Control"] : [], `${path}: nothing else`);
   }
-  assert.equal(headersFor("/assets/poses/x.svg")["Cache-Control"], "public, max-age=86400");
+  assert.equal(headersFor("/assets/day/poses/x.webp")["Cache-Control"], "public, max-age=86400");
 });
 
 test("the admin page has its own policy: no Google Tag Manager, no inline script, nothing it does not need", () => {

@@ -634,7 +634,7 @@
     {
       "type": "function",
       "name": "text_me",
-      "description": "Send a text message (SMS) from Doddy's own phone number to the user's own number, the one they verified in Doddy's Settings. Use it only when the user asks Doddy to text them something, for example 'text me the parcel code' or 'send me that address by SMS'. It can never text anyone else; to message someone else, use draft_message. Write the text in the user's language, short, with exactly what they asked for, and never a password, PIN or card number. The card shows it word for word and nothing is sent until the user taps Send. Before this tool runs, say only one short line, for example 'Confirm on screen to send this text.' The result starts with 'delivered' (the carrier reported it reached the phone), 'sent' (Twilio accepted it; delivery isn't confirmed), 'queued' (Doddy's server has it; not sent yet), 'declined', 'failed' (nothing was sent; the reason follows) or 'unknown'. Say the text arrived only when the result starts with 'delivered'. After 'unknown', never call this tool again unless the user asks.",
+      "description": "Send a text message (SMS) from Doddy's own phone number to the user's own number, the one they verified in Doddy's Settings. Use it only when the user asks Doddy to text them something, for example 'text me the parcel code' or 'send me that address by SMS'. It can never text anyone else; to message someone else, use draft_message. Write the text in the user's language, short, with exactly what they asked for, and never a password, PIN or card number. It is sent at once, with no card to tap, but only to the user's own verified number and only while they have turned on Texts from Doddy; the same text is never sent twice in a row. Before this tool runs, say only one short line, for example 'Sending you that now.' The result starts with 'delivered' (the carrier reported it reached the phone), 'sent' (Twilio accepted it; delivery isn't confirmed), 'queued' (Doddy's server has it; not sent yet), 'failed' (nothing was sent; the reason follows) or 'unknown'. Say the text arrived only when the result starts with 'delivered'. After 'unknown', never call this tool again unless the user asks.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -642,7 +642,7 @@
         },
         "required": ["body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7901m57kexstfma8fsdzdxvjj9jc"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7901m57kexstfma8fsdzdxvjj9jc"}
     },
     {
       "type": "function",
@@ -658,6 +658,58 @@
         "required": ["time", "reason"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6901m57key8nftdsvny3qd3n5kr7"}
+    },
+    {
+      "type": "function",
+      "name": "call_places",
+      "description": "Have Doddy phone up to three places (restaurants, shops, offices) for the user and ask them one question, for example 'find an Italian restaurant in the centre and check if they have a table for two at 7', 'zadzwoń do trzech fryzjerów i zapytaj o wolny termin jutro'. First find the places and their phone numbers with find_places (never guess a number); pass the best ones, at most three, in the order to call them: place_names and place_phones, the same number of each, matched by position. Polish numbers only. Give question as one short yes-or-no question in Polish, exactly as Doddy should ask it, and goal as one sentence saying what the user wants. Doddy says it's an AI calling for the user, asks the question, and never books, pays or agrees to anything. The card shows every place, its number, the question and whether the result comes back by text; nothing is dialled until the user taps. After the tap Doddy calls the places one at a time and stops at the first clear yes. Before this tool runs, say only one short line, for example 'Check the places on screen.' The result starts with 'started' (the first call is being dialled; the answer comes later as a notification, and a text if chosen, never to you), 'declined', 'failed' (nobody was called; the reason follows) or 'unknown'. Never say anyone answered or that anything is booked. After 'unknown', never call this tool again unless the user asks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "place_names": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "One place's name as the search gave it, e.g. 'Trattoria Roma'."
+            },
+            "description": "The places to call, best first, at most three."
+          },
+          "place_phones": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "That place's phone number as the search gave it, e.g. '22 123 45 67'."
+            },
+            "description": "One phone number for each name, in the same order."
+          },
+          "question": {
+            "type": "string",
+            "description": "One short yes-or-no question in Polish, asked word for word at every place, e.g. 'Czy mają Państwo wolny stolik dla dwóch osób dziś o 19:00'. At most 200 characters."
+          },
+          "goal": {
+            "type": "string",
+            "description": "What the user wants, in one sentence, e.g. 'Znaleźć stolik na randkę dziś o 19.' Shown on the card, never said on the call. At most 160 characters."
+          },
+          "text_result": {
+            "type": "boolean",
+            "description": "true (the default) to text the result to the user's own number as well as the notification; false if they said not to."
+          }
+        },
+        "required": [
+          "place_names",
+          "place_phones",
+          "question",
+          "goal"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": true,
+        "ask": "tap",
+        "speak_before": "force",
+        "timeout_secs": 90,
+        "elevenlabs_tool_id": "not_synced"
+      }
     },
     {
       "type": "function",

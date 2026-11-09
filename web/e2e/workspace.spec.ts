@@ -50,12 +50,18 @@ async function signIn(page: Page, signInCode: string): Promise<void> {
 /**
  * The page's rules (CSP) must not block anything the app itself needs, and the page must not
  * throw. A failed request is not a problem in itself: a signed-out page's first session check is
- * a 401 on purpose, and Chromium logs it.
+ * a 401 on purpose, and Chromium logs it. So is the menu's owner check (`GET /v1/web/owner`): the
+ * server answers 404 to everyone who is not an owner, so nobody can tell the admin dashboard exists
+ * (decision 2026-11-09-usage-counts-on-by-default). Only that one address is allowed to 404 here.
  */
 function watchConsole(page: Page): string[] {
   const problems: string[] = [];
   page.on("console", (message) => {
-    if (message.type() === "error" && !/^Failed to load resource: the server responded with a status of 401/.test(message.text())) problems.push(message.text());
+    if (message.type() !== "error") return;
+    const text = message.text();
+    if (/^Failed to load resource: the server responded with a status of 401/.test(text)) return;
+    if (/^Failed to load resource: the server responded with a status of 404/.test(text) && /\/v1\/web\/owner$/.test(message.location().url)) return;
+    problems.push(text);
   });
   page.on("pageerror", (error) => problems.push(error.message));
   return problems;
@@ -212,7 +218,8 @@ test("Logbook shows what the iPhone sent, downloads it, and deletes it when aske
   await logbookSwitch(request, token, true);
 
   // The iPhone sends three days; one with a word where a number belongs is refused whole.
-  for (const [ago, n] of [[2, 4], [1, 1], [0, 3]] as const) {
+  const SENT = [[2, 4], [1, 1], [0, 3]] as const;
+  for (const [ago, n] of SENT) {
     const sent = await request.put(`/v1/web/logbook/days/${daysAgo(ago)}`, { headers, data: logbookDay(daysAgo(ago), n) });
     expect(sent.status()).toBe(200);
   }
@@ -223,9 +230,13 @@ test("Logbook shows what the iPhone sent, downloads it, and deletes it when aske
   await signIn(page, await code(request, token));
   await page.goto("/logbook");
   await expect(page.getByRole("heading", { level: 1, name: "Dziennik" })).toBeVisible();
-  // Real numbers: no example banner, the receipt adds up what was sent (4 + 1 + 3), and the week can start mid-week.
+  // Real numbers: no example banner, and the receipt adds up what was sent in the week it shows. The page
+  // opens on the latest Monday-to-Sunday week, so on a Monday or a Tuesday the days sent before that
+  // Monday are in the week before (all three, 4 + 1 + 3, from Wednesday on).
+  const sinceMonday = (new Date().getUTCDay() + 6) % 7;
+  const inWeek = SENT.filter(([ago]) => ago <= sinceMonday);
   await expect(page.locator(".lb-rc-line").first()).toContainText("Rozmowy");
-  await expect(page.locator(".lb-rc-line").first().locator("dd")).toHaveText("8");
+  await expect(page.locator(".lb-rc-line").first().locator("dd")).toHaveText(String(inWeek.reduce((sum, [, n]) => sum + n, 0)));
   await expect(page.getByRole("note").filter({ hasText: "Przykład." })).toHaveCount(0);
 
   // Download everything: the server's own file.

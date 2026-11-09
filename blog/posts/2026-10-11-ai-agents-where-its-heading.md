@@ -5,7 +5,7 @@ author: "The Doddy team"
 status: published
 summary: "AI agents are moving from talking to doing, and fast. We looked at the research on where agents are heading, what's holding them back, and why we think the winners will be the small, trustworthy ones that ask before they act."
 keywords: "AI agents, agentic AI, future of AI, AI assistant, AI companion, personal AI agent, AI trust, human in the loop"
-banner_pose: pointing
+banner_pose: reaching_high
 banner_says: The future asks first.
 banner_card_title: Add to your calendar?
 banner_card_text: Dentist, Friday at 3pm. Doddy checks it saved before saying so.

@@ -10274,6 +10274,17 @@
         }
       }
     },
+    "Call them": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń"
+          }
+        }
+      }
+    },
     "Call them as you would on the phone. Say \"koniec próby\" for tips.": {
       "extractionState": "manual",
       "localizations": {
@@ -10281,6 +10292,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mów tak, jak w prawdziwej rozmowie. Powiedz „koniec próby”, aby dostać wskazówki."
+          }
+        }
+      }
+    },
+    "Call these places for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwonić do tych miejsc w Twoim imieniu?"
+          }
+        }
+      }
+    },
+    "Call this place for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwonić do tego miejsca w Twoim imieniu?"
           }
         }
       }
@@ -20083,17 +20116,6 @@
         }
       }
     },
-    "Doddy couldn't confirm an earlier try of this exact text. Sending again while Doddy is open won't send it twice.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy nie mógł potwierdzić wcześniejszej próby wysłania dokładnie tego SMS-a. Ponowne wysłanie, póki Doddy jest otwarty, nie wyśle go dwa razy."
-          }
-        }
-      }
-    },
     "Doddy couldn't confirm it was removed from this iPhone. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -23576,6 +23598,17 @@
         }
       }
     },
+    "Doddy says:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy mówi:"
+          }
+        }
+      }
+    },
     "Doddy starts in English until you pick another language. A change shows the next time you open Doddy: close it first, then open it again.": {
       "extractionState": "manual",
       "localizations": {
@@ -25274,6 +25307,17 @@
         }
       }
     },
+    "Don't call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie dzwoń"
+          }
+        }
+      }
+    },
     "Don't change": {
       "extractionState": "manual",
       "localizations": {
@@ -25871,17 +25915,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "不保存"
-          }
-        }
-      }
-    },
-    "Don't send": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie wysyłaj"
           }
         }
       }
@@ -30859,17 +30892,6 @@
         }
       }
     },
-    "From Doddy's number to your number ending %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Z numeru Doddy’ego na Twój numer kończący się na %@"
-          }
-        }
-      }
-    },
     "From Google Keep: in Google Takeout, export Keep. In the Files app, tap the .zip to unpack it, open the Keep folder and pick the .json files. You can also pick .txt and .md files.": {
       "extractionState": "manual",
       "localizations": {
@@ -35320,6 +35342,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jest w plikach tymczasowych Doddy’ego, dopóki iOS ich nie wyczyści. Zapisz ją w Keynote albo w Plikach, żeby ją zachować."
+          }
+        }
+      }
+    },
+    "It's outside calling hours (8:00 to 23:00), so the first call can't start now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest poza godzinami dzwonienia (8:00–23:00), więc pierwsza rozmowa nie może zacząć się teraz."
           }
         }
       }
@@ -51759,6 +51792,17 @@
         }
       }
     },
+    "Number from Doddy's place search": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer z wyszukiwania miejsc Doddy’ego"
+          }
+        }
+      }
+    },
     "Number from a note": {
       "extractionState": "manual",
       "localizations": {
@@ -51799,6 +51843,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Numer wpisany ręcznie, źródło: %@"
+          }
+        }
+      }
+    },
+    "Numbers from Doddy's place search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numery z wyszukiwania miejsc Doddy’ego."
           }
         }
       }
@@ -52511,6 +52566,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Raz w tygodniu przez cztery tygodnie, tylko dopóki z któregoś nie skorzystasz. Tylko jeśli powiadomienia są już włączone."
+          }
+        }
+      }
+    },
+    "One at a time, in this order. Doddy stops at the first yes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po kolei, w tej kolejności. Doddy kończy na pierwszym „tak”."
           }
         }
       }
@@ -69804,28 +69870,6 @@
         }
       }
     },
-    "Send text": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wyślij SMS-a"
-          }
-        }
-      }
-    },
-    "Send this text to you?": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wysłać Ci tego SMS-a?"
-          }
-        }
-      }
-    },
     "Send to Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -70032,17 +70076,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在发送…"
-          }
-        }
-      }
-    },
-    "Sent as %lld SMS parts": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wysłany jako %lld części SMS"
           }
         }
       }
@@ -92587,17 +92620,6 @@
         }
       }
     },
-    "Twilio carries the text. Doddy's server keeps it encrypted only until it's sent, and sends exactly this.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SMS-a przenosi Twilio. Serwer Doddy’ego trzyma go zaszyfrowanego tylko do wysłania i wysyła dokładnie ten tekst."
-          }
-        }
-      }
-    },
     "Twilio keeps its call log (numbers, times, duration, price) under its own retention. No audio is recorded anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -100091,17 +100113,6 @@
         }
       }
     },
-    "You already sent this exact text at %@. Sending again sends it a second time.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ten sam SMS został już wysłany o %@. Ponowne wysłanie wyśle go drugi raz."
-          }
-        }
-      }
-    },
     "You also have an unfinished note from %@. It's kept; it opens the next time you start a new note.": {
       "extractionState": "manual",
       "localizations": {
@@ -100599,6 +100610,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "你在三个不同的日子按这个顺序做了这些事。保存后，你可以按名称向 Doddy 请求。每一步每次都仍会先问你。"
+          }
+        }
+      }
+    },
+    "You get a notification and a text with the answer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedź dostaniesz w powiadomieniu i SMS-ie."
+          }
+        }
+      }
+    },
+    "You get a notification with the answer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedź dostaniesz w powiadomieniu."
           }
         }
       }
