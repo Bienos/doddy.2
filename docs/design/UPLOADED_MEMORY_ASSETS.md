@@ -232,8 +232,8 @@ The dark appearance (`AppIcon-dark.png`, v1.3 art from ADR-050) is removed: the 
 vanish on night, and recolouring it is not allowed. iOS shows this icon on a dark Home Screen too and derives
 the tinted one. The strip's frames are about 450 px tall, so the 1024 px file is a 2.5× upscale; the Home
 Screen draws the icon at 180 px at most. A larger or vector wave from the artist replaces it by rerunning the
-script. This was the last v1.3 drawing in the shipped app's icon; the opening scene still reads the v1.3
-basketball SVGs (ADR-225).
+script. This was the last v1.3 drawing in the shipped app's icon; the opening scene read the v1.3
+basketball SVGs (ADR-225) until it was removed on 9 Nov 2026, the last v1.3 art in the app.
 
 ## Mac menu bar and desktop widget (ADR-438, ADR-439, 11 October 2026)
 | Image set | Pack source | SHA-256 of the source | Made how |

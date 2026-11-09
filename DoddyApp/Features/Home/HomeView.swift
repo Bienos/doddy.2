@@ -24,9 +24,6 @@ struct HomeView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Right after the opening (ADR-225) Doddy is ready to talk: the listening pose is up and the
-    /// bar slides in. Absent in previews and tests.
-    @Environment(OpeningModel.self) private var opening: OpeningModel?
     @State private var modal: MemoryModal?
     /// The first visit of a morning waves before he sits (ADR-380).
     @State private var waving = false
@@ -108,7 +105,6 @@ struct HomeView: View {
             .safeAreaInset(edge: .bottom) {
                 bottomBar
                     .opacity(showFiles ? 0 : 1)
-                    .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
             // ADR-596, ADR-665: the island grows to the sides with his waves while he talks on Home.
@@ -368,14 +364,11 @@ struct HomeView: View {
 
     // MARK: Doddy
 
-    /// Doddy is the Talk button. The opening (ADR-225) lands him here, so this reports where "here" is.
+    /// Doddy is the Talk button.
     private var character: some View {
         Button(action: talk) {
             Group {
-                if ready != nil {
-                    // The opening's hand-over lands on this picture, in this place.
-                    UploadedCharacterView(assetName: "UploadedDoddy_Listening", height: 210)
-                } else if DoddyDirector.shared.isActive {
+                if DoddyDirector.shared.isActive {
                     // Motion v2: this picture becomes the persistent Doddy, drawn on the stage
                     // overlaid below (the same 210 pt box, so nothing else on Home moves). A tap
                     // anywhere in the box still talks; a touch on him leans him and a tap on him
@@ -403,21 +396,12 @@ struct HomeView: View {
         // stage's frame (hosted run 39454393739 read the whole 210 pt box as "the stage"). No visible
         // line, because the calm Home's mockup has none.
         .overlay(alignment: .bottom) {
-            if DoddyDirector.shared.isActive && ready == nil {
+            if DoddyDirector.shared.isActive {
                 StageLine(visible: false).padding(.bottom, 31)
             }
         }
-        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [opening] rect in
-            Task { @MainActor in
-                opening?.homeArtBox = ScreenBox(centerX: rect.midX, centerY: rect.midY, height: rect.height)
-            }
-        }
-        // While the opening plays, its Doddy stands in for this one; when it ends, this one is in
-        // the same place, so nothing moves.
-        .opacity(opening?.play == nil ? 1 : 0)
         // With Files open he moves up above the sheet.
         .offset(y: showFiles ? -120 : 0)
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: waving)
         .animation(reduceMotion ? nil : .spring(duration: 0.3, bounce: 0.3), value: perking)
         .task { await waveOnce() }
@@ -660,7 +644,7 @@ struct HomeView: View {
     /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.
     private func talk() {
         guard canTalk else { return }
-        guard !reduceMotion, !hideCharacterArt, ready == nil, conversation.live == nil else {
+        guard !reduceMotion, !hideCharacterArt, conversation.live == nil else {
             conversation.talk(store: store, profile: profiles.profile)
             return
         }
@@ -674,28 +658,19 @@ struct HomeView: View {
         }
     }
 
-    /// Once per launch, when Home appears without the opening: the first time on a morning he waves
-    /// (ADR-380), then sits. Waits a moment first, so an opening that is about to start wins.
+    /// Once per launch, when Home appears: the first time on a morning he waves (ADR-380), then
+    /// sits. Waits a moment first.
     private func waveOnce() async {
         // Motion v2: the one persistent Doddy has his own daily welcome (ADR-555).
         guard !HomeIdle.played, !reduceMotion, !hideCharacterArt, !DoddyDirector.shared.isActive else { return }
         try? await Task.sleep(for: .seconds(0.6))
-        guard !Task.isCancelled, !HomeIdle.played, opening?.play == nil, ready == nil else { return }
+        guard !Task.isCancelled, !HomeIdle.played else { return }
         HomeIdle.played = true
         guard HomeIdle.wavesThisMorning(now: .now) else { return }
         waving = true
         // The wave rests on the open hand a moment before he sits.
         try? await Task.sleep(for: .seconds(DoddyMotion.wave.duration + 0.8))
         waving = false
-    }
-
-    private var ready: OpeningReady? { opening?.ready }
-
-    /// Hidden under the opening until its hand-over, then they slide in as Doddy jumps into
-    /// place. Never hidden under Reduce Motion.
-    private var buttonsShown: Bool {
-        guard let opening, let play = opening.play else { return true }
-        return play.reducedMotion || opening.handingOver
     }
 
     /// Uses only the approved name; without one, "I'm here."
@@ -1043,20 +1018,6 @@ private struct HomeVoiceSheet: View {
             }
         }
         .presentationDetents([.medium])
-    }
-}
-
-/// The bar's entrance after the opening: up from just below, with a little bounce. Instant
-/// (never hidden) under Reduce Motion, where `shown` stays true.
-private struct SlideIn: ViewModifier {
-    let shown: Bool
-    let delay: Double
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(shown ? 1 : 0)
-            .offset(y: shown ? 0 : 28)
-            .animation(.spring(duration: 0.5, bounce: 0.3).delay(delay), value: shown)
     }
 }
 

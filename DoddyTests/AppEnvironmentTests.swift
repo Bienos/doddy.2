@@ -86,20 +86,6 @@ final class AppEnvironmentTests: XCTestCase {
         }
     }
 
-    func testFirstLaunchAnimationIsRememberedAndOlderInstallationsDoNotReplayIt() {
-        let suite = "doddy-opening-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
-        defer { defaults.removePersistentDomain(forName: suite) }
-
-        XCTAssertFalse(OpeningPreferences.firstLaunchIntroSeen(defaults))
-        defaults.set(true, forKey: PreferenceKey.quickStartOffered)
-        XCTAssertTrue(OpeningPreferences.firstLaunchIntroSeen(defaults))
-        XCTAssertTrue(defaults.bool(forKey: PreferenceKey.firstLaunchIntroSeen))
-
-        OpeningPreferences.markFirstLaunchIntroSeen(defaults)
-        XCTAssertTrue(OpeningPreferences.firstLaunchIntroSeen(defaults))
-    }
-
     func testVoiceDoesNotStartOnOpenByDefault() {
         let suite = "doddy-listen-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
