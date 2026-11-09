@@ -111,7 +111,7 @@ struct OnlineAccountsView: View {
             Button("Disconnect", role: .destructive) { Task { await model.disconnect(toolkit.id) } }
             Button("Cancel", role: .cancel) {}
         } message: { toolkit in
-            Text("Doddy switches off every \(toolkit.title) tool right away and asks \(toolkit.title) to remove its access. Nothing you saved in Doddy is deleted.")
+            Text(verbatim: String(format: NSLocalizedString("Doddy switches off every %@ tool right away and asks %@ to remove its access. Nothing you saved in Doddy is deleted.", comment: ""), toolkit.title, toolkit.title))
         }
         .sheet(item: Binding<ToolkitView?>(
             get: { model.choosingAccess.flatMap { model.toolkit($0) } },
@@ -200,24 +200,24 @@ struct OnlineAccountsView: View {
         if model.busyToolkit == toolkit.id {
             ProgressView("Working…")
         } else if let demo = model.demoAttempt, demo.toolkit == toolkit.id {
-            Text("Demo connection: no \(toolkit.title) account is involved and the data is made up.")
+            Text(verbatim: String(format: NSLocalizedString("Demo connection: no %@ account is involved and the data is made up.", comment: ""), toolkit.title))
                 .font(.footnote)
-            Button("Connect demo \(toolkit.title)") { Task { await model.completeDemo(approve: true) } }
+            Button(String(format: NSLocalizedString("Connect demo %@", comment: ""), toolkit.title)) { Task { await model.completeDemo(approve: true) } }
                 .accessibilityIdentifier("onlineAccounts.demoApprove")
             Button("Cancel", role: .cancel) { Task { await model.cancelDemo() } }
         } else if !toolkit.hasAccount {
             // Web search: nothing to sign in to, only the switch below.
             if toolkit.status == .unavailable {
-                Text("\(toolkit.title) isn't set up on this server.")
+                Text(verbatim: String(format: NSLocalizedString("%@ isn't set up on this server.", comment: ""), toolkit.title))
                     .font(.footnote)
             }
         } else {
             switch toolkit.status {
             case .unavailable:
-                Text("\(toolkit.title) isn't set up on this server.")
+                Text(verbatim: String(format: NSLocalizedString("%@ isn't set up on this server.", comment: ""), toolkit.title))
                     .font(.footnote)
             case .disconnected, .connecting, .error:
-                Button("Connect \(toolkit.title)") { confirmConnect = toolkit }
+                Button(String(format: NSLocalizedString("Connect %@", comment: ""), toolkit.title)) { confirmConnect = toolkit }
                     .disabled(model.busyToolkit != nil)
                     .accessibilityIdentifier("onlineAccounts.connect.\(toolkit.id)")
             case .connected:
@@ -232,7 +232,7 @@ struct OnlineAccountsView: View {
                 Button("Disconnect", role: .destructive) { confirmDisconnect = toolkit }
                     .disabled(model.busyToolkit != nil)
             case .expired:
-                Text("Access expired or was removed at \(toolkit.title). Its tools are off. Reconnect to keep using it.")
+                Text(verbatim: String(format: NSLocalizedString("Access expired or was removed at %@. Its tools are off. Reconnect to keep using it.", comment: ""), toolkit.title))
                     .font(.footnote)
                 Button("Reconnect") { confirmConnect = toolkit }
                     .disabled(model.busyToolkit != nil)
@@ -240,7 +240,8 @@ struct OnlineAccountsView: View {
                     .disabled(model.busyToolkit != nil)
             }
             if toolkit.remoteCleanup == .failed {
-                Label("Disconnected in Doddy, but removing access at \(toolkit.title) couldn't be confirmed. Remove Doddy in your \(toolkit.title) account settings.", systemImage: "exclamationmark.triangle")
+                Label(String(format: NSLocalizedString("Disconnected in Doddy, but removing access at %@ couldn't be confirmed. Remove Doddy in your %@ account settings.", comment: ""), toolkit.title, toolkit.title),
+                      systemImage: "exclamationmark.triangle")
                     .font(.footnote)
                     .foregroundStyle(Theme.error)
             }
@@ -351,7 +352,9 @@ private struct OnlineReceiptRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(receipt.summary)
-            Text("\(Self.statusText(receipt.status)) · \(receipt.mode == .mock ? "demo" : "live") · \(ConnectedAppsDates.instant(receipt.timestamp)?.formatted(date: .abbreviated, time: .shortened) ?? receipt.timestamp)")
+            Text(verbatim: Self.statusText(receipt.status) + " · "
+                 + (receipt.mode == .mock ? NSLocalizedString("demo", comment: "") : NSLocalizedString("live", comment: ""))
+                 + " · " + (ConnectedAppsDates.instant(receipt.timestamp)?.formatted(date: .abbreviated, time: .shortened) ?? receipt.timestamp))
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -377,10 +380,10 @@ private struct OnlineReceiptsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 OnlineReceiptRow(receipt: receipt)
                 Group {
-                    Text("Operation: \(receipt.operation.rawValue) · \(receipt.toolkit)\(receipt.tool.map { " · \($0)" } ?? "")")
-                    if let code = receipt.errorCode { Text("Code: \(code)") }
-                    Text("Provider reference: \(receipt.providerReference ?? "none returned")")
-                    Text("Receipt ID: \(receipt.operationId.uuidString)")
+                    Text(verbatim: String(format: NSLocalizedString("Operation: %@ · %@", comment: ""), receipt.operation.rawValue, receipt.toolkit) + (receipt.tool.map { " · \($0)" } ?? ""))
+                    if let code = receipt.errorCode { Text(verbatim: String(format: NSLocalizedString("Code: %@", comment: ""), code)) }
+                    Text(verbatim: String(format: NSLocalizedString("Provider reference: %@", comment: ""), receipt.providerReference ?? NSLocalizedString("none returned", comment: "")))
+                    Text(verbatim: String(format: NSLocalizedString("Receipt ID: %@", comment: ""), receipt.operationId.uuidString))
                 }
                 .font(.caption.monospaced())
                 .foregroundStyle(Theme.secondaryText)

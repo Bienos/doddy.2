@@ -361,7 +361,7 @@ struct OpenDoddyWaysView: View {
             Text("That worked.")
                 .font(.largeTitle.bold())
                 .accessibilityAddTraits(.isHeader)
-            Text("Doddy's shortcut ran at \(date.formatted(date: .omitted, time: .shortened)). Did Double Back Tap trigger it, or did you run the shortcut another way?")
+            Text(verbatim: String(format: NSLocalizedString("Doddy's shortcut ran at %@. Did Double Back Tap trigger it, or did you run the shortcut another way?", comment: ""), date.formatted(date: .omitted, time: .shortened)))
             Button {
                 model.send(.confirmDoubleTap(now: .now))
                 screen = .done
@@ -385,7 +385,7 @@ struct OpenDoddyWaysView: View {
         Group {
             UploadedCharacterView(assetName: "UploadedDoddy_Listening")
                 .frame(maxWidth: .infinity)
-            Label("Tested by you · \(DateText.full(date))", systemImage: "checkmark.seal")
+            Label(String(format: NSLocalizedString("Tested by you · %@", comment: ""), DateText.full(date)), systemImage: "checkmark.seal")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Theme.confirmed)
             Text("An easier way to say hey.")
@@ -424,7 +424,7 @@ struct OpenDoddyWaysView: View {
 
     private func numbered<Content: View>(_ number: Int, @ViewBuilder _ text: () -> Content) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text("\(number).")
+            Text(verbatim: "\(number).")
                 .font(.body.monospacedDigit().weight(.semibold))
                 .foregroundStyle(Theme.secondaryText)
             text()

@@ -60,7 +60,7 @@ struct FocusView: View {
                 .font(.title2.weight(.medium))
                 .accessibilityAddTraits(.isHeader)
             Picker("Minutes", selection: $minutes) {
-                ForEach(FocusSession.presetMinutes, id: \.self) { Text("\($0) min").tag($0) }
+                ForEach(FocusSession.presetMinutes, id: \.self) { Text(verbatim: String(format: NSLocalizedString("%lld min", comment: ""), $0)).tag($0) }
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("focus.minutes")

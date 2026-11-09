@@ -482,7 +482,7 @@ struct MessagesView: View {
             HStack(spacing: 0) {
                 Spacer(minLength: 56)
                 MessageBubble(text: message.text, fromUser: true, tail: tail)
-                    .accessibilityLabel("You: \(message.text)")
+                    .accessibilityLabel(String(format: NSLocalizedString("You: %@", comment: ""), message.text))
             }
             // Only what is known: on its way, or no answer yet. Never "read".
             switch ThreadRules.deliveryLine(for: message) {
@@ -532,7 +532,7 @@ struct MessagesView: View {
             } else {
                 HStack(spacing: 0) {
                     MessageBubble(text: message.text, fromUser: false, tail: tail)
-                        .accessibilityLabel("Doddy: \(message.text)")
+                        .accessibilityLabel(Text(verbatim: "Doddy: \(message.text)"))
                         .accessibilityIdentifier("ask.answer")
                     Spacer(minLength: 56)
                 }
@@ -550,7 +550,7 @@ struct MessagesView: View {
                         ForEach(notes) { record in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(record.currentText).lineLimit(3)
-                                Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))")
+                                Text(verbatim: "\(record.source.displayName) · \(DateText.full(record.capturedAt))")
                                     .font(.footnote)
                                     .foregroundStyle(Theme.secondaryText)
                             }

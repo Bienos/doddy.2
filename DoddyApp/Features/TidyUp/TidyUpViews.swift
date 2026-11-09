@@ -93,11 +93,12 @@ struct TidyUpView: View {
                             ForEach(duplicates) { group in
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(group.keep.currentText).lineLimit(3)
-                                    Text("First saved \(DateText.full(group.keep.capturedAt)). Copies: \(group.copies.count).")
+                                    Text(verbatim: String(format: NSLocalizedString("First saved %@. Copies: %lld.", comment: ""),
+                                                         DateText.full(group.keep.capturedAt), group.copies.count))
                                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                                     ForEach(group.copies) { copy in
                                         Button(role: .destructive) { confirmDelete = copy } label: {
-                                            Text("Delete the copy from \(DateText.full(copy.capturedAt))")
+                                            Text(verbatim: String(format: NSLocalizedString("Delete the copy from %@", comment: ""), DateText.full(copy.capturedAt)))
                                         }
                                     }
                                     Button("Keep them all") { kept.insert(group.id) }
@@ -112,7 +113,7 @@ struct TidyUpView: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(store.record(id: reminder.memoryID)?.currentText ?? "").lineLimit(3)
                                     if let fireAt = reminder.fireAt {
-                                        Text("Was due \(DateText.full(fireAt)).").font(.footnote).foregroundStyle(Theme.secondaryText)
+                                        Text(verbatim: String(format: NSLocalizedString("Was due %@.", comment: ""), DateText.full(fireAt))).font(.footnote).foregroundStyle(Theme.secondaryText)
                                     }
                                     Button("Mark done") { Task { await markDone(reminder) } }
                                     Button("Leave it") { kept.insert(reminder.id) }
@@ -126,7 +127,7 @@ struct TidyUpView: View {
                             ForEach(lists) { list in
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(list.name).font(.headline)
-                                    Text("\(list.done.count) ticked").font(.footnote).foregroundStyle(Theme.secondaryText)
+                                    Text(verbatim: String(format: NSLocalizedString("%lld ticked", comment: ""), list.done.count)).font(.footnote).foregroundStyle(Theme.secondaryText)
                                     Button("Clear the ticked items") { Task { await clear(list) } }
                                     Button(role: .destructive) { confirmDelete = list.record } label: { Text("Delete the list") }
                                     Button("Leave it") { kept.insert(list.id) }

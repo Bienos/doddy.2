@@ -79,8 +79,8 @@ private struct ErrandRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(errand.title).font(.headline).foregroundStyle(Theme.ink)
-            Text("\u{201C}\(errand.draft.words)\u{201D}").lineLimit(2).foregroundStyle(Theme.ink)
-            Text("\(ErrandText.state(errand)) · \(DateText.full(errand.createdAt))")
+            Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), errand.draft.words)).lineLimit(2).foregroundStyle(Theme.ink)
+            Text(verbatim: "\(ErrandText.state(errand)) · \(DateText.full(errand.createdAt))")
                 .font(.footnote).foregroundStyle(Theme.secondaryText)
         }
     }
@@ -129,7 +129,7 @@ struct ErrandDetailView: View {
                 }
             }
             Section("You said") {
-                Text("\u{201C}\(errand.draft.words)\u{201D}").foregroundStyle(Theme.ink).textSelection(.enabled)
+                Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), errand.draft.words)).foregroundStyle(Theme.ink).textSelection(.enabled)
                 LabeledContent("Doddy's note", value: errand.draft.brief)
             }
             if !errand.deletions.isEmpty {

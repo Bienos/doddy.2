@@ -284,7 +284,7 @@ private struct CandidateRow: View {
                 Text("Already in Doddy.").font(.caption).foregroundStyle(Theme.secondaryText)
             }
             if !candidate.leftOut.isEmpty {
-                Text("Not imported: \(candidate.leftOut.joined(separator: ", ")).").font(.caption).foregroundStyle(Theme.secondaryText)
+                Text(verbatim: String(format: NSLocalizedString("Not imported: %@.", comment: ""), candidate.leftOut.joined(separator: ", "))).font(.caption).foregroundStyle(Theme.secondaryText)
             }
         }
         .padding(.vertical, 4)

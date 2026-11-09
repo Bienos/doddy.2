@@ -84,7 +84,8 @@ struct PersonalityView: View {
                     .autocorrectionDisabled()
                     .accessibilityIdentifier("settings.nickname")
                 if !nickname.trimmingCharacters(in: .whitespaces).isEmpty && Nickname.clean(nickname) == nil {
-                    Label("Use letters only, up to \(Nickname.maxLength) characters. Doddy won't use this until it's a plain name.", systemImage: "exclamationmark.triangle")
+                    Label(String(format: NSLocalizedString("Use letters only, up to %lld characters. Doddy won't use this until it's a plain name.", comment: ""), Nickname.maxLength),
+                          systemImage: "exclamationmark.triangle")
                         .foregroundStyle(Theme.error)
                 }
             } header: {

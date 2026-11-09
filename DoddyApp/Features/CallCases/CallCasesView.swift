@@ -110,7 +110,7 @@ struct CallCasesView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(record.title).font(.headline).foregroundStyle(Theme.ink)
                                 Text(record.brief.question).lineLimit(2).foregroundStyle(Theme.ink)
-                                Text("\(CallCaseText.state(record)) · \(DateText.full(record.createdAt))")
+                                Text(verbatim: "\(CallCaseText.state(record)) · \(DateText.full(record.createdAt))")
                                     .font(.footnote).foregroundStyle(Theme.secondaryText)
                             }
                         }

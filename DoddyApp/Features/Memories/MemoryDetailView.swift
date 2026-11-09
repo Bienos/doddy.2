@@ -48,13 +48,13 @@ struct MemoryDetailView: View {
                     if record.userEdited {
                         let history = store.history(of: record)
                         let between = history.earlier.filter { !$0.isOriginal }
-                        Text("Edited \(DateText.full(record.updatedAt))").font(.caption).foregroundStyle(Theme.secondaryText)
+                        Text(verbatim: String(format: NSLocalizedString("Edited %@", comment: ""), DateText.full(record.updatedAt))).font(.caption).foregroundStyle(Theme.secondaryText)
                         if !between.isEmpty {
-                            DisclosureGroup("Earlier versions (\(between.count))") {
+                            DisclosureGroup(String(format: NSLocalizedString("Earlier versions (%lld)", comment: ""), between.count)) {
                                 VStack(alignment: .leading, spacing: 12) {
                                     ForEach(between, id: \.number) { version in
                                         VStack(alignment: .leading, spacing: 4) {
-                                            Text("Version \(version.number) · \(DateText.full(version.savedAt))")
+                                            Text(verbatim: String(format: NSLocalizedString("Version %lld · %@", comment: ""), version.number, DateText.full(version.savedAt)))
                                                 .font(.caption).foregroundStyle(Theme.secondaryText)
                                             Text(version.text).frame(maxWidth: .infinity, alignment: .leading)
                                                 .textSelection(.enabled)
