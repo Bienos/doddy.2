@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Doddy voice agent spec: check it, and render it for ElevenLabs or OpenAI Realtime.
+"""Doddy voice agent spec: check it, and render it for ElevenLabs.
 
-The files in voice-agent/ are the source of truth (OpenAI Realtime shapes). ElevenLabs is the
-engine today; this script turns the same spec into what each provider expects, and compares a
-copy of the live ElevenLabs agent against the spec so drift made in the dashboard is caught.
+The files in voice-agent/ are the source of truth (written in OpenAI Realtime's tool shape, which
+stays as the neutral format). ElevenLabs is the only engine (the app's OpenAI voice was removed on
+9 Nov 2026); this script turns the spec into what ElevenLabs expects, and compares a copy of the
+live ElevenLabs agent against the spec so drift made in the dashboard is caught.
 
   python3 -I scripts/voice_agent_spec.py check
-  python3 -I scripts/voice_agent_spec.py openai              # session.update body (template unrendered)
   python3 -I scripts/voice_agent_spec.py elevenlabs          # one ElevenLabs tool_config per tool
   python3 -I scripts/voice_agent_spec.py compare EXPORT.json # EXPORT = {"prompt": str, "tools": [agents_list_tools items]}
 
@@ -245,14 +245,6 @@ def check_app(tools, sources=APP_SOURCES):
     return errors
 
 
-def openai_session(tools, session, instructions):
-    clean = [{k: v for k, v in t.items() if k != "x_doddy"} for t in tools["tools"]]
-    body = json.loads(json.dumps(session["openai_realtime"]["session_update"]))
-    body["instructions"] = instructions
-    body["tools"] = clean
-    return {"type": "session.update", "session": body}
-
-
 def _el_param(prop, constant=None):
     out = {"type": prop["type"] if prop else type_of(constant), "description": prop.get("description", "") if prop else ""}
     if prop and "enum" in prop:
@@ -379,7 +371,7 @@ def main(argv):
         i = argv.index("--agent")
         agent = argv[i + 1] if i + 1 < len(argv) else ""
         argv = argv[:i] + argv[i + 2:]
-    if agent not in AGENTS or len(argv) < 2 or argv[1] not in {"check", "openai", "elevenlabs", "compare"}:
+    if agent not in AGENTS or len(argv) < 2 or argv[1] not in {"check", "elevenlabs", "compare"}:
         print(__doc__.strip())
         return 2
     spec = AGENTS[agent]
@@ -403,8 +395,6 @@ def main(argv):
         web = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "web"]
         groups = "; ".join(f"{label}: {', '.join(names)}" for label, names in (("phone", phone), ("web", web)) if names)
         print(f"PASS voice agent spec ({where}): {len(tools['tools'])} tools ({groups})")
-    elif cmd == "openai":
-        print(json.dumps(openai_session(tools, session, instructions), ensure_ascii=False, indent=2))
     elif cmd == "elevenlabs":
         print(json.dumps([elevenlabs_tool(t) for t in tools["tools"]], ensure_ascii=False, indent=2))
     else:

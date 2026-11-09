@@ -118,22 +118,16 @@ Common points:
 | Item | Detail |
 |---|---|
 | Who | Doddy's own small server (`server/voice-token`) on Vercel Functions: project `doddy-voice-token`, team `doddyyyy`, address `doddy-voice-token-beta.vercel.app` (ADR-521). It keeps its records in Upstash Redis. **[CONFIRM: Vercel and Upstash regions, and the processor agreements with both]** |
-| What is sent | **Signing in (once):** Apple's identity token from Sign in with Apple, a one-time number (nonce) that ties it to this request, and Apple's one-time authorization code (used only so the link can be revoked later; ADR-524). **Each conversation:** a short-lived Doddy access token and the voice provider you picked (and, for OpenAI, the model). No audio, transcripts, notes or profile. (ADR-522, `server/voice-token/README.md`.) |
+| What is sent | **Signing in (once):** Apple's identity token from Sign in with Apple, a one-time number (nonce) that ties it to this request, and Apple's one-time authorization code (used only so the link can be revoked later; ADR-524). **Each conversation:** a short-lived Doddy access token and ElevenLabs (the only voice). No audio, transcripts, notes or profile. (ADR-522, `server/voice-token/README.md`.) |
 | What it does | Checks the Apple token with Apple's published keys. If Doddy's Sign in with Apple key is set up, it also swaps the authorization code with Apple for a token that lets it end the Sign in with Apple link when you delete your voice account. Then it swaps your Doddy session for a one-conversation ElevenLabs token or a short-lived OpenAI client secret, so the provider API keys stay on the server. It limits each account to 30 conversations an hour by default. |
 | What it keeps | A keyed pseudonym of your Apple account ID (not the ID itself), your session records, hashes of your refresh tokens (not the tokens), and short-lived counters for one-time numbers and rate limits. If Doddy's Sign in with Apple key is set up, also Apple's refresh token for you, encrypted, kept only to revoke the link and deleted with your account. Refresh tokens last 30 days and rotate on use; access tokens last 10 minutes and stay on the iPhone. **[CONFIRM: whether Apple's identity token carries your email and whether the server reads it; the code keeps only the subject]** |
 | Logged | One line per request: action or provider, outcome, status and duration. No content, credentials, Apple account ID or user identifier (`server/voice-token/README.md`). The hosting platform may keep its own request logs. **[CONFIRM: Vercel log retention and IP logging]** |
 | Opt-in? | Required for voice; nothing else in the app needs it. Settings, Voice has Sign out of voice and Delete voice account. Deleting removes your sessions on the server. Once Doddy's Sign in with Apple key is set up, it first asks Apple to revoke the Sign in with Apple link (ADR-524); the account is deleted even if Apple doesn't answer. Until then, and for accounts made before it, the app tells you to remove it in your Apple ID settings (go-live checklist C8). **[CONFIRM: the key is set and a revoke was seen to work, before this sentence is published]** |
 | Legal basis | **[CONFIRM: proposed: performance of the service you asked for]** |
 
-### 5.3 OpenAI: Doddy's voice (a choice in the voice picker; ElevenLabs is the default, ADR-546)
+### 5.3 OpenAI as a voice: removed on 9 Nov 2026
 
-| Item | Detail |
-|---|---|
-| Who | OpenAI (Realtime API). **[CONFIRM: OpenAI entity, terms, region]** |
-| What is sent | The same as 5.1: your voice, the conversation, notes, list names, personality settings and the rest of the prompt. The prompt, notes and tools go from the phone straight to OpenAI, not through Doddy's server. (`server/voice-token/README.md`, ADR-265.) |
-| When | Only while a conversation is open and the voice picker says OpenAI. ElevenLabs is the default (ADR-546), including for people who never chose; someone who chose OpenAI under ADR-442 keeps it. |
-| Retention | The app says: how long OpenAI keeps the audio and transcript "isn't verified in this build" (`DataFlow`). **[CONFIRM]** |
-| Opt-in? | Yes: nothing goes to OpenAI for voice unless you pick OpenAI in Settings › Voice (or on Home after your first conversation); the picker also picks the model (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`). **[CONFIRM: the consent wording for people who chose OpenAI while it was the default]** |
+OpenAI Realtime, and the voice picker that chose it, were removed from the app and the token server (decision `2026-11-09-elevenlabs-only-voice`). Nothing goes to OpenAI for voice. OpenAI still appears as the language model behind the ElevenLabs agent (section 5.1, checked 24 Oct 2026), for Ask Doddy's fallback and for the news writer (5.x below). Conversations kept on a phone from before this date may be marked as run by OpenAI; they stay on the phone.
 
 ### 5.4 Ask Doddy (typed questions): Doddy's server and Anthropic
 
@@ -272,7 +266,7 @@ The app asks for these only. Each text below is the app's own wording (`project.
 
 | Permission | Why (the app's own words) |
 |---|---|
-| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone." |
+| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it. A voice memo you record on a note stays on this iPhone." |
 | **Speech recognition** | "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere." |
 | **Contacts** | "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections." |
 | **Calendar (full access)** | "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections." |
@@ -293,7 +287,7 @@ The Share extension and the widgets ask for nothing (ADR-311). The Apple Watch a
 
 **AI transparency (draft statement, EU AI Act Article 50).**
 - Doddy is an AI system. When you talk to Doddy, you are talking to software and not to a person.
-- Doddy's voice is generated by a speech system (OpenAI Realtime by default, or ElevenLabs).
+- Doddy's voice is generated by a speech system (ElevenLabs; OpenAI Realtime was removed on 9 Nov 2026).
 - Doddy's answers can be wrong. Check anything that matters.
 - The app says "Doddy is an AI, not a person" on Home and on the Ask screen (`HomeView.swift`, `AskView.swift`). The voice prompt tells Doddy to say plainly that it is an AI when asked. The phone agent says it in its first sentence (`voice-agent/instructions.md`, `voice-agent/phone/instructions.md`, ADR-191, ADR-194).
 - The voice agent's own greeting ("Hey, it's Doddy. what's up?") does not say it is an AI. The disclosure on the voice screen is by text on screen and by answer when asked. **[CONFIRM: with a specialist whether Article 50 needs more, and from what date; whether synthetic audio must be marked; ElevenLabs' and OpenAI's role as provider and ours as deployer]**
@@ -409,7 +403,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A8 | Private conversation is on-device only | ADR-170 |
 | A9 | Translator mode data | `DataFlow.swift` row `translator`; ADR-215 |
 | A10 | Token server behaviour and logs | `server/voice-token/README.md`; `docs/implementation/VOICE_TOKEN_SERVER_STATUS.md` |
-| A11 | OpenAI voice (default), direct from the phone | `server/voice-token/README.md`; ADR-265; `DataFlow.swift` row `openaiVoice` |
+| A11 | ~~OpenAI voice, direct from the phone~~ removed 9 Nov 2026 | decision `2026-11-09-elevenlabs-only-voice` |
 | A12 | Ask Doddy data, limits, no storage, not yet run against Anthropic | `backend/src/assist.ts`; `backend/test/assist.test.ts`; ADR-587 (the old OpenAI gateway: `docs/architecture/ASSISTANT_GATEWAY.md`, ADR-113) |
 | A13 | Messaging server tables, anonymous account, phone number plain, hash-only token | `server/messaging/migrations/001_init.sql` to `007`; `server/messaging/src/routes/account.ts` |
 | A14 | Built-in messaging address empty | `DoddyApp/Infrastructure/Server/ServerConfig.swift` |
@@ -534,7 +528,7 @@ Based on the code and `PrivacyInfo.xcprivacy`. Apple counts data that leaves the
 
 | Apple data type | Collected? | Linked to user? | Used for tracking? | Purpose | What and why | Status |
 |---|---|---|---|---|---|---|
-| Audio data (Voice or sound recordings) | Yes | Declared "not linked" in `PrivacyInfo.xcprivacy`. A random install ID is sent as the conversation user ID. | No | App functionality | Your voice goes to ElevenLabs (or OpenAI). | **[CONFIRM: linked or not; ElevenLabs keeps it]** |
+| Audio data (Voice or sound recordings) | Yes | Declared "not linked" in `PrivacyInfo.xcprivacy`. A random install ID is sent as the conversation user ID. | No | App functionality | Your voice goes to ElevenLabs. | **[CONFIRM: linked or not; ElevenLabs keeps it]** |
 | Other user content | Yes | Declared "linked" | No | App functionality | Notes, list names and items, conversations, drafts, calendar and reminder text, email previews and other results sent to ElevenLabs or the server (which passes Ask Doddy questions to Anthropic). Since U4, the reason of a call you book (kept until the call is over). **With "Keep on Doddy's server" on: the text of your notes and conversations, kept on Doddy's server for a year, and read by Claude (Anthropic) to answer a question on the web.** | **[CONFIRM]** |
 | Name | Yes | Declared "not linked" | No | App functionality | Your first name or nickname when About you is shared with voice. | **[CONFIRM]** |
 | Phone number | Yes, only if you use texts or calls | Declared "linked" | No | App functionality | Your verified number goes to the messaging server and Twilio. Doddy texts and calls only that number. | **[CONFIRM]** |

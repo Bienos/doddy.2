@@ -86,7 +86,7 @@
           <h2 id="short">The short version</h2>
           <ul>
             <li><strong>Your notes stay on your iPhone.</strong> They leave it only for the features listed below, most of which you switch on yourself.</li>
-            <li><strong>A voice conversation sends a lot.</strong> Your voice, the conversation and your saved notes (except ones you mark Private) go to the voice service: ElevenLabs by default, or OpenAI if you choose it. ElevenLabs keeps a recording and a transcript.</li>
+            <li><strong>A voice conversation sends a lot.</strong> Your voice, the conversation and your saved notes (except ones you mark Private) go to the voice service, ElevenLabs. ElevenLabs keeps a recording and a transcript.</li>
             <li><strong>Doddy asks first</strong> before it reads your calendar, contacts, photos, email and the like, and you tap a card before it changes or sends anything. Public look-ups (weather, web, news, places) run without asking and send only the words searched for.</li>
             <li><strong>Apple Health is read only, and only if you turn it on.</strong> Doddy shows your week on your iPhone and keeps none of it. A short summary of the week leaves the iPhone only when you allow it, with a separate yes for Messages and for the voice (see <a class="text-link" href="#health">Apple Health</a>).</li>
             <li><strong>No ads, no selling data, no tracking.</strong> The app has no analytics, crash-reporting or advertising code. The website does count visits (see <a class="text-link" href="#website">The website</a>).</li>
@@ -167,7 +167,7 @@
           <p>Doddy's voice, and some of what Doddy writes, is produced by AI services run by other companies. This section says which ones, what they get and when.</p>
 
           <h3 id="voice-provider">Who runs the voice</h3>
-          <p><strong>ElevenLabs</strong> runs Doddy's voice by default: it turns your speech into text, works out the answer with a large language model, and speaks it. You can choose <strong>OpenAI</strong> (its Realtime voice) instead in Settings › Voice. Only the service you chose gets the conversation. The app asks you before it first shares your voice with each of them; Settings › Voice › "Ask again before sharing voice" resets that.</p>
+          <p><strong>ElevenLabs</strong> runs Doddy's voice: it turns your speech into text, works out the answer with a large language model, and speaks it. It is the only voice service; there is no other to choose. The app asks you before it first shares your voice with ElevenLabs; Settings › Voice › "Ask again before sharing voice" resets that.</p>
           <p>The language model behind ElevenLabs: the live voice agent uses an OpenAI model (checked on 24 October 2026), so your conversation is also processed by OpenAI through ElevenLabs. <span class="ph" data-ph="D2">[OWNER: confirm which model the live voice agent uses at release, and that provider's role]</span></p>
 
           <h3 id="voice-sent">What is sent in a conversation</h3>
@@ -188,8 +188,7 @@
           <h3 id="voice-kept">What the voice services keep</h3>
           <ul>
             <li><strong>ElevenLabs</strong> keeps a recording and a transcript of each conversation it runs. At the moment, Doddy's ElevenLabs settings keep them with no time limit. <span class="ph" data-ph="R1">[OWNER: retention period for recordings and transcripts at release]</span></li>
-            <li><strong>OpenAI:</strong> how long OpenAI keeps the audio and transcript has not been verified. <span class="ph" data-ph="R2">[OWNER: OpenAI retention for Realtime voice]</span></li>
-            <li>A <strong>Private</strong> conversation means nothing of it is kept on your iPhone. The voice service still runs it and keeps its own copy as above.</li>
+            <li>A <strong>Private</strong> conversation means nothing of it is kept on your iPhone. ElevenLabs still runs it and keeps its own copy as above.</li>
             <li>Deleting things in the app does not delete what a voice service already holds. <span class="ph" data-ph="R3">[OWNER: how users can ask for their recordings and transcripts to be deleted]</span></li>
           </ul>
 
@@ -198,7 +197,7 @@
 
           <h3 id="lookups">Look-ups that run without asking</h3>
           <ul>
-            <li><strong>Weather and Wikipedia</strong> (with ElevenLabs as the voice): ElevenLabs makes the request for Doddy. A place name and its coordinates go to Open-Meteo; search words go to Wikipedia. The app doesn't contact them itself. These don't work with the OpenAI voice.</li>
+            <li><strong>Weather and Wikipedia:</strong> ElevenLabs makes the request for Doddy. A place name and its coordinates go to Open-Meteo; search words go to Wikipedia. The app doesn't contact them itself.</li>
             <li><strong>Web, news and place searches:</strong> your search words go to Doddy's server, which looks them up through Monid, a paid search service, and the search providers it uses (Search1API for web and news, LiteScrape for places). You don't sign in to any of them, and Doddy's server doesn't keep the search words.</li>
             <li><strong>Sums, unit and currency conversions</strong> are worked out on your iPhone. For currencies, the app downloads the European Central Bank's public daily rates file (at most every six hours); nothing about you is sent with it.</li>
           </ul>
@@ -301,9 +300,8 @@
           <div class="table-wrap"><table>
             <thead><tr><th scope="col">Service</th><th scope="col">What for</th><th scope="col">What it gets</th></tr></thead>
             <tbody>
-              <tr><td>ElevenLabs</td><td>Doddy's voice (default); weather and Wikipedia requests</td><td>Your voice, the conversation and what is listed in <a class="text-link" href="#voice-sent">section 4</a></td></tr>
+              <tr><td>ElevenLabs</td><td>Doddy's voice; weather and Wikipedia requests</td><td>Your voice, the conversation and what is listed in <a class="text-link" href="#voice-sent">section 4</a></td></tr>
               <tr><td>OpenAI (through ElevenLabs)</td><td>The language model behind the voice</td><td>The conversation, as ElevenLabs passes it on</td></tr>
-              <tr><td>OpenAI</td><td>Doddy's voice, if you choose it</td><td>The same as ElevenLabs for voice</td></tr>
               <tr><td>Anthropic</td><td>Claude on Doddy's server; Ask Doddy, if you turn it on; tasks handed over</td><td>The request and its material, after your yes; typed questions (and matching notes you allow) for Ask Doddy; a week summary from Apple Health that you send in Messages</td></tr>
               <tr><td>Composio</td><td>Connecting online accounts</td><td>Sign-in tokens for the accounts you connect; the requests you approve</td></tr>
               <tr><td>Google, Microsoft, Notion, Todoist</td><td>Your own accounts</td><td>The requests you approve (you have your own agreement with them)</td></tr>
@@ -340,7 +338,6 @@
               <tr><td>Remembered conversations</td><td>The last 10, until you forget them</td></tr>
               <tr><td>What Doddy did</td><td>30 days or 300 entries</td></tr>
               <tr><td>Voice recordings and transcripts at ElevenLabs</td><td>No time limit in the current settings <span class="ph" data-ph="R1">[OWNER: retention period at release]</span></td></tr>
-              <tr><td>Voice audio and transcripts at OpenAI</td><td><span class="ph" data-ph="R2">[OWNER: OpenAI retention]</span></td></tr>
               <tr><td>Voice sign-in sessions</td><td>Sign-in tokens last 30 days and renew when used; account records until you delete the voice account</td></tr>
               <tr><td>Doddy's server: approvals</td><td>Deleted a day after they expire</td></tr>
               <tr><td>Doddy's server: receipts</td><td>90 days, at most the newest 200 per account</td></tr>
@@ -370,7 +367,7 @@
           </table></div>
           <p>What the app can't delete:</p>
           <ul>
-            <li>recordings and transcripts already at ElevenLabs or OpenAI, and anything their model providers keep <span class="ph" data-ph="R3">[OWNER: how to ask for these to be deleted]</span>;</li>
+            <li>recordings and transcripts already at ElevenLabs, and anything its model provider keeps <span class="ph" data-ph="R3">[OWNER: how to ask for these to be deleted]</span>;</li>
             <li>Doddy's server records for web search, Claude and online accounts: there is no delete button for them yet. Write to <span class="ph" data-ph="C2">[OWNER: privacy contact email address]</span>;</li>
             <li>your iPhone or iCloud backups, and files you exported or backed up yourself;</li>
             <li>what other companies hold in your own accounts with them (Google, Microsoft, Notion, Todoist, Apple).</li>

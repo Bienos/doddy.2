@@ -18,8 +18,10 @@ Two voices meant two privacy stories, two consent paths, a picker nobody asked f
 ## Consequences
 - Weather and Wikipedia now always work in a conversation (they never worked with OpenAI).
 - Older app builds with OpenAI chosen can't talk until they update or switch to ElevenLabs.
-- Owner steps (Vercel env, public privacy and terms pages, homepage FAQ line, `voice-agent` leftovers): `docs/OWNER_QUEUE.md` item 28.
-- Eight draft translations lose the few changed sentences (they show English there); Polish was updated.
+- Public pages: Privacy and Terms (en, pl) and the homepage FAQ line (all languages) no longer offer OpenAI as the voice. The privacy page keeps OpenAI as the language model behind ElevenLabs. The versions in `LegalAcceptance.swift` are not raised: the change removes a way data could go, and `docs/legal/LEGAL_PAGES_OWNER_CHECKLIST.md` leaves that call to the owner.
+- `voice-agent/session.json` lost its `openai_realtime` block and `scripts/voice_agent_spec.py` its `openai` command.
+- Owner step left: Vercel, after the merge (`docs/OWNER_QUEUE.md` item 28).
+- Eight draft app languages lose the few changed sentences (they show English there); Polish was updated.
 
 ## Evidence
 `node --test` in `server/voice-token`: 65 passed. `bash scripts/check_forbidden_capabilities.sh`, `node tools/secrets/sync.mjs check`, `python3 -I tools/build_strings_catalog.py --check`: pass. The Swift changes (DoddyApp, DoddyCore, tests, UI tests) were **not compiled and not run**: this session had no Swift toolchain. The hosted Mac CI is the first compile.
