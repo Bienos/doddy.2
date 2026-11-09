@@ -14,7 +14,7 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 5. During the call the app shows the live transcript, a big **Przejmij** (rings the user's phone; pressing 1 joins the call) and **Zakończ**. The Lock Screen shows the phase and the time only.
 6. After the call: an answer card with the reply quoted from the transcript, a confidence flag with reasons, warnings about anything Doddy said that needs a look, the transcript, a next step, the cost, and receipts for what the servers deleted. The transcript is saved on the iPhone first; then the server deletes its copies.
 7. Failed calls (no answer, busy, voicemail, phone menu, wrong number, technical failure) get an honest card and "Zadzwoń ponownie o …" with times that fit the calling hours.
-8. Rehearsal: the user practises with Doddy playing the receptionist, then picks "Doddy dzwoni" or "Dzwonię sam" (the script on screen and the number to dial).
+8. Rehearsal: the user practises with Doddy playing the receptionist, then picks "Doddy dzwoni" or "Dzwonię sam" (the script on screen and the number to dial). The rehearsal runs on the OpenAI voice, so it starts only after that voice's consent, the same step as Talk to Doddy (`CallRehearsalSession` refuses without it), and its banner says the voice goes to OpenAI (7 Nov 2026 engineering audit).
 
 ## Code
 | Part | Where |

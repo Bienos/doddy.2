@@ -8,13 +8,16 @@ import Observation
 /// token server, like the main voice, but with no tools at all (`CallRehearsal.toolsJSON`), so it
 /// can't call, save or read anything. Nobody is called. The lines shown live only in this
 /// object's memory and are gone when the screen closes; OpenAI processes the audio, as in any
-/// conversation with the OpenAI voice. Its cost is not tracked on the case (v1).
-/// Not compiled or heard on a device yet.
+/// conversation with the OpenAI voice, so it needs the same consent (`CallRehearsal.provider`).
+/// Its cost is not tracked on the case (v1). Not heard on a device yet.
 @MainActor
 @Observable
 final class CallRehearsalSession {
     enum State: Equatable {
         case idle, connecting, live, ended
+        /// The OpenAI voice consent isn't given: nothing was claimed, fetched or recorded. The screen
+        /// shows the consent step (`VoiceAccessGate`) and starts again from there.
+        case needsConsent
         case failed(String)
     }
 
@@ -41,6 +44,13 @@ final class CallRehearsalSession {
 
     func start(preview: CallPreview) async {
         guard !isRunning else { return }
+        // The rehearsal streams the microphone to OpenAI, so it needs that provider's voice consent,
+        // exactly as a conversation on the OpenAI voice does (VoiceSessionController.start). Checked
+        // here, in the session, so no screen can start it without (7 Nov 2026 engineering audit).
+        guard VoiceProviderConsent.isGranted(for: CallRehearsal.provider) else {
+            state = .needsConsent
+            return
+        }
         // One owner of the audio session (ADR-695): a conversation, a recording, a memo or dictation
         // has the microphone. What only plays is stopped for the rehearsal.
         if case .refused(let holder) = AudioSessionOwner.shared.claim(.callRehearsal, by: self) {
@@ -49,13 +59,6 @@ final class CallRehearsalSession {
         }
         guard let endpoint = VoiceConfig.tokenEndpoint else {
             state = .failed(NSLocalizedString("Voice isn't set up yet. Try again later.", comment: ""))
-            return
-        }
-        // The same consent gate as the main voice (VoiceSessionController.start): a rehearsal streams the
-        // microphone to OpenAI, so it needs the person's yes to OpenAI voice data sharing first
-        // (engineering audit, 7 Nov 2026; before, it started without asking).
-        guard VoiceProviderConsent.isGranted(for: .openAIRealtime) else {
-            state = .failed(NSLocalizedString("Open Talk to Doddy to review voice data sharing before starting a conversation.", comment: ""))
             return
         }
         attempt += 1
