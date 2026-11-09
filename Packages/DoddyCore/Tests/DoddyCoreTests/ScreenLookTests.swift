@@ -190,4 +190,35 @@ final class ScreenLookTests: XCTestCase {
         }
         XCTAssertEqual(ScreenLookSpeech.askCard(polish: true).confirmLabel, "Tak, zerknij")
     }
+
+    // MARK: The voice tool
+
+    func testTheToolIsParsedAsksFirstAndIsLoggedWithoutTheQuestion() {
+        XCTAssertEqual(VoiceToolName.lookAtScreen, "look_at_screen")
+        let request = VoiceToolRequest.parse(name: "look_at_screen", parametersJSON: Data(#"{"question":"Co mam jej odpisać?"}"#.utf8))
+        XCTAssertEqual(request, .lookAtScreen(question: "Co mam jej odpisać?"))
+        if case .invalid = VoiceToolRequest.parse(name: "look_at_screen", parametersJSON: Data("{}".utf8)) {} else { XCTFail("a look needs the question") }
+        let long = String(repeating: "a", count: ScreenLookRequest.maxQuestionScalars + 1)
+        if case .invalid = VoiceToolRequest.parse(name: "look_at_screen", parametersJSON: Data(#"{"question":"\#(long)"}"#.utf8)) {} else { XCTFail("too long") }
+
+        // ASK-01: a read of the person's own screen waits for a spoken yes or a tap, never runs at once.
+        guard case .yesFirst(let card) = AskFirst.need(for: request, polish: true) else { return XCTFail("asks first") }
+        XCTAssertEqual(card, ScreenLookSpeech.askCard(polish: true))
+        XCTAssertFalse(AskFirst.needsTap(AskFirst.need(for: request)))
+
+        let logged = ActivityRequest.describe(request, calendar: .current)
+        XCTAssertEqual(logged?.app, .screen)
+        XCTAssertNil(logged?.detail, "the question can name someone on the screen")
+        XCTAssertEqual(ActivityApp.screen.title(.polish), "Twój ekran")
+
+        XCTAssertTrue(ConnectionPause.applies(to: request), "Pause all stops it: the picture goes to a server")
+        XCTAssertEqual(CarProfile.decision(for: request), .run, "a look changes nothing")
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.lookAtScreen)?.approval, .askFirst)
+        XCTAssertTrue(Feature.messages.tools.contains(VoiceToolName.lookAtScreen), "it comes and goes with Messages")
+    }
+
+    func testTheSheetLineTellsThemToTapAndAskAgain() {
+        XCTAssertTrue(ScreenLookSpeech.sheetOpened.contains("Start Broadcast"))
+        XCTAssertTrue(ScreenLookSpeech.sheetOpened.contains("ask again"))
+    }
 }

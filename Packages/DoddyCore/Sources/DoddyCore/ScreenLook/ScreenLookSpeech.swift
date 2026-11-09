@@ -20,6 +20,9 @@ public enum ScreenLookSpeech {
                       confirmLabel: "Yes, look")
     }
 
+    /// Added to "not sharing" when the app opened iOS's "Start Broadcast" sheet for the person.
+    public static let sheetOpened = "The app has just opened iOS's Start Broadcast window on the screen: tell them to tap Start Broadcast, then ask again."
+
     /// The tool result for a picture that couldn't be taken.
     public static func notReady(_ readiness: ScreenLookReadiness) -> String? {
         switch readiness {

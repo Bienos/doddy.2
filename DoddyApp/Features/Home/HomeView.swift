@@ -186,6 +186,11 @@ struct HomeView: View {
                 if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
                 }
+                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
+                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
+                if conversation.live != nil, scope.shows(.messages) {
+                    showScreenButton
+                }
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
                 Spacer()
@@ -220,6 +225,14 @@ struct HomeView: View {
         .buttonStyle(DoddyPressStyle())
         .foregroundStyle(Theme.ink)
         .accessibilityIdentifier("home.transcript")
+    }
+
+    /// Starts sharing the screen with Doddy through iOS's "Start Broadcast" sheet, so he can look when asked.
+    private var showScreenButton: some View {
+        ScreenShareButton(tint: UIColor(Theme.ink))
+            .frame(width: 36, height: 36)
+            .background(Theme.quietSurface, in: Circle())
+            .frame(width: 44, height: 44)
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and

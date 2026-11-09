@@ -102,6 +102,10 @@ public enum AskFirst {
             return .runsNow
         case .findPhotos(let request):
             return .yesFirst(AskCard(title: "Look through your photos?", lines: [request.text(calendar: calendar), "Only the counts and times go to Doddy's voice; the photos stay on your screen."], confirmLabel: "Yes, look"))
+        case .lookAtScreen:
+            // A read of the person's own screen: one picture to Doddy's server and Anthropic, after a spoken yes
+            // or a tap (decision 2026-11-09-doddy-looks-at-the-screen). The card says where it goes.
+            return .yesFirst(ScreenLookSpeech.askCard(polish: polish))
         case .readSteps(let day):
             return .yesFirst(AskCard(title: "Read your steps?", lines: ["\(day.text), from Motion & Fitness"], confirmLabel: "Yes, read them"))
         case .readHealthWeek:

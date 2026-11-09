@@ -32,6 +32,11 @@ public enum ScreenShare {
     public static let extensionBundleSuffix = ".screen"
 }
 
+extension VoiceToolName {
+    /// "What's on my screen?" (decision 2026-11-09-doddy-looks-at-the-screen).
+    public static let lookAtScreen = ScreenShare.toolName
+}
+
 /// What the extension writes next to the picture. `live` false (or no file) means sharing is off.
 public struct ScreenShareState: Codable, Equatable, Sendable {
     public var live: Bool

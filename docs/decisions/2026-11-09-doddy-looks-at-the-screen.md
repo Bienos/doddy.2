@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Decided by:** owner, in Polish. Asked: "czy jest szansa że doddy mógłby widzieć co ja robię na telefonie i np jestem na tinderze i mówię widzisz jej profil wez napisz mi jakiś pick up line"; "chcę żeby to było takie wiesz coś robię na tel i mówię ej dody a to na ekranie to co to jest i on mówi". Out of three options (screen sharing like Gemini Live and ChatGPT, a Back Tap screenshot shortcut, Apple's Visual Intelligence), the owner chose A, screen sharing: "chcę A … na pewno ma to działać dobrze, doddy jak gada też ma mieć pamięć".
-- **Status:** accepted. Step 1 (this branch): the server route, the rules in DoddyCore, the broadcast extension. Step 2: the voice tool and the "Show screen" button (see "Order of work").
+- **Status:** accepted; steps 1 and 2 on branch `claude/cool-volta-4wwmsn`. Step 2 was written while `Bienos/doddy.2#295` and `#297` also changed `VoiceSessionController.swift`: the owner allowed it ("zrób", 9 Nov 2026), and whoever merges second resolves that file.
 - **Replaces:** nothing.
 
 ## Why
@@ -27,7 +27,8 @@ iOS lets no app see another app's screen. The one supported way is a broadcast u
 
 **Order of work:**
 1. *(this branch)* `POST /v1/screen/look` on `doddy-messaging` and its tests; DoddyCore `ScreenLook/` (the extension–app contract, the client, what the agent hears, the ask card) and its tests; the `DoddyScreen` target; `Shared/Screen/ScreenShareFiles.swift`; CI rules. The extension is built into the app, but nothing in the app reads its picture yet.
-2. *(after `Bienos/doddy.2#295` merges; it holds `VoiceSessionController.swift`, one agent at a time)* the `look_at_screen` tool: `VoiceToolRequest`, `AskFirst`, `ToolCatalog`, `ReleaseScope`, the handler in `VoiceSessionController.swift`, `tools.json` (`not_synced`) and the prompt lines in `instructions.md`; placing the "Show screen" button (`ScreenShareButton`, already in `DoddyApp/Features/Voice/ScreenSharePicker.swift`) on Home's conversation and the voice screen, and the spoken "patrz na ekran" that calls `ScreenSharePicker.present()`.
+2. *(done on the branch, owner's "zrób" past the one-agent rule)* the `look_at_screen` tool: `VoiceToolRequest`, `AskFirst`, `ToolCatalog`, `ReleaseScope`, the handler in `VoiceSessionController.swift`, `tools.json` (`not_synced`) and the prompt lines in `instructions.md`; placing the "Show screen" button (`ScreenShareButton`, already in `DoddyApp/Features/Voice/ScreenSharePicker.swift`) on Home's conversation and the voice screen, and the spoken "patrz na ekran" that calls `ScreenSharePicker.present()`.
+   The tool belongs to `Feature.messages` in the release scope (same server route, key and caps), so it is in the beta while Messages is. "Pause all connections" stops it. In the car it runs (it only reads). What Doddy did logs "Looked at your screen" with no detail, because the question can name someone on the screen. With no fresh picture the app answers before asking anything, and if sharing is off it opens iOS's sheet (`ScreenSharePicker.present()`). The "Show screen" button is in Home's header next to Transcript while a conversation is live.
 3. *(owner)* add the tool and the prompt lines to the live ElevenLabs agent; deploy `doddy-messaging`; App Store privacy answers.
 
 ## Consequences

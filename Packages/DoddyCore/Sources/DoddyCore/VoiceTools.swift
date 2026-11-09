@@ -276,6 +276,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
     case openCamera
+    /// One picture of the screen the person shares with Doddy, read by Claude for their question, after a yes
+    /// (decision 2026-11-09-doddy-looks-at-the-screen).
+    case lookAtScreen(question: String)
     /// Turn a light, outlet or fan on or off, or run a scene, in HomeKit (HomeCommand.swift). The
     /// app resolves the words to one exact accessory and shows a card with it before anything runs.
     case controlHome(HomeProposal)
@@ -441,6 +444,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:
             return .openCamera
+        case VoiceToolName.lookAtScreen:
+            guard let question = args.text("question") else { return .invalid(name: name, reason: "missing question") }
+            return .lookAtScreen(question: question)
         case VoiceToolName.controlHome:
             return parseControlHome(args, name: name)
         case VoiceToolName.startTranslator:
@@ -702,6 +708,8 @@ public enum VoiceTextLimits {
         case "topic": StudioJob.maxTopic
         case "details": StudioJob.maxDetails
         case "query", "place": search
+        // What the person asked about their screen, as `POST /v1/screen/look` takes it.
+        case "question": ScreenLookRequest.maxQuestionScalars
         case "slides": PresentationLimits.slidesJSON
         default: line
         }

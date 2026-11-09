@@ -27,6 +27,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case training
     /// Following, the feed of what the person follows (ADR-656, ADR-657).
     case news
+    /// The screen the person shares with Doddy (decision 2026-11-09-doddy-looks-at-the-screen).
+    case screen
 
     public var title: String {
         switch self {
@@ -54,6 +56,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .health: "Apple Health"
         case .training: "Training plan"
         case .news: "Following"
+        case .screen: "Your screen"
         }
     }
 }
@@ -269,6 +272,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:
             return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
+        case .lookAtScreen:
+            // The question can name someone on the screen, so the log keeps only that Doddy looked.
+            return ActivityRequest(app: .screen, title: "Looked at your screen", detail: nil, isLookup: true)
         case .controlHome(let proposal):
             // The log keeps what was done, not the room or accessory words.
             return ActivityRequest(app: .home, title: "Control the home", detail: proposal.summary, logDetail: nil, isLookup: false)
