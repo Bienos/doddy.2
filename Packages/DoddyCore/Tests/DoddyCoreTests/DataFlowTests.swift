@@ -407,7 +407,7 @@ final class DataFlowSummaryTests: XCTestCase {
     func testTheTokenServerRowHasNoWakeWordSetup() throws {
         let token = try XCTUnwrap(DataFlow.rows(base).first { $0.id == "tokenServer" })
         XCTAssertFalse(token.when.localizedCaseInsensitiveContains("wake"))
-        XCTAssertTrue(token.when.contains("a conversation requests a provider connection credential"))
+        XCTAssertTrue(token.when.contains("a conversation requests an ElevenLabs connection credential"))
         XCTAssertTrue(token.what.contains("No voice, transcript, notes or profile details are sent"))
     }
 
