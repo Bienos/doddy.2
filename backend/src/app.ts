@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { AccountEraser } from "./account.js";
-import { AssistService } from "./assist.js";
+import { type AssistReply, AssistService } from "./assist.js";
+import { ASK_DEDUP, RequestOnce } from "./idempotency.js";
 import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
@@ -162,7 +163,10 @@ export async function buildApp(
   // Deleting the account (ADR-674): each connection is removed by the provider that made it, and
   // each linked Google or Apple sign-in at Supabase, with the secret key (ADR-818).
   const supabaseUsers = config.web?.social?.secretKey ? new SupabaseUserRemover(config.web.social.projectUrl, config.web.social.secretKey) : null;
+  // Finished Ask Doddy answers kept a few minutes in memory so a repeated request id is not paid for twice; account deletion drops them.
+  const askOnce = new RequestOnce<AssistReply>(ASK_DEDUP);
   const accountEraser = new AccountEraser({
+    forget: (userId) => void askOnce.forgetUser(userId),
     store,
     removers: [
       { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
@@ -217,7 +221,7 @@ export async function buildApp(
         }
       : null;
   // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
-  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
+  const assist = new AssistService({ store, once: askOnce, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
