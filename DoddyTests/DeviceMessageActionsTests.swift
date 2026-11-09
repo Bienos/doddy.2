@@ -6,6 +6,36 @@ import XCTest
 /// Real in-memory SQLite; no cloud model, microphone or EventKit writes.
 final class DeviceMessageActionsTests: XCTestCase {
     @MainActor
+    func testWholeProposalExecutionAndReceiptAreKeptByRealThreadStorage() async throws {
+        let defaults = UserDefaults.standard
+        let keys = [PreferenceKey.assistantConsent, PrivateNotes.appLockKey]
+        let old = keys.map { defaults.object(forKey: $0) }
+        defer { for (key, value) in zip(keys, old) { if let value { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) } } }
+        defaults.set(true, forKey: PreferenceKey.assistantConsent)
+        defaults.set(false, forKey: PrivateNotes.appLockKey)
+        let environment = AppEnvironment.live(arguments: ["-inMemoryStore"])
+        let store = MemoryStore(environment: environment)
+        let model = MessagesModel(repository: environment.messageThreadRepository)
+        await model.load()
+        let action = try XCTUnwrap(LocalMessageAction.make(name: "save_memory", parametersJSON: #"{"text":"Durable synthetic note"}"#))
+        let service = AssistantService(recall: environment.recallService, client: NativeActionTestClient(action: action), backoff: [])
+        model.draft = "Save this note"
+        model.send(using: service, policy: AssistantPolicy(consentGranted: true, includeNotes: false, localActionsEnabled: true), locale: "en")
+        for _ in 0..<400 where model.isSending { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertFalse(model.isSending)
+        let id = try XCTUnwrap(model.localActions.keys.first)
+        await model.confirmLocalAction(id, using: DeviceMessageActions(store: store, polish: false))
+        XCTAssertEqual(model.storage, .saving)
+        let reopened = MessagesModel(repository: environment.messageThreadRepository)
+        await reopened.load()
+        XCTAssertEqual(reopened.messages.map(\.text), model.messages.map(\.text))
+        XCTAssertEqual(reopened.messages.count, 3)
+        XCTAssertTrue(reopened.messages.suffix(2).allSatisfy(\.isLocalAction))
+        XCTAssertEqual(reopened.messages.last?.text, "Saved note:\nDurable synthetic note")
+        XCTAssertTrue(reopened.localActions.isEmpty, "reopening restores receipts, never executable offers")
+        XCTAssertEqual(store.memories.last?.source, .explicitText)
+    }
+    @MainActor
     func testProposalCardRendersWithoutExecutingAnything() throws {
         let action = try XCTUnwrap(LocalMessageAction.make(name: "create_list", parametersJSON: #"{"name":"Weekend shopping","items":["Oat milk","Eggs","Bread"]}"#))
         var calls = 0
@@ -64,5 +94,12 @@ final class DeviceMessageActionsTests: XCTestCase {
         defaults.set(false, forKey: PreferenceKey.assistantConsent)
         _ = await executor.execute(note, stillAuthorised: { true })
         XCTAssertEqual(store.memories.count, before)
+    }
+}
+
+private struct NativeActionTestClient: AssistantClient {
+    let action: LocalMessageAction
+    func respond(_ request: AssistantRequest) async throws -> AssistantReply {
+        AssistantReply(text: "Confirm the card", localAction: action)
     }
 }

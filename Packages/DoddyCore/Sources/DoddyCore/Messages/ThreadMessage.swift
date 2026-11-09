@@ -79,11 +79,14 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
     /// The name of a file the person sent with this message (7 Nov 2026). Only the name is kept: the file went with the
     /// question and is not stored.
     public let attachedFileName: String?
+    /// A native action offer/receipt, not a generated answer. Persisted so reopening keeps that distinction.
+    public let isLocalAction: Bool
 
     public init(
         id: UUID = UUID(), sender: Sender, text: String, createdAt: Date, delivery: Delivery,
         basis: Basis? = nil, noteIDs: [UUID] = [], notesSent: Int = 0, notesSearchFailed: Bool = false,
-        document: ThreadDocument? = nil, hasPhoto: Bool = false, attachedFileName: String? = nil
+        document: ThreadDocument? = nil, hasPhoto: Bool = false, attachedFileName: String? = nil,
+        isLocalAction: Bool = false
     ) {
         self.id = id
         self.sender = sender
@@ -97,6 +100,7 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
         self.document = document
         self.hasPhoto = hasPhoto
         self.attachedFileName = attachedFileName
+        self.isLocalAction = isLocalAction
     }
 
     /// A message the user is sending now.
@@ -108,7 +112,7 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, sender, text, createdAt, delivery, basis, noteIDs, notesSent, notesSearchFailed, document, hasPhoto
-        case attachedFileName
+        case attachedFileName, isLocalAction
     }
 
     /// An export written before photos existed has no `hasPhoto`; it reads as false.
@@ -122,7 +126,8 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
             notesSearchFailed: try c.decode(Bool.self, forKey: .notesSearchFailed),
             document: try c.decodeIfPresent(ThreadDocument.self, forKey: .document),
             hasPhoto: try c.decodeIfPresent(Bool.self, forKey: .hasPhoto) ?? false,
-            attachedFileName: try c.decodeIfPresent(String.self, forKey: .attachedFileName))
+            attachedFileName: try c.decodeIfPresent(String.self, forKey: .attachedFileName),
+            isLocalAction: try c.decodeIfPresent(Bool.self, forKey: .isLocalAction) ?? false)
     }
 
     /// Doddy's answer, from what the assistant returned.

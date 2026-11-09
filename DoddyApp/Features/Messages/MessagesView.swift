@@ -541,7 +541,7 @@ struct MessagesView: View {
             }
 
             // Where the answer came from, small and grey under the bubble, as a caption would be.
-            if message.document == nil {
+            if message.document == nil && !message.isLocalAction {
             Group {
                 switch message.basis {
                 case .savedNotes:

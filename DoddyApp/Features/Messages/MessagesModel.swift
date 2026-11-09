@@ -153,7 +153,8 @@ final class MessagesModel {
         })
         runningLocalAction = nil
         guard generation == owner, actionScope() == scope else { return }
-        let receipt = ThreadMessage(sender: .doddy, text: outcome.message, createdAt: now(), delivery: .sent)
+        let receipt = ThreadMessage(sender: .doddy, text: outcome.message, createdAt: now(), delivery: .sent,
+                                    basis: .general, isLocalAction: true)
         messages.append(receipt)
         await persist { try await $0.append(receipt) }
     }
@@ -198,7 +199,7 @@ final class MessagesModel {
             // An offer is never evidence of completion, regardless of the model's accompanying words.
             let action = answer.answer.localAction
             let reply = action == nil ? ThreadMessage.doddy(answer, now: now()) : ThreadMessage(
-                sender: .doddy, text: locale.hasPrefix("pl") ? "Sprawdź propozycję poniżej i zatwierdź ją." : "Review the proposal below and confirm it.", createdAt: now(), delivery: .sent)
+                sender: .doddy, text: locale.hasPrefix("pl") ? "Sprawdź propozycję poniżej i zatwierdź ją." : "Review the proposal below and confirm it.", createdAt: now(), delivery: .sent, basis: .general, isLocalAction: true)
             setDelivery(of: message.id, .sent)
             messages.append(reply)
             if let proposal = answer.answer.proposal { proposals[reply.id] = proposal }
