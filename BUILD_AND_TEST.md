@@ -117,6 +117,10 @@ and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds c
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
   is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths) and
   doesn't carry the owner's `owner-approved` label. Adding the label reruns it.
+- `Vercel blocked status` (`.github/workflows/vercel-blocked-status.yml`, decision
+  `2026-11-09-vercel-blocked-status`): an old Vercel account still connected to the repository marks every push
+  "Account is blocked."; on `claude/…` branches, which the live team doesn't build (ADR-498), this replaces that
+  red with "Skipped". It never touches `main` or any other Vercel message (`scripts/vercel_blocked_status.sh`).
 
 Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs.
 
