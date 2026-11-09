@@ -164,3 +164,11 @@ Written by the agent that did the redesign, not by the translation agents; the s
 - "… If it keeps happening, make a backup file in Settings › Doddy's memory." The eight drafts write "Doddy's memory" in English, because that row isn't translated in them yet.
 - "… Close Doddy and open it again." (the memory store isn't available)
 - "… Try picking them again." (files for an import couldn't be opened)
+
+## Added 9 November 2026 (same decision, Settings)
+
+Written by the agent that did the redesign; the same native review applies, the privacy texts first (ADR-234):
+
+- **Connections, Polish only (85 lines):** every function's examples, "Doddy may" list, "What leaves your phone" and "What stays here" text (`ConnectionInfo` in `ConnectionsView.swift`), and the headings "Powiedz na przykład" and "Doddy może". They were English for everyone before, because the code never sent them through the string tables. Written gender-neutral where Polish allows ("do sprawdzenia i wysłania", "z twoich słów"); the example questions avoid first-person past forms. The eight drafts show these in English until they are translated.
+- **"Doddy", not "DODDY" (Polish only):** the recording shortcuts are "Zacznij / Wstrzymaj / Wznów / Zatrzymaj nagrywanie w Doddym" and "Nagrywaj z Doddym". The island's label for "something to check" is "SPRAWDŹ" (was "DODDY").
+- **Next steps, all nine tables:** "… Check My profile and add it again if it's missing." (the drafts keep "My profile" in English, as it shows on their screens), "… Close Doddy and open it again." (preferences can't be saved) and "… Check its address, or swipe to delete it." (a news feed that didn't load).
