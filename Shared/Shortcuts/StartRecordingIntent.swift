@@ -9,7 +9,7 @@ struct CaptureIntentProblem: Error, CustomLocalizedStringResourceConvertible {
     var localizedStringResource: LocalizedStringResource { LocalizedStringResource(stringLiteral: message) }
 }
 
-/// "Start DODDY Recording" (ADR-588): Siri, Shortcuts, and the Action Button through a shortcut.
+/// "Start Doddy Recording" (ADR-588): Siri, Shortcuts, and the Action Button through a shortcut.
 /// Works on iOS 17 too, which is why it is a plain App Intent.
 ///
 /// It OPENS Doddy. iOS does not let a recording begin from a cold background: developers report
@@ -23,7 +23,7 @@ struct CaptureIntentProblem: Error, CustomLocalizedStringResourceConvertible {
 /// audio. Compiled into the app and the widget extension (the control needs the type); only the
 /// app's copy does anything.
 struct StartDoddyRecordingIntent: AppIntent {
-    static let title: LocalizedStringResource = "Start DODDY Recording"
+    static let title: LocalizedStringResource = "Start Doddy Recording"
     static var description: IntentDescription {
         IntentDescription("Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this device.")
     }
@@ -62,7 +62,7 @@ struct StartDoddyRecordingIntent: AppIntent {
 /// still runs on iOS 17 (see `TalkInIslandIntent`); `StartDoddyRecordingIntent` is the Siri one.
 @available(iOS 18.0, *)
 struct RecordWithDoddyIntent: AudioRecordingIntent {
-    static let title: LocalizedStringResource = "Record with DODDY"
+    static let title: LocalizedStringResource = "Record with Doddy"
     static var description: IntentDescription {
         IntentDescription("Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this device.")
     }

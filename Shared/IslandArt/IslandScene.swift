@@ -433,7 +433,7 @@ extension IslandAction {
         case .askFirst: IslandWords(label: islandWord("ASK"), title: "Doddy asks first", subtitle: "Say yes, or tap it in Doddy")
         case .access: IslandWords(label: islandWord("ACCESS"), title: "Doddy needs your OK", subtitle: "Allow it or say Not now, in Doddy")
         case .signIn: IslandWords(label: islandWord("ACCOUNT"), title: "Connect an account?", subtitle: "Sign in from Doddy")
-        case .other: IslandWords(label: islandWord("DODDY"), title: "Something to check", subtitle: "Nothing happens until you tap yes")
+        case .other: IslandWords(label: islandWord("CHECK"), title: "Something to check", subtitle: "Nothing happens until you tap yes")
         }
     }
 }
