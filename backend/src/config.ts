@@ -137,6 +137,15 @@ export interface Config {
   claude: ClaudeSettings | null;
   /** Supabase Auth project origin for `supabase` mode (ADR-526): Apple and Google sign-in. */
   supabaseUrl: string | null;
+  /** The Supabase project's https origin whenever SUPABASE_URL is set; the owner panel reads its users there. */
+  supabaseProjectUrl: string | null;
+  /** SUPABASE_SECRET_KEY: deleting a person's sign-in (ADR-818) and the owner panel's account list. Null: not set. */
+  supabaseSecretKey: string | null;
+  /**
+   * The accounts that see the owner panel (decision 2026-11-09-usage-counts-on-by-default): Supabase
+   * user ids or this server's own user ids, from DODDY_OWNER_ACCOUNTS. Empty: there is no owner panel.
+   */
+  ownerAccounts: string[];
   composio: ComposioSettings | null;
   /** Gmail, Drive, Notion, Todoist, Outlook: only toolkits with both an auth config and a pinned version. */
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
@@ -237,6 +246,8 @@ const EnvSchema = z.object({
    * `open` in mock mode and `closed` in live mode.
    */
   DODDY_OWNER_CLAIM: z.string().optional(),
+  /** Who sees the owner panel (decision 2026-11-09-usage-counts-on-by-default): account ids, comma-separated. */
+  DODDY_OWNER_ACCOUNTS: z.string().optional(),
   /** Invite codes (ADR-709): tries per client per hour, sessions per code per UTC day, iPhones per code. */
   DODDY_INVITE_TRIES_PER_CLIENT: intSetting(20, 1, 1_000),
   DODDY_INVITE_SESSIONS_PER_CODE_PER_DAY: intSetting(20, 1, 10_000),
@@ -422,6 +433,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     problems.push("SUPABASE_SECRET_KEY must be the project's secret key (sb_secret_…) or its legacy service_role key");
   }
   if (secretKey !== "" && secretKey === publishableKey) problems.push("SUPABASE_SECRET_KEY and SUPABASE_PUBLISHABLE_KEY must differ");
+  const ownerAccounts: string[] = [];
+  for (const raw of (e.DODDY_OWNER_ACCOUNTS ?? "").split(",").map((v) => v.trim().toLowerCase()).filter(Boolean)) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(raw)) problems.push("DODDY_OWNER_ACCOUNTS must be account ids (UUIDs), comma-separated");
+    else if (!ownerAccounts.includes(raw)) ownerAccounts.push(raw);
+  }
   const socialProviders: ("google" | "apple")[] = [];
   for (const raw of e.DODDY_WEB_SIGNIN_PROVIDERS.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean)) {
     if (raw !== "google" && raw !== "apple") problems.push(`DODDY_WEB_SIGNIN_PROVIDERS: unknown sign-in "${raw}" (google, apple)`);
@@ -573,6 +589,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL } : null,
     chatClaude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CHAT_MODEL } : null,
     supabaseUrl,
+    supabaseProjectUrl: supabaseOrigin,
+    supabaseSecretKey: secretKey || null,
+    ownerAccounts,
     composio,
     toolkits,
     monid,

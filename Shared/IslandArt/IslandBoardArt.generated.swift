@@ -48,12 +48,6 @@ enum IslandBoardArt {
         case (.storySpool, false, .expanded): storySpool1Expanded
         case (.storySpool, false, .compact): storySpool1Compact
         case (.storySpool, false, .minimal): storySpool1Minimal
-        case (.calmTide, true, .expanded): calmTide0Expanded
-        case (.calmTide, true, .compact): calmTide0Compact
-        case (.calmTide, true, .minimal): calmTide0Minimal
-        case (.calmTide, false, .expanded): calmTide1Expanded
-        case (.calmTide, false, .compact): calmTide1Compact
-        case (.calmTide, false, .minimal): calmTide1Minimal
         }
     }
 
@@ -306,38 +300,6 @@ enum IslandBoardArt {
         ])
 
     private static let storySpool1Minimal = IslandArt(viewBox: IslandRect(x: 0, y: 0, width: 45, height: 36.67), elements: [
-            .face(x: 14.5, y: 18.335, scale: 0.525, .calm),
-        ])
-
-    private static let calmTide0Expanded = IslandArt(viewBox: IslandRect(x: 17.15, y: 56.37, width: 66.7, height: 77.48), elements: [
-            .face(x: 49, y: 76, scale: 0.9, .calm),
-            .path("M19 115Q48 132 82 115", IslandPaint(fill: nil, stroke: 0xF5EFE2, width: 1.7)),
-            .path("M78 76A29 27 0 0 1 43.565941877013984 102.5217557696746", IslandPaint(fill: nil, stroke: 0xEC803F, width: 2)),
-            .ellipse(cx: 76, cy: 89, rx: 2.5, ry: 2.5, IslandPaint(fill: 0xEC803F, stroke: nil, width: 0)),
-        ])
-
-    private static let calmTide0Compact = IslandArt(viewBox: IslandRect(x: 0, y: 0, width: 52.33, height: 36.67), elements: [
-            .path("M43 18.335A18 15 0 0 1 21.627136337456953 33.069308760930326", IslandPaint(fill: nil, stroke: 0xEC803F, width: 1.7)),
-            .face(x: 25, y: 18.335, scale: 0.55, .calm),
-        ])
-
-    private static let calmTide0Minimal = IslandArt(viewBox: IslandRect(x: 0, y: 0, width: 45, height: 36.67), elements: [
-            .face(x: 14.5, y: 18.335, scale: 0.525, .calm),
-        ])
-
-    private static let calmTide1Expanded = IslandArt(viewBox: IslandRect(x: 17.15, y: 49.5697, width: 66.7, height: 75.2803), elements: [
-            .face(x: 49, y: 76, scale: 0.9, .calm),
-            .path("M19 123Q48 107 82 123", IslandPaint(fill: nil, stroke: 0xF5EFE2, width: 1.7)),
-            .path("M78 76A29 27 0 1 1 36.65240054461291 51.569669583417465", IslandPaint(fill: nil, stroke: 0xEC803F, width: 2)),
-            .ellipse(cx: 30, cy: 55, rx: 2.5, ry: 2.5, IslandPaint(fill: 0xEC803F, stroke: nil, width: 0)),
-        ])
-
-    private static let calmTide1Compact = IslandArt(viewBox: IslandRect(x: 0, y: 0, width: 52.33, height: 36.67), elements: [
-            .path("M43 18.335A18 15 0 1 1 17.335972751828702 4.762594213009704", IslandPaint(fill: nil, stroke: 0xEC803F, width: 1.7)),
-            .face(x: 25, y: 18.335, scale: 0.55, .calm),
-        ])
-
-    private static let calmTide1Minimal = IslandArt(viewBox: IslandRect(x: 0, y: 0, width: 45, height: 36.67), elements: [
             .face(x: 14.5, y: 18.335, scale: 0.525, .calm),
         ])
 

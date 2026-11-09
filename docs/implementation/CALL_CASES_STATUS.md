@@ -30,6 +30,16 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 | App screens | `DoddyApp/Features/CallCases/`, `DoddyApp/Features/Voice/CallRehearsalSession.swift`, `DoddyApp/Infrastructure/Connections/ContactNumberPicker.swift`, Settings → Phone calls → Calls for you |
 | Live Activity | `Shared/CallActivity/`, `DoddyWidgets/DoddyCallLiveActivity.swift`, `DoddyApp/Features/CallCases/CallLiveActivity.swift` |
 
+## Call tasks: up to three places, one tap (9 Nov 2026)
+Decision `docs/decisions/2026-11-09-restaurant-calls-one-tap.md`, step 2. **Server only, tested with fakes; no app screen uses it yet, and no real call has been placed.**
+- `POST /v1/call-tasks` takes up to 3 places (name, number, source, including the new source `places` for a number from Doddy's place search) and one shared question, principal, goal and facts. Each place is checked and compiled exactly like a single case (`compileCase`); the same number twice is refused. The answer is one card: every place's preview and the task digest, which covers the case digests in order and the "text me the result" choice.
+- `POST /v1/call-tasks/:id/approve {digest}` calls the first place now. After each place's result the worker calls the next one (`advanceTask`, in the transaction that stores the result), within 3 hours of the tap and inside calling hours, with every dial gate run again.
+- The task stops at the first clear yes (the result step's `answer: yes` and a quote cut from the transcript, with no warnings), or as **unclear** when the answer isn't a clear yes or no, so Doddy never guesses and moves on. A place that doesn't pick up, is busy, a voicemail or a phone menu is skipped. Taking a call over, cancelling, the end of calling hours or the kill switch stops the task.
+- At the end: one content-free push (the same kind as a single call's, so the app opens the recap) and, if the card said so and the person has consented to texts, one text to their own number with the place's name and the quoted answer. The briefs of places never called are deleted, with receipts.
+- A place of a task can't be approved on its own (`part_of_task`); cancelling one place cancels the task.
+- Tests: `server/messaging/test/callTasks.test.ts` (9).
+- **Before the app can use it:** DoddyCore's `CallNumberSource` must learn `places`, or an older app can't read such a case's preview (step 4 of the decision).
+
 ## Verified here (Linux, 2026-10-18)
 - Server: `npm run typecheck` and `npm test` against a throwaway Postgres 16: **115 tests pass** (call cases: payload binding, every limit, kill switch, agent drift, webhooks and their signatures, takeover, answer card, costs, deletion receipts, retry after voicemail; plus config).
 - `python3 -I scripts/voice_agent_spec.py check --agent task-call` passes; `node scripts/setup-task-call-agent.mjs --dry-run` builds a request that validates against ElevenLabs' published OpenAPI schema.

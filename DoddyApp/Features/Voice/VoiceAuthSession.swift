@@ -122,14 +122,24 @@ final class VoiceAuthSession {
             message = serverLine
             return
         }
+        if let voiceLine = await deleteVoiceAccountOnly() {
+            message = [serverLine, voiceLine].compactMap { $0 }.joined(separator: " ")
+        } else {
+            message = serverLine
+        }
+    }
+
+    /// The voice account alone, once Doddy's server has already deleted what it keeps: here, and when
+    /// the Doddy account is deleted (`DoddyAccountServers.deleteAccount`, decision
+    /// 2026-11-08-required-account). Nil when it was deleted; otherwise why it wasn't.
+    func deleteVoiceAccountOnly() async -> String? {
         do {
             let token = try await bearerToken()
             try await VoiceAuthAPI.shared.deleteAccount(token)
             clearLocalSession()
-            message = serverLine
+            return nil
         } catch {
-            let voiceLine = (error as? VoiceAuthFailure)?.message ?? "Couldn’t delete the Doddy voice account. Check your connection and retry."
-            message = [serverLine, voiceLine].compactMap { $0 }.joined(separator: " ")
+            return (error as? VoiceAuthFailure)?.message ?? "Couldn’t delete the Doddy voice account. Check your connection and retry."
         }
     }
 

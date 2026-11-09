@@ -57,6 +57,7 @@ function fakeStore() {
     sessions, refresh, nonces, appleTokens, signIns,
     async setAppleToken(userId, sealed) { appleTokens.set(userId, sealed); },
     async getAppleToken(userId) { return appleTokens.get(userId) ?? null; },
+    async deleteAppleToken(userId) { appleTokens.delete(userId); },
     async createSession(input) {
       if (nonces.has(input.nonceHash) || refresh.has(input.refreshHash)) return 0;
       nonces.add(input.nonceHash);
@@ -145,6 +146,7 @@ async function run(req, options = {}) {
     verifyAppleIdentityToken: options.verifyAppleIdentityToken ?? (async (_token, rawNonce) => ({ sub: "apple-sub-test", nonce: rawNonce })),
     exchangeAppleAuthorizationCode: options.exchangeAppleAuthorizationCode,
     revokeAppleToken: options.revokeAppleToken,
+    authenticateDoddyAccount: options.authenticateDoddyAccount,
     fetch: options.fetch,
   });
   return { response, body: await response.json(), logs };
@@ -909,4 +911,188 @@ test("the Redis scripts: sign-out and account deletion also remove the remembere
       assert.equal(await keys(), 0, `${action} leaves no refresh record behind`);
     }
   });
+});
+
+// Decision 2026-11-09-apple-revoke-for-doddy-accounts: a Doddy account (a Supabase user) that signed
+// in with Apple has its Apple token kept sealed, and Apple is told to end the link before the
+// account is deleted. The account's token is checked by `authenticateDoddyAccount`, faked here.
+const ACCOUNT_ID = "account:3f2b8c1e-5a47-4d3e-9b6a-0c1d2e3f4a5b";
+const accountAuth = async (req) => (req.headers.get("authorization") === "Bearer account-token" ? { userId: ACCOUNT_ID, sessionId: null } : null);
+const LINK_BODY = { identityToken: "apple-identity-token", rawNonce: NONCE, authorizationCode: "one-time-code" };
+
+test("apple-link keeps Apple's token sealed under the Doddy account, and revoking removes it", async () => {
+  const store = fakeStore();
+  const exchanged = [];
+  const revoked = [];
+  const options = {
+    store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth,
+    exchangeAppleAuthorizationCode: async (code, _env, input) => { exchanged.push({ code, sub: input.expectedSub }); return "apple-refresh-token"; },
+    revokeAppleToken: async (token) => { revoked.push(token); return true; },
+  };
+  const linked = await run(request("apple-link", LINK_BODY, "account-token"), options);
+  assert.equal(linked.response.status, 200);
+  assert.deepEqual(linked.body, { linked: true });
+  assert.deepEqual(exchanged, [{ code: "one-time-code", sub: "apple-sub-test" }], "the code is swapped for the person the identity token names");
+  const sealed = store.appleTokens.get(ACCOUNT_ID);
+  assert.ok(sealed && !sealed.includes("apple-refresh-token"), "kept sealed, never in the clear");
+  assert.equal(openAppleToken(sealed, SIGNING_KEY), "apple-refresh-token");
+  assert.ok(!JSON.stringify(linked.logs).includes("apple-refresh-token") && !JSON.stringify(linked.logs).includes("one-time-code"), "nothing secret in the log");
+  assert.deepEqual(linked.logs[0], { event: "voice_auth", action: "apple-link", status: 200, error: null, ms: 0, apple: "linked" });
+
+  const gone = await run(request("apple-revoke", {}, "account-token"), options);
+  assert.equal(gone.response.status, 200);
+  assert.deepEqual(gone.body, { appleRevoked: true, apple: "revoked" });
+  assert.deepEqual(revoked, ["apple-refresh-token"]);
+  assert.equal(store.appleTokens.size, 0, "the sealed token is forgotten once Apple revoked it");
+});
+
+test("apple-link and apple-revoke need a valid Doddy account token and touch nothing without one", async () => {
+  const store = fakeStore();
+  let appleCalled = false;
+  const options = {
+    store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth,
+    exchangeAppleAuthorizationCode: async () => { appleCalled = true; return "t"; },
+    revokeAppleToken: async () => { appleCalled = true; return true; },
+  };
+  for (const action of ["apple-link", "apple-revoke"]) {
+    for (const token of [undefined, "wrong-token"]) {
+      const result = await run(request(action, LINK_BODY, token), options);
+      assert.equal(result.response.status, 401, `${action} with ${token ?? "no token"}`);
+      assert.deepEqual(result.body, { error: "session_expired" });
+    }
+  }
+  assert.equal(appleCalled, false);
+  assert.equal(store.appleTokens.size, 0);
+});
+
+test("a voice session's token cannot link or revoke: only a Doddy account's can", async () => {
+  const store = fakeStore();
+  const signedIn = await run(request("sign-in", { identityToken: "id", rawNonce: "V".repeat(43) }), { store, environment: APPLE_ENV });
+  const result = await run(request("apple-link", LINK_BODY, signedIn.body.accessToken), {
+    store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth,
+    exchangeAppleAuthorizationCode: async () => "t",
+  });
+  assert.equal(result.response.status, 401);
+  assert.equal(store.appleTokens.size, 0);
+});
+
+test("apple-link with a code that isn't the same Apple person's keeps nothing, and the account still works", async () => {
+  const store = fakeStore();
+  const result = await run(request("apple-link", LINK_BODY, "account-token"), {
+    store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth,
+    exchangeAppleAuthorizationCode: async () => null, // the swap said no: another Apple account, or Apple refused
+  });
+  assert.equal(result.response.status, 200);
+  assert.deepEqual(result.body, { linked: false });
+  assert.equal(store.appleTokens.size, 0);
+});
+
+test("apple-link refuses an identity token that Apple's keys don't vouch for", async () => {
+  const store = fakeStore();
+  let exchanged = false;
+  const result = await run(request("apple-link", LINK_BODY, "account-token"), {
+    store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth,
+    verifyAppleIdentityToken: async () => null,
+    exchangeAppleAuthorizationCode: async () => { exchanged = true; return "t"; },
+  });
+  assert.equal(result.response.status, 401);
+  assert.deepEqual(result.body, { error: "apple_sign_in_failed" });
+  assert.equal(exchanged, false, "Apple's code is not swapped for an unverified token");
+  assert.equal(store.appleTokens.size, 0);
+});
+
+test("without the Sign in with Apple key, nothing is kept and Apple is never called", async () => {
+  const store = fakeStore();
+  let appleCalled = false;
+  const options = {
+    store, environment: ENV, authenticateDoddyAccount: accountAuth,
+    exchangeAppleAuthorizationCode: async () => { appleCalled = true; return "t"; },
+    revokeAppleToken: async () => { appleCalled = true; return true; },
+  };
+  const link = await run(request("apple-link", LINK_BODY, "account-token"), options);
+  assert.deepEqual([link.response.status, link.body], [200, { linked: false }]);
+  const revoke = await run(request("apple-revoke", {}, "account-token"), options);
+  assert.deepEqual([revoke.response.status, revoke.body], [200, { appleRevoked: false, apple: "not_configured" }]);
+  assert.equal(appleCalled, false);
+  assert.equal(store.appleTokens.size, 0);
+});
+
+test("apple-revoke says no_token when none was kept, and keeps the token when Apple fails so asking again can work", async () => {
+  const store = fakeStore();
+  let appleOk = false;
+  const options = {
+    store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth,
+    revokeAppleToken: async () => appleOk,
+  };
+  const none = await run(request("apple-revoke", {}, "account-token"), options);
+  assert.deepEqual(none.body, { appleRevoked: false, apple: "no_token" });
+
+  store.appleTokens.set(ACCOUNT_ID, sealAppleToken("apple-refresh-token", SIGNING_KEY));
+  const failed = await run(request("apple-revoke", {}, "account-token"), options);
+  assert.deepEqual(failed.body, { appleRevoked: false, apple: "failed" });
+  assert.equal(failed.response.status, 200, "Apple failing is reported, not an error: the deletion goes on");
+  assert.ok(store.appleTokens.has(ACCOUNT_ID), "kept for another try");
+
+  appleOk = true;
+  const retried = await run(request("apple-revoke", {}, "account-token"), options);
+  assert.deepEqual(retried.body, { appleRevoked: true, apple: "revoked" });
+  assert.equal(store.appleTokens.size, 0);
+});
+
+test("a token sealed for one Doddy account is never revoked for another", async () => {
+  const store = fakeStore();
+  store.appleTokens.set("account:00000000-0000-4000-8000-000000000000", sealAppleToken("someone-elses-token", SIGNING_KEY));
+  let revoked = false;
+  const result = await run(request("apple-revoke", {}, "account-token"), {
+    store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth,
+    revokeAppleToken: async () => { revoked = true; return true; },
+  });
+  assert.deepEqual(result.body, { appleRevoked: false, apple: "no_token" });
+  assert.equal(revoked, false);
+  assert.equal(store.appleTokens.size, 1, "the other account's token is untouched");
+});
+
+test("when the project's signing keys can't be read the answer is 503, never 'signed out'", async () => {
+  const { AccountCheckUnavailable } = await import("../src/doddy-account.js");
+  const result = await run(request("apple-revoke", {}, "account-token"), {
+    environment: APPLE_ENV,
+    authenticateDoddyAccount: async () => { throw new AccountCheckUnavailable(); },
+  });
+  assert.equal(result.response.status, 503);
+  assert.deepEqual(result.body, { error: "account_check_unavailable" });
+});
+
+test("apple-link is limited per account like a sign-in, and a refused one never reaches Apple", async () => {
+  const store = fakeStore();
+  let swaps = 0;
+  const options = {
+    store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth,
+    exchangeAppleAuthorizationCode: async () => { swaps += 1; return "t"; },
+  };
+  for (let n = 0; n < 10; n += 1) assert.equal((await run(request("apple-link", LINK_BODY, "account-token"), options)).response.status, 200);
+  const refused = await run(request("apple-link", LINK_BODY, "account-token"), options);
+  assert.equal(refused.response.status, 429);
+  assert.match(refused.response.headers.get("retry-after"), /^[1-9][0-9]*$/);
+  assert.equal(swaps, 10);
+});
+
+test("apple-link rejects a malformed body before anything is checked or kept", async () => {
+  const store = fakeStore();
+  for (const bad of [{}, { ...LINK_BODY, authorizationCode: "" }, { ...LINK_BODY, authorizationCode: "x".repeat(1_025) },
+    { ...LINK_BODY, rawNonce: "short" }, { ...LINK_BODY, identityToken: "x".repeat(18_001) }, { ...LINK_BODY, identityToken: 7 }]) {
+    const result = await run(request("apple-link", bad, "account-token"), { store, environment: APPLE_ENV, authenticateDoddyAccount: accountAuth });
+    assert.equal(result.response.status, 400);
+    assert.deepEqual(result.body, { error: "invalid_request" });
+  }
+  assert.equal(store.appleTokens.size, 0);
+});
+
+test("the Redis adapter's deleteAppleToken deletes only the one sealed Apple token", async () => {
+  let sent;
+  const store = createVoiceAuthStore({
+    url: "https://redis.example.test", token: "store-secret",
+    fetch: async (_url, init) => { sent = JSON.parse(init.body); return Response.json([{ result: 1 }]); },
+  });
+  await store.deleteAppleToken(ACCOUNT_ID);
+  assert.deepEqual(sent, [["DEL", `doddy:voice:v1:apple-token:${ACCOUNT_ID}`]]);
 });

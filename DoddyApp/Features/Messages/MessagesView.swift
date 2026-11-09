@@ -926,7 +926,7 @@ private struct MessagesComposer: View {
 /// Text on Doddy's orange is always the dark ink, in light and dark appearance: cream on orange does not
 /// read (the brand guide passes ink on orange, not white). Orange itself is the app's `Theme.orangeCue`.
 private enum BubbleInk {
-    static let onOrange = Color(red: 8 / 255, green: 8 / 255, blue: 8 / 255)
+    static var onOrange: Color { Theme.inkOnOrange }
 }
 
 /// One bubble: Doddy's orange with dark ink for the user, the quiet surface for Doddy, with a tail when it ends a run.
@@ -1017,7 +1017,7 @@ private struct TypingBubble: View {
             Spacer(minLength: 56)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Doddy is thinking…")
+        .accessibilityLabel("Working on it…")
         .accessibilityIdentifier("ask.thinking")
     }
 

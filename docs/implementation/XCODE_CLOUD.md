@@ -16,13 +16,17 @@ keeps it. Two paths would number their builds differently (the workflow's run nu
 Cloud's own counter), and TestFlight refuses a build number it has already seen for a version.
 
 **What this repository adds:** `ci_scripts/ci_post_clone.sh`. Xcode Cloud runs it on its Mac
-after it downloads the code and before it builds. It does four things:
+after it downloads the code and before it builds. It does five things:
 1. Generates `Doddy.xcodeproj` from `project.yml`, as `make project` does. The project isn't
    committed.
-2. Gives the app and its two extensions Xcode Cloud's build number. TestFlight needs a higher one
-   for every upload, the same in all three.
-3. Sets a team or a bundle ID, but only if the workflow names one (below).
-4. Resolves the Swift packages. Xcode Cloud won't do that itself without `Package.resolved`, which
+2. Gives the app and its three extensions (widgets, share, notification content) Xcode Cloud's
+   build number. TestFlight needs a higher one for every upload, the same in all four.
+3. Writes the commit the build is made from (`CI_COMMIT`) into the `DODDY_GIT_COMMIT` build
+   setting. Info.plist carries it as `DoddyGitCommit`, and Settings › About shows its first seven
+   characters next to the version, for example "0.1.0 (12, 8f3c2a1)". A build made anywhere else
+   says `local` and shows only the version and build number (7 Nov 2026 audit).
+4. Sets a team or a bundle ID, but only if the workflow names one (below).
+5. Resolves the Swift packages. Xcode Cloud won't do that itself without `Package.resolved`, which
    a generated project doesn't have.
 
 It never signs, uploads or reads a key. `scripts/test_xcode_cloud_post_clone.sh` checks it on
@@ -45,6 +49,26 @@ Linux, and `scripts/ci.sh` runs that test.
    the aps-environment entitlement". Not ready yet? Set `DODDY_PUSH` = `0` in the workflow for now
    (no notification then reaches that build). The server side is already on: `doddy-messaging`
    started with `push: true` on 3 Nov 2026.
+
+4. **Every bundle ID is registered on your Apple Developer account.** Xcode Cloud's automatic
+   signing builds and signs the app, but it cannot register a bundle ID with Apple. Build 8
+   (8 Nov 2026) archived fine and then all three exports failed with exit code 70 and
+   `Automatic signing cannot register bundle identifier "com.bienos.doddy2.dev.notificationcontent"`:
+   the notification content extension (ADR-786) was newer than the IDs registered by hand.
+   Register each one at developer.apple.com › Certificates, Identifiers & Profiles › Identifiers
+   › + › App IDs › App, with an **explicit** bundle ID:
+
+   | Bundle ID | Capabilities |
+   |---|---|
+   | `com.bienos.doddy2.dev` (the app) | what `Config/Doddy-Push-AppGroup.entitlements` asks for: Sign in with Apple, Push Notifications, Time Sensitive Notifications, App Groups, HealthKit, HomeKit |
+   | `com.bienos.doddy2.dev.widgets` | App Groups (`group.com.bienos.doddy2.dev`) |
+   | `com.bienos.doddy2.dev.share` | App Groups (same group) |
+   | `com.bienos.doddy2.dev.notificationcontent` | none (no App Group, no network, no permissions) |
+
+   The App Group `group.com.bienos.doddy2.dev` must exist under Identifiers › App Groups. The same
+   goes for any extension added later: register its ID before the next Xcode Cloud build. (On
+   8 Nov 2026 the account had the app, widgets and share IDs, not the notification content one;
+   what capabilities those three carry was not in the log.)
 
 ## The setup (once, on your Mac, about 15 minutes)
 
@@ -84,6 +108,11 @@ Linux, and `scripts/ci.sh` runs that test.
 - To build without a merge: Start Build in App Store Connect › Xcode Cloud.
 - If a build fails, App Store Connect › Xcode Cloud › the build shows the log. The script's own
   lines start with `ci_post_clone:`.
+- An **export** step that ends "Command exited with non-zero exit-code: 70" doesn't show its reason
+  in that view. Download the build's Artifacts (the logs for the archive), open
+  `app-store-export-archive-logs/xcodebuild-export-archive.log` (or the `ad-hoc` or `development`
+  folder) and look for lines starting `error: exportArchive`. Build 8's said a bundle ID wasn't
+  registered (step 4 above).
 
 ## Not checked
 

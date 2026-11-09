@@ -64,7 +64,7 @@ describe("signing in", () => {
     const nav = screen.getByRole("navigation", { name: "Workspace" });
     // Logbook is there with example numbers only, and the menu says so (ADR-602).
     // The chat answers from the account today, so it has no marker (ADR-604).
-    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Home", "Messages Soon", "Chat", "Documents", "Connected apps", "Activity", "Logbook Example", "Memory Soon", "Settings"]);
+    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Home", "Messages Soon", "Chat", "Documents", "Connected apps", "Activity", "Logbook", "Memory Soon", "Settings"]);
     // Nothing pretends: Home has no chat box of its own, only the way to the chat; no memories, no tasks.
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.getByRole("link", { name: "Message Doddy" })).toHaveAttribute("href", "/chat");

@@ -1,10 +1,18 @@
 import DoddyCore
 import SwiftUI
 
-/// The sign-in sheet pinned to the bottom of the welcome (ADR-598, ADR-599). **Sign in with Apple is
-/// real**: it is the voice account's sign-in (`AppleAccountSignInButton`, `VoiceAuthSession`), and
-/// a finished sign-in moves on. Face ID, Google and email are UI only: no backend yet, so each says
-/// so and none looks like a success. "Try Doddy without an account" also moves on.
+/// The sign-in sheet pinned to the bottom of the welcome (ADR-598, ADR-599).
+///
+/// **With Doddy accounts set up in this build** (decision 2026-11-08-required-account): Apple or
+/// Google (`DoddyAccountModel`), and no way past without one. The welcome stays until the person is
+/// signed in (`RootView.accountRequired`). Email is off for now (`offersEmail`, decision
+/// 2026-11-09-email-sign-in-off-for-now). Every kept sign-in ends the welcome (`signInCount`), and a
+/// person who is already signed in when it shows (Settings › "Show the welcome again", or a reinstall,
+/// which keeps the Keychain) gets "Continue" instead of the sign-in buttons.
+///
+/// **Without them** (today's builds, and UI tests), as before: Sign in with Apple is the voice
+/// account's sign-in (`AppleAccountSignInButton`, `VoiceAuthSession`) and a finished sign-in moves on;
+/// Face ID, Google and email are UI only and each says so; "Try Doddy without an account" moves on.
 ///
 /// It is a custom bottom sheet, not a system `.sheet`: a system sheet would be presented above the
 /// Face ID lock's cover (`RootView` draws the lock as an overlay), and the lock must stay above
@@ -12,19 +20,26 @@ import SwiftUI
 struct SignInSheet: View {
     static let collapsedHeight: CGFloat = 138
     static let expandedHeight: CGFloat = 446
+    /// Email sign-in is off for now (owner, 9 Nov 2026): the account service still emails a link to
+    /// a web page instead of the code the form asks for, so it can't be finished in the app. Turning
+    /// it back on is this line, once the email template sends the code (`EmailCodeForm` is kept).
+    static let offersEmail = false
 
     @Binding var expanded: Bool
     let provider: SignInProviding
     /// Which voice provider the voice account is created for (the stored choice, ElevenLabs by default).
     let voiceProvider: VoiceProvider
     let continueWithoutAccount: () -> Void
-    /// Sign in with Apple finished: the Doddy account exists and the welcome is over.
+    /// A sign-in finished (the Doddy account, or without one the voice account): the welcome is over.
     let signedIn: () -> Void
 
     @GestureState private var drag: CGFloat = 0
     @State private var scanning = false
     @State private var notConnected = false
     @State private var account = VoiceAuthSession.shared
+    @State private var doddyAccount = DoddyAccountModel.shared
+    /// The email form is open in place of the buttons.
+    @State private var emailOpen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -65,7 +80,10 @@ struct SignInSheet: View {
         .gesture(dragGesture)
         .animation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.86), value: expanded)
         .sensoryFeedback(.impact(weight: .light), trigger: expanded)
-        .onChange(of: account.isSignedIn) { _, now in if now { signedIn() } }
+        .onChange(of: account.isSignedIn) { _, now in if now, !doddyAccount.isConfigured { signedIn() } }
+        // Each kept sign-in, not "signed in" turning true: a sign-in made while a session was already
+        // kept left that true, and the welcome never closed (TestFlight build 20).
+        .onChange(of: doddyAccount.signInCount) { _, _ in emailOpen = false; signedIn() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("welcome.sheet")
     }
@@ -108,7 +126,10 @@ struct SignInSheet: View {
                 biometryGlyph(size: 40, scanning: false)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Get in").font(.headline)
-                    Text("Apple, Face ID, Google or email").font(.footnote).foregroundStyle(Theme.secondaryText)
+                    Group {
+                        if doddyAccount.isConfigured { Text("Apple or Google") } else { Text("Apple, Face ID, Google or email") }
+                    }
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.up").font(.headline).foregroundStyle(Theme.ink)
@@ -123,8 +144,100 @@ struct SignInSheet: View {
         .accessibilityIdentifier("welcome.getIn")
     }
 
-    /// Expanded: Face ID, Google and email, the same size and weight.
-    private var expandedContent: some View {
+    @ViewBuilder private var expandedContent: some View {
+        if doddyAccount.isConfigured { accountContent } else { withoutAccountsContent }
+    }
+
+    /// With Doddy accounts: Apple and Google, the same size and weight, and no way past without one of
+    /// them. Already signed in (the welcome shown again, or a reinstall): which account, and Continue.
+    private var accountContent: some View {
+        VStack(spacing: 10) {
+            Text("Your turn")
+                .font(.title3.weight(.bold))
+                .padding(.bottom, 4)
+                .accessibilityAddTraits(.isHeader)
+            if let session = doddyAccount.session {
+                Text(verbatim: DoddyAccountSettingsSection.methodTitle(session.method))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("welcome.account.signedIn")
+                Button(action: signedIn) {
+                    Text("Continue")
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .foregroundStyle(Theme.canvas)
+                        .background(Capsule().fill(Theme.ink))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("welcome.continue")
+            } else if emailOpen && Self.offersEmail {
+                EmailCodeForm(account: doddyAccount, back: {
+                    doddyAccount.changeEmail()
+                    emailOpen = false
+                })
+            } else {
+                Group {
+                    AppleAccountSignInButton(provider: voiceProvider, usesContinueTitle: true, height: 52,
+                                             isCapsule: true, adaptsToDarkAppearance: true)
+                        .accessibilityIdentifier("welcome.apple")
+                    googleButton { Task { await doddyAccount.signInWithGoogle() } }
+                    if Self.offersEmail {
+                        emailButton {
+                            doddyAccount.message = nil
+                            emailOpen = true
+                        }
+                    }
+                }
+                .disabled(doddyAccount.isWorking)
+            }
+            if doddyAccount.isWorking {
+                ProgressView().accessibilityIdentifier("welcome.account.working")
+            } else if let message = doddyAccount.shownMessage {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.updatesFrequently)
+                    .accessibilityIdentifier("welcome.account.message")
+            } else if !emailOpen && !doddyAccount.isSignedIn {
+                Text("Doddy needs an account. There's no password: sign in with Apple or Google.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .font(.body.weight(.semibold))
+    }
+
+    private func googleButton(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text("Continue with Google")
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .foregroundStyle(Theme.ink)
+                .background(Capsule().fill(Theme.canvas))
+                .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("welcome.google")
+    }
+
+    private func emailButton(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: "envelope").font(.body)
+                Text("Continue with email")
+            }
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .foregroundStyle(Theme.ink)
+            .background(Capsule().fill(Theme.separator.opacity(0.5)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("welcome.email")
+    }
+
+    /// Without Doddy accounts (as before): Face ID, Google and email, the same size and weight.
+    private var withoutAccountsContent: some View {
         VStack(spacing: 10) {
             Text("Your turn")
                 .font(.title3.weight(.bold))
@@ -145,26 +258,8 @@ struct SignInSheet: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("welcome.faceID")
-            Button { tap(.google) } label: {
-                Text("Continue with Google")
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .foregroundStyle(Theme.ink)
-                    .background(Capsule().fill(Theme.canvas))
-                    .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("welcome.google")
-            Button { tap(.email) } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "envelope").font(.body)
-                    Text("Continue with email")
-                }
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .foregroundStyle(Theme.ink)
-                .background(Capsule().fill(Theme.separator.opacity(0.5)))
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("welcome.email")
+            googleButton { tap(.google) }
+            emailButton { tap(.email) }
             Button(action: continueWithoutAccount) {
                 Text("Try Doddy without an account")
                     .font(.subheadline.weight(.semibold))

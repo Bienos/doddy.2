@@ -44,7 +44,7 @@ BOARDS = [
     ("voice", "leanIn"), ("focus", "tinyPromise"),
     ("thought-drop", "thoughtPocket"), ("language-bridge", "languageBridge"),
     ("reminder-pin", "reminderKnot"), ("step-path", "stepStones"),
-    ("spoken-mark", "storySpool"), ("calm-pulse", "calmTide"),
+    ("spoken-mark", "storySpool"),
 ]
 
 

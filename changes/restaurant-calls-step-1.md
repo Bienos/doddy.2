@@ -1,0 +1,2 @@
+Place search (`find_places`) now keeps a listing's phone number when it looks like one, so Doddy can say it and, in a later step, offer to call the place. Step 1 of decision `docs/decisions/2026-11-09-restaurant-calls-one-tap.md` (one tap per task, Doddy may book, texts to your own number without a tap).
+Ran: backend build and the place-search tests (23 of 23, two new); scripts/ci.sh --only checks,backend. Not run: anything live (no Monid search, no call, no text). Needs a deploy of `doddy` (backend) to reach the voice agent; Render auto-deploy is off.

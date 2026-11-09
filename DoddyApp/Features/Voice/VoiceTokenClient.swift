@@ -25,8 +25,12 @@ struct VoiceTokenClient: Sendable {
     private func post(_ body: Data?, anonymousAllowed: Bool = false) async throws(VoiceTokenError) -> (Int, Data, String?) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"
-        let accessToken: String?
-        do { accessToken = try await VoiceAuthSession.shared.bearerToken() }
+        var accessToken: String?
+        // Decision 2026-11-08-required-account: the Doddy account's token, unless this iPhone still has its
+        // own voice session (that one works whether or not the voice server takes accounts yet).
+        let accountToken = await DoddyAccountServers.voiceAccountToken()
+        if let accountToken { accessToken = accountToken }
+        else { do { accessToken = try await VoiceAuthSession.shared.bearerToken() }
         catch let error as VoiceAuthFailure {
             if anonymousAllowed {
                 // No session: ask without one. The server refuses with 401 unless it allows this (ADR-726).
@@ -43,7 +47,7 @@ struct VoiceTokenClient: Sendable {
             }
         } catch {
             if anonymousAllowed { accessToken = nil } else { throw .badResponse }
-        }
+        } }
         if let accessToken { request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization") }
         if let body {
             request.httpBody = body
@@ -63,7 +67,8 @@ struct VoiceTokenClient: Sendable {
             throw VoiceTokenServer.loadingFailure(error)
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        if status == 401, !anonymousAllowed { await VoiceAuthSession.shared.serverRejectedSession() }
+        // A refused account token says nothing about the voice session, so that one is left alone.
+        if status == 401, !anonymousAllowed, accountToken == nil { await VoiceAuthSession.shared.serverRejectedSession() }
         return (status, data, (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After"))
     }
 }
@@ -93,6 +98,24 @@ actor VoiceAuthAPI {
 
     func deleteAccount(_ accessToken: String) async throws {
         let _: EmptyReply = try await post(["action": "delete-account"], bearer: accessToken)
+    }
+
+    // Decision 2026-11-09-apple-revoke-for-doddy-accounts: a Doddy account (not a voice session) that
+    // signed in with Apple. Both take the Doddy account's access token as the bearer.
+
+    /// Right after that sign-in: the server keeps Apple's token, sealed, so deleting the account can end
+    /// Sign in with Apple. True only when the server kept it; the account works either way.
+    func linkApple(accountToken: String, identityToken: String, rawNonce: String, authorizationCode: String) async throws -> Bool {
+        let reply: AppleLinkReply = try await post(
+            ["action": "apple-link", "identityToken": identityToken, "rawNonce": rawNonce, "authorizationCode": authorizationCode],
+            bearer: accountToken)
+        return reply.linked
+    }
+
+    /// Before the account is deleted: the server tells Apple to end the link. True only when Apple said yes.
+    func revokeApple(accountToken: String) async throws -> Bool {
+        let reply: AppleRevokeReply = try await post(["action": "apple-revoke"], bearer: accountToken)
+        return reply.appleRevoked
     }
 
     private func post<T: Decodable>(_ body: [String: Any], bearer: String? = nil) async throws -> T {
@@ -125,3 +148,5 @@ actor VoiceAuthAPI {
 }
 
 private struct EmptyReply: Decodable {}
+private struct AppleLinkReply: Decodable { let linked: Bool }
+private struct AppleRevokeReply: Decodable { let appleRevoked: Bool }

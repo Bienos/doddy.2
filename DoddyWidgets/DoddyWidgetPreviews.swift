@@ -24,7 +24,6 @@ private typealias Voice = DoddyVoiceAttributes.ContentState
     Voice(status: .listening, isMuted: false, islandStyle: .wholeDoddy)
     Voice(status: .speaking, isMuted: false, islandStyle: .wholeDoddy)
     Voice(status: .listening, isMuted: true, islandStyle: .wholeDoddy)
-    Voice(status: .wakeListening, isMuted: false, islandStyle: .wholeDoddy)
 }
 
 #Preview("Voice · compact", as: .dynamicIsland(.compact), using: DoddyVoiceAttributes(startedAt: .now)) {
@@ -54,13 +53,6 @@ private typealias Voice = DoddyVoiceAttributes.ContentState
 } contentStates: {
     DoddyToolAttributes.ContentState(isPaused: false, label: "Bieg", islandStyle: .wholeDoddy, countsFrom: .now.addingTimeInterval(-727))
     DoddyToolAttributes.ContentState(isPaused: true, islandStyle: .wholeDoddy, elapsed: 727)
-}
-
-#Preview("Breathing · island", as: .dynamicIsland(.expanded),
-         using: DoddyToolAttributes(kind: .breathing, startedAt: .now, duration: 120)) {
-    DoddyToolLiveActivity()
-} contentStates: {
-    DoddyToolAttributes.ContentState(isPaused: false, endsAt: .now.addingTimeInterval(90), islandStyle: .wholeDoddy)
 }
 
 #Preview("Shopping · Lock Screen", as: .content, using: ShoppingActivityAttributes(listID: UUID())) {

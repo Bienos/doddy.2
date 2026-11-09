@@ -185,41 +185,8 @@ private struct MemorySortMenu: View {
                 .font(.caption)
                 .frame(minHeight: 44)
         }
-        .accessibilityLabel(String(format: NSLocalizedString("Order, %@", comment: ""), Self.title(MemorySort(stored: sortRaw))))
+        .accessibilityLabel("Order, \(Self.title(MemorySort(stored: sortRaw)))")
         .accessibilityIdentifier("memories.sort")
-    }
-}
-
-/// One chip per tag in use (ADR-333), most used first. Selecting the active chip again clears it.
-struct MemoryTagRow: View {
-    let tags: [(tag: String, count: Int)]
-    @Binding var selection: String?
-    let active: String?
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(tags, id: \.tag) { item in
-                    let isOn = active == item.tag
-                    Button {
-                        selection = isOn ? nil : item.tag
-                    } label: {
-                        Text(verbatim: "#\(item.tag) \(item.count)")
-                            .font(.subheadline)
-                            .padding(.horizontal, 14)
-                            .frame(minHeight: 44)
-                            .background(isOn ? Theme.ink : Theme.quietSurface, in: Capsule())
-                            .foregroundStyle(isOn ? Theme.canvas : Theme.ink)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(String(format: NSLocalizedString("Tag %@, %lld notes", comment: ""), item.tag, item.count))
-                    .accessibilityAddTraits(isOn ? .isSelected : [])
-                }
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(NSLocalizedString("Show notes with one tag", comment: ""))
-        .accessibilityIdentifier("memories.tags")
     }
 }
 
@@ -249,7 +216,7 @@ struct MemoryTypeFilterRow: View {
 
     private func chip(_ title: String, count: Int, isOn: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(verbatim: "\(title) \(count)")
+            Text("\(title) \(count)")
                 .font(.subheadline)
                 .padding(.horizontal, 14)
                 .frame(minHeight: 44)
@@ -257,9 +224,7 @@ struct MemoryTypeFilterRow: View {
                 .foregroundStyle(isOn ? Theme.canvas : Theme.ink)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(count == 1
-                            ? String(format: NSLocalizedString("%@, 1 note", comment: ""), title)
-                            : String(format: NSLocalizedString("%@, %lld notes", comment: ""), title, count))
+        .accessibilityLabel("\(title), \(count) \(count == 1 ? "note" : "notes")")
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

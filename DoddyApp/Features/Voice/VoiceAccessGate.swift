@@ -9,8 +9,8 @@ struct VoiceAccessGate: View {
     let onContinue: () -> Void
     @State private var session = VoiceAuthSession.shared
     @State private var consented = false
-    /// A DODDY voice account, or (Debug builds only, ADR-551) the developer's direct connection.
-    private var accessReady: Bool { session.isSignedIn || VoiceConfig.talksWithoutAccount(for: provider) }
+    /// A Doddy account, a DODDY voice account, or (Debug builds only, ADR-551) the developer's direct connection.
+    private var accessReady: Bool { session.hasVoiceAccess(for: provider) }
 
     var body: some View {
         ScrollView {
@@ -92,10 +92,12 @@ struct VoiceAccessGate: View {
     }
 }
 
-/// The one Sign in with Apple button for the Doddy voice account: the voice screen's gate and the
-/// first-launch welcome (ADR-599) both use it, so there is a single place that builds Apple's
-/// request, checks its answer and hands it to `VoiceAuthSession`. It lives in this file because
-/// `check_forbidden_capabilities.sh` allows AuthenticationServices only in the voice account's files.
+/// The one Sign in with Apple button: the voice screen's gate and the first-launch welcome (ADR-599)
+/// both use it, so there is a single place that builds Apple's request and checks its answer. With
+/// Doddy accounts set up in this build (decision 2026-11-08-required-account) it signs in to the Doddy
+/// account (`DoddyAccountModel`); without them, to the voice account (`VoiceAuthSession`), as before.
+/// It lives in this file because `check_forbidden_capabilities.sh` allows AuthenticationServices only
+/// in the voice account's files.
 ///
 /// Apple's rules (HIG, Sign in with Apple): the system button with a system title, black on light
 /// and white on dark backgrounds, no smaller than the other sign-in buttons. A rounder corner is
@@ -111,17 +113,27 @@ struct AppleAccountSignInButton: View {
     var adaptsToDarkAppearance = false
 
     @State private var session = VoiceAuthSession.shared
+    @State private var doddyAccount = DoddyAccountModel.shared
     @State private var rawNonce: String?
     @Environment(\.colorScheme) private var colorScheme
+
+    /// Where this build's failures are shown: the Doddy account's message, or the voice account's.
+    private func say(_ message: String) {
+        if doddyAccount.isConfigured { doddyAccount.message = message } else { session.message = message }
+    }
 
     var body: some View {
         SignInWithAppleButton(usesContinueTitle ? .continue : .signIn, onRequest: { request in
             guard let nonce = AppleSignInNonce.make() else {
-                session.message = "This iPhone couldn’t start secure Apple sign-in. Try again."
+                say(NSLocalizedString("This iPhone couldn’t start secure Apple sign-in. Try again.", comment: ""))
                 return
             }
             rawNonce = nonce.raw
             request.nonce = nonce.hashed
+            // Doddy accounts only (decision 2026-11-09-apple-email-for-linking): Apple's token then carries
+            // the person's email (or Apple's private relay address), so Supabase can join this sign-in to a
+            // Google or email account with the same verified address. The voice-only sign-in is unchanged.
+            if doddyAccount.isConfigured { request.requestedScopes = [.email] }
         }, onCompletion: completeSignIn)
         .signInWithAppleButtonStyle(adaptsToDarkAppearance && colorScheme == .dark ? .white : .black)
         .frame(height: height)
@@ -135,8 +147,25 @@ struct AppleAccountSignInButton: View {
               let identityToken = String(data: data, encoding: .utf8),
               let rawNonce else {
             if case .failure(let error) = result, (error as? ASAuthorizationError)?.code != .canceled {
-                session.message = "Apple sign-in didn’t finish. Try again."
+                say(NSLocalizedString("Apple sign-in didn’t finish. Try again.", comment: ""))
             }
+            return
+        }
+        if doddyAccount.isConfigured {
+            // Apple's token and the raw nonce go to the Doddy account service, which checks both.
+            // Apple's one-time code goes to the voice server once the account exists, so deleting the
+            // account can also end Sign in with Apple (decision 2026-11-09-apple-revoke-for-doddy-accounts).
+            // That step is best effort: the sign-in has already counted without it.
+            let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+            let account = doddyAccount
+            Task { @MainActor in
+                await account.signInWithApple(identityToken: identityToken, rawNonce: rawNonce)
+                if account.isSignedIn, let authorizationCode, !authorizationCode.isEmpty {
+                    await DoddyAccountServers.linkAppleRevocation(
+                        identityToken: identityToken, rawNonce: rawNonce, authorizationCode: authorizationCode)
+                }
+            }
+            self.rawNonce = nil
             return
         }
         // Apple's one-time code lets the server revoke Sign in with Apple if the account is

@@ -111,6 +111,28 @@ restart_simulator() {
   xcrun simctl shutdown "$1" 2>/dev/null || true  # fails harmlessly if it is already shut down
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
+# Runs a command again when it failed because a download failed (8 Nov 2026: github.com release
+# downloads of the LiveKit binary frameworks answered 504 on hosted runs 42465092351 and others, so
+# `xcodebuild` could not resolve packages and exited 74). It retries only when the output names a failed
+# download or connection, never for any other error, and still fails with the last exit code once
+# CI_FETCH_TRIES (default 4) attempts are used; between attempts it waits CI_FETCH_WAIT s (default 30)
+# times the attempt number. Nothing is skipped and nothing is treated as passed that did not pass.
+with_fetch_retries() {  # command...
+  local tries=${CI_FETCH_TRIES:-4} wait_s=${CI_FETCH_WAIT:-30} n=1 rc out
+  out=$(mktemp)
+  while :; do
+    "$@" 2>&1 | tee "$out"
+    rc=${PIPESTATUS[0]}
+    [ "$rc" -eq 0 ] && break
+    [ "$n" -ge "$tries" ] && break
+    grep -qE 'failed downloading|badResponseStatusCode|Could not connect|timed out|connection was lost|Internet connection appears to be offline|Could not resolve host' "$out" || break
+    echo "A download failed (attempt $n of $tries); trying again in $((wait_s * n)) s."
+    sleep $((wait_s * n))
+    n=$((n + 1))
+  done
+  rm -f "$out"
+  return "$rc"
+}
 # Runs a command and stops it if it is still running after $1 seconds (ADR-764). For a simulator
 # whose drawing has frozen: xcodebuild then waits for ever on an app launch that never returns.
 with_watchdog() {  # seconds, command...
@@ -312,11 +334,16 @@ else
     not_run "iOS app build + tests" "no available iPhone simulator; install one or set DODDY_DESTINATION"
   else
     echo "Destination: $dest"
+    # Resolve the packages first, and again when a download fails (with_fetch_retries): `-list` also
+    # resolves, so before this a single failed download failed all three steps. A failure to fetch
+    # a package still stops the run before the long build, and the pins can be checked now. If Xcode
+    # still wrote no file, the check is tried again after the build, which resolves too.
+    # build/packages-ok: every package resolved and downloaded, so hosted CI may save them as its cache.
+    mkdir -p build; rm -f build/packages-ok
+    if run_step "Resolve the app's packages" with_fetch_retries xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy; then
+      touch build/packages-ok
+    fi
     run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
-    # `-list` does not resolve packages, so resolve them here: a failure to fetch a package stops the run
-    # before the long build, and the pins can be checked now. If Xcode still wrote no file, the check
-    # is tried again after the build, which resolves too.
-    run_step "Resolve the app's packages" xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
     if check_package_pins; then pins_checked=1; fi
     # Build once, then run the unit tests and the UI tests as two passes, with the simulator
     # restarted in between (ADR-561). The unit tests run inside the app on the simulator; right

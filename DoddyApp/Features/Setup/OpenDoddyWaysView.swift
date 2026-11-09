@@ -320,7 +320,7 @@ struct OpenDoddyWaysView: View {
                 .font(.largeTitle.bold())
                 .accessibilityAddTraits(.isHeader)
             Text("Go to your Home Screen, then double-tap the back of your iPhone. The shortcut should bring you back to Doddy.")
-            CandidateCharacterView(assetName: "Doddy_approaching")
+            WholeDoddyView(pose: .tiptoe)
                 .frame(maxWidth: .infinity)
             TimelineView(.periodic(from: window.startedAt, by: 1)) { context in
                 if window.isActive(at: context.date) {
@@ -383,7 +383,7 @@ struct OpenDoddyWaysView: View {
 
     private func done(at date: Date) -> some View {
         Group {
-            CandidateCharacterView(assetName: "Doddy_listening")
+            UploadedCharacterView(assetName: "UploadedDoddy_Listening")
                 .frame(maxWidth: .infinity)
             Label(String(format: NSLocalizedString("Tested by you · %@", comment: ""), DateText.full(date)), systemImage: "checkmark.seal")
                 .font(.footnote.weight(.semibold))

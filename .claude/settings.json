@@ -17,7 +17,7 @@
       "Read(./site/**/*.otf)",
       "Read(./site/**/*.pdf)",
       "Read(./site/**/*.ico)",
-      "Read(./blog/**)",
+  
       "Read(./assets/**)",
       "Read(./design/**/*.png)",
       "Read(./design/**/*.jpg)",

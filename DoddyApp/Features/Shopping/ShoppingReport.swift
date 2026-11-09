@@ -1,4 +1,5 @@
 import DoddyCore
+import DoddyDesignTokens
 import SwiftUI
 
 // The shopping report as a PDF (docs/implementation/SHOPPING.md 3, design/shopping-mode-v0.1/report):
@@ -67,17 +68,19 @@ struct ShoppingReport {
     }
 }
 
-/// Fixed light colours (Brand Guidelines V2.2): the PDF looks the same in dark mode and in print.
+/// Fixed light colours (Brand Guidelines V2.2, the tokens' light values): the PDF looks the same in
+/// dark mode and in print.
 private enum Paper {
-    static let paper = Color(red: 0xFF / 255, green: 0xF7 / 255, blue: 0xE9 / 255)
-    static let ink = Color(red: 0x17 / 255, green: 0x17 / 255, blue: 0x15 / 255)
-    static let quiet = Color(red: 0xF5 / 255, green: 0xEA / 255, blue: 0xD8 / 255)
-    static let line = Color(red: 0xDF / 255, green: 0xD5 / 255, blue: 0xC6 / 255)
-    static let muted = Color(red: 0x65 / 255, green: 0x5F / 255, blue: 0x56 / 255)
-    static let accentText = Color(red: 0xA6 / 255, green: 0x4B / 255, blue: 0x00 / 255)
-    static let orange = Color(red: 0xFF / 255, green: 0x6A / 255, blue: 0x00 / 255)
-    static let ok = Color(red: 0x32 / 255, green: 0x67 / 255, blue: 0x46 / 255)
-    static let error = Color(red: 0xA3 / 255, green: 0x34 / 255, blue: 0x2E / 255)
+    private static func light(_ role: UploadedColorRole) -> Color { .fixed(role.hex(.light)) }
+    static let paper = light(.canvas)
+    static let ink = light(.readingInk)
+    static let quiet = light(.quietSurface)
+    static let line = light(.separator)
+    static let muted = light(.secondaryText)
+    static let accentText = light(.accentText)
+    static let orange = light(.orangeCue)
+    static let ok = light(.confirmed)
+    static let error = light(.error)
 }
 
 private struct ReportHeader: View {

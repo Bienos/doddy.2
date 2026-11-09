@@ -877,6 +877,11 @@ final class VoiceSessionController {
         config.onError = { error in
             let offline = Offline.isNoConnection(error)
             let slow = Offline.isServerSlow(error)
+            // The SDK reports a failed start here as well as throwing it (3.3.1, `handleStartupFailure`).
+            // A refused developer connection is handled where the start throws it
+            // (`developerConnectionRefused`); failing here too, before or after that, would show the
+            // SDK's English words and stop the retry through the token server.
+            if DeveloperVoiceConnection.isRefusal(error.localizedDescription) { return }
             Task { @MainActor in
                 if offline {
                     ref.value?.failOffline()
@@ -903,6 +908,17 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.disconnected(kind) }
         }
 
+        await connectElevenLabs(mode, config: config, attempt: attempt, earlyToken: earlyToken)
+    }
+
+    /// Gets the credential for `mode` and opens the ElevenLabs conversation. When the agent refuses a
+    /// Debug build's developer connection (its authentication is on, as since 8 Nov 2026), the same
+    /// start carries on through the token server if this iPhone has a voice session, and otherwise
+    /// asks for sign-in, instead of showing the SDK's English text.
+    private func connectElevenLabs(
+        _ mode: VoiceConnectionMode, config: ConversationConfig, attempt: Int,
+        earlyToken: Task<Result<String, VoiceTokenError>, Never>?
+    ) async {
         let auth: ElevenLabsConfiguration
         switch mode {
         case .tokenServer(let endpoint):
@@ -982,11 +998,43 @@ final class VoiceSessionController {
                 fail(Offline.slowServerMessage)
                 return
             }
+            if case .directAgent = mode, DeveloperVoiceConnection.isRefusal(error.localizedDescription) {
+                await developerConnectionRefused(config: config, attempt: attempt)
+                return
+            }
+            // Translated before it reaches the card, which shows its text as given.
+            var message = NSLocalizedString("Couldn't connect to Doddy's voice. Check your internet connection and try again.", comment: "")
             // An agent that doesn't allow the voice overrides refuses the conversation.
-            let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
-                ? ""
-                : " If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality."
-            fail("Couldn't connect to Doddy's voice. Check your internet connection and try again.\(voiceHint) (\(error.localizedDescription))")
+            if config.ttsOverrides != nil || config.agentOverrides != nil {
+                message += " " + NSLocalizedString("If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality.", comment: "")
+            }
+            #if DEBUG
+            // The SDK's own words, in English, for the developer; Release builds keep them in the log only.
+            message += "\n(\(error.localizedDescription))"
+            #endif
+            fail(message)
+        }
+    }
+
+    /// The agent refused the developer connection (Debug builds, ADR-551): its authentication is on.
+    /// The Debug switch goes off so later starts use the token server too, and this start carries on
+    /// through it when there is a voice session to ask with.
+    private func developerConnectionRefused(config: ConversationConfig, attempt: Int) async {
+        Self.audioLog.notice("the agent refused the developer connection: attempt \(attempt, privacy: .public)")
+        VoiceConfig.directAgentRefused()
+        let auth = VoiceAuthSession.shared
+        switch DeveloperVoiceConnection.afterRefusal(
+            tokenServer: VoiceConfig.connectionMode(for: .elevenLabs),
+            signedIn: auth.isSignedIn || auth.hasSavedSession
+        ) {
+        case .retry(let next):
+            // A translator restarted later uses the connection that worked.
+            startedMode = next
+            await connectElevenLabs(next, config: config, attempt: attempt, earlyToken: nil)
+        case .signInNeeded:
+            fail(NSLocalizedString("Doddy's voice now needs you to be signed in. Close this screen and tap Talk to Doddy to sign in.", comment: ""))
+        case .notSetUp(let reason):
+            fail(reason)
         }
     }
 
@@ -1360,6 +1408,9 @@ final class VoiceSessionController {
         // the web, and never a private conversation (ADR-603). That is separate from what this iPhone remembers.
         let isPrivate = self.isPrivate
         Task { await WebMemory.shared.sendConversation(log, language: WebMemory.language(), isPrivate: isPrivate) }
+        // Logbook (ADR-602): its times, how it ended and its language, never its words; not a private one.
+        Logbook.conversationEnded(startedAt: log.startedAt, endedAt: log.endedAt, ended: log.ended,
+                                  language: WebMemory.language(), isPrivate: isPrivate)
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         logs.append(log)
     }
