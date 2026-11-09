@@ -62,6 +62,12 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
     userId,
     Buffer.from("secret plan"),
   ]);
+  // The usage ledger (counters and ids, no text) goes with the account.
+  await q(
+    `INSERT INTO claude_usage (created_at, user_id, provider, model, feature, request_id, seq, kind, outcome, usage_known)
+     VALUES (1, $1, 'anthropic', 'claude-sonnet-5-5', 'ask_doddy', $2, 0, 'initial', 'failed', false)`,
+    [userId, `req-${tag}`],
+  );
   await q("INSERT INTO web_link_codes (code_hash, user_id, created_at, expires_at) VALUES ($1, $2, 1, 2)", [`code-${tag}`, userId]);
   await q(
     `INSERT INTO web_sessions (session_id, user_id, token_hash, browser, os, created_at, last_seen_at, expires_at)

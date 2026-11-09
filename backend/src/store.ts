@@ -1,6 +1,8 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { ConnectionReason, ConnectionStatus, Receipt } from "./contracts.js";
 import { type Database, type DatabaseOptions, openDatabase, type Queryable } from "./db.js";
+import { FILE_BACKOFF_BASE_MS, FILE_BACKOFF_CAP_MS, type ProviderFileQueue } from "./providerFiles.js";
+import type { LedgerEvent } from "./usageLedger.js";
 
 /**
  * Small durable store (Postgres, ADR-525). Holds only what the backend needs: the internal-user →
@@ -41,6 +43,22 @@ export interface QueuedCleanup {
   provider: string;
 }
 
+/** One account's Claude calls for one feature and model (`claudeUsageByAccount`). Cost is nano-US-dollars. */
+export interface ClaudeUsageSummary {
+  feature: string;
+  model: string;
+  calls: number;
+  failedCalls: number;
+  retryCalls: number;
+  unknownUsageCalls: number;
+  unpricedCalls: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheCreationTokens: number;
+  cacheReadTokens: number;
+  costNanoUsd: number;
+}
+
 export interface CleanupRow {
   connection_id: string;
   user_id: string;
@@ -68,6 +86,7 @@ export const ERASED_TABLES = [
   "payment_receipts",
   "payments",
   "documents",
+  "claude_usage",
   "web_link_codes",
   "web_sessions",
   "web_identities",
@@ -386,6 +405,41 @@ export const SCHEMA_SQL = `
     received_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
+  CREATE TABLE IF NOT EXISTS claude_usage (
+    id BIGSERIAL PRIMARY KEY,
+    created_at BIGINT NOT NULL,
+    user_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    feature TEXT NOT NULL,
+    request_id TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('initial', 'continuation', 'retry')),
+    outcome TEXT NOT NULL CHECK (outcome IN ('succeeded', 'failed')),
+    error_code TEXT,
+    stop_reason TEXT,
+    usage_known BOOLEAN NOT NULL,
+    input_tokens BIGINT,
+    output_tokens BIGINT,
+    cache_creation_tokens BIGINT,
+    cache_creation_1h_tokens BIGINT,
+    cache_read_tokens BIGINT,
+    cost_nano_usd BIGINT,
+    price_version TEXT,
+    CHECK (usage_known = (input_tokens IS NOT NULL AND output_tokens IS NOT NULL AND cache_creation_tokens IS NOT NULL AND cache_creation_1h_tokens IS NOT NULL AND cache_read_tokens IS NOT NULL)),
+    CHECK (cost_nano_usd IS NULL OR usage_known)
+  );
+  CREATE INDEX IF NOT EXISTS claude_usage_user ON claude_usage(user_id, created_at);
+  CREATE INDEX IF NOT EXISTS claude_usage_request ON claude_usage(user_id, request_id);
+  CREATE INDEX IF NOT EXISTS claude_usage_age ON claude_usage(created_at);
+  CREATE TABLE IF NOT EXISTS provider_file_deletions (
+    file_id TEXT PRIMARY KEY CHECK (length(file_id) BETWEEN 1 AND 200),
+    created_at BIGINT NOT NULL,
+    attempts INTEGER NOT NULL,
+    next_attempt_at BIGINT NOT NULL,
+    last_error TEXT
+  );
+  CREATE INDEX IF NOT EXISTS provider_file_deletions_due ON provider_file_deletions(next_attempt_at);
 `;
 
 /**
@@ -1152,6 +1206,107 @@ export class Store {
   /** Days older than `oldest` (a "YYYY-MM-DD") go, for every user. Separate from `prune` so its counts stay as they were. */
   async pruneLogbook(oldest: string): Promise<number> {
     return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Claude usage ledger (research item 1)
+  // Counters, cost and ids only; never a prompt, material or answer (`usageLedger.ts`).
+
+  /** One call to Anthropic. */
+  async recordClaudeCall(e: LedgerEvent): Promise<void> {
+    const u = e.usage;
+    await this.db.query(
+      `INSERT INTO claude_usage (created_at, user_id, provider, model, feature, request_id, seq, kind, outcome, error_code, stop_reason, usage_known,
+         input_tokens, output_tokens, cache_creation_tokens, cache_creation_1h_tokens, cache_read_tokens, cost_nano_usd, price_version)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+      [
+        e.at, e.userId, e.provider, e.model, e.feature, e.requestId, e.seq, e.kind, e.outcome, e.errorCode, e.stopReason, u !== null,
+        u?.inputTokens ?? null, u?.outputTokens ?? null, u?.cacheCreationTokens ?? null, u?.cacheCreation1hTokens ?? null, u?.cacheReadTokens ?? null,
+        e.costNanoUsd, e.priceVersion,
+      ],
+    );
+  }
+
+  /**
+   * One account's calls since `since` (ms), grouped by feature and model. Sums cover only calls whose
+   * usage is known; `unknownUsageCalls` and `unpricedCalls` say how many calls the sums leave out, so a
+   * total is never presented as complete when it isn't. Only this account's rows are read.
+   */
+  async claudeUsageByAccount(userId: string, since: number): Promise<ClaudeUsageSummary[]> {
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT feature, model,
+              COUNT(*) AS calls,
+              COUNT(*) FILTER (WHERE outcome = 'failed') AS failed_calls,
+              COUNT(*) FILTER (WHERE kind = 'retry') AS retry_calls,
+              COUNT(*) FILTER (WHERE NOT usage_known) AS unknown_usage_calls,
+              COUNT(*) FILTER (WHERE usage_known AND cost_nano_usd IS NULL) AS unpriced_calls,
+              COALESCE(SUM(input_tokens), 0) AS input_tokens,
+              COALESCE(SUM(output_tokens), 0) AS output_tokens,
+              COALESCE(SUM(cache_creation_tokens), 0) AS cache_creation_tokens,
+              COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+              COALESCE(SUM(cost_nano_usd), 0) AS cost_nano_usd
+       FROM claude_usage WHERE user_id = $1 AND created_at >= $2 GROUP BY feature, model ORDER BY feature, model`,
+      [userId, since],
+    );
+    const n = (v: unknown) => Number(v);
+    return rows.rows.map((r) => ({
+      feature: String(r.feature),
+      model: String(r.model),
+      calls: n(r.calls),
+      failedCalls: n(r.failed_calls),
+      retryCalls: n(r.retry_calls),
+      unknownUsageCalls: n(r.unknown_usage_calls),
+      unpricedCalls: n(r.unpriced_calls),
+      inputTokens: n(r.input_tokens),
+      outputTokens: n(r.output_tokens),
+      cacheCreationTokens: n(r.cache_creation_tokens),
+      cacheReadTokens: n(r.cache_read_tokens),
+      costNanoUsd: n(r.cost_nano_usd),
+    }));
+  }
+
+  /** Ledger rows older than `before` (ms) go; kept 400 days, like the monthly counters. */
+  async pruneClaudeUsage(before: number): Promise<number> {
+    return (await this.db.query("DELETE FROM claude_usage WHERE created_at < $1", [before])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Files owed a deletion at Anthropic (research item 14)
+  // An opaque provider file id and counters; no account, no name, no content (`providerFiles.ts`).
+
+  providerFileQueue(): ProviderFileQueue {
+    return {
+      queue: async (ids, now) => {
+        for (const id of ids) {
+          await this.db.query(
+            "INSERT INTO provider_file_deletions (file_id, created_at, attempts, next_attempt_at) VALUES ($1, $2, 0, $2) ON CONFLICT (file_id) DO NOTHING",
+            [id, now],
+          );
+        }
+      },
+      confirm: async (id) => void (await this.db.query("DELETE FROM provider_file_deletions WHERE file_id = $1", [id])),
+      failed: async (id, code, now) => {
+        // Backoff doubles from a minute to a cap, from the attempts before this one.
+        await this.db.query(
+          `UPDATE provider_file_deletions
+           SET attempts = attempts + 1, last_error = $2,
+               next_attempt_at = $3 + LEAST($4::bigint * (2 ^ LEAST(attempts, 20))::bigint, $5::bigint)
+           WHERE file_id = $1`,
+          [id, /^[a-z_]{1,40}$/.test(code) ? code : "unknown", now, FILE_BACKOFF_BASE_MS, FILE_BACKOFF_CAP_MS],
+        );
+      },
+      due: async (now, limit) =>
+        (await this.db.query<{ file_id: string }>("SELECT file_id FROM provider_file_deletions WHERE next_attempt_at <= $1 ORDER BY next_attempt_at, created_at LIMIT $2", [now, limit])).rows.map(
+          (r) => r.file_id,
+        ),
+      backlog: async (stuckAfter, now) => {
+        const row = (
+          await this.db.query<{ pending: number; stuck: number; oldest: number | null }>(
+            `SELECT COUNT(*) FILTER (WHERE attempts < $1) AS pending, COUNT(*) FILTER (WHERE attempts >= $1) AS stuck, MIN(created_at) AS oldest FROM provider_file_deletions`,
+            [stuckAfter],
+          )
+        ).rows[0]!;
+        return { pending: Number(row.pending), stuck: Number(row.stuck), oldestAgeMs: row.oldest === null ? 0 : Math.max(0, now - Number(row.oldest)) };
+      },
+    };
   }
 
   // ------------------------------------------------------------ Owner panel (decision 2026-11-09-usage-counts-on-by-default)

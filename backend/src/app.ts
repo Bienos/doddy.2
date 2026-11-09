@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { AccountEraser } from "./account.js";
-import { AssistService } from "./assist.js";
+import { type AssistReply, AssistService } from "./assist.js";
+import { ASK_DEDUP, RequestOnce } from "./idempotency.js";
 import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
@@ -25,6 +26,7 @@ import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./provi
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
 import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
+import type { LedgerEvent } from "./usageLedger.js";
 import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
@@ -110,9 +112,11 @@ export async function buildApp(
           ? new MonidWebSearchProvider(config.monid)
           : null
         : new MockWebSearchProvider();
+  // Every live Anthropic call writes a content-free usage row for its account (usageLedger.ts); mock calls cost nothing and write none.
+  const usageDeps = { files: store.providerFileQueue(), recorder: { record: (event: LedgerEvent) => store.recordClaudeCall(event) }, log: (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`) };
   // Claude (ADR-564): live only with an Anthropic key; mock mode uses offline demo text.
   const claude =
-    overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
+    overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude, undefined, undefined, usageDeps) : null) : new MockClaudeProvider();
   // Document links are signed with the session key; without one, make_document says "not set up".
   const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
   const tools = new CloudToolsService({
@@ -150,7 +154,7 @@ export async function buildApp(
   const log = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
   const memory = new MemoryService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
   const chatClaude =
-    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : null) : claude;
+    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude, undefined, undefined, usageDeps) : null) : claude;
   // The chat also reads the account's other parts (ADR-604): Logbook, apps, documents, receipts.
   const account = new AccountContext({ store, memory, tools });
   const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, account, log });
@@ -159,7 +163,10 @@ export async function buildApp(
   // Deleting the account (ADR-674): each connection is removed by the provider that made it, and
   // each linked Google or Apple sign-in at Supabase, with the secret key (ADR-818).
   const supabaseUsers = config.web?.social?.secretKey ? new SupabaseUserRemover(config.web.social.projectUrl, config.web.social.secretKey) : null;
+  // Finished Ask Doddy answers kept a few minutes in memory so a repeated request id is not paid for twice; account deletion drops them.
+  const askOnce = new RequestOnce<AssistReply>(ASK_DEDUP);
   const accountEraser = new AccountEraser({
+    forget: (userId) => void askOnce.forgetUser(userId),
     store,
     removers: [
       { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
@@ -214,7 +221,7 @@ export async function buildApp(
         }
       : null;
   // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
-  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
+  const assist = new AssistService({ store, once: askOnce, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
@@ -244,11 +251,14 @@ export async function buildApp(
     void Promise.allSettled([
       service.sweepAbandoned(),
       tools.sweepAbandoned(),
+      // Anthropic copies of made documents whose deletion was not confirmed yet (research item 14).
+      ...((claude as ClaudeProvider | null)?.sweepFiles ? [(claude as ClaudeProvider).sweepFiles!(Date.now()).catch(() => log({ level: "warn", event: "provider_file_sweep_failed" }))] : []),
       // ADR-818: a deleted person's Supabase sign-in, when the first try failed.
       ...(supabaseUsers ? [accountEraser.sweep([SUPABASE_AUTH_CLEANUP])] : []),
     ])
       .then(() => store.prune(Date.now()))
       .then(() => store.pruneDocuments(Date.now()))
+      .then(() => store.pruneClaudeUsage(Date.now() - 400 * 86_400_000))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => store.pruneTokenFloors(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))

@@ -51,6 +51,7 @@ import {
   MODEL_TEXT_LABEL,
 } from "./claude.js";
 import type { DocumentLinks } from "../documents.js";
+import { UsageScope } from "../usageLedger.js";
 import { MockToolsProvider, type ToolsMockScenario } from "./mock.js";
 import type { ToolsProvider } from "./provider.js";
 import {
@@ -1043,7 +1044,7 @@ export class CloudToolsService {
 
       if (tool === ASK_CLAUDE_TOOL) {
         try {
-          const answer = await claude.ask(args as never, AbortSignal.timeout(ASK_CLAUDE_TIMEOUT_MS));
+          const answer = await claude.ask(args as never, AbortSignal.timeout(ASK_CLAUDE_TIMEOUT_MS), new UsageScope(userId, "ask_claude"));
           // ADR-710: Claude worked from material that may be untrusted (an email, a page), so what it wrote
           // goes back marked as information, the way the read tools mark theirs.
           const text = `Claude's answer (written for this user; read it out or sum it up, in your own words if it's long). ${MODEL_TEXT_LABEL}\n${answer.text}`;
@@ -1063,7 +1064,7 @@ export class CloudToolsService {
       const name = fileName(doc.title, info.ext);
       const id = await this.store.startDocument(userId, name, info.mime, now);
       const url = this.deps.documentLinks!.link(id, new Date(now));
-      const job = this.makeDocumentInBackground(id, doc, claude).finally(() => {
+      const job = this.makeDocumentInBackground(userId, id, doc, claude).finally(() => {
         slot?.();
         this.background.delete(job);
       });
@@ -1104,9 +1105,9 @@ export class CloudToolsService {
     };
   }
 
-  private async makeDocumentInBackground(id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
+  private async makeDocumentInBackground(userId: string, id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
     try {
-      const file = await claude.makeDocument(args, AbortSignal.timeout(DOCUMENT_TIMEOUT_MS));
+      const file = await claude.makeDocument(args, AbortSignal.timeout(DOCUMENT_TIMEOUT_MS), new UsageScope(userId, "make_document", id));
       await this.store.finishDocument(id, file.name, file.mime, file.bytes);
       this.deps.log?.({ level: "info", event: "document_ready", kind: args.kind, bytes: file.bytes.length });
     } catch (error) {
