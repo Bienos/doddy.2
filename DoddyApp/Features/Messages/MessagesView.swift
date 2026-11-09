@@ -4,7 +4,7 @@ import SwiftUI
 import UIKit
 
 /// Messages (ADR-585): the typed conversation with Doddy, saved on this iPhone until the user deletes it.
-/// Opt-in like before (Settings → Ask Doddy). Every answer says whether it comes from the user's saved
+/// On unless the person turns it off (Settings → Ask Doddy; decision 2026-11-09-messages-on-by-default). Every answer says whether it comes from the user's saved
 /// notes (with the notes shown) or is a general answer that is not from their notes. What each line may
 /// claim is decided by `ThreadRules`; this view only draws it.
 ///
@@ -18,7 +18,7 @@ struct MessagesView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage(PreferenceKey.assistantConsent) private var consent = false
+    @AppStorage(PreferenceKey.assistantConsent) private var consent = PreferenceKey.assistantConsentDefault
     @AppStorage(PreferenceKey.assistantUseNotes) private var useNotes = true
     @State private var model: MessagesModel
     @State private var confirmingDelete = false
@@ -127,7 +127,9 @@ struct MessagesView: View {
         .foregroundStyle(Theme.ink)
         .task { await model.load() }
         // Only once Ask Doddy is on: opening Messages with it off makes no call to Doddy's server.
-        .task(id: consent) { if consent { await files.refresh() } }
+        // The files list belongs to the person (their own session, as the Files sheet reads it), so it doesn't wait for
+        // Ask Doddy. It keeps looking while Messages is open: a file takes a minute or two to make.
+        .task { await keepFilesFresh() }
         .quickLookPreview($preview)
         .task { await ErrandsModel.shared.load() }
         // A failed read shows no cards here; the calls themselves are in Settings › Phone calls.
@@ -314,41 +316,95 @@ struct MessagesView: View {
         }
     }
 
-    /// Ready files Doddy made that are not already bubbles above. A tap downloads one and opens it in Quick Look,
-    /// whose Share button saves or sends it; nothing is added to the saved thread.
+    /// The server's ready files that are not already bubbles above (the person's own list, read with their session).
+    private var madeDocuments: [MadeDocument] {
+        guard case .ready(let list) = files.load else { return [] }
+        return ThreadAttachments.shown(documents: list.documents, thread: model.messages, now: Date())
+    }
+
+    /// Files Doddy is making now: shown at once, so "On it" by voice has something to point at.
+    private var makingDocuments: [MadeDocument] {
+        guard case .ready(let list) = files.load else { return [] }
+        return ThreadAttachments.inProgress(documents: list.documents, thread: model.messages, now: Date())
+    }
+
+    /// Reads the files list when Messages opens, then every few seconds while one is being made and slowly otherwise,
+    /// until the screen closes. Quiet: it never deletes a file that is open in Quick Look.
+    private func keepFilesFresh() async {
+        await files.refresh()
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(files.isMaking(now: Date()) ? 6 : 30))
+            guard !Task.isCancelled else { return }
+            await files.refresh(clearingDownloads: false)
+        }
+    }
+
+    /// Files Doddy made on this iPhone in a voice conversation and kept for a week (the deck from `make_presentation`).
+    /// On the iPhone only: they need neither Ask Doddy nor the server.
+    private var localFiles: [LocalMadeFile] {
+        LocalMadeFiles.shown(LocalMadeFilesStore.shared.files, now: Date())
+    }
+
+    /// Ready files Doddy made that are not already bubbles above: the ones made on this iPhone, then the server's. A tap
+    /// opens one in Quick Look, whose Share button saves or sends it; nothing is added to the saved thread.
     @ViewBuilder
     private var attachments: some View {
-        if case .ready(let list) = files.load {
-            let shown = ThreadAttachments.shown(documents: list.documents, thread: model.messages, now: Date())
-            if !shown.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Files Doddy made for you")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                        .accessibilityAddTraits(.isHeader)
-                    ForEach(shown) { document in
-                        Button {
-                            Task { preview = await files.download(document) }
-                        } label: {
-                            MadeDocumentRow(document: document, downloading: files.downloading == document.id)
-                                .padding(.horizontal, 12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        let local = localFiles
+        let made = madeDocuments
+        let making = makingDocuments
+        if !local.isEmpty || !made.isEmpty || !making.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Files Doddy made for you")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(local) { file in
+                    Button {
+                        preview = LocalMadeFilesStore.shared.url(for: file)
+                    } label: {
+                        LocalMadeFileRow(file: file)
+                            .padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            LocalMadeFilesStore.shared.remove(file.id)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(files.downloading != nil)
-                        .accessibilityIdentifier("messages.attachment")
                     }
-                    if let problem = files.downloadProblem {
-                        Label(problem, systemImage: "exclamationmark.triangle")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.error)
-                            .accessibilityIdentifier("messages.attachmentProblem")
-                    }
+                    .accessibilityIdentifier("messages.localFile")
                 }
-                .padding(.top, 14)
-                .padding(.trailing, 40)
+                ForEach(made) { document in
+                    Button {
+                        Task { preview = await files.download(document) }
+                    } label: {
+                        MadeDocumentRow(document: document, downloading: files.downloading == document.id)
+                            .padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(files.downloading != nil)
+                    .accessibilityIdentifier("messages.attachment")
+                }
+                ForEach(making) { document in
+                    // Not tappable until it is ready; the row says Doddy is still making it.
+                    MadeDocumentRow(document: document, downloading: false)
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .accessibilityIdentifier("messages.attachmentMaking")
+                }
+                if let problem = files.downloadProblem ?? LocalMadeFilesStore.shared.problem {
+                    Label(problem, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.error)
+                        .accessibilityIdentifier("messages.attachmentProblem")
+                }
             }
+            .padding(.top, 14)
+            .padding(.trailing, 40)
         }
     }
 
@@ -1038,5 +1094,41 @@ private struct TypingBubble: View {
 
     private func dot(opacity: Double) -> some View {
         Circle().fill(Theme.secondaryText).opacity(opacity).frame(width: 8, height: 8)
+    }
+}
+
+/// One file Doddy made on this iPhone, as a card under the thread.
+struct LocalMadeFileRow: View {
+    let file: LocalMadeFile
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.title3)
+                .frame(width: 28)
+                .foregroundStyle(Theme.accentText)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: file.title)
+                    .lineLimit(2)
+                Text(String(format: NSLocalizedString("%@ · kept on this iPhone for a week", comment: "Messages: a file Doddy made on this iPhone; the first value is its kind, for example Deck"), file.label))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            Spacer(minLength: 8)
+        }
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private var icon: String {
+        switch file.kind {
+        case "deck": "rectangle.on.rectangle"
+        case "doc": "doc.text"
+        case "spreadsheet": "tablecells"
+        case "pdf": "doc.richtext"
+        default: "doc.plaintext"
+        }
     }
 }

@@ -39,6 +39,7 @@ const FROZEN = [
   "020_scheduled_calls.sql",
   "021_account_subject.sql",
   "022_call_tasks.sql",
+  "023_file_watches.sql",
   "024_callback_routes.sql",
 ];
 

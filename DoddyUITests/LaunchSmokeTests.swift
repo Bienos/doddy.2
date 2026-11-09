@@ -186,20 +186,22 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testAskDoddyIsOffByDefaultAndSaysWhyWithoutAnyNetworkCall() {
+    func testMessagesWorkWithoutTurningAnythingOnInSettings() {
+        // Messages is on unless the person turned it off (decision 2026-11-09-messages-on-by-default).
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
         app.buttons["home.ask"].tap()
 
         XCTAssertTrue(app.textFields["ask.input"].waitForExistence(timeout: 5))
+        // The disclosure stays on screen; the "turn it on in Settings" card is gone.
         XCTAssertTrue(app.staticTexts["ask.disclosure"].exists)
-        XCTAssertTrue(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
-        // Nothing to send yet, so Send stays disabled.
+        XCTAssertFalse(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
+        // Nothing typed yet, so Send stays disabled.
         XCTAssertFalse(app.buttons["ask.send"].isEnabled)
     }
 
     @MainActor
-    func testSettingsShowsAskDoddyOffUntilTheUserTurnsItOn() {
+    func testSettingsShowsAskDoddyOnUntilTheUserTurnsItOff() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
@@ -207,11 +209,11 @@ final class LaunchSmokeTests: XCTestCase {
         let consent = app.switches["settings.assistantConsent"]
         // The long Settings form creates rows lazily; scroll until the section is on screen.
         XCTAssertTrue(app.reveal(consent))
-        XCTAssertEqual(consent.value as? String, "0")
+        XCTAssertEqual(consent.value as? String, "1")
         // The status row sits below the toggles, so it may not be built yet.
         let status = app.descendants(matching: .any)["settings.assistantStatus"].firstMatch
         XCTAssertTrue(app.reveal(status))
-        XCTAssertTrue(status.label.contains("Off"), status.label)
+        XCTAssertFalse(status.label.contains("Off"), status.label)
     }
 
     @MainActor
@@ -315,11 +317,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
-        // Ask Doddy starts off, so it is listed under "Not sent right now". Each row reads as one
-        // element (destination and note combined), so the note is checked in the row's label.
+        // Ask Doddy starts on (decision 2026-11-09-messages-on-by-default), so its row says so. Each row reads
+        // as one element (destination and note combined), so the note is checked in the row's label.
         let askRow = app.descendants(matching: .any)["dataFlow.askDoddy"].firstMatch
         XCTAssertTrue(app.reveal(askRow))
-        XCTAssertTrue(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
+        XCTAssertFalse(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
     }
 
     @MainActor

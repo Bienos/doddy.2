@@ -303,6 +303,15 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "Web research and code execution at Anthropic aren't zero-retention, so Anthropic keeps that work under its normal retention. The server keeps the job and the files, encrypted, until you delete them in Studio. The notification has no words from the job."
                     : "No messaging server is set, so Studio can't make anything."),
+            // 9 Nov 2026: "tell me when the file is done", a notification when a file Doddy is making is ready.
+            DataFlowRow(
+                id: "fileReady", destination: "Your Doddy messaging server and Apple (one notification)",
+                what: "The private link of a file Doddy is making for you (a deck, document, spreadsheet, PDF or text) and the language the notification is written in. Never the file, its words or its name. The messaging server uses the link only to ask Doddy's own server whether the file is done.",
+                when: "Only after you said yes to a file Doddy makes, and only until it is done (the server stops asking after 15 minutes).",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "The server keeps the link, encrypted, until the file is done or for at most a day. The notification has fixed words and nothing from the file. It reaches you only if notifications are on."
+                    : "No messaging server is set, so no notification comes when a file is ready."),
             // ADR-500..507 (docs/decisions/calls.md): a call Doddy places for the user, from Settings › Notifications ›
             // Phone calls › Calls for you. Read from CallBriefDraft.requestBody, CallCasesModel and server/messaging/src/
             // taskCalls (payload, twiml, worker, cases, writer), review of 4 Nov 2026.
@@ -410,6 +419,7 @@ public enum DataFlow {
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "studio": "Anthropic (Studio, through your messaging server)",
+        "fileReady": "Apple (a notification that a file is ready, through your messaging server)",
         "callCases": "Twilio, ElevenLabs and Anthropic (calls Doddy places for you, through your messaging server)",
         "updates": "Apple and Twilio (notifications and texts from Doddy, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",

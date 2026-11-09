@@ -120,8 +120,10 @@ extension VoiceToolReply {
 
     /// After the tap: the file was written and read back on the iPhone. The title is the agent's
     /// own words, so it goes back as data (ToolData).
-    public static func presentationMade(_ draft: PresentationDraft) -> String {
-        "made: the presentation is saved on the user's iPhone as a PowerPoint file that Keynote opens, \(draft.slideCount) slides with the title slide. The share sheet is open so they can open it in Keynote, save it to Files or send it. Doddy can't see what they choose: never say it was opened, saved or sent.\n"
+    /// `inMessages`: the file was also copied for Messages and read back as complete, so Doddy may say where it is.
+    public static func presentationMade(_ draft: PresentationDraft, inMessages: Bool = false) -> String {
+        "made: the presentation is saved on the user's iPhone as a PowerPoint file that Keynote opens, \(draft.slideCount) slides with the title slide. The share sheet is open so they can open it in Keynote, save it to Files or send it. Doddy can't see what they choose: never say it was opened, saved or sent."
+            + (inMessages ? " " + LocalMadeFiles.inMessagesNote : "") + "\n"
             + ToolData.block(["Title: \"\(ToolData.clean(draft.title))\""])
     }
 

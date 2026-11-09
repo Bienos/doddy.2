@@ -17,6 +17,7 @@ import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/w
 import type { StudioContext } from "./studio/context.js";
 import { newStudioLoopState, runStudioPasses, stopStudioRuns } from "./studio/worker.js";
 import type { WatchContext } from "./watches/context.js";
+import { CHECK_EVERY_MS, runFileWatchPass, type FileWatchContext } from "./fileWatches.js";
 import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
 
 import { log } from "./log.js";
@@ -39,6 +40,8 @@ export interface WorkerDeps {
   errands?: ErrandContext;
   studio?: StudioContext;
   watches?: WatchContext;
+  /** File-ready pushes (9 Nov 2026); only with MEMORY_ENCRYPTION_KEY and DOCUMENTS_ORIGIN. */
+  fileWatches?: FileWatchContext;
   /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
   limits?: Pick<AbuseLimits, "allowedCountryCodes">;
   /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753). */
@@ -65,6 +68,7 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
   if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
+  if (deps.fileWatches) loops.push(fileWatchLoop(deps.fileWatches, shouldStop));
   await Promise.all(loops);
 }
 
@@ -110,6 +114,22 @@ async function watchLoop(ctx: WatchContext, shouldStop: () => boolean) {
     }
   } finally {
     clearInterval(stopWatcher);
+  }
+}
+
+/**
+ * File-ready pushes (9 Nov 2026): asks Doddy's backend whether the files being made are ready and queues one push for
+ * each that is. Its own loop, so a slow backend never holds back other pushes.
+ */
+async function fileWatchLoop(ctx: FileWatchContext, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    try {
+      const counts = await runFileWatchPass(ctx);
+      if (Object.keys(counts).length) log("file watch passes", counts);
+    } catch (err) {
+      log("file watch passes failed", { error: (err as Error).message });
+    }
+    await pause(Math.min(CHECK_EVERY_MS, 5000), shouldStop);
   }
 }
 

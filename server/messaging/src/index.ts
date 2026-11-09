@@ -9,6 +9,7 @@ import { errandContext } from "./errands/context.js";
 import { studioContext } from "./studio/context.js";
 import { modelLabel } from "./studio/models.js";
 import { watchContext } from "./watches/context.js";
+import { fileWatchContext } from "./fileWatches.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
@@ -19,6 +20,7 @@ const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   accounts: config.supabaseUrl ? createAccountVerifier({ projectUrl: config.supabaseUrl }) : null,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
+  fileWatches: { origin: config.documentsOrigin },
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
 const app = await buildApp(deps);
@@ -35,6 +37,7 @@ app.log.info({
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
   dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,
+  fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   ceidg: !!providers.ceidg,
 }, "configured features");
 
@@ -49,8 +52,9 @@ if (config.runWorkerInWeb) {
   const errandCtx = errandContext(db, providers.errands, providers.cipher, providers.push, log);
   const studioCtx = studioContext(db, providers.studio, providers.cipher, providers.push, log);
   const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
+  const fileWatchCtx = fileWatchContext(db, { origin: config.documentsOrigin }, providers.cipher, providers.push, log);
   workerDone = runWorkerLoop(db, {
-    ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, scheduledCalls: scheduledCallsFrom(config, providers),
+    ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, scheduledCalls: scheduledCallsFrom(config, providers),
   }, () => stopping);
 }
 
