@@ -30,7 +30,7 @@ const UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 /** Every source in `schemas/memory.schema.json` but `sample_fixture`; a test keeps them in step. One note with a
  * source missing here made the whole snapshot fail. */
-export const NOTE_SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy"] as const;
+export const NOTE_SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy", "conversation_recap"] as const;
 const SOURCES = NOTE_SOURCES;
 const KINDS = ["fact", "preference", "commitment", "recommendation", "decision", "item", "place", "intention", "other"] as const;
 const ENDINGS = ["you", "doddy", "quiet", "dropped"] as const;

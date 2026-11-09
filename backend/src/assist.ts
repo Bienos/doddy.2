@@ -28,7 +28,7 @@ export const LIMITS = Object.freeze({ userText: 2_000, turns: 6, turnText: 2_000
 const UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 const LOCALE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/;
 /** Every source in `schemas/memory.schema.json` but `sample_fixture`; a test keeps them in step. */
-export const ASSIST_SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy"] as const;
+export const ASSIST_SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy", "conversation_recap"] as const;
 const SOURCES = new Set<string>(ASSIST_SOURCES);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 

@@ -31,7 +31,7 @@ const uuid = z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-
 /** Every source a note on the iPhone can have, as in `schemas/memory.schema.json`, except `sample_fixture` (never
  * the person's own note, so never sent). A test keeps the two in step: a note with a source missing here made the
  * whole request fail. */
-export const MEMORY_SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy"] as const;
+export const MEMORY_SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy", "conversation_recap"] as const;
 
 const memory = z.strictObject({
   id: uuid,
