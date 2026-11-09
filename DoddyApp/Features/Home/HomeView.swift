@@ -55,6 +55,9 @@ struct HomeView: View {
     @State private var showErrands = false
     /// The stories behind what the person follows (ADR-656).
     @State private var showFollowing = false
+    /// Phone calls (owner, 9 Nov 2026): calling Doddy, Doddy calling you and calls Doddy makes for you,
+    /// from Home's menu as well as Settings › Notifications › Phone calls.
+    @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
     @State private var showVoicePicker = false
@@ -121,6 +124,7 @@ struct HomeView: View {
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
@@ -243,9 +247,16 @@ struct HomeView: View {
                     Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                         .accessibilityIdentifier("home.tasks")
                 }
+                // Phone calls (owner, 9 Nov 2026): the same screen as Settings › Notifications › Phone calls, which
+                // leads to Calls for you. It says itself when the server or the phone line isn't set up yet.
+                if scope.shows(.phoneCalls) {
+                    Button { showCalls = true } label: { Label("Phone calls", systemImage: "phone") }
+                        .accessibilityIdentifier("home.calls")
+                }
                 // Focus counts down, the stopwatch counts up (ADR-652). One row for both: the menu
                 // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
                 // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
+                // Phone calls took a row on 9 Nov 2026; leaflets and Following share one below to make room.
                 Menu {
                     Button { tool = .focus } label: {
                         if FocusController.shared.session.map({ !$0.isOver }) ?? false {
@@ -298,17 +309,25 @@ struct HomeView: View {
                 Text("Doddy is an AI, not a person.")
             }
             Section {
-                // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
-                // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
-                // MemoryJourneyTests). Settings, which leads to Doddy's memory too (ADR-633), heads the menu.
-                if scope.shows(.deals) {
-                    Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
-                        .accessibilityIdentifier("home.deals")
-                }
-                // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
-                if scope.shows(.following) {
-                    Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
-                        .accessibilityIdentifier("home.following")
+                // Leaflets read on request (SHOPPING.md 2) and the feed of what the person follows (ADR-656: the
+                // publishers' stories, no AI line), in one row since 9 Nov 2026 so Phone calls fits (eleven rows).
+                // In this section, not the first: there it pushed the menu's first item off its first screen at the
+                // largest text size (the dark, largest-text UI test, MemoryJourneyTests). Settings, which leads to
+                // Doddy's memory too (ADR-633), heads the menu.
+                if scope.shows(.deals) || scope.shows(.following) {
+                    Menu {
+                        if scope.shows(.deals) {
+                            Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
+                                .accessibilityIdentifier("home.deals")
+                        }
+                        if scope.shows(.following) {
+                            Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                                .accessibilityIdentifier("home.following")
+                        }
+                    } label: {
+                        Label("Leaflets and news", systemImage: "newspaper")
+                    }
+                    .accessibilityIdentifier("home.feeds")
                 }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
@@ -1079,6 +1098,23 @@ private struct UnfinishedNoteCard: View {
             Button("Discard", role: .destructive) { UnfinishedNoteStore.shared.remove(id: note.id) }
             Button("Keep it", role: .cancel) {}
         } message: { Text("It was never saved, so it can't be brought back.") }
+    }
+}
+
+/// Home › ••• › Phone calls (owner, 9 Nov 2026): the Settings screen in a sheet with Done, so it opens
+/// from Home without leaving it. Calls for you is a row on that screen.
+private struct HomeCallsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            CallsSettingsView()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+        }
     }
 }
 

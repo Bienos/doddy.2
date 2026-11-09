@@ -151,6 +151,20 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testPhoneCallsOpenFromTheHomeMenu() {
+        // Owner, 9 Nov 2026: Phone calls in Home's ••• menu, the same screen as Settings › Notifications › Phone calls.
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        app.tapHomeMenuItem("home.calls")
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForNonExistence(timeout: 5))
+        // The menu still reaches its last rows with the extra one (eleven rows fit, ADR-652).
+        app.tapHomeMenuItem("home.dataFlow")
+        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testAskDoddyIsOffByDefaultAndSaysWhyWithoutAnyNetworkCall() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))

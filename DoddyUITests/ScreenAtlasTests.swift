@@ -90,7 +90,7 @@ final class ScreenAtlasTests: XCTestCase {
         visit("2-home-07-files") { app in self.tap(app.buttons["home.files"], app, 10) && self.see(app.buttons["files.recordings"]) }
         visit("2-home-08-today") { app in self.menu(app, ["home.today"]) }
         visit("2-home-09-tasks") { app in self.menu(app, ["home.tasks"]) && self.see(app.navigationBars["Tasks"]) }
-        visit("2-home-10-cheapest-this-week") { app in self.menu(app, ["home.deals"]) }
+        visit("2-home-10-cheapest-this-week") { app in self.menu(app, ["home.feeds", "home.deals"]) }
         visit("2-home-11-translate") { app in self.menu(app, ["home.translate"]) && self.see(app.buttons["translator.start"]) }
         visit("2-home-12-focus") { app in self.menu(app, ["home.timers", "home.focus"]) && self.see(app.buttons["focus.start"]) }
         visit("2-home-13-focus-running") { app in

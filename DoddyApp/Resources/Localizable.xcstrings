@@ -37600,6 +37600,17 @@
         }
       }
     },
+    "Leaflets and news": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki i wiadomości"
+          }
+        }
+      }
+    },
     "Leaflets read: %lld": {
       "extractionState": "manual",
       "localizations": {
