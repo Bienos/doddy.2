@@ -239,4 +239,31 @@ final class ConversationRecapTests: XCTestCase {
         XCTAssertNil(CallCaseRecap.make(waiting))
         XCTAssertNotNil(CallCaseRecap.make(try call(outcome: "answered", next: "")), "no next step is fine")
     }
+
+    // MARK: - Once, and only after the switch
+
+    func testTheLedgerKeepsEachConversationOnceAndSurvivesStorage() {
+        let id = UUID()
+        let attempt = UUID()
+        let key = RecapLedger.key(callCase: id, attempt: attempt)
+        XCTAssertTrue(key.hasPrefix("call_for_you:\(id.uuidString.lowercased()):"))
+        XCTAssertNotEqual(key, RecapLedger.key(callCase: id, attempt: UUID()), "a retried call gets its own recap")
+        let ledger = RecapLedger().adding(key).adding(key)
+        XCTAssertEqual(ledger.keys, [key])
+        XCTAssertEqual(RecapLedger(stored: ledger.stored), ledger)
+        XCTAssertEqual(RecapLedger(stored: "not json"), RecapLedger())
+        XCTAssertEqual(RecapLedger(stored: nil), RecapLedger())
+        let full = (0..<(RecapLedger.maxKeys + 3)).reduce(RecapLedger()) { $0.adding("k\($1)") }
+        XCTAssertEqual(full.keys.count, RecapLedger.maxKeys)
+        XCTAssertFalse(full.contains("k0"), "the oldest go first")
+        XCTAssertTrue(full.contains("k\(RecapLedger.maxKeys + 2)"))
+    }
+
+    func testTurningTheSwitchOnIsNotAYesForThePast() {
+        let on = Date(timeIntervalSince1970: 1_000)
+        XCTAssertFalse(RecapPolicy.endedAfterSwitchOn(on.addingTimeInterval(-1), since: on))
+        XCTAssertTrue(RecapPolicy.endedAfterSwitchOn(on, since: on))
+        XCTAssertTrue(RecapPolicy.endedAfterSwitchOn(on.addingTimeInterval(60), since: on))
+        XCTAssertFalse(RecapPolicy.endedAfterSwitchOn(on, since: nil))
+    }
 }

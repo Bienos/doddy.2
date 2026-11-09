@@ -4,7 +4,7 @@
 - **Decided by:** owner, in Polish:
   - "co do recap to tak chcę, żeby Doddy pamiętał, zrobić recap po rozmowie z kimś bez transkryptu ale co zostało omówione"
   - then four answers in one session: all four kinds of conversation; the recap is written by "Oba" (Apple on the iPhone where it can, otherwise Claude on Doddy's server after a yes); saving is "Raz włączam, potem samo"
-- **Status:** accepted. Applied in steps, one pull request each (see "Order of work"). Step 1 is this decision and the shared rules in DoddyCore.
+- **Status:** accepted. Applied in steps, one pull request each (see "Order of work"). Step 1 (#292) is this decision and the shared rules in DoddyCore; step 2 adds the switch and calls Doddy made for you.
 - **Replaces:** for Recordings only, the part of ADR-588 that says a recording's words never leave the iPhone. They still never leave without a yes (below). ADR-591 is answered: (c) on-device first, (a) the server after a yes.
 
 ## Why
@@ -37,13 +37,15 @@
 - If the model's output breaks a rule, the recap is refused and nothing is saved. It is never cut down to fit.
 
 **Remembering ("Raz włączam, potem samo"):**
-- **The switch:** Settings › Conversations, "Remember what we talked about" (`RecapSettings.rememberKey`). It is **off** until the person turns it on, per `memory_policy.explicit_long_term_memory_opt_in_default`. The switch is the explicit act DOD-06 asks for.
+- **The switch:** Settings › What Doddy knows, "Remember what we talked about" (`RecapSettings.rememberKey`). It is **off** until the person turns it on, per `memory_policy.explicit_long_term_memory_opt_in_default`. The switch is the explicit act DOD-06 asks for.
 - **After that:** each recap is saved as a note with source `conversation_recap` and no tap. The app says "Saved" only after the store read the note back (DOD-08, `MemoryStore.save`). The note can be opened, corrected and deleted like any note.
 - **Never:**
   - for a Private conversation (ADR-310 private mode);
   - for a conversation too short to have content (fewer than 30 words from the person);
   - while the switch is off;
   - in the car profile without a screen (none of these flows has one).
+- **Only after the switch:** a conversation that ended before the switch was last turned on is never recapped (`RecapSettings.rememberSinceKey`). Turning it on is not a yes for the past.
+- **Once:** each conversation is recapped once (`RecapLedger`); its key is stored only after the note was read back, so a failed save is tried again and a deleted recap never comes back.
 - **Turning the switch off** stops new recaps. Recaps already saved stay notes until the person deletes them, like any note.
 
 **Who writes it ("Oba"):**
@@ -53,7 +55,7 @@
 
 ## Order of work (one pull request each)
 1. This decision. DoddyCore: `ConversationRecap`, `RecapRules`, `RecapPolicy`, `RecapSettings`, `RecapMemoryText`, the model input and output (`RecapModelIO`), the call-for-you recap (`CallCaseRecap`), the `conversation_recap` source (schema, both servers' lists, Doddy Web). No screen yet.
-2. The switch in Settings, and `call_for_you` saving its recap when an answer card arrives. Waits for #284, which has `SettingsScreens.swift`.
+2. The switch in Settings › What Doddy knows, and `call_for_you` saving its recap when the calls list sees an answered call (`RecapKeeper`); the answer card says when its recap is in the notes.
 3. The writers: Apple's Foundation Models on the iPhone; `POST /v1/recaps` on the messaging server (Claude Haiku, no storage, daily caps); the yes card. `voice_conversation` at the end of a conversation. Waits for #281, which changes `VoiceSessionController.swift`.
 4. `recording`: a "Recap" button on a recording, and after a recording stops when the switch is on.
 5. `phone_line`: the post-call webhook for the phone agent, the recap made on the server, sent to the iPhone like a call note and then deleted on the server.
