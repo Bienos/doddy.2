@@ -10,10 +10,12 @@ iOS lets no app see another app's screen. The one supported way is a broadcast u
 
 ## Decision
 **How it works for the person:**
-1. In a conversation, or before one, they tap "Show screen" in Doddy (or long-press Screen Recording in Control Center and pick Doddy), and confirm iOS's sheet once. iOS shows that the screen is shared.
+1. In a conversation they say "Doddy, patrz na ekran" (Doddy opens iOS's "Start Broadcast" sheet himself while he is on screen), or tap "Show screen", or long-press Screen Recording in Control Center and pick Doddy. They confirm iOS's sheet with one tap; no app can skip it. iOS shows that the screen is shared. Once per conversation is enough: sharing stays on across apps.
 2. They go to any app and ask out loud: "Doddy, what's this?", "what should I reply?", "give me an opening line for her".
 3. Doddy asks "Mam zerknąć?" and waits for a yes or a tap (ASK-01: a read of the person's own data). Then he answers in a few spoken sentences.
 4. Stopping sharing (iOS's indicator, Control Center, locking the phone) deletes the picture.
+
+**Opening the sheet by voice** (owner, 9 Nov 2026, after being told it is unofficial and may meet App Review: "OK zróbmy to"): `ScreenSharePicker.present()` sends iOS's own picker button its tap, only right after the person asked, only while Doddy is in the foreground. Apple has no API for this. If it fails (Doddy in the island, a future iOS), Doddy asks the person to tap "Show screen" or use Control Center, so nothing depends on it. A CI rule keeps the picker in that one file.
 
 **What runs where:**
 - **`DoddyScreen`, the broadcast extension:** keeps one JPEG of the screen (long edge 1280 px, under 750 kB) in the App Group folder, replaced at most once a second, plus a small state file. Video only: it never reads the microphone or app audio. No network, no database (a CI rule enforces both, and that no other code can capture the screen). It deletes the picture when sharing pauses or ends.
@@ -25,7 +27,7 @@ iOS lets no app see another app's screen. The one supported way is a broadcast u
 
 **Order of work:**
 1. *(this branch)* `POST /v1/screen/look` on `doddy-messaging` and its tests; DoddyCore `ScreenLook/` (the extension–app contract, the client, what the agent hears, the ask card) and its tests; the `DoddyScreen` target; `Shared/Screen/ScreenShareFiles.swift`; CI rules. The extension is built into the app, but nothing in the app reads its picture yet.
-2. *(after `Bienos/doddy.2#295` merges; it holds `VoiceSessionController.swift`, one agent at a time)* the `look_at_screen` tool: `VoiceToolRequest`, `AskFirst`, `ToolCatalog`, `ReleaseScope`, the handler in `VoiceSessionController.swift`, `tools.json` (`not_synced`) and the prompt lines in `instructions.md`; the "Show screen" button (`RPSystemBroadcastPickerView`) on Home's conversation and the voice screen.
+2. *(after `Bienos/doddy.2#295` merges; it holds `VoiceSessionController.swift`, one agent at a time)* the `look_at_screen` tool: `VoiceToolRequest`, `AskFirst`, `ToolCatalog`, `ReleaseScope`, the handler in `VoiceSessionController.swift`, `tools.json` (`not_synced`) and the prompt lines in `instructions.md`; placing the "Show screen" button (`ScreenShareButton`, already in `DoddyApp/Features/Voice/ScreenSharePicker.swift`) on Home's conversation and the voice screen, and the spoken "patrz na ekran" that calls `ScreenSharePicker.present()`.
 3. *(owner)* add the tool and the prompt lines to the live ElevenLabs agent; deploy `doddy-messaging`; App Store privacy answers.
 
 ## Consequences

@@ -354,6 +354,10 @@ fi
 if grep -RInE --include='*.swift' 'RPScreenRecorder|RPBroadcastSampleHandler' "${dirs[@]}" | code_only | grep -vE '^DoddyScreen/'; then
   echo "FAIL: screen capture outside DoddyScreen/; only the broadcast extension the person starts may see the screen (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
 fi
+# Sharing starts only from iOS's own sheet, opened by the one picker file (a button, or the person's spoken ask).
+if grep -RInE --include='*.swift' 'RPSystemBroadcastPickerView' "${dirs[@]}" | code_only | grep -v '^DoddyApp/Features/Voice/ScreenSharePicker.swift:'; then
+  echo "FAIL: iOS's screen-sharing sheet opened outside DoddyApp/Features/Voice/ScreenSharePicker.swift (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
+fi
 if grep -RInE --include='*.swift' 'URLSession|URLRequest|NWConnection|DatabaseQueue|DatabasePool|import DoddyPersistence|import GRDB' DoddyScreen Shared/Screen | code_only; then
   echo "FAIL: the screen-sharing extension may not use the network or a database; it only leaves one picture in the App Group (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
 fi

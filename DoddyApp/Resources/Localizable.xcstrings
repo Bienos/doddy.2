@@ -73488,6 +73488,17 @@
         }
       }
     },
+    "Show screen to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż ekran Doddy’emu"
+          }
+        }
+      }
+    },
     "Show the %@ card.": {
       "extractionState": "manual",
       "localizations": {
