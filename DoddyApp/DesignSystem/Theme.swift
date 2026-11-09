@@ -34,13 +34,4 @@ extension Color {
                            blue: CGFloat(hex.blue) / 255, alpha: 1)
         })
     }
-    static func candidate(_ role: CandidateColorRole) -> Color {
-        Color(uiColor: UIColor { traits in
-            let scheme: CandidateColorScheme = traits.userInterfaceStyle == .dark ? .dark : .light
-            let hex = role.hex(scheme)
-            return UIColor(
-                red: CGFloat(hex.red) / 255, green: CGFloat(hex.green) / 255,
-                blue: CGFloat(hex.blue) / 255, alpha: 1)
-        })
-    }
 }
