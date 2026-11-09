@@ -33,7 +33,9 @@ public struct ToolDescriptor: Equatable, Sendable {
     public enum Approval: String, Sendable, CaseIterable {
         /// A public lookup that reads nothing of the user's and changes nothing (`AskFirst.publicLookups`):
         /// runs when the agent calls it (owner, 21 Oct 2026, ADR-575). Also translator mode's start
-        /// and stop, which read and send nothing (owner, 24 Oct 2026, ADR-619).
+        /// and stop, which read and send nothing (owner, 24 Oct 2026, ADR-619), and a text to the
+        /// user's own verified number while Texts from Doddy is on (owner, 9 Nov 2026, decision
+        /// 2026-11-09-restaurant-calls-one-tap).
         case runsNow
         /// Changes nothing: the app shows what it will do and runs it on a tap or the user's own
         /// spoken yes (`AskFirst.Need.yesFirst`).
@@ -149,7 +151,9 @@ public enum ToolCatalog {
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // Sent by Doddy, so the card shows the exact text and the tap approves exactly that
         // text; the server checks the same approval hash (ADR-750 U2).
-        .init(VoiceToolName.textMe, .sendText, .card),
+        // Decision 2026-11-09-restaurant-calls-one-tap (owner, 9 Nov 2026): to the user's own verified number only,
+        // at once while Texts from Doddy is on, no card; never the same text twice in a row (`TextRepeat`).
+        .init(VoiceToolName.textMe, .sendText, .runsNow),
         // The card shows the time and the exact reason Doddy will say; the server checks the same
         // approval hash when it books the call and again when it places it (ADR-754).
         .init(VoiceToolName.callMeLater, .placeCall, .card),

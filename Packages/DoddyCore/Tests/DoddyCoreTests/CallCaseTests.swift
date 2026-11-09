@@ -237,6 +237,16 @@ final class CallCaseTests: XCTestCase {
         XCTAssertEqual(tools["tools"]?.count, 0)
     }
 
+    /// The rehearsal runs on OpenAI, so the app asks for that provider's consent, and the banner
+    /// says where the voice goes instead of only "nothing is saved" (7 Nov audit).
+    func testRehearsalNamesTheProviderItSendsTheVoiceTo() {
+        XCTAssertEqual(CallRehearsal.provider, .openAIRealtime)
+        XCTAssertTrue(CallRehearsal.banner.contains(CallRehearsal.provider.shortName))
+        XCTAssertTrue(CallRehearsal.banner.contains("OpenAI"))
+        XCTAssertTrue(CallRehearsal.banner.contains("nikt nie dzwoni"))
+        XCTAssertFalse(CallRehearsal.banner.contains("nic nie jest zapisywane"), "the old wording said nothing at all is saved")
+    }
+
     func testSelfCallScript() throws {
         let preview = try JSONDecoder().decode(CallPreview.self, from: Data(Self.previewJSON.utf8))
         let steps = SelfCallScript.steps(from: preview)

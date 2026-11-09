@@ -52,8 +52,6 @@
   <script src="/i18n.js" defer></script>
   <!-- i18n:dictionary --><script src="/i18n/ja.js" defer></script><!-- /i18n:dictionary -->
   <script src="/main.js" defer></script>
-  <script src="/court.js" defer></script>
-  <script src="/memory.js" defer></script>
   <script src="/analytics.js" defer></script>
   <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
        /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
@@ -105,7 +103,6 @@
           <li><a href="#asks">頼みごと</a></li>
           <li><a href="/ja/what-can-doddy-do/">Doddyに何ができる？</a></li>
           <li><a href="#meet">Doddyに会う</a></li>
-          <li><a href="#play">遊ぶ</a></li>
           <li><a href="/ja/blog/">ブログ</a></li>
           <li><a href="#privacy">プライバシー</a></li>
         </ul>
@@ -120,7 +117,6 @@
           <li><a href="#asks">頼みごと</a></li>
           <li><a href="/ja/what-can-doddy-do/" class="menu-new">Doddyに何ができる？ <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">Doddyに会う</a></li>
-          <li><a href="#play">遊ぶ</a></li>
           <li><a href="/ja/blog/">ブログ</a></li>
           <li><a href="#privacy">プライバシー</a></li>
         </ul>
@@ -215,46 +211,6 @@
       </div>
     </section>
 
-    <section class="film" id="film" aria-labelledby="film-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="film-title" class="display-m">ワルシャワのある朝。</h2>
-          <p>Doddyと、なかなか手放さないボール、そして、とても根気強いハトの短編映像です。1分15秒。音声ありでご覧ください。</p>
-        </div>
-        <div class="film-stage">
-          <div class="film-card">
-            <span class="tape t1" aria-hidden="true"></span>
-            <span class="tape t2" aria-hidden="true"></span>
-            <div class="player">
-              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddyのブランド映像、1分15秒">
-                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
-              </video>
-              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>プレビュー、消音</span>
-              <button class="cover" type="button" aria-label="音声ありで映像を再生">
-                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
-                <span class="cover-label" aria-hidden="true"><span class="cover-title">映像を見る</span>1:15 · 音声オン</span>
-              </button>
-            </div>
-          </div>
-          <div class="film-doddy" aria-hidden="true">
-            <p class="says">それがぼくです。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
-          </div>
-        </div>
-        <ol class="chapters" aria-label="映像の好きな場面へ移動">
-          <li><button type="button" data-seek="0"><span class="t">0:00</span>城の広場</button></li>
-          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>大事な質問</button></li>
-          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>すべての言語が一度に</button></li>
-          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>地元の人に聞く</button></li>
-          <li><button type="button" data-seek="38"><span class="t">0:38</span>ハト</button></li>
-          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>ゲートでの切ない別れ</button></li>
-          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>閉店</button></li>
-          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
-        </ol>
-        <p class="caption film-caption">ブランド映像です。Doddyの物語で、アプリのデモではありません。</p>
-      </div>
-    </section>
-
     <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
     <section class="vs-section" aria-labelledby="vs-title">
       <div class="wrap">
@@ -313,54 +269,6 @@
     </section>
 
     <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
-    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
-      <div class="wrap play-head">
-        <div>
-          <p class="pill"><span class="dot" aria-hidden="true"></span>待っている間に</p>
-          <h2 id="play-intro-title" class="display-m">二つのゲーム。彼が決して離さないボール。</h2>
-        </div>
-        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
-      </div>
-    </section>
-
-    <section class="court" id="shoot" aria-labelledby="play-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="play-title" class="display-m">シュートに挑戦</h2>
-          <p>Doddyは、なかなかボールを手放しません。コートのどこでも押して引き、そのまま離すと投げられます。または、Doddyに任せることもできます。</p>
-        </div>
-        <div class="court-panel">
-          <canvas id="court" width="800" height="520" role="img" aria-label="バスケットボールのゲーム：Doddyがゴールめがけてボールを投げます。投げるには「代わりにシュート」ボタンを使ってください。"></canvas>
-          <div class="court-bar">
-            <p class="court-score" aria-live="polite">成功 <strong id="made">0</strong> 本（<strong id="shots">0</strong> 回中）</p>
-            <button class="button small" id="auto-shot" type="button">代わりにシュート</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="memory" id="remember" aria-labelledby="remember-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="remember-title" class="display-m">覚えておく</h2>
-          <p>小さなことが6つ、カードは12枚。一度に2枚ずつめくって、ペアを見つけてください。こういうことは、Doddyのほうが人より得意です。</p>
-        </div>
-        <div class="court-panel memory-panel">
-          <div class="memory-stage">
-            <div class="memory-grid" id="memory-grid" role="group" aria-label="記憶のカード"></div>
-            <div class="memory-doddy">
-              <p class="memory-bubble" id="memory-bubble" aria-live="polite">2枚めくって、ペアを見つけてください。</p>
-              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
-            </div>
-          </div>
-          <div class="court-bar">
-            <p class="court-score">そろった組 <strong id="memory-pairs">0</strong>（全6組中） · 手数 <strong id="memory-moves">0</strong></p>
-            <button class="button small" id="memory-restart" type="button">新しいゲーム</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="privacy" id="privacy" aria-labelledby="privacy-title">
       <div class="wrap">
         <div class="privacy-panel">
@@ -373,8 +281,8 @@
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
-              <h3>アカウント不要</h3>
-              <p>登録も、メールアドレスも、パスワードも不要です。アプリを開いて始めるだけです。</p>
+              <h3>サインインは一度だけ</h3>
+              <p>Apple または Google でサインイン。覚えるパスワードはありません。</p>
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
@@ -387,7 +295,7 @@
               <p>メモを1件または全件削除できます。削除したメモは、すぐに検索からも消えます。</p>
             </li>
           </ul>
-          <p class="privacy-note">Doddy は AI であり、人ではありません。オンにした機能の一部はデータを端末の外に送ります：音声会話（OpenAI、音声を変えた場合は ElevenLabs）、天気とウィキペディアの検索（地名や検索語）、通話と通話中の記憶（Doddy のサーバー、Twilio、ElevenLabs）、共有リスト（iCloud）、Gmail や Todoist などの接続アカウント（Doddy のサーバー経由）。それ以外はすべて iPhone に残ります。これらはすべてテスト中です。</p>
+          <p class="privacy-note">Doddy は AI であり、人ではありません。オンにした機能の一部はデータを端末の外に送ります：音声会話（ElevenLabs、音声を変えた場合は OpenAI）、天気とウィキペディアの検索（地名や検索語）、通話と通話中の記憶（Doddy のサーバー、Twilio、ElevenLabs）、共有リスト（iCloud）、Gmail や Todoist などの接続アカウント（Doddy のサーバー経由）。それ以外はすべて iPhone に残ります。これらはすべてテスト中です。</p>
         </div>
       </div>
     </section>
@@ -445,7 +353,7 @@
               <p id="answers-status" class="status" role="status" aria-live="polite"></p>
             </form>
             <ul class="join-facts" aria-label="先行アクセスとは">
-              <li><b>アカウント不要。</b> アプリを開いてすぐ始められます。</li>
+              <li><b>サインインは一度だけ。</b> Apple または Google で始められます。</li>
               <li><b>メモは iPhone に保存されます。</b> 音声、通話、共有リスト、メール、カレンダー、ファイルは、オンにしたときだけ iPhone の外に出ます。</li>
               <li><b>いつでも削除できます。</b> メール、メモ、すべて。</li>
             </ul>

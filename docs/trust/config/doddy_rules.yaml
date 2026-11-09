@@ -49,6 +49,11 @@ action_policy:
   ask_first:
     applies_to: every_tool_every_platform_except_public_lookups
     public_lookups_run_at_once: [calculate, convert_units, convert_currency, web_search, news_search, find_places, geocode_place, get_weather, wikipedia_search, wikipedia_summary]
+    # Exception (owner, 2026-11-09; decision docs/decisions/2026-11-09-restaurant-calls-one-tap.md): a text to the
+    # user's own verified number (text_me) goes at once, without a card, only while Texts from Doddy (consent sms-v1)
+    # is on. Texts to anyone else are not possible (contact_policy.text_recipients). The same text is not sent twice
+    # in a row, and an unknown outcome is never sent again (contact_policy.unknown_text_outcome).
+    own_number_text_runs_at_once: [text_me]
     reads: spoken_yes_or_tap_for_that_one_call
     changes: tap_on_card_with_exact_payload
     one_yes_covers: one_action

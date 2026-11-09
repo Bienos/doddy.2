@@ -547,7 +547,6 @@ TAIL = '''
               <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
             </form>
             <div class="open-app">
-              <p>Not seen the film? <a class="text-link" href="/#film">One morning in Warsaw (1:15)</a></p>
               <p>Want to chat now? <a class="text-link" href="{TELEGRAM}" target="_blank" rel="noopener">Join the Telegram group</a></p>
               <p>More Doddy: <a class="text-link" href="/blog/">Read the blog</a></p>
             </div>
@@ -563,7 +562,7 @@ TAIL = '''
       <div class="foot-top">
         <p class="wordmark">Doddy</p>
         <ul class="foot-links">
-          <li><a href="/#how">How it works</a></li>
+          <li><a href="/#asks">Big asks</a></li>
           <li><a href="/what-can-doddy-do/">What can Doddy do?</a></li>
           <li><a href="/#meet">Meet Doddy</a></li>
           <li><a href="/#privacy">Privacy</a></li>
