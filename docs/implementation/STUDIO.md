@@ -41,7 +41,7 @@ Reply `201`: `{ "id", "digest", "job": {…exactly as stored…}, "expiresAt" }`
 
 **Item states the app sees:** `queued`, `researching`, `making`, `checking`, `ready`, `needs_look`, `failed`, `cancelled`. (`draft` items are never listed.) On the server a running item has `state = 'running'` and a `stage` (`plan`, `research`, `write`, `make`, `check`, `store`); `researching` covers plan, research and write; `making` is make; `checking` is check and store.
 
-**Failure codes:** `interrupted` (the worker stopped mid-run; never re-run by itself), `time_limit`, `refused`, `provider_error`, `unreadable_result`, `too_little_found` (fewer than 3 usable claims), `cost_limit` (the job passed its own dollar limit).
+**Failure codes:** `interrupted` (the worker stopped mid-run; never re-run by itself), `time_limit`, `refused`, `provider_error`, `unreadable_result`, `too_little_found` (fewer than 3 usable claims), `cost_limit` (the job would pass its own dollar limit: a call whose worst-case cost did not fit what was left is never sent; see `server/messaging/README.md` "Pre-call job budget").
 
 The item (`GET /v1/studio/:id`):
 
