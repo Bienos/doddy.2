@@ -59,6 +59,8 @@ The app's routing is `VoiceToolRequest.parse` and `CloudToolName` in DoddyCore. 
 
 ## Changes to the live main agent, 20 Oct to 9 Nov 2026 (newest first)
 
+**Not yet applied to the live agent (9 Nov 2026, decision `2026-11-09-companion-not-ai-label`):** `instructions.md` now presents Doddy as a digital companion: the first paragraph says to call himself Doddy or a digital companion, not an "AI assistant", "AI agent" or "chatbot", and not to keep bringing up being an AI, while still saying plainly that he is an AI, not a person, when asked (`voice_agent_spec.py` checks that). "personal AI sidekick" became "personal sidekick", and "If asked what you are" says "a digital companion … powered by AI". Merge these lines into the live prompt only on the owner's instruction (OWNER_QUEUE 31); read the live prompt first and don't overwrite it. Not tested by voice call.
+
 **Applied to the live agent 9 Nov 2026, about 10:20 UTC (`call_me_later`, ADR-754; owner: "zrób to", after being told "Doddy, call me" by voice needs the tool on the agent, and that the agent is changed only on their word).**
 - **Why:** the owner asked Doddy by voice to call them (conversations `conv_4401m6zw3e3peg1vf2rc8efxhy9v`, `conv_6501m6zw86xhfxk9tz5wfbt81g65`, 9 Nov about 10:02 and 10:04 UTC); the agent had no calling tool and said it couldn't. The messaging server already serves booked calls (`GET /v1/calls/scheduled` answered 200 in its log at 10:00 UTC), so no deploy was needed.
 - **Read right before saving:** `agtvrsn_5201m6xmg5wcf0prdxf923k5b3et`, 104 tools, model `gpt-6-luna`. **Rollback:** that version.

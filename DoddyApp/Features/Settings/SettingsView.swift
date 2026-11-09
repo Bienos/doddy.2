@@ -147,7 +147,7 @@ struct SettingsView: View {
             }
             .accessibilityIdentifier("settings.about")
         } footer: {
-            Text("Doddy is an AI, not a person.")
+            Text("Doddy is a digital companion powered by AI, not a person.")
         }
     }
 

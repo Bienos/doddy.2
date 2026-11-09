@@ -3569,65 +3569,6 @@
         }
       }
     },
-    "AI answers": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "KI-Antworten"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respuestas IA"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Réponses IA"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI odgovori"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Risposte dell'IA"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AIの回答"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odpowiedzi SI"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respostas da IA"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI 回答"
-          }
-        }
-      }
-    },
     "ALARM": {
       "extractionState": "manual",
       "localizations": {
@@ -8216,61 +8157,61 @@
         }
       }
     },
-    "Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's an AI and doesn't have moods.": {
+    "Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's a digital character and doesn't have moods.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gilt ab deinem nächsten Sprachgespräch. Die Stimmung ändert, wie Doddy klingt, nicht, was er fühlt: Er ist eine KI und hat keine Stimmungen."
+            "value": "Gilt ab deinem nächsten Sprachgespräch. Die Stimmung ändert, wie Doddy klingt, nicht, was er fühlt: Er ist eine digitale Figur und hat keine Stimmungen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se aplica desde tu próxima conversación de voz. El ánimo cambia cómo suena Doddy, no lo que siente: es una IA y no tiene estados de ánimo."
+            "value": "Se aplica desde tu próxima conversación de voz. El ánimo cambia cómo suena Doddy, no lo que siente: es un personaje digital y no tiene estados de ánimo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "S’applique à partir de ta prochaine conversation vocale. L’humeur change la façon dont Doddy sonne, pas ce qu’il ressent : c’est une IA et il n’a pas d’humeurs."
+            "value": "S’applique à partir de ta prochaine conversation vocale. L’humeur change la façon dont Doddy sonne, pas ce qu’il ressent : c’est un personnage numérique et il n’a pas d’humeurs."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. Raspoloženje mijenja kako Doddy zvuči, a ne što osjeća: on je AI i nema raspoloženja."
+            "value": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. Raspoloženje mijenja kako Doddy zvuči, a ne što osjeća: on je digitalni lik i nema raspoloženja."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vale dalla tua prossima conversazione vocale. L'umore cambia come suona Doddy, non ciò che prova: è un'IA e non ha umori."
+            "value": "Vale dalla tua prossima conversazione vocale. L'umore cambia come suona Doddy, non ciò che prova: è un personaggio digitale e non ha umori."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次の音声会話から適用されます。「気分」はDoddyの話し方を変えるだけで、感じ方を変えるものではありません。DoddyはAIなので、気分はありません。"
+            "value": "次の音声会話から適用されます。「気分」はDoddyの話し方を変えるだけで、感じ方を変えるものではありません。Doddyはデジタルのキャラクターなので、気分はありません。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Działa od następnej rozmowy głosowej. Nastrój zmienia to, jak Doddy brzmi, a nie to, co czuje: jest SI i nie ma nastrojów."
+            "value": "Działa od następnej rozmowy głosowej. Nastrój zmienia to, jak Doddy brzmi, a nie to, co czuje: jest cyfrową postacią i nie ma nastrojów."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vale a partir da sua próxima conversa por voz. O ânimo muda como o Doddy soa, não o que ele sente: ele é uma IA e não tem estados de ânimo."
+            "value": "Vale a partir da sua próxima conversa por voz. O ânimo muda como o Doddy soa, não o que ele sente: ele é um personagem digital e não tem estados de ânimo."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "从你的下一次语音对话开始生效。心情只改变 Doddy 的语气，不改变他的感受：他是 AI，没有心情。"
+            "value": "从你的下一次语音对话开始生效。心情只改变 Doddy 的语气，不改变他的感受：他是数字角色，没有心情。"
           }
         }
       }
@@ -19904,6 +19845,17 @@
         }
       }
     },
+    "Doddy can get things wrong, and prices and availability can change after the time they were checked. Check the price in the shop before you pay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może się pomylić, a ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz."
+          }
+        }
+      }
+    },
     "Doddy can look things up in this account when you ask. He asks first every time.": {
       "extractionState": "manual",
       "localizations": {
@@ -22006,6 +21958,106 @@
         }
       }
     },
+    "Doddy is a digital companion powered by AI, not a person.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ist ein digitaler Begleiter mit KI, kein Mensch."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy es un compañero digital impulsado por IA, no una persona."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy est un compagnon numérique propulsé par l’IA, pas une personne."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy je digitalni pratitelj pokretan umjetnom inteligencijom, a ne osoba."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy è un compagno digitale basato sull'IA, non una persona."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DoddyはAIで動くデジタルの相棒で、人ではありません。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to cyfrowy towarzysz oparty na AI, nie człowiek."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy é um companheiro digital movido por IA, não uma pessoa."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 是由 AI 驱动的数字伙伴，不是真人。"
+          }
+        }
+      }
+    },
+    "Doddy is a digital companion powered by AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is a digital companion powered by AI, not a person. This conversation is saved on this iPad until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPad or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is a digital companion powered by AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy to cyfrowy towarzysz oparty na AI, nie człowiek. Ta rozmowa jest zapisana na tym iPadzie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie lub plik, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie ani plik nie są przechowywane ani na tym iPadzie, ani na serwerze; w tej rozmowie zostaje tylko nazwa pliku. Kopia tej rozmowy, bez zdjęć i plików, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy to cyfrowy towarzysz oparty na AI, nie człowiek. Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie lub plik, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie ani plik nie są przechowywane ani na tym iPhonie, ani na serwerze; w tej rozmowie zostaje tylko nazwa pliku. Kopia tej rozmowy, bez zdjęć i plików, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy is a practical, curious mate who spots small hassles, answers first and admits when he got something wrong. Pick how he comes across.": {
       "extractionState": "manual",
       "localizations": {
@@ -22157,65 +22209,6 @@
         }
       }
     },
-    "Doddy is an AI, not a person.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy ist eine KI, kein Mensch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy es una IA, no una persona."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy est une IA, pas une personne."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy je AI, ne osoba."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy è un'IA, non una persona."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DoddyはAIであり、人ではありません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy to AI, nie człowiek."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Doddy é uma IA, não uma pessoa."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 是 AI，不是真人。"
-          }
-        }
-      }
-    },
     "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
       "extractionState": "manual",
       "localizations": {
@@ -22294,58 +22287,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPad until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPad or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPadzie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie lub plik, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie ani plik nie są przechowywane ani na tym iPadzie, ani na serwerze; w tej rozmowie zostaje tylko nazwa pliku. Kopia tej rozmowy, bez zdjęć i plików, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie lub plik, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie ani plik nie są przechowywane ani na tym iPhonie, ani na serwerze; w tej rozmowie zostaje tylko nazwa pliku. Kopia tej rozmowy, bez zdjęć i plików, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "Doddy is an AI. Prices and availability can change after the time they were checked. Check the price in the shop before you pay.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy to AI. Ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz."
           }
         }
       }
@@ -53550,6 +53491,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "在线账户需要一台 Doddy 服务器。请在设置 › 已连接的应用服务器中设置其地址和会话令牌。"
+          }
+        }
+      }
+    },
+    "Online answers": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online-Antworten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Respuestas en línea"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réponses en ligne"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online odgovori"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risposte online"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オンラインの回答"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedzi online"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Respostas online"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在线回答"
           }
         }
       }
@@ -93878,65 +93878,6 @@
         }
       }
     },
-    "Typed AI questions": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Getippte KI-Fragen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preguntas escritas a la IA"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questions écrites à l’IA"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pisana pitanja za AI"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Domande scritte all'IA"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字入力のAIへの質問"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pisane pytania do SI"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perguntas digitadas à IA"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字 AI 提问"
-          }
-        }
-      }
-    },
     "Typed in": {
       "extractionState": "manual",
       "localizations": {
@@ -93944,6 +93885,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisany ręcznie"
+          }
+        }
+      }
+    },
+    "Typed questions": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getippte Fragen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preguntas escritas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questions écrites"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pisana pitanja"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domande scritte"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字入力の質問"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pisane pytania"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perguntas digitadas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字提问"
           }
         }
       }

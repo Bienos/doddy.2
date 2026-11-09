@@ -205,7 +205,7 @@ struct MessagesView: View {
                                 .foregroundStyle(Theme.error)
                                 .accessibilityIdentifier("messages.notSaved")
                         }
-                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
+                        Text("Doddy is a digital companion powered by AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .multilineTextAlignment(.center)

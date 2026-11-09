@@ -223,7 +223,8 @@ struct HomeView: View {
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
-    /// the privacy page. The AI disclosure heads it.
+    /// the privacy page. No header: the voice and Messages screens and Settings say what Doddy is
+    /// (decision 2026-11-09-companion-not-ai-label).
     private var moreMenu: some View {
         Menu {
             Section {
@@ -298,8 +299,6 @@ struct HomeView: View {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
                         .accessibilityIdentifier("home.today")
                 }
-            } header: {
-                Text("Doddy is an AI, not a person.")
             }
             Section {
                 // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the

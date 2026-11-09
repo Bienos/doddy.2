@@ -1,5 +1,5 @@
 ---
-title: "Meet Doddy, an AI companion that wants to do it all for you"
+title: "Meet Doddy, the always-online companion that wants to do it all for you"
 date: 2026-10-10
 author: "The Doddy team"
 status: published
@@ -8,10 +8,10 @@ banner_says: Hey. I'm Doddy.
 banner_card_title: Save this note?
 banner_card_text: The spare keys are in the blue tin above the fridge.
 banner_tint: orange
-summary: "Doddy is an AI companion for your iPhone with a big goal. One day it should help with anything you need, and it will always ask before it acts. Here's what it does today, what it can't do yet, how we keep it safe, and answers to the questions people ask most."
+summary: "Doddy is an always-online companion for your iPhone with a big goal. One day it should help with anything you need, and it will always ask before it acts. Here's what it does today, what it can't do yet, how we keep it safe, and answers to the questions people ask most."
 keywords: "AI companion, AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI safety, human in the loop"
 tldr:
-  - Doddy is an AI companion for your iPhone, a hand-drawn mate you can talk to, in English, Polish and more.
+  - Doddy is an always-online companion for your iPhone, a hand-drawn mate you can talk to, in English, Polish and more.
   - The big goal is a companion that can help with anything, and we're getting there one skill at a time.
   - Today it remembers what you tell it in your own words and finds it again. It can also help with your calendar, reminders, timers, maps and message drafts.
   - It always asks first. Every action is a card you tap, and it never sends, buys or deletes anything on its own.
@@ -29,7 +29,7 @@ evidence:
 Everyone seems to be building AI agents right now. There are agents that book flights, write code,
 do your shopping and answer your email while you sleep. It's a lot.
 
-Doddy is our version, an AI companion that lives in your iPhone. It's a hand-drawn mate you talk
+Doddy is our version, an always-online companion that lives in your iPhone. It's a hand-drawn mate you talk
 to like a person (it isn't one, and it tells you so). The dream is pretty simple. Whatever you
 need, you tell Doddy and it gets handled. Remember this, plan that, sort out the other thing.
 
@@ -190,7 +190,7 @@ folks recommend
    all off by default, plus the usual iOS permission prompt.
 4. Doddy only says "saved" or "added" once your phone confirms it. Early on we caught it saying
    "I'm saving this" before anyone had tapped, and we changed that.
-5. It tells you it's an AI. In its introduction Doddy says "I'm an AI assistant, not a person."
+5. It tells you it's an AI. In its introduction Doddy says "I'm a digital companion powered by AI, not a person."
    That's becoming the law in the EU too. Under the AI Act, AI systems that talk to people have to
    make it clear they're AI, and those transparency rules apply from 2 August 2026
    ([European Commission](https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems)).
@@ -236,7 +236,7 @@ If that sounds like your kind of thing, [join early access](/#join) or say hi in
 
 ### What is Doddy?
 
-It's an AI companion app for iPhone. You talk to it or type, it keeps the things you ask it to
+It's a companion app for iPhone. You talk to it or type, it keeps the things you ask it to
 keep, and it helps with everyday jobs on your phone like your calendar, reminders, timers and
 message drafts.
 

@@ -549,7 +549,7 @@ struct VoiceView: View {
     /// settings can change it, is on "What leaves this iPhone": it reads the current switches.
     private var dataFootnote: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Doddy is an AI, not a person.")
+            Text("Doddy is a digital companion powered by AI, not a person.")
             Text("He keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.")
             Button("What leaves this iPhone") { showDataFlow = true }
                 .font(.footnote.weight(.semibold))

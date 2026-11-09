@@ -7,8 +7,8 @@ public enum CapabilityIntroduction {
     public static func text(for catalog: CapabilityCatalog, language: NotificationLanguage = .english) -> String {
         let polish = language == .polish
         var sentences = polish
-            ? ["Jestem AI, nie człowiekiem.", "Twoje notatki są przechowywane na tym iPhonie."]
-            : ["I'm an AI assistant, not a person.", "Your notes are kept on this iPhone."]
+            ? ["Tu Doddy, cyfrowy towarzysz oparty na AI, nie człowiek.", "Twoje notatki są przechowywane na tym iPhonie."]
+            : ["I'm a digital companion powered by AI, not a person.", "Your notes are kept on this iPhone."]
         if isBuilt(.voiceInput, in: catalog) {
             sentences.append(polish
                 ? "Kiedy rozmawiamy, Twój głos i notatki, z których korzystam, trafiają do ElevenLabs, który obsługuje rozmowę."
