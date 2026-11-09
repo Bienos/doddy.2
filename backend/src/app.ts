@@ -113,7 +113,7 @@ export async function buildApp(
           : null
         : new MockWebSearchProvider();
   // Every live Anthropic call writes a content-free usage row for its account (usageLedger.ts); mock calls cost nothing and write none.
-  const usageDeps = { recorder: { record: (event: LedgerEvent) => store.recordClaudeCall(event) }, log: (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`) };
+  const usageDeps = { files: store.providerFileQueue(), recorder: { record: (event: LedgerEvent) => store.recordClaudeCall(event) }, log: (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`) };
   // Claude (ADR-564): live only with an Anthropic key; mock mode uses offline demo text.
   const claude =
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude, undefined, undefined, usageDeps) : null) : new MockClaudeProvider();
@@ -251,6 +251,8 @@ export async function buildApp(
     void Promise.allSettled([
       service.sweepAbandoned(),
       tools.sweepAbandoned(),
+      // Anthropic copies of made documents whose deletion was not confirmed yet (research item 14).
+      ...((claude as ClaudeProvider | null)?.sweepFiles ? [(claude as ClaudeProvider).sweepFiles!(Date.now()).catch(() => log({ level: "warn", event: "provider_file_sweep_failed" }))] : []),
       // ADR-818: a deleted person's Supabase sign-in, when the first try failed.
       ...(supabaseUsers ? [accountEraser.sweep([SUPABASE_AUTH_CLEANUP])] : []),
     ])

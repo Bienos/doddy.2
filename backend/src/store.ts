@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { ConnectionReason, ConnectionStatus, Receipt } from "./contracts.js";
 import { type Database, type DatabaseOptions, openDatabase, type Queryable } from "./db.js";
+import { FILE_BACKOFF_BASE_MS, FILE_BACKOFF_CAP_MS, type ProviderFileQueue } from "./providerFiles.js";
 import type { LedgerEvent } from "./usageLedger.js";
 
 /**
@@ -431,6 +432,14 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS claude_usage_user ON claude_usage(user_id, created_at);
   CREATE INDEX IF NOT EXISTS claude_usage_request ON claude_usage(user_id, request_id);
   CREATE INDEX IF NOT EXISTS claude_usage_age ON claude_usage(created_at);
+  CREATE TABLE IF NOT EXISTS provider_file_deletions (
+    file_id TEXT PRIMARY KEY CHECK (length(file_id) BETWEEN 1 AND 200),
+    created_at BIGINT NOT NULL,
+    attempts INTEGER NOT NULL,
+    next_attempt_at BIGINT NOT NULL,
+    last_error TEXT
+  );
+  CREATE INDEX IF NOT EXISTS provider_file_deletions_due ON provider_file_deletions(next_attempt_at);
 `;
 
 /**
@@ -1258,6 +1267,46 @@ export class Store {
   /** Ledger rows older than `before` (ms) go; kept 400 days, like the monthly counters. */
   async pruneClaudeUsage(before: number): Promise<number> {
     return (await this.db.query("DELETE FROM claude_usage WHERE created_at < $1", [before])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Files owed a deletion at Anthropic (research item 14)
+  // An opaque provider file id and counters; no account, no name, no content (`providerFiles.ts`).
+
+  providerFileQueue(): ProviderFileQueue {
+    return {
+      queue: async (ids, now) => {
+        for (const id of ids) {
+          await this.db.query(
+            "INSERT INTO provider_file_deletions (file_id, created_at, attempts, next_attempt_at) VALUES ($1, $2, 0, $2) ON CONFLICT (file_id) DO NOTHING",
+            [id, now],
+          );
+        }
+      },
+      confirm: async (id) => void (await this.db.query("DELETE FROM provider_file_deletions WHERE file_id = $1", [id])),
+      failed: async (id, code, now) => {
+        // Backoff doubles from a minute to a cap, from the attempts before this one.
+        await this.db.query(
+          `UPDATE provider_file_deletions
+           SET attempts = attempts + 1, last_error = $2,
+               next_attempt_at = $3 + LEAST($4::bigint * (2 ^ LEAST(attempts, 20))::bigint, $5::bigint)
+           WHERE file_id = $1`,
+          [id, /^[a-z_]{1,40}$/.test(code) ? code : "unknown", now, FILE_BACKOFF_BASE_MS, FILE_BACKOFF_CAP_MS],
+        );
+      },
+      due: async (now, limit) =>
+        (await this.db.query<{ file_id: string }>("SELECT file_id FROM provider_file_deletions WHERE next_attempt_at <= $1 ORDER BY next_attempt_at, created_at LIMIT $2", [now, limit])).rows.map(
+          (r) => r.file_id,
+        ),
+      backlog: async (stuckAfter, now) => {
+        const row = (
+          await this.db.query<{ pending: number; stuck: number; oldest: number | null }>(
+            `SELECT COUNT(*) FILTER (WHERE attempts < $1) AS pending, COUNT(*) FILTER (WHERE attempts >= $1) AS stuck, MIN(created_at) AS oldest FROM provider_file_deletions`,
+            [stuckAfter],
+          )
+        ).rows[0]!;
+        return { pending: Number(row.pending), stuck: Number(row.stuck), oldestAgeMs: row.oldest === null ? 0 : Math.max(0, now - Number(row.oldest)) };
+      },
+    };
   }
 
   // ------------------------------------------------------------ Owner panel (decision 2026-11-09-usage-counts-on-by-default)

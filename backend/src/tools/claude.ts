@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ClaudeSettings } from "../config.js";
 import { ProviderError, type ProviderDetail } from "../errors.js";
+import { FILE_STUCK_AFTER, FILE_SWEEP_BATCH, type ProviderFileQueue } from "../providerFiles.js";
 import { type CallKind, readUsage, recordCall, type UsageRecorder, type UsageScope, type TokenUsage } from "../usageLedger.js";
 
 /**
@@ -181,6 +182,8 @@ export interface ClaudeProvider {
   ask(args: AskClaudeArgs, signal: AbortSignal, scope?: UsageScope): Promise<{ text: string }>;
   /** One finished file. Slow (often one to three minutes); run in the background. */
   makeDocument(args: MakeDocumentArgs, signal: AbortSignal, scope?: UsageScope): Promise<ClaudeFile>;
+  /** Hourly: retries deleting Anthropic's copies of files that weren't confirmed gone. Live provider only. */
+  sweepFiles?(now: number): Promise<{ confirmed: number; failed: number; pending: number; stuck: number }>;
   /**
    * One JSON answer constrained to `schema` (structured output), for Ask Doddy (ADR-587). Throws
    * `ClaudeRefusal` when the model declines and `ProviderError` for everything else that fails.
@@ -256,7 +259,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     private readonly settings: ClaudeSettings,
     private readonly fetchImpl: typeof fetch = (input, init) => fetch(input, init),
     private readonly baseUrl: string = ANTHROPIC_BASE_URL,
-    private readonly deps: { recorder?: UsageRecorder | null; log?: (line: Record<string, unknown>) => void; now?: () => number } = {},
+    private readonly deps: { files?: ProviderFileQueue | null; recorder?: UsageRecorder | null; log?: (line: Record<string, unknown>) => void; now?: () => number } = {},
   ) {}
 
   isConfigured(): boolean {
@@ -292,6 +295,23 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
       return { name: fileName(args.title, info.ext), mime: info.mime, bytes: Buffer.from(text, "utf8"), summary: "" };
     }
 
+    // Every file Claude makes in its container at Anthropic is owed a deletion, whatever happens next:
+    // the document made, the request failed or timed out. The deletion is recorded before it is tried.
+    const fileIds = new Set<string>();
+    try {
+      return await this.makeSkillDocument(args, info as typeof info & { skill: string }, signal, scope, fileIds);
+    } finally {
+      await this.retireFiles([...fileIds]);
+    }
+  }
+
+  private async makeSkillDocument(
+    args: MakeDocumentArgs,
+    info: (typeof KIND_INFO)[DocumentKind] & { skill: string },
+    signal: AbortSignal,
+    scope: UsageScope | undefined,
+    fileIds: Set<string>,
+  ): Promise<ClaudeFile> {
     const skills = [{ type: "anthropic", skill_id: info.skill, version: "latest" }];
     const tools = [{ type: "code_execution_20250825", name: "code_execution" }];
     const messages: { role: "user" | "assistant"; content: unknown }[] = [
@@ -301,7 +321,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
       },
     ];
     let response = await this.messages({ model: this.settings.model, max_tokens: 16_000, system: cachedSystem(this.settings.model, DOCUMENT_SYSTEM), container: { skills }, tools, messages }, signal, scope);
-    const fileIds = new Set(fileIdsOf(response.content));
+    for (const id of fileIdsOf(response.content)) fileIds.add(id);
     for (let i = 0; i < MAX_PAUSE_TURNS && response.stop_reason === "pause_turn"; i++) {
       const containerId = response.container?.id;
       if (!containerId) throw new ProviderError("malformed_provider_result");
@@ -313,7 +333,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
       const min = minCacheableTokens(this.settings.model);
       const cache = min !== null && estimatedTokens(JSON.stringify(messages).length + DOCUMENT_SYSTEM.length) >= min ? { cache_control: EPHEMERAL } : {};
       response = await this.messages(
-        { model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { id: containerId, skills }, tools, messages, ...cache },
+        { model: this.settings.model, max_tokens: 16_000, system: cachedSystem(this.settings.model, DOCUMENT_SYSTEM), container: { id: containerId, skills }, tools, messages, ...cache },
         signal,
         scope,
         true,
@@ -335,8 +355,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     }
     if (!chosen) throw new ProviderError("malformed_provider_result");
     const bytes = await this.fileContent(chosen.id, signal);
-    // Best effort: Doddy keeps its own copy for a week; Anthropic's copy isn't needed.
-    for (const id of fileIds) void this.deleteFile(id).catch(() => {});
+    // Doddy keeps its own copy for a week; Anthropic's copies are deleted by `retireFiles` (in `makeDocument`).
     return { name: fileName(args.title, info.ext), mime: info.mime, bytes, summary: textOf(response.content).slice(0, 300) };
   }
 
@@ -429,8 +448,79 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     return bytes;
   }
 
-  private async deleteFile(id: string): Promise<void> {
-    await this.fetchImpl(`${this.baseUrl}/v1/files/${encodeURIComponent(id)}`, { method: "DELETE", headers: this.headers(), signal: AbortSignal.timeout(10_000) });
+  // ---------------------------------------------------------------- deleting Anthropic's copies (research item 14)
+
+  /**
+   * Deletes one file at Anthropic and reads it back: `gone` only when the provider says so (a 404 on the
+   * delete, or on the read after it). A delete that was accepted but still finds the file is `present`;
+   * anything we couldn't tell is `unknown`. None of these is ever an error to the caller.
+   */
+  async removeFile(id: string): Promise<{ result: "gone" } | { result: "failed"; code: "delete_failed" | "still_present" | "unreachable" | "unknown" }> {
+    const url = `${this.baseUrl}/v1/files/${encodeURIComponent(id)}`;
+    try {
+      const deleted = await this.fetchImpl(url, { method: "DELETE", headers: this.headers(), signal: AbortSignal.timeout(10_000) });
+      if (deleted.status === 404) return { result: "gone" };
+      if (!deleted.ok) return { result: "failed", code: "delete_failed" };
+      const read = await this.fetchImpl(url, { method: "GET", headers: this.headers(), signal: AbortSignal.timeout(10_000) });
+      if (read.status === 404) return { result: "gone" };
+      return { result: "failed", code: read.ok ? "still_present" : "unknown" };
+    } catch {
+      return { result: "failed", code: "unreachable" };
+    }
+  }
+
+  /**
+   * Records each file as owed a deletion, then tries it once now. Never throws, and never puts a file
+   * id or any content in a log: counts only. A file that can't be recorded is still tried, and counted
+   * as untracked if that fails too.
+   */
+  private async retireFiles(ids: string[]): Promise<void> {
+    const queue = this.deps.files;
+    if (ids.length === 0) return;
+    let tracked = true;
+    if (queue) {
+      try {
+        await queue.queue(ids, this.deps.now?.() ?? Date.now());
+      } catch {
+        tracked = false;
+        this.deps.log?.({ level: "warn", event: "provider_file_untracked", files: ids.length });
+      }
+    }
+    for (const id of ids) {
+      const outcome = await this.removeFile(id);
+      try {
+        if (outcome.result === "gone") await queue?.confirm(id);
+        else if (queue && tracked) await queue.failed(id, outcome.code, this.deps.now?.() ?? Date.now());
+      } catch {
+        this.deps.log?.({ level: "warn", event: "provider_file_state_not_saved" });
+      }
+      if (outcome.result !== "gone" && !queue) this.deps.log?.({ level: "warn", event: "provider_file_delete_failed", code: outcome.code });
+    }
+  }
+
+  /**
+   * The hourly retry (app.ts): files whose deletion isn't confirmed yet, a bounded batch, with backoff
+   * set by the queue. Returns counts only; a file stuck past `FILE_STUCK_AFTER` tries keeps being retried
+   * at the slowest pace and is reported, never dropped without a confirmation.
+   */
+  async sweepFiles(now: number): Promise<{ confirmed: number; failed: number; pending: number; stuck: number }> {
+    const queue = this.deps.files;
+    if (!queue) return { confirmed: 0, failed: 0, pending: 0, stuck: 0 };
+    let confirmed = 0;
+    let failed = 0;
+    for (const id of await queue.due(now, FILE_SWEEP_BATCH)) {
+      const outcome = await this.removeFile(id);
+      if (outcome.result === "gone") {
+        await queue.confirm(id);
+        confirmed++;
+      } else {
+        await queue.failed(id, outcome.code, now);
+        failed++;
+      }
+    }
+    const backlog = await queue.backlog(FILE_STUCK_AFTER, now);
+    if (backlog.stuck > 0) this.deps.log?.({ level: "warn", event: "provider_file_deletion_stuck", stuck: backlog.stuck, pending: backlog.pending, oldestAgeMs: backlog.oldestAgeMs });
+    return { confirmed, failed, pending: backlog.pending, stuck: backlog.stuck };
   }
 
   private async send(path: string, init: RequestInit & { signal: AbortSignal }): Promise<Response> {
