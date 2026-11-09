@@ -358,7 +358,7 @@ public enum DataFlow {
         return list + ". Each only when you use it; What leaves this iPhone says what goes."
     }
 
-    /// Settings → Privacy "Cloud AI": the AI services that can get what you say or type right now.
+    /// Settings → Privacy "Online answers": the AI services that can get what you say or type right now.
     public static func cloudAISummary(_ state: DataFlowState) -> String {
         let active = Set(rows(state).filter(\.isActive).map(\.id))
         var parts: [String] = []

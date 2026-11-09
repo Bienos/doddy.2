@@ -21,10 +21,10 @@ Removing the word entirely isn't possible: the EU AI Act (Article 50, applying s
    - Privacy facts that say what *doesn't* happen ("no AI reads them", "not by an AI"): they don't label Doddy.
    - The legal drafts (Terms, Privacy Policy): lawyer text.
    - The blog post "AI agents are coming": an essay about the industry; only the lines that describe Doddy changed.
-5. **Not in this change:** the privacy summary in `SettingsScreens.swift` ("Doddy is an AI, not a person. Notes stay…") and its "Cloud AI" row, because open pull request #294 is editing that file (one agent at a time, `AGENTS.md`). A follow-up changes them to the same wording.
+5. **Settings › Privacy:** the privacy summary starts with the same line, and the "Cloud AI" row is now "Online answers" (it lists the services that answer you: ElevenLabs, Anthropic). Owner, 9 Nov: "ok change do all", after being told open pull request #294 also edits `SettingsScreens.swift`; the two changes are in different parts of the file.
 
 ## Consequences
-- Fewer mentions: the English homepage goes from 8 to 1 (the footer), the app's everyday screens from 5 to 3 short lines.
+- Fewer mentions: the English homepage goes from 8 to 1 (the footer), the app's everyday screens from 5 to 3 short lines, plus the Settings privacy summary.
 - The live ElevenLabs agent keeps its current prompt until the owner says to sync (`docs/OWNER_QUEUE.md` 31); until then voice may still call himself "an AI sidekick".
 - Translations of the new lines are drafts, like the rest (ADR-234); the Polish ones were written with the app's existing terms.
 

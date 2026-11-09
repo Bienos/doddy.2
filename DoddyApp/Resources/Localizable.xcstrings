@@ -13022,65 +13022,6 @@
         }
       }
     },
-    "Cloud AI": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cloud-KI"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IA en la nube"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IA dans le cloud"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI u oblaku"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IA nel cloud"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クラウドAI"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SI w chmurze"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IA na nuvem"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "云端 AI"
-          }
-        }
-      }
-    },
     "Code": {
       "extractionState": "manual",
       "localizations": {
@@ -22017,6 +21958,88 @@
         }
       }
     },
+    "Doddy is a digital companion powered by AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is a digital companion powered by AI, not a person. Notes are kept on this iPad, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPad only; Google Calendar reading is in Settings › Connections › Online accounts."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is a digital companion powered by AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy to cyfrowy towarzysz oparty na AI, nie człowiek. Notatki są na tym iPadzie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPadzie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy to cyfrowy towarzysz oparty na AI, nie człowiek. Notatki są na tym iPhonie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Doddy is a digital companion powered by AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is a digital companion powered by AI, not a person. Notes stay on this iPad; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPad only; Google Calendar reading is in Settings › Connections › Online accounts."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is a digital companion powered by AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy to cyfrowy towarzysz oparty na AI, nie człowiek. Notatki zostają na tym iPadzie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPadzie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy to cyfrowy towarzysz oparty na AI, nie człowiek. Notatki zostają na tym iPhonie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy is a digital companion powered by AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.": {
       "extractionState": "manual",
       "localizations": {
@@ -22205,88 +22228,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy to AI, a nie lekarz ani trener. Przy bólu, zawrotach głowy albo czymkolwiek, co Cię niepokoi, idź do lekarza."
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. Notes are kept on this iPad, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPad only; Google Calendar reading is in Settings › Connections › Online accounts."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Notatki są na tym iPadzie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPadzie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Notatki są na tym iPhonie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. Notes stay on this iPad; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPad only; Google Calendar reading is in Settings › Connections › Online accounts."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Notatki zostają na tym iPadzie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPadzie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Notatki zostają na tym iPhonie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
-                }
-              }
-            }
           }
         }
       }
