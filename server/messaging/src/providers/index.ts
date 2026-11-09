@@ -67,6 +67,7 @@ export function providersFrom(config: Config) {
     liveActivity: push ? {
       update: async (token, env, state, end) => { await push.sendLiveActivity({ deviceToken: token, environment: env }, state, end); },
     } : undefined,
+    smsCaps: { perAccount: config.limits.smsPerAccountDay, perServer: config.limits.smsPerServerDay },
   } : undefined;
   // Errands (ADR-570): a researcher only with an Anthropic key and the switch on. Without
   // MEMORY_ENCRYPTION_KEY the routes answer 503 errands_disabled whatever is set here.
