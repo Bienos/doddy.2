@@ -242,6 +242,14 @@ final class ErrandsModel {
     // MARK: For the voice agent
 
     /// `{{errands}}` at the start of a conversation.
+    func cachedPromptText(now: Date = Date()) -> String {
+        guard hasLoaded, loadProblem == nil else {
+            return "(The task index is not ready. Use check_errands if the user asks about their tasks.)"
+        }
+        return ErrandsPrompt.render(errands, now: now)
+    }
+
+    /// On-demand readers may load; voice startup uses `cachedPromptText` instead.
     func promptText(now: Date = Date()) async -> String {
         if !hasLoaded { await load() }
         guard loadProblem == nil else { return "(the tasks kept on this iPhone couldn't be read)" }

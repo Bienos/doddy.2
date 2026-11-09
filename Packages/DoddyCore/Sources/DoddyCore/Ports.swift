@@ -21,6 +21,8 @@ public protocol MemoryRepository: Sendable {
     func save(_ draft: NewMemory) async throws -> MemoryRecord
     /// Newest first. `nil` limit returns everything.
     func list(limit: Int?) async throws -> [MemoryRecord]
+    /// Small, coherent startup context; private notes are excluded before the limits.
+    func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot
     func query(_ query: String, limit: Int) async throws -> [MemoryCandidate]
     func update(id: UUID, currentText: String) async throws -> MemoryRecord
     /// Changes only the note's type. Read back before success; the words, dates and "edited"
@@ -49,6 +51,10 @@ public protocol MemoryRepository: Sendable {
 }
 
 extension MemoryRepository {
+    public func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
+
     public func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord] {
         throw DoddyError.capabilityUnavailable(.memoryStorage)
     }
