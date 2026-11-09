@@ -1503,7 +1503,7 @@
   "You're offline": "Jesteś offline",
   "You're offline. Doddy's voice needs the internet.": "Jesteś offline. Głos Doddy’ego potrzebuje internetu.",
   "Couldn't connect to Doddy's voice. Check your internet connection and try again.": "Nie udało się połączyć z głosem Doddy’ego. Sprawdź połączenie z internetem i spróbuj ponownie.",
-  "If it keeps failing, choose \\\"Use Doddy's own voice\\\" and language \\\"Automatic\\\" in Settings → Voice and personality.":"Jeśli dalej się nie udaje, wybierz „Użyj własnego głosu Doddy’ego” i język „Automatycznie” w Ustawieniach → Głos i osobowość.",
+  "If it keeps failing, choose \\\"Use Doddy's own voice\\\" and language \\\"Automatic\\\" in Settings → Voice and personality.": "Jeśli dalej się nie udaje, wybierz „Użyj własnego głosu Doddy’ego” i język „Automatycznie” w Ustawieniach → Głos i osobowość.",
   "Doddy's voice now needs you to be signed in. Close this screen and tap Talk to Doddy to sign in.": "Głos Doddy’ego wymaga teraz zalogowania. Zamknij ten ekran i stuknij „Porozmawiaj z Doddym”, żeby się zalogować.",
   "You're on the call": "Teraz Ty rozmawiasz",
   "You're on the call now; hang up on your phone to end it.": "Teraz Ty prowadzisz rozmowę; rozłącz się w telefonie, aby ją zakończyć.",
@@ -2935,5 +2935,11 @@
   "Finds the person's number if Contacts is allowed too": "Znajduje numer osoby, jeśli dostęp do Kontaktów też jest włączony",
   "The person's name, the amount and the title you said, as part of the conversation.": "Imię osoby, kwota i tytuł z twoich słów, jako część rozmowy.",
   "Phone numbers are shown only on your screen. Doddy has no access to your bank and can't see whether you sent it.": "Numery telefonów widać tylko na twoim ekranie. Doddy nie ma dostępu do twojego banku i nie widzi, czy przelew został wysłany.",
-  "CHECK": "SPRAWDŹ"
+  "CHECK": "SPRAWDŹ",
+  "Count how I use Doddy": "Licz, jak używam Doddy’ego",
+  "Last sent": "Ostatnio wysłane",
+  "Logbook": "Dziennik",
+  "Counting stopped. The counts already on Doddy's server will be deleted when it can be reached.": "Liczenie wyłączone. Liczby, które są już na serwerze Doddy’ego, zostaną usunięte, gdy serwer będzie dostępny.",
+  "Counting stopped. Doddy's server deleted the counts it held.": "Liczenie wyłączone. Serwer Doddy’ego usunął zapisane liczby.",
+  "On unless you turn it off. Doddy counts how you use him: conversations, what he did for you, notes and list items saved. Never the words of your conversations or notes. The counts go to Doddy's server, where you see them in Logbook on the web and Doddy's team can see them with your account. Turning this off stops counting and deletes the counts on the server.": "Włączone, dopóki tego nie wyłączysz. Doddy liczy, jak z niego korzystasz: rozmowy, to, co dla ciebie zrobił, zapisane notatki i pozycje list. Nigdy treści rozmów ani notatek. Liczby trafiają na serwer Doddy’ego: widzisz je w Dzienniku w przeglądarce, a zespół Doddy’ego widzi je razem z twoim kontem. Wyłączenie zatrzymuje liczenie i usuwa liczby z serwera."
 }

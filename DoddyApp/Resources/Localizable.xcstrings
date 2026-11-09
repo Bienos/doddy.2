@@ -15286,6 +15286,17 @@
         }
       }
     },
+    "Count how I use Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licz, jak używam Doddy’ego"
+          }
+        }
+      }
+    },
     "Count the photos and videos you took on a day or over up to a month, after you say yes or tap": {
       "extractionState": "manual",
       "localizations": {
@@ -15304,6 +15315,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odliczanie"
+          }
+        }
+      }
+    },
+    "Counting stopped. Doddy's server deleted the counts it held.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczenie wyłączone. Serwer Doddy’ego usunął zapisane liczby."
+          }
+        }
+      }
+    },
+    "Counting stopped. The counts already on Doddy's server will be deleted when it can be reached.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczenie wyłączone. Liczby, które są już na serwerze Doddy’ego, zostaną usunięte, gdy serwer będzie dostępny."
           }
         }
       }
@@ -37441,6 +37474,17 @@
         }
       }
     },
+    "Last sent": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnio wysłane"
+          }
+        }
+      }
+    },
     "Last test": {
       "extractionState": "manual",
       "localizations": {
@@ -40046,6 +40090,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skrytka na paczki 4471"
+          }
+        }
+      }
+    },
+    "Logbook": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziennik"
           }
         }
       }
@@ -51448,6 +51503,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每次通话时，Doddy 在查看你的记忆或记笔记之前都会要求输入这个 PIN 码，因为来电号码可能被伪造。输错五次后，PIN 码输入会被锁定，每次锁定时间更长，并且你会收到通知。"
+          }
+        }
+      }
+    },
+    "On unless you turn it off. Doddy counts how you use him: conversations, what he did for you, notes and list items saved. Never the words of your conversations or notes. The counts go to Doddy's server, where you see them in Logbook on the web and Doddy's team can see them with your account. Turning this off stops counting and deletes the counts on the server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włączone, dopóki tego nie wyłączysz. Doddy liczy, jak z niego korzystasz: rozmowy, to, co dla ciebie zrobił, zapisane notatki i pozycje list. Nigdy treści rozmów ani notatek. Liczby trafiają na serwer Doddy’ego: widzisz je w Dzienniku w przeglądarce, a zespół Doddy’ego widzi je razem z twoim kontem. Wyłączenie zatrzymuje liczenie i usuwa liczby z serwera."
           }
         }
       }
