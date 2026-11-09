@@ -277,6 +277,29 @@
         }
       }
     },
+    "%@ · kept on this iPhone for a week": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ · kept on this iPad for a week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ · kept on this iPhone for a week"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%@ · seen %@": {
       "extractionState": "manual",
       "localizations": {
@@ -5514,6 +5537,17 @@
         }
       }
     },
+    "Agree and talk": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zgadzam się, rozmawiajmy"
+          }
+        }
+      }
+    },
     "Agree to anything, book, order or confirm": {
       "extractionState": "manual",
       "localizations": {
@@ -7928,6 +7962,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apple lub Google"
+          }
+        }
+      }
+    },
+    "Apple sign-in and microphone access are separate. You can use notes without enabling voice, and you can change this provider’s consent in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logowanie przez Apple i dostęp do mikrofonu to osobne sprawy. Z notatek możesz korzystać bez włączania głosu, a tę zgodę dla dostawcy zmienisz w Ustawieniach."
           }
         }
       }
@@ -25060,6 +25105,17 @@
         }
       }
     },
+    "Doddy’s voice runs through %@. Your voice and this conversation go to them so Doddy can answer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego działa przez %@. Twój głos i ta rozmowa trafiają tam, żeby Doddy mógł odpowiedzieć."
+          }
+        }
+      }
+    },
     "Doing the plan": {
       "extractionState": "manual",
       "localizations": {
@@ -32479,17 +32535,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "幽默"
-          }
-        }
-      }
-    },
-    "I agree to send voice data to %@ for this conversation": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zgadzam się wysłać dane głosowe do %@ na potrzeby tej rozmowy"
           }
         }
       }
@@ -69870,6 +69915,17 @@
         }
       }
     },
+    "Send my voice to %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłaj mój głos do %@"
+          }
+        }
+      }
+    },
     "Send to Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -73625,6 +73681,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已稍后提醒"
+          }
+        }
+      }
+    },
+    "So Doddy can answer when you talk. %@ runs Doddy’s voice. Nothing is sent until you start a conversation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby Doddy mógł odpowiadać, gdy mówisz. Głos Doddy’ego działa przez %@. Nic nie jest wysyłane, dopóki nie zaczniesz rozmowy."
           }
         }
       }
@@ -95327,17 +95394,6 @@
         }
       }
     },
-    "Voice runs through %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Głos obsługuje %@"
-          }
-        }
-      }
-    },
     "Voicemail": {
       "extractionState": "manual",
       "localizations": {
@@ -97828,6 +97884,17 @@
         }
       }
     },
+    "What's sent": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co jest wysyłane"
+          }
+        }
+      }
+    },
     "Whatever you pick, Doddy answers your question first, says when he isn't sure, only repeats notes you actually saved, asks before saving anything, never jokes about serious things and never makes fun of you.": {
       "extractionState": "manual",
       "localizations": {
@@ -98411,17 +98478,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gdy zapytasz na przykład „Jak mi poszedł tydzień?”, Doddy najpierw zapyta, a dopiero po Twoim „tak” jego głos usłyszy to samo podsumowanie: liczby z tygodnia, bez surowych danych ze Zdrowia."
-          }
-        }
-      }
-    },
-    "When you continue, your voice and this conversation are sent to %@ so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gdy przejdziesz dalej, Twój głos i ta rozmowa trafią do %@, żeby Doddy mógł odpowiedzieć. Zależnie od Twoich ustawień Doddy może też wysłać notatki, które nie są prywatne, szczegóły list użyte w rozmowie, ostatnie rozmowy, zatwierdzone dane z profilu i wyniki z włączonych połączonych usług. Dostawca przetwarza te dane na własnych zasadach prywatności."
           }
         }
       }
@@ -103823,6 +103879,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你输入的笔记"
+          }
+        }
+      }
+    },
+    "Your voice and each conversation are sent to %@ so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój głos i każda rozmowa są wysyłane do %@, żeby Doddy mógł odpowiedzieć. Zależnie od ustawień Doddy może też wysłać notatki, które nie są prywatne, szczegóły list użytych w rozmowie, ostatnie rozmowy, zatwierdzone dane z profilu i wyniki z włączonych połączonych usług. Dostawca przetwarza te dane według własnych zasad prywatności."
           }
         }
       }

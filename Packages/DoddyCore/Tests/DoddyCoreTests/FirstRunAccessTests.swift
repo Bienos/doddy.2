@@ -52,4 +52,14 @@ final class FirstRunAccessTests: XCTestCase {
         XCTAssertEqual(summary.allowed, 2)
         XCTAssertEqual(summary.refused, 1)
     }
+
+    func testVoiceConsentStartsUntickedAndNeedsAllow() {
+        XCTAssertFalse(FirstRunAccessRule.voiceDataTickedAtStart,
+                       "agreeing to send voice to another company is never ticked in advance")
+        XCTAssertTrue(FirstRunAccessRule.recordsVoiceConsent(ticked: true, tappedAllow: true))
+        XCTAssertFalse(FirstRunAccessRule.recordsVoiceConsent(ticked: true, tappedAllow: false),
+                       "Not now records nothing")
+        XCTAssertFalse(FirstRunAccessRule.recordsVoiceConsent(ticked: false, tappedAllow: true))
+        XCTAssertFalse(FirstRunAccessRule.recordsVoiceConsent(ticked: false, tappedAllow: false))
+    }
 }

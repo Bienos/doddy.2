@@ -9,15 +9,22 @@ import SwiftUI
 /// may say no. An answer turns on that item's Settings › Connections switch (`ConnectionController`);
 /// a "no" turns nothing on. Health and speech recognition are not asked here: Health has its own
 /// screen and sheet, and speech recognition is asked with the first voice memo.
+///
+/// Under the list, one unticked box agrees to send voice to the voice provider (decision
+/// 2026-11-09-voice-consent-in-setup), so the first Talk goes straight to Doddy instead of stopping at
+/// "Before Doddy listens". It is recorded only with "Allow selected"; otherwise Talk still asks.
 struct FirstRunAccessView: View {
     @AppStorage(PreferenceKey.firstRunAccessSeen) private var seen = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
+    @State private var voiceConsentTicked = FirstRunAccessRule.voiceDataTickedAtStart
     @State private var connections = ConnectionController()
     @State private var ticked = Set(FirstRunAccessItem.allCases.filter(\.tickedAtStart))
     @State private var asking: FirstRunAccessItem?
     @State private var summary: (allowed: Int, refused: Int)?
 
     private var isAsking: Bool { asking != nil }
+    private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
 
     var body: some View {
         OnboardingPage {
@@ -37,6 +44,7 @@ struct FirstRunAccessView: View {
                 finished(summary)
             } else {
                 list
+                voiceConsent
                 buttons
             }
 
@@ -61,6 +69,35 @@ struct FirstRunAccessView: View {
                 .accessibilityIdentifier("access.\(item.rawValue)")
             }
         }
+    }
+
+    /// Agreement to send voice to the provider: not an iOS question, so it sits apart from the list.
+    private var voiceConsent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle(isOn: $voiceConsentTicked) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(VoiceConsentCopy.setupTitle(provider)).font(.body.weight(.semibold))
+                    Text(VoiceConsentCopy.setupReason(provider))
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .toggleStyle(TickBoxToggleStyle())
+            .disabled(isAsking)
+            .accessibilityIdentifier("access.voiceData")
+            DisclosureGroup("What's sent") {
+                Text(VoiceConsentCopy.details(provider))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 6)
+            }
+            .font(.footnote.weight(.semibold))
+            .accessibilityIdentifier("access.voiceData.details")
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var buttons: some View {
@@ -122,6 +159,11 @@ struct FirstRunAccessView: View {
     /// Asks the ticked items one after another, in the fixed order. iOS shows its own question for each
     /// and may skip it (already answered). Nothing is claimed beyond what iOS answered.
     private func askAll() async {
+        // Recorded before the iOS questions, from the box as it was when Allow was tapped. It turns on no
+        // microphone and sends nothing: a conversation still starts only when the person taps Talk.
+        if FirstRunAccessRule.recordsVoiceConsent(ticked: voiceConsentTicked, tappedAllow: true) {
+            VoiceProviderConsent.grant(for: provider)
+        }
         var outcomes: [FirstRunAccessItem: FirstRunAccessOutcome] = [:]
         for item in FirstRunAccessRule.itemsToAsk(ticked: ticked) {
             asking = item

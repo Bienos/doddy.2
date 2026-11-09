@@ -2,7 +2,7 @@
 
 Doddy is a voice-first companion for iPhone and iPad. The Apple Watch app and the Mac menu bar prototype are **paused** (ADR-572). This page says what is true now, in one page. **Replace facts when they change; don't add dated log paragraphs.** What a pull request changed goes in `changes/` (see `changes/README.md`); the full log up to 7 Nov 2026 is in `docs/archive/STATUS-log-2026-10-08-to-2026-11-07.md`.
 
-Last checked: **7 Nov 2026, 20:30 UTC** (GitHub; Render last read 19:30 UTC through its API). Repository facts re-checked against the code (docs review, decision `docs/decisions/2026-11-07-plain-readme.md`, re-checked on 8 Nov after the merge of `main`); live services not re-read.
+Last checked: **7 Nov 2026, 20:30 UTC** (the ElevenLabs row: 9 Nov 2026, 10:30 UTC) (GitHub; Render last read 19:30 UTC through its API). Repository facts re-checked against the code (docs review, decision `docs/decisions/2026-11-07-plain-readme.md`, re-checked on 8 Nov after the merge of `main`); live services not re-read.
 
 ## Code
 - **Default branch:** `main` (renamed from `claude/loving-dirac-uuxoux` on 7 Nov 2026). It is the only permanent branch; every change arrives by pull request (`AGENTS.md`, last section).
@@ -22,7 +22,7 @@ Last checked: **7 Nov 2026, 20:30 UTC** (GitHub; Render last read 19:30 UTC thro
 | `doddy-messaging` (Render): Messages, errands, leaflets, texts and calls, push | `174ba21` (#198), deployed 7 Nov 13:58 UTC (owner queue 19) | Branch `main`, auto-deploy off. **Behind `main`:** Studio (#193), the phone number (#196, off), phone-agent conversation deletion and the other #169 parts changed `server/messaging/` on 7 Nov; not deployed. The next deploy applies migrations 017 to 020 (two files start 017; they run in name order). Free plan, with the worker inside the web process. |
 | `doddy-messaging-db` (Render Postgres) | Free plan | **Expires 10 Nov 2026, 10:11 UTC**, read 7 Nov 19:30 UTC. Not upgraded. Everything the messaging server keeps is in it (owner queue 1). |
 | Vercel `doddy-voice-token`, `doddy` (www.doddy.lol), `doddy-gateway` | Production builds of the default branch | After the rename, the Production Branch setting must say `main` (owner queue 20). Pull requests' Vercel statuses say "Account is blocked." The gateway is unused by the app (ADR-587). |
-| ElevenLabs agent (main) | One agent for Debug, TestFlight and future App Store builds | Authentication off (owner queue 4). `draft_invoice` (#161) and `lost_wallet` (#176) are live on it and now on `main` too. The tools of #193, #196 and #192 (`make_something`, `text_me`, `call_me_later`, `pay_for_page`) are in `voice-agent/` but not on the live agent; the agent is changed only on the owner's instruction. |
+| ElevenLabs agent (main) | One agent for Debug, TestFlight and future App Store builds | **Working: nine conversations connected on 9 Nov 2026** (log read 9 Nov; before that every start failed at 0 seconds from 2 Nov to 7 Nov 22:28 UTC). Authentication **on**, 1,000 a day (owner queue 4). `draft_invoice` (#161) and `lost_wallet` (#176) are live on it and now on `main` too. The tools of #193, #196 and #192 (`make_something`, `text_me`, `call_me_later`, `pay_for_page`) are in `voice-agent/` but not on the live agent; the agent is changed only on the owner's instruction. |
 | Old Render copies `doddy-gateway`, `doddy-voice-token` | Old branch, free plan | Not used. Delete them. |
 
 ## Platforms

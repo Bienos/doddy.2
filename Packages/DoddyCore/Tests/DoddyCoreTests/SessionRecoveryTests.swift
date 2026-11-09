@@ -89,10 +89,19 @@ final class SessionRecoveryTests: XCTestCase {
         XCTAssertTrue(with.text.hasSuffix(recent.text))
         XCTAssertEqual(with.includedCount, recent.includedCount)
 
-        // The dropped one is too long to be sent: no note about a conversation the agent can't see.
+        // The dropped one is longer than the whole budget: its last lines are sent (it is not forgotten whole, 9 Nov 2026),
+        // so the agent can see where it stopped and the note goes first.
         let huge = [log("dropped-connection", endedAt: t0, lines: (0..<40).map { line($0 % 2 == 0, String(repeating: "word ", count: 80)) })]
         let hugeRecent = VoiceContext.recentConversations(huge, timeZone: utc)
-        XCTAssertEqual(SessionRecovery.withResumeNote(hugeRecent, logs: huge, now: t0 + 30, timeZone: utc), hugeRecent)
+        XCTAssertEqual(hugeRecent.includedCount, 1)
+        XCTAssertTrue(hugeRecent.text.contains(VoiceContext.cutStartNote))
+        let hugeWith = SessionRecovery.withResumeNote(hugeRecent, logs: huge, now: t0 + 30, timeZone: utc)
+        XCTAssertTrue(hugeWith.text.hasPrefix("Note: the newest conversation below was cut off"))
+        XCTAssertTrue(hugeWith.text.hasSuffix(hugeRecent.text))
+        // Nothing of it fits (a budget smaller than one line): nothing is sent, so no note about a conversation the agent can't see.
+        let none = VoiceContext.recentConversations(huge, maxCharacters: 50, timeZone: utc)
+        XCTAssertEqual(none.includedCount, 0)
+        XCTAssertEqual(SessionRecovery.withResumeNote(none, logs: huge, now: t0 + 30, timeZone: utc, maxCharacters: 50), none)
         // The newest one ended normally: nothing added.
         let fine = [log("dropped-connection", endedAt: t0 - 60), log("doddy", endedAt: t0)]
         let fineRecent = VoiceContext.recentConversations(fine, timeZone: utc)

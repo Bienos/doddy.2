@@ -184,6 +184,9 @@ enum TalkInIsland {
         }
         let controller = VoiceSessionController(store: store)
         started = controller
+        // Home shows the conversation from here on (ADR-595), so opening Doddy during it leaves the
+        // app usable (Messages, notes) with Doddy talking, instead of a sheet covering it.
+        HomeConversation.shared.hold(controller)
         await controller.start(VoiceConfig.connectionMode, profile: profile,
                                wakeGreeting: greeting(for: profile), withoutOpeningApp: true)
         switch controller.phase {
@@ -196,11 +199,9 @@ enum TalkInIsland {
         default:
             break
         }
-        // Doddy came to the front while it started: iOS doesn't show his island over him, so show
-        // the conversation instead of leaving it without a screen.
-        if UIApplication.shared.applicationState == .active, VoiceSessionController.runningConversation != nil {
-            ShortcutRouter.shared.showConversationStartedElsewhere()
-        }
+        // Doddy came to the front while it started: iOS doesn't show his island over him, but Home
+        // holds the conversation and shows it, so nothing is put over the app. The transcript sheet
+        // comes up by itself only when a card needs the user (`HomeConversation.needsYou`).
     }
 
     private static func refused(_ check: String, needsApp message: String) -> StartProblem {

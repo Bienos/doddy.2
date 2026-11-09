@@ -174,6 +174,39 @@ final class VoiceContextTests: XCTestCase {
         XCTAssertFalse(small.text.contains("User: first"))
     }
 
+    func testNewestConversationLongerThanTheBudgetKeepsItsLastLines() {
+        // A long planning chat: before this, the newest conversation not fitting meant nothing at all.
+        var lines: [ConversationLog.Line] = []
+        for index in 0..<30 {
+            lines.append(.init(fromUser: true, text: "Question number \(index) about the evening"))
+            lines.append(.init(fromUser: false, text: "Answer number \(index) with some filler text to take room"))
+        }
+        lines.append(.init(fromUser: false, text: "Final ideas: Pod Baranami, Hala Koszyki, Kuchnia Vikinga."))
+        let log = ConversationLog(startedAt: t0, endedAt: t0.addingTimeInterval(600), lines: lines)
+
+        let rendered = VoiceContext.recentConversations([log], maxCharacters: 600, timeZone: warsaw)
+        XCTAssertEqual(rendered.includedCount, 1)
+        XCTAssertTrue(rendered.truncated, "the agent is told something was cut")
+        XCTAssertLessThanOrEqual(rendered.text.count + 2, 600)
+        XCTAssertTrue(rendered.text.hasPrefix("Conversation on 2026-10-09 02:05:\n\(VoiceContext.cutStartNote)\n"))
+        XCTAssertTrue(rendered.text.hasSuffix("Doddy: Final ideas: Pod Baranami, Hala Koszyki, Kuchnia Vikinga."), "the end survives")
+        XCTAssertFalse(rendered.text.contains("Question number 0 "), "the start is what is cut")
+        XCTAssertEqual(VoiceContext.conversationsSentNextTime([log], maxCharacters: 600, timeZone: warsaw), [log.id],
+                       "Settings shows it as sent, because it is")
+    }
+
+    func testDoddysLongAnswerKeepsItsListOfIdeas() {
+        let ideas = (1...12).map { "Idea \($0): a place with a long enough name" }.joined(separator: "; ")
+        XCTAssertGreaterThan(ideas.count, VoiceContext.maxLineLength)
+        XCTAssertLessThan(ideas.count, VoiceContext.maxDoddyLineLength)
+        let log = ConversationLog(startedAt: t0, endedAt: t0.addingTimeInterval(60),
+                                  lines: [.init(fromUser: true, text: ideas), .init(fromUser: false, text: ideas)])
+        let rendered = VoiceContext.recentConversations([log], timeZone: warsaw)
+        XCTAssertTrue(rendered.text.contains("Doddy: \(ideas)"), "Doddy's own line is kept whole")
+        XCTAssertFalse(rendered.text.contains("User: \(ideas)"), "the user's line is still clipped at maxLineLength")
+        XCTAssertTrue(rendered.text.contains("Idea 12"), "the last idea is there")
+    }
+
     func testEmptyConversationsAreSkipped() {
         let empty = ConversationLog(startedAt: t0, endedAt: t0, lines: [])
         let rendered = VoiceContext.recentConversations([empty], timeZone: warsaw)
