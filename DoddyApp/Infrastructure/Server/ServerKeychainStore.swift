@@ -44,6 +44,51 @@ struct ServerKeychainError: Error {
     let status: OSStatus
 }
 
+/// Messaging-server tokens whose revocation is still owed (security audit 2026-11-09, finding 1): this
+/// iPhone signed out, the server hasn't yet said it forgot the token. Kept apart from the token the app
+/// uses (`ServerKeychainStore`): nothing reads these but the one request that ends them. Keychain, this
+/// device only (not in backups, not synced), readable after the first unlock so a launch can retry.
+///
+/// `clearLeftoversOnFreshInstall` (below) leaves this slot alone on purpose: a reinstall after an
+/// offline sign-out still owes the server its revocation, and the first launch pays it.
+struct ServerPendingRevocationStore: PendingRevocationStore {
+    private let service = "com.bienos.doddy2.server.pending-revocation"
+    private let account = "deviceTokens"
+
+    func load() -> [String] {
+        var query = baseQuery
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess, let data = item as? Data,
+              let tokens = try? JSONDecoder().decode([String].self, from: data)
+        else { return [] }
+        return tokens
+    }
+
+    func save(_ tokens: [String]) -> Bool {
+        if tokens.isEmpty {
+            let status = SecItemDelete(baseQuery as CFDictionary)
+            return status == errSecSuccess || status == errSecItemNotFound
+        }
+        guard let data = try? JSONEncoder().encode(tokens) else { return false }
+        // Updated in place: a failed write must never lose what was already owed.
+        let updated = SecItemUpdate(baseQuery as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if updated == errSecSuccess { return true }
+        guard updated == errSecItemNotFound else { return false }
+        var query = baseQuery
+        query[kSecValueData as String] = data
+        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
+    }
+
+    private var baseQuery: [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: service,
+         kSecAttrAccount as String: account]
+    }
+}
+
 extension ServerKeychainStore {
     static let installMarkerKey = "serverKeychainInstalled"
 
