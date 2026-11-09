@@ -56,9 +56,14 @@ final class VoiceStartupSnapshotTests: XCTestCase {
         let repo = try SQLiteMemoryRepository.inMemory()
         let ids = Set((0..<1500).map { _ in UUID() })
         let snapshot = try await repo.voiceStartupSnapshot(excluding: ids)
-        XCTAssertEqual(snapshot.notesContext(excluding: ids).text, "(no saved notes)")
+        XCTAssertEqual(snapshot.notesContext(excluding: ids).includedCount, 0)
+        XCTAssertTrue(snapshot.notesContext(excluding: ids).text.contains("No eligible notes included"))
         XCTAssertFalse(snapshot.notesTruncated)
         XCTAssertNotEqual(VoiceStartupSnapshot.unavailableNotes.text, "(no saved notes)")
         XCTAssertTrue(VoiceStartupSnapshot.unavailableNotes.truncated)
+        let redacted = VoiceStartupSnapshot(notes: [], lists: [.init(id: UUID(), name: "Private", open: 1, done: 0)], notesTruncated: true, listsTruncated: true)
+        let rendered = redacted.listsContext(excluding: Set(redacted.lists.map(\.id)))
+        XCTAssertFalse(rendered.contains("no lists yet"))
+        XCTAssertTrue(rendered.contains("incomplete"))
     }
 }
