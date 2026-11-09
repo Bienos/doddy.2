@@ -226,7 +226,7 @@ struct NoteReminderSheet: View {
     private var explainer: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                CandidateCharacterView(assetName: "Doddy_waving", size: 140)
+                DoddyMotionView(motion: .wave, height: 140)
                     .frame(maxWidth: .infinity)
                 Text("Doddy needs permission to remind you")
                     .font(.title2.bold())
