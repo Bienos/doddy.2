@@ -39,6 +39,17 @@ Every user signs in with a Doddy account, using Apple, Google or a code sent by 
   - Google sign-in fails at Google with `redirect_uri_mismatch` until the Supabase callback is registered on the Google OAuth client (OWNER_QUEUE 25, read 9 Nov).
   - Retiring the old ways in (guests, device sessions, anonymous accounts, the Apple-only voice sign-in) is step 5.
 
+## Logbook: usage counts (ADR-602; on by default, decision `2026-11-09-usage-counts-on-by-default`)
+- **What it sends:** one summary a day to Doddy's backend, counts only: conversations (times, length, how they ended, language), what Doddy did by tool and result, notes and list items saved, tasks handed over. No words, note text, names or audio. Private notes and private conversations are not counted. Ways in and the translator are zeros until the app records them.
+- **Rules (DoddyCore, tested on Linux):** `Logbook/LogbookDay.swift` (the shape and the server's checks), `LogbookBuilder.swift` (a day from the app's records), `LogbookSync.swift` (which days to send, the client, the upload), `LogbookModel.swift` (on by default, the switch, deletion confirmed by the server). `LogbookTests` 10, `LogbookModelTests` 7.
+- **The app:**
+  - `Features/Web/Logbook.swift` reads What Doddy did, the notes, lists and errands;
+  - `VoiceSessionController.keepLog` counts each finished conversation;
+  - `RootView` sends at launch, when Doddy comes to the front and when it goes to the back;
+  - Settings › Doddy on the web › Logbook is the switch (`LogbookSection`).
+- **Where it shows:** Logbook in Doddy Web for the person; the owner panel for the owner (next pull request).
+- **Not run on a device.** Compiled by CI only.
+
 ## Feature map
 Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/implementation/`. Rules with no UI are in `Packages/DoddyCore/Sources/DoddyCore/`.
 

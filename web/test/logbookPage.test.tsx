@@ -42,7 +42,7 @@ describe("Logbook, At a glance", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Logbook" })).toBeInTheDocument();
     expect(screen.getByRole("note")).toHaveTextContent("Example. Made-up numbers, not anyone's usage.");
     const nav = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(nav).getByRole("link", { name: "Logbook Example" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: "Logbook" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("tab", { name: /At a glance/ })).toHaveAttribute("aria-selected", "true");
     // The session check, the health check and the Logbook read: no writes.
     await waitFor(() => expect(seen.map((s) => `${s.method} ${s.path}`).sort()).toEqual(["GET /v1/health", "GET /v1/web/logbook", "GET /v1/web/session"]));
@@ -210,7 +210,7 @@ describe("Logbook, controls and words", () => {
     const panel = (await screen.findByRole("heading", { level: 2, name: "What Logbook will know" })).closest("section") as HTMLElement;
     expect(within(panel).getByText("The text of your notes, lists or tags")).toBeInTheDocument();
     expect(within(panel).getByText("Private notes, not even a count")).toBeInTheDocument();
-    expect(within(panel).getByText("Off until you turn it on in the app")).toBeInTheDocument();
+    expect(within(panel).getByText("On unless you turn it off in the app. Doddy's team can see these counts with your account")).toBeInTheDocument();
   });
 
   test("in Polish: the page, the receipt and the tabs", async () => {
@@ -273,16 +273,17 @@ describe("Logbook, the numbers the iPhone sent", () => {
     expect(seen.filter((s) => s.method !== "GET")).toEqual([]);
   });
 
-  test("Logbook off: one calm card that never sends anyone to a switch that isn't built, and an example on request", async () => {
+  test("Logbook off (turned off in the app): one calm card that says where the switch is, and an example on request", async () => {
     renderLogbook("en", "/logbook");
     expect(await screen.findByRole("heading", { level: 2, name: "Logbook is off" })).toBeInTheDocument();
     const card = screen.getByRole("heading", { level: 2, name: "Logbook is off" }).closest("section") as HTMLElement;
-    expect(card).toHaveTextContent("can't send Logbook yet");
-    expect(document.body).not.toHaveTextContent("Settings › Doddy on the web");
+    expect(card).toHaveTextContent("Turn it on in Doddy on your iPhone: Settings › Doddy on the web.");
+    expect(card).not.toHaveTextContent("isn't built");
     expect(screen.queryByRole("tablist")).toBeNull();
 
     await userEvent.click(within(card).getByRole("button", { name: "Show an example" }));
-    expect(screen.getByRole("note")).toHaveTextContent("Example. Made-up numbers, not anyone's usage. Your real Logbook needs a Doddy update on your iPhone that isn't built yet.");
+    expect(screen.getByRole("note")).toHaveTextContent("Example. Made-up numbers, not anyone's usage.");
+    expect(screen.getByRole("note")).not.toHaveTextContent("isn't built");
     expect(receiptLine("Conversations")).toBe("Conversations28");
     await userEvent.click(screen.getByRole("button", { name: "Back to my Logbook" }));
     expect(screen.getByRole("heading", { level: 2, name: "Logbook is off" })).toBeInTheDocument();
@@ -411,7 +412,7 @@ describe("Logbook, the numbers the iPhone sent", () => {
   test("in Polish: the off card and its example", async () => {
     renderLogbook("pl", "/logbook");
     expect(await screen.findByRole("heading", { level: 2, name: "Dziennik jest wyłączony" })).toBeInTheDocument();
-    expect(document.body).toHaveTextContent("tej części aplikacji Doddy jeszcze nie ma");
+    expect(document.body).toHaveTextContent("Włącz go w Doddym na iPhonie: Ustawienia › Doddy w przeglądarce.");
     await userEvent.click(screen.getByRole("button", { name: "Pokaż przykład" }));
     expect(screen.getByRole("note")).toHaveTextContent("Przykład. Wymyślone liczby, nie czyjeś użycie.");
     expect(screen.getByRole("button", { name: "Wróć do mojego Dziennika" })).toBeInTheDocument();

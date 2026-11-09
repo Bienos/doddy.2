@@ -1408,6 +1408,9 @@ final class VoiceSessionController {
         // the web, and never a private conversation (ADR-603). That is separate from what this iPhone remembers.
         let isPrivate = self.isPrivate
         Task { await WebMemory.shared.sendConversation(log, language: WebMemory.language(), isPrivate: isPrivate) }
+        // Logbook (ADR-602): its times, how it ended and its language, never its words; not a private one.
+        Logbook.conversationEnded(startedAt: log.startedAt, endedAt: log.endedAt, ended: log.ended,
+                                  language: WebMemory.language(), isPrivate: isPrivate)
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         logs.append(log)
     }
