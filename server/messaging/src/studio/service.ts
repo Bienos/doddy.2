@@ -4,8 +4,8 @@
 //   - only a draft can be approved, only with its own digest, only within 10 minutes, only while the
 //     account has fewer than STUDIO_MAX_OPEN open jobs and today's spend plus a reserve per open job
 //     stays within STUDIO_DAILY_CAP_USD (counted under an advisory lock);
-//   - the money is capped in code, not in a prompt (ADR-742): per job (STUDIO_JOB_LIMIT_USD, checked by the
-//     pipeline after every model request), per account and day, and for the whole server and day. The server's
+//   - the money is capped in code, not in a prompt (ADR-742): per job (STUDIO_JOB_LIMIT_USD, enforced by the
+//     pipeline BEFORE every model request (budget.ts) and again after it), per account and day, and for the whole server and day. The server's
 //     counts (approvals, the new-account pool, committed dollars) live in tables with no account in them, so
 //     deleting an item or an account can't give a day back; each approval commits STUDIO_JOB_LIMIT_USD of
 //     STUDIO_DAILY_SERVER_CAP_USD and of STUDIO_MONTHLY_SERVER_CAP_USD (the whole server, a UTC calendar month,

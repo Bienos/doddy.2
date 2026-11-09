@@ -4,7 +4,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { collectSources, countToolUses, echoable, languageName, SeenSources, type ResearchTurn } from "../errands/researcher.js";
 import { checkFiles, failed, isKeptFile, type MadeFile } from "./checks.js";
-import { fileIdsOf, type MakeTurn, type StudioModelApi, type Structured, type UsageLike } from "./model.js";
+import { JobReservations, planCall, TOOL_INPUT_FACTOR } from "./budget.js";
+import { fileIdsOf, MAKE_SYSTEM, PACK_SYSTEM, PLAN_SYSTEM, RESEARCH_SYSTEM, WRITE_SYSTEM, type MakeTurn, type StudioModelApi, type Structured, type UsageLike } from "./model.js";
 import { PER_SEARCH_USD, tokenCostUsd, type StudioStep } from "./models.js";
 import {
   contentProblems, LIMITS, type Check, type ContentOutput, type FailureCode, type PackSource, type PlanOutput,
@@ -63,6 +64,10 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
   /** Token cost so far, each call priced with its own step's model. */
   let tokenUsd = 0;
   let searches = 0, fetches = 0, reportedSearches = 0, reportedFetches = 0, containerMs = 0;
+  /** Calls in flight and the allowance kept for calls whose outcome is unknown (budget.ts). */
+  const reservations = new JobReservations();
+  let callSeq = 0;
+  const caps = api.caps ?? { maxSearches: 15, maxFetches: 15, taskBudgetTokens: 150_000 };
   /** Files made at Anthropic in this job, until each delete is read back. */
   const atAnthropic = new Set<string>();
 
@@ -70,7 +75,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     const s = Math.max(searches, reportedSearches);
     return {
       usage: { ...usage }, searches: s, fetches: Math.max(fetches, reportedFetches),
-      containerSeconds: Math.round(containerMs / 1000), costUsd: roundUsd(tokenUsd + s * PER_SEARCH_USD), model: api.model,
+      containerSeconds: Math.round(containerMs / 1000), costUsd: roundUsd(tokenUsd + s * PER_SEARCH_USD + reservations.unknownUsd), model: api.model,
     };
   };
   const add = (step: StudioStep, u: UsageLike | undefined) => {
@@ -92,10 +97,11 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
   };
 
   /** One model call with the time limit, Cancel and shutdown wired to an abort. */
-  async function guarded<T>(call: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  async function guarded<T>(call: (signal: AbortSignal) => Promise<T>, prepare?: () => void): Promise<T> {
     if (control.signal?.aborted) throw stopFor("interrupted");
     if (now() >= control.deadline) throw stopFor("time_limit");
     if (await control.isCancelled()) throw stopFor("cancelled");
+    prepare?.(); // the pre-call budget check and reservation: throws cost_limit before anything is sent
     const controller = new AbortController();
     const abort = (why: StopReason) => { if (!controller.signal.aborted) controller.abort(why); };
     const timer = setTimeout(() => abort("time_limit"), Math.max(0, control.deadline.getTime() - now().getTime()));
@@ -115,9 +121,51 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     }
   }
 
-  const structured = async <T>(step: StudioStep, call: (signal: AbortSignal) => Promise<Structured<T>>): Promise<Structured<T>> => {
-    const r = await guarded(call);
-    add(step, r.usage);
+  /**
+   * One PAID model call: ceiling, clamp, reserve, send, settle (budget.ts). `spec` is the request's size; `call` gets the
+   * max_tokens the job's remaining budget allows. The reservation is settled from the usage the reply reports; a call that
+   * was sent but didn't come back cleanly keeps an allowance counted, and one that never left costs nothing.
+   */
+  async function paid<T extends { usage?: UsageLike }>(
+    step: StudioStep, spec: { inputChars: number; cacheWrite?: boolean; tools?: boolean },
+    call: (signal: AbortSignal, maxTokens: number) => Promise<T>,
+  ): Promise<T> {
+    const id = `${step}#${++callSeq}`;
+    let maxTokens = 0;
+    let sent = false;
+    const prepare = () => {
+      const searchesLeft = spec.tools ? Math.max(0, caps.maxSearches - Math.max(searches, reportedSearches)) : 0;
+      const fetchesLeft = spec.tools ? Math.max(0, caps.maxFetches - Math.max(fetches, reportedFetches)) : 0;
+      const wholeCaps = caps.maxSearches + caps.maxFetches;
+      const toolInputTokens = spec.tools && wholeCaps > 0 ? caps.taskBudgetTokens * TOOL_INPUT_FACTOR * (searchesLeft + fetchesLeft) / wholeCaps : 0;
+      const remaining = control.jobLimitUsd - stats().costUsd - reservations.openUsd;
+      const plan = planCall({ step, model: api.models[step], inputChars: spec.inputChars, cacheWrite: spec.cacheWrite, searchesLeft, toolInputTokens }, remaining);
+      if (!plan) {
+        log("studio call not sent: its worst-case cost doesn't fit the job's limit", { step, remainingUsd: roundUsd(Math.max(0, remaining)) });
+        throw fail("cost_limit");
+      }
+      maxTokens = plan.maxTokens;
+      reservations.reserve(id, plan.ceilingUsd);
+    };
+    let r: T;
+    try {
+      r = await guarded((signal) => { sent = true; return call(signal, maxTokens); }, prepare);
+    } catch (err) {
+      if (sent) reservations.unknown(id);
+      else reservations.release(id);
+      throw err;
+    }
+    if (r.usage) {
+      add(step, r.usage);
+      reservations.settle(id);
+    } else {
+      reservations.unknown(id); // a reply with no usage may still have been billed
+    }
+    return r;
+  }
+
+  const structured = async <T>(step: StudioStep, input: string, system: string, call: (signal: AbortSignal, maxTokens: number) => Promise<Structured<T>>): Promise<Structured<T>> => {
+    const r = await paid(step, { inputChars: system.length + input.length }, call);
     if (r.kind === "refused") throw fail("refused");
     return r;
   };
@@ -144,7 +192,8 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
 
     // ---------- 1. plan ----------
     await control.setStage("plan");
-    const planned = await structured("plan", (s) => api.plan(JSON.stringify({ today, language, job }), s));
+    const planInput = JSON.stringify({ today, language, job });
+    const planned = await structured("plan", planInput, PLAN_SYSTEM, (s, n) => api.plan(planInput, s, n));
     if (planned.kind !== "ok") throw fail("unreadable_result");
     const plan: PlanOutput = {
       title: clip(planned.value.title.trim(), LIMITS.title),
@@ -162,8 +211,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     const messages: ResearchTurn[] = [{ role: "user", content: JSON.stringify({ today, language, job, subQuestions: plan.subQuestions }) }];
     const notes: string[] = [];
     for (let turn = 0; ; turn++) {
-      const m = await guarded((s) => api.research(messages, s));
-      add("research", m.usage);
+      const m = await paid("research", { inputChars: RESEARCH_SYSTEM.length + JSON.stringify(messages).length, cacheWrite: true, tools: true }, (s, n) => api.research(messages, s, n));
       const counted = countToolUses(m.content);
       searches += counted.searches;
       fetches += counted.fetches;
@@ -181,7 +229,8 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     const allNotes = notes.join("\n\n").slice(0, MAX_NOTES_CHARS);
     if (!allNotes) throw fail("unreadable_result");
 
-    const packed = await structured("pack", (s) => api.pack(JSON.stringify({ today, language, job, notes: allNotes, sources: seen.list(200) }), s));
+    const packInput = JSON.stringify({ today, language, job, notes: allNotes, sources: seen.list(200) });
+    const packed = await structured("pack", packInput, PACK_SYSTEM, (s, n) => api.pack(packInput, s, n));
     if (packed.kind !== "ok") throw fail("unreadable_result");
     const pack = buildPack(packed.value.claims, seen, seenAt);
     log("studio pack", { claims: pack.claims.length, sources: pack.sources.length, seen: seen.size, offered: packed.value.claims.length });
@@ -196,7 +245,8 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     let previous: ContentOutput | undefined;
     for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS && !content; attempt++) {
       const input = attempt === 0 ? writeInput : { ...writeInput, previousAttempt: previous, fixThese: problems };
-      const written = await structured("write", (s) => api.write(JSON.stringify(input), s));
+      const writeJson = JSON.stringify(input);
+      const written = await structured("write", writeJson, WRITE_SYSTEM, (s, n) => api.write(writeJson, s, n));
       withinLimit();
       if (written.kind !== "ok") { problems = ["the reply didn't match the schema"]; continue; }
       previous = written.value;
@@ -256,9 +306,8 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     let containerId = container;
     for (let turn = 0; ; turn++) {
       const started = Date.now();
-      const m = await guarded((s) => api.make(turns, containerId, s));
+      const m = await paid("make", { inputChars: MAKE_SYSTEM.length + JSON.stringify(turns).length, cacheWrite: true }, (s, n) => api.make(turns, containerId, s, n));
       containerMs += Date.now() - started;
-      add("make", m.usage);
       containerId = m.containerId ?? containerId;
       for (const id of fileIdsOf(m.content)) { ids.push(id); atAnthropic.add(id); }
       turns.push({ role: "assistant", content: m.content });

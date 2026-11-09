@@ -299,6 +299,10 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
     assert.equal(await reapInterrupted(w.ctx), 1);
     assert.equal((await row(lost.id)).failure, "interrupted");
     assert.equal((await dayRows()).spend, before, "nothing came back for a job whose cost is unknown");
+    // Reaping again, or starting the loop again, neither re-runs the job nor reserves or releases anything a second time.
+    assert.equal(await reapInterrupted(w.ctx), 0);
+    assert.equal(await runNext(w.ctx), undefined);
+    assert.equal((await dayRows()).spend, before, "no second reservation or release after the crash");
   });
 
   test("a draft expires after 10 minutes; off, unconfigured or without skills answers 503", async () => {

@@ -9,7 +9,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
 import { FALLBACK_BETA, type ResearchMessage, type ResearchTurn } from "../errands/researcher.js";
-import { supportsServerFallback, type StepModels, type StudioStep } from "./models.js";
+import { STEP_MAX_OUTPUT, supportsServerFallback, type StepModels, type StudioStep } from "./models.js";
 import { ContentOutput, PackOutput, PlanOutput } from "./schema.js";
 
 type Block = { type: string; [key: string]: unknown };
@@ -36,11 +36,14 @@ export interface StudioModelApi {
   /** The model each step uses; its tokens are priced with that model's prices. */
   readonly models: StepModels;
   readonly skills: readonly SkillRef[];
-  plan(input: string, signal: AbortSignal): Promise<Structured<PlanOutput>>;
-  research(messages: ResearchTurn[], signal: AbortSignal): Promise<ResearchMessage>;
-  pack(input: string, signal: AbortSignal): Promise<Structured<PackOutput>>;
-  write(input: string, signal: AbortSignal): Promise<Structured<ContentOutput>>;
-  make(messages: MakeTurn[], containerId: string | undefined, signal: AbortSignal): Promise<MakeMessage>;
+  /** The research tool caps, for the pipeline's pre-call cost ceiling (defaults when absent). */
+  readonly caps?: { maxSearches: number; maxFetches: number; taskBudgetTokens: number };
+  // `maxTokens` is the pipeline's clamp from the job's remaining dollar budget (budget.ts); at most the step's usual `max_tokens`.
+  plan(input: string, signal: AbortSignal, maxTokens?: number): Promise<Structured<PlanOutput>>;
+  research(messages: ResearchTurn[], signal: AbortSignal, maxTokens?: number): Promise<ResearchMessage>;
+  pack(input: string, signal: AbortSignal, maxTokens?: number): Promise<Structured<PackOutput>>;
+  write(input: string, signal: AbortSignal, maxTokens?: number): Promise<Structured<ContentOutput>>;
+  make(messages: MakeTurn[], containerId: string | undefined, signal: AbortSignal, maxTokens?: number): Promise<MakeMessage>;
   fileName(id: string, signal: AbortSignal): Promise<string>;
   download(id: string, signal: AbortSignal): Promise<Buffer>;
   deleteFile(id: string, signal: AbortSignal): Promise<void>;
@@ -118,12 +121,14 @@ export class AnthropicStudioApi implements StudioModelApi {
   readonly model: string;
   readonly models: StepModels;
   readonly skills: readonly SkillRef[];
+  readonly caps: { maxSearches: number; maxFetches: number; taskBudgetTokens: number };
   private readonly client: Anthropic;
 
   constructor(apiKey: string, private readonly options: StudioApiOptions) {
     this.models = options.models;
     this.model = options.modelLabel;
     this.skills = options.skills;
+    this.caps = { maxSearches: options.maxSearches, maxFetches: options.maxFetches, taskBudgetTokens: options.taskBudgetTokens };
     // No automatic retries (ADR-742): a model request that may have run and billed is never repeated blindly; a
     // failure ends the job as `provider_error` and the user asks again. The only repeats are the pipeline's own,
     // each bounded and decided by code (a write that broke a rule, a render that failed its checks).
@@ -144,13 +149,13 @@ export class AnthropicStudioApi implements StudioModelApi {
     ];
   }
 
-  private async structured<S extends z.ZodType>(step: StudioStep, system: string, input: string, schema: S, signal: AbortSignal): Promise<Structured<z.infer<S>>> {
+  private async structured<S extends z.ZodType>(step: StudioStep, system: string, input: string, schema: S, signal: AbortSignal, maxTokens?: number): Promise<Structured<z.infer<S>>> {
     const model = this.models[step];
     let response;
     try {
       response = await this.client.beta.messages.parse({
         model,
-        max_tokens: 32000,
+        max_tokens: Math.min(STEP_MAX_OUTPUT[step], maxTokens ?? STEP_MAX_OUTPUT[step]),
         thinking: { type: "adaptive" },
         output_config: { effort: STEP_EFFORT[step], format: zodOutputFormat(schema) },
         ...this.fallback(model),
@@ -167,16 +172,16 @@ export class AnthropicStudioApi implements StudioModelApi {
     return { kind: "ok", value: response.parsed_output as z.infer<S>, usage };
   }
 
-  plan(input: string, signal: AbortSignal) { return this.structured("plan", PLAN_SYSTEM, input, PlanOutput, signal); }
-  pack(input: string, signal: AbortSignal) { return this.structured("pack", PACK_SYSTEM, input, PackOutput, signal); }
-  write(input: string, signal: AbortSignal) { return this.structured("write", WRITE_SYSTEM, input, ContentOutput, signal); }
+  plan(input: string, signal: AbortSignal, maxTokens?: number) { return this.structured("plan", PLAN_SYSTEM, input, PlanOutput, signal, maxTokens); }
+  pack(input: string, signal: AbortSignal, maxTokens?: number) { return this.structured("pack", PACK_SYSTEM, input, PackOutput, signal, maxTokens); }
+  write(input: string, signal: AbortSignal, maxTokens?: number) { return this.structured("write", WRITE_SYSTEM, input, ContentOutput, signal, maxTokens); }
 
-  async research(messages: ResearchTurn[], signal: AbortSignal): Promise<ResearchMessage> {
+  async research(messages: ResearchTurn[], signal: AbortSignal, maxTokens?: number): Promise<ResearchMessage> {
     const model = this.models.research;
     const fb = this.fallback(model);
     const stream = this.client.beta.messages.stream({
       model,
-      max_tokens: 64000,
+      max_tokens: Math.min(STEP_MAX_OUTPUT.research, maxTokens ?? STEP_MAX_OUTPUT.research),
       thinking: { type: "adaptive" },
       // The task budget is advisory to the model; Doddy's own dollar limits are the real cap.
       output_config: { effort: STEP_EFFORT.research, task_budget: { type: "tokens", total: this.options.taskBudgetTokens } },
@@ -190,11 +195,11 @@ export class AnthropicStudioApi implements StudioModelApi {
     return (await stream.finalMessage()) as unknown as ResearchMessage;
   }
 
-  async make(messages: MakeTurn[], containerId: string | undefined, signal: AbortSignal): Promise<MakeMessage> {
+  async make(messages: MakeTurn[], containerId: string | undefined, signal: AbortSignal, maxTokens?: number): Promise<MakeMessage> {
     const skills = this.skills.map((s) => ({ type: "custom" as const, skill_id: s.id, version: s.version }));
     const stream = this.client.beta.messages.stream({
       model: this.models.make,
-      max_tokens: 32000,
+      max_tokens: Math.min(STEP_MAX_OUTPUT.make, maxTokens ?? STEP_MAX_OUTPUT.make),
       thinking: { type: "adaptive" },
       output_config: { effort: STEP_EFFORT.make },
       cache_control: { type: "ephemeral" },

@@ -61,15 +61,23 @@ export const PER_SEARCH_USD = 0.01;
 
 export interface CallUsage { inputTokens: number; cacheWriteTokens: number; cacheReadTokens: number; outputTokens: number }
 
+/** The prices a call of `promptTokens` is billed at (the long-prompt tier where a model has one). */
+export function priceTier(model: string, promptTokens: number): { input: number; output: number; readFactor: number } {
+  const p = PRICES[model] ?? UNKNOWN_MODEL_PRICE;
+  const tier = p.long && promptTokens > p.long.from ? p.long : p;
+  return { input: tier.input, output: tier.output, readFactor: p.readFactor };
+}
+
 /** One call's token cost in USD (searches are priced separately, per search). */
 export function tokenCostUsd(model: string, u: CallUsage): number {
-  const p = PRICES[model] ?? UNKNOWN_MODEL_PRICE;
   const promptTokens = u.inputTokens + u.cacheReadTokens + u.cacheWriteTokens;
-  const tier = p.long && promptTokens > p.long.from ? p.long : p;
-  const usd = (u.inputTokens * tier.input + u.outputTokens * tier.output
-    + u.cacheReadTokens * tier.input * p.readFactor + u.cacheWriteTokens * tier.input * 1.25) / 1_000_000;
-  return usd;
+  const t = priceTier(model, promptTokens);
+  return (u.inputTokens * t.input + u.outputTokens * t.output
+    + u.cacheReadTokens * t.input * t.readFactor + u.cacheWriteTokens * t.input * 1.25) / 1_000_000;
 }
+
+/** The `max_tokens` each step asks for when the job budget leaves room (thinking counts toward it). */
+export const STEP_MAX_OUTPUT: Record<StudioStep, number> = { plan: 32_000, research: 64_000, pack: 32_000, write: 32_000, make: 32_000 };
 
 /** Fallback on a safety refusal is offered by Anthropic for these models only; Haiku 5.5 has none. */
 export const supportsServerFallback = (model: string) => model === OPUS || model === SONNET || model === "claude-fable-5-1";
