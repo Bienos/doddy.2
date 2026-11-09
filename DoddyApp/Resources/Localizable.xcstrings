@@ -23548,65 +23548,6 @@
         }
       }
     },
-    "Doddy's opening. Doddy scores a basket.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eröffnung von Doddy. Doddy trifft in den Korb."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entrada de Doddy. Doddy encesta."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouverture de Doddy. Doddy marque un panier."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyjev uvod. Doddy zabija koš."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apertura di Doddy. Doddy fa canestro."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyのオープニング。Doddyがシュートを決めます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Powitanie Doddy’ego. Doddy trafia do kosza."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abertura do Doddy. O Doddy acerta uma cesta."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 的开场。Doddy 投进一球。"
-          }
-        }
-      }
-    },
     "Doddy's paper,\non your Lock Screen": {
       "extractionState": "manual",
       "localizations": {
@@ -25711,65 +25652,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "轻点两下 iPhone 背面，就能开始和 Doddy 聊天。“和 Doddy 聊聊”也可以通过 Siri、“快捷指令”应用使用，在配备操作按钮的 iPhone 上还能通过操作按钮使用。"
-          }
-        }
-      }
-    },
-    "Double-tap to skip.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doppeltippen überspringt."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toca dos veces para saltar."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touche deux fois pour passer."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dvaput dodirni za preskakanje."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tocca due volte per saltare."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダブルタップでスキップします。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stuknij dwukrotnie, aby pominąć."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toque duas vezes para pular."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轻点两下跳过。"
           }
         }
       }
@@ -75966,65 +75848,6 @@
         }
       }
     },
-    "Tap to skip": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippen überspringt"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toca para saltar"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toucher pour passer"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dodirni za preskakanje"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tocca per saltare"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タップでスキップ"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stuknij, aby pominąć"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toque para pular"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轻点跳过"
-          }
-        }
-      }
-    },
     "Tasks": {
       "extractionState": "manual",
       "localizations": {
@@ -82094,65 +81917,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "The pose SVGs are not in the bundle.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Posen-SVGs sind nicht im Bundle."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Los SVG de las poses no están en el paquete."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les SVG des poses ne sont pas dans le bundle."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SVG datoteke poza nisu u paketu."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gli SVG delle pose non sono nel bundle."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ポーズのSVGがバンドルに含まれていません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "W pakiecie aplikacji brakuje plików SVG z pozami."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Os SVGs das poses não estão no pacote."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "应用包中没有姿势 SVG 文件。"
           }
         }
       }

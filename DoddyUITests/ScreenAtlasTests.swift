@@ -313,8 +313,7 @@ final class ScreenAtlasTests: XCTestCase {
             store: store, onboardingDone: onboardingDone, appearance: appearance, language: language, welcome: welcome,
             legalAccepted: legalAccepted)
         // As LaunchSmokeTests: someone who has talked to Doddy before, unless the visit is a first one.
-        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", firstVisit ? "NO" : "YES",
-                                "-firstLaunchIntroSeen", firstVisit ? "NO" : "YES"]
+        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", firstVisit ? "NO" : "YES"]
         // A key in `extra` replaces the same key set above (UITestLaunch's -memoriesShowsLists NO).
         var arguments = app.launchArguments
         for key in extra where key.hasPrefix("-") {

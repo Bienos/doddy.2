@@ -167,7 +167,7 @@ final class ScreenFixtureTests: XCTestCase {
         let name = "8-native-\(numbered)-\(id)"
         let app = XCUIApplication()
         app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light", language: .english)
-        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", "YES", "-firstLaunchIntroSeen", "YES"]
+        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", "YES"]
         app.launchArguments += ["-screenFixture", "island:\(id)"]
         app.launch()
         var started = see(app.buttons["home.more"], 12)
@@ -207,7 +207,7 @@ final class ScreenFixtureTests: XCTestCase {
     private func visit(_ name: String, fixture: String, extra: [String] = [], _ steps: @MainActor (XCUIApplication) -> Bool) {
         let app = XCUIApplication()
         app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light", language: .english)
-        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", "YES", "-firstLaunchIntroSeen", "YES"]
+        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", "YES"]
         app.launchArguments += extra
         app.launchArguments += ["-screenFixture", fixture]
         app.launch()

@@ -10,7 +10,7 @@ final class DoddyArtTests: XCTestCase {
     private func launch(hideArt: Bool = false, pauseAll: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-inMemoryStore", "YES", "-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-onboardingDone", "YES", "-backTapSetupStatus", "deferred",
-                               "-appearance", "light", "-openingScene", "NO", "-listenOnOpen", "NO",
+                               "-appearance", "light", "-listenOnOpen", "NO",
                                "-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO",
                                "-legalAcceptanceSkippedForUITests", "YES"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
