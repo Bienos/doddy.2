@@ -79,7 +79,7 @@ struct MessagesView: View {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
                             Button("Delete conversation", systemImage: "trash", role: .destructive) { confirmingDelete = true }
-                                .disabled(model.isSending)
+                                .disabled(model.isSending || model.runningLocalAction != nil)
                         } label: {
                             Image(systemName: "ellipsis.circle")
                         }

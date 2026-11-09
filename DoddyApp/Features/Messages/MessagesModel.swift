@@ -114,7 +114,7 @@ final class MessagesModel {
 
     /// Sends a message that got no answer once more, as a new message at the end of the thread.
     func retry(_ id: UUID, using service: AssistantService?, policy: AssistantPolicy, locale: String) {
-        guard !isSending, storage != .loading,
+        guard !isSending, runningLocalAction == nil, storage != .loading,
               let index = messages.firstIndex(where: { $0.id == id }), ThreadRules.canRetry(messages[index])
         else { return }
         let text = messages[index].text
