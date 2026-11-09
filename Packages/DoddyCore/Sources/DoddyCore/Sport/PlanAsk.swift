@@ -47,14 +47,30 @@ public struct PlanAsk: Equatable, Sendable, Codable {
     }
 
     /// The card's lines: what is filled in, and that the safety questions come next, on the screen.
-    public var cardLines: [String] {
-        var lines = ["Goal: " + Self.goalTitle(goal)]
+    public var cardLines: [String] { cardLines(polish: false) }
+
+    /// `polish`: the app is shown in Polish.
+    public func cardLines(polish: Bool) -> [String] {
+        var lines = [(polish ? "Cel: " : "Goal: ") + (polish ? Self.goalTitlePolish(goal) : Self.goalTitle(goal))]
         var week: [String] = []
-        if let daysPerWeek { week.append("\(daysPerWeek) days a week") }
-        if let minutesPerSession { week.append("\(minutesPerSession) min a session") }
-        if !week.isEmpty { lines.append(week.joined(separator: ", ")) }
-        lines.append("You answer the safety questions yourself, on screen.")
+        if let daysPerWeek { week.append(polish ? "dni w tygodniu: \(daysPerWeek)" : "\(daysPerWeek) days a week") }
+        if let minutesPerSession { week.append(polish ? "\(minutesPerSession) min na trening" : "\(minutesPerSession) min a session") }
+        if !week.isEmpty {
+            let joined = week.joined(separator: ", ")
+            lines.append(polish ? joined.prefix(1).uppercased() + joined.dropFirst() : joined)
+        }
+        lines.append(polish ? "Na pytania o bezpieczeństwo odpowiesz na ekranie." : "You answer the safety questions yourself, on screen.")
         return lines
+    }
+
+    static func goalTitlePolish(_ goal: PlanGoal) -> String {
+        switch goal {
+        case .firstFiveK: "Pierwsze 5 km"
+        case .tenK: "10 km"
+        case .halfMarathon: "Półmaraton"
+        case .strengthHome: "Siła w domu"
+        case .strengthGym: "Siła na siłowni"
+        }
     }
 
     public static func goalTitle(_ goal: PlanGoal) -> String {

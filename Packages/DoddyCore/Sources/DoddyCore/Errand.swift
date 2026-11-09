@@ -243,7 +243,8 @@ public enum ErrandAsk {
     /// are what the agent says the user said, so the card asks the user to check them; the note and
     /// the title are Doddy's own. For a shopping task (SHOPPING.md) the digest also binds the
     /// priorities in their order, so the card shows those too.
-    public static func handOverCard(_ draft: ErrandDraft) -> AskCard {
+    public static func handOverCard(_ draft: ErrandDraft, polish: Bool = false) -> AskCard {
+        if polish { return handOverCardPolish(draft) }
         var lines = [
             "Your words, as Doddy will pass them on: \u{201C}\(draft.words)\u{201D}",
             "Doddy's own note, written by Doddy and not by you: \u{201C}\(draft.brief)\u{201D}",
@@ -270,8 +271,41 @@ public enum ErrandAsk {
         return AskCard(title: "Hand this to Doddy?", lines: lines, confirmLabel: "Yes, go")
     }
 
-    public static let checkCard = AskCard(
-        title: "Check your tasks?", lines: ["What Doddy found for the tasks you handed over"], confirmLabel: "Yes, check")
+    /// The same card in Polish: the same lines, in the same order.
+    static func handOverCardPolish(_ draft: ErrandDraft) -> AskCard {
+        var lines = [
+            "Twoje słowa, tak jak Doddy je przekaże: „\(draft.words)”",
+            "Notatka Doddy’ego, napisana przez Doddy’ego, nie przez Ciebie: „\(draft.brief)”",
+            "Tytuł w Sprawach, też od Doddy’ego: „\(draft.title)”",
+        ]
+        let check = "Sprawdź, czy to Twoje słowa. Jeśli nie, stuknij Nie."
+        switch draft.kind {
+        case nil:
+            lines += [
+                check,
+                "Doddy szuka w sieci i czyta strony w tle, tyle, ile trzeba. Wynik będzie czekał w Sprawach w aplikacji.",
+                "Nic nie jest rezerwowane, kupowane ani wysyłane.",
+            ]
+        case .shopping?:
+            if !draft.priorities.isEmpty {
+                lines.append("Co jest najważniejsze, tak jak Doddy to usłyszał, w tej kolejności: " + draft.priorities.joined(separator: ", "))
+            }
+            lines += [
+                check,
+                "Doddy szuka ofert w sklepach w Polsce i czyta ich strony, w tle. Wynik będzie czekał w Sprawach w aplikacji.",
+                "Nic nie jest kupowane, zamawiane ani wysyłane.",
+            ]
+        }
+        return AskCard(title: "Przekazać to Doddy’emu?", lines: lines, confirmLabel: "Tak, działaj")
+    }
+
+    public static let checkCard = checkCard(polish: false)
+
+    public static func checkCard(polish: Bool) -> AskCard {
+        polish
+            ? AskCard(title: "Sprawdzić Twoje sprawy?", lines: ["Co Doddy znalazł w przekazanych mu sprawach"], confirmLabel: "Tak, sprawdź")
+            : AskCard(title: "Check your tasks?", lines: ["What Doddy found for the tasks you handed over"], confirmLabel: "Yes, check")
+    }
 }
 
 // MARK: - States and failures

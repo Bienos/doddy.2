@@ -545,12 +545,12 @@ struct VoiceView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Two short lines instead of the old paragraph. What is sent, to whom and when, now that the
-    /// settings can change it, is on "What leaves this iPhone": it reads the current switches.
+    /// One short line (owner, 9 Nov 2026: "po co to takie długie?"): that Doddy is an AI, and that he
+    /// listens until End. Every card already says nothing happens before a tap. What is sent, to whom
+    /// and when is on "What leaves this iPhone": it reads the current switches.
     private var dataFootnote: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Doddy is an AI, not a person.")
-            Text("He keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.")
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Doddy is an AI. He listens until you tap End.")
             Button("What leaves this iPhone") { showDataFlow = true }
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Theme.accentText)

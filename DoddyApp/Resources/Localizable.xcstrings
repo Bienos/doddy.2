@@ -22446,6 +22446,17 @@
         }
       }
     },
+    "Doddy is an AI. He listens until you tap End.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to AI. Słucha, dopóki nie stukniesz Zakończ."
+          }
+        }
+      }
+    },
     "Doddy is an AI. Prices and availability can change after the time they were checked. Check the price in the shop before you pay.": {
       "extractionState": "manual",
       "localizations": {
@@ -32363,17 +32374,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czy lekarz zalecił Ci ograniczenie wysiłku?"
-          }
-        }
-      }
-    },
-    "He keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Słucha dalej, jeśli wyjdziesz z aplikacji, dopóki nie stukniesz Zakończ. Nic nie jest zapisywane, wysyłane ani otwierane, dopóki tego nie stukniesz."
           }
         }
       }
