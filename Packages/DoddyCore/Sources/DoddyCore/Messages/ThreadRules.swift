@@ -12,6 +12,11 @@ public enum ThreadRules {
     /// A heading with the date and time shows when this long has passed since the previous message.
     public static let headingGap: TimeInterval = 3_600
 
+    /// What the model sees in place of an action card's offer or result (`ThreadMessage.isLocalAction`).
+    public static let localActionStandIn =
+        "(An action card was shown on the phone. Its contents and result stay on the phone and are not shared here. "
+        + "Do not assume what it said or whether it was done.)"
+
     /// The earlier turns for a question, from the thread as it was before that question:
     /// delivered messages only (a failed or still-sending one never reached Doddy), recent ones only.
     /// `AssistantService` then keeps the last few of these.
@@ -24,7 +29,10 @@ public enum ThreadRules {
                 return message.delivery == .sent ? ConversationTurn(role: .user, text: message.text) : nil
             case .doddy:
                 // A file bubble is a name, not something Doddy said: it is not sent as conversation.
-                return message.document == nil ? ConversationTurn(role: .assistant, text: message.text) : nil
+                guard message.document == nil else { return nil }
+                // An action card's offer or result can hold note text or a whole list read on the phone. It stays
+                // on the phone: the model gets only that a card was shown, even with "Use my notes" off.
+                return ConversationTurn(role: .assistant, text: message.isLocalAction ? localActionStandIn : message.text)
             }
         }
     }

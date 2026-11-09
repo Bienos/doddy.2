@@ -26,6 +26,15 @@ final class ThreadRulesTests: XCTestCase {
         XCTAssertEqual(turns.map(\.role), [.user, .assistant])
     }
 
+    func testActionCardsAndResultsReachTheModelOnlyAsAStandIn() {
+        let result = ThreadMessage(
+            id: UUID(), sender: .doddy, text: "Matching notes:\nGate code 4821", createdAt: now.addingTimeInterval(-60),
+            delivery: .sent, basis: .general, isLocalAction: true)
+        let turns = ThreadRules.history(from: [message(.user, "find the gate code", minutesAgo: 2), result], before: now)
+        XCTAssertEqual(turns.map(\.text), ["find the gate code", ThreadRules.localActionStandIn])
+        XCTAssertFalse(turns.contains { $0.text.contains("4821") })
+    }
+
     func testHistoryExcludesTheQuestionBeingAskedAndAnythingLater() {
         let asking = message(.user, "now", minutesAgo: 0)
         let thread = [message(.user, "before", minutesAgo: 5), message(.doddy, "reply", minutesAgo: 4), asking]

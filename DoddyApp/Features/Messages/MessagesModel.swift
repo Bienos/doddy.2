@@ -31,6 +31,12 @@ final class MessagesModel {
     /// A training plan Doddy offered with an answer (ADR-626), by the id of that answer. An offer, not a record: kept for this
     /// session only. It holds a goal and maybe days and minutes; the safety questions are asked on the plan screen.
     private(set) var planAsks: [UUID: PlanAsk] = [:]
+    private(set) var localActions: [UUID: LocalMessageAction] = [:]
+    private(set) var runningLocalAction: UUID?
+    private var actionScopes: [UUID: String] = [:]
+    private var actionDates: [UUID: Date] = [:]
+    private var generation = 0
+    private let actionScope: @MainActor () -> String?
     /// The answer whose file is being made now. One at a time, so a double tap makes one file.
     private(set) var making: UUID?
     /// Why the last file was not made. The offer stays so the person can try again or decline.
@@ -57,13 +63,14 @@ final class MessagesModel {
     private var makeTask: Task<Void, Never>?
     private var didLoad = false
 
-    init(repository: any MessageThreadRepository, sync: (any ThreadSyncClient)? = nil, now: @escaping @Sendable () -> Date = { Date() }) {
+    init(repository: any MessageThreadRepository, sync: (any ThreadSyncClient)? = nil, now: @escaping @Sendable () -> Date = { Date() }, actionScope: @escaping @MainActor () -> String? = { "local-device" }) {
         self.repository = repository
         self.sync = sync
         self.now = now
+        self.actionScope = actionScope
     }
 
-    var canSend: Bool { storage != .loading && ThreadRules.canSend(draft: draft, isSending: isSending, hasPhoto: photo != nil || file != nil) }
+    var canSend: Bool { runningLocalAction == nil && storage != .loading && ThreadRules.canSend(draft: draft, isSending: isSending, hasPhoto: photo != nil || file != nil) }
 
     // MARK: Loading
 
@@ -107,7 +114,7 @@ final class MessagesModel {
 
     /// Sends a message that got no answer once more, as a new message at the end of the thread.
     func retry(_ id: UUID, using service: AssistantService?, policy: AssistantPolicy, locale: String) {
-        guard !isSending, storage != .loading,
+        guard !isSending, runningLocalAction == nil, storage != .loading,
               let index = messages.firstIndex(where: { $0.id == id }), ThreadRules.canRetry(messages[index])
         else { return }
         let text = messages[index].text
@@ -118,6 +125,38 @@ final class MessagesModel {
 
     func cancel() {
         task?.cancel()
+        invalidateLocalActions()
+    }
+
+    func invalidateLocalActions() {
+        generation += 1
+        localActions = [:]; actionScopes = [:]; actionDates = [:]
+    }
+
+    func dismissLocalAction(_ id: UUID) {
+        localActions[id] = nil; actionScopes[id] = nil; actionDates[id] = nil
+    }
+
+    /// Consume the exact offer before awaiting: double taps and unknown outcomes never repeat a write.
+    func confirmLocalAction(_ id: UUID, using executor: any LocalMessageActionExecuting) async {
+        guard runningLocalAction == nil, let action = localActions[id], action.canExecute,
+              let scope = actionScopes[id], actionScope() == scope,
+              let date = actionDates[id], (0...300).contains(now().timeIntervalSince(date)) else {
+            dismissLocalAction(id); return
+        }
+        let owner = generation
+        dismissLocalAction(id)
+        runningLocalAction = id
+        let outcome = await executor.execute(action, stillAuthorised: { [weak self] in
+            guard let self else { return false }
+            return self.generation == owner && self.actionScope() == scope
+        })
+        runningLocalAction = nil
+        guard generation == owner, actionScope() == scope else { return }
+        let receipt = ThreadMessage(sender: .doddy, text: outcome.message, createdAt: now(), delivery: .sent,
+                                    basis: .general, isLocalAction: true)
+        messages.append(receipt)
+        await persist { try await $0.append(receipt) }
     }
 
     func clearError() { error = nil }
@@ -138,6 +177,8 @@ final class MessagesModel {
         error = nil
         isSending = true
         let sessionID = self.sessionID
+        let owner = generation
+        let scope = actionScope()
         task = Task {
             if let old { await self.persist { try await $0.delete(id: old) } }
             await self.persist { try await $0.append(message) }
@@ -147,18 +188,27 @@ final class MessagesModel {
             } catch {
                 result = .failure(error)
             }
-            await self.finish(message, result)
+            let current = !Task.isCancelled && owner == self.generation && scope == self.actionScope()
+            await self.finish(message, current ? result : .failure(.cancelled), scope: scope, locale: locale)
         }
     }
 
-    private func finish(_ message: ThreadMessage, _ result: Result<AssistantAnswer, AssistantError>) async {
+    private func finish(_ message: ThreadMessage, _ result: Result<AssistantAnswer, AssistantError>, scope: String?, locale: String) async {
         switch result {
         case .success(let answer):
-            let reply = ThreadMessage.doddy(answer, now: now())
+            // An offer is never evidence of completion, regardless of the model's accompanying words.
+            let action = answer.answer.localAction
+            let reply = action.map {
+                ThreadMessage(sender: .doddy, text: $0.offerText(polish: locale.hasPrefix("pl")), createdAt: now(), delivery: .sent,
+                              basis: .general, isLocalAction: true)
+            } ?? ThreadMessage.doddy(answer, now: now())
             setDelivery(of: message.id, .sent)
             messages.append(reply)
             if let proposal = answer.answer.proposal { proposals[reply.id] = proposal }
             if let planAsk = answer.answer.planAsk { planAsks[reply.id] = planAsk }
+            if let action, let scope {
+                localActions[reply.id] = action; actionScopes[reply.id] = scope; actionDates[reply.id] = now()
+            }
             await persist {
                 try await $0.setDelivery(id: message.id, .sent)
                 try await $0.append(reply)
@@ -255,7 +305,8 @@ final class MessagesModel {
     /// Removes the whole conversation from this iPhone, then the copy on Doddy's server for the web. The screen is emptied
     /// only after the store read back as empty; the web copy is called deleted only when the server said so.
     func deleteConversation() async {
-        guard !isSending, storage != .loading else { return }
+        guard !isSending, runningLocalAction == nil, storage != .loading else { return }
+        invalidateLocalActions()
         deleteFailed = false
         do {
             try await repository.deleteAll()

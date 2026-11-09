@@ -126,6 +126,7 @@ public struct AssistantRequest: Equatable, Sendable {
     public let image: AssistantImage?
     /// A file sent with this question only (Messages, 7 Nov 2026). Never with a photo, never sent again.
     public let file: AssistantFile?
+    public let localActions: LocalMessageActionContext?
 
     public init(
         sessionID: UUID,
@@ -135,7 +136,8 @@ public struct AssistantRequest: Equatable, Sendable {
         locale: String = "en",
         image: AssistantImage? = nil,
         file: AssistantFile? = nil,
-        requestID: UUID = UUID()
+        requestID: UUID = UUID(),
+        localActions: LocalMessageActionContext? = nil
     ) {
         self.requestID = requestID
         self.sessionID = sessionID
@@ -145,6 +147,7 @@ public struct AssistantRequest: Equatable, Sendable {
         self.locale = locale
         self.image = image
         self.file = file
+        self.localActions = localActions
     }
 }
 
@@ -229,12 +232,15 @@ public struct AssistantReply: Equatable, Sendable {
     /// A training plan the person asked for (ADR-626): a goal and maybe days and minutes, checked here. The plan screen
     /// opens only on a tap, and asks the safety questions itself. nil when none was asked for.
     public let planAsk: PlanAsk?
+    public let localAction: LocalMessageAction?
 
-    public init(text: String, citedMemoryIDs: [UUID] = [], proposal: AssistantProposal? = nil, planAsk: PlanAsk? = nil) {
+    public init(text: String, citedMemoryIDs: [UUID] = [], proposal: AssistantProposal? = nil, planAsk: PlanAsk? = nil,
+                localAction: LocalMessageAction? = nil) {
         self.text = text
         self.citedMemoryIDs = citedMemoryIDs
         self.proposal = proposal
         self.planAsk = planAsk
+        self.localAction = localAction
     }
 }
 

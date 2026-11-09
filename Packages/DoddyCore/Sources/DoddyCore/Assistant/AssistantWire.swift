@@ -34,6 +34,7 @@ struct AssistWireRequest: Codable, Equatable {
 
     /// Messages only, like `image`, and never with it.
     var file: File? = nil
+    var localActions: LocalMessageActionContext? = nil
 
     struct File: Codable, Equatable {
         let name: String
@@ -71,6 +72,11 @@ struct AssistWireResponse: Codable, Equatable {
     let usage: Usage?
     var proposal: Proposal? = nil
     var plan: PlanOffer? = nil
+    struct LocalAction: Codable, Equatable {
+        let name: String
+        let parametersJSON: String
+    }
+    var localAction: LocalAction? = nil
 }
 
 struct AssistWireError: Codable, Equatable {
@@ -128,6 +134,7 @@ enum WireCoding {
                     capturedAt: $0.record.capturedAt.map(isoDate))
             },
             image: request.image.map { .init(mediaType: AssistantImage.mediaType, data: $0.jpeg.base64EncodedString()) },
-            file: request.file.map { .init(name: $0.name, mediaType: $0.mediaType, data: $0.data.base64EncodedString()) })
+            file: request.file.map { .init(name: $0.name, mediaType: $0.mediaType, data: $0.data.base64EncodedString()) },
+            localActions: request.localActions)
     }
 }

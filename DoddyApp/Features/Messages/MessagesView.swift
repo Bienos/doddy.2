@@ -45,14 +45,14 @@ struct MessagesView: View {
          openSettings: @escaping () -> Void = {}) {
         self.openSettings = openSettings
         // Messages on the web (owner, 28 Oct 2026: always on): the thread is copied to Doddy's server after every change.
-        let model = MessagesModel(repository: repository, sync: ServerThreadSync())
+        let model = MessagesModel(repository: repository, sync: ServerThreadSync(), actionScope: { DeviceMessageActions.accountScope })
         model.draft = draft
         model.photo = photo
         if let file { model.file = file }
         _model = State(initialValue: model)
     }
 
-    private var policy: AssistantPolicy { AssistantPolicy(consentGranted: consent, includeNotes: useNotes) }
+    private var policy: AssistantPolicy { AssistantPolicy(consentGranted: consent, includeNotes: useNotes, localActionsEnabled: DeviceMessageActions.accountScope != nil) }
 
     var body: some View {
         NavigationStack {
@@ -79,7 +79,7 @@ struct MessagesView: View {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
                             Button("Delete conversation", systemImage: "trash", role: .destructive) { confirmingDelete = true }
-                                .disabled(model.isSending)
+                                .disabled(model.isSending || model.runningLocalAction != nil)
                         } label: {
                             Image(systemName: "ellipsis.circle")
                         }
@@ -164,6 +164,8 @@ struct MessagesView: View {
             model.cancel()
             DoddyDirector.shared.askClosing()
         }
+        .onChange(of: DeviceMessageActions.accountScope) { _, _ in model.cancel() }
+        .onChange(of: consent) { _, enabled in if !enabled { model.cancel() } }
     }
 
     /// Closes Messages; he is back on Home's stage under the cover as it goes down.
@@ -539,7 +541,7 @@ struct MessagesView: View {
             }
 
             // Where the answer came from, small and grey under the bubble, as a caption would be.
-            if message.document == nil {
+            if message.document == nil && !message.isLocalAction {
             Group {
                 switch message.basis {
                 case .savedNotes:
@@ -566,11 +568,12 @@ struct MessagesView: View {
                                 .foregroundStyle(Theme.secondaryText)
                         }
                     }
-                case .general, nil:
+                case .general:
                     Label("Not from your notes. This is a general answer.", systemImage: "info.circle")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("ask.basis.general")
+                case nil: EmptyView()
                 }
 
                 if message.notesSent > 0 {
@@ -594,6 +597,12 @@ struct MessagesView: View {
             if let planAsk = model.planAsks[message.id] {
                 planCard(planAsk, answerID: message.id)
             }
+            if let action = model.localActions[message.id] {
+                LocalMessageActionCard(action: action, busy: model.runningLocalAction != nil,
+                    confirm: { Task { await model.confirmLocalAction(message.id, using: DeviceMessageActions(store: store, polish: Locale.current.language.languageCode?.identifier == "pl")) } },
+                    dismiss: { model.dismissLocalAction(message.id) })
+            }
+            if model.runningLocalAction == message.id { ProgressView().accessibilityLabel("Working") }
         }
     }
 

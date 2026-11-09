@@ -66,6 +66,7 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
         citedMemoryIDs: outcome.sources.map((id) => id.toLowerCase()), usage: outcome.usage,
         ...(outcome.proposal ? { proposal: outcome.proposal } : {}),
         ...(outcome.plan ? { plan: outcome.plan } : {}),
+        ...(body.localActions && outcome.localAction ? { localAction: outcome.localAction } : {}),
       };
     } catch (err) {
       if (timedOut) return fail("timeout", body.requestId);
