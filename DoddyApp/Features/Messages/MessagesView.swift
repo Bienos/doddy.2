@@ -314,41 +314,69 @@ struct MessagesView: View {
         }
     }
 
-    /// Ready files Doddy made that are not already bubbles above. A tap downloads one and opens it in Quick Look,
-    /// whose Share button saves or sends it; nothing is added to the saved thread.
+    /// The server's ready files that are not already bubbles above (read while Ask Doddy is on).
+    private var madeDocuments: [MadeDocument] {
+        guard case .ready(let list) = files.load else { return [] }
+        return ThreadAttachments.shown(documents: list.documents, thread: model.messages, now: Date())
+    }
+
+    /// Files Doddy made on this iPhone in a voice conversation and kept for a week (the deck from `make_presentation`).
+    /// On the iPhone only: they need neither Ask Doddy nor the server.
+    private var localFiles: [LocalMadeFile] {
+        LocalMadeFiles.shown(LocalMadeFilesStore.shared.files, now: Date())
+    }
+
+    /// Ready files Doddy made that are not already bubbles above: the ones made on this iPhone, then the server's. A tap
+    /// opens one in Quick Look, whose Share button saves or sends it; nothing is added to the saved thread.
     @ViewBuilder
     private var attachments: some View {
-        if case .ready(let list) = files.load {
-            let shown = ThreadAttachments.shown(documents: list.documents, thread: model.messages, now: Date())
-            if !shown.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Files Doddy made for you")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                        .accessibilityAddTraits(.isHeader)
-                    ForEach(shown) { document in
-                        Button {
-                            Task { preview = await files.download(document) }
-                        } label: {
-                            MadeDocumentRow(document: document, downloading: files.downloading == document.id)
-                                .padding(.horizontal, 12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        let local = localFiles
+        let made = madeDocuments
+        if !local.isEmpty || !made.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Files Doddy made for you")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(local) { file in
+                    Button {
+                        preview = LocalMadeFilesStore.shared.url(for: file)
+                    } label: {
+                        LocalMadeFileRow(file: file)
+                            .padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            LocalMadeFilesStore.shared.remove(file.id)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(files.downloading != nil)
-                        .accessibilityIdentifier("messages.attachment")
                     }
-                    if let problem = files.downloadProblem {
-                        Label(problem, systemImage: "exclamationmark.triangle")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.error)
-                            .accessibilityIdentifier("messages.attachmentProblem")
-                    }
+                    .accessibilityIdentifier("messages.localFile")
                 }
-                .padding(.top, 14)
-                .padding(.trailing, 40)
+                ForEach(made) { document in
+                    Button {
+                        Task { preview = await files.download(document) }
+                    } label: {
+                        MadeDocumentRow(document: document, downloading: files.downloading == document.id)
+                            .padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(files.downloading != nil)
+                    .accessibilityIdentifier("messages.attachment")
+                }
+                if let problem = files.downloadProblem ?? LocalMadeFilesStore.shared.problem {
+                    Label(problem, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.error)
+                        .accessibilityIdentifier("messages.attachmentProblem")
+                }
             }
+            .padding(.top, 14)
+            .padding(.trailing, 40)
         }
     }
 
@@ -1038,5 +1066,41 @@ private struct TypingBubble: View {
 
     private func dot(opacity: Double) -> some View {
         Circle().fill(Theme.secondaryText).opacity(opacity).frame(width: 8, height: 8)
+    }
+}
+
+/// One file Doddy made on this iPhone, as a card under the thread.
+struct LocalMadeFileRow: View {
+    let file: LocalMadeFile
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.title3)
+                .frame(width: 28)
+                .foregroundStyle(Theme.accentText)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: file.title)
+                    .lineLimit(2)
+                Text(String(format: NSLocalizedString("%@ · kept on this iPhone for a week", comment: "Messages: a file Doddy made on this iPhone; the first value is its kind, for example Deck"), file.label))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            Spacer(minLength: 8)
+        }
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private var icon: String {
+        switch file.kind {
+        case "deck": "rectangle.on.rectangle"
+        case "doc": "doc.text"
+        case "spreadsheet": "tablecells"
+        case "pdf": "doc.richtext"
+        default: "doc.plaintext"
+        }
     }
 }

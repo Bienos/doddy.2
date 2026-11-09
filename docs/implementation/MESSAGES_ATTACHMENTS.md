@@ -9,6 +9,13 @@ Owner, 28 Oct 2026: "go ahead with attachments next" (item 3: documents, slides 
 - A file made from the chat's "Make it" card is already a bubble; it is matched by the id inside its server link and not shown twice.
 - The cards are read from the server each time Messages opens and **only while Ask Doddy is on**. Nothing is added to the saved thread, so a file the server deleted (after a week) just stops showing.
 
+## Files Doddy made on the iPhone (9 Nov 2026)
+Owner, 9 Nov 2026: "i want Doddy to send me files he creates in Messages inside the app."
+- The deck from `make_presentation` (ADR-567) was written to a temporary folder cleared within a day and offered only on the voice screen's share sheet. Now, once it is written and read back, a copy is kept for a week (`LocalMadeFilesStore`: Application Support/MadeFiles/<id>/, an index, readable after first unlock only) and shows in the same "Files Doddy made for you" section, **first**, before the server's files. A tap opens it in Quick Look (Share saves or sends it); a long press offers Delete, which changes the list only after the index was rewritten.
+- A copy counts as kept only when it reads back byte for byte. When it can't be kept, the deck is still on the share sheet as before and Doddy is not told it is in Messages (`VoiceToolReply.presentationMade(_, inMessages:)`).
+- On the iPhone only: no server, no Ask Doddy consent needed, nothing added to the saved thread or its web copy. Rules in DoddyCore `ThreadLocalFiles.swift` (`ThreadLocalFilesTests`).
+- Not covered: Studio briefs and infographics (they stay in Home ••• › Studio; Studio is off by default), invoice drafts, and a real chat bubble among the messages (a saved bubble needs a thread-table and web-sync change, so the file is a card under the newest message, like the server's files). Google Drive and Notion pages Doddy creates are in those apps, not here.
+
 ## Files
 - `Packages/DoddyCore/.../Messages/ThreadAttachments.swift` (+ `ThreadAttachmentsTests`); `MadeDocument.isID` made public.
 - `DoddyApp/Features/Messages/MessagesView.swift`: the `attachments` section; `MadeDocumentRow` in `FilesView.swift` is now shared.

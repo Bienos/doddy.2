@@ -1687,12 +1687,16 @@ final class VoiceSessionController {
             // ADR-567: written on this iPhone and read back; the share sheet hands it to Keynote.
             do {
                 let url = try PresentationFiles.write(draft, created: Date())
+                // Also kept for a week under "Files Doddy made for you" in Messages. Whatever the screen shows
+                // below, and even if the conversation ended meanwhile; Doddy says "in Messages" only when the
+                // copy read back complete.
+                let inMessages = LocalMadeFilesStore.shared.add(copying: url, title: draft.title, kind: "deck")
                 if onScreen(attempt) {
                     presentationReady = PresentationReady(url: url, title: draft.title, slideCount: draft.slideCount)
                     // ADR-616: written and read back, so it is ready; Show opens its card.
                     flashIsland(.resultReady(.presentation))
                 }
-                await reply(id, VoiceToolReply.presentationMade(draft))
+                await reply(id, VoiceToolReply.presentationMade(draft, inMessages: inMessages))
             } catch {
                 await reply(id, VoiceToolReply.presentationFailed(UserFacingError.message(for: error)), isError: true)
             }
