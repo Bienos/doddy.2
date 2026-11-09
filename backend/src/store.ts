@@ -1242,6 +1242,22 @@ export class Store {
   }
 
   /**
+   * One page of one user's kept notes, in the same order as `memoryNoteRows`, and how many notes
+   * the user keeps in all. The user filter is in both queries; only the page's ciphertext leaves the database.
+   * The id breaks ties, so pages never overlap or skip a note that shares a capture time.
+   */
+  async memoryNoteRowsPage(userId: string, limit: number, offset: number): Promise<{ rows: MemoryNoteRow[]; total: number }> {
+    const [page, count] = await Promise.all([
+      this.db.query<MemoryNoteRow>(
+        "SELECT note_id, key_version, ciphertext, captured_at, received_at FROM memory_notes WHERE user_id = $1 ORDER BY captured_at DESC NULLS LAST, note_id LIMIT $2 OFFSET $3",
+        [userId, limit, offset],
+      ),
+      this.one<{ n: string }>(this.db, "SELECT count(*) AS n FROM memory_notes WHERE user_id = $1", [userId]),
+    ]);
+    return { rows: page.rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) })), total: Number(count?.n ?? 0) };
+  }
+
+  /**
    * Keeps one conversation, replacing the one with that id. "off" (nothing stored) when the
    * conversations switch is off; "full" (nothing stored) when keeping it would pass `limits`.
    */
