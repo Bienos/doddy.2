@@ -86,8 +86,8 @@ struct LegalAcceptanceView: View {
 }
 
 /// A square box that is empty until tapped: never ticked in advance. VoiceOver reads it as a
-/// switch with its label, because it is a `Toggle`.
-private struct TickBoxToggleStyle: ToggleStyle {
+/// switch with its label, because it is a `Toggle`. Also the voice-data box in "Let Doddy get ready".
+struct TickBoxToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
         Button {
             configuration.isOn.toggle()
