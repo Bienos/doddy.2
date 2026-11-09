@@ -2798,6 +2798,17 @@
         }
       }
     },
+    "A recap of this call is in your notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie tej rozmowy jest w Twoich notatkach"
+          }
+        }
+      }
+    },
     "A receipt, a label, where you parked. Doddy reads its text on this iPhone; the photo is never sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -5662,6 +5673,17 @@
         }
       }
     },
+    "After a call Doddy makes for you, a short recap goes into your notes: what was asked, the answer and what's left to do. Never the transcript, and nothing from before you turn this on. You can edit or delete each recap like any note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: o co pytał, jaka była odpowiedź i co zostało do zrobienia. Nigdy zapis rozmowy i nic sprzed włączenia tej opcji. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę."
+          }
+        }
+      }
+    },
     "After research in the British Journal of Sports Medicine (2025), ACSM's 2026 guidance on strength training and WHO's 2020 guidelines.": {
       "extractionState": "manual",
       "localizations": {
@@ -5702,6 +5724,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zgadzać się na cokolwiek, rezerwować, zamawiać ani potwierdzać"
+          }
+        }
+      }
+    },
+    "Agreed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustalone"
           }
         }
       }
@@ -10565,6 +10598,17 @@
         }
       }
     },
+    "Call with %@, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa: %@, %@"
+          }
+        }
+      }
+    },
     "Call you later?": {
       "extractionState": "manual",
       "localizations": {
@@ -10572,6 +10616,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zadzwonić do Ciebie później?"
+          }
+        }
+      }
+    },
+    "Call, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa, %@"
           }
         }
       }
@@ -19355,6 +19410,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在断开连接…"
+          }
+        }
+      }
+    },
+    "Discussed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omówione"
           }
         }
       }
@@ -61758,6 +61824,17 @@
         }
       }
     },
+    "Recap made by Doddy from the call's card and answer, not from the transcript.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie zrobione przez Doddy’ego z karty rozmowy i odpowiedzi, nie z zapisu rozmowy."
+          }
+        }
+      }
+    },
     "Recap of a conversation, kept by your setting": {
       "extractionState": "manual",
       "localizations": {
@@ -61765,6 +61842,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podsumowanie rozmowy, zachowane według Twojego ustawienia"
+          }
+        }
+      }
+    },
+    "Recap written by Claude on Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie napisane przez Claude’a na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
+    "Recap written on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Recap written on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Recap written on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Podsumowanie napisane na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Podsumowanie napisane na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -62572,6 +62701,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "记住关于你的这一点？"
+          }
+        }
+      }
+    },
+    "Remember what we talked about": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamiętaj, o czym rozmawialiśmy"
           }
         }
       }

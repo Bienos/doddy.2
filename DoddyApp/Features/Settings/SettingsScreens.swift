@@ -501,6 +501,7 @@ struct KnowledgeSettingsView: View {
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @AppStorage(PreferenceKey.suggestSavesAfterConversation) private var suggestSaves = true
     @AppStorage(PreferenceKey.learningOn) private var learningOn = false
+    @AppStorage(RecapSettings.rememberKey) private var rememberRecaps = RecapSettings.rememberDefault
     private var conversationLogs: ConversationLogStore { .shared }
 
     var body: some View {
@@ -542,6 +543,16 @@ struct KnowledgeSettingsView: View {
                 }
             } footer: {
                 Text("Up to three things you said, offered when a conversation ends. Nothing is saved unless you tap Save.")
+            }
+            Section {
+                // Decision 2026-11-09-conversation-recaps: off until the person turns it on; then each recap
+                // is saved as a note without a tap. Turning it on is not a yes for conversations before it.
+                Toggle("Remember what we talked about", isOn: Binding(
+                    get: { rememberRecaps },
+                    set: { RecapKeeper.setRemember($0); rememberRecaps = $0 }))
+                    .accessibilityIdentifier("settings.rememberRecaps")
+            } footer: {
+                Text("After a call Doddy makes for you, a short recap goes into your notes: what was asked, the answer and what's left to do. Never the transcript, and nothing from before you turn this on. You can edit or delete each recap like any note.")
             }
         }
         .settingsPage()
