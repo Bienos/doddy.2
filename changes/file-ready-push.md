@@ -1,4 +1,4 @@
 A notification when a file Doddy makes by voice is ready: iPhone registers the file's signed link, the messaging server asks the backend (`?status=1`) and queues one fixed-words push.
 - Backend `?status=1` (+test), messaging `POST /v1/file-watches` + worker pass + migration 023 (+10 tests, FROZEN list), DoddyCore `FileWatchClient` (+3 tests), `DataFlow` row `fileReady`, app `FileReadyPush`. Doc: `docs/implementation/FILE_READY_PUSH.md`.
-- Ran: backend `just-works` 20/20; the whole messaging suite 855/855 against Postgres 16. Not run: Swift (no toolchain), any deploy, a real Apple push, a device. Needs `DOCUMENTS_ORIGIN` on `doddy-messaging` and a deploy of both servers (owner queue 29).
+- Ran: backend `just-works` 20/20; the whole messaging suite 855/855 against Postgres 16. Deployed 9 Nov (both services at `8658d38`, `DOCUMENTS_ORIGIN` set, `fileReadyPush: true` in the log). Not run: a real file made by voice, a real Apple push, a device. Needs an app build that registers files and the database upgrade (owner queue 29, 1).
 - A migration was added: another open pull request that adds `023_*` would collide; the later one renumbers.

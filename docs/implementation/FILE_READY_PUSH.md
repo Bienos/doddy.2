@@ -22,7 +22,7 @@ Row `fileReady` in "What leaves this iPhone" (`DataFlow.swift`): the private lin
 - Messaging `test/fileWatches.test.ts` against Postgres 16 (8 database tests and the link-validation units) and `migrationsFrozen.test.ts`; the **whole messaging suite passed: 855 of 855**.
 
 ## Not run
-- **Nothing was deployed.** Both `doddy` (backend) and `doddy-messaging` need a deploy, and `DOCUMENTS_ORIGIN` must be set on `doddy-messaging` (`docs/OWNER_QUEUE.md` item 29).
+- **Deployed 9 Nov 2026** (owner: "turn it on"): `doddy` and `doddy-messaging` both run `8658d38` (the merge of #282); `DOCUMENTS_ORIGIN=https://doddy-yaci.onrender.com` is set on `doddy-messaging`. Read after the deploys: `doddy-messaging` logged `fileReadyPush: true` at 12:38:49 UTC, `POST /v1/file-watches` without a token answers 401, the backend answers `{"status":"gone"}` to `?status=1` on an unknown link, and neither service logged an error. **Not yet true:** the app build that registers files (Xcode Cloud builds `main` after the merge; no build was seen), no real file was made and no real push was sent, and the messaging database still expires 10 Nov 2026 10:11 UTC (`docs/OWNER_QUEUE.md` item 1).
 - **Swift not compiled, not run** (no toolchain here): `FileWatchClient.swift` and `FileWatchClientTests` in DoddyCore, `DataFlow.swift` row, `DoddyApp/Infrastructure/Server/FileReadyPush.swift`, the call in `VoiceSessionController.swift`. Not seen on a device; no real push was sent through Apple.
 - Files made from the Messages "Make it" card are not watched (the person is in the app then).
 - A tapped notification does not open Messages by itself.
