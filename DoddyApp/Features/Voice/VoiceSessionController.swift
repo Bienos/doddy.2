@@ -3719,7 +3719,10 @@ final class VoiceSessionController {
                 // ADR-616: "ready" only when the server says the file is ready.
                 switch document.status {
                 case .ready: flashIsland(.resultReady(.document))
-                case .working: flashIsland(.resultReady(.documentStarted))
+                case .working:
+                    flashIsland(.resultReady(.documentStarted))
+                    // One notification when it is done, if the messaging server is set up for it.
+                    FileReadyPush.watch(document)
                 case .failed: break
                 }
             }
