@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Decided by:** owner. Asked for: "doddy should send sms from his numbers on his own right … why not remove them [the call limits] and let doddy like find number and call restirant get info and then send message me or notfication in app with result and or like used booking servie instead if available". Then "ok" to the three choices below, as proposed in the same session.
-- **Status:** accepted. Step 1 applied in the pull request that adds this file; steps 2 to 5 to follow, one pull request each.
+- **Status:** accepted. Steps 1 and 2 (the server side) applied in the pull request that adds this file; steps 3 to 5 to follow.
 - **Replaces:** for the steps below only, parts of ADR-500 to 507 (`docs/decisions/calls.md`: one callee per approval, "ask" only, never commits) and of ADR-752 (`text_me` needs a tap).
 
 ## Why
@@ -27,7 +27,7 @@ The owner's example: "Find an Italian restaurant in Warsaw city centre for a dat
 
 ## Steps
 1. Place search keeps the listing's phone number when it looks like one (`listingPhone` in `backend/src/tools/websearch.ts`). Whether Doddy may dial it is still decided by the messaging server's allowlist (`taskCalls/phone.ts`).
-2. Messaging server: a task of up to 3 places under one digest; places are called one after another and the task stops at the first yes; a structured yes/no answer; the "book" kind on its own agent; the result by push and by text to the person's own number. A new migration and the task-call agent setup for booking.
+2. Messaging server: a task of up to 3 places under one digest; places are called one after another and the task stops at the first yes; a structured yes/no answer; the result by push and by text to the person's own number (`server/messaging/src/taskCalls/tasks.ts`, migration `022_call_tasks.sql`). The "book" kind, on its own task-call agent with its own pinned prompt, is a later step: it needs that agent created on ElevenLabs, which only the owner can do.
 3. App: `text_me` to the person's own number without a card when "Texts from Doddy" is on; the rules file and its tests follow.
 4. App: a voice tool that proposes a task from the conversation, the one-tap card, and the result in Messages.
 5. Booking links: the place search or a web search keeps a place's booking page, and Doddy offers it before calling.
@@ -40,4 +40,6 @@ The owner's example: "Find an Italian restaurant in Warsaw city centre for a dat
 - A text to the person's own number now goes out without a second look. If a model proposes a wrong text, it reaches only the person who asked, within the daily cap.
 
 ## Evidence
-Step 1: `backend` build and `node --test dist/test/monid-tools.test.js dist/test/websearch.test.js`, 23 of 23 passed (two new tests). Nothing else was built or run yet; no call has been placed and no text sent by any of this.
+- Step 1: `backend` build and `node --test dist/test/monid-tools.test.js dist/test/websearch.test.js`, 23 of 23 passed (two new tests).
+- Step 2: messaging `npm test` against Postgres 16, 845 of 845 (10 new in `server/messaging/test/callTasks.test.ts`): one tap calls the places in turn, a yes stops the task, unclear stops it, no answer moves on, a call that couldn't be placed stops it, the text choice is part of the digest, cancelling stops it, calling hours end it.
+- No call has been placed and no text sent by any of this; the app doesn't use it yet.
