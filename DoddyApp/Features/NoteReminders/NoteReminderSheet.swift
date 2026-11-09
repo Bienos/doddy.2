@@ -202,7 +202,8 @@ struct NoteReminderSheet: View {
         return Button { choice = value } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.headline)
+                    // Looked up when shown ("Pick a date and time" is a key; a pick's own title already is translated).
+                    Text(NSLocalizedString(title, comment: "")).font(.headline)
                     if let detail {
                         Text(detail).font(.subheadline).foregroundStyle(Theme.secondaryText)
                     }
@@ -226,7 +227,7 @@ struct NoteReminderSheet: View {
     private var explainer: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                CandidateCharacterView(assetName: "Doddy_waving", size: 140)
+                DoddyMotionView(motion: .wave, height: 140)
                     .frame(maxWidth: .infinity)
                 Text("Doddy needs permission to remind you")
                     .font(.title2.bold())

@@ -217,7 +217,7 @@ final class VoiceContextTests: XCTestCase {
         let earlier = ConversationLog(startedAt: t0, endedAt: t0.addingTimeInterval(90),
                                       lines: [.init(fromUser: true, text: long), .init(fromUser: false, text: "Okay.")])
         let text = ConversationLogExport.plainText([later, earlier], exportedAt: t0.addingTimeInterval(7200), timeZone: warsaw)
-        XCTAssertTrue(text.hasPrefix("DODDY remembered conversations — exported 2026-10-09T02:05:06Z\n2 conversations."))
+        XCTAssertTrue(text.hasPrefix("Doddy remembered conversations — exported 2026-10-09T02:05:06Z\n2 conversations."))
         XCTAssertTrue(text.contains("## 2026-10-09 02:05 – 2026-10-09 02:06\nYou: \(long)\nDoddy: Okay."), "full text, not clipped")
         XCTAssertLessThan(text.range(of: "Okay.")!.lowerBound, text.range(of: "Second chat")!.lowerBound)
         XCTAssertTrue(ConversationLogExport.plainText([], exportedAt: t0).contains("0 conversations."))

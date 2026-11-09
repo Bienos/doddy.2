@@ -75,7 +75,7 @@ public struct CaptureActivitySnapshot: Codable, Equatable, Hashable, Sendable {
 
 /// The words and the choices around a snapshot. Plain functions, so they are tested here.
 public enum CapturePresentation {
-    public static let name = "DODDY Capture"
+    public static let name = "Doddy Capture"
 
     /// The date a running timer counts from: `Text(timerInterval:)` in the widget needs a start,
     /// and with this one it shows the audio captured, not the time since the button was pressed.

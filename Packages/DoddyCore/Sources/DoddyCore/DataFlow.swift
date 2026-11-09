@@ -231,9 +231,9 @@ public enum DataFlow {
                 note: "Doddy keeps only the place you pick, and only on this iPhone. iOS watches a reminder's place itself; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
-                what: "A short-lived DODDY session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
+                what: "A short-lived Doddy session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
                 when: "When you sign in or refresh your session, and when a conversation requests a provider connection credential.", isActive: state.tokenServerSet,
-                note: state.tokenServerSet ? "Provider credentials stay on DODDY's server. Your voice and any approved conversation context go directly to the selected provider." : "Voice isn't set up yet."),
+                note: state.tokenServerSet ? "Provider credentials stay on Doddy's server. Your voice and any approved conversation context go directly to the selected provider." : "Voice isn't set up yet."),
             // ADR-563: the phone signs itself in to the built-in server with a random device ID, so there is a
             // Doddy server for every ordinary user once an online feature has been used, with no address typed
             // (ADR-721). Before that nothing has been sent, and the row says so instead of "no server is set".
@@ -449,7 +449,7 @@ public enum DataFlow {
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
             // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
             "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",
-            "DODDY voice refresh sessions and connected-app credentials, in this iPhone's Keychain; short-lived provider credentials stay in memory.",
+            "Doddy voice refresh sessions and connected-app credentials, in this iPhone's Keychain; short-lived provider credentials stay in memory.",
             // ADR-640/641: the key is the person's own, and the list is theirs.
             "Your inFakt key, if you saved one: in this iPhone's Keychain only, never on Doddy's server. Your list of parcels.",
         ]

@@ -147,11 +147,11 @@ enum ProfileErrorText {
             case .verificationFailed:
                 return NSLocalizedString("The save couldn't be confirmed, so it wasn't counted as saved. Your answers are still here.", comment: "")
             case .corruptRecord:
-                return NSLocalizedString("A saved preference couldn't be read. Nothing was deleted.", comment: "")
+                return NSLocalizedString("A saved preference couldn't be read. Nothing was deleted. Check My profile and add it again if it's missing.", comment: "")
             }
         }
         if error is DoddyError {
-            return NSLocalizedString("Preferences can't be saved on this iPhone right now.", comment: "")
+            return NSLocalizedString("Preferences can't be saved on this iPhone right now. Close Doddy and open it again.", comment: "")
         }
         return "Something went wrong and nothing was saved. (\(error.localizedDescription))"
     }

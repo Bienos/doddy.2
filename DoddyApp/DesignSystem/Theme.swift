@@ -15,6 +15,9 @@ enum Theme {
     static var error: Color { .uploaded(.error) }
     /// Decoration only (underlines, dots, props). Never body text.
     static var orangeCue: Color { .uploaded(.orangeCue) }
+    /// Text and icons on the orange (Messages' bubbles and send button): the light ink in both
+    /// appearances, because dark mode's cream doesn't read on orange (6.25:1 on `#FF6A00`).
+    static var inkOnOrange: Color { .fixed(UploadedColorRole.readingInk.hex(.light)) }
 
     /// Doddy's own hand-written lines (the welcome, ADR-598). The design used Caveat, which the app
     /// does not bundle (no font files ship without the owner's approval), so this is a system
@@ -26,6 +29,11 @@ enum Theme {
 }
 
 extension Color {
+    /// One colour in every appearance.
+    static func fixed(_ hex: HexColor) -> Color {
+        Color(red: Double(hex.red) / 255, green: Double(hex.green) / 255, blue: Double(hex.blue) / 255)
+    }
+
     static func uploaded(_ role: UploadedColorRole) -> Color {
         Color(uiColor: UIColor { traits in
             let scheme: CandidateColorScheme = traits.userInterfaceStyle == .dark ? .dark : .light

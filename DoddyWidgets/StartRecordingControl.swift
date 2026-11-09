@@ -2,7 +2,7 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// "Record with DODDY" for Control Center, the Lock Screen and the Action Button (iOS 18+, ADR-588).
+/// "Record with Doddy" for Control Center, the Lock Screen and the Action Button (iOS 18+, ADR-588).
 /// It opens Doddy and starts recording (`RecordWithDoddyIntent`); the recording then carries on in
 /// the Dynamic Island. iOS does not let a recording begin from a cold background, so it cannot start
 /// with no screen at all (docs/implementation/CAPTURE_AUDIT.md section 3). The user adds it
@@ -15,10 +15,10 @@ struct StartRecordingControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: RecordWithDoddyIntent()) {
-                Label("Record with DODDY", systemImage: "record.circle")
+                Label("Record with Doddy", systemImage: "record.circle")
             }
         }
-        .displayName("Record with DODDY")
+        .displayName("Record with Doddy")
         .description("Opens Doddy and starts recording a meeting or conversation. The recording goes on in the Dynamic Island.")
     }
 }

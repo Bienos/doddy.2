@@ -104,7 +104,7 @@ public enum ProfileExport {
 
     public static func plainText(_ profile: ApprovedProfile, style: StyleSnapshot, exportedAt: Date) -> String {
         let iso = ISO8601DateFormatter()
-        var lines = ["DODDY profile and settings — exported \(iso.string(from: exportedAt))", "", "## About you"]
+        var lines = ["Doddy profile and settings — exported \(iso.string(from: exportedAt))", "", "## About you"]
         let stored = fields(profile)
         if stored.isEmpty {
             lines.append("Nothing saved.")
