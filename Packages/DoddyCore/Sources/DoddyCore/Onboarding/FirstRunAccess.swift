@@ -63,6 +63,19 @@ public enum FirstRunAccessRule {
         FirstRunAccessItem.allCases.filter(ticked.contains)
     }
 
+    /// Sending voice to the voice provider (ElevenLabs or OpenAI) is a tick box of its own under the list
+    /// (decision 2026-11-09-voice-consent-in-setup), so the first Talk goes straight to Doddy. Unlike the
+    /// iOS questions above it starts unticked: it is agreement to send data to another company, so the
+    /// person ticks it themselves.
+    public static let voiceDataTickedAtStart = false
+
+    /// Whether finishing the step records voice-data consent: only a ticked box followed by "Allow
+    /// selected". "Not now, ask me when Doddy needs one" records nothing, whatever is ticked, and the
+    /// first Talk asks instead.
+    public static func recordsVoiceConsent(ticked: Bool, tappedAllow: Bool) -> Bool {
+        ticked && tappedAllow
+    }
+
     /// How many were allowed and how many were refused, for the line under the button. Skipped ones count
     /// in neither.
     public static func summary(_ outcomes: [FirstRunAccessItem: FirstRunAccessOutcome]) -> (allowed: Int, refused: Int) {

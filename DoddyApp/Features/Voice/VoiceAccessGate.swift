@@ -8,7 +8,6 @@ struct VoiceAccessGate: View {
     let provider: VoiceProvider
     let onContinue: () -> Void
     @State private var session = VoiceAuthSession.shared
-    @State private var consented = false
     /// A Doddy account, a DODDY voice account, or (Debug builds only, ADR-551) the developer's direct connection.
     private var accessReady: Bool { session.hasVoiceAccess(for: provider) }
 
@@ -43,28 +42,33 @@ struct VoiceAccessGate: View {
                 AppleAccountSignInButton(provider: provider)
                     .accessibilityIdentifier("voice.auth.appleSignIn")
             } else {
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("Voice runs through \(provider.shortName)", systemImage: "waveform")
-                        .font(.headline)
-                    Text("When you continue, your voice and this conversation are sent to \(provider.shortName) so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.")
-                        .font(.body)
-                    Text("Apple sign-in and microphone access are separate. You can use notes without enabling voice, and you can change this provider’s consent in Settings.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
+                // Short on purpose (decision 2026-11-09-voice-consent-in-setup): most people agree in the
+                // first-run "Let Doddy get ready" step and never see this. It shows only for someone who
+                // skipped that, used Doddy before it existed, or switched provider. The button is the
+                // agreement: nothing is sent until it is tapped.
+                Text(VoiceConsentCopy.gateSummary(provider))
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("voice.auth.providerConsent")
+                DisclosureGroup("What's sent") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(VoiceConsentCopy.details(provider))
+                        Text("Apple sign-in and microphone access are separate. You can use notes without enabling voice, and you can change this provider’s consent in Settings.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 6)
                 }
+                .font(.footnote.weight(.semibold))
                 .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
-                .accessibilityIdentifier("voice.auth.providerConsent")
-
-                Toggle("I agree to send voice data to \(provider.shortName) for this conversation", isOn: $consented)
-                    .accessibilityIdentifier("voice.auth.consentToggle")
-                Button("Continue to microphone access") {
+                .accessibilityIdentifier("voice.auth.consentDetails")
+                Button("Agree and talk") {
                     VoiceProviderConsent.grant(for: provider)
                     onContinue()
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(!consented)
                 .accessibilityIdentifier("voice.auth.continue")
             }
 
@@ -87,7 +91,26 @@ struct VoiceAccessGate: View {
         .frame(maxWidth: 520)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { consented = VoiceProviderConsent.isGranted(for: provider) }
+    }
+}
+
+/// What agreeing to send voice says, in one place for the first-run step and the Talk fallback, so the
+/// two can't drift apart. Format strings so the provider's name is filled in and Polish still applies.
+enum VoiceConsentCopy {
+    static func setupTitle(_ provider: VoiceProvider) -> String {
+        String(format: NSLocalizedString("Send my voice to %@", comment: "First-run tick box"), provider.shortName)
+    }
+
+    static func setupReason(_ provider: VoiceProvider) -> String {
+        String(format: NSLocalizedString("So Doddy can answer when you talk. %@ runs Doddy’s voice. Nothing is sent until you start a conversation.", comment: ""), provider.shortName)
+    }
+
+    static func gateSummary(_ provider: VoiceProvider) -> String {
+        String(format: NSLocalizedString("Doddy’s voice runs through %@. Your voice and this conversation go to them so Doddy can answer.", comment: ""), provider.shortName)
+    }
+
+    static func details(_ provider: VoiceProvider) -> String {
+        String(format: NSLocalizedString("Your voice and each conversation are sent to %@ so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.", comment: ""), provider.shortName)
     }
 }
 

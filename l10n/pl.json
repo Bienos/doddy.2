@@ -1,4 +1,11 @@
 {
+  "What's sent": "Co jest wysyłane",
+  "Agree and talk": "Zgadzam się, rozmawiajmy",
+  "Apple sign-in and microphone access are separate. You can use notes without enabling voice, and you can change this provider’s consent in Settings.": "Logowanie przez Apple i dostęp do mikrofonu to osobne sprawy. Z notatek możesz korzystać bez włączania głosu, a tę zgodę dla dostawcy zmienisz w Ustawieniach.",
+  "Send my voice to %@": "Wysyłaj mój głos do %@",
+  "So Doddy can answer when you talk. %@ runs Doddy’s voice. Nothing is sent until you start a conversation.": "Żeby Doddy mógł odpowiadać, gdy mówisz. Głos Doddy’ego działa przez %@. Nic nie jest wysyłane, dopóki nie zaczniesz rozmowy.",
+  "Doddy’s voice runs through %@. Your voice and this conversation go to them so Doddy can answer.": "Głos Doddy’ego działa przez %@. Twój głos i ta rozmowa trafiają tam, żeby Doddy mógł odpowiedzieć.",
+  "Your voice and each conversation are sent to %@ so Doddy can respond. Depending on your settings, Doddy may also send non-private notes, list details used in the conversation, recent conversations, approved profile details, and enabled connected-service results. The provider processes this data under its own privacy terms.": "Twój głos i każda rozmowa są wysyłane do %@, żeby Doddy mógł odpowiedzieć. Zależnie od ustawień Doddy może też wysłać notatki, które nie są prywatne, szczegóły list użytych w rozmowie, ostatnie rozmowy, zatwierdzone dane z profilu i wyniki z włączonych połączonych usług. Dostawca przetwarza te dane według własnych zasad prywatności.",
   " (shared)": " (udostępniona)",
   "%@ shared a reminder at “%@”.": "%@ udostępnia przypomnienie w miejscu „%@”.",
   "%lld calls still have a part of their cost unknown or pending, so no average is shown for them.": "Połączenia z częścią kosztu wciąż nieznaną lub w toku: %lld; dla nich średnia nie jest pokazywana.",
