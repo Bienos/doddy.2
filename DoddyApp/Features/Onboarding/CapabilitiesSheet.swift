@@ -12,6 +12,9 @@ struct CapabilitiesSheet: View {
     @Environment(\.appEnvironment) private var environment
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var textSize
+    /// Phone calls and calls for you open inside this sheet. A tile is a plain button that sets this: a
+    /// NavigationLink inside a grid in a List row doesn't push (the hosted UI test caught it, 10 Nov 2026).
+    @State private var openedInside: DoddyAbility?
 
     private var language: NotificationLanguage { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) }
 
@@ -52,6 +55,12 @@ struct CapabilitiesSheet: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.canvas)
+            .navigationDestination(item: $openedInside) { ability in
+                switch ability {
+                case .callsForYou: CallCasesView()
+                default: CallsSettingsView()
+                }
+            }
             .navigationTitle("What I can do")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -73,12 +82,8 @@ struct CapabilitiesSheet: View {
     private func abilityTile(_ row: AbilityRow) -> some View {
         let id = "capabilities.row.\(row.ability.rawValue)"
         switch row.ability {
-        case .phoneCalls:
-            NavigationLink { CallsSettingsView() } label: { AbilityTileView(row: row, opens: true) }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier(id)
-        case .callsForYou:
-            NavigationLink { CallCasesView() } label: { AbilityTileView(row: row, opens: true) }
+        case .phoneCalls, .callsForYou:
+            Button { openedInside = row.ability } label: { AbilityTileView(row: row, opens: true) }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier(id)
         case .notes, .lists, .messages, .tasks, .leaflets:
