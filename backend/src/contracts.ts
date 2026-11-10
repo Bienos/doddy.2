@@ -193,6 +193,8 @@ export const ErrorCode = z.enum([
   "refused",
   /** A sign-in or device already linked elsewhere (decision 2026-11-08-required-account). Not retried. */
   "account_conflict",
+  /** make_document was asked with too little to go on (decision 2026-11-10-files-ask-for-details). Nothing was made or counted; ask the user and send it again. */
+  "need_details",
   "internal",
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;

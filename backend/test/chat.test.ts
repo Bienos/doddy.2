@@ -90,7 +90,7 @@ async function connect(r: WebRig, toolkit: string, token = USER_A) {
 }
 
 async function makeDocument(r: WebRig, title: string, token = USER_A) {
-  const args = { kind: "pdf", title, request: "A one-page summary" };
+  const args = { kind: "pdf", title, request: "A one-page summary for the owner" };
   const asked = await r.call("POST", "/v1/tools/prepare", { token, body: { tool: "make_document", arguments: args } });
   assert.equal(asked.status, 200, asked.text);
   const ran = await r.call("POST", "/v1/tools/run", { token, body: { tool: "make_document", arguments: args, timeZone: "Europe/Warsaw", approvalId: asked.body.approvalId } });

@@ -807,6 +807,7 @@ struct MessagesView: View {
         switch failure {
         case .notConfigured: Text("Making files needs Doddy's server, which isn't set up in this build.")
         case .offline: Text("Doddy's server couldn't be reached. Nothing was confirmed. Check your connection and try again.")
+        case .needsDetails: Text("Add a bit more detail, such as who it is for or what it is for, and try again. Nothing was made.")
         case .failed: Text("The file wasn't made, or Doddy couldn't confirm it. Try again.")
         }
     }

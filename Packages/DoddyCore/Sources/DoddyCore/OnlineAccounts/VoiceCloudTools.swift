@@ -49,6 +49,13 @@ extension VoiceToolReply {
     /// The result words the server starts a line with (backend/src/tools/catalog.ts).
     static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:", "started:"]
 
+    /// What the agent hears when `make_document` was asked with too little to go on. Starts with the fixed word
+    /// `need_details`, then the server's one-line list of what is missing, then what to do.
+    public static func needDetails(message: String) -> String {
+        let list = ToolData.clean(message).trimmingCharacters(in: .whitespacesAndNewlines)
+        return "need_details: \(list) Nothing was made and nothing was used up. Ask the user at most two short questions about exactly what is missing (skip any they already answered), then call make_document again with their answers in the request. If they say to just do it, call it again with sensible defaults and say which you assumed."
+    }
+
     public static func cloudDeclined(_ tool: String) -> String {
         "declined: the user chose not to do \"\(CloudToolName.title(tool))\". Nothing was done."
     }
@@ -84,6 +91,10 @@ extension VoiceToolReply {
                 // A repeat of a confirmation whose first run may have gone through (ADR-322).
                 if receipt?.errorCode == "earlier_outcome_unknown" || receipt?.status == .outcomeUnknown { return maybeDone }
                 return "failed: \"\(CloudToolName.title(tool))\" is switched off. Tell the user they can switch it on in Settings, Online accounts. Nothing was done."
+            case OnlineAccountsError.needDetailsCode:
+                // Decision 2026-11-10-files-ask-for-details: the server turned a too-thin file request away before any
+                // card, approval or Claude call. It is not a failure and not "done": the agent asks and sends it again.
+                return needDetails(message: error.userMessage)
             case "not_connected", "connection_expired", "permission_insufficient":
                 // ADR-563: the app puts a Connect button on screen for this account.
                 return "not_connected: \(account) isn't connected yet, or needs reconnecting. A \"Connect \(account)\" button is on the user's screen now. Ask in one short sentence whether they'd like to connect it; it takes a few seconds. When it's connected the app tells you, and then you do what they asked. Nothing was done yet."

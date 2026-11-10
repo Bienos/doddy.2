@@ -1934,6 +1934,7 @@
   "PDF": "PDF",
   "Making files needs Doddy's server, which isn't set up in this build.": "Robienie plików wymaga serwera Doddy’ego, którego ta wersja aplikacji nie ma ustawionego.",
   "Doddy's server couldn't be reached. Nothing was confirmed. Check your connection and try again.": "Nie udało się połączyć z serwerem Doddy’ego. Nic nie zostało potwierdzone. Sprawdź połączenie i spróbuj jeszcze raz.",
+  "Add a bit more detail, such as who it is for or what it is for, and try again. Nothing was made.": "Dodaj trochę szczegółów, na przykład dla kogo to jest albo do czego, i spróbuj jeszcze raz. Nic nie powstało.",
   "The file wasn't made, or Doddy couldn't confirm it. Try again.": "Plik nie powstał albo Doddy nie mógł tego potwierdzić. Spróbuj jeszcze raz.",
   "SHOPPING REPORT": "RAPORT ZAKUPOWY",
   "Doddy is an AI. Prices and availability can change after the time they were checked. Check the price in the shop before you pay.": "Doddy to AI. Ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz.",

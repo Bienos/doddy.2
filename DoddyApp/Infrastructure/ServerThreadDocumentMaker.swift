@@ -37,6 +37,7 @@ struct ServerThreadDocumentMaker: ThreadDocumentMaker {
         switch error {
         case .notConfigured: .notConfigured
         case .transport: .offline
+        case .server where error.isNeedDetails: .needsDetails
         case .unauthenticated, .server, .unreadableResponse: .failed
         }
     }

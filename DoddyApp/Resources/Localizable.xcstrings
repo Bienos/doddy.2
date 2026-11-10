@@ -4409,6 +4409,17 @@
         }
       }
     },
+    "Add a bit more detail, such as who it is for or what it is for, and try again. Nothing was made.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj trochę szczegółów, na przykład dla kogo to jest albo do czego, i spróbuj jeszcze raz. Nic nie powstało."
+          }
+        }
+      }
+    },
     "Add a parcel": {
       "extractionState": "manual",
       "localizations": {

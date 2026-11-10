@@ -273,7 +273,7 @@ test("make_document: a failure says so on the page and in the log, without conte
     throw new ProviderError("provider_unavailable");
   };
   rig = await start({}, { claude: failing });
-  const res = await run(rig, "make_document", { kind: "text", title: "Blog: private stuff", request: "Write a blog post" });
+  const res = await run(rig, "make_document", { kind: "text", title: "Blog: private stuff", request: "Write a blog post for my friends" });
   assert.equal(res.status, 200, res.text);
   await rig.tools.settle();
   const link = new URL(res.body.document.url);
@@ -290,7 +290,7 @@ test("Claude not set up, or no document links: the card is refused honestly and 
   assert.equal(res.body.error.message, "Claude isn't set up on this server.");
   await rig.close();
   rig = await start({}, { documentLinks: false });
-  const doc = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "pdf", title: "x", request: "y" } } });
+  const doc = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "pdf", title: "x", request: "y for the owner" } } });
   assert.equal(doc.status, 503);
 });
 
