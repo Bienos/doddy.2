@@ -172,9 +172,17 @@ extension TimerBanners {
         let requestID = response.notification.request.identifier
         // A call Doddy made for the person has its answer ready (ADR-730): the tap opens Files › Calls,
         // where the recap is. The push says only that (the server sends a kind, never words or ids).
-        if ServerPushKind.parse(response.notification.request.content.userInfo) == .callResult {
+        let serverPush = ServerPushKind.parse(response.notification.request.content.userInfo)
+        if serverPush == .callResult {
             if action != UNNotificationDismissActionIdentifier {
                 await MainActor.run { ShortcutRouter.shared.callRecapsOpened() }
+            }
+            return
+        }
+        // A task or a file Doddy finished (owner, 10 Nov 2026): Messages opens, where his message about it is.
+        if serverPush?.opensMessages == true {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.messagesOpened() }
             }
             return
         }

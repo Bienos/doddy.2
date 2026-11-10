@@ -40,7 +40,7 @@ final class VoiceSessionController {
         case alarm(toolCallID: String, draft: AlarmDraft)
         /// "Turn off this alarm?" (ADR-283), one of Doddy's alarms.
         case cancelAlarm(toolCallID: String, alarm: AlarmEntry)
-        case map(toolCallID: String, place: String)
+        case map(toolCallID: String, trip: MapTrip)
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
         case message(toolCallID: String, draft: MessageDraft, address: String)
@@ -1526,13 +1526,14 @@ final class VoiceSessionController {
                 return
             }
             await reply(id, AlarmScheduler.cancel(alarm.id) ? VoiceToolReply.alarmCancelled(alarm) : VoiceToolReply.alarmCancelUnconfirmed)
-        case .map(let id, let place):
-            guard let url = OpenLinks.map(place: place) else {
+        case .map(let id, let trip):
+            guard let url = trip.url else {
                 await reply(id, VoiceToolReply.notOpened("That place can't be opened in Maps."))
                 return
             }
             let opened = await open(url)
-            await reply(id, opened ? VoiceToolReply.mapOpened(place) : VoiceToolReply.notOpened("Maps didn't open."))
+            let said = trip.isRoute ? VoiceToolReply.routeOpened(trip) : VoiceToolReply.mapOpened(trip.place)
+            await reply(id, opened ? said : VoiceToolReply.notOpened("Maps didn't open."))
         case .shortcut(let id, let name):
             guard let url = OpenLinks.shortcut(name: name) else {
                 await reply(id, VoiceToolReply.notOpened("That shortcut name can't be used."))
@@ -1820,59 +1821,72 @@ final class VoiceSessionController {
     func declinePendingAction() async {
         guard let action = pendingAction else { return }
         pendingAction = nil
+        await settleUnanswered(action, replaced: false)
+    }
+
+    /// A card closed without a yes: the user's No, or a newer ask that took its place (owner, 10 Nov
+    /// 2026: a card the user couldn't see blocked every later card). Nothing runs either way. When
+    /// replaced, the state shared between cards (ticks, the note's type) already belongs to the new
+    /// card, so it is left alone.
+    private func settleUnanswered(_ action: PendingAction, replaced: Bool) async {
+        func answer(_ id: String, _ text: String) async {
+            await reply(id, replaced ? VoiceToolReply.replacedByNewerAsk : text)
+        }
         switch action {
         case .memory(let id, _):
-            pendingMemoryCategory = .other
-            await reply(id, VoiceToolReply.declined)
-        case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
-        case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
-        case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
-        case .alarm(let id, _): await reply(id, VoiceToolReply.declinedAlarm)
-        case .cancelAlarm(let id, _): await reply(id, VoiceToolReply.alarmCancelDeclined)
-        case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
-        case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
-        case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
-        case .blik(let id, _, _, _): await reply(id, VoiceToolReply.blikDeclined)
+            if !replaced { pendingMemoryCategory = .other }
+            await answer(id, VoiceToolReply.declined)
+        case .event(let id, _): await answer(id, VoiceToolReply.declinedEvent)
+        case .reminder(let id, _): await answer(id, VoiceToolReply.declinedReminder)
+        case .timer(let id, _): await answer(id, VoiceToolReply.declinedTimer)
+        case .alarm(let id, _): await answer(id, VoiceToolReply.declinedAlarm)
+        case .cancelAlarm(let id, _): await answer(id, VoiceToolReply.alarmCancelDeclined)
+        case .map(let id, _): await answer(id, VoiceToolReply.declinedMap)
+        case .shortcut(let id, _): await answer(id, VoiceToolReply.declinedShortcut)
+        case .message(let id, _, _): await answer(id, VoiceToolReply.declinedMessage)
+        case .blik(let id, _, _, _): await answer(id, VoiceToolReply.blikDeclined)
         case .callTask(let id, let preview):
             // Nothing was dialled; the server deletes the places' briefs now instead of when they lapse.
             if let client = Self.messagingClient() { try? await client.cancelCallTask(preview.taskId) }
-            await reply(id, VoiceToolReply.callTaskDeclined)
+            await answer(id, VoiceToolReply.callTaskDeclined)
         case .callLater(let id, _, _, _):
-            callLaterAllowQuiet = false
-            await reply(id, VoiceToolReply.callDeclined)
+            if !replaced { callLaterAllowQuiet = false }
+            await answer(id, VoiceToolReply.callDeclined)
         case .callNow(let id, _):
-            await reply(id, VoiceToolReply.callNowDeclined)
-        case .presentation(let id, _): await reply(id, VoiceToolReply.presentationDeclined)
-        case .camera(let id): await reply(id, VoiceToolReply.cameraDeclined)
-        case .home(let id, _): await reply(id, VoiceToolReply.homeDeclined)
-        case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
+            await answer(id, VoiceToolReply.callNowDeclined)
+        case .presentation(let id, _): await answer(id, VoiceToolReply.presentationDeclined)
+        case .camera(let id): await answer(id, VoiceToolReply.cameraDeclined)
+        case .home(let id, _): await answer(id, VoiceToolReply.homeDeclined)
+        case .cloud(let id, let call, _, _, _): await answer(id, VoiceToolReply.cloudDeclined(call.name))
         case .ask(let id, _, _, let toolName, _):
             _ = askLedger.answer(.declined, for: id, at: Date())
-            await reply(id, AskFirst.notAsked(toolName))
+            await answer(id, AskFirst.notAsked(toolName))
         case .cloudRead(let id, let call, _, _, _):
             _ = askLedger.answer(.declined, for: id, at: Date())
-            await reply(id, AskFirst.notAsked(call.name))
-        case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
-        case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
-        case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
-        case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
-        case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
-        case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
-        case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
+            await answer(id, AskFirst.notAsked(call.name))
+        case .noteReminder(let id, _, _, _, _): await answer(id, VoiceToolReply.declinedNoteReminder)
+        case .createList(let id, _, _): await answer(id, VoiceToolReply.declinedList)
+        case .changeEvent(let id, _), .changeReminder(let id, _, _): await answer(id, VoiceToolReply.changeDeclined)
+        case .deleteEvent(let id, _), .deleteReminder(let id, _): await answer(id, VoiceToolReply.deleteDeclined)
+        case .undo(let id, _): await answer(id, VoiceToolReply.undoDeclined)
+        case .parking(let id, _): await answer(id, VoiceToolReply.parkingDeclined)
+        case .leaveBy(let id, _): await answer(id, VoiceToolReply.leaveByDeclined)
         case .ingredients(let id, _, _, _, _, _):
-            ingredientsUnticked = []
-            ingredientsAtHome = []
-            await reply(id, VoiceToolReply.ingredientsDeclined)
+            if !replaced {
+                ingredientsUnticked = []
+                ingredientsAtHome = []
+            }
+            await answer(id, VoiceToolReply.ingredientsDeclined)
         case .bulk(let id, _, _, _):
-            bulkUnticked = []
-            await reply(id, VoiceToolReply.bulkDeclined)
+            if !replaced { bulkUnticked = [] }
+            await answer(id, VoiceToolReply.bulkDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
             for step in steps {
                 logPlanStep(step, reply: PlanReply.declined, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
             }
-            await reply(id, PlanReply.declined)
+            await answer(id, PlanReply.declined)
         }
     }
 
@@ -2983,8 +2997,8 @@ final class VoiceSessionController {
                 guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
                 propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
             }
-        case .openMap(let place):
-            propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
+        case .openMap(let place, let from, let mode):
+            propose(.map(toolCallID: call.toolCallId, trip: MapTrip(place: place, from: from, mode: mode)), toolCallID: call.toolCallId)
         case .runShortcut(let name):
             propose(.shortcut(toolCallID: call.toolCallId, name: name), toolCallID: call.toolCallId)
         case .draftMessage(let draft):
@@ -3303,11 +3317,6 @@ final class VoiceSessionController {
         proposedNoteTexts += steps.compactMap { step in
             if case .saveMemory(let text) = step.request { text } else { nil }
         }
-        guard pendingAction == nil else {
-            // One card at a time, as in propose(_:toolCallID:).
-            await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
-            return
-        }
         var blocked: [Int: PlanBlock] = [:]
         // This plan's own approvals (review H7): kept apart until its card is shown, so an
         // overlapping propose_plan can't mix its approvals into this card or this one's into it.
@@ -3347,11 +3356,7 @@ final class VoiceSessionController {
             await reply(call.toolCallId, PlanReply.summary(results))
             return
         }
-        // Another card may have been shown while the steps were checked (the checks wait).
-        guard pendingAction == nil else {
-            await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
-            return
-        }
+        // A card shown while the steps were checked is replaced by this one in propose(_:toolCallID:).
         planTicked = Set(steps.map(\.number)).subtracting(blocked.keys)
         planChanged = []
         planCloud = approvals
@@ -3650,6 +3655,9 @@ final class VoiceSessionController {
                     FileReadyPush.watch(document)
                 case .failed: break
                 }
+                // Also Doddy's own message in Messages, with the file to open and share from (owner, 10 Nov 2026).
+                // A private conversation keeps nothing on this iPhone, so it adds nothing there either.
+                if !isPrivate { await ThreadInbox.deliver(document: document, polish: Self.cardsInPolish) }
             }
             await reply(toolCallID, VoiceToolReply.cloudResult(result))
         } catch {
@@ -3776,12 +3784,7 @@ final class VoiceSessionController {
                 dropStale(toolCallID)
                 return
             }
-            // Refused here, not in propose(): resetting the choice for a card that isn't shown
-            // would change the place on the card that is (review H8).
-            guard pendingAction == nil else {
-                await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer."))
-                return
-            }
+            // This card replaces any card still waiting (propose), so the choice starts at the first place.
             selectedPlaceIndex = 0
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
                                   savedAt: record.capturedAt, target: .place(results: Array(results.prefix(5)), onArrival: onArrival)),
@@ -4150,9 +4153,11 @@ final class VoiceSessionController {
         // A proposal that finished its lookups after End shows no card (review H9), and one that
         // finished after End and a new Start shows none in the new conversation (ADR-458).
         guard isLive, isCurrent(toolCallID) else { return dropStale(toolCallID) }
-        guard pendingAction == nil else {
-            Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
-            return
+        // One card at a time: the newest ask wins. The card it replaces is closed unanswered and
+        // nothing on it runs (owner, 10 Nov 2026).
+        if let waiting = pendingAction {
+            pendingAction = nil
+            Task { await settleUnanswered(waiting, replaced: true) }
         }
         pendingAction = action
     }

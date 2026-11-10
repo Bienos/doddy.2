@@ -184,7 +184,7 @@ enum ScreenFixtures {
             return .deleteEvent(toolCallID: call, event: CalendarEventSummary(
                 title: "Dentist", start: start, end: start.addingTimeInterval(hour), allDay: false))
         case "map":
-            return .map(toolCallID: call, place: "Biedronka, ul. Hoża 9")
+            return .map(toolCallID: call, trip: MapTrip(place: "Biedronka, ul. Hoża 9"))
         case "shortcut":
             return .shortcut(toolCallID: call, name: "Good night")
         case "camera":

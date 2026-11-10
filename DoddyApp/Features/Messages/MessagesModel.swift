@@ -89,6 +89,15 @@ final class MessagesModel {
         }
     }
 
+    /// A message Doddy delivered while this screen was open (a finished task or a file, `ThreadInbox`). It is
+    /// already saved and read back; this only shows it, once.
+    func receive(_ message: ThreadMessage) {
+        guard didLoad, !messages.contains(where: { $0.id == message.id }) else { return }
+        messages.append(message)
+        messages.sort { $0.createdAt < $1.createdAt }
+        syncToWeb()
+    }
+
     // MARK: Sending
 
     /// - Parameter service: nil when Ask Doddy isn't set up.

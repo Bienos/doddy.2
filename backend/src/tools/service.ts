@@ -1075,7 +1075,8 @@ export class CloudToolsService {
         tool,
         text:
           `started: Claude is making the ${info.label} "${doc.title}". It takes one to three minutes. ` +
-          "A button to open it is on the user's screen now; it shows the file as soon as it's ready. Tell the user that in one sentence. Don't read out any link. " +
+          "A card to open it is on the user's screen now, and it also arrives as Doddy's message in Messages in the app, where Share saves it to Files or sends it on. " +
+          "Tell the user that in one sentence. Don't read out any link. " +
           MODEL_TEXT_LABEL,
         count: 1,
         truncated: false,

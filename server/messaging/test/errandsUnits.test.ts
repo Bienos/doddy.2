@@ -79,8 +79,8 @@ describe("errand request and card schemas", () => {
   });
 
   test("pushes carry no words from the errand", () => {
-    assert.equal(pushText("done", "pl"), "Gotowe. Wynik sprawy czeka w aplikacji.");
-    assert.equal(pushText("done", "en"), "Done. Your task's result is waiting in the app.");
+    assert.equal(pushText("done", "pl"), "Gotowe. Wynik czeka w Wiadomościach.");
+    assert.equal(pushText("done", "en"), "Done. The result is waiting in Messages.");
     assert.equal(pushText("failed", "pl"), "Nie udało się dokończyć sprawy.");
     assert.equal(pushText("failed", "de"), "Doddy couldn't finish a task.");
   });
