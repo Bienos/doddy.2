@@ -171,10 +171,20 @@ extension DoddyServerClient {
         } catch is OutcomeUnknown {
             return unknown
         }
+        // Doddy's own server says Twilio turned the call down (status failed, nothing placed). A gateway's
+        // 502 has no such body, and stays unknown.
+        if response.status == 502, Self.serverRefusedCall(response.body) { throw ServerError.providerUnavailable }
         if Self.mayHaveStarted(response.status) { return unknown }
         guard response.status == 202 else { throw Self.error(from: response) }
         guard let request = try? JSONDecoder().decode(CallRequest.self, from: response.body) else { return unknown }
         return request
+    }
+
+    /// `{"error":"provider_unavailable","callId":…}`: the messaging server's answer when Twilio refused the call.
+    static func serverRefusedCall(_ body: Data) -> Bool {
+        struct Refused: Decodable { let error: String; let callId: UUID? }
+        guard let refused = try? JSONDecoder().decode(Refused.self, from: body) else { return false }
+        return refused.error == "provider_unavailable" && refused.callId != nil
     }
 
     /// A 500, 502 or 504 can come after the server already started the call (a proxy or gateway

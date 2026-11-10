@@ -46,6 +46,7 @@ final class ActivityTextTests: XCTestCase {
             .textMe(body: "Parcel code 4417"),
             // ADR-754.
             .callMeLater(CallLaterDraft(at: now.addingTimeInterval(3_600), reason: "Cake", timeZoneID: "Europe/Warsaw")),
+            .callMeNow,
             // Decision 2026-11-09-restaurant-calls-one-tap.
             .callPlaces(CallTaskDraft(places: [CallTaskPlace(name: "Trattoria Uno", phone: "22 123 45 67")],
                                       question: "Czy mają Państwo wolny stolik", goal: "Stolik na dziś.", textResult: true)),
@@ -83,7 +84,7 @@ final class ActivityTextTests: XCTestCase {
              .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
-             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater, .callPlaces:
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater, .callMeNow, .callPlaces:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap, .lostWallet, .draftInvoice:
@@ -97,7 +98,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 51, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap)")
+        XCTAssertEqual(kinds.count, 52, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

@@ -253,6 +253,18 @@ struct VoiceView: View {
                             .id("callBooking")
                         }
 
+                        if controller.callPlacing {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                Text("Calling you…")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                            .id("callPlacing")
+                        }
+
                         if let status = controller.reminderStatus {
                             reminderStatusCard(status, controller: controller)
                                 .id("reminderStatus")
@@ -734,6 +746,15 @@ struct VoiceView: View {
             blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
         case .callLater(_, let draft, let to, let quietHours):
             callLaterContent(draft, to: to, quietHours: quietHours, controller: controller)
+        case .callNow(_, let to):
+            // Decision 2026-11-10-call-me-now-by-voice: the same call as Settings, Phone calls, Call me now.
+            Text("Call you now?")
+                .font(.headline)
+            Text(String(format: NSLocalizedString("From Doddy's number to your number ending %@", comment: ""), String(to.suffix(3))))
+                .foregroundStyle(Theme.secondaryText)
+            Text("Your phone rings when you tap. When you answer, you talk to Doddy on Doddy's phone line. Twilio places the call.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .callTask(_, let preview):
             callTaskContent(preview)
         case .presentation(_, let draft):
@@ -1181,6 +1202,7 @@ struct VoiceView: View {
         case .home: (NSLocalizedString("Yes", comment: ""), NSLocalizedString("No", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
+        case .callNow: (NSLocalizedString("Call me", comment: ""), NSLocalizedString("Don't call", comment: ""))
         case .callTask: (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
         // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))
