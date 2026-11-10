@@ -82,6 +82,9 @@ final class VoiceSessionController {
         /// at `draft.at`, saying `draft.reason` first. The tap approves that with the card's
         /// quiet-hours switch (`callLaterAllowQuiet`).
         case callLater(toolCallID: String, draft: CallLaterDraft, to: String, quietHours: CallQuietHours)
+        /// "Call you now?" (decision 2026-11-10-call-me-now-by-voice): from Doddy's number to the user's own
+        /// verified number `to`, at once. The tap approves exactly that; nothing is placed before it.
+        case callNow(toolCallID: String, to: String)
         /// "Call these places for you?" (decision 2026-11-09-restaurant-calls-one-tap): the server's preview of
         /// every place and the task digest the one tap approves.
         case callTask(toolCallID: String, preview: CallTaskPreview)
@@ -109,7 +112,7 @@ final class VoiceSessionController {
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
-                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _), .callTask(let id, _):
+                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _), .callNow(let id, _), .callTask(let id, _):
                 id
             }
         }
@@ -367,6 +370,8 @@ final class VoiceSessionController {
     var callLaterAllowQuiet = false
     /// True from the tap on Book call until the server's answer.
     private(set) var callBooking = false
+    /// True from the tap on Call me until the server's answer (decision 2026-11-10-call-me-now-by-voice).
+    private(set) var callPlacing = false
     /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
     private(set) var changeReceipt: ChangeReceipt?
     /// The BLIK transfer the user said they'll send (ADR-510). It stays on screen until dismissed
@@ -1600,6 +1605,15 @@ final class VoiceSessionController {
             let outcome = await approveCallTask(preview)
             writeResults[id] = WriteResult(reply: outcome.reply, attempted: outcome.attempted)
             await reply(id, outcome.reply)
+        case .callNow(let id, _):
+            callPlacing = true
+            let outcome = await placeCallNow()
+            callPlacing = false
+            // Refused means the server answered that nothing was placed; requested or unknown may ring.
+            var attempted = true
+            if case .refused = outcome { attempted = false }
+            writeResults[id] = WriteResult(reply: VoiceToolReply.callNow(outcome), attempted: attempted)
+            await reply(id, VoiceToolReply.callNow(outcome))
         case .callLater(let id, let draft, let to, let quietHours):
             callBooking = true
             let result = await bookCall(draft, to: to, quietHours: quietHours, allowQuietHours: callLaterAllowQuiet)
@@ -1826,6 +1840,8 @@ final class VoiceSessionController {
         case .callLater(let id, _, _, _):
             callLaterAllowQuiet = false
             await reply(id, VoiceToolReply.callDeclined)
+        case .callNow(let id, _):
+            await reply(id, VoiceToolReply.callNowDeclined)
         case .presentation(let id, _): await reply(id, VoiceToolReply.presentationDeclined)
         case .camera(let id): await reply(id, VoiceToolReply.cameraDeclined)
         case .home(let id, _): await reply(id, VoiceToolReply.homeDeclined)
@@ -2392,7 +2408,7 @@ final class VoiceSessionController {
         case .ask(_, _, let needsTap, _, _): return needsTap ? .other : .askFirst
         case .cloudRead: return .askFirst
         // A call booked for later (ADR-754): the island says only that something waits for a tap.
-        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater, .callTask: return .other
+        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater, .callNow, .callTask: return .other
         }
     }
 
@@ -3145,6 +3161,8 @@ final class VoiceSessionController {
             await proposeText(body, toolCallID: call.toolCallId)
         case .callMeLater(let draft):
             await proposeCallLater(draft, toolCallID: call.toolCallId)
+        case .callMeNow:
+            await proposeCallNow(toolCallID: call.toolCallId)
         case .callPlaces(let draft):
             await proposeCallTask(draft, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
@@ -4048,6 +4066,47 @@ final class VoiceSessionController {
         }
     }
 
+    /// "Call me now" (decision 2026-11-10-call-me-now-by-voice): the same checks as a call booked for later,
+    /// then a card with the number's last digits. Nothing is placed here.
+    private func proposeCallNow(toolCallID: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(toolCallID, VoiceToolReply.callNowNoServer, isError: true)
+            return
+        }
+        // No account yet means no verified number; asking the server would create an account.
+        guard await client.hasAccount() else {
+            await reply(toolCallID, VoiceToolReply.callNowNotReady(.noPhone))
+            return
+        }
+        let readiness: CallReadiness
+        do {
+            async let settings = client.callSettings()
+            async let phone = client.phoneStatus()
+            readiness = CallReadiness(settings: try await settings, phone: try await phone)
+        } catch {
+            await reply(toolCallID, VoiceToolReply.callNowCheckFailed(error as? ServerError), isError: true)
+            return
+        }
+        guard case .ready(let to, _) = readiness else {
+            await reply(toolCallID, VoiceToolReply.callNowNotReady(readiness))
+            return
+        }
+        propose(.callNow(toolCallID: toolCallID, to: to), toolCallID: toolCallID)
+    }
+
+    /// After the tap: the same request as Settings, Phone calls, Call me now. A request that may have
+    /// reached the server is `unknown`, never retried (DOD-08, ADR-672).
+    private func placeCallNow() async -> CallNowOutcome {
+        guard let client = Self.messagingClient() else { return .refused(.notConfigured("no_server")) }
+        do {
+            return CallNowOutcome(try await client.callMeNow())
+        } catch let error as ServerError {
+            return .refused(error)
+        } catch {
+            return .refused(.unexpected(status: 0))
+        }
+    }
+
     /// So the app sends its time zone again when it comes to the front while this call may be
     /// waiting (CallZoneSync); the booking itself sent this zone.
     private static func rememberBooked(_ draft: CallLaterDraft) {
@@ -4936,7 +4995,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater, .callTask: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater, .callNow, .callTask: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only
