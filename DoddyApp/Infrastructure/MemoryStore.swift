@@ -217,10 +217,10 @@ final class MemoryStore {
     /// The newest notes voice may see when a search found nothing, read fresh from storage so a
     /// note saved during the call counts. Private notes are left out before the limit. A failed
     /// read gives none, and the reply stays a plain "not found".
-    func newestNotesForVoice() async -> NewestNotes {
+    func newestNotesForVoice(excluding privateIDs: Set<UUID>) async -> NewestNotes {
         guard let records = try? await environment.memoryRepository.list(limit: 50) else { return .none }
         let photoIDs = Set(((try? await environment.photoRepository.allPhotos()) ?? []).map(\.memoryID))
-        return NewestNotes.pick(records, excluding: PrivateNotesStore.current().ids, withPhoto: photoIDs)
+        return NewestNotes.pick(records, excluding: privateIDs, withPhoto: photoIDs)
     }
 }
 
