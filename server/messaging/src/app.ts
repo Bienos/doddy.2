@@ -11,6 +11,7 @@ import type { CallRegistrar, OutboundCaller, PhoneVerifier, PushSender, SmsSende
 import { callRoutes } from "./routes/calls.js";
 import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { newsRoutes } from "./routes/news.js";
+import { radarRoutes } from "./routes/radar.js";
 import type { NewsDeps } from "./news/digest.js";
 import type { QuietHours } from "./quietHours.js";
 import { accountRoutes } from "./routes/account.js";
@@ -79,6 +80,8 @@ export interface Deps {
   quietHours?: QuietHours;
   /** News digests: feeds always; keyword search and AI writer when configured. */
   news?: NewsDeps;
+  /** On my radar alerts (decision 2026-11-10-radar-alerts): RADAR_ALERTS_ENABLED. Off: nothing new is stored. */
+  radar?: { enabled: boolean };
   logger?: boolean;
   /** Proxies in front that append to X-Forwarded-For (Render: 1). Default 1. */
   trustProxyHops?: number;
@@ -204,6 +207,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(scheduledCallRoutes(deps));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));
+  await app.register(radarRoutes(deps));
   await app.register(callCaseRoutes(deps, taskCtx));
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));

@@ -6,9 +6,10 @@ import { principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
 import { usableChannels } from "../outbox.js";
 import { CATALOG, catalogById } from "../news/catalog.js";
-import { buildDigest, gatherItems, MAX_FEEDS, MAX_TOPICS } from "../news/digest.js";
+import { buildDigest, gatherItems, MAX_FEEDS, MAX_TOPICS, type FollowedTopic, type FollowSources } from "../news/digest.js";
 import { buildFeed, FEED_LIMIT } from "../news/feed.js";
 import { parseFeed } from "../news/feeds.js";
+import { httpsFeedUrl } from "../news/radar.js";
 import { checkUrl, safeFetchText, UnsafeUrlError } from "../news/safeFetch.js";
 import { isValidTimeZone, nextRunAt } from "../news/schedule.js";
 
@@ -29,9 +30,17 @@ const settingsBody = z.object({
 });
 const feedCheckBody = z.object({ url: z.string().max(500) });
 // The feed's follows (ADR-656): the same shape as the digest's topics, sent with the request, never saved.
+// On my radar (decision 2026-11-10-radar-alerts) adds the person's own feed, https only, with words to
+// narrow it if they like. It comes first: a union keeps the first shape that fits, and the words shape
+// would otherwise take a feed follow and drop its address.
+const follow = z.union([
+  z.object({ catalogId: z.string().refine((id) => catalogById.has(id)) }),
+  z.object({ label: z.string().trim().min(1).max(60), feedUrl: httpsFeedUrl, keywords: z.array(keyword).max(10).default([]) }),
+  z.object({ label: z.string().trim().min(1).max(60), keywords: z.array(keyword).min(1).max(10) }),
+]);
 const feedBody = z.object({
   language: z.enum(["en", "pl"]).default("en"),
-  follows: z.array(topic).min(1).max(MAX_TOPICS),
+  follows: z.array(follow).min(1).max(MAX_TOPICS),
   limit: z.number().int().min(1).max(FEED_LIMIT).default(FEED_LIMIT),
 });
 
@@ -42,7 +51,8 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
 
   app.get("/v1/news/catalog", { preHandler: auth }, async (req) => {
     const lang = (req.query as { lang?: string }).lang === "pl" ? "pl" : "en";
-    return { topics: CATALOG.map((t) => ({ id: t.id, label: t.label[lang] })) };
+    // `sources`: the publishers behind each topic, so the person sees where its stories come from.
+    return { topics: CATALOG.map((t) => ({ id: t.id, label: t.label[lang], sources: [...new Set(t.feeds.map((f) => f.name))] })) };
   });
 
   app.get("/v1/news/settings", { preHandler: auth }, async (req) => {
@@ -143,18 +153,29 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!body) return;
     if (!news) return reply.code(503).send({ error: "not_configured" });
     const now = new Date();
-    const topics = body.follows.map((t) => {
-      const cat = "catalogId" in t ? catalogById.get(t.catalogId)! : undefined;
-      return cat
-        ? { catalog_id: cat.id, label: cat.label[body.language], keywords: [] }
-        : { catalog_id: null, label: (t as { label: string }).label, keywords: (t as { keywords: string[] }).keywords };
+    const topics: FollowedTopic[] = body.follows.map((t) => {
+      if ("catalogId" in t) {
+        const cat = catalogById.get(t.catalogId)!;
+        return { catalog_id: cat.id, label: cat.label[body.language], keywords: [] };
+      }
+      return { catalog_id: null, label: t.label, keywords: t.keywords, feed_url: "feedUrl" in t ? t.feedUrl : null };
     });
-    const gathered = await gatherItems(db, news, topics, [], body.language, now);
+    // The person's own words are looked for in every catalog feed (and their own feeds), not only in their other
+    // follows: without a news search key (the live server has none, 10 Nov 2026) "Tesla" alone found nothing.
+    const report = new Map<string, FollowSources>();
+    const gathered = await gatherItems(db, news, topics, [], body.language, now, { keywordPool: "catalog", report });
     const cards = buildFeed(gathered, now, body.limit);
     return {
       fetchedAt: now.toISOString(),
       keywordSearch: !!news.search,
       cards,
+      // Per follow: where its stories come from, whether each publisher answered, and how many cards it has now.
+      follows: topics.map((t) => ({
+        label: t.label,
+        sources: report.get(t.label)?.sources ?? [],
+        ...(report.get(t.label)?.searchedFeeds !== undefined ? { searchedFeeds: report.get(t.label)!.searchedFeeds } : {}),
+        cards: cards.filter((c) => c.follows.includes(t.label)).length,
+      })),
     };
   });
 

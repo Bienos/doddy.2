@@ -276,6 +276,19 @@ A recap is a short note of what was discussed, agreed and left to do after a con
 | Legal basis | **[CONFIRM: consent, by the two switches; withdrawn by switching off]** |
 | **[CONFIRM]** | Anthropic entity, terms, region and retention for the API key's organisation; whether telling the caller that a recap is made is required for phone calls (the phone agent says it is an AI in its first sentence; it does not say a recap is made); Apple's terms for the on-device model; the effect on the retention table in Section 9. |
 
+### 5.15 On my radar (Following) and its alerts (ADR-656; decision 2026-11-10-radar-alerts)
+
+What you follow is kept on the iPhone. Each time you open or refresh the screen, the follows (topic ids, your own words, your own feed's address) go to Doddy's messaging server, which fetches the publishers' public feeds through a shared cache and keeps nothing of yours. **Alerts are off until you turn on "Let Doddy's server check this for you" for one follow**, and the server feature is off until the owner switches it on (`RADAR_ALERTS_ENABLED`).
+
+| Item | Detail |
+|---|---|
+| What is sent and kept | Only for a follow with that switch on: its name, its words or feed address, the words to look out for, how to tell you (as it happens or once a day, and at what time), your time zone and language (`radar_alerts`). The stories found for it: the publisher's headline, summary, link and name, and which of your words they mention (`radar_hits`). |
+| What the server does | Reads the follow's feeds about every 20 minutes (a daily alert every 2 hours) and, for a new story that mentions your words, queues a notification through Apple: the publisher's headline and name. As it happens: not in quiet hours (21:00–08:00 in your time zone), at most 8 a day. Once a day: a count and up to three lines; if the server has a news writer, Anthropic (Claude) or OpenAI gets those public headlines and summaries, with your follow's name, to write the lines, and the notification says so. |
+| Your own feed | Fetched by the server from its address (https, public addresses only). The address is kept only while the alert is on. |
+| Retention | Found stories: 14 days. Alerts: until you turn the switch off, remove the follow or delete the account (all deleted with it). Notifications queued: as other notifications (section 5.5). Logs: counts only. |
+| Opt-in? | Yes, per follow, off by default. |
+| **[CONFIRM]** | The live privacy page and App Store answers before the switch goes on; the news writer's terms and retention (as section 5.9). |
+
 ## 6. Permissions the app asks for
 
 The app asks for these only. Each text below is the app's own wording (`project.yml` and `Config/Doddy-Info.plist`). Not listed means the app does not ask: no camera, no photo library, no motion, no Bluetooth, no health data, no advertising ID, no "Always" location.
@@ -373,6 +386,7 @@ What the app **cannot** delete:
 | Message and call records at Twilio | Deleted by Doddy 24 hours after final by default; Twilio backups up to 30 days | `providerRecords.ts`, ADR-753 |
 | Verification-start records | 2 days (hash of number only) | `routes/phone.ts` |
 | News sent records / digests / feed cache | 14 days / 30 days / 24 hours | `news/digest.ts`, `news/sources.ts` |
+| On my radar: alerts / stories found | Until turned off / 14 days | `026_radar_alerts.sql`, `news/radar.ts` |
 | Backend receipts and usage counters | **[CONFIRM: no pruning today]** | `SECURITY_AND_PERMISSIONS.md` |
 | Waitlist | **[CONFIRM]** | `site/README.md` |
 | Web server logs | **[CONFIRM: Vercel and Render]** | |

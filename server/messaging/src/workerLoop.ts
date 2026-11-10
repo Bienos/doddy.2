@@ -4,6 +4,8 @@ import type { TextCipher } from "./crypto.js";
 import { pruneCounters } from "./dailyCounters.js";
 import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
+import { runRadarPass, type RadarContext } from "./news/radar.js";
+import type { QuietHours } from "./quietHours.js";
 import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
 import { DELETE_AFTER_HOURS_DEFAULT, deleteAfterMinutes, pruneDeletions, runDueDeletions } from "./providerRecords.js";
@@ -42,6 +44,8 @@ export interface WorkerDeps {
   watches?: WatchContext;
   /** File-ready pushes (9 Nov 2026); only with MEMORY_ENCRYPTION_KEY and DOCUMENTS_ORIGIN. */
   fileWatches?: FileWatchContext;
+  /** On my radar alerts (decision 2026-11-10-radar-alerts); only with RADAR_ALERTS_ENABLED=1. */
+  radar?: RadarContext;
   /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
   limits?: Pick<AbuseLimits, "allowedCountryCodes">;
   /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753). */
@@ -69,7 +73,35 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
   if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
   if (deps.fileWatches) loops.push(fileWatchLoop(deps.fileWatches, shouldStop));
+  if (deps.radar) loops.push(radarLoop(deps.radar, shouldStop));
   await Promise.all(loops);
+}
+
+/**
+ * On my radar alerts (decision 2026-11-10-radar-alerts): reads the feeds of the alerts that are due (each about
+ * every 20 minutes, daily ones every 2 hours and at their summary time), records new matching stories and queues
+ * their pushes. Its own loop, so slow feeds never hold back other pushes. Logs counts only.
+ */
+async function radarLoop(ctx: RadarContext, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    let more = false;
+    try {
+      const counts = await runRadarPass(ctx);
+      if (Object.keys(counts).length) log("radar passes", counts);
+      more = (counts.claimed ?? 0) >= 10;
+    } catch (err) {
+      log("radar passes failed", { error: (err as Error).message });
+    }
+    if (!more) await pause(30_000, shouldStop);
+  }
+}
+
+/** The radar worker's context, or undefined while RADAR_ALERTS_ENABLED is off. */
+export function radarContext(
+  db: Db, enabled: boolean, news: NewsDeps, push: PushSender | undefined, cipher: TextCipher | undefined, quietHours?: QuietHours,
+): RadarContext | undefined {
+  if (!enabled) return undefined;
+  return { db, news, push, cipher, quietHours, now: () => new Date(), log };
 }
 
 /**
