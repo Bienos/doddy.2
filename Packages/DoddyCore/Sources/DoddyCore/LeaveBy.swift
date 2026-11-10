@@ -102,8 +102,24 @@ public enum LeaveBy {
 /// the app shows what was asked, waits for a tap, and only then reads the position and builds the
 /// second card (place Maps found, travel time, leave time) that Set reminder answers.
 public enum LeaveByAsk {
-    public static func card(_ request: LeaveByRequest, calendar: Calendar = .current) -> AskCard {
-        AskCard(
+    public static func card(_ request: LeaveByRequest, calendar: Calendar = .current, polish: Bool = false) -> AskCard {
+        if polish {
+            let how = switch request.mode {
+            case .driving: "Samochodem"
+            case .walking: "Pieszo"
+            case .transit: "Komunikacją miejską"
+            }
+            return AskCard(
+                title: "Obliczyć, kiedy wyjść?",
+                lines: [
+                    "Dokąd: \(request.place)",
+                    "Na miejscu: \(LeaveBy.day(request.arriveBy, calendar: calendar)) \(LeaveBy.clock(request.arriveBy, calendar: calendar))",
+                    "\(how), z zapasem \(request.bufferMinutes) min",
+                    "Doddy raz sprawdza, gdzie jest teraz Twój iPhone, żeby zapytać Mapy Apple o czas dojazdu. Twoja pozycja nie jest zachowywana. Potem zobaczysz miejsce znalezione przez Mapy i godzinę wyjścia; nic nie zostanie ustawione, dopóki nie stukniesz Ustaw przypomnienie.",
+                ],
+                confirmLabel: "Oblicz")
+        }
+        return AskCard(
             title: "Work out when to leave?",
             lines: [
                 "To: \(request.place)",

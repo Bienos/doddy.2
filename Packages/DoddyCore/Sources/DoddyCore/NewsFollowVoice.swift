@@ -48,12 +48,19 @@ public enum NewsFollowAsk: Equatable, Sendable {
     }
 
     /// The card's lines: what will be followed and where it shows.
-    public var cardLines: [String] {
-        switch self {
-        case .topic(let id):
+    public var cardLines: [String] { cardLines(polish: false) }
+
+    /// `polish`: the app is shown in Polish.
+    public func cardLines(polish: Bool) -> [String] {
+        switch (self, polish) {
+        case (.topic(let id), false):
             return ["Topic: \(Self.topicName(id, polish: false) ?? id)", "Stories show in Following, in Home's menu"]
-        case .words(let name, let keywords):
+        case (.topic(let id), true):
+            return ["Temat: \(Self.topicName(id, polish: true) ?? id)", "Artykuły pojawią się w Śledzonych, w menu ekranu głównego"]
+        case (.words(let name, let keywords), false):
             return ["“\(name)”", "Stories with: \(keywords.joined(separator: ", "))", "Shown in Following, in Home's menu"]
+        case (.words(let name, let keywords), true):
+            return ["„\(name)”", "Artykuły ze słowami: \(keywords.joined(separator: ", "))", "W Śledzonych, w menu ekranu głównego"]
         }
     }
 
