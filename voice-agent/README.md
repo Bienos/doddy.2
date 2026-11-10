@@ -59,7 +59,14 @@ Every tool asks first (ASK-01, `x_doddy.ask`): a read, or a request to Claude, w
 
 The app's routing is `VoiceToolRequest.parse` and `CloudToolName` in DoddyCore. `check` fails if a phone tool has no Swift source that names it. Tools that were on the live agent and were detached because the app couldn't run them: `upcoming_renewals` and `add_to_diary` (19 Oct, ADR-544; not in `tools.json`, no app handler). `pay_for_page`, `text_me` and `call_me_later` were detached then too; they are back in `tools.json` with app handlers, but still not on the live agent.
 
-## Changes to the live main agent, 20 Oct to 9 Nov 2026 (newest first)
+## Changes to the live main agent, 20 Oct to 10 Nov 2026 (newest first)
+
+**Applied to the live agent 10 Nov 2026, about 07:15 UTC (`call_me_now`, decision `2026-11-10-call-me-now-by-voice`, #305; owner on 10 Nov: "daj to już żeby działało", after the 9 Nov go-ahead for the call tools).**
+- **Read right before saving:** `agtvrsn_0801m71zgg3wfj29agemmp6cx39b`, 105 tools, model `gpt-6-luna`. **Rollback:** that version.
+- **Created:** `call_me_now` `tool_1301m724k8bfegwr7kaextr677tv`, exactly as `voice_agent_spec.py elevenlabs` renders it from `main` after #305 (client tool, no parameters, 90 s, speak first forced). A listing first showed no tool of that name.
+- **Saved:** `agtvrsn_5601m724q731f9rvhw87tjwgqae2`, `tool_ids` only: the 105 live ids unchanged and in order, plus the new one (106). No prompt, model or other setting was sent; the read-back shows the same prompt, `gpt-6-luna`, temperature 0.7 and timezone `Europe/Warsaw`.
+- **Not changed:** the live prompt (its call_me_later line and the new call_me_now lines in `instructions.md` wait for the owner's word), and the live `call_me_later` tool, whose description still says to tap Call me now in Settings for a call right now (`tools.json` now says "use call_me_now instead"). Updating that tool was refused by this session's permission check; it waits for the owner.
+- **Not yet seen working:** no app build with the call-now card had run when this was written, and Twilio refused both of the owner's Call me now taps on 9 Nov (502); the reason is in the messaging server's log since #293.
 
 **Applied to the live agent 9 Nov 2026, about 10:20 UTC (`call_me_later`, ADR-754; owner: "zrób to", after being told "Doddy, call me" by voice needs the tool on the agent, and that the agent is changed only on their word).**
 - **Why:** the owner asked Doddy by voice to call them (conversations `conv_4401m6zw3e3peg1vf2rc8efxhy9v`, `conv_6501m6zw86xhfxk9tz5wfbt81g65`, 9 Nov about 10:02 and 10:04 UTC); the agent had no calling tool and said it couldn't. The messaging server already serves booked calls (`GET /v1/calls/scheduled` answered 200 in its log at 10:00 UTC), so no deploy was needed.

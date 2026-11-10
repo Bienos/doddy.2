@@ -1,0 +1,1 @@
+`call_me_now` is on the live main agent (10 Nov 2026): tool `tool_1301m724k8bfegwr7kaextr677tv`, agent version `agtvrsn_5601m724q731f9rvhw87tjwgqae2` (tool ids only; rollback `agtvrsn_0801m71zgg3wfj29agemmp6cx39b`). The live prompt and the live `call_me_later` description were not changed (waiting for the owner). Log in `voice-agent/README.md`.
