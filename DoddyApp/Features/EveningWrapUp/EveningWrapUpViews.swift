@@ -136,7 +136,7 @@ struct EveningWrapUpView: View {
                                 .foregroundStyle(selected.contains(reminder.id) ? Theme.accentText : Theme.secondaryText)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(reminder.title)
-                                Text("\(reminder.listTitle) · \(ReminderText.due(reminder.due))")
+                                Text(verbatim: "\(reminder.listTitle) · \(ReminderText.due(reminder.due))")
                                     .font(.caption).foregroundStyle(Theme.secondaryText)
                             }
                             Spacer()

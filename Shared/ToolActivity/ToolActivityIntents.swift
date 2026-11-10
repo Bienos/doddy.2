@@ -2,7 +2,7 @@ import ActivityKit
 import AppIntents
 import Foundation
 
-/// Lets the tool island's buttons reach the focus timer, breathing or read-aloud running in the
+/// Lets the tool island's buttons reach the focus timer or read-aloud running in the
 /// app, the same way as the conversation's buttons (`VoiceActivityActions`, ADR-131): the
 /// intents run in the app's process, where the controllers register these handlers. The focus
 /// timer registers at launch from its saved state, so Pause and Stop work even after iOS ended

@@ -30,6 +30,7 @@ extension ActivityApp {
         case .health: return "Zdrowie"
         case .training: return "Plan treningowy"
         case .news: return "Śledzone"
+        case .screen: return "Twój ekran"
         }
     }
 }
@@ -74,9 +75,16 @@ public enum ActivityText {
         "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
         "Looked through photos": "Przejrzano zdjęcia",
         "Open the camera": "Otwórz aparat",
+        "Looked at your screen": "Zerknięto na ekran",
         "Control the home": "Steruj domem",
         "Open the training plan": "Otwórz plan treningowy",
         "Draft an email": "Szkic e-maila",
+        // ADR-750 U2.
+        "Text you from Doddy's number": "SMS do Ciebie z numeru Doddy’ego",
+        // ADR-754.
+        "Call you later from Doddy's number": "Telefon do Ciebie później z numeru Doddy’ego",
+        "Call you now from Doddy's number": "Telefon do Ciebie teraz z numeru Doddy’ego",
+        "Call places for you from Doddy's number": "Telefony do miejsc w Twoim imieniu z numeru Doddy’ego",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
         "Checked email": "Sprawdzono pocztę",
@@ -89,6 +97,8 @@ public enum ActivityText {
         // Errands (ADR-570): "sprawa" is the user's word for a task handed over.
         "Hand over a task": "Przekaż sprawę",
         "Checked your tasks": "Sprawdzono sprawy",
+        // Studio (ADR-740).
+        "Make a research brief": "Przygotuj raport",
         // Leaflets (SHOPPING.md).
         "Checked the leaflets": "Sprawdzono gazetki",
         "Add to a list": "Dodaj do listy",
@@ -160,6 +170,9 @@ public enum ActivityText {
         var notes: [String: String] = [
             "Connections were paused.": "Połączenia były wstrzymane.",
             "Doddy couldn't confirm it went through.": "Doddy nie mógł potwierdzić, że się udało.",
+            // Texts from Doddy's number (ADR-750 U2).
+            "Twilio accepted the text; delivery isn't confirmed.": "Twilio przyjął SMS-a; doręczenie nie jest potwierdzone.",
+            "Doddy's server has the text; it wasn't confirmed as sent yet.": "Serwer Doddy’ego ma SMS-a; wysłanie nie zostało jeszcze potwierdzone.",
             "Demo data from a test server, not your account.": "Dane demonstracyjne z serwera testowego, nie z Twojego konta.",
             "Doddy didn't send any money. You send it in your bank app.": "Doddy nie wysłał żadnych pieniędzy. Wysyłasz je w aplikacji banku.",
             ActivityLog.interruptedNote: "Doddy zamknął się, zanim to się skończyło. Sprawdź, zanim poprosisz ponownie, żeby nie zrobić tego dwa razy.",

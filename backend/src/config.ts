@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { InviteLimits } from "./deviceSession.js";
+import { CdpKeyError, type CdpSettings, loadCdpKeys } from "./payments/coinbase.js";
+import { NETWORK_IDS, NETWORKS, type NetworkId, parseUsdc } from "./payments/x402.js";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
 import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 
@@ -73,6 +75,26 @@ export interface MonidSettings {
   baseUrl: string;
 }
 
+/**
+ * Paying for things (x402). Off unless the owner sets a wallet: `wallet: "none"` is the default and
+ * means no payment route can run. The Coinbase wallet is one optional choice, never an implied one.
+ * Amounts are atomic USDC units (6 decimals).
+ */
+export interface PaymentsSettings {
+  wallet: "none" | "coinbase_cdp";
+  /** Defaults to the Base test network: real money needs an explicit `base`. */
+  network: NetworkId;
+  maxPerPayment: number;
+  /** From this amount up, the person must also type the amount to confirm (enforced by the server). */
+  confirmAmount: number;
+  userDaily: number;
+  serviceDaily: number;
+  /** Empty: any public https site. Each payment still needs its own approval. */
+  allowedHosts: string[];
+  /** Live mode with wallet "coinbase_cdp" only. */
+  cdp: CdpSettings | null;
+}
+
 /** Claude through the Anthropic API (ADR-564). Doddy's own key; users never sign in. */
 export interface ClaudeSettings {
   apiKey: string;
@@ -115,11 +137,21 @@ export interface Config {
   claude: ClaudeSettings | null;
   /** Supabase Auth project origin for `supabase` mode (ADR-526): Apple and Google sign-in. */
   supabaseUrl: string | null;
+  /** The Supabase project's https origin whenever SUPABASE_URL is set; the owner panel reads its users there. */
+  supabaseProjectUrl: string | null;
+  /** SUPABASE_SECRET_KEY: deleting a person's sign-in (ADR-818) and the owner panel's account list. Null: not set. */
+  supabaseSecretKey: string | null;
+  /**
+   * The accounts that see the owner panel (decision 2026-11-09-usage-counts-on-by-default): Supabase
+   * user ids or this server's own user ids, from DODDY_OWNER_ACCOUNTS. Empty: there is no owner panel.
+   */
+  ownerAccounts: string[];
   composio: ComposioSettings | null;
   /** Gmail, Drive, Notion, Todoist, Outlook: only toolkits with both an auth config and a pinned version. */
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
+  payments: PaymentsSettings;
   /** Doddy Web (ADR-600). Null: no web routes and no web pages on this server. */
   web: WebSettings | null;
   /** `DODDY_TRUST_PROXY=1`: behind one proxy that appends the client to X-Forwarded-For (Render). */
@@ -140,6 +172,28 @@ export interface WebSettings {
   trustProxy: boolean;
   /** Sign-in tries per client address (an IPv6 /64) per quarter hour. */
   signInTriesPerClient: number;
+  /**
+   * Apple and Google sign-in on the web, through Supabase Auth (ADR-818). Null: the web signs in
+   * with the iPhone's code only. Needs SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY; independent of
+   * DODDY_AUTH_MODE (the iPhone keeps its own session).
+   */
+  social: WebSocialSettings | null;
+}
+
+export interface WebSocialSettings {
+  /** https://<project-ref>.supabase.co */
+  projectUrl: string;
+  /** The project's publishable (anon) key: public by design, sent as `apikey` to Supabase Auth. */
+  publishableKey: string;
+  /** Sign-in buttons offered, in this order. */
+  providers: ("google" | "apple")[];
+  /** A Google or Apple account with no Doddy account may make one on the web, after saying so (DODDY_WEB_SIGNUP). */
+  signup: boolean;
+  /**
+   * The project's secret key, used only to delete a person's Supabase Auth user when their Doddy
+   * account is deleted. Null: the removal stays owed (and the deletion says so).
+   */
+  secretKey: string | null;
 }
 
 export class ConfigError extends Error {
@@ -192,6 +246,8 @@ const EnvSchema = z.object({
    * `open` in mock mode and `closed` in live mode.
    */
   DODDY_OWNER_CLAIM: z.string().optional(),
+  /** Who sees the owner panel (decision 2026-11-09-usage-counts-on-by-default): account ids, comma-separated. */
+  DODDY_OWNER_ACCOUNTS: z.string().optional(),
   /** Invite codes (ADR-709): tries per client per hour, sessions per code per UTC day, iPhones per code. */
   DODDY_INVITE_TRIES_PER_CLIENT: intSetting(20, 1, 1_000),
   DODDY_INVITE_SESSIONS_PER_CODE_PER_DAY: intSetting(20, 1, 10_000),
@@ -227,6 +283,17 @@ const EnvSchema = z.object({
   COMPOSIO_OUTLOOK_TOOLKIT_VERSION: z.string().optional(),
   MONID_API_KEY: z.string().optional(),
   MONID_BASE_URL: z.string().default(MONID_DEFAULT_BASE_URL),
+  DODDY_PAYMENTS_WALLET: z.enum(["none", "coinbase_cdp"]).default("none"),
+  DODDY_PAYMENTS_NETWORK: z.enum(NETWORK_IDS).default("base-sepolia"),
+  DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC: z.string().default("0.25"),
+  DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC: z.string().default("0.10"),
+  DODDY_PAYMENTS_USER_DAILY_USDC: z.string().default("1.00"),
+  DODDY_PAYMENTS_SERVICE_DAILY_USDC: z.string().default("5.00"),
+  DODDY_PAYMENTS_ALLOWED_HOSTS: z.string().default(""),
+  CDP_API_KEY_ID: z.string().optional(),
+  CDP_API_KEY_SECRET: z.string().optional(),
+  CDP_WALLET_SECRET: z.string().optional(),
+  CDP_PAYMENT_ACCOUNT_ADDRESS: z.string().optional(),
   DODDY_LIMIT_USER_DAILY_WEB_SEARCHES: intSetting(30, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES: intSetting(200, 1, 100_000),
   DODDY_LIMIT_SERVICE_DAILY_CALLS: intSetting(300, 1, 1_000_000),
@@ -244,6 +311,14 @@ const EnvSchema = z.object({
   DODDY_TRUST_PROXY: z.enum(["0", "1"]).default("0"),
   /** Sign-in tries per client per quarter hour (raise it for an office behind one address). */
   DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: intSetting(10, 1, 1_000),
+  /** Apple and Google sign-in on the web (ADR-818): the Supabase project's publishable key. Empty: off. */
+  SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
+  /** Which buttons the web shows, comma-separated: google, apple. */
+  DODDY_WEB_SIGNIN_PROVIDERS: z.string().default("google,apple"),
+  /** `open`: a Google or Apple account with no Doddy account can make one on the web (owner, 3 Nov 2026). `off`: it can only sign in to a linked one. */
+  DODDY_WEB_SIGNUP: z.enum(["open", "off"]).default("open"),
+  /** Server only, never the web app: deletes a person's Supabase Auth user when their account is deleted. */
+  SUPABASE_SECRET_KEY: z.string().optional(),
 });
 
 /** Custom scheme (`doddy-dev://…`) or https. No query, no fragment: the server adds its own parameters. */
@@ -321,6 +396,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     }
   }
 
+  // SUPABASE_URL is read for supabase mode (ADR-526) and for Apple and Google on the web (ADR-818).
+  const publishableKey = (e.SUPABASE_PUBLISHABLE_KEY ?? "").trim();
   // Who may claim a server that has no owner yet (ADR-707). Unset: open for mock runs (tests, demos),
   // closed for a live server, where an empty owner row after a wipe, a restore or a changed
   // DATABASE_URL would otherwise make the first caller to post any device ID the owner. Only the
@@ -331,7 +408,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   else if (claimSetting !== "") problems.push("DODDY_OWNER_CLAIM must be open or closed");
 
   let supabaseUrl: string | null = null;
-  if (e.DODDY_AUTH_MODE === "supabase") {
+  let supabaseOrigin: string | null = null;
+  if (e.DODDY_AUTH_MODE === "supabase" || publishableKey !== "") {
     const raw = (e.SUPABASE_URL ?? "").trim();
     let parsed: URL | null = null;
     try {
@@ -342,8 +420,28 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (!parsed || parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname !== "/" && parsed.pathname !== "")) {
       problems.push("SUPABASE_URL must be the project's https origin, e.g. https://<project-ref>.supabase.co");
     } else {
-      supabaseUrl = parsed.origin;
+      supabaseOrigin = parsed.origin;
+      if (e.DODDY_AUTH_MODE === "supabase") supabaseUrl = parsed.origin;
     }
+  }
+  if (publishableKey !== "" && !/^(sb_publishable_[A-Za-z0-9_-]{10,200}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.test(publishableKey)) {
+    problems.push("SUPABASE_PUBLISHABLE_KEY must be the project's publishable key (sb_publishable_…) or its legacy anon key, never the secret key");
+  }
+  if (publishableKey.startsWith("sb_secret_")) problems.push("SUPABASE_PUBLISHABLE_KEY is a secret key: use the publishable one");
+  const secretKey = (e.SUPABASE_SECRET_KEY ?? "").trim();
+  if (secretKey !== "" && !/^(sb_secret_[A-Za-z0-9_-]{10,200}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.test(secretKey)) {
+    problems.push("SUPABASE_SECRET_KEY must be the project's secret key (sb_secret_…) or its legacy service_role key");
+  }
+  if (secretKey !== "" && secretKey === publishableKey) problems.push("SUPABASE_SECRET_KEY and SUPABASE_PUBLISHABLE_KEY must differ");
+  const ownerAccounts: string[] = [];
+  for (const raw of (e.DODDY_OWNER_ACCOUNTS ?? "").split(",").map((v) => v.trim().toLowerCase()).filter(Boolean)) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(raw)) problems.push("DODDY_OWNER_ACCOUNTS must be account ids (UUIDs), comma-separated");
+    else if (!ownerAccounts.includes(raw)) ownerAccounts.push(raw);
+  }
+  const socialProviders: ("google" | "apple")[] = [];
+  for (const raw of e.DODDY_WEB_SIGNIN_PROVIDERS.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean)) {
+    if (raw !== "google" && raw !== "apple") problems.push(`DODDY_WEB_SIGNIN_PROVIDERS: unknown sign-in "${raw}" (google, apple)`);
+    else if (!socialProviders.includes(raw)) socialProviders.push(raw);
   }
 
   // Live mode needs Composio (accounts) or Monid (web search), or both. Composio is optional: a
@@ -442,7 +540,10 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     } else if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLoopbackUrl(parsed))) {
       problems.push("DODDY_WEB_ORIGIN must be https outside loopback development");
     } else {
-      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1", signInTriesPerClient: e.DODDY_WEB_SIGNIN_TRIES_PER_CLIENT };
+      const social: WebSocialSettings | null =
+        publishableKey !== "" && supabaseOrigin && socialProviders.length > 0 ? { projectUrl: supabaseOrigin, publishableKey, providers: socialProviders, signup: e.DODDY_WEB_SIGNUP === "open", secretKey: secretKey || null }
+          : null;
+      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1", signInTriesPerClient: e.DODDY_WEB_SIGNIN_TRIES_PER_CLIENT, social };
     }
   }
 
@@ -458,6 +559,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   else if (e.DODDY_MODE === "live" && databaseUrl === null && !isLoopbackHost(e.DODDY_HOST)) {
     problems.push("DATABASE_URL is required when DODDY_MODE=live and DODDY_HOST isn't loopback");
   }
+
+  // Paying for things (x402): off unless the owner sets a wallet.
+  const payments = loadPayments(e, problems);
 
   if (problems.length > 0) throw new ConfigError(problems);
 
@@ -485,9 +589,13 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL } : null,
     chatClaude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CHAT_MODEL } : null,
     supabaseUrl,
+    supabaseProjectUrl: supabaseOrigin,
+    supabaseSecretKey: secretKey || null,
+    ownerAccounts,
     composio,
     toolkits,
     monid,
+    payments,
     web,
     trustProxy: e.DODDY_TRUST_PROXY === "1",
     limits: {
@@ -516,6 +624,69 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       // Polish can take two bytes a character.
       maxBodyBytes: 24 * 1024,
     },
+  };
+}
+
+const HOSTNAME = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+
+/**
+ * Payments are strictly opt-in: wallet "none" (the default) leaves every payment route unavailable.
+ * Mock mode never reads live wallet settings. Messages name variables, never values.
+ */
+function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): PaymentsSettings {
+  const amount = (name: string, value: string, min = 10_000): number => {
+    const parsed = parseUsdc(value);
+    if (parsed === null || parsed < min || parsed > 10_000 * 1_000_000) {
+      problems.push(`${name} must be an amount of USDC between 0.01 and 10000, like 0.25`);
+      return 0;
+    }
+    return parsed;
+  };
+  const maxPerPayment = amount("DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC", e.DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC);
+  const confirmAmount = amount("DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC", e.DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC);
+  const userDaily = amount("DODDY_PAYMENTS_USER_DAILY_USDC", e.DODDY_PAYMENTS_USER_DAILY_USDC);
+  const serviceDaily = amount("DODDY_PAYMENTS_SERVICE_DAILY_USDC", e.DODDY_PAYMENTS_SERVICE_DAILY_USDC);
+  if (maxPerPayment > userDaily && userDaily > 0) problems.push("DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC must not exceed DODDY_PAYMENTS_USER_DAILY_USDC");
+  if (userDaily > serviceDaily && serviceDaily > 0) problems.push("DODDY_PAYMENTS_USER_DAILY_USDC must not exceed DODDY_PAYMENTS_SERVICE_DAILY_USDC");
+
+  // Real money is NOT approved (ADR-737; the owner approved review of this code, not use). Only the test
+  // network is accepted until the owner decides on mainnet; lifting this is a code change with its own ADR.
+  if (NETWORKS[e.DODDY_PAYMENTS_NETWORK].testnet !== true) {
+    problems.push("DODDY_PAYMENTS_NETWORK must be base-sepolia: paying on a network with real money is not approved (ADR-737)");
+  }
+
+  const allowedHosts = e.DODDY_PAYMENTS_ALLOWED_HOSTS.split(",").map((h) => h.trim().toLowerCase()).filter((h) => h !== "");
+  if (allowedHosts.some((h) => !HOSTNAME.test(h))) problems.push("DODDY_PAYMENTS_ALLOWED_HOSTS must be comma-separated host names like example.com");
+
+  let cdp: CdpSettings | null = null;
+  const names = ["CDP_API_KEY_ID", "CDP_API_KEY_SECRET", "CDP_WALLET_SECRET", "CDP_PAYMENT_ACCOUNT_ADDRESS"] as const;
+  if (e.DODDY_MODE === "live" && e.DODDY_PAYMENTS_WALLET === "coinbase_cdp") {
+    const missing = names.filter((n) => (e[n] ?? "").trim() === "");
+    for (const n of missing) problems.push(`${n} is required when DODDY_PAYMENTS_WALLET=coinbase_cdp`);
+    if (missing.length === 0) {
+      const candidate: CdpSettings = {
+        apiKeyId: e.CDP_API_KEY_ID!.trim(),
+        apiKeySecret: e.CDP_API_KEY_SECRET!.trim(),
+        walletSecret: e.CDP_WALLET_SECRET!.trim(),
+        accountAddress: e.CDP_PAYMENT_ACCOUNT_ADDRESS!.trim(),
+      };
+      try {
+        loadCdpKeys(candidate);
+        cdp = candidate;
+      } catch (error) {
+        problems.push(error instanceof CdpKeyError ? error.message : "the Coinbase wallet settings are invalid");
+      }
+    }
+  }
+  return {
+    wallet: e.DODDY_PAYMENTS_WALLET,
+    network: e.DODDY_PAYMENTS_NETWORK,
+    maxPerPayment,
+    confirmAmount,
+    userDaily,
+    serviceDaily,
+    allowedHosts,
+    cdp,
   };
 }
 

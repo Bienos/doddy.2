@@ -72,7 +72,8 @@ struct CaptureVoiceMemo: View {
     private var recording: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label {
-                Text("Recording… \(VoiceMemoText.duration(milliseconds: Int(recorder.elapsed * 1000))) of 5:00")
+                Text(verbatim: String(format: NSLocalizedString("Recording… %@ of 5:00", comment: ""),
+                                     VoiceMemoText.duration(milliseconds: Int(recorder.elapsed * 1000))))
                     .monospacedDigit()
             } icon: {
                 Image(systemName: "record.circle").foregroundStyle(.red)
@@ -183,10 +184,10 @@ private struct PlayRow: View {
                 HStack {
                     Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
                     if player.isPlaying || player.position > 0 {
-                        Text("\(VoiceMemoText.duration(milliseconds: Int(player.position * 1000))) / \(VoiceMemoText.duration(milliseconds: durationMilliseconds))")
+                        Text(verbatim: "\(VoiceMemoText.duration(milliseconds: Int(player.position * 1000))) / \(VoiceMemoText.duration(milliseconds: durationMilliseconds))")
                             .monospacedDigit()
                     } else {
-                        Text("Voice memo, \(VoiceMemoText.duration(milliseconds: durationMilliseconds))")
+                        Text(verbatim: String(format: NSLocalizedString("Voice memo, %@", comment: ""), VoiceMemoText.duration(milliseconds: durationMilliseconds)))
                             .monospacedDigit()
                     }
                     Spacer()

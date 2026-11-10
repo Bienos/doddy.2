@@ -1,7 +1,7 @@
 {
   "receipts": [
     {
-      "operationId": "a15f1643-3770-4df5-9706-0ffd6d10bad6",
+      "operationId": "111bc149-00eb-4f33-95df-656e7075d455",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -13,7 +13,7 @@
       "providerReference": null
     },
     {
-      "operationId": "7a49b714-e844-4ff4-aae7-525661d0f5d3",
+      "operationId": "1a9363c4-5d76-435c-a5cc-3981a986ded8",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -25,7 +25,7 @@
       "providerReference": null
     },
     {
-      "operationId": "b279ea05-9e83-4af3-bd9a-9c4f64d84639",
+      "operationId": "e0f6e248-eb19-494f-bc0f-80e7c6ebaac4",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -34,10 +34,10 @@
       "status": "succeeded",
       "summary": "Gmail draft created (not sent).",
       "errorCode": null,
-      "providerReference": "mock_log_b079e3e6"
+      "providerReference": "mock_log_8eb60857"
     },
     {
-      "operationId": "c0229939-4f11-4031-820c-4a4567d91720",
+      "operationId": "8dab585f-ab4a-4935-8844-e626e196dd23",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -49,7 +49,7 @@
       "providerReference": null
     },
     {
-      "operationId": "7b3af2fc-e93b-4de5-9f26-ff6a2200ad4d",
+      "operationId": "795eabbc-3d39-4f22-9300-cc94825c9d09",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -58,10 +58,10 @@
       "status": "succeeded",
       "summary": "Checked email: 2 messages listed.",
       "errorCode": null,
-      "providerReference": "mock_log_ae9c994e"
+      "providerReference": "mock_log_70fd94c3"
     },
     {
-      "operationId": "af878ed1-a3f3-4a05-ad09-16de73a67c3f",
+      "operationId": "22339e74-ecef-4816-bcf7-038aa72d15e9",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -73,7 +73,7 @@
       "providerReference": null
     },
     {
-      "operationId": "876f0160-f365-4c67-a4cd-32b96081d209",
+      "operationId": "c89f9a68-4a62-422c-95d9-9d7550470581",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -85,7 +85,7 @@
       "providerReference": null
     },
     {
-      "operationId": "6f03048f-e9ce-4b3a-b4c0-5361a40d01f4",
+      "operationId": "805faf6b-1f65-485e-a50c-dc36ab0ce055",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -97,19 +97,19 @@
       "providerReference": null
     },
     {
-      "operationId": "675bb46a-c124-4b07-94ec-48188a143205",
+      "operationId": "33078348-52ae-43cb-a7be-a266bad63d5c",
       "operation": "connect",
       "toolkit": "gmail",
       "tool": null,
       "timestamp": "2026-10-10T10:00:00.000Z",
       "mode": "mock",
       "status": "succeeded",
-      "summary": "Gmail connected. Doddy can use it now; he still asks before every look and every change.",
+      "summary": "Gmail connected. Doddy won't use it until you choose what he may do: look only, or look and act.",
       "errorCode": null,
       "providerReference": null
     },
     {
-      "operationId": "1ea7e374-5714-4f11-b0a8-3579748a8c2f",
+      "operationId": "77fc9295-0cb2-405e-a808-f667b10bda96",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",

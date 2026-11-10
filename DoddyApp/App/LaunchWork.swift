@@ -58,7 +58,7 @@ enum LaunchWork {
     }
 
     /// A moment later: network and notification work, one job at a time. Stops if the scene goes away.
-    static func later() async {
+    static func later(store: MemoryStore) async {
         try? await Task.sleep(for: settle)
         // If the user turned Doddy's notifications on earlier, re-send the (possibly new) token.
         let jobs: [(StaticString, () async -> Void)] = [
@@ -74,6 +74,8 @@ enum LaunchWork {
             ("Weekly look back", { if WeeklyLookBackSettings.stored().isOn { _ = await WeeklyLookBackScheduler.apply(.stored()) } }),
             ("Weekly plan", { if WeeklyPlanSettings.stored().isOn { _ = await WeeklyPlanScheduler.apply(.stored()) } }),
             ("Birthdays", { await BirthdayScheduler.refresh() }),
+            // "A thought is ready for review" (ADR-785): the next one, from the notes as they are now.
+            ("Thought review", { _ = await ThoughtReviewScheduler.refresh(store: store) }),
             // A recording Doddy was closed in the middle of is finished, or reported lost (ADR-588).
             ("Recordings recovery", { await RecordingCoordinator.shared.recoverUnfinished() }),
         ]

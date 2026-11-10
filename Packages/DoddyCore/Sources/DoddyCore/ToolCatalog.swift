@@ -19,6 +19,13 @@ public struct ToolDescriptor: Equatable, Sendable {
         /// Opens another app with something filled in; the user finishes there. Also a task
         /// handed to Doddy's server, which works on it and keeps the result in the app (ADR-716).
         case handoff
+        /// A text from Doddy's own number to the user's verified number (ADR-750 U2), through
+        /// Doddy's messaging server. Never to anyone else.
+        case sendText
+        /// A call placed by Doddy's messaging server from Doddy's own number: to the user's verified
+        /// number at a time they approved (ADR-754), or to up to three places the user approved on one
+        /// card (decision 2026-11-09-restaurant-calls-one-tap).
+        case placeCall
         /// Changes the conversation itself (translator mode, the plan card).
         case session
     }
@@ -27,7 +34,9 @@ public struct ToolDescriptor: Equatable, Sendable {
     public enum Approval: String, Sendable, CaseIterable {
         /// A public lookup that reads nothing of the user's and changes nothing (`AskFirst.publicLookups`):
         /// runs when the agent calls it (owner, 21 Oct 2026, ADR-575). Also translator mode's start
-        /// and stop, which read and send nothing (owner, 24 Oct 2026, ADR-619).
+        /// and stop, which read and send nothing (owner, 24 Oct 2026, ADR-619), and a text to the
+        /// user's own verified number while Texts from Doddy is on (owner, 9 Nov 2026, decision
+        /// 2026-11-09-restaurant-calls-one-tap).
         case runsNow
         /// Changes nothing: the app shows what it will do and runs it on a tap or the user's own
         /// spoken yes (`AskFirst.Need.yesFirst`).
@@ -67,8 +76,7 @@ public enum ToolCatalog {
     /// can't ask before them; since ADR-575 public lookups run at once, so they are back.
     public static let all: [ToolDescriptor] = phone + cloud + web
 
-    /// Public lookups ElevenLabs runs on its own servers (ADR-575). With OpenAI Realtime the app
-    /// answers them as not available (`OpenAISpec.webTools`).
+    /// Public lookups ElevenLabs runs on its own servers (ADR-575).
     public static let webLookups: Set<String> = ["geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"]
 
     private static let web: [ToolDescriptor] = webLookups.sorted().map {
@@ -117,6 +125,7 @@ public enum ToolCatalog {
         .init(VoiceToolName.openTrainingPlan, .handoff, .card),
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .askFirst),
+        .init(VoiceToolName.lookAtScreen, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
@@ -141,10 +150,23 @@ public enum ToolCatalog {
         .init(VoiceToolName.draftMessage, .handoff, .card),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
+        // Sent by Doddy, so the card shows the exact text and the tap approves exactly that
+        // text; the server checks the same approval hash (ADR-750 U2).
+        // Decision 2026-11-09-restaurant-calls-one-tap (owner, 9 Nov 2026): to the user's own verified number only,
+        // at once while Texts from Doddy is on, no card; never the same text twice in a row (`TextRepeat`).
+        .init(VoiceToolName.textMe, .sendText, .runsNow),
+        // The card shows the time and the exact reason Doddy will say; the server checks the same
+        // approval hash when it books the call and again when it places it (ADR-754).
+        .init(VoiceToolName.callMeLater, .placeCall, .card),
+        // The same call as Settings, Phone calls, Call me now; the card shows the number's last digits.
+        .init(VoiceToolName.callMeNow, .placeCall, .card),
+        .init(VoiceToolName.callPlaces, .placeCall, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
         .init(VoiceToolName.openCamera, .handoff, .card),
+        // "I lost my wallet" (ADR-692): the official steps on a card; each page or number opens only on a tap.
+        .init(VoiceToolName.lostWallet, .handoff, .card),
         // A light, outlet, fan or scene in HomeKit, after a card naming the exact accessory.
         .init(VoiceToolName.controlHome, .localChange, .card),
         // A task handed over (ADR-570): web research on Doddy's server that changes nothing on the
@@ -152,14 +174,24 @@ public enum ToolCatalog {
         // its text goes to a server that opens what it names. Checking what it found is a read.
         .init(VoiceToolName.handOverErrand, .handoff, .card),
         .init(VoiceToolName.checkErrands, .lookup, .askFirst),
+        // A Studio job (ADR-740): web research and files made on Doddy's server, paid from Doddy's account.
+        // A tap and not a spoken yes (ADR-742), like a handed-over task: it spends money.
+        .init(VoiceToolName.makeSomething, .handoff, .card),
         // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
         // changes; it asks first until the owner decides whether it joins the public look-ups.
         .init(VoiceToolName.findDeals, .lookup, .askFirst),
+        // Paying for one web page (ADR-734 to 736; off by default, not on the live agent). The agent only
+        // names the page; Doddy's server's own terms are on the payment card, and only a tap (plus the typed
+        // amount from the threshold) and a fresh Face ID start it. Counted as a handoff because it hands one
+        // request to Doddy's server behind its own card; it is not a `CloudToolName` and never a plan step.
+        .init(PaymentToolName.payForPage, .handoff, .card),
         // The conversation itself.
         // ADR-619: translator mode starts and stops at once, without asking (owner, 24 Oct 2026).
         .init(VoiceToolName.startTranslator, .session, .runsNow),
         .init(VoiceToolName.stopTranslator, .session, .runsNow),
         .init(VoiceToolName.proposePlan, .session, .card),
+        // An invoice draft on the card (ADR-677): nothing leaves the iPhone; issuing is the card's tap.
+        .init(VoiceToolName.draftInvoice, .session, .card),
     ]
 
     /// From `CloudToolName`: a write is an account write behind the server's approval, the rest are reads.

@@ -25,9 +25,9 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-618); not enough for a merge."
+        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-618). screens: a picture of each screen, about 40-60 minutes (ADR-820). fixtures: only the sample-state pictures of the screens run (ADR-821), about 30 minutes. None of the last three is enough for a merge."
         type: choice
-        options: [all, island]
+        options: [all, island, screens, fixtures]
         default: all
 
 concurrency:
@@ -35,7 +35,7 @@ concurrency:
   # commit is in the group, so each one gets its own run that is never cancelled, and never replaced
   # while it waits (GitHub drops a pending run when a newer one joins the same group). Before this, a
   # docs merge right after an app merge cancelled the app merge's run (7 Nov 2026, run 42376928312).
-  # The quick island run (ADR-618) has its own group, so it doesn't cancel a full run of the same branch.
+  # The quick island run (ADR-618) and the screens run (ADR-820) have their own groups, so they don't cancel a full run of the same branch.
   group: ios-${{ github.event_name == 'push' && github.sha || github.ref }}-${{ inputs.only || 'all' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
@@ -54,7 +54,7 @@ jobs:
       node: ${{ steps.groups.outputs.node }}
       messaging: ${{ steps.groups.outputs.messaging }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # A pull request is checked out as its test merge commit. Its first parent is the base
           # branch, so HEAD^1..HEAD is exactly what the pull request changes.
@@ -99,11 +99,14 @@ jobs:
   ios-build:
     name: ios-build
     needs: [changes]
-    if: needs.changes.outputs.mac == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: macos-26
-    timeout-minutes: 75
+    # A push to main runs the whole UI suite, the native island test and the Release build: 70 to 75
+    # minutes on 8 Nov 2026 (runs 42408593703, 42481741193), against a limit of 75. Run 42479036099 was
+    # cancelled after 75 minutes. Pull requests run the smoke classes and take about 30.
+    timeout-minutes: 100
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Select Xcode 26.6
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
@@ -124,6 +127,21 @@ jobs:
           swift --version
           xcodegen --version
 
+      # The app's Swift packages (checkouts and the binary frameworks, LiveKit's alone is several
+      # hundred MB) are downloaded from GitHub on every run. On 8 Nov 2026 a LiveKit release asset
+      # answered 504 for hours and no Mac build could start (runs 42465092351, 42465199294). Restored
+      # here, saved after, but only once ci.sh says every package resolved (build/packages-ok): a cache
+      # key can't be overwritten, so a partial download must never be saved. The folder's name is
+      # derived from the project's path, which is the same on every run.
+      - name: Restore the app's Swift packages
+        id: packages-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/Doddy-*/SourcePackages
+          key: app-packages-${{ runner.os }}-${{ hashFiles('project.yml', 'Config/Package.resolved') }}
+          restore-keys: |
+            app-packages-${{ runner.os }}-
+
       - name: scripts/ci.sh --app-only
         env:
           # Pull requests run the UI smoke classes, about 8 of the suite's 27 minutes (ADR-811);
@@ -135,11 +153,18 @@ jobs:
           DODDY_RELEASE_BUILD: ${{ github.event_name != 'pull_request' && '1' || '0' }}
         run: scripts/ci.sh --app-only
 
+      - name: Save the app's Swift packages
+        if: always() && steps.packages-cache.outputs.cache-hit != 'true' && hashFiles('build/packages-ok') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/Doddy-*/SourcePackages
+          key: app-packages-${{ runner.os }}-${{ hashFiles('project.yml', 'Config/Package.resolved') }}
+
       # What this run resolved for the app's packages: the file to commit as Config/Package.resolved
       # when pinning or moving versions (`make update-packages` does the same on a Mac).
       - name: Keep the resolved package versions
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: app-package-resolved
           path: build/Package.resolved
@@ -148,7 +173,7 @@ jobs:
 
       - name: Keep the test results
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: xcode-test-results
           path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
@@ -159,7 +184,7 @@ jobs:
       # DoddyTests/IslandScreenshotTests (ADR-615). Small PNGs, so the look can be checked from here.
       - name: Keep the island pictures
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: island-screenshots
           path: build/island-screenshots/
@@ -171,13 +196,14 @@ jobs:
 
   # Python generators and guards, the agent specs, the pack check: seconds, always run.
   checks:
-    if: inputs.only != 'island'
+    if: inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # reportlab and matplotlib: Doddy Studio's two renderers, run on the samples by the checks group (ADR-740).
       - name: Python for the checks
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-yaml
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-yaml python3-reportlab python3-matplotlib
       - name: scripts/ci.sh --only checks
         run: scripts/ci.sh --only checks
 
@@ -185,16 +211,16 @@ jobs:
   # toolchain the Linux checks were run with (Swift 6.1).
   swift:
     needs: [changes]
-    if: needs.changes.outputs.swift == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.swift == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     container: swift:6.1-noble
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Cache SwiftPM's checkouts and build products (GRDB, swift-crypto and the rest compile once).
       # Our own sources get fresh timestamps on checkout and rebuild; the dependencies' don't.
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: Packages/DoddyCore/.build
           key: swiftpm-6.1-${{ hashFiles('Packages/DoddyCore/Package.swift') }}-${{ github.sha }}
@@ -216,12 +242,12 @@ jobs:
   # The backend's type-check and tests: the longest Linux group (about 7 minutes), so it has a job to itself.
   backend:
     needs: [changes]
-    if: needs.changes.outputs.backend == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.backend == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -232,12 +258,12 @@ jobs:
   # Gateway, web app, site functions, voice token server, the secrets tool.
   node:
     needs: [changes]
-    if: needs.changes.outputs.node == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.node == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -259,7 +285,7 @@ jobs:
   # The messaging server (server/messaging, ADR-139), with a disposable Postgres for its tests.
   messaging:
     needs: [changes]
-    if: needs.changes.outputs.messaging == 'true' && inputs.only != 'island'
+    if: needs.changes.outputs.messaging == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
@@ -279,12 +305,16 @@ jobs:
     env:
       TEST_DATABASE_URL: postgres://doddy:doddy@localhost:5432/doddy_test
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: server/messaging/package-lock.json
+      # Python with reportlab and matplotlib: scripts/ci.sh --only messaging also runs Studio's server checks on files
+      # the real renderers make from the skills' samples (scripts/check_studio_crosscheck.sh, ADR-740).
+      - name: Python for the Studio cross-check
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3 python3-reportlab python3-matplotlib
       - name: scripts/ci.sh --only messaging
         run: scripts/ci.sh --only messaging
 
@@ -293,7 +323,7 @@ jobs:
   # fine, a failed or cancelled one does not.
   core:
     needs: [changes, checks, swift, backend, node, messaging]
-    if: always() && inputs.only != 'island'
+    if: always() && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -315,7 +345,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Select Xcode 26.6
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
@@ -330,7 +360,7 @@ jobs:
 
       - name: Keep the test results
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: xcode-test-results
           path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
@@ -339,9 +369,52 @@ jobs:
 
       - name: Keep the island pictures
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: island-screenshots
           path: build/island-screenshots/
           if-no-files-found: ignore
           retention-days: 14
+
+  # The screens run (ADR-820), by hand with only=screens: one build, then only
+  # DoddyUITests/ScreenAtlasTests, which keeps a picture of each screen it reaches. Pictures only:
+  # it verifies nothing about the app's behaviour and is no substitute for the full run.
+  screens:
+    if: github.event_name == 'workflow_dispatch' && (inputs.only == 'screens' || inputs.only == 'fixtures')
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select Xcode 26.6 (pinned with the image, ADR-811)
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+        with:
+          xcode-version: "26.6"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: scripts/ci_screens.sh
+        env:
+          SCREENS_ONLY: ${{ inputs.only }}
+        run: scripts/ci_screens.sh
+
+      - name: Keep the screen pictures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screen-atlas
+          path: |
+            build/screen-atlas/
+            build/screen-atlas-attachments/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: xcode-test-results
+          path: build/screen-atlas.xcresult
+          if-no-files-found: ignore
+          retention-days: 7

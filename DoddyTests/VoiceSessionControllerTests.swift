@@ -26,8 +26,14 @@ final class VoiceSessionControllerTests: XCTestCase {
         /// "Listening" marks the first conversation as had (ADR-326); `beginForTesting` reaches it,
         /// so the flag is put back too, or the app's later UI tests would skip Home's first visit.
         private let savedFirstConversation: Any?
+        /// The release scope (decision 2026-11-07-release-scope) hides most features in the shipping
+        /// scope; these tests drive every tool, so they run with everything shown (a Debug build reads
+        /// this key) unless a test asks for the shipping scope.
+        private let savedPreviewEverything: Any?
 
-        init() {
+        init(showEverything: Bool = true) {
+            savedPreviewEverything = UserDefaults.standard.object(forKey: ReleaseScope.previewEverythingKey)
+            UserDefaults.standard.set(showEverything, forKey: ReleaseScope.previewEverythingKey)
             // The card re-checks Settings → Connections at the tap; turned on for this test only.
             var saved: [VoiceConnection: Any?] = [:]
             for connection in Self.switches {
@@ -51,6 +57,7 @@ final class VoiceSessionControllerTests: XCTestCase {
                 UserDefaults.standard.set(value, forKey: connection.preferenceKey)
             }
             UserDefaults.standard.set(savedFirstConversation, forKey: PreferenceKey.hadFirstConversation)
+            UserDefaults.standard.set(savedPreviewEverything, forKey: ReleaseScope.previewEverythingKey)
         }
     }
 
@@ -106,6 +113,24 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.link.results.map(\.id), ["translator-1"])
         XCTAssertTrue(t.link.results.first?.text.hasPrefix("started:") == true)
         XCTAssertTrue(t.link.results.first?.text.contains("what to translate") == true)
+    }
+
+    /// The shipping scope (decision 2026-11-07-release-scope): a tool whose feature the build hides
+    /// runs nothing and shows no card, and the agent hears that it isn't in this version.
+    @MainActor
+    func testHiddenFeaturesToolRunsNothingInTheShippingScope() async {
+        let t = Harness(showEverything: false)
+        defer { t.restore() }
+        XCTAssertEqual(ReleaseScopeStore.current, .shipping)
+        t.controller.beginForTesting(link: t.link)
+
+        // The translator is shown in the beta since decision 2026-11-08-translator-in-beta; leaflets stay hidden.
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.findDeals, id: "deals-2", parameters: #"{"items":["masło"]}"#).value
+
+        XCTAssertNil(t.controller.pendingAction, "no card")
+        XCTAssertEqual(t.link.results.map(\.id), ["deals-2"])
+        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.hidden(VoiceToolName.findDeals))
     }
 
     // MARK: Declined card runs nothing
@@ -289,6 +314,29 @@ final class StaleToolCallTests: XCTestCase {
         XCTAssertNil(t.controller.pendingAction)
         XCTAssertEqual(first.results, [])
         XCTAssertEqual(second.results, [])
+    }
+
+    /// Owner, 10 Nov 2026: a card nobody could see blocked every later card ("Another item is waiting"). The
+    /// newest ask now takes the card's place; the replaced one runs nothing and its call is answered declined.
+    @MainActor
+    func testANewAskReplacesTheWaitingCardAndTheOldOneRunsNothing() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.openReminders = [Self.reminder("Buy milk"), Self.reminder("Call mum")]
+        let link = FakeLink()
+        t.controller.beginForTesting(link: link)
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "older", parameters: #"{"title":"Buy milk"}"#).value
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "newer", parameters: #"{"title":"Call mum"}"#).value
+        for _ in 0..<100 where !link.results.contains(where: { $0.id == "older" }) { await Task.yield() }
+
+        guard case .deleteReminder(let id, _)? = t.controller.pendingAction else {
+            return XCTFail("expected the newer card, got \(String(describing: t.controller.pendingAction))")
+        }
+        XCTAssertEqual(id, "newer")
+        XCTAssertEqual(link.results.first { $0.id == "older" }?.text, VoiceToolReply.replacedByNewerAsk)
+        XCTAssertEqual(t.devices.writeCount, 0, "nothing on the replaced card ran")
     }
 
     @MainActor
@@ -867,7 +915,7 @@ private final class FakeDevices: DeviceConnecting {
     }
 }
 
-/// Stands in for the ElevenLabs or OpenAI conversation: keeps every tool result sent.
+/// Stands in for the ElevenLabs conversation: keeps every tool result sent.
 private final class FakeLink: LiveVoiceLink, @unchecked Sendable {
     struct Sent: Equatable {
         let id: String

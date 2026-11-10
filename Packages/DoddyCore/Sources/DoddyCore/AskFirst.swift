@@ -6,7 +6,10 @@ import Foundation
 // its single yes covers every web search and page read Doddy's server makes for that task, with no
 // limit, and nothing else (owner, 21 Oct 2026, ADR-570). That yes is a tap since ADR-716: the task's
 // text goes to a server that opens whatever it names, so a spoken "yes" (to another question, or
-// anything the microphone heard) must not start one. Anything that changes, sends, deletes, books or shares
+// anything the microphone heard) must not start one. A Studio job (`make_something`, ADR-740) is the
+// second such action, a tap too (ADR-742: it spends money): its tap covers that job's web look-ups
+// (capped by the server's max_uses) and the making of its files in Anthropic's container, within the
+// server's dollar limits, and nothing else. Anything that changes, sends, deletes, books or shares
 // something needs a tap on a card with the exact payload: a spoken yes is not enough there,
 // because the model hears it (model-only approval is forbidden, DOD-07). No yes, a no, an unclear
 // answer or a timeout: nothing runs, and the agent is told so. Text from emails, the web or
@@ -19,6 +22,11 @@ import Foundation
 // words searched for leave the phone. Everything that reads the user's own data or changes anything
 // still asks first.
 //
+// A second exception since 9 Nov 2026 (owner: "doddy should send sms from his numbers on his own", decision
+// 2026-11-09-restaurant-calls-one-tap): `text_me` goes at once. It can only reach the user's own verified number,
+// and only while they have turned on Texts from Doddy; the server still checks the approval hash of exactly that
+// text and number. Texts to anyone else are impossible, not just asked about.
+//
 // This file is the rule as code, so it is tested on Linux: which ask each tool needs (`AskFirst`),
 // what counts as a spoken yes (`SpokenYes`), and the one check the app makes before running a
 // tool (`AskLedger.mayRun`).
@@ -28,11 +36,14 @@ public struct AskCard: Equatable, Sendable {
     public let title: String
     public let lines: [String]
     public let confirmLabel: String
+    /// The other button; nil shows the app's own "No".
+    public let declineLabel: String?
 
-    public init(title: String, lines: [String], confirmLabel: String) {
+    public init(title: String, lines: [String], confirmLabel: String, declineLabel: String? = nil) {
         self.title = title
         self.lines = lines
         self.confirmLabel = confirmLabel
+        self.declineLabel = declineLabel
     }
 }
 
@@ -70,50 +81,109 @@ public enum AskFirst {
     /// until it says how it asks.
     /// `polish`: the app is shown in Polish, for the cards whose words are chosen here (ADR-666: leaflets).
     public static func need(for request: VoiceToolRequest, calendar: Calendar = .current, polish: Bool = false) -> Need {
+        // The card is drawn as it is, so its words are chosen here: Polish when the app is shown in
+        // Polish (owner, 9 Nov 2026: the app kept showing English words on these cards).
+        func say(_ english: String, _ polishText: String) -> String { polish ? polishText : english }
         switch request {
         case .unsupported, .invalid, .needsClarification:
             return .nothingRuns
         case .searchMemories(let query):
-            return .yesFirst(AskCard(title: "Search your notes?", lines: ["For: \(query)"], confirmLabel: "Yes, search"))
+            return .yesFirst(AskCard(
+                title: say("Search your notes?", "Przeszukać Twoje notatki?"),
+                lines: [say("For: ", "Szukam: ") + query],
+                confirmLabel: say("Yes, search", "Tak, szukaj")))
         case .readCalendar(let range):
-            return .yesFirst(AskCard(title: "Read your calendar?", lines: [span(range.start, range.end, calendar: calendar)], confirmLabel: "Yes, read it"))
+            return .yesFirst(AskCard(
+                title: say("Read your calendar?", "Przeczytać Twój kalendarz?"),
+                lines: [span(range.start, range.end, calendar: calendar, polish: polish)],
+                confirmLabel: say("Yes, read it", "Tak, przeczytaj")))
         case .findFreeTime(let request):
             let last = calendar.date(byAdding: .day, value: max(request.days - 1, 0), to: request.firstDay) ?? request.firstDay
+            let first = day(request.firstDay, calendar: calendar)
             return .yesFirst(AskCard(
-                title: "Look for free time in your calendar?",
-                lines: [day(request.firstDay, calendar: calendar) + (request.days > 1 ? " to " + day(last, calendar: calendar) : "")],
-                confirmLabel: "Yes, look"))
+                title: say("Look for free time in your calendar?", "Poszukać wolnego czasu w kalendarzu?"),
+                lines: [request.days > 1
+                    ? say(first + " to " + day(last, calendar: calendar), "Od " + first + " do " + day(last, calendar: calendar))
+                    : first],
+                confirmLabel: say("Yes, look", "Tak, poszukaj")))
         case .lookupContact(let name):
-            return .yesFirst(AskCard(title: "Look up a contact?", lines: ["Name: \(name)"], confirmLabel: "Yes, look it up"))
+            return .yesFirst(AskCard(
+                title: say("Look up a contact?", "Wyszukać kontakt?"),
+                lines: [say("Name: ", "Kto: ") + name],
+                confirmLabel: say("Yes, look it up", "Tak, wyszukaj")))
         case .upcomingBirthdays(let days):
-            return .yesFirst(AskCard(title: "Check birthdays in Contacts?", lines: ["The next \(days) days"], confirmLabel: "Yes, check"))
+            return .yesFirst(AskCard(
+                title: say("Check birthdays in Contacts?", "Sprawdzić urodziny w Kontaktach?"),
+                lines: [say("The next \(days) days", "Najbliższe dni: \(days)")],
+                confirmLabel: say("Yes, check", "Tak, sprawdź")))
         case .calculate, .convertUnits, .convertCurrency:
             return .runsNow
         case .findPhotos(let request):
-            return .yesFirst(AskCard(title: "Look through your photos?", lines: [request.text(calendar: calendar), "Only the counts and times go to Doddy's voice; the photos stay on your screen."], confirmLabel: "Yes, look"))
+            return .yesFirst(AskCard(
+                title: say("Look through your photos?", "Przejrzeć Twoje zdjęcia?"),
+                lines: [
+                    polish ? photoDays(request, calendar: calendar) : request.text(calendar: calendar),
+                    say("Only the counts and times go to Doddy's voice; the photos stay on your screen.",
+                        "Do głosu Doddy’ego trafiają tylko liczby i godziny; zdjęcia zostają na Twoim ekranie."),
+                ],
+                confirmLabel: say("Yes, look", "Tak, przejrzyj")))
+        case .lookAtScreen:
+            // A read of the person's own screen: one picture to Doddy's server and Anthropic, after a spoken yes
+            // or a tap (decision 2026-11-09-doddy-looks-at-the-screen). The card says where it goes.
+            return .yesFirst(ScreenLookSpeech.askCard(polish: polish))
         case .readSteps(let day):
-            return .yesFirst(AskCard(title: "Read your steps?", lines: ["\(day.text), from Motion & Fitness"], confirmLabel: "Yes, read them"))
+            return .yesFirst(AskCard(
+                title: say("Read your steps?", "Odczytać Twoje kroki?"),
+                lines: [say("\(day.text), from Motion & Fitness", "\(stepDay(day)), z Ruchu i fitness")],
+                confirmLabel: say("Yes, read them", "Tak, odczytaj")))
         case .readHealthWeek:
-            return .yesFirst(AskCard(title: "Read your week from Apple Health?", lines: ["Workouts, sleep and heart, the last 7 days", "A short summary goes to Doddy's voice"], confirmLabel: "Yes, read it"))
+            return .yesFirst(AskCard(
+                title: say("Read your week from Apple Health?", "Odczytać Twój tydzień ze Zdrowia?"),
+                lines: [say("Workouts, sleep and heart, the last 7 days", "Treningi, sen i serce z ostatnich 7 dni"),
+                        say("A short summary goes to Doddy's voice", "Krótkie podsumowanie trafia do głosu Doddy’ego")],
+                confirmLabel: say("Yes, read it", "Tak, odczytaj")))
         case .openTrainingPlan(let ask):
             // ADR-626: opens a screen and makes nothing; a tap, because it changes what the person sees.
-            return .tapFirst(AskCard(title: "Make a training plan?", lines: ask.cardLines, confirmLabel: "Open"))
+            return .tapFirst(AskCard(
+                title: say("Make a training plan?", "Ułożyć plan treningowy?"),
+                lines: ask.cardLines(polish: polish),
+                confirmLabel: say("Open", "Otwórz")))
         case .listAlarms:
-            return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
+            return .yesFirst(AskCard(
+                title: say("Check Doddy's alarms?", "Sprawdzić alarmy Doddy’ego?"),
+                lines: [say("The alarms Doddy set on this iPhone", "Alarmy, które Doddy ustawił na tym iPhonie")],
+                confirmLabel: say("Yes, check", "Tak, sprawdź")))
         case .followNews(let ask):
             // ADR-657: a change to what the person follows, so a tap.
-            return .tapFirst(AskCard(title: "Follow this?", lines: ask.cardLines, confirmLabel: "Follow"))
+            return .tapFirst(AskCard(
+                title: say("Follow this?", "Śledzić to?"),
+                lines: ask.cardLines(polish: polish),
+                confirmLabel: say("Follow", "Śledź")))
         case .startStopwatch(let label):
             return .tapFirst(AskCard(
-                title: "Start a stopwatch?", lines: [label.map { "“\($0)”" } ?? "It counts up until you stop it"], confirmLabel: "Start"))
+                title: say("Start a stopwatch?", "Włączyć stoper?"),
+                lines: [label.map { "“\($0)”" } ?? say("It counts up until you stop it", "Liczy czas, dopóki go nie zatrzymasz")],
+                confirmLabel: say("Start", "Włącz")))
         case .stopStopwatch:
-            return .tapFirst(AskCard(title: "Stop the stopwatch?", lines: ["It stops and keeps the time it reached"], confirmLabel: "Stop"))
+            return .tapFirst(AskCard(
+                title: say("Stop the stopwatch?", "Zatrzymać stoper?"),
+                lines: [say("It stops and keeps the time it reached", "Zatrzyma się i zachowa zmierzony czas")],
+                confirmLabel: say("Stop", "Zatrzymaj")))
         case .checkStopwatch:
-            return .yesFirst(AskCard(title: "Read your stopwatch?", lines: ["How long it has been running"], confirmLabel: "Yes, read it"))
+            return .yesFirst(AskCard(
+                title: say("Read your stopwatch?", "Sprawdzić stoper?"),
+                lines: [say("How long it has been running", "Ile czasu już mierzy")],
+                confirmLabel: say("Yes, read it", "Tak, sprawdź")))
         case .readList(let name):
-            return .yesFirst(AskCard(title: "Read a list?", lines: ["List: \(name)"], confirmLabel: "Yes, read it"))
+            return .yesFirst(AskCard(
+                title: say("Read a list?", "Przeczytać listę?"),
+                lines: [say("List: ", "Lista: ") + name],
+                confirmLabel: say("Yes, read it", "Tak, przeczytaj")))
         case .parkingSpot(.find):
-            return .yesFirst(AskCard(title: "Find your parking spot?", lines: ["Uses where your iPhone is now"], confirmLabel: "Yes, find it"))
+            return .yesFirst(AskCard(
+                title: say("Find your parking spot?", "Znaleźć miejsce parkowania?"),
+                lines: [say("Uses where your iPhone is now", "Korzysta z tego, gdzie jest teraz Twój iPhone")],
+                confirmLabel: say("Yes, find it", "Tak, znajdź")))
         // ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
         // tłumaczyć"), replacing ADR-542: translator mode starts and stops the moment the user asks.
         // It reads nothing and sends nothing; the conversation turns private, and the other person
@@ -124,34 +194,66 @@ public enum AskFirst {
             // Reads the web and changes nothing on the iPhone (ADR-570), but the text goes to a server
             // that opens what it names, and a spoken "yes" could be anything the microphone heard, so
             // only a tap starts it (ADR-716). The card shows whose each text is, in full.
-            return .tapFirst(ErrandAsk.handOverCard(draft))
+            return .tapFirst(ErrandAsk.handOverCard(draft, polish: polish))
         case .checkErrands:
-            return .yesFirst(ErrandAsk.checkCard)
+            return .yesFirst(ErrandAsk.checkCard(polish: polish))
+        case .makeSomething(let job):
+            // ADR-740: web research and files made in Anthropic's container, paid from Doddy's account.
+            // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
+            // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
+            return .tapFirst(StudioAsk.card(job))
         case .findDeals(let request):
             // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
             // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.
             return .yesFirst(DealsAsk.card(request, polish: polish))
         case .addToList(let request):
-            return .tapFirst(AskCard(title: "Add to \(request.list)?", lines: request.items, confirmLabel: "Add"))
+            return .tapFirst(AskCard(
+                title: say("Add to \(request.list)?", "Dodać do listy „\(request.list)”?"),
+                lines: request.items, confirmLabel: say("Add", "Dodaj")))
         case .checkOff(let request):
-            return .tapFirst(AskCard(title: "Tick off on \(request.list)?", lines: request.items, confirmLabel: "Tick off"))
+            return .tapFirst(AskCard(
+                title: say("Tick off on \(request.list)?", "Odhaczyć na liście „\(request.list)”?"),
+                lines: request.items, confirmLabel: say("Tick off", "Odhacz")))
         case .removeFromList(let request):
-            return .tapFirst(AskCard(title: "Remove from \(request.list)?", lines: request.items, confirmLabel: "Remove"))
+            return .tapFirst(AskCard(
+                title: say("Remove from \(request.list)?", "Usunąć z listy „\(request.list)”?"),
+                lines: request.items, confirmLabel: say("Remove", "Usuń")))
         case .parkingSpot(.clear):
-            return .tapFirst(AskCard(title: "Forget your parking spot?", lines: ["The one spot kept on this iPhone is removed."], confirmLabel: "Forget it"))
+            return .tapFirst(AskCard(
+                title: say("Forget your parking spot?", "Zapomnieć miejsce parkowania?"),
+                lines: [say("The one spot kept on this iPhone is removed.", "Jedyne miejsce zapisane na tym iPhonie zostanie usunięte.")],
+                confirmLabel: say("Forget it", "Zapomnij")))
         case .noteCapabilityGap(let category):
             return .tapFirst(AskCard(
-                title: "Note that Doddy couldn't do this?",
-                lines: ["Kept on this iPhone as a category only: \(category.rawValue.replacingOccurrences(of: "_", with: " "))"],
-                confirmLabel: "Note it"))
+                title: say("Note that Doddy couldn't do this?", "Zanotować, czego Doddy nie umie?"),
+                lines: [polish
+                    ? "Na tym iPhonie zostaje tylko temat: \(gapTopic(category))"
+                    : "Kept on this iPhone as a category only: \(category.rawValue.replacingOccurrences(of: "_", with: " "))"],
+                confirmLabel: say("Note it", "Zanotuj")))
         case .leaveBy(let request):
             // Working out the trip reads where the iPhone is and asks Apple Maps, so nothing of it
             // happens, and the agent hears nothing of it, until this tap; the payload card with the
             // place Maps found and the leave time follows (ADR-718).
-            return .tapFirst(LeaveByAsk.card(request, calendar: calendar))
+            return .tapFirst(LeaveByAsk.card(request, calendar: calendar, polish: polish))
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
-             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save):
+             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
+             // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
+             // call_places: the card shows every place, its number and where it came from, the exact
+             // opening line and question; the one tap approves exactly that task's digest.
+             .callMeLater, .callMeNow, .callPlaces:
+            return .ownPayloadCard
+        case .textMe:
+            // A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
+            // decision 2026-11-09-restaurant-calls-one-tap). It can reach no one else (contact_policy.text_recipients).
+            return .runsNow
+        case .lostWallet:
+            // ADR-692: the checklist is its own card. Showing it reads and changes nothing; each
+            // step's page or number opens only on the person's tap on that step.
+            return .ownPayloadCard
+        case .draftInvoice:
+            // ADR-677: the draft card shows the exact invoice and changes nothing anywhere; issuing in
+            // inFakt is the card's own tap, bound to the digest of what it shows (ADR-640).
             return .ownPayloadCard
         case .cloudTool(let call):
             return !call.isWrite && publicLookups.contains(call.name) ? .runsNow : .serverCard(isWrite: call.isWrite)
@@ -176,12 +278,40 @@ public enum AskFirst {
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
 
-    private static func span(_ start: Date, _ end: Date, calendar: Calendar) -> String {
+    private static func span(_ start: Date, _ end: Date, calendar: Calendar, polish: Bool) -> String {
         let time = { (d: Date) -> String in
             let c = calendar.dateComponents([.hour, .minute], from: d)
             return String(format: "%02d:%02d", c.hour ?? 0, c.minute ?? 0)
         }
-        return "From \(day(start, calendar: calendar)) \(time(start)) to \(day(end, calendar: calendar)) \(time(end))"
+        let from = "\(day(start, calendar: calendar)) \(time(start))", to = "\(day(end, calendar: calendar)) \(time(end))"
+        return polish ? "Od \(from) do \(to)" : "From \(from) to \(to)"
+    }
+
+    private static func photoDays(_ request: PhotoSearchRequest, calendar: Calendar) -> String {
+        let first = day(request.firstDay, calendar: calendar)
+        guard request.days > 1, let last = calendar.date(byAdding: .day, value: request.days - 1, to: request.firstDay) else { return first }
+        return "Od \(first) do \(day(last, calendar: calendar))"
+    }
+
+    private static func stepDay(_ day: StepDay) -> String {
+        switch day.daysAgo {
+        case 0: "Dzisiaj"
+        case 1: "Wczoraj"
+        default: "\(day.daysAgo) dni temu"
+        }
+    }
+
+    /// The category the capability-gap card names, in Polish.
+    static func gapTopic(_ category: CapabilityGapCategory) -> String {
+        switch category {
+        case .sendMessage: "wysyłanie wiadomości"
+        case .payment: "płatności"
+        case .music: "muzyka"
+        case .smartHome: "inteligentny dom"
+        case .otherAppControl: "sterowanie inną aplikacją"
+        case .webAction: "działanie na stronie"
+        case .unknown: "inne"
+        }
     }
 }
 

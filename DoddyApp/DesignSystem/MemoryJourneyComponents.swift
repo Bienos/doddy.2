@@ -53,7 +53,6 @@ struct JourneyHeading: View {
 }
 
 /// Byte-identical drawings from the owner's numbered ZIP. No invented animation.
-/// Light paper backing preserves the supplied cream/black illustration in dark appearance.
 struct UploadedCharacterView: View {
     let assetName: String
     var height: CGFloat = 180
@@ -120,15 +119,16 @@ private struct DoddyArtMarker: ViewModifier {
     }
 }
 
-/// A place from Doddy's world (ADR-299): his room behind Doddy on Home, a strip of the memory
-/// library on Memories and of the coffee shop on the morning check-in. The owner's pack (021-036
+/// A place from Doddy's world (ADR-299): his room behind the timer, the coffee shop on the
+/// morning check-in and the weekly plan, the court behind focus and the stopwatch, the rooftop on
+/// the weekly look-back. The owner's pack (021-036
 /// "world"), day pictures in light appearance and night pictures in dark. It never sits under
 /// text (ADR-308): placed only where there is none, faint (25 %), and fading in and out at its
 /// top and bottom edges into the page. It scrolls with the screen. Decoration only: hidden from
 /// VoiceOver, and with "Hide Doddy's pictures" (then it takes no space).
 struct SceneryBackdrop: View {
     enum Place: String {
-        case home, memory, coffee
+        case home, coffee
         /// The focus timer (ADR-313): the basketball court, day and night.
         case court
         /// The weekly look-back (ADR-313): the rooftop. The pack has it at night only, so it is
@@ -178,9 +178,10 @@ struct SceneryBackdrop: View {
     }
 }
 
-/// The picture itself at an exact height, with the paper backing in dark appearance. Shared by
-/// `UploadedCharacterView` and the opening's hand-over (ADR-225), so the opening's last frame
-/// and Home's picture are drawn the same way, pixel for pixel.
+/// The picture itself at an exact height. Shared by `UploadedCharacterView` and the opening's hand-over
+/// (ADR-225), so the opening's last frame and Home's picture are drawn the same way, pixel for pixel.
+/// Drawn the same in light and dark: no card behind it. In dark appearance it gets a thin white outline
+/// (`DarkOutline`), so his black outline and limbs don't vanish into the canvas.
 struct CharacterArtImage: View {
     let assetName: String
     let height: CGFloat
@@ -257,7 +258,8 @@ struct MemoryLinkCard: View {
                     Text(record.currentText).lineLimit(3).font(.body)
                 }
                 HStack(alignment: .top) {
-                    Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))\(record.userEdited ? " · Edited" : "")")
+                    Text(verbatim: "\(record.source.displayName) · \(DateText.full(record.capturedAt))"
+                         + (record.userEdited ? NSLocalizedString(" · Edited", comment: "") : ""))
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                     Spacer(minLength: 8)
                     if isPinned {
@@ -267,7 +269,7 @@ struct MemoryLinkCard: View {
                     Image(systemName: "arrow.up.right").font(.caption).accessibilityHidden(true)
                 }
                 if !matchedTerms.isEmpty {
-                    Text("Matched: \(matchedTerms.joined(separator: ", "))")
+                    Text(verbatim: String(format: NSLocalizedString("Matched: %@", comment: ""), matchedTerms.joined(separator: ", ")))
                         .font(.caption).foregroundStyle(Theme.accentText)
                 }
             }

@@ -64,6 +64,63 @@ test("errands get a researcher only with an Anthropic key and the switch on", as
   assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", ERRANDS_ENABLED: "0" })).errands.researcher, undefined);
 });
 
+test("studio: off by default; the mid tier (Sonnet) for every step, $2 a job and $3 a day, 15 searches; empty values count as unset", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", STUDIO_ENABLED: "", STUDIO_MODEL: "", STUDIO_SKILLS: "" });
+  assert.deepEqual(c.studioSettings, {
+    enabled: false, models: { plan: "claude-sonnet-5-5", research: "claude-sonnet-5-5", pack: "claude-sonnet-5-5", write: "claude-sonnet-5-5", make: "claude-sonnet-5-5" },
+    skills: "", maxSearches: 15, maxFetches: 15, blockedDomains: [], taskBudgetTokens: 150_000, jobLimitUsd: 2, dailyCapUsd: 3, timeLimitMinutes: 20, maxOpen: 3,
+    dailyPerAccount: 3, dailyPerServer: 10, dailyForNewAccounts: 0, newAccountHours: 24, dailyServerCapUsd: 10, monthlyServerCapUsd: 100,
+  });
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", STUDIO_ENABLED: "1" }).studioSettings.enabled, true);
+});
+
+test("studio: the model API exists only with STUDIO_ENABLED=1, an Anthropic key and skills; a key alone, or the switch alone, starts nothing", async () => {
+  const { providersFrom } = await import("../src/providers/index.js");
+  const base = { DATABASE_URL: "postgres://x/y", MEMORY_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString("base64") };
+  assert.equal(providersFrom(loadConfig(base)).studio.api, undefined);
+  // Keyed, with skills, but STUDIO_ENABLED defaults to "0": still none.
+  assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", STUDIO_SKILLS: "skill_a" })).studio.api, undefined);
+  assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", STUDIO_SKILLS: "skill_a", STUDIO_ENABLED: "0" })).studio.api, undefined);
+  // Switched on but no key, or no skills: still none.
+  assert.equal(providersFrom(loadConfig({ ...base, STUDIO_SKILLS: "skill_a", STUDIO_ENABLED: "1" })).studio.api, undefined);
+  assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", STUDIO_ENABLED: "1" })).studio.api, undefined);
+  // The new-account pool is closed and the server's dollar cap is set, whatever else is configured.
+  const on = providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", STUDIO_SKILLS: "skill_a", STUDIO_ENABLED: "1" })).studio;
+  assert.ok(on.api);
+  assert.equal(on.settings.dailyForNewAccounts, 0);
+  assert.equal(on.settings.dailyServerCapUsd, 10);
+  assert.equal(on.settings.monthlyServerCapUsd, 100, "the owner's $100 ceiling, per UTC month for the whole server (ADR-742)");
+  for (const bad of [{ STUDIO_DAILY_SERVER_CAP_USD: "0" }, { STUDIO_DAILY_PER_ACCOUNT: "0" }, { STUDIO_DAILY_PER_SERVER: "0" }, { STUDIO_DAILY_SERVER_CAP_USD: "6000" }, { STUDIO_MONTHLY_SERVER_CAP_USD: "0" }, { STUDIO_MONTHLY_SERVER_CAP_USD: "-5" }]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("studio: STUDIO_TIER picks free (Haiku), plus (Sonnet, the default), pro (Opus) or max (Fable); STUDIO_MODEL and step variables still win; a bad tier is refused", () => {
+  const model = (env: Record<string, string>) => loadConfig({ DATABASE_URL: "postgres://x/y", ...env }).studioSettings.models;
+  assert.equal(model({ STUDIO_TIER: "free" }).research, "claude-haiku-5-5");
+  assert.equal(model({ STUDIO_TIER: "plus" }).make, "claude-sonnet-5-5");
+  assert.equal(model({ STUDIO_TIER: "pro" }).write, "claude-opus-5-5");
+  assert.equal(model({ STUDIO_TIER: "max" }).research, "claude-fable-5-1");
+  assert.equal(model({ STUDIO_TIER: "pro", STUDIO_MODEL_PLAN: "claude-haiku-5-5" }).plan, "claude-haiku-5-5");
+  assert.equal(model({ STUDIO_TIER: "free", STUDIO_MODEL: "claude-opus-5-5" }).plan, "claude-opus-5-5");
+  assert.throws(() => model({ STUDIO_TIER: "gold" }));
+});
+
+test("studio: STUDIO_MODEL sets every step first, a step variable overrides it, bad ids and values are refused", () => {
+  const all = loadConfig({ DATABASE_URL: "postgres://x/y", STUDIO_MODEL: "claude-opus-5-5" }).studioSettings.models;
+  assert.deepEqual(Object.values(all), Array(5).fill("claude-opus-5-5"));
+  const mixed = loadConfig({ DATABASE_URL: "postgres://x/y", STUDIO_MODEL: "claude-sonnet-5-5", STUDIO_MODEL_RESEARCH: "claude-opus-5-5", STUDIO_MODEL_MAKE: "claude-haiku-5-5" }).studioSettings.models;
+  assert.deepEqual(mixed, { plan: "claude-sonnet-5-5", research: "claude-opus-5-5", pack: "claude-sonnet-5-5", write: "claude-sonnet-5-5", make: "claude-haiku-5-5" });
+  const set = loadConfig({
+    DATABASE_URL: "postgres://x/y", STUDIO_SKILLS: "skill_a@skver_1,skill_b", STUDIO_MAX_SEARCHES: "8", STUDIO_BLOCKED_DOMAINS: "spam.example,farm.example",
+    STUDIO_JOB_LIMIT_USD: "1.5", STUDIO_DAILY_CAP_USD: "2", STUDIO_TASK_BUDGET_TOKENS: "20000",
+  }).studioSettings;
+  assert.deepEqual([set.skills, set.maxSearches, set.blockedDomains, set.jobLimitUsd, set.dailyCapUsd, set.taskBudgetTokens],
+    ["skill_a@skver_1,skill_b", 8, ["spam.example", "farm.example"], 1.5, 2, 20_000]);
+  for (const bad of [{ STUDIO_MODEL_PLAN: "Not A Model!" }, { STUDIO_TASK_BUDGET_TOKENS: "1000" }, { STUDIO_JOB_LIMIT_USD: "0" }, { STUDIO_BLOCKED_DOMAINS: "http://x.example" }, { STUDIO_SKILLS: "bad skill" }]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});
 test("Messages: off by default, Haiku 5.5 at medium effort, 100 per account and 1000 per server; caps only go down", () => {
   const base = { DATABASE_URL: "postgres://x/y" };
   const c = loadConfig({ ...base, ASSISTANT_ENABLED: "", ASSISTANT_MODEL: "", ASSISTANT_EFFORT: "" });

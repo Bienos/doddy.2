@@ -14,12 +14,8 @@ struct CallCaseView: View {
     let onClose: () -> Void
 
     @State private var confirmingCall = false
-    @State private var rehearsing = false
     @State private var selfScript = false
     @State private var editor: EditorItem?
-    /// Acted on once the sheet that chose it has closed: presenting while a sheet is still
-    /// closing fails silently.
-    @State private var rehearsalChoice: CallRehearsalView.Choice?
     @State private var preparedCase: StoredCallCase?
 
     init(model: CallCaseModel, list: CallCasesModel, onOpen: @escaping (StoredCallCase) -> Void, onClose: @escaping () -> Void) {
@@ -42,16 +38,6 @@ struct CallCaseView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.refresh() }
         .onDisappear { model.stopWatching() }
-        .sheet(isPresented: $rehearsing, onDismiss: actOnRehearsalChoice) {
-            if let preview = model.preview {
-                NavigationStack {
-                    CallRehearsalView(preview: preview) { choice in
-                        rehearsalChoice = choice
-                        rehearsing = false
-                    }
-                }
-            }
-        }
         .sheet(isPresented: $selfScript) {
             if let preview = model.preview {
                 NavigationStack { SelfCallScriptView(preview: preview) }
@@ -75,22 +61,6 @@ struct CallCaseView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Doddy says the opening line on the card first, asks the question and ends the call. You can take over or end it from this screen or the Lock Screen.")
-        }
-    }
-
-    /// "Doddy dzwoni" after a rehearsal goes through the same hours check as the card's button.
-    private func actOnRehearsalChoice() {
-        guard let choice = rehearsalChoice else { return }
-        rehearsalChoice = nil
-        switch choice {
-        case .callMyself:
-            selfScript = true
-        case .doddyCalls:
-            if let preview = model.preview, CallHours.fits(Date(), maxDurationSecs: preview.maxDurationSecs) {
-                confirmingCall = true
-            } else {
-                model.message = NSLocalizedString("Doddy calls only between 8:00 and 23:00 Polish time, and the whole call must fit. Pick a time:", comment: "")
-            }
         }
     }
 
@@ -173,11 +143,6 @@ struct CallCaseView: View {
                 }
             }
             Button {
-                rehearsing = true
-            } label: {
-                Label("Rehearse first", systemImage: "theatermasks")
-            }
-            Button {
                 selfScript = true
             } label: {
                 Label("I'll call myself", systemImage: "phone")
@@ -231,7 +196,7 @@ struct CallApprovalSections: View {
             Text(preview.goal)
         }
         Section {
-            Text("„\(preview.openingLine)”").italic()
+            Text(verbatim: "„\(preview.openingLine)”").italic()
         } header: {
             Text("Doddy says first, word for word")
         } footer: {
@@ -249,7 +214,7 @@ struct CallApprovalSections: View {
             ForEach(Array(preview.forbidden.enumerated()), id: \.offset) { _, rule in
                 Label(rule, systemImage: "xmark.circle")
             }
-            Text("„\(preview.callbackLine)”").italic()
+            Text(verbatim: "„\(preview.callbackLine)”").italic()
         } header: {
             Text("Doddy must not")
         } footer: {
@@ -269,6 +234,8 @@ struct CallApprovalSections: View {
             : String(format: NSLocalizedString("Number from a note: %@", comment: ""), label)
         case .typed: return label.isEmpty ? NSLocalizedString("Number typed in", comment: "")
             : String(format: NSLocalizedString("Number typed in, from: %@", comment: ""), label)
+        // Decision 2026-11-09-restaurant-calls-one-tap: a place Doddy found and the user approved on one card.
+        case .places: return NSLocalizedString("Number from Doddy's place search", comment: "")
         }
     }
 
@@ -368,6 +335,8 @@ struct CallLiveSection: View {
 struct CallResultSections: View {
     let record: StoredCallCase
     let result: CallResultCard
+    /// The recaps saved on this iPhone (`RecapLedger`): a key is there only after the note was read back.
+    @AppStorage(RecapSettings.ledgerKey) private var recapLedger = "[]"
 
     var body: some View {
         Section {
@@ -379,7 +348,7 @@ struct CallResultSections: View {
             }
             if let quote = result.quote {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("„\(quote.text)”").font(.title3).foregroundStyle(Theme.ink)
+                    Text(verbatim: "„\(quote.text)”").font(.title3).foregroundStyle(Theme.ink)
                     Text("Quoted word for word from the transcript").font(.caption).foregroundStyle(Theme.secondaryText)
                 }
                 .accessibilityIdentifier("callResult.quote")
@@ -399,6 +368,11 @@ struct CallResultSections: View {
             if result.callbackPromised {
                 Label("Doddy said you'd call back about something outside the card.", systemImage: "arrow.uturn.left.circle")
             }
+            if RecapLedger(stored: recapLedger).contains(RecapLedger.key(callCase: record.id, attempt: record.resultAttemptId)) {
+                Label("A recap of this call is in your notes", systemImage: "note.text")
+                    .font(.footnote)
+                    .accessibilityIdentifier("callResult.recapSaved")
+            }
         } header: {
             Text("Answer")
         }
@@ -409,7 +383,7 @@ struct CallResultSections: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(CallCaseText.warning(warning.kind)).foregroundStyle(Theme.error)
                         if result.transcript.indices.contains(warning.line) {
-                            Text("„\(result.transcript[warning.line].text)”").font(.footnote).italic()
+                            Text(verbatim: "„\(result.transcript[warning.line].text)”").font(.footnote).italic()
                         }
                     }
                 }

@@ -42,6 +42,14 @@ final class ActivityTextTests: XCTestCase {
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
             // ADR-510.
             .draftBlikTransfer(BlikTransferDraft(recipientName: "Ania", amount: BlikAmount(grosze: 5_000)!, title: "Pizza")),
+            // ADR-750 U2.
+            .textMe(body: "Parcel code 4417"),
+            // ADR-754.
+            .callMeLater(CallLaterDraft(at: now.addingTimeInterval(3_600), reason: "Cake", timeZoneID: "Europe/Warsaw")),
+            .callMeNow,
+            // Decision 2026-11-09-restaurant-calls-one-tap.
+            .callPlaces(CallTaskDraft(places: [CallTaskPlace(name: "Trattoria Uno", phone: "22 123 45 67")],
+                                      question: "Czy mają Państwo wolny stolik", goal: "Stolik na dziś.", textResult: true)),
             // ADR-567, ADR-568.
             .makePresentation(PresentationDraft(title: "Trip", subtitle: nil, slides: [PresentationSlide(title: "Day 1", points: ["Old Town"])])),
             .readSteps(StepDay(daysAgo: 0)!),
@@ -53,6 +61,8 @@ final class ActivityTextTests: XCTestCase {
             // ADR-570.
             .handOverErrand(ErrandDraft(words: "sprawdź loty do Rzymu", brief: "Loty do Rzymu w listopadzie.", title: "Rzym")),
             .checkErrands(about: nil),
+            // ADR-740.
+            .makeSomething(StudioJob(topic: "Pompy ciepła")),
             // ADR-652.
             .startStopwatch(label: "Bieg"), .stopStopwatch, .checkStopwatch,
             // ADR-626.
@@ -60,6 +70,7 @@ final class ActivityTextTests: XCTestCase {
             // SHOPPING.md.
             .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),
             .followNews(.words(name: "CPK", keywords: ["CPK"])),
+            .lookAtScreen(question: "Co to jest?"),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests
@@ -71,14 +82,15 @@ final class ActivityTextTests: XCTestCase {
         switch request {
         case .searchMemories, .saveMemory, .readCalendar, .createCalendarEvent, .createReminder, .remindAboutNote,
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
-             .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
+             .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .lookAtScreen, .openCamera, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
-             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .findDeals,
-             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews:
+             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater, .callMeNow, .callPlaces:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
-             .noteCapabilityGap:
-            // The gap tool leaves no row in What Doddy did (ADR-440).
+             .noteCapabilityGap, .lostWallet, .draftInvoice:
+            // The gap tool leaves no row in What Doddy did (ADR-440), nor does the lost-wallet
+            // checklist, which changes nothing (ADR-692), nor an invoice draft on screen (ADR-677).
             false
         }
     }
@@ -87,7 +99,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 47, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658)")
+        XCTAssertEqual(kinds.count, 53, "look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
@@ -110,6 +122,23 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertEqual(ActivityText.title("Draft a email", .polish), "Szkic e-maila")
     }
 
+    /// A BLIK row (app "blik", outcome "shown") must load: the log is decoded as one array, so one
+    /// unknown value would drop the whole 30 days. Kept from #207's test (ADR-810), which loaded such
+    /// a row after the flow was removed; it still guards the same decode now that the flow is back.
+    func testABlikRowStillLoadsAndReadsInPolish() throws {
+        let saved = ActivityEntry(at: now, app: .messages, title: "Prepare a BLIK transfer", detail: "to Ania", outcome: .done)
+        let json = try XCTUnwrap(String(data: JSONEncoder().encode([saved]), encoding: .utf8))
+            .replacingOccurrences(of: "\"app\":\"messages\"", with: "\"app\":\"blik\"")
+            .replacingOccurrences(of: "\"outcome\":\"done\"", with: "\"outcome\":\"shown\"")
+        XCTAssertTrue(json.contains("\"app\":\"blik\"") && json.contains("\"outcome\":\"shown\""), json)
+        let loaded = try JSONDecoder().decode([ActivityEntry].self, from: Data(json.utf8))
+        XCTAssertEqual(loaded.count, 1)
+        XCTAssertEqual(loaded[0].app, .blik)
+        XCTAssertEqual(loaded[0].outcome, .shown)
+        XCTAssertNil(loaded[0].outcome.status, "nothing to track on a card the user sends themselves")
+        XCTAssertEqual(loaded[0].title(.polish), "Przygotuj przelew BLIK")
+    }
+
     func testEveryResultHasPolish() {
         let all: [ActivityOutcome] = [.lookedUp, .done, .alreadyThere, .opened, .notSure, .notDone, .declined, .inProgress]
         XCTAssertEqual(Set(all.map { $0.text(.polish) }).count, all.count)
@@ -128,6 +157,7 @@ final class ActivityTextTests: XCTestCase {
         let fixed = [
             "Connections were paused.", "Doddy couldn't confirm it went through.", "Demo data from a test server, not your account.",
             ActivityLog.interruptedNote, "The conversation ended before you answered.", "Reminders isn't connected.",
+            "Twilio accepted the text; delivery isn't confirmed.", "Doddy's server has the text; it wasn't confirmed as sent yet.",
         ]
         for note in fixed { XCTAssertNotEqual(ActivityText.note(note, .polish), note, note) }
 

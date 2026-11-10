@@ -182,7 +182,7 @@ struct SharedPlaceRow: View {
                 Button("Share this place with everyone on the list") { run { try await sharing.setSharedPlace(place, for: list.id) } }
                     .disabled(isWorking)
                     .accessibilityIdentifier("list.sharePlace")
-                Text("They see the place you picked (“\(place.name)”) and can choose to be reminded there too. Not where you are.")
+                Text(verbatim: String(format: NSLocalizedString("They see the place you picked (“%@”) and can choose to be reminded there too. Not where you are.", comment: ""), place.name))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
             case .remindMeToo(let shared, let by):
                 Group {

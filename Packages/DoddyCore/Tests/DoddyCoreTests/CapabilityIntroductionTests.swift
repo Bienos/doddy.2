@@ -27,7 +27,34 @@ final class CapabilityIntroductionTests: XCTestCase {
 
     func testAlwaysPointsToTheDataFlowScreen() {
         for catalog in [CapabilityCatalog.m0, .v1Voice, .shipping(serverConfigured: true)] {
-            XCTAssertTrue(CapabilityIntroduction.text(for: catalog).hasSuffix("Settings › What leaves this iPhone shows everything that is sent, and where."))
+            // The screen moved off Home's menu on 9 Nov 2026; the paragraph names where it is now.
+            XCTAssertTrue(CapabilityIntroduction.text(for: catalog).hasSuffix("Settings › Privacy › What leaves this iPhone shows everything that is sent, and where."))
+        }
+    }
+
+    func testPolishSaysTheSameThings() {
+        let english = CapabilityIntroduction.text(for: .shipping(serverConfigured: true))
+        let polish = CapabilityIntroduction.text(for: .shipping(serverConfigured: true), language: .polish)
+        XCTAssertNotEqual(polish, english)
+        XCTAssertTrue(polish.hasPrefix("Jestem AI, nie człowiekiem."))
+        XCTAssertTrue(polish.contains("ElevenLabs"))
+        XCTAssertTrue(polish.contains("potwierdzasz na ekranie"))
+        XCTAssertTrue(polish.hasSuffix("Ustawienia › Prywatność › Co opuszcza tego iPhone’a pokazuje wszystko, co jest wysyłane, i dokąd."))
+        XCTAssertTrue(CapabilityIntroduction.text(for: .m0, language: .polish)
+            .contains("W tej wersji nie mogę dodawać przypomnień ani korzystać z innych aplikacji."))
+        XCTAssertFalse(CapabilityIntroduction.text(for: .m0, language: .polish).contains("ElevenLabs"))
+    }
+
+    /// Doddy is an AI character: the Polish never uses a gendered first-person form ("sam", "byłem", "byłam").
+    func testPolishHasNoGenderedFirstPerson() {
+        for catalog in [CapabilityCatalog.m0, .shipping(serverConfigured: true)] {
+            let words = CapabilityIntroduction.text(for: catalog, language: .polish)
+                .split(whereSeparator: { !$0.isLetter }).map { $0.lowercased() }
+            // Gendered forms Doddy could slip into here. A suffix rule would also catch the present tense
+            // ("wysyłam"), so the forms are listed.
+            let gendered: Set<String> = ["sam", "sama", "byłem", "byłam", "mogłem", "mogłam", "dodałem", "dodałam",
+                                         "gotowy", "gotowa", "pewien", "pewna", "asystentem", "asystentką"]
+            for word in words { XCTAssertFalse(gendered.contains(word), word) }
         }
     }
 }

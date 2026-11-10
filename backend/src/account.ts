@@ -1,5 +1,5 @@
 import type { TokenFloors } from "./auth.js";
-import type { QueuedCleanup, Store, UserErasure } from "./store.js";
+import { CLEANUP_RETRY, type QueuedCleanup, type Store, type UserErasure } from "./store.js";
 
 /**
  * Deleting a Doddy account on the server (ADR-674): everything this backend keeps for the person
@@ -49,11 +49,13 @@ export class AccountEraser {
     },
   ) {}
 
-  async erase(userId: string): Promise<AccountErasure> {
+  /** `accountSubjects`: the Doddy account (Supabase user) asking, removed there too (decision 2026-11-08-required-account). */
+  async erase(userId: string, accountSubjects: readonly string[] = []): Promise<AccountErasure> {
     const now = this.deps.now?.() ?? Date.now();
-    const erased = await this.deps.store.eraseUser(userId, now);
+    const erased = await this.deps.store.eraseUser(userId, now, accountSubjects);
     // The cut-off is already in the database (same transaction as the erasure); this makes it count here without waiting for the memory to refresh.
     this.deps.floors?.remember(userId, erased.tokensValidAfter, now);
+    for (const subject of erased.subjects) this.deps.floors?.remember(subject, erased.tokensValidAfter, now);
     const removed: string[] = [];
     const pending: string[] = [];
     for (const cleanup of erased.cleanups) {
@@ -79,6 +81,16 @@ export class AccountEraser {
       kept: [...KEPT_EXPLAINED],
       erasedAt: new Date(now).toISOString(),
     };
+  }
+
+  /**
+   * Hourly (app.ts): retries removals owed after a deletion for `providers` that have no sweep of
+   * their own (ADR-818: a person's Supabase sign-in). Same rules as the other sweeps (CLEANUP_RETRY).
+   */
+  async sweep(providers: readonly string[]): Promise<void> {
+    const now = this.deps.now?.() ?? Date.now();
+    const due = await this.deps.store.cleanupsToRetry([...providers], now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    for (const cleanup of due) await this.remove(cleanup);
   }
 
   /** Removed and dequeued, or kept as `failed` for the sweep. A provider with no remover here stays queued. */

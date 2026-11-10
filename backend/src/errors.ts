@@ -1,4 +1,5 @@
 import type { ErrorCode, Receipt } from "./contracts.js";
+import type { PaymentReceipt } from "./payments/contracts.js";
 import type { ToolReceipt } from "./tools/contracts.js";
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
@@ -19,6 +20,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   malformed_provider_result: 502,
   live_not_configured: 503,
   refused: 422,
+  account_conflict: 409,
   internal: 500,
 };
 
@@ -41,6 +43,7 @@ const MESSAGES: Record<ErrorCode, string> = {
   malformed_provider_result: "Google Calendar sent a result Doddy couldn't read, so nothing is shown.",
   live_not_configured: "Live connections are not set up on this server.",
   refused: "Doddy can't help with that one.",
+  account_conflict: "This sign-in and this iPhone's data belong to different Doddy accounts, so nothing was linked.",
   internal: "Something went wrong on Doddy's server.",
 };
 
@@ -48,7 +51,7 @@ export class AppError extends Error {
   readonly status: number;
   constructor(
     readonly code: ErrorCode,
-    readonly options: { retryAfterSeconds?: number; receipt?: Receipt | ToolReceipt; message?: string } = {},
+    readonly options: { retryAfterSeconds?: number; receipt?: Receipt | ToolReceipt | PaymentReceipt; message?: string } = {},
   ) {
     super(options.message ?? MESSAGES[code]);
     this.name = "AppError";

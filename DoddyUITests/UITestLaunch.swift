@@ -12,9 +12,6 @@ enum UITestLaunch {
         case persistent(UUID)
     }
 
-    /// How much slower than real time the opening plays when a test turns it on.
-    static let openingTimeScale = 6
-
     /// The screens' language for a test. The app's default is Polish (ADR-573), so every test
     /// says which language it reads; the argument wins over anything a launch stored before.
     enum Language: String {
@@ -24,8 +21,8 @@ enum UITestLaunch {
 
     static func arguments(
         store: Store, onboardingDone: Bool = true, appearance: String = "system", backTapSetup: String = "deferred",
-        opening: Bool = false, listen: Bool = false, language: Language = .english, welcome: Bool = false,
-        legalAccepted: Bool = true
+        listen: Bool = false, language: Language = .english, welcome: Bool = false,
+        legalAccepted: Bool = true, firstRunAccess: Bool = false
     ) -> [String] {
         var arguments: [String]
         switch store {
@@ -37,20 +34,24 @@ enum UITestLaunch {
         arguments += ["-appearance", appearance, "-backTapSetupStatus", backTapSetup]
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
         arguments += ["-voiceAgentID", ""]
-        arguments += ["-openingScene", opening ? "YES" : "NO", "-listenOnOpen", listen ? "YES" : "NO"]
+        arguments += ["-listenOnOpen", listen ? "YES" : "NO"]
         // The first-launch welcome (ADR-598) would cover every fresh-install test; a test that is
         // about it asks for it (`welcome: true`).
         arguments += ["-welcome", welcome ? "YES" : "NO"]
-        // The opening's whole timeline is 2.4 s, and on CI the launch and the first idle wait can
-        // take longer than that, so a test sometimes looked only after it had ended. Played 6×
-        // slower (14.4 s) it is still on screen when the test first looks, and still ends by itself.
-        if opening { arguments += ["-openingTimeScale", String(openingTimeScale)] }
+        // The first-run "Allow access" step (ADR-814) would sit between the Terms and the introduction in
+        // every fresh-install test, and a real iOS question would block them. `FirstRunAccessUITests` asks for it.
+        arguments += ["-firstRunAccess", firstRunAccess ? "YES" : "NO"]
         // Memories remembers Notes or Lists in UserDefaults, which outlive the in-memory store: a
         // test that opened Lists would leave every later test looking at Lists, not the notes.
         arguments += ["-memoriesShowsLists", "NO"]
         // "Before we start" (ADR-581) would cover every first screen; Debug builds skip it with
         // this. `LegalAcceptanceUITests` turns it off to test the step itself.
         if legalAccepted { arguments += ["-legalAcceptanceSkippedForUITests", "YES"] }
+        // The release scope (decision 2026-11-07-release-scope) hides most features in the shipping build; the UI tests cover
+        // every screen, so they run with everything shown (a Debug build honours this key). The UI test
+        // target doesn't link DoddyCore, so this is `ReleaseScope.previewEverythingKey` spelled out;
+        // `ReleaseScopeTests.testPreviewKeyIsTheOneTheUITestsPass` keeps the two the same.
+        arguments += ["-releaseScope.previewEverything", "YES"]
         return arguments
     }
 }

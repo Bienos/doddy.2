@@ -17,7 +17,7 @@ struct PhotoResultsCard: View {
                 .font(.headline)
             Text(results.request.text(calendar: .current))
                 .foregroundStyle(Theme.secondaryText)
-            Text("\(summary.photos) photos · \(summary.videos) videos")
+            Text(verbatim: String(format: NSLocalizedString("%lld photos · %lld videos", comment: ""), summary.photos, summary.videos))
                 .font(.subheadline.weight(.semibold))
             if summary.limited {
                 Text("You let Doddy see only some of your photos, so there may be more.")
@@ -31,7 +31,7 @@ struct PhotoResultsCard: View {
                     }
                 }
                 if summary.photos + summary.videos > results.identifiers.count {
-                    Text("The newest \(results.identifiers.count) are shown here.")
+                    Text(verbatim: String(format: NSLocalizedString("The newest %lld are shown here.", comment: ""), results.identifiers.count))
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

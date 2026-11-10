@@ -19,7 +19,7 @@ extension DataFlowState {
             // typed one) and has a session with it or has made the device ID that signs in (ADR-721). Nothing
             // typed is needed: since ADR-563 the phone signs itself in to the built-in server.
             doddyServerSet: DeviceSession.isServerInUse(),
-            askDoddyOn: flag(PreferenceKey.assistantConsent, default: false),
+            askDoddyOn: flag(PreferenceKey.assistantConsent, default: PreferenceKey.assistantConsentDefault),
             askDoddyUsesNotes: flag(PreferenceKey.assistantUseNotes, default: true),
             // Same rule as ServerConfig: the built-in address, or a valid one entered in Settings.
             messagingServerSet: ServerConfig.baseURL(defaults: defaults) != nil,
@@ -28,13 +28,13 @@ extension DataFlowState {
             morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey),
             siriReadsNotes: flag(PreferenceKey.siriReadsNotes, default: true),
             sharedLists: SharedListsController.shared.links.count,
-            // ElevenLabs is the default (ADR-546); a choice in Settings wins.
-            voiceProvider: VoiceProvider.effective(
-                stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true),
             learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice),
             webNotesKept: defaults.bool(forKey: WebMemoryModel.notesKey),
             webConversationsKept: defaults.bool(forKey: WebMemoryModel.conversationsKey),
-            inFaktKeySaved: AccountKeyStore.manager(for: .inFakt).state().isSaved)
+            inFaktKeySaved: AccountKeyStore.manager(for: .inFakt).state().isSaved,
+            textsToDoddyOn: defaults.bool(forKey: PreferenceKey.textsToDoddyOn),
+            recapsOnServer: flag(RecapSettings.serverWriterKey, default: RecapSettings.serverWriterDefault),
+            phoneRecapsOn: flag(RecapSettings.rememberKey, default: RecapSettings.rememberDefault))
     }
 }
 
@@ -45,17 +45,17 @@ struct DataFlowView: View {
     // Redraws this screen when the development server address changes; a shipped build has no such address (ADR-720).
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     #endif
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
+    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = PreferenceKey.assistantConsentDefault
     @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAll = false
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+    @AppStorage(PreferenceKey.textsToDoddyOn) private var textsToDoddyOn = false
     // Redraws this screen when a switch for keeping notes or conversations on Doddy's server changes (ADR-603).
     @AppStorage(WebMemoryModel.notesKey) private var webNotesKept = false
     @AppStorage(WebMemoryModel.conversationsKey) private var webConversationsKept = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
 
     /// The @AppStorage values above redraw this screen when a switch changes; the state itself is
     /// read by `DataFlowState.current()`, which Settings' Privacy rows use too (ADR-447).

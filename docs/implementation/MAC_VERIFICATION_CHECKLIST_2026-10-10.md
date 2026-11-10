@@ -273,7 +273,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 |---|---|---|
 | W1 | Fresh install; open Settings → Voice → Dynamic Island style. Then pick Lean In, relaunch, and check it stays | "Whole Doddy" is first and already ticked (the default, ADR-267); a picked style is kept after a relaunch. Its preview: Doddy's whole body on black with a thin cream edge, no panel. Switch the preview between Listening, Speaking, Thinking and Muted: hand at ear, open hands, kneeling, shush |
 | W2 | Choose Whole Doddy, talk to Doddy, go to the Home Screen and long-press the island | The expanded island shows the pose for each state as it changes (connecting = stretch). The pose is sharp, not blurry, and the cream edge is even |
-| W3 | Look at compact and minimal (open another app with its own activity for minimal) | A round face crop: the listening face while live, shush when muted. Not cut off, not blurry |
+| W3 | Look at compact and minimal (open another app with its own activity for minimal) | A round face: the listening face while live, shush when muted. On the left compact side too: a cream face with eyes and smile, **not an empty grey circle** (owner's report, 2026-10-11). Not cut off, not blurry |
 | W4 | Ask Doddy to save a note, tap Save; ask for a reminder and Add | Reaching high while it waits; a fist pump only after Saved / Reminders confirmed it |
 | W5 | With Hey Doddy on: wait, say "Hey Doddy", end the call | Cross-legged while waiting, waving with the greeting (no paper edge around the wave), leaning while paused |
 | W6 | Start the translator from Home with Whole Doddy chosen | Language Bridge as before, no pose |
@@ -456,6 +456,35 @@ Needs first: the new "First conversation" section on the live agent, with placeh
 | S7 | "Add milk to the shopping list", then End at once (slow device or many lists) | What Doddy did shows the add as done (or "in progress" for a moment), never "not done" when milk is on the list |
 | S8 | Confirm a plan with a note and a reminder, End and Start while it runs | Both steps run and are logged; the new conversation shows no plan progress and its saved-notes count starts at 0 |
 
+## 4za. Payments: the approval card, Face ID, the voice tool and the Home banner (ADR-735, ADR-736, `PAYMENTS_STATUS.md`)
+**Nothing here has been compiled or run.** The Swift was written without a toolchain. Do P1 first; use a server in mock mode (the demo wallet and demo seller move no money) until P12.
+| # | Do this | Expect |
+|---|---|---|
+| P1 | Build every target; run `scripts/ci.sh` | Compiles. `PaymentsTests` (DoddyCore, never run) pass. The new files are `DoddyApp/Features/Payments/*`, `PaymentsClientFactory.swift`, `FaceIDPaymentAuthenticator` in `AppLock.swift`, and the Payments row in `SettingsView.swift` |
+| P2 | Settings › Payments, with the mock server set | "Demo data" banner; the switch is off; Wallet "Demo wallet"; Network "Test network, no real money"; "Pay for a page" is disabled |
+| P3 | Turn the switch on | It moves only after the server answers; "Payments switched on." appears under Recent |
+| P4 | Enter `https://demo-shop.example/articles/42`, tap See the price | A card: "Pay demo-shop.example", five lines (amount first), a countdown that ticks down from about two minutes, a "Pay 0.05 USDC" button with the Face ID icon, and Cancel. Nothing in Recent yet for a payment |
+| P5 | Tap Cancel | The card closes. No payment receipt; Paid today is still 0.00 |
+| P6 | Tap pay and cancel the Face ID sheet | Back on the card with "Face ID wasn't confirmed. Nothing was paid."; Paid today is still 0.00 |
+| P7 | Tap pay and confirm Face ID | "Paid", the summary, a short transaction, "Demo: no real money moved."; after Done, Paid today is 0.05 USDC |
+| P8 | Open the card, wait over two minutes, tap pay | "This confirmation ran out. Nothing was paid." **with no Face ID prompt** |
+| P9 | Simulator or an iPhone with no passcode and no Face ID | "Doddy can only pay after Face ID, Touch ID or a passcode…"; nothing paid |
+| P10 | During the instant of "Paying…" (delay the seller to see it) | Close is greyed and swiping the card down does nothing |
+| P11 | Tap pay, then switch to Airplane Mode at once | "Not confirmed" with Check again and Done, **no way to pay again**; after reconnecting, Check again shows the server's receipt |
+| P12 | Server on the Base test network with a funded Coinbase test account (`docs/integrations/PAYMENTS_X402.md` setup) | Same as P7 but a real transaction you can see on a block explorer |
+| P13 | With the app lock on and unlocked a minute ago, pay | Face ID is asked anyway (an earlier unlock doesn't count); afterwards private notes are still locked |
+| P14 | Privacy › What leaves this iPhone, with a Doddy server set | The Doddy server row mentions payments; so does the Privacy paragraph in Settings |
+| P15 | Switch the iPhone to Polish; Dynamic Type at the largest size; VoiceOver on the card | Labels are Polish (the server's lines are not); the card scrolls; VoiceOver reads the title, the terms as one item, then the pay button as "Pay 0.05 USDC" |
+| P16 | With a server whose demo price is at or above the threshold (set `DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC=0.05`), open the card | A field "Type the amount to confirm" with the price as its hint; the pay button is greyed until what you type equals it ("0.050" works, "0.5" doesn't); a wrong entry shows "Type the amount shown…" and no Face ID prompt |
+| P17 | Settings › Payments after leaving a payment unconfirmed (Airplane Mode right after tapping pay), then open Home | A banner "A payment wasn't confirmed" with Open Payments and "I've checked"; "I've checked" hides it; another unconfirmed payment shows it again; before payments were ever switched on, Home never contacts the server about payments |
+| P18 | Voice (after syncing `pay_for_page`, or with the dev agent's tool added): "pay for https://demo-shop.example/articles/42" | Doddy says one short line to confirm on screen; the payment card opens over the conversation with the server's terms; nothing is paid until you tap and confirm Face ID |
+| P19 | In that conversation, say "yes, pay it" instead of tapping | Nothing happens; Doddy does not treat speech as approval |
+| P20 | Complete the payment | Doddy says it was paid only after the card shows Paid; What Doddy did shows "Paid for a page" as Done with no address |
+| P21 | Close the card with Cancel (or swipe it away) before paying | Doddy hears the user chose not to pay and does not offer again; What Doddy did shows "you said no" |
+| P22 | Lose the connection right after tapping pay | The card shows "Not confirmed"; Doddy says it may or may not have gone through, to check the wallet, and does not try again |
+| P23 | Say "pay for the shoe shop" (no address), or "pay for this page" after a web search | Doddy asks for the full web address; it doesn't invent one |
+| P24 | Drive mode (CarPlay profile) and ask it to pay; then Settings › Pause all connections and ask again | Refused in both cases with nothing opened |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |
@@ -546,3 +575,19 @@ These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_
 | AC7 | Card up, tap End, start a new conversation | No card in the new conversation |
 | AC8 | Card up, tap Details, turn it on in the sheet, close the sheet | The card goes and Doddy carries on |
 | AC9 | ElevenLabs conversation log for AC1 to AC5 | The "(app) The user just allowed …" message reached the agent and it called the tool again once |
+
+## 4aa. Everyday iPhone moments (ADR-780 to ADR-786, `IPHONE_MOMENTS_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| E1 | Build everything: `make project`, then the app with its extensions (widgets, share, `DoddyNotificationContent`; the watch targets are paused, ADR-572). Set the team on `DoddyNotificationContent` too | Compiles. The content extension has never been generated or built; errors there are new to this checklist |
+| E2 | **The open question.** Home → Save a detail → type something → Save, with the app in front | After the receipt appears, the island shows "NOTE · Saved · Note saved" for about 8 s and goes away. If the island shows nothing while Doddy is in front, press Home at once: it must be on the Lock Screen / from another app. Record which, for ADR-781. The card must never show the note's words |
+| E3 | Home → ••• → Focus, timers and stopwatch → Timer, 5 min, "Pasta", Start; go Home | Island: "TIMER · 5 min", the count ticking, "Pasta", Pause/Stop. Lock Screen: the same card. Pause from the island, Resume, let it run out with the app in the background: "Time's up" on the island and a "Timer done · Pasta" notification (Polish iPhone: "Minutnik: koniec") |
+| E4 | Say "set a timer for two minutes" in a conversation (the default branch's AlarmKit voice timer, ADR-650; ADR-780 does not reroute it) | The voice timer behaves as before (rings like the Clock app); Home's Timer from S3 is separate and does not appear in its place. Decide whether the two should be one (owner decision in `IPHONE_MOMENTS_STATUS.md`) |
+| E5 | Home → ••• → Focus, timers and stopwatch → Wind down, 5 min, Start; put the iPhone in StandBy (charging, on its side) | StandBy shows the card with "WIND DOWN" and the time only. At the end: "Wind-down over · Time to put the phone down". With Whole Doddy: stretching while it runs, cross-legged at the end |
+| E6 | StandBy at night (dim room, or Settings › StandBy › Night Mode) with the "Doddy, resting" widget | Only the next reminder's time, no picture, in the system's red |
+| E7 | (ADR-450's "New note" widget, kept; ADR-782 added no second one) Add "New note" (small, and the Lock Screen circle); tap each | Doddy opens on an empty capture screen; nothing is saved. Tinted Home Screen: the pencil symbol. Exactly one "New note" widget in the gallery |
+| E8 | Add "Saved thoughts" (small, Lock Screen rectangular, inline); save a note; wait for the widget to reload | The count goes up by one and "N this week" with it; no note words anywhere; tap opens Memories. Turn "Show notes and lists in widgets" off: "Turned off in Doddy's Settings." |
+| E9 | Settings › Appearance › Lock Screen wallpaper: Dark paper, Stretching, Make the picture, Share, Save Image; then iOS Settings › Wallpaper › Add New Wallpaper › Photos | A picture of this iPhone's exact pixel size; Doddy stands in the lower middle, the clock and widgets sit on clear paper, the orange rule under them. "Hide character artwork" on: paper only |
+| E10 | Settings › Check-ins and reminders › A thought to review: on, time two minutes ahead; have a note older than 7 days (or back-date one through import) | At the time a quiet notification waits in Notification Center, no sound, no banner: "A thought is ready for review". Tap: the note opens. Settings then says the next one comes tomorrow; with no other note due it says nothing is due yet |
+| E11 | Long-press a note reminder notification, and a review notification | Doddy's paper card: eyebrow ("Note reminder" / "A thought to review"), title, words, Doddy's picture on the left; the actions (Open note, In 1 hour…) below it as before. In dark appearance the card is the dark paper. Timers and the morning check-in keep iOS's plain expanded view |
+| E12 | "Hide character artwork" on; repeat S3, S7, S9 and S11 | No Doddy on the timer island (its board instead), the New note widget shows the pencil, the wallpaper is paper only, the expanded notification has no picture |

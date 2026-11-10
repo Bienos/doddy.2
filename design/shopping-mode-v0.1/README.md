@@ -1,6 +1,6 @@
 # Doddy na zakupach (shopping mode): design study v0.1
 
-Date: 24 Oct 2026. Status: **proposal, not built.** Owner's brief (24 Oct, in Polish): a shopping mode where Doddy finds any item, looks for the cheapest option, reads grocery leaflets (Biedronka and others), makes a short report as a PDF in Doddy's style with a cheap model, lets the user say what matters most, and later lets people pay inside the app with Apple Pay or BLIK. Keep it simple. The written proposal, sources and decisions are in `docs/strategy/TRYB_ZAKUPOW_2026-10.md`.
+Date: 24 Oct 2026. Status: **proposal, since built** (`DoddyApp/Features/Shopping/`, ADR-607 to 614, 659 to 669); this folder is the design study it started from. Owner's brief (24 Oct, in Polish): a shopping mode where Doddy finds any item, looks for the cheapest option, reads grocery leaflets (Biedronka and others), makes a short report as a PDF in Doddy's style with a cheap model, lets the user say what matters most, and later lets people pay inside the app with Apple Pay or BLIK. Keep it simple. The written proposal, sources and decisions are in `docs/strategy/TRYB_ZAKUPOW_2026-10.md`.
 
 Open `index.html` in a browser. It is one page; the only network request is Google Fonts (Bricolage Grotesque and Caveat, both already the site's faces). No font files are committed.
 

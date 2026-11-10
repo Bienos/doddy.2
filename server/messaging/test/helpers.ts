@@ -1,23 +1,46 @@
 import { readFileSync } from "node:fs";
+import { enforceDbGate } from "./dbGate.js";
 import { buildApp, type Deps } from "../src/app.js";
 import { DEFAULT_TASK_CALL_SETTINGS, type TaskCallSettings } from "../src/config.js";
 import { createPool, migrate, type Db } from "../src/db.js";
 import { TextCipher } from "../src/crypto.js";
+import { twilioSignature } from "../src/providers/twilio.js";
 import type {
   CallCreateOutcome, CallFetchOutcome, CallRecord, CallUpdate, CallUpdateOutcome, CreateCallParams, ElConversation,
-  RegisterOutcome, TaskTelephony, TaskVoice,
+  RegisterOutcome as ElRegisterOutcome, TaskTelephony, TaskVoice,
 } from "../src/providers/taskCalls.js";
 import type {
-  CallOutcome, OutboundCaller, PhoneVerifier, PushData, PushSender, PushTarget, SendOutcome, SmsSender, VerifyCheck,
+  CallOutcome, CallRegistrar, DeleteOutcome, OutboundCall, OutboundCaller, PhoneVerifier, PushData, PushSender, PushTarget, RecordDeleter,
+  RegisterOutcome, SendOutcome, SmsSender, VerifyCheck,
 } from "../src/providers/types.js";
 import type { BriefInput } from "../src/taskCalls/brief.js";
 import type { ResultWriter } from "../src/taskCalls/context.js";
 
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
+// In CI a missing database fails the run (throws here); locally it skips with one warning line.
+enforceDbGate();
 export const dbSkip = TEST_DATABASE_URL ? false : "TEST_DATABASE_URL not set (needs a disposable Postgres database)";
+
+/**
+ * Refuses a database that isn't plainly a disposable test one (engineering audit, 7 Nov 2026): freshDb
+ * drops its whole public schema, so a TEST_DATABASE_URL pasted from a real service would wipe it. The
+ * database's name must end in `_test` or `-test`, or be `test`, as CI's `doddy_test` does.
+ */
+export function assertDisposableTestDatabase(url: string): void {
+  let name = "";
+  try {
+    name = decodeURIComponent(new URL(url).pathname.replace(/^\//, ""));
+  } catch {
+    name = "";
+  }
+  if (!/(^|[_-])test$/i.test(name)) {
+    throw new Error(`TEST_DATABASE_URL must name a disposable database whose name ends in _test (it names "${name || "no database"}"): the tests drop its public schema`);
+  }
+}
 
 /** Wipes the test database's public schema and re-applies migrations. */
 export async function freshDb(): Promise<Db> {
+  assertDisposableTestDatabase(TEST_DATABASE_URL!);
   const db = createPool(TEST_DATABASE_URL!);
   await db.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
   await migrate(db);
@@ -37,9 +60,16 @@ export class FakePush implements PushSender {
 export class FakeSms implements SmsSender {
   sent: { to: string; body: string }[] = [];
   next: SendOutcome[] = [];
+  /** Twilio's message list for any number; undefined means Twilio couldn't be asked. */
+  recent: { sid: string; body: string; createdAt: Date; status: string }[] | undefined = [];
+  lookups: string[] = [];
   async send(to: string, body: string): Promise<SendOutcome> {
     this.sent.push({ to, body });
     return this.next.shift() ?? { kind: "accepted", providerId: `SM${this.sent.length}` };
+  }
+  async recentMessagesTo(to: string) {
+    this.lookups.push(to);
+    return this.recent;
   }
 }
 
@@ -51,12 +81,38 @@ export class FakeVerifier implements PhoneVerifier {
   }
 }
 
+/** Stands in for Twilio's Calls API. */
 export class FakeOutbound implements OutboundCaller {
-  calls: { to: string; variables: Record<string, string> }[] = [];
+  calls: OutboundCall[] = [];
   next: CallOutcome[] = [];
-  async placeCall(to: string, variables: Record<string, string>): Promise<CallOutcome> {
-    this.calls.push({ to, variables });
-    return this.next.shift() ?? { kind: "accepted", conversationId: `conv_${this.calls.length}`, callSid: "CA1" };
+  /** Twilio's CallSid is unique in the table (migration 017): tests that share a database and place calls from several
+   * fakes give each its own prefix. The call-flow tests rely on the default "CAout" + the call's number. */
+  constructor(private readonly prefix = "CAout") {}
+  async placeCall(call: OutboundCall): Promise<CallOutcome> {
+    this.calls.push(call);
+    return this.next.shift() ?? { kind: "accepted", callSid: `${this.prefix}${this.calls.length}` };
+  }
+}
+
+export const CONNECT_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://agent.example.test"/></Connect></Response>';
+
+/** Stands in for ElevenLabs register-call: records each call it is asked to connect. */
+export class FakeRegistrar implements CallRegistrar {
+  calls: Parameters<CallRegistrar["register"]>[0][] = [];
+  next: RegisterOutcome[] = [];
+  async register(call: Parameters<CallRegistrar["register"]>[0]): Promise<RegisterOutcome> {
+    this.calls.push(call);
+    return this.next.shift() ?? { kind: "twiml", twiml: CONNECT_TWIML };
+  }
+}
+
+/** Stands in for Twilio's DELETE on a message or call record. */
+export class FakeDeleter implements RecordDeleter {
+  deleted: { kind: string; sid: string }[] = [];
+  next: DeleteOutcome[] = [];
+  async deleteRecord(kind: "message" | "call", sid: string): Promise<DeleteOutcome> {
+    this.deleted.push({ kind, sid });
+    return this.next.shift() ?? { kind: "deleted" };
   }
 }
 
@@ -153,12 +209,12 @@ export function compliantAgent(): Record<string, unknown> {
 /** Stands in for ElevenLabs: register-call, conversations, the agent. */
 export class FakeVoice implements TaskVoice {
   registered: { agentId: string; from: string; to: string; variables: Record<string, string> }[] = [];
-  nextRegister: RegisterOutcome[] = [];
+  nextRegister: ElRegisterOutcome[] = [];
   conversations = new Map<string, ElConversation>();
   deleted: string[] = [];
   agent: unknown = compliantAgent();
   agentReads = 0;
-  async registerCall(p: { agentId: string; from: string; to: string; variables: Record<string, string> }): Promise<RegisterOutcome> {
+  async registerCall(p: { agentId: string; from: string; to: string; variables: Record<string, string> }): Promise<ElRegisterOutcome> {
     this.registered.push(p);
     return this.nextRegister.shift() ?? { kind: "ok", twiml: EL_TWIML };
   }
@@ -215,14 +271,26 @@ export async function testApp(db: Db, extra: Partial<Deps> = {}) {
   const sms = new FakeSms();
   const verifier = new FakeVerifier();
   const outbound = new FakeOutbound();
+  const registrar = new FakeRegistrar();
   const app = await buildApp({
-    db, push, sms, verifier, outbound, cipher: testCipher, toolSecret: TOOL_SECRET, doddyPhoneNumber: "+48221234567",
-    twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false,
+    db, push, sms, verifier, outbound, registrar, cipher: testCipher, toolSecret: TOOL_SECRET,
+    doddyPhoneNumber: DODDY_NUMBER, twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false,
     // The tests of other features make dozens of accounts from the one test address in a single database, so the
     // daily account cap per address (50 in production, ADR-702) would be a hidden limit on how many tests a file may
     // have. The tests of that cap pass their own `limits`.
     limits: { accountsPerIpDay: 100_000 },
     ...extra,
   });
-  return { app, push, sms, verifier, outbound };
+  return { app, push, sms, verifier, outbound, registrar };
+}
+
+export const DODDY_NUMBER = "+48221234567";
+
+/** A webhook request signed the way Twilio signs it (form body, X-Twilio-Signature). */
+export function twilioRequest(url: string, form: Record<string, string>,
+  signature = twilioSignature(TWILIO_TOKEN, BASE_URL + url, form)) {
+  return {
+    method: "POST" as const, url, payload: new URLSearchParams(form).toString(),
+    headers: { "content-type": "application/x-www-form-urlencoded", "x-twilio-signature": signature },
+  };
 }

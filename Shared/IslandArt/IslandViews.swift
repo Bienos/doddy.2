@@ -443,8 +443,9 @@ struct IslandCompactTrailingView: View {
 struct IslandAuroraView: View {
     let scene: IslandScene
 
-    static let size = CGSize(width: 48, height: 26)
-    static let lineWidth: CGFloat = 1.35
+    static let size = CGSize(width: 38, height: 26)
+    /// Seven solid, round-ended bars like the iPhone's call island (owner, 9 Nov 2026).
+    static let lineWidth: CGFloat = 3.4
 
     var body: some View {
         let columns = scene.aurora
@@ -456,12 +457,8 @@ struct IslandAuroraView: View {
                     ? Color(red: column.colour.red, green: column.colour.green, blue: column.colour.blue)
                     : Color.islandSecondary
                 Capsule()
-                    .fill(LinearGradient(stops: [
-                        .init(color: colour.opacity(0), location: 0),
-                        .init(color: colour.opacity(0.92), location: 0.5),
-                        .init(color: colour.opacity(0), location: 1),
-                    ], startPoint: .top, endPoint: .bottom))
-                    .frame(width: Self.lineWidth, height: max(1.5, Self.size.height * CGFloat(column.height)))
+                    .fill(colour)
+                    .frame(width: Self.lineWidth, height: max(Self.lineWidth, Self.size.height * CGFloat(column.height)))
             }
         }
         .frame(width: Self.size.width, height: Self.size.height)
@@ -471,7 +468,8 @@ struct IslandAuroraView: View {
 }
 
 /// Minimal (another app's activity is also running): the board's 45 pt drawing with the sign
-/// over its right side.
+/// over its right side. A centred sign (a timer's time) is drawn alone with Whole Doddy, never
+/// over his face (`IslandScene.minimalShowsPoseFace`).
 struct IslandMinimalView: View {
     let scene: IslandScene
     let startedAt: Date
@@ -484,9 +482,11 @@ struct IslandMinimalView: View {
     var body: some View {
         ZStack(alignment: scene.minimalSignCentred ? .center : .trailing) {
             if let pose = scene.pose {
-                IslandPoseFaceView(pose: pose, size: 24)
-                    .padding(.leading, 4)
-                    .frame(width: 45, alignment: .leading)
+                if scene.minimalShowsPoseFace {
+                    IslandPoseFaceView(pose: pose, size: 24)
+                        .padding(.leading, 4)
+                        .frame(width: 45, alignment: .leading)
+                }
             } else {
                 IslandArtView(art: scene.art(.minimal), face: scene.face, live: scene.live, showsHands: false)
             }
@@ -563,22 +563,19 @@ struct IslandFigureView: View {
     }
 }
 
-/// Whole Doddy's face for compact and minimal: a circle cropped from the pose's face pose.
+/// Whole Doddy's face for compact and minimal: a small round picture of its own
+/// (`WholeDoddy_face_<pose>`, cut by tools/whole_doddy/cut_faces.py), drawn as it is. It used
+/// to be cropped from the whole pose at draw time, and the Dynamic Island's left compact side
+/// then showed an empty grey circle.
 struct IslandPoseFaceView: View {
     let pose: IslandPose
     let size: CGFloat
 
     var body: some View {
-        let face = pose.facePose
-        let head = face.head ?? (x: 0.5, y: 0.3, diameter: 0.5)
-        let width = size / CGFloat(head.diameter * 1.06)
-        let height = width * 1.5
-        Image(face.assetName)
+        Image(pose.faceAssetName)
             .resizable()
-            .frame(width: width, height: height)
-            .offset(x: size / 2 - CGFloat(head.x) * width, y: size / 2 - CGFloat(head.y) * height)
-            .frame(width: size, height: size, alignment: .topLeading)
-            .clipShape(Circle())
+            .scaledToFit()
+            .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
 }

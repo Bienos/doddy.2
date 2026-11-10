@@ -120,7 +120,7 @@ extension VoiceToolReply {
         return lines.joined(separator: "\n")
     }
 
-    public static let cameraOpened = "opened: Doddy's camera is open on the user's screen. A photo they keep goes into a new note that they check and save themselves. Never say a photo was taken or saved."
+    public static let cameraOpened = "opened: Doddy's camera is open on the user's screen. A photo they keep goes into a new note that they check and save themselves. Never say a photo was taken or saved. Once they say they saved it, call search_memories: it also lists the newest saved notes."
     public static let cameraDeclined = "declined: the user chose not to open the camera. Nothing was opened."
     public static let cameraUnavailable = "unavailable: this device has no camera Doddy can use. Nothing was opened. Tell the user in one short sentence."
 }

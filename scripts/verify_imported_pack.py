@@ -6,6 +6,10 @@ font-binary exclusion for the pack files and nested archives.
 
 APPEND_ONLY files carry owner-approved additions (DODDY AI Constitution V1, ADR-178):
 their imported bytes must still be an exact, unchanged prefix of the file.
+
+MOVED files were moved, unchanged, to make room for repository-authored pages at their
+old path (decision docs/decisions/2026-11-07-plain-readme.md). They are checked at the
+new path against the same manifest entry, so the original bytes stay provable.
 """
 from pathlib import Path
 import hashlib, io, json, sys, zipfile
@@ -14,9 +18,13 @@ root = Path(__file__).resolve().parents[1]
 manifest = json.loads((root / "PACKAGE_MANIFEST.json").read_text())
 FONT = (".ttf", ".otf", ".woff", ".woff2")
 APPEND_ONLY = {"AGENTS.md", "CLAUDE.md"}
+MOVED = {
+    "README.md": "docs/archive/imported-pack/README.md",
+    "READ_ME_FIRST.md": "docs/archive/imported-pack/READ_ME_FIRST.md",
+}
 problems = []
 for e in manifest["files"]:
-    p = root / e["path"]
+    p = root / MOVED.get(e["path"], e["path"])
     if not p.is_file():
         problems.append(f"missing: {e['path']}")
         continue

@@ -110,7 +110,7 @@ public enum MemoryExport {
     ) -> String {
         let byNote = Dictionary(grouping: corrections, by: \.memoryID)
         let iso = ISO8601DateFormatter()
-        var lines = ["DODDY memories — exported \(iso.string(from: exportedAt))", "\(records.count) memories", ""]
+        var lines = ["Doddy memories — exported \(iso.string(from: exportedAt))", "\(records.count) memories", ""]
         for record in records {
             lines.append("## \(record.currentText)")
             lines.append("Saved: \(record.capturedAt.map(iso.string(from:)) ?? "date unavailable")")

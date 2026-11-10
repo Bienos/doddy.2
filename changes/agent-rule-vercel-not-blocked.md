@@ -1,0 +1,2 @@
+Agent rules (`AGENTS.md`, read by Claude Code through `CLAUDE.md` and by Codex): the live Vercel team isn't blocked; the "Account is blocked." statuses on pull requests come from an old Vercel account (owner queue 14) and are marked "Skipped" by the workflow of #272. Agents must not tell the owner Vercel is blocked (owner, 9 Nov 2026: "vercel isnt blocked … make sure you remember that next time").
+Ran: scripts/ci.sh --only checks. Nothing else changes.

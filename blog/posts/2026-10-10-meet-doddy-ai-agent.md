@@ -3,7 +3,7 @@ title: "Meet Doddy, an AI companion that wants to do it all for you"
 date: 2026-10-10
 author: "The Doddy team"
 status: published
-banner_pose: waving
+banner_pose: wave
 banner_says: Hey. I'm Doddy.
 banner_card_title: Save this note?
 banner_card_text: The spare keys are in the blue tin above the fridge.
@@ -98,7 +98,7 @@ tests stays out, however cool the demo looks.
 
 ## Why a character?
 
-{{doddy relaxing "Useful first. Charming second."}}
+{{doddy crosslegged "Useful first. Charming second."}}
 
 Talking to a blank text box is a bit weird. Talking to a stick figure in white sneakers is a bit
 less weird. Doddy is meant to be the mate who notices small annoyances and sorts them out without
@@ -176,7 +176,7 @@ only.
 
 ## How we think about safety
 
-{{doddy pointing "Your tap, your call."}}
+{{doddy reaching_high "Your tap, your call."}}
 
 Remember "excessive agency"? This is how we try to avoid it, roughly following what the security
 folks recommend
@@ -232,7 +232,7 @@ If that sounds like your kind of thing, [join early access](/#join) or say hi in
 
 ## FAQ
 
-{{doddy reading "Good questions."}}
+{{doddy belly_reading "Good questions."}}
 
 ### What is Doddy?
 

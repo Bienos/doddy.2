@@ -14,7 +14,7 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 5. During the call the app shows the live transcript, a big **Przejmij** (rings the user's phone; pressing 1 joins the call) and **Zakończ**. The Lock Screen shows the phase and the time only.
 6. After the call: an answer card with the reply quoted from the transcript, a confidence flag with reasons, warnings about anything Doddy said that needs a look, the transcript, a next step, the cost, and receipts for what the servers deleted. The transcript is saved on the iPhone first; then the server deletes its copies.
 7. Failed calls (no answer, busy, voicemail, phone menu, wrong number, technical failure) get an honest card and "Zadzwoń ponownie o …" with times that fit the calling hours.
-8. Rehearsal: the user practises with Doddy playing the receptionist, then picks "Doddy dzwoni" or "Dzwonię sam" (the script on screen and the number to dial).
+8. ~~Rehearsal~~ (removed 9 Nov 2026 with OpenAI voice; it ran only on OpenAI Realtime). "Dzwonię sam" stays: the script on screen and the number to dial, from the card.
 
 ## Code
 | Part | Where |
@@ -25,10 +25,20 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 | Server: providers | `src/providers/taskCalls.ts` (Twilio calls, ElevenLabs register-call and conversations), `src/providers/apns.ts` (Live Activity pushes) |
 | Voice agent spec | `voice-agent/task-call/`, `server/messaging/scripts/setup-task-call-agent.mjs`, checked by `scripts/voice_agent_spec.py --agent task-call` |
 | Terminal harness | `server/messaging/scripts/task-call.mjs` |
-| Rules and client (Linux-tested) | `Packages/DoddyCore/Sources/DoddyCore/{CallCase,CallCasesClient,CallRehearsal}.swift` |
+| Rules and client (Linux-tested) | `Packages/DoddyCore/Sources/DoddyCore/{CallCase,CallCasesClient,CallRehearsal}.swift` (`CallRehearsal.swift` now holds only `SelfCallScript`) |
 | On-iPhone store | `Packages/DoddyCore/Sources/DoddyPersistence/SQLiteCallCaseRepository.swift`, migration `v14_call_cases` |
-| App screens | `DoddyApp/Features/CallCases/`, `DoddyApp/Features/Voice/CallRehearsalSession.swift`, `DoddyApp/Infrastructure/Connections/ContactNumberPicker.swift`, Settings → Phone calls → Calls for you |
+| App screens | `DoddyApp/Features/CallCases/`, `DoddyApp/Infrastructure/Connections/ContactNumberPicker.swift`, Settings → Phone calls → Calls for you |
 | Live Activity | `Shared/CallActivity/`, `DoddyWidgets/DoddyCallLiveActivity.swift`, `DoddyApp/Features/CallCases/CallLiveActivity.swift` |
+
+## Call tasks: up to three places, one tap (9 Nov 2026)
+Decision `docs/decisions/2026-11-09-restaurant-calls-one-tap.md`, step 2. **Server only, tested with fakes; no app screen uses it yet, and no real call has been placed.**
+- `POST /v1/call-tasks` takes up to 3 places (name, number, source, including the new source `places` for a number from Doddy's place search) and one shared question, principal, goal and facts. Each place is checked and compiled exactly like a single case (`compileCase`); the same number twice is refused. The answer is one card: every place's preview and the task digest, which covers the case digests in order and the "text me the result" choice.
+- `POST /v1/call-tasks/:id/approve {digest}` calls the first place now. After each place's result the worker calls the next one (`advanceTask`, in the transaction that stores the result), within 3 hours of the tap and inside calling hours, with every dial gate run again.
+- The task stops at the first clear yes (the result step's `answer: yes` and a quote cut from the transcript, with no warnings), or as **unclear** when the answer isn't a clear yes or no, so Doddy never guesses and moves on. A place that doesn't pick up, is busy, a voicemail or a phone menu is skipped. Taking a call over, cancelling, the end of calling hours or the kill switch stops the task.
+- At the end: one content-free push (the same kind as a single call's, so the app opens the recap) and, if the card said so and the person has consented to texts, one text to their own number with the place's name and the quoted answer. The briefs of places never called are deleted, with receipts.
+- A place of a task can't be approved on its own (`part_of_task`); cancelling one place cancels the task.
+- Tests: `server/messaging/test/callTasks.test.ts` (9).
+- **The app's side (step 4, 9 Nov 2026):** the voice tool `call_places` (up to three places and their numbers from `find_places`, one question, a goal, `text_result`) asks Doddy's server for the task's card (`createCallTask`) and shows it in the conversation: every place, its number, "Numbers from Doddy's place search", the exact opening line, what Doddy won't do, and how the answer comes back. "Call them" approves the task's digest (`approveCallTask`); "Don't call" cancels it on the server. The tool's reply is only "started", never an answer; the answers reach the user through the existing Calls for you sync. DoddyCore's `CallNumberSource` has `places`. **Not compiled here** (no Xcode): `VoiceSessionController.swift`, `VoiceView.swift`, `CallCaseView.swift`; DoddyCore's rules are tested on Linux (`CallTaskTests`). Not on the live ElevenLabs agent (`not_synced`); the OpenAI voice takes it from the app.
 
 ## Verified here (Linux, 2026-10-18)
 - Server: `npm run typecheck` and `npm test` against a throwaway Postgres 16: **115 tests pass** (call cases: payload binding, every limit, kill switch, agent drift, webhooks and their signatures, takeover, answer card, costs, deletion receipts, retry after voicemail; plus config).
@@ -39,7 +49,7 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 
 ## Not verified
 - **No real call.** Nothing has been dialled, heard or transcribed for real; Twilio's and ElevenLabs' real callbacks have only been imitated by fakes.
-- **The iPhone screens, Live Activity, widget, intents, contact picker and rehearsal have never been run.** They compile on hosted CI (Xcode 26.6, PR #90), where `CallCasesModelTests` (8) passed on the iOS simulator and the existing 29 UI tests still pass; no UI test covers the call screens.
+- **The iPhone screens, Live Activity, widget, intents, contact picker have never been run.** They compile on hosted CI (Xcode 26.6, PR #90), where `CallCasesModelTests` (8) passed on the iOS simulator and the existing 29 UI tests still pass; no UI test covers the call screens.
 - APNs Live Activity pushes, Twilio Real-Time Transcription in Polish (track labels, latency, quality), the takeover conference, the voicemail tool on Polish voicemail greetings, ElevenLabs' post-call webhook arriving and its deletion.
 - How long callees wait in silence after "Halo" before Doddy speaks.
 - The Polish wording has not been read by a native speaker in context; the recording notice wording has not been reviewed legally.

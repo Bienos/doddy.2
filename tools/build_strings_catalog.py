@@ -32,6 +32,7 @@ TARGETS = [
     ("DoddyApp/Resources/Localizable.xcstrings", ("DoddyApp", "Shared")),
     ("DoddyWidgets/Localizable.xcstrings", ("DoddyWidgets", "Shared")),
     ("DoddyShare/Localizable.xcstrings", ("DoddyShare",)),
+    ("DoddyNotificationContent/Localizable.xcstrings", ("DoddyNotificationContent",)),
     ("DoddyWatch/Localizable.xcstrings", ("DoddyWatch",)),
     ("DoddyWatchWidgets/Localizable.xcstrings", ("DoddyWatchWidgets",)),
     ("DoddyMac/Localizable.xcstrings", ("DoddyMac",)),
@@ -54,6 +55,11 @@ PLIST_LANGUAGES = re.compile(r"(<key>CFBundleLocalizations</key>\n\t<array>\n)(?
 CALLS = (r'(?:Text|Button|Label|Toggle|Section|navigationTitle|TextField|SecureField|DisclosureGroup|Picker|'
          r'confirmationDialog|alert|LabeledContent|Link|ShareLink|DatePicker|Stepper|ProgressView|accessibilityLabel|accessibilityHint)')
 LITERAL = re.compile(CALLS + r'\(\s*"((?:[^"\\]|\\.)*)"')
+# Both branches of a condition that is the call's first argument: Text(isOn ? "On" : "Off"),
+# Button(isSaving ? "Saving…" : "Save"). SwiftUI reads them as localization keys exactly like a plain
+# literal (its StringProtocol initialisers are disfavoured overloads), so they need catalog lines too.
+# No comma before the "?": a condition in a later argument (systemImage: on ? "a" : "b") is no key.
+TERNARY = re.compile(CALLS + r'\(\s*([^"(),]*?)\?\s*"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"')
 NAMED = re.compile(r'(?:eyebrow|title|subtitle):\s*"((?:[^"\\]|\\.)*)"')
 # Strings made in code (ADR-223 follow-up): NSLocalizedString("…"), App Intent titles and
 # descriptions, App Shortcut short titles.
@@ -96,6 +102,11 @@ def strings_in(*folders):
                         for match in pattern.finditer(text):
                             if "\\(" not in match.group(1):
                                 found.add(match.group(1))
+                    for match in TERNARY.finditer(text):
+                        # A condition on the language already picks its own words ("Nagrywanie" : "Recording").
+                        if ".polish" in match.group(1):
+                            continue
+                        found.update(s for s in match.group(2, 3) if "\\(" not in s)
     return found
 
 

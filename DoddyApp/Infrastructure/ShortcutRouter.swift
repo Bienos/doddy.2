@@ -111,6 +111,7 @@ final class ShortcutRouter {
         isWeeklyPlanPresented = false
         isRecordingsPresented = false
         isCallRecapsPresented = false
+        isMessagesRequested = false
         translatorPreset = nil
         talkToDoddyOpened = false
         checkInBriefing = nil
@@ -121,25 +122,32 @@ final class ShortcutRouter {
 
     /// Called from `TalkToDoddyIntent.perform()`. If a tap test is active the invocation is its
     /// receipt and the setup sheet takes over; otherwise the voice conversation opens.
-    func talkToDoddyInvoked(at now: Date = .now) {
-        guard mayGoAhead(.startConversation, again: { [self] in talkToDoddyInvoked(at: now) }) else { return }
+    /// With `startOnHome` the voice screen is not opened: the answer is true when the caller should
+    /// start the conversation on Home, where its strip over the island is the screen (owner, 9 Nov
+    /// 2026: "only the small island"). The router has no UI types, so the caller starts it.
+    @discardableResult
+    func talkToDoddyInvoked(at now: Date = .now, startOnHome: Bool = false) -> Bool {
+        guard mayGoAhead(.startConversation, again: { [self] in _ = talkToDoddyInvoked(at: now, startOnHome: startOnHome) }) else { return false }
         // A shared draft's capture sheet is up on the same view as the conversation cover: a
         // second presentation would be dropped and leave drafts queued behind it for good.
-        if drafts.shown != nil { return }
+        if drafts.shown != nil { return false }
         // Whatever started it, the shortcut ran: the card and the weekly reminder have done their job.
         setup.noteShortcutRan()
         Task { await OpenWaysReminderScheduler.refresh(setup) }
         if setup.deliver(ShortcutReceipt(receivedAt: now)) {
             isVoicePresented = false
             isSetupPresented = true
+            return false
         } else if !BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction)).startsConversation {
             // Settings → Back Tap and Siri → "Only open Doddy": the app comes forward (the intent
             // opens it) and no conversation, microphone or island starts.
-            return
+            return false
         } else {
             isSetupPresented = false
+            if startOnHome, !isVoicePresented { return true }
             if !isVoicePresented { talkToDoddyOpened = true }
             isVoicePresented = true
+            return false
         }
     }
 
@@ -263,12 +271,25 @@ final class ShortcutRouter {
         isCallRecapsPresented = true
     }
 
+    /// A finished task's or file's push was tapped (owner, 10 Nov 2026): Home opens Messages, where Doddy's
+    /// message about it is. Navigation only: it starts nothing and sends nothing. Home takes it once.
+    var isMessagesRequested = false
+
+    func messagesOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in messagesOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isMessagesRequested = true
+    }
+
     /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and
     /// "Open Latest Recording" all come here. Navigation only: it never starts or stops anything.
     var isRecordingsPresented = false
     private var recordingToOpen: UUID?
 
     func openRecordings() {
+        // Hidden in this build (decision 2026-11-07-release-scope): a link or an older control opens nothing.
+        guard ReleaseScopeStore.current.shows(.recordings) else { return }
         guard mayGoAhead(.openRecordings, again: { [self] in openRecordings() }) else { return }
         guard !isVoicePresented, drafts.shown == nil else { return }
         isSetupPresented = false

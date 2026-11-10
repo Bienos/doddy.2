@@ -1,36 +1,17 @@
 import DoddyCore
 import SwiftUI
 
-/// Compatibility wrapper for existing onboarding/voice views. All visible drawings
-/// now use the owner's uploaded pack; original asset sets remain untouched.
-struct CandidateCharacterView: View {
-    let assetName: String
-    var size: CGFloat = 180
-
-    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
-
-    var body: some View {
-        if !hideCharacterArt {
-            switch assetName {
-            // Whole Doddy poses (ADR-299): hello is the wave, played once from the pack's whole
-            // wave strip (ADR-380); "on the way" is the tiptoe.
-            case "Doddy_waving": DoddyMotionView(motion: .wave, height: size)
-            case "Doddy_approaching": WholeDoddyView(pose: .tiptoe, height: size)
-            case "Doddy_listening": UploadedCharacterView(assetName: "UploadedDoddy_Listening", height: size)
-            default: UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: size)
-            }
-        }
-    }
-}
-
 /// Label on the left, explicit text value on the right (never colour alone).
 struct StatusRow: View {
+    /// Looked up in the string catalog when shown: a literal `title: "…"` is collected into the
+    /// tables, but `Text(String)` alone would show it in English even in Polish. A title that is
+    /// already translated (`NSLocalizedString` at the call) or is no key shows as it is.
     let title: String
     let value: String
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title)
+            Text(NSLocalizedString(title, comment: ""))
             Spacer(minLength: 12)
             Text(value)
                 .foregroundStyle(Theme.secondaryText)
@@ -95,33 +76,6 @@ struct MemoryTextEditor: View {
                 .foregroundStyle(length > MemoryLimits.maxTextLength ? Theme.error : Theme.secondaryText)
                 .accessibilityLabel("\(length) of \(MemoryLimits.maxTextLength) characters")
         }
-    }
-}
-
-struct MemoryRow: View {
-    let record: MemoryRecord
-    var matchedTerms: [String] = []
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "note.text")
-                .foregroundStyle(Theme.secondaryText)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(record.currentText)
-                    .lineLimit(3)
-                Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))\(record.userEdited ? " · corrected" : "")")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                if !matchedTerms.isEmpty {
-                    Text("Matched: \(matchedTerms.joined(separator: ", "))")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.accentText)
-                }
-            }
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -202,6 +156,8 @@ extension MemorySource {
         case .sharedContent: NSLocalizedString("Shared into Doddy", comment: "")
         case .importedLegacyUnknown: NSLocalizedString("Imported, date unknown", comment: "")
         case .importedFile: NSLocalizedString("Imported from a file", comment: "")
+        case .notedByDoddy: NSLocalizedString("Noted by Doddy, saved by you", comment: "")
+        case .conversationRecap: NSLocalizedString("Recap of a conversation, kept by your setting", comment: "")
         case .sampleFixture: NSLocalizedString("Sample", comment: "")
         }
     }

@@ -239,6 +239,58 @@ a {
   box-shadow: inset 0 0 0 1.5px var(--reading-ink);
 }
 
+/* Apple and Google (ADR-818): plain paper buttons with the provider's name; no logos are bundled. */
+.button-social {
+  width: 100%;
+  min-height: var(--control-height);
+  border-radius: 18px;
+  background: var(--paper);
+  color: var(--reading-ink);
+  box-shadow: inset 0 0 0 1.5px var(--reading-ink);
+}
+
+.button-social:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 2px var(--reading-ink), inset 0 -4px 0 var(--orange-cue);
+}
+
+.social-sign-in {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.social-sign-in .field-hint {
+  margin: 0;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--secondary-text);
+  font-size: 0.9375rem;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--separator);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.button-row .button-social {
+  width: auto;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-5);
+}
+
 .select,
 .language-picker select,
 .code-input {

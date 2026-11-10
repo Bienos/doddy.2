@@ -186,6 +186,20 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
 
+### Round faces for the island's compact and minimal views
+`WholeDoddy_face_listening`, `_shush`, `_yawn_stretch`, `_crosslegged` (app and widgets; 48×48 and 72×72).
+Each is a crop of the matching `WholeDoddy_<pose>` image set (itself a downscale of the pack's
+01-transparent-poses picture) to the head circle in `IslandPose.head`, with the pixels outside the circle made
+transparent, cut by `tools/whole_doddy/cut_faces.py`. Nothing redrawn or recoloured. Source = the widget
+catalog's `art@3x.png` (SHA-256):
+
+| Face | Cut from | SHA-256 of the source |
+|---|---|---|
+| `WholeDoddy_face_listening` | `WholeDoddy_listening` | 69ac3b1ab13beb758d9f196cfebc71cbdcfb640b3b3b69cff0e7fa6e1221a482 |
+| `WholeDoddy_face_shush` | `WholeDoddy_shush` | 11b6e3e9b654524e5b9e1852edc7f66638027cda96cbb2d0636179cf2dae49d6 |
+| `WholeDoddy_face_yawn_stretch` | `WholeDoddy_yawn_stretch` | 3ef49ce4d7870c437f6dc242635489e6e7aaed211b047d08b4e3b9842f6d8646 |
+| `WholeDoddy_face_crosslegged` | `WholeDoddy_crosslegged` | e6b3c15fbd5852f30dc0ae7361b9bcf86b3daa1bc689b9f2db62f0518a8a0518 |
+
 ## The app icon: his face on orange (ADR-565, 21 October 2026)
 
 Owner: "I would like just his face", then option B (face on orange) of four shown. Source: `007_doddy_blink_v02.png` from the Drive folder, downloaded in the session and verified against the SHA-256 recorded below for the eyes (`1de78fb2…`). `tools/whole_doddy/make_app_icon.py` cuts tile 1 (x 0–543, the open head) to its ink (alpha above 8): 369 × 363 px, the head with both open eyes, the one brow and the smile. It is Lanczos-resized to 780 px wide and centred on brand orange `#FF6A00` (Brand Guidelines V2.2 p.20, ADR-556) at 1024 px, RGB, no alpha. Nothing is redrawn or recoloured.
@@ -218,8 +232,8 @@ The dark appearance (`AppIcon-dark.png`, v1.3 art from ADR-050) is removed: the 
 vanish on night, and recolouring it is not allowed. iOS shows this icon on a dark Home Screen too and derives
 the tinted one. The strip's frames are about 450 px tall, so the 1024 px file is a 2.5× upscale; the Home
 Screen draws the icon at 180 px at most. A larger or vector wave from the artist replaces it by rerunning the
-script. This was the last v1.3 drawing in the shipped app's icon; the opening scene still reads the v1.3
-basketball SVGs (ADR-225).
+script. This was the last v1.3 drawing in the shipped app's icon; the opening scene read the v1.3
+basketball SVGs (ADR-225) until it was removed on 9 Nov 2026, the last v1.3 art in the app.
 
 ## Mac menu bar and desktop widget (ADR-438, ADR-439, 11 October 2026)
 | Image set | Pack source | SHA-256 of the source | Made how |
@@ -243,3 +257,21 @@ pictures the engine draws with a front-facing head. It writes `DoddyEye_*` image
 Not used: sheets 004 to 006, 009 to 011 (expressions, mouths, hands, props, effects), and the fourth
 head of 007 (the second half closed, the same as the second). The pictures the pieces go on:
 `DoddyMotion_idle_1` to `_4`, `DoddyMotion_wave_1` to `_5` and `WholeDoddy_crosslegged`.
+
+## Removed because no screen showed them (9 November 2026)
+
+Owner: "ok recommended" to the design inventory of 9 Nov 2026 (decision
+`docs/decisions/2026-11-09-remove-old-design-leftovers.md`, item R4 and R5). Nothing below was
+redrawn or replaced; the files are in git history, and the pack still has their originals.
+`tools/whole_doddy/build_imagesets.py` no longer writes them.
+
+| Image sets | Catalog | Why |
+| --- | --- | --- |
+| `Storybook_page_1` … `_4` (038) | app | The welcome's storybook was removed on 20 Oct; only a preview showed them |
+| `Scenery_memory` (031/032) | app | Memories has no scenery since ADR-545; only a preview showed it |
+| `DoddyMotion_sit_1` … `_5` (017) | app | Home doesn't sit since ADR-545; the motion engine uses `WholeDoddy_crosslegged` for sitting |
+| `WholeDoddy_oneleg_balance` | app and widgets | The breathing island's pose; breathing was removed (ADR-550) |
+| `UploadedDoddy_Listening`, `_Kept`, `_Sitting` | widgets | No widget or Live Activity loads them (the app's copies stay) |
+
+Every Whole Doddy pose keeps its widget copy, even one no widget shows today (`sneaky_crouch`):
+`scripts/check_island_art.sh` requires each `IslandPose` in both catalogs.

@@ -23,13 +23,19 @@ public struct CallSettings: Equatable, Sendable, Decodable {
     public let pinLocked: Bool
     public let outboundConsent: Bool
     public let memoryCopy: MemoryCopy
+    /// When booked calls don't ring, on the user's clock (ADR-754); nil from servers before U4.
+    public let quietHours: CallQuietHours?
+    /// The zone the server last heard from this iPhone; nil until it has heard one.
+    public let timeZone: String?
 }
 
 public struct CallNote: Equatable, Sendable, Decodable, Identifiable {
     public let id: UUID
     public let text: String
-    /// When it was said on the call (ISO 8601 from the server).
+    /// When it was said on the call, or the text arrived (ISO 8601 from the server).
     public let createdAt: String
+    /// "call" or "text" (ADR-753); nil from servers before texts to Doddy.
+    public var source: String? = nil
 
     public var createdDate: Date? { ServerDates.parse(createdAt) }
 }
@@ -70,8 +76,10 @@ public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
 public struct CallRequest: Equatable, Sendable, Decodable {
     /// Nil when the server's answer never reached the phone.
     public let callId: UUID?
-    /// `requested` (ElevenLabs accepted it) or `unknown` (no answer from ElevenLabs, or the
+    /// `requested` (Twilio accepted it, ADR-750) or `unknown` (no answer from Twilio, or the
     /// server's answer was lost on the way back; the phone may already be ringing; not redialled).
+    /// How the call then went arrives later in `CallRecord.status`: ringing, answered, completed,
+    /// busy, no_answer, canceled or failed.
     public let status: String
 }
 
@@ -163,10 +171,20 @@ extension DoddyServerClient {
         } catch is OutcomeUnknown {
             return unknown
         }
+        // Doddy's own server says Twilio turned the call down (status failed, nothing placed). A gateway's
+        // 502 has no such body, and stays unknown.
+        if response.status == 502, Self.serverRefusedCall(response.body) { throw ServerError.providerUnavailable }
         if Self.mayHaveStarted(response.status) { return unknown }
         guard response.status == 202 else { throw Self.error(from: response) }
         guard let request = try? JSONDecoder().decode(CallRequest.self, from: response.body) else { return unknown }
         return request
+    }
+
+    /// `{"error":"provider_unavailable","callId":…}`: the messaging server's answer when Twilio refused the call.
+    static func serverRefusedCall(_ body: Data) -> Bool {
+        struct Refused: Decodable { let error: String; let callId: UUID? }
+        guard let refused = try? JSONDecoder().decode(Refused.self, from: body) else { return false }
+        return refused.error == "provider_unavailable" && refused.callId != nil
     }
 
     /// A 500, 502 or 504 can come after the server already started the call (a proxy or gateway

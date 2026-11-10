@@ -91,6 +91,22 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(errands.note?.contains("no words from the task") ?? false)
     }
 
+    /// ADR-740: Studio jobs go to the messaging server and Anthropic, and the row says what isn't
+    /// zero-retention and how long the server keeps the files.
+    func testStudioRowNamesAnthropicRetentionAndNeverTheNotes() {
+        XCTAssertFalse(row("studio", base).isActive)
+        XCTAssertTrue(row("studio", base).note?.contains("can't make anything") ?? false)
+        var state = base
+        state.messagingServerSet = true
+        let studio = row("studio", state)
+        XCTAssertTrue(studio.isActive)
+        XCTAssertTrue(studio.destination.contains("Anthropic"))
+        XCTAssertTrue(studio.what.contains("Never your saved notes"))
+        XCTAssertTrue(studio.note?.contains("aren't zero-retention") ?? false)
+        XCTAssertTrue(studio.note?.contains("until you delete them") ?? false)
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (Studio)"))
+    }
+
     /// SHOPPING.md: leaflets go through the messaging server; nothing that identifies the user goes to the
     /// shops, and the row says Rossmann gets the item names as a search.
     func testLeafletsRowSaysNothingIdentifyingGoesToTheShops() {
@@ -156,6 +172,21 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("messagingServer", state).what.contains("a copy of your saved notes"))
     }
 
+    func testTextsToDoddyAreListedAsNotesWithNoAI() {
+        // ADR-753: texts kept as notes on the messaging server; no model reads them (ADR-755).
+        var state = base
+        state.messagingServerSet = true
+        state.newsWriterProvider = "openai"
+        XCTAssertFalse(row("messagingServer", state).what.contains("texts you send"))
+        state.textsToDoddyOn = true
+        XCTAssertTrue(row("messagingServer", state).what.contains("the texts you send Doddy's number"))
+        XCTAssertFalse(row("messagingServer", state).destination.contains("Anthropic"), "notes alone go to no AI")
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("replies to your texts"))
+        XCTAssertFalse(row("messagingServer", state).note?.contains("written by Anthropic") == true)
+        state.textsToDoddyOn = false
+        XCTAssertFalse(row("messagingServer", state).what.contains("the texts you send Doddy's number"))
+    }
+
     func testNewsWriterIsNamedOnlyAsTheServerReportsIt() {
         var state = base
         state.messagingServerSet = true
@@ -203,7 +234,6 @@ final class DataFlowSummaryTests: XCTestCase {
         state.messagingServerSet = true
         state.siriReadsNotes = true
         state.sharedLists = 1
-        state.voiceProvider = .openAIRealtime
         return state
     }
 
@@ -243,14 +273,12 @@ final class DataFlowSummaryTests: XCTestCase {
 
     func testCloudAINamesEveryAIServiceThatIsOn() {
         XCTAssertEqual(DataFlow.cloudAISummary(base), "ElevenLabs (voice)")
-        // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
+        // ElevenLabs is the only voice (9 Nov 2026): nothing names OpenAI for voice.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
-        XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
-        var elevenLabs = everything
-        elevenLabs.voiceProvider = .elevenLabs
-        XCTAssertTrue(DataFlow.cloudAISummary(elevenLabs).hasPrefix("ElevenLabs (voice); Anthropic (Ask Doddy)"))
+            "ElevenLabs (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
+        XCTAssertTrue(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
+        XCTAssertFalse(DataFlow.networkSummary(everything).contains("OpenAI (while talking)"))
         var state = everything
         state.newsWriterProvider = "anthropic"
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))
@@ -379,7 +407,7 @@ final class DataFlowSummaryTests: XCTestCase {
     func testTheTokenServerRowHasNoWakeWordSetup() throws {
         let token = try XCTUnwrap(DataFlow.rows(base).first { $0.id == "tokenServer" })
         XCTAssertFalse(token.when.localizedCaseInsensitiveContains("wake"))
-        XCTAssertTrue(token.when.contains("a conversation requests a provider connection credential"))
+        XCTAssertTrue(token.when.contains("a conversation requests an ElevenLabs connection credential"))
         XCTAssertTrue(token.what.contains("No voice, transcript, notes or profile details are sent"))
     }
 
@@ -484,6 +512,10 @@ final class DataFlowCallsAndUpdatesTests: XCTestCase {
                      "Anthropic's Claude reads the call's transcript", "If you tap Take over", "never words"] {
             XCTAssertTrue(calls.what.contains(part), part)
         }
+        // From a conversation (decision 2026-11-09-restaurant-calls-one-tap): one card for up to three places, and the text it may send.
+        for part in ["in a conversation", "up to three places", "one at a time after your one tap", "to your own verified number"] {
+            XCTAssertTrue(calls.what.contains(part), part)
+        }
         XCTAssertTrue(calls.when.contains("When you prepare a call's card (nothing is dialled)"))
         XCTAssertTrue(calls.when.contains("between 8:00 and 23:00 Warsaw time"))
         XCTAssertTrue(calls.when.contains("at most 5 minutes"))
@@ -571,5 +603,38 @@ final class DataFlowCallsAndUpdatesTests: XCTestCase {
         let server = DataFlow.rows(all).first { $0.id == "doddyServer" }
         XCTAssertTrue(server?.what.contains("after you say yes or tap") ?? false)
         XCTAssertTrue(server?.what.contains("only after you tap its card to confirm") ?? false, "drafts, emails and tasks are tap-only")
+    }
+
+    /// Decision 2026-11-09-conversation-recaps: conversation text goes to the server for a recap only with both switches on.
+    func testRecapsGoToTheServerOnlyWithBothSwitches() {
+        var state = DataFlowState(rememberConversations: true, shareProfileWithVoice: false, tokenServerSet: true,
+                                  connectionsOn: [], pauseAll: false, doddyServerSet: false,
+                                  askDoddyOn: false, askDoddyUsesNotes: false, messagingServerSet: true)
+        let off = DataFlow.rows(state).first { $0.id == "recaps" }
+        XCTAssertEqual(off?.isActive, false)
+        XCTAssertEqual(off?.note, "Recaps are written on this iPhone or not at all, so nothing goes there.")
+        state.recapsOnServer = true
+        let on = DataFlow.rows(state).first { $0.id == "recaps" }
+        XCTAssertEqual(on?.isActive, true)
+        XCTAssertTrue(on?.when.contains("Never a Private conversation") ?? false)
+        XCTAssertTrue(on?.note?.contains("keeps only counts, not words") ?? false)
+    }
+
+    /// Decision 2026-11-09-conversation-recaps, step 5: the text of a phone call reaches the server and Anthropic
+    /// for a recap only with "Remember what we talked about" on.
+    func testPhoneCallRecapsAreNamedAndOnlyWithTheSwitch() {
+        var state = DataFlowState(rememberConversations: true, shareProfileWithVoice: false, tokenServerSet: true,
+                                  connectionsOn: [], pauseAll: false, doddyServerSet: false,
+                                  askDoddyOn: false, askDoddyUsesNotes: false, messagingServerSet: true)
+        let off = DataFlow.rows(state).first { $0.id == "phoneRecaps" }
+        XCTAssertEqual(off?.isActive, false)
+        XCTAssertEqual(off?.note, "Recaps are off, so the server writes none.")
+        state.phoneRecapsOn = true
+        let on = DataFlow.rows(state).first { $0.id == "phoneRecaps" }
+        XCTAssertEqual(on?.isActive, true)
+        XCTAssertTrue(on?.when.contains("keeps only the recap") ?? false)
+        XCTAssertTrue(on?.when.contains("ElevenLabs keeps its own copy") ?? false, "the row doesn't claim the call is gone everywhere")
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("recaps of calls to Doddy's phone line"))
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("recaps of calls to Doddy's phone line"))
     }
 }

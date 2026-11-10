@@ -28,7 +28,10 @@ export const MEMORY_MAX_CONVERSATION_BYTES = 24 * 1024 * 1024;
 
 const UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-const SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file"] as const;
+/** Every source in `schemas/memory.schema.json` but `sample_fixture`; a test keeps them in step. One note with a
+ * source missing here made the whole snapshot fail. */
+export const NOTE_SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy", "conversation_recap"] as const;
+const SOURCES = NOTE_SOURCES;
 const KINDS = ["fact", "preference", "commitment", "recommendation", "decision", "item", "place", "intention", "other"] as const;
 const ENDINGS = ["you", "doddy", "quiet", "dropped"] as const;
 
@@ -153,6 +156,17 @@ export interface MemoryOverview {
 export function refuse(error: z.ZodError): never {
   const sections = [...new Set(error.issues.map((issue) => (typeof issue.path[0] === "string" ? issue.path[0] : "the request")))].slice(0, 3);
   throw new AppError("invalid_request", { message: `That wasn't valid (${sections.join(", ")}). Nothing was stored.` });
+}
+
+/**
+ * The same refusal for a list field that isn't a list or has more than `max` items, before the
+ * schema reads it: zod 3 checks every item of an array before its `.max()`, which costs a lot of
+ * memory on a large body. Pass the constant the schema's `.max()` uses.
+ */
+export function refuseLongList(body: unknown, field: string, max: number): void {
+  if (typeof body !== "object" || body === null) return; // the schema refuses it without reading any list
+  const list = (body as Record<string, unknown>)[field];
+  if (!Array.isArray(list) || list.length > max) throw new AppError("invalid_request", { message: `That wasn't valid (${field}). Nothing was stored.` });
 }
 
 export const ONE_DAY_MS = 86_400_000;

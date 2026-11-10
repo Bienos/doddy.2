@@ -169,7 +169,7 @@ test("a floor is dropped only when every token it covers has expired", async () 
   assert.equal(await r.store.pruneTokenFloors(now), 1);
   assert.equal(await r.store.tokenFloor("00000000-0000-4000-8000-0000000000a1"), 0, "older than a token can live");
   assert.ok((await r.store.tokenFloor("00000000-0000-4000-8000-0000000000a2")) > 0, "a recent cut-off still matters");
-  assert.deepEqual(Object.keys(await r.store.prune(now)).sort(), ["approvals", "attempts", "receipts", "toolReceipts", "usage"], "prune's own counts are unchanged");
+  assert.deepEqual(Object.keys(await r.store.prune(now)).sort(), ["approvals", "attempts", "paymentReceipts", "payments", "receipts", "toolReceipts", "usage"], "prune's own counts are unchanged (plus the two payment tables, ADR-734)");
 });
 
 // ------------------------------------------------------------------ the verifier itself

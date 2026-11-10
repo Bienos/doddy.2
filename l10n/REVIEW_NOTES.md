@@ -148,3 +148,27 @@ Eleven new Polish lines in `l10n/pl.json`, agent-written: "Skupienie i stoper" (
 ## Dynamic Island and Lock Screen, Polish (24 Oct 2026, ADR-617)
 
 92 lines in `l10n/pl.json` for the island's words: labels (GŁOS, SMS, PRZYPOMNIENIE, …), titles ("SMS do sprawdzenia", "Twój dokument jest gotowy"), second lines and the Lock Screen. Written in a coding session, not read by another Polish speaker. Check on a device first: whether PRZYPOMNIENIE fits beside the camera with LIVE, and whether "Wysyłasz go Ty, w Wiadomościach" reads naturally.
+
+## Added 2 November 2026 (ADR-828, the home page's privacy lines)
+
+Written by the agent that fixed the two lines, not by the translation agents; no native speaker has read them. The same native review applies:
+
+- The hero's small print and the early-access facts no longer say "Your notes stay on your iPhone" without a condition. They say the notes are stored on the iPhone and that voice, calls, shared lists and connected accounts (and mail, calendar and files) leave it only when the person switches them on. Two keys changed in all nine tables, plus the English master and its key list.
+- Polish, German, Spanish, French, Italian, Portuguese (Brazil), Japanese, Simplified Chinese and Croatian keep the register of the lines they replace (informal "ty", "du", "tu", "tú", "você").
+
+## Added 9 November 2026 (decision `2026-11-09-remove-old-design-leftovers`, memory journey)
+
+Written by the agent that did the redesign, not by the translation agents; the same native review applies. Four error lines kept their first sentences word for word and got a next step, in all nine tables:
+
+- "… Change the text, then try again." (a note that can't be saved as it is)
+- "… If it keeps happening, make a backup file in Settings › Doddy's memory." The eight drafts write "Doddy's memory" in English, because that row isn't translated in them yet.
+- "… Close Doddy and open it again." (the memory store isn't available)
+- "… Try picking them again." (files for an import couldn't be opened)
+
+## Added 9 November 2026 (same decision, Settings)
+
+Written by the agent that did the redesign; the same native review applies, the privacy texts first (ADR-234):
+
+- **Connections, Polish only (85 lines):** every function's examples, "Doddy may" list, "What leaves your phone" and "What stays here" text (`ConnectionInfo` in `ConnectionsView.swift`), and the headings "Powiedz na przykład" and "Doddy może". They were English for everyone before, because the code never sent them through the string tables. Written gender-neutral where Polish allows ("do sprawdzenia i wysłania", "z twoich słów"); the example questions avoid first-person past forms. The eight drafts show these in English until they are translated.
+- **"Doddy", not "DODDY" (Polish only):** the recording shortcuts are "Zacznij / Wstrzymaj / Wznów / Zatrzymaj nagrywanie w Doddym" and "Nagrywaj z Doddym". The island's label for "something to check" is "SPRAWDŹ" (was "DODDY").
+- **Next steps, all nine tables:** "… Check My profile and add it again if it's missing." (the drafts keep "My profile" in English, as it shows on their screens), "… Close Doddy and open it again." (preferences can't be saved) and "… Check its address, or swipe to delete it." (a news feed that didn't load).

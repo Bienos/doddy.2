@@ -86,13 +86,13 @@ final class VoiceAuthSession {
     }
 
     func finishAppleSignIn(identityToken: String, rawNonce: String, authorizationCode: String? = nil,
-                           userID: String, provider: VoiceProvider) async {
+                           userID: String) async {
         isLoading = true
         message = nil
         defer { isLoading = false }
         do {
             let reply = try await VoiceAuthAPI.shared.signIn(identityToken, rawNonce: rawNonce,
-                                                             authorizationCode: authorizationCode, provider: provider.rawValue)
+                                                             authorizationCode: authorizationCode, provider: "elevenlabs")
             save(reply, userID: userID)
         } catch {
             lastFailure = (error as? VoiceAuthFailure) ?? .rejected
@@ -122,18 +122,38 @@ final class VoiceAuthSession {
             message = serverLine
             return
         }
+        if let voiceLine = await deleteVoiceAccountOnly() {
+            message = [serverLine, voiceLine].compactMap { $0 }.joined(separator: " ")
+        } else {
+            message = serverLine
+        }
+    }
+
+    /// The voice account alone, once Doddy's server has already deleted what it keeps: here, and when
+    /// the Doddy account is deleted (`DoddyAccountServers.deleteAccount`, decision
+    /// 2026-11-08-required-account). Nil when it was deleted; otherwise why it wasn't.
+    func deleteVoiceAccountOnly() async -> String? {
         do {
             let token = try await bearerToken()
             try await VoiceAuthAPI.shared.deleteAccount(token)
             clearLocalSession()
-            message = serverLine
+            return nil
         } catch {
-            let voiceLine = (error as? VoiceAuthFailure)?.message ?? "Couldn’t delete the Doddy voice account. Check your connection and retry."
-            message = [serverLine, voiceLine].compactMap { $0 }.joined(separator: " ")
+            return (error as? VoiceAuthFailure)?.message ?? "Couldn’t delete the Doddy voice account. Check your connection and retry."
         }
     }
 
-    func serverRejectedSession() {
+    /// The voice token server refused the access token (401). That alone doesn't mean the sign-in is
+    /// gone: the access token can be revoked or expire early on the server. So the saved refresh token is
+    /// tried once first (engineering audit, 7 Nov 2026: before, any 401 deleted it and forced a new
+    /// Sign in with Apple). restore() itself clears the session when the server refuses the refresh
+    /// token too; offline, the refresh token is kept and restore() says why.
+    func serverRejectedSession() async {
+        accessToken = nil
+        accessTokenExpiresAt = .distantPast
+        await restore()
+        if accessToken != nil { return }
+        guard VoiceSessionKeychain.refreshToken() == nil else { return }
         clearLocalSession()
         lastFailure = .sessionExpired
         message = "Your voice session expired. Sign in with Apple again to reconnect."
@@ -270,15 +290,20 @@ enum AppleSignInNonce {
     }
 }
 
+/// The person's yes to sending voice data to ElevenLabs. ElevenLabs is the only voice (9 Nov 2026), so
+/// there is one consent. Its key is the one that was kept for ElevenLabs before, so a yes already given
+/// still counts. The old OpenAI consent has no use any more; `reset` removes it too.
 enum VoiceProviderConsent {
-    static func key(for provider: VoiceProvider) -> String { "voice.providerConsent.\(provider.rawValue).v1" }
-    static func isGranted(for provider: VoiceProvider) -> Bool {
-        UserDefaults.standard.bool(forKey: key(for: provider))
+    static let key = "voice.providerConsent.elevenlabs.v1"
+    private static let retiredOpenAIKey = "voice.providerConsent.openai.v1"
+    static func isGranted() -> Bool {
+        UserDefaults.standard.bool(forKey: key)
     }
-    static func grant(for provider: VoiceProvider) {
-        UserDefaults.standard.set(true, forKey: key(for: provider))
+    static func grant() {
+        UserDefaults.standard.set(true, forKey: key)
     }
     static func reset() {
-        for provider in VoiceProvider.allCases { UserDefaults.standard.removeObject(forKey: key(for: provider)) }
+        UserDefaults.standard.removeObject(forKey: key)
+        UserDefaults.standard.removeObject(forKey: retiredOpenAIKey)
     }
 }

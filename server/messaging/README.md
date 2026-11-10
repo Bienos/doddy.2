@@ -1,6 +1,6 @@
 # Doddy server (S1)
 
-TypeScript / Node 22 + Postgres, deployed on Render (EU, `render.yaml` at repo root).
+TypeScript / Node 22 + Postgres on Render (EU). **Live** as `doddy-messaging`, made by hand on the free plan with the worker inside the web process (`RUN_WORKER_IN_WEB=1`). The `render.yaml` Blueprint at the repo root has not been applied (`STATUS.md`).
 It holds provider keys so the iPhone app never does, and sends updates by **push** and **SMS**.
 **Memories are not stored here.** They stay in the app's local SQLite database.
 
@@ -8,16 +8,27 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Area | Endpoints |
 |---|---|
 | Anonymous account (no email/name) | `POST /v1/accounts` → `{accountId, deviceToken}` · `DELETE /v1/account` erases everything |
+| Sign in with a Doddy account (decision `2026-11-08-required-account`) | `POST /v1/accounts/sign-in` with `Authorization: Bearer <the account's Supabase access token>` and, optionally, `{deviceToken}`, this iPhone's earlier anonymous token. Answers `{accountId, deviceToken}`. Needs `SUPABASE_URL`; without it, 503 `not_configured`. The token is checked against the project's published keys (`src/doddyAccount.ts`: Apple, Google or email, never a password). One account here per Doddy account (`accounts.auth_subject`, migration 021), and each iPhone its own device token, at most 10 per account; the iPhone unseen longest makes room. An earlier anonymous account is linked once. If the Doddy account already has an account here, this iPhone moves to it only when its own holds nothing; otherwise 409 `account_conflict`, because accounts are never merged. Keys that can't be read: 503 `account_check_unavailable`. Limit: 30 an hour per address. |
 | Push token | `PUT/DELETE /v1/device/push-token` `{token, environment: sandbox\|production}` |
 | Phone (Twilio Verify) | `POST /v1/phone/verification` `{phone}` · `POST /v1/phone/verification/check` `{phone, code}` · `GET/DELETE /v1/phone` |
 | SMS opt-in | `PUT /v1/phone/sms-consent` `{consent, textVersion}`: the app records which wording the user agreed to |
-| Updates | `POST /v1/updates` `{text ≤640, channels:[push,sms], sendAt?, idempotencyKey}` · `GET/DELETE /v1/updates/:id` |
-| Twilio webhooks | `POST /webhooks/twilio/sms` (STOP/START) · `POST /webhooks/twilio/status` (delivery receipts), signature-checked |
-| Calls (S2, app) | `GET/PUT /v1/calls/settings` (inbound on/off, outbound consent `calls-v1`) · `PUT/DELETE /v1/calls/pin` · `POST /v1/calls/outbound` ("call me now") · `GET /v1/calls` |
+| Text with Doddy (opt-in) | `PUT /v1/phone/sms-chat` `{consent, textVersion}`: needs texts on; a text from that number then gets one reply from Claude by text, no tools, no notes (`docs/implementation/SMS_CHAT.md`, `src/smsChat.ts`) |
+| Updates | `POST /v1/updates` `{text ≤640, channels:[push,sms], sendAt?, idempotencyKey}` · `GET/DELETE /v1/updates/:id` (the GET includes `lookup` for a text whose outcome was unknown) |
+| Texts to Doddy (U3, ADR-753) | `GET/PUT /v1/texts/settings` `{inboundEnabled?, language?, consentTextVersion?}`: the switch needs the consent wording the user agreed to; texts arrive through `POST /webhooks/twilio/sms`. `GET /v1/phone/history`: the user's call and text status rows and waiting notes, as JSON. `GET /v1/call-notes` now says each note's `source` (call or text). |
+| Approved texts (U2, ADR-752) | `POST /v1/texts` `{body ≤640, approvalHash, idempotencyKey}`: a text the user approved on a card, to their own verified number only. `approvalHash` is `src/approval.ts` over that number and the exact text; any difference is `409 approval_mismatch`. 20 per account per day, 300 across the server. Its status is read with `GET /v1/updates/:id`. |
+| Twilio webhooks | `POST /webhooks/twilio/sms` (STOP/START) · `POST /webhooks/twilio/status` (delivery receipts) · `POST /webhooks/twilio/voice` (someone calls Doddy) · `POST /webhooks/twilio/voice/outbound/:callId` (the user answered Doddy's call) · `POST /webhooks/twilio/call-status` (how a call went), all signature-checked |
+| Calls (S2, app) | `GET/PUT /v1/calls/settings` (inbound on/off, outbound consent `calls-v1`, the iPhone's `timeZone`; the GET also says `quietHours` and the `timeZone` the server holds) · `PUT/DELETE /v1/calls/pin` · `POST /v1/calls/outbound` ("call me now") · `GET /v1/calls` |
+| Calls booked for later (U4, ADR-754) | `POST /v1/calls/scheduled` `{at (UTC, YYYY-MM-DDTHH:MM:SSZ), reason ≤200, timeZone, allowQuietHours, language, approvalHash, idempotencyKey}`: `approvalHash` is `src/approval.ts` over the verified number, `at`, the exact reason and the quiet-hours choice. 1 minute to 7 days ahead, 10 waiting, at most 3 calls in any hour and 10 in any day that holds it (made and booked, before and after). A repeat of the same key answers with the first request's call (409 `already_done` once it is over); the same time and reason already waiting is 409 `already_booked`. · `GET /v1/calls/scheduled` (the last 20, with the reason while it is kept) · `DELETE /v1/calls/scheduled/:id` (only while waiting) |
 | Memory on calls (opt-in) | `PUT /v1/memory-copy` `{enabled}` (off deletes every copy) · `PUT /v1/memory-copy/snapshot` (replaces the copy) |
 | Notes from calls | `GET /v1/call-notes` · `DELETE /v1/call-notes/:id` (after the user confirms or discards) |
-| ElevenLabs (S2) | `POST /webhooks/elevenlabs/call-start` · `POST /webhooks/elevenlabs/tools/{verify-pin,search-memories,save-note}`; all need `X-Doddy-Tool-Secret`, tools also `X-Doddy-Session` |
+| ElevenLabs (S2) | `POST /webhooks/elevenlabs/tools/{verify-pin,search-memories,save-note}`: the phone agent's tools; they need `X-Doddy-Tool-Secret` and `X-Doddy-Session` |
 | Errands (ADR-570) | `POST /v1/errands` · `POST /v1/errands/:id/{approve,cancel,ack}` · `GET /v1/errands` · `GET/DELETE /v1/errands/:id` (below) |
+| Task calls (ADR-500) | `/v1/call-cases…` (below) |
+| Messages (ADR-586) | `POST /v1/assistant/ask` (below) |
+| Conversation recaps (decision 2026-11-09-conversation-recaps) | `POST /v1/recaps` (below) |
+| Leaflets (ADR-609) | `POST /v1/deals/search` (below) |
+| Price watches | `/v1/watches…` (below) |
+| Studio (ADR-740) | `POST /v1/studio` · `POST /v1/studio/:id/{approve,cancel}` · `GET /v1/studio` · `GET/DELETE /v1/studio/:id` · `GET /v1/studio/:id/files/:name` (below) |
 | News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` · `POST /v1/news/feed` (the stories behind the follows sent with the request, as cards, nothing stored; ADR-656) |
 | Health | `GET /healthz` |
 
@@ -28,7 +39,13 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
 - STOP cancels queued texts. Only an inbound START re-opens SMS, as carrier rules require.
 - Outbox states: `queued → sending → sent | failed | unknown | cancelled`.
   - A timeout or dropped connection becomes `unknown` and is **never resent automatically**, so nobody gets a text twice.
-  - A 429 or 5xx refusal is retried with backoff, at most 5 attempts.
+  - A Twilio 429 or 503 is retried with backoff, at most 5 attempts: Twilio didn't accept the text.
+  - Since U2 (ADR-752, ADR-755), any other Twilio 5xx (500, 502, 504, ...) is `unknown` too, as Twilio may have created the message (the default branch's ADR-670 still retried a 500; for a text the user approved a second copy is the worse mistake). Two minutes later the worker looks for it in Twilio's message list for that number (by a hash of the text and the time, up to 3 tries): found means `sent` with Twilio's id, not found leaves it `unknown` with `lookup: not_found`. Then the hash is erased.
+- An approved text (`POST /v1/texts`) is checked against its approval hash by the route and again by the worker just before Twilio; a mismatch is never sent. It needs `MEMORY_ENCRYPTION_KEY`: without it the route answers `503 sms_not_configured`, so an approved text is never stored readable.
+- Delivery receipts only move a status forward (queued, sending, sent, then delivered, undelivered or failed).
+- Texts to Doddy (U3, ADR-753, off by default): only the verified number with the "Texts to Doddy" switch on; anyone else gets empty TwiML and nothing is stored. A Twilio message id is handled once; 30 texts an hour. A text becomes an encrypted inbox note, and gets **no reply** (answers by text are "Text with Doddy", ADR-656, `src/smsChat.ts`, which handles a text only when this switch is off for that sender: one handler per text, never both). Nothing from memory is ever put in a text.
+- Calls booked for later (U4, ADR-754): the worker takes one due call at a time and checks it again: more than 15 minutes late means missed; the number and consent; the approval hash against the number now; quiet hours (`QUIET_HOURS_START`/`QUIET_HOURS_END`, default 21:00–08:00) in the zone the iPhone last sent, unless the card allowed them; and the hourly and daily caps under the same lock as "call me now". A call whose outcome is unknown is never placed again. Each call that doesn't happen sends one notification (if the user has push on) with the time only. The reason is encrypted and erased when the call ends (Twilio's final status), 2 hours after a placed call whose end was never reported, or at once when the call won't happen or its outcome is unknown; the phone agent gets it as `doddy_call_reason` and its first sentence as `doddy_call_opening`. A new or removed number, or consent turned off, cancels waiting calls.
+- Records at Twilio (messages both ways, calls) are deleted `TWILIO_RECORD_DELETE_AFTER_HOURS` after they are final (default 24; 0 = about 2 minutes). Only Twilio's id is queued for that.
 - Message text is erased from the database as soon as a message reaches a final state. While queued it is encrypted with `MEMORY_ENCRYPTION_KEY`. Outside production it is plain text when the key is not set; **in production nothing is queued without the key** (ADR-706).
 - Logs carry ids and counts only. No message text, no phone numbers, no tokens.
 - A missing provider configuration returns `503 not_configured`. It never fakes success.
@@ -44,19 +61,30 @@ Accounts are free and anonymous, so the server caps what any one address, accoun
 - **Texts and calls:** 30 texts an account and 300 for the server a UTC day; 10 "call me" calls an account and 20 for the server; task calls count per account as well as per verified number, and `TASK_CALL_BLOCKED_NUMBERS` is an operator-side do-not-call list.
 - **Not covered here (dashboards, owner):** Twilio geo-permissions and Verify Fraud Guard, the ElevenLabs agent's own maximum call length and authentication, and provider spend limits. Premium-rate ranges inside an allowed country are not filtered by this server.
 
-## Phone calls (S2)
-- **Who:** Doddy answers only verified numbers whose owner turned calls on. Unknown numbers get a polite "add this number in the app".
+## Phone calls (S2, through this server since ADR-750)
+- **Route:** every call to Doddy's Twilio number reaches this server first (`src/routes/twilioVoice.ts`).
+  - The server decides who reaches the "Doddy (phone)" agent and connects them with ElevenLabs `register-call`.
+  - The number stays on Doddy's Twilio account and is **not** imported into ElevenLabs.
+- **Who:** only a verified number whose owner turned calls on reaches the agent. Everyone else, including withheld numbers, hears one fixed sentence (Polish, then English, saying Doddy is an AI) and the call ends. No AI runs for them, and the log keeps only the reason, never the number.
+- **When something is missing:**
+  - No phone agent configured: a fixed "not connected yet" sentence.
+  - The agent can't be reached: "I can't talk right now", and the call is recorded as failed.
+  - The server can't check Twilio's signature: 503, so Twilio plays the number's fallback (a TwiML Bin).
 - **PIN:** every call needs the user's PIN before memories are searched or notes saved, because caller ID can be faked.
   - The PIN is stored as an scrypt hash.
-  - 5 wrong tries lock it for 15 minutes.
-- **Session:** each call gets a random session key, passed as an ElevenLabs `secret__` variable. That kind of variable is only put in request headers and never shown to the language model.
+  - 5 wrong tries lock it for 15 minutes. Each later lockout is longer (1 h, 4 h, 16 h, then 24 h) until a correct or new PIN (ADR-175, `src/calls.ts`).
+- **Session:**
+  - Each call gets a random session key, passed as an ElevenLabs `secret__` variable through `register-call`. That kind of variable is only put in tool request headers, never shown to the language model.
+  - The session ends when Twilio reports the call finished, or after 2 hours.
 - **Encryption:** memory copies and call notes are encrypted with AES-256-GCM, bound to account and row, using `MEMORY_ENCRYPTION_KEY`. This is encryption at rest, **not end-to-end**: the server decrypts to answer.
 - **Notes:** notes taken on a call wait in the app until the user confirms them. The push notification never contains the note.
-- **Outbound:** goes only to the verified number, after consent (`calls-v1`). Limits are 3 per hour and 10 per day. A network timeout is recorded as `unknown` and never redialled.
-- **Agent setup:**
-  1. Run `node scripts/setup-phone-agent.mjs --dry-run` to see the requests, then run it for real after deploy.
-  2. In ElevenLabs, import the Twilio number and assign it to the new agent.
-  3. Set the call-start webhook (or use `--set-workspace-webhook`).
+- **Outbound ("Call me now"):**
+  - goes only to the verified number, after consent (`calls-v1`), at most 3 per hour and 10 per day;
+  - Twilio rings from `DODDY_PHONE_NUMBER`, and the session opens only when the user answers, once per call (consent is checked again then);
+  - a timeout or Twilio server error is recorded as `unknown` and never redialled;
+  - Twilio's status callbacks record ringing, answered, completed, busy, no answer, failed or canceled, and a status never moves backwards.
+- **Recording:** none. No TwiML or Twilio request asks to record, and TwiML that would record is refused.
+- **Agent setup:** run `node scripts/setup-phone-agent.mjs --dry-run` to see the requests, then run it for real after deploy. It prints the Twilio settings to use. The full steps are in `docs/integrations/PHONE_NUMBER_SETUP.md`, section "Unit U1".
 
 ## Calls Doddy makes for you (task calls, ADR-500)
 Doddy calls a business in Polish for the user, says it's an AI calling on their behalf, asks one question and brings the answer back as a card. Design, docs checked and open legal questions: `docs/decisions/calls.md`. Status and live-test steps: `docs/implementation/CALL_CASES_STATUS.md`. **Not tried on a real call yet.**
@@ -64,11 +92,13 @@ Doddy calls a business in Polish for the user, says it's an AI calling on their 
 | Area | Endpoints |
 |---|---|
 | App | `GET /v1/call-cases/availability` · `POST /v1/call-cases` (brief → preview built from the exact payload) · `GET /v1/call-cases` · `GET /v1/call-cases/:id` · `POST …/:id/approve {digest, at?}` · `GET …/:id/live?after=` · `POST …/:id/end` · `POST …/:id/takeover` · `POST …/:id/cancel` · `POST …/:id/ack {attemptId, resultDigest}` · `PUT/DELETE …/:id/live-activity` |
+| App: call tasks (up to 3 places, one tap) | `POST /v1/call-tasks` (places + shared question → one card with every place's preview and the task digest) · `GET /v1/call-tasks/:id` · `POST …/:id/approve {digest}` (now only) · `POST …/:id/cancel` |
 | Twilio (signed with the task account's token) | `/webhooks/twilio/task-call/{answer,fallback,connect-ended,status,transcription,takeover-answer,takeover-digits,takeover-status,conference}` |
 | ElevenLabs (HMAC on the raw body) | `POST /webhooks/elevenlabs/post-call`: other agents' calls are dropped unread |
 
+- **Call tasks** (decision `docs/decisions/2026-11-09-restaurant-calls-one-tap.md`, migration `022_call_tasks.sql`, `src/taskCalls/tasks.ts`): each place is an ordinary case with its own payload and digest; the task digest covers the case digests in order and the "text me the result" choice. One tap calls the first place; after each result the worker calls the next place, within 3 hours of the tap and inside calling hours, until one says a clear yes (the result step's yes plus a quote cut from the transcript). An unclear answer, a takeover, the end of calling hours or the kill switch stops the task. A place of a task can't be approved on its own. At the end: one content-free push and, if chosen and the person has consented to texts, one text to their own number (within the daily text caps).
 - **Our server places the call; ElevenLabs is only the voice** (register-call). The approved payload is encrypted and bound to its digest by a foreign key; what Twilio and ElevenLabs receive is exactly that payload.
-- **Hard limits** (code ceilings; env can only lower them): Polish mobile, landline and 800 numbers only; the whole call inside 8:00–23:00 Warsaw time; per user 3/hour and 10/day; per number 2/day per user, 3/day in all, 15 min apart; 50/day in all; one live call per account; longest call 300 s; `TASK_CALLS_KILL_SWITCH=1` stops everything, live calls included. Dial and answer are refused while the live ElevenLabs agent differs from `voice-agent/task-call/`.
+- **Hard limits** (code ceilings; env can only lower them): Polish mobile, landline and 800 numbers only; the whole call inside 8:00–23:00 Warsaw time; per user 3/hour and 10/day; per number 2/day per user, 3/day in all, 15 min apart; 50/day in all (the one limit env can raise, up to 200); one live call per account; longest call 300 s; `TASK_CALLS_KILL_SWITCH=1` stops everything, live calls included. Dial and answer are refused while the live ElevenLabs agent differs from `voice-agent/task-call/`.
 - **Audio is never recorded.** A text transcript is: live from Twilio Real-Time Transcription, final from ElevenLabs. Both are encrypted here only until the app has saved the answer card; then they are deleted, with a receipt per deletion. The ElevenLabs conversation is deleted after processing and checked gone.
 - **Cost:** every dialled attempt gets cost items (Twilio price, transcription, ElevenLabs credits, model tokens) in the transaction that claims the dial. Unset prices make an item `unknown`, never zero.
 - **Env:** `TWILIO_TASK_ACCOUNT_SID`, `TWILIO_TASK_AUTH_TOKEN` (fall back to the main Twilio pair; use a Poland-only subaccount), `TASK_CALL_FROM_NUMBER`, `ELEVENLABS_API_KEY`, `ELEVENLABS_TASK_AGENT_ID`, `ELEVENLABS_WEBHOOK_SECRET`, `TASK_CALLS_KILL_SWITCH`, `CALL_RECORDING_NOTICE` (`off` by default), `TASK_CALL_LIMIT_*`, `TASK_CALL_MAX_SECS`, `PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN`, `PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN`, `PRICE_ELEVENLABS_USD_PER_CREDIT`, `TASK_CALL_SAY_VOICE`. `ANTHROPIC_API_KEY`, if set, lets Claude Haiku point at the answer and write the summary; the card works without it. `.env.example` explains each.
@@ -80,7 +110,7 @@ The user hands Doddy a task ("sprawdź loty i hotele do Rzymu…"), says yes onc
 
 | Route | Body | Reply |
 |---|---|---|
-| `POST /v1/errands` | `{words ≤1000, brief ≤1000, title ≤80, language}` | `201 {id, digest, title, words, brief, language, expiresAt}`: a draft, nothing runs |
+| `POST /v1/errands` | `{words ≤1000, brief ≤1000, title ≤80, language, kind?, priorities?}` (`kind: "shopping"` needs `priorities`) | `201 {id, digest, title, words, brief, language, expiresAt}`: a draft, nothing runs |
 | `POST /v1/errands/:id/approve` | `{digest}` | `202 {id, state: "queued"}` · `409 digest_mismatch` · `409 not_approvable {state}` (not a draft, or `expired`) · `409 too_many_open_errands` · `503 errands_disabled` |
 | `GET /v1/errands` | | `{errands: [{id, title, state, createdAt, finishedAt, failure}]}`, newest first, no drafts; `title` is null once the server's copy is deleted |
 | `GET /v1/errands/:id` | | id, state, times, `searches`, `fetches`, `cancelRequested`; `title`, `words`, `brief`, `digest` while the server holds them; `result` + `resultDigest` when done; `failure` when failed |
@@ -88,16 +118,25 @@ The user hands Doddy a task ("sprawdź loty i hotele do Rzymu…"), says yes onc
 | `POST /v1/errands/:id/ack` | `{resultDigest}` | `200 {deletions: [{what, reason, deletedAt}]}`: words, brief, title and result are deleted, id, state and times stay · `409 result_mismatch` · `409 no_result {state}` |
 | `DELETE /v1/errands/:id` | | `204`: the row goes (receipts stay) |
 
-- **One yes, exactly these words.** The draft's words, brief and title are stored encrypted (`MEMORY_ENCRYPTION_KEY`, AAD bound to account and errand) with their SHA-256 over the canonical JSON of `{brief, language, title, words}` (keys sorted, no spaces, strings as `JSON.stringify` writes them, UTF-8). Plain SHA-256, as the contract says, so the app can recompute it; the call-case digest is an HMAC instead. Approve needs that digest, a draft under 10 minutes old, and fewer than `ERRANDS_MAX_OPEN` queued or running errands (counted under an advisory lock). The worker checks the digest again before it runs anything.
-- **The runner** (`src/errands/researcher.ts`): `claude-opus-5-5` (`ERRANDS_MODEL`), adaptive thinking, effort `high` (`ERRANDS_EFFORT`), streamed, `max_tokens` 64000, server-side refusal fallbacks (`fallbacks: "default"`), prompt caching, and only two tools: `web_search_20260209` and `web_fetch_20260209`, **with no `max_uses`** (owner: no cap on look-ups). `pause_turn` is resumed by sending the paused content back, until the model ends its turn. A second call writes the card in a fixed schema (`output_config.format`, effort `medium`, no tools). Web pages are data: the prompts say so, and there is no tool that could book, buy, send or start anything.
+- **One yes, exactly these words.** The draft's words, brief and title are stored encrypted (`MEMORY_ENCRYPTION_KEY`, AAD bound to account and errand) with their SHA-256 over the canonical JSON of `{brief, language, title, words}`, plus `kind` and `priorities` for a shopping errand (keys sorted, no spaces, strings as `JSON.stringify` writes them, UTF-8). Plain SHA-256, as the contract says, so the app can recompute it; the call-case digest is an HMAC instead. Approve needs that digest, a draft under 10 minutes old, and fewer than `ERRANDS_MAX_OPEN` queued or running errands (counted under an advisory lock). The worker checks the digest again before it runs anything.
+- **The runner** (`src/errands/researcher.ts`): `claude-opus-5-5` (`ERRANDS_MODEL`), adaptive thinking, effort `high` (`ERRANDS_EFFORT`), streamed, `max_tokens` up to 64000 per request, server-side refusal fallbacks (`fallbacks: "default"`), prompt caching, and only two tools: `web_search_20260209` and `web_fetch_20260209`. Their `max_uses` comes from the errand's research budget (`src/errands/budget.ts`, ADR-702: `ERRAND_MAX_SEARCHES`, `ERRAND_MAX_FETCHES`, `ERRAND_MAX_REQUESTS`, `ERRAND_MAX_OUTPUT_TOKENS`; `0` means no limit), which narrows the owner's earlier "no cap on look-ups". `pause_turn` is resumed by sending the paused content back, until the model ends its turn. A second call writes the card in a fixed schema (`output_config.format`, effort `medium`, no tools). Web pages are data: the prompts say so, and there is no tool that could book, buy, send or start anything.
 - **Rules in code, not only the prompt** (`src/errands/card.ts`): a `url` in an item or in `sources` is kept only if a search result or fetched page in this run had exactly that url; an item without a kept url loses its `price` and its detail says the price wasn't confirmed; lengths and counts are clamped (6 sections, 8 items, 3 next, 20 sources, answer 600); `checkedAt` is the server's clock. A card that still doesn't fit is `unreadable_result`.
 - **What stops a run:** the model finishing; Cancel (checked between requests and every 15 s during one); the time limit (`ERRAND_TIME_LIMIT_MINUTES`, default 30; the card call gets 4 more minutes) → `failed: time_limit`; a refusal → `refused`; an API or network error → `provider_error`. A running errand older than the time limit + 5 minutes lost its worker → `failed: interrupted`, never re-run by itself; on a clean shutdown running errands are stored as `interrupted` at once.
-- **Worker:** its own loop (`errandLoop` in `src/workerLoop.ts`), up to 3 runs at once per process, claims with `FOR UPDATE SKIP LOCKED` committed before any model call. The result (or failure code), the counts and the push go in one transaction. The push carries no words from the errand: "Gotowe. Wynik sprawy czeka w aplikacji." / "Done. Your task's result is waiting in the app." (failure: "Nie udało się dokończyć sprawy." / "Doddy couldn't finish a task."), Polish when the errand's language is `pl`.
+- **Worker:** its own loop (`errandLoop` in `src/workerLoop.ts`), up to 3 runs at once per process, claims with `FOR UPDATE SKIP LOCKED` committed before any model call. The result (or failure code), the counts and the push go in one transaction. The push carries no words from the errand: "Gotowe. Wynik czeka w Wiadomościach." / "Done. The result is waiting in Messages." (failure: "Nie udało się dokończyć sprawy." / "Doddy couldn't finish a task."), Polish when the errand's language is `pl`.
 - **Kept on the server:** encrypted words, brief, title and result until `ack` or `DELETE`; an unapproved draft is deleted after 10 minutes; the content of any finished errand not acknowledged or deleted is deleted 30 days after it finished. Each deletion writes a receipt (`errand_deletions`, no content). Deleting the account deletes its errands and receipts.
 - **Sent to Anthropic:** the words, the brief, the language and today's date (not the title), then whatever the run searches and reads; the card call gets the notes and the list of sources. Nothing from notes, lists, the profile or earlier conversations.
 - **Cost visibility:** per errand, input, cache-write, cache-read and output tokens across both calls, searches and fetches, and the model, stored on the row and logged with ids only. Not priced in code.
 - **Env:** `ERRANDS_ENABLED` (default `0`, off: set `1` to turn errands on; runs only when `ANTHROPIC_API_KEY` and `MEMORY_ENCRYPTION_KEY` are also set, otherwise `503 errands_disabled`), `ERRANDS_MODEL`, `ERRANDS_EFFORT` (`low|medium|high|xhigh|max`), `ERRAND_TIME_LIMIT_MINUTES` (1–120), `ERRANDS_MAX_OPEN` (1–20), `ERRANDS_DAILY_PER_ACCOUNT` (default 10) and `ERRANDS_DAILY_PER_SERVER` (default 30) approvals a UTC day (ADR-673: over either, approve answers `429 {"error":"errand_daily_limit","scope":"account"|"server"}` and queues nothing; the server's count is in `server_daily_usage`, which deleting an account doesn't reduce). Migrations `009_errands.sql` and `015_server_usage.sql` are applied at startup.
+- **Shopping errands** (ADR-607, `docs/implementation/SHOPPING.md`, `src/shopping/`): `kind: "shopping"` runs a shopping runner instead. It looks for offers with two tools the code runs (`find_offers` through Serper, `check_offer_page` through the polite fetcher) plus web search and fetch; every price, shop and link on the card comes from the code's own record, never from the model. Env: `SHOPPING_MODEL` (default `claude-haiku-5-5`), `SHOPPING_PREMIUM_MODEL` (default `claude-sonnet-5-5`, only for the account ids in `SHOPPING_PREMIUM_ACCOUNTS`), `SHOPPING_EFFORT`, `SHOPPING_MAX_OFFER_SEARCHES` (8), `SHOPPING_MAX_PAGE_CHECKS` (15), `SERPER_API_KEY` (without it `find_offers` answers "not set up"), `AFFILIATE_LINKS` (empty: no tracked links).
 - **Caveat:** a free Render web service sleeps after about 15 minutes without requests, which stops the worker; for dependable errands use a paid instance or the separate `doddy-messaging-worker` (`render.yaml`).
+
+## Leaflets (shopping stage 1, ADR-609)
+`POST /v1/deals/search` `{items[1–12], chains?, language}` reads shops' official leaflets on request and answers with the matching offers (`schemas/fixtures/deals_search_v1.json`). Contract: `docs/implementation/SHOPPING.md` section 2. Code: `src/deals/`, `src/routes/deals.ts`.
+- **Shops:** 16 are read (Biedronka, Lidl, Dino, Rossmann, Aldi, Żabka, Delikatesy Centrum, E.Leclerc, Maxi Zoo, Komfort, CCC, Lewiatan, Natura, Action, Deichmann, zooplus; some only when an item is their kind). Kaufland, Carrefour, Auchan and Netto get a link to their leaflet page only (`src/deals/types.ts`).
+- **Image pages** are read by Claude (`DEALS_VISION_MODEL`, default `claude-haiku-5-5`), so they need `ANTHROPIC_API_KEY`. Every price comes from the shop's own data or a page that was read.
+- **Stored and logged:** counts per account and day only. What the person asked for is not stored or logged.
+- **Limits:** 60 an hour per device; `DEALS_DAILY_PER_ACCOUNT` (30) and `DEALS_DAILY_PER_SERVER` (1000) a UTC day, counted before anything is fetched (`429 daily_limit`); `DEALS_DAILY_NEW_ACCOUNTS` for new accounts; `DEALS_MAX_PAGES` (40 pages read) and `DEALS_SCREEN_PAGES` (120 image pages screened first) per chain per request.
+- **Env:** `DEALS_ENABLED` (default `0`: `503 deals_disabled`), the names above, and `DEALS_SEARCH_SHOPS` (the "search further" links; empty means Allegro and Ceneo).
 
 ## Price watches (shopping stage 2)
 Contract: `docs/implementation/SHOPPING_WATCH.md` and `schemas/fixtures/watch_create_v1.json`. After one yes the worker reads one shop page about four times a day for 30 days and queues one push when the confirmed price is at or below the user's number. It only notifies: it never buys, signs in or fills in anything, and no model is involved. Code: `src/watches/` (`schema.ts` request and digest, `rules.ts` the pure decisions, `service.ts` create/approve/read/stop/delete, `worker.ts` the checks), `src/routes/watches.ts`, migration `013_price_watches.sql` (a new table only).
@@ -111,6 +150,10 @@ Contract: `docs/implementation/SHOPPING_WATCH.md` and `schemas/fixtures/watch_cr
 
 ## Messages (ADR-585, ADR-586)
 `POST /v1/assistant/ask` answers the app's typed conversation with Claude. The wire is the Ask gateway's (`gateway/src/validate.js`, `AssistantWire.swift`): `{ schemaVersion, requestId, sessionId, locale, userText, turns[≤6], memories[≤8] }` in, `{ schemaVersion, requestId, text, citedMemoryIDs, usage }` out, or `{ schemaVersion, requestId?, error: { code, message } }` with the gateway's status codes (400 `invalidRequest`, 422 `refused`, 429 `dailyLimitReached`, 503 `providerUnavailable` / `notConfigured`, 504 `timeout`). Needs a device bearer token.
+
+`POST /v1/recaps` writes a recap of a conversation the iPhone couldn't recap itself, after the person turned on "Recaps on Doddy's server": `{ schemaVersion: 1, requestId, kind: "voice_conversation" | "recording", language, lines: [{ speaker: "person" | "doddy" | "other", text }] }` in (at most 400 lines, 24,000 characters), `{ schemaVersion, requestId, discussed, agreed, to_do, usage }` out (at most 6 points of 240 characters each), or the same errors as Messages. It runs behind Messages' switch and key (`ASSISTANT_ENABLED`, `ANTHROPIC_API_KEY`, `ASSISTANT_MODEL`) and counts against Messages' daily caps; the lines are used for the one call and never stored or logged. The instructions are the app's (`schemas/fixtures/recap_instructions_v1.json` keeps both in step), and the app checks the answer again before saving it as a note.
+
+Phone-line recaps (step 5): ElevenLabs' post-call webhook (`POST /webhooks/elevenlabs/post-call`, the workspace webhook, HMAC-checked) also carries the phone agent's calls (`ELEVENLABS_PHONE_AGENT_ID`). For a call with a `calls` row (matched by the Twilio call SID or the conversation id) of an account that turned recaps on, Claude writes three lists and only those are stored, encrypted, in `phone_recaps` (migration 025); the transcript is never stored and the log keeps counts. The iPhone reads `GET /v1/calls/recaps`, turns them on or off with `PUT /v1/calls/recaps/settings` `{ enabled }` (off deletes the waiting ones) and deletes each after saving it with `DELETE /v1/calls/recaps/:callId`; anything older than 30 days is deleted when it asks. It uses Messages' key, switch and daily caps.
 - **Text only, no tools:** nothing it reads can search, send, book or change anything (ASK-01). The prompt (`src/assistant/prompt.ts`) says it is an AI, that notes and earlier turns are data, and that it cannot state current prices or dates.
 - **Notes:** sent under aliases `n1…`; the real ids never reach the model, and an alias that was not sent maps to nothing. Citations are read back as ids; the app checks them again.
 - **Stored and logged:** the database keeps counts per account and UTC day (`assistant_usage`, migration `010`: requests, input and output tokens). The question, the answer and the notes are not stored; the log holds the model, counts and codes.
@@ -118,7 +161,27 @@ Contract: `docs/implementation/SHOPPING_WATCH.md` and `schemas/fixtures/watch_cr
 - **Env:** `ASSISTANT_ENABLED` (default `0`; runs only when `ANTHROPIC_API_KEY` is also set, otherwise `503 notConfigured`), `ASSISTANT_MODEL` (default `claude-haiku-5-5`), `ASSISTANT_EFFORT` (`low|medium|high`, default `medium`), `ASSISTANT_DAILY_PER_ACCOUNT`, `ASSISTANT_DAILY_PER_SERVER`.
 - **Sent to Anthropic:** the question, up to six earlier turns, and the notes the app chose to send (none for a private note, ADR-310). Not cost-priced in code; the token counts are in `assistant_usage`.
 
-## News digests## News digests
+## Studio: research it, make it, keep it (ADR-740)
+The owner says "research X"; after one yes the worker plans, researches the web, writes the content, has Claude render a research brief (PDF) and an infographic (SVG and PNGs) with Doddy's own skills in Anthropic's container, checks the files in code, and keeps them until the owner deletes the item. Contract: `docs/implementation/STUDIO.md`. **Off by default and never run against the real Anthropic API, APNs or a device**; the tests use a fake model API.
+
+| Route | Body | Reply |
+|---|---|---|
+| `POST /v1/studio` | the job `{kind: "brief", topic ≤300, audience? ≤120, length, style, language, details? ≤1000, sources? 1–5}` | `201 {id, digest, job, expiresAt}`: a draft, nothing runs |
+| `POST /v1/studio/:id/approve` | `{digest}` | `202 {id, state: "queued"}` · `409 digest_mismatch` · `409 not_approvable {state}` · `409 too_many_open_items` · `409 daily_cap_reached {capUsd, spentUsd}` · `429 studio_daily_limit {scope}` · `429 studio_monthly_limit` · `503 studio_disabled` |
+| `GET /v1/studio` | | `{items: [{id, kind, title, state, createdAt, finishedAt, failure?, costUsd}]}`, newest first, no drafts |
+| `GET /v1/studio/:id` | | the job, title, state (`queued`, `researching`, `making`, `checking`, `ready`, `needs_look`, `failed`, `cancelled`), summary, sources with fetched dates, checks, files, cost, model, skills |
+| `GET /v1/studio/:id/files/:name` | | the file (`brief.pdf`, `infographic.svg`, `infographic.png`, `infographic-a4.png`), `private, no-store`, sandboxed CSP |
+| `POST /v1/studio/:id/cancel` | | `204` |
+| `DELETE /v1/studio/:id` | | `200 {deleted: true, files, anthropicFiles: {pending}}` after the item and files read back as gone |
+
+- **Steps** (`src/studio/pipeline.ts`): plan (structured output) → research (`web_search_20260209` and `web_fetch_20260209` only, `max_uses` from `STUDIO_MAX_SEARCHES`/`STUDIO_MAX_FETCHES`, `blocked_domains` from `STUDIO_BLOCKED_DOMAINS`, a task budget, server-side fallbacks) → pack (claims whose page the run never saw are dropped; fewer than 3 is `too_little_found`) → write (structured output, checked by `contentProblems`, one retry) → make (`code_execution_20250825` with Doddy's custom skills from `STUDIO_SKILLS` only) → check (`src/studio/checks.ts`, one retry, then `needs_look`). Files made at Anthropic are deleted there and the delete is read back; unconfirmed ones are retried by the worker, also after the item or the account is deleted (`studio_orphan_files`).
+- **Models:** one per step (`src/studio/models.ts`): Haiku 5.5 plans, extracts claims (`pack`) and runs the render recipe (`make`); Sonnet 5.5 researches and writes. Set `STUDIO_MODEL` (all steps) and/or `STUDIO_MODEL_PLAN|RESEARCH|PACK|WRITE|MAKE`. Server-side refusal fallbacks are sent only for models that have them (not Haiku 5.5).
+- **Money:** each job's cost from the API's usage, each call at its own model's list prices, plus $10 per 1,000 searches (container time recorded, counted $0 inside the free hours); a per-job limit (`STUDIO_JOB_LIMIT_USD`, default $2, checked in code after every request) and a daily cap per account checked at approve (`STUDIO_DAILY_CAP_USD`, default $3, with a $1 reserve per open job). Fitted onto the abuse limits (ADR-742): approvals per account (`STUDIO_DAILY_PER_ACCOUNT`, 3) and for the server (`STUDIO_DAILY_PER_SERVER`, 10) per UTC day, a closed pool for accounts still new (`STUDIO_DAILY_NEW_ACCOUNTS`, 0) the server's dollars per day (`STUDIO_DAILY_SERVER_CAP_USD`, 10, each approval holding the job limit until its real cost is known) and the server's hard ceiling per UTC calendar month (`STUDIO_MONTHLY_SERVER_CAP_USD`, **100**, the same holding rule; `studio_server_spend_month`; the owner gave no period with "100usd cap", so this is the safest reading and the owner can change it), all counted where deleting an item or an account can't give them back; a refusal is `429 studio_daily_limit {scope}` or, for the month, `429 studio_monthly_limit`, and takes nothing. No automatic retries of a model request.
+- **Kept on the server:** the job and the result encrypted (`MEMORY_ENCRYPTION_KEY`), the files encrypted in `studio_files` (AAD bound to account, item and file name), until the owner deletes the item or the account. Migration `017_studio.sql` (new tables, and a wider CHECK on `server_daily_usage`; numbered after the default branch's 016).
+- **Push:** no words from the item: "Gotowe. Twój materiał czeka w Studiu." / "Ready. Your Studio item is waiting in the app." (needs a look, failed: their own lines).
+- **Cross-check:** `scripts/check_studio_crosscheck.sh` (repository root) renders the skills' samples with the real renderers and runs this server's checks on them (`scripts/check-studio-render.mjs`).
+
+## News digests
 Once a day at the user's local time, the worker builds a short news message:
 1. **Gather:** curated RSS feeds per topic, the user's own feeds, and GNews keyword search for their own topics. Fetches are cached 30–60 minutes and shared across users.
 2. **Shortlist:** deterministic. Stories from the last 36 hours, not sent in the past 14 days, deduplicated by URL (tracking parameters ignored) and title, scored by topic fit and freshness, at most 3 per source.
@@ -135,18 +198,19 @@ cp .env.example .env            # fill what you have; empty blocks stay off
 npm ci && npm run build
 DATABASE_URL=... npm start      # applies migrations, then serves on $PORT
 DATABASE_URL=... npm run worker # sends due updates every 2 s
-TEST_DATABASE_URL=postgres://…/doddy_test npm test   # WARNING: drops that DB's public schema
+TEST_DATABASE_URL=postgres://…/doddy_test npm test   # WARNING: drops that DB's public schema; refused unless its name ends in _test
 ```
 With 1Password (ADR-493): `npm run start:op` takes the secrets from the `doddy-dev` vault through `.env.op` (references only) and the rest from `.env`. See `docs/security/SECRETS_1PASSWORD.md`.
 
 ## Before the first deploy (owner)
+For the owner's single-number setup, follow `docs/integrations/PHONE_NUMBER_SETUP.md` instead (one web service with `RUN_WORKER_IN_WEB=1`, no Blueprint). The live service was made that way, by hand, so general steps 1 and 2 have not been done; steps 3 to 5 are provider setup and apply either way.
 1. Apply `render.yaml` in Render. This creates **paid** resources: 2 × starter + basic-256mb Postgres.
 2. Render asks for each secret when the Blueprint is created, once for the web service and once for the worker (ADR-495). Take the values from 1Password, and set `PUBLIC_BASE_URL` to the service's URL. Later changes go through `tools/secrets/sync.mjs` (`docs/security/SECRETS_1PASSWORD.md`).
 3. Twilio:
    - Buy a number and create a Messaging Service with **Advanced Opt-Out** on.
    - Point the inbound webhook at `/webhooks/twilio/sms`.
    - Create a Verify service.
-   - US numbers also need A2P 10DLC registration.
+   - Doddy's number is a Polish mobile number (ADR-750): Twilio's identity bundle, no A2P 10DLC. A US number would need A2P 10DLC registration.
 4. APNs: create a .p8 key and enable the Push capability on the app id. Turning push on, in this order:
    1. developer.apple.com → Identifiers → the app's ID (`com.bienos.doddy2.dev`): tick **Push Notifications**. Keys → **+** → tick **Apple Push Notifications service (APNs)** → download the `.p8` once. Note the Key ID and your Team ID. Keep the `.p8` in 1Password (`apns-auth-key`), never in a chat or a commit.
    2. On Render, set `APNS_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY` (the whole `.p8` text) and `APNS_BUNDLE_ID` (must equal the app's bundle id) on **both** `doddy-messaging` and `doddy-messaging-worker`, then deploy. All four or none: with one missing the server starts with `push: false` in its startup log.

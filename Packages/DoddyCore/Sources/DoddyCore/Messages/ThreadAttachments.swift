@@ -26,4 +26,21 @@ public enum ThreadAttachments {
             .prefix(limit)
         return candidates.sorted { $0.createdAt < $1.createdAt }
     }
+
+    /// A file counts as "being made" this long after it started. The server marks one that never finished as
+    /// interrupted; until it does, a stale "working" must not keep the screen asking forever.
+    public static let makingWindow: TimeInterval = 15 * 60
+
+    /// Files Doddy is making now (deck, document, spreadsheet, PDF or text; one to three minutes), oldest first, so a
+    /// file asked for by voice shows as soon as Messages opens instead of only after it is finished. Not a file that
+    /// is already a bubble, not one past the window or past the server's deletion.
+    public static func inProgress(documents: [MadeDocument], thread: [ThreadMessage], now: Date) -> [MadeDocument] {
+        let inThread = Set(thread.compactMap { $0.document.flatMap { documentID(of: $0.url) } })
+        return documents
+            .filter {
+                $0.status == .working && $0.deleteAfter > now && !inThread.contains($0.id)
+                    && now.timeIntervalSince($0.createdAt) <= makingWindow
+            }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
 }

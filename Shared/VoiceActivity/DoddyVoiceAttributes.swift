@@ -10,12 +10,6 @@ struct DoddyVoiceAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
         enum Status: String, Codable, Hashable {
             case connecting, listening, thinking, speaking
-            /// "Hey Doddy" is on (ADR-254): the iPhone listens on the device for the wake word
-            /// only. No conversation is running and nothing is sent anywhere.
-            case wakeListening
-            /// "Hey Doddy" is on but not listening for a moment: a call or another app has the
-            /// microphone, or a conversation is still letting go of it.
-            case wakePaused
             /// Doddy proposed a note and waits for Save / Don't save on the app's screen.
             case needsConfirmation
             /// The final state after End or a lost connection: shown briefly on the Lock Screen
@@ -72,8 +66,7 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         /// ADR-577), shown instead of "Connecting…" / "Listening" / "Speaking" until the user first
         /// speaks. Only the greeting Doddy opens with, never anything the user said.
         var greeting: String?
-        /// When this conversation started, if the activity began earlier as "Hey Doddy"
-        /// listening (one activity carries both, because iOS can't start one in the background).
+        /// When this conversation started, if it differs from the activity's own start.
         var conversationStartedAt: Date?
         /// The language Doddy's screens are in ("pl", "en", …), so the island and the Lock Screen
         /// use it too (ADR-617); the widget extension can't see the app's own setting. Nil: the
@@ -86,7 +79,7 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         var voiceBeat: Int?
     }
 
-    /// When the activity started: the conversation, or "Hey Doddy" listening (ADR-254).
+    /// When the activity started.
     var startedAt: Date
 }
 
@@ -140,10 +133,12 @@ extension DoddyVoiceAttributes.ContentState {
 
     /// Content written by an older build (without `savedCount`, `endedAt`, `moment`,
     /// `islandStyle`, `greeting`, `conversationStartedAt` or `voiceBeat`) still decodes. An unknown style or
-    /// moment from a newer build falls back to Whole Doddy and no moment rather than failing.
+    /// moment from a newer build falls back to Whole Doddy and no moment rather than failing. A
+    /// status this build no longer has (the "Hey Doddy" states, removed with the wake word,
+    /// ADR-549) reads as ended, so nothing claims to be listening.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        status = try container.decode(Status.self, forKey: .status)
+        status = Status(rawValue: try container.decode(String.self, forKey: .status)) ?? .ended
         isMuted = try container.decode(Bool.self, forKey: .isMuted)
         savedCount = try container.decodeIfPresent(Int.self, forKey: .savedCount) ?? 0
         endedAt = try container.decodeIfPresent(Date.self, forKey: .endedAt)
@@ -161,18 +156,11 @@ extension DoddyVoiceAttributes.ContentState {
         status == .speaking && wholeDoddyWaves(stale: false) == .speaking
     }
 
-    /// "Hey Doddy" listening (ADR-254): the iPhone waits for the wake word; no conversation.
-    static let wakeListening = Self(status: .wakeListening, isMuted: false)
-    static let wakePaused = Self(status: .wakePaused, isMuted: false)
-
     /// A final state: ended normally, or stopped by a failure. Neither claims anything live.
     var isEnded: Bool { status == .ended || status == .failed }
     var isFailed: Bool { status == .failed }
-    /// "Hey Doddy" waiting or paused: not a conversation, so no timer, no Mute, Stop listening.
-    var isWakeMode: Bool { status == .wakeListening || status == .wakePaused }
-
     /// Muted only means something while the conversation runs and nothing waits in the app.
-    var showsMuted: Bool { isMuted && status != .needsConfirmation && !isEnded && !isWakeMode }
+    var showsMuted: Bool { isMuted && status != .needsConfirmation && !isEnded }
 
     /// The greeting replaces Connecting, Listening and Speaking until the user first answers: it
     /// is Doddy's first message (`opening_line`), so while he speaks it the island shows his words
@@ -183,7 +171,7 @@ extension DoddyVoiceAttributes.ContentState {
         return status == .connecting || status == .listening || status == .speaking
     }
 
-    /// For the elapsed time: the conversation's own start when it began after "Hey Doddy".
+    /// For the elapsed time: the conversation's own start when it was given one.
     func conversationStart(activityStartedAt: Date) -> Date {
         conversationStartedAt ?? activityStartedAt
     }
@@ -198,8 +186,6 @@ extension DoddyVoiceAttributes.ContentState {
         switch status {
         case .connecting: return islandWord("Connecting…")
         case .listening: return islandWord("Listening")
-        case .wakeListening: return islandWord("Say “Hey Doddy”")
-        case .wakePaused: return islandWord("“Hey Doddy” paused")
         case .thinking: return islandWord("Working on it…")
         case .speaking: return islandWord("Speaking")
         case .needsConfirmation: return islandWord("Confirm in Doddy")
@@ -229,8 +215,6 @@ extension DoddyVoiceAttributes.ContentState {
             }
         // Every card, not only a note's (ADR-616: a text or a transfer said "Save or Don't save").
         case .needsConfirmation: return islandWord("Open Doddy to see it and decide")
-        case .wakeListening: return islandWord("Listening on this iPhone for “Hey Doddy” only")
-        case .wakePaused: return islandWord("Not listening right now")
         default: return nil
         }
     }
@@ -245,8 +229,6 @@ extension DoddyVoiceAttributes.ContentState {
         case .needsConfirmation: return "hand.tap.fill"
         case .ended: return "checkmark.circle"
         case .failed: return "exclamationmark.circle"
-        case .wakeListening: return "ear"
-        case .wakePaused: return "pause.circle"
         #if DEBUG
         case .testFixture: return isMuted ? "mic.slash.fill" : "wrench.and.screwdriver"
         #endif
@@ -258,9 +240,7 @@ extension DoddyVoiceAttributes.ContentState {
         #if DEBUG
         if status == .testFixture { return false }
         #endif
-        // "Hey Doddy" listening is not a conversation: nothing is sent and Doddy isn't talking
-        // with you, so it gets its own quiet look (iOS still shows its microphone dot).
-        return !showsMuted && !isEnded && status != .needsConfirmation && !isWakeMode
+        return !showsMuted && !isEnded && status != .needsConfirmation
     }
 }
 

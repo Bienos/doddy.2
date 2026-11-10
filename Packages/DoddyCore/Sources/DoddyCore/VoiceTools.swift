@@ -19,16 +19,20 @@ public enum VoiceToolName {
     public static let proposePlan = "propose_plan"
     /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
     public static let noteCapabilityGap = "note_capability_gap"
+    /// A text from Doddy's own number to the user's verified number, after a card (ADR-750 U2).
+    public static let textMe = "text_me"
     /// Hand a task over: Doddy's server researches it in the background (ADR-570, Errand.swift).
     public static let handOverErrand = "hand_over_errand"
     /// What Doddy found for the tasks handed over, as saved on this iPhone.
     public static let checkErrands = "check_errands"
+    /// "Research X": a research brief and an infographic made in the background (ADR-740, Studio.swift).
+    public static let makeSomething = "make_something"
     /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
     public static let findDeals = "find_deals"
 }
 
-/// The functions a user turns on in Settings, Connections. All start off, and each one may also
-/// need an iOS permission of its own.
+/// The functions a user turns on or off in Settings, Connections. The ones that need no iOS permission
+/// start on (`startsOn`); the rest start off, and each of those needs an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
     /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
@@ -65,6 +69,24 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
 
     /// Per-device preference key for @AppStorage.
     public var preferenceKey: String { "voiceConnection.\(rawValue)" }
+
+    /// Whether the switch is on until the person turns it off. Only the connections that need no iOS
+    /// permission start on: Doddy only prepares a draft, a card or a file, and the person still taps
+    /// Send, Open or Save. A connection that needs iOS permission (calendar, reminders, contacts, timers,
+    /// steps, photos, camera) stays off, because a switch that is on without the permission is shown as
+    /// blocked and never asks; turning it on in Settings is what makes iOS ask.
+    public var startsOn: Bool {
+        switch self {
+        case .maps, .shortcuts, .messages, .blik, .presentations: true
+        case .calendar, .reminders, .contacts, .timers, .steps, .photos, .camera, .home: false
+        }
+    }
+
+    /// The stored value for each connection that starts on, to register as the app's defaults. A value
+    /// the person stored (on or off) always wins over it.
+    public static var registeredDefaults: [String: Bool] {
+        Dictionary(uniqueKeysWithValues: allCases.filter(\.startsOn).map { ($0.preferenceKey, true) })
+    }
 
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {
@@ -226,12 +248,25 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case startStopwatch(label: String?)
     case stopStopwatch
     case checkStopwatch
-    case openMap(place: String)
+    /// One place, or a route to it when `from` or `mode` is given (owner, 10 Nov 2026).
+    case openMap(place: String, from: String? = nil, mode: MapTravelMode? = nil)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
     /// never sends money.
     case draftBlikTransfer(BlikTransferDraft)
+    /// A text from Doddy's number to the user's own verified number (ADR-750 U2). Shown on a card
+    /// with the exact text; sent only on the user's tap, bound to that text by `ApprovalHash`.
+    case textMe(body: String)
+    /// A call from Doddy's number to the user's verified number at a later time (ADR-754). Shown
+    /// on a card with the time and the exact reason; booked only on the user's tap.
+    case callMeLater(CallLaterDraft)
+    /// A call from Doddy's number to the user's verified number now (decision 2026-11-10-call-me-now-by-voice).
+    /// Shown on a card with the number's last digits; placed only on the user's tap.
+    case callMeNow
+    /// Up to three places, one card, one tap; called one after another until one says yes
+    /// (decision 2026-11-09-restaurant-calls-one-tap). Placed by Doddy's messaging server.
+    case callPlaces(CallTaskDraft)
     /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-568).
@@ -245,6 +280,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
     case openCamera
+    /// One picture of the screen the person shares with Doddy, read by Claude for their question, after a yes
+    /// (decision 2026-11-09-doddy-looks-at-the-screen).
+    case lookAtScreen(question: String)
     /// Turn a light, outlet or fan on or off, or run a scene, in HomeKit (HomeCommand.swift). The
     /// app resolves the words to one exact accessory and shows a card with it before anything runs.
     case controlHome(HomeProposal)
@@ -283,9 +321,17 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case handOverErrand(ErrandDraft)
     /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
     case checkErrands(about: String?)
+    /// A Studio job (ADR-740): one yes covers its web look-ups (capped on the server) and making its
+    /// files in Anthropic's container, nothing else; nothing is published or sent.
+    case makeSomething(StudioJob)
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
+    /// Builds or changes the invoice draft on screen (ADR-677, InvoiceVoice.swift). Nothing is sent.
+    case draftInvoice(InvoiceVoiceUpdate)
+    /// "I lost my wallet" (ADR-692): a checklist of official steps on a card. Doddy does none of them;
+    /// a step's page opens or its number is dialled only on the person's tap.
+    case lostWallet(LostWalletSituation)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -365,7 +411,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .checkStopwatch
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
-            return .openMap(place: place)
+            return .openMap(place: place, from: args.text("from"), mode: MapTravelMode.parse(args.text("mode")))
         case VoiceToolName.runShortcut:
             guard let shortcut = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .runShortcut(name: shortcut)
@@ -373,6 +419,25 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseMessage(args, name: name)
         case VoiceToolName.draftBlikTransfer:
             return parseBlikTransfer(args, name: name)
+        case VoiceToolName.textMe:
+            // Exactly as the agent wrote it: the card shows it and the approval covers it, so
+            // nothing is trimmed. Too long is refused, never cut (review C11).
+            guard let body = args.text("body") else { return .invalid(name: name, reason: "missing body") }
+            guard body.utf16.count <= ApprovedTextLimits.maxLength else {
+                return .invalid(name: name, reason: "body is longer than \(ApprovedTextLimits.maxLength) characters")
+            }
+            // The user approves what they see; a hidden character would be sent unseen.
+            if let hidden = ApprovedTextLimits.hiddenCharacter(in: body) {
+                let code = String(hidden.value, radix: 16, uppercase: true)
+                return .invalid(name: name, reason: "body has a hidden character (U+\(code)); write the text without it")
+            }
+            return .textMe(body: body)
+        case VoiceToolName.callMeLater:
+            return parseCallMeLater(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.callMeNow:
+            return .callMeNow
+        case VoiceToolName.callPlaces:
+            return parseCallPlaces(args, name: name)
         case VoiceToolName.makePresentation:
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:
@@ -385,6 +450,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:
             return .openCamera
+        case VoiceToolName.lookAtScreen:
+            guard let question = args.text("question") else { return .invalid(name: name, reason: "missing question") }
+            return .lookAtScreen(question: question)
         case VoiceToolName.controlHome:
             return parseControlHome(args, name: name)
         case VoiceToolName.startTranslator:
@@ -401,8 +469,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseHandOverErrand(args, name: name)
         case VoiceToolName.checkErrands:
             return parseCheckErrands(args)
+        case VoiceToolName.makeSomething:
+            return parseMakeSomething(args, name: name)
         case VoiceToolName.findDeals:
             return parseFindDeals(args, name: name)
+        case VoiceToolName.draftInvoice:
+            return parseDraftInvoice(args, name: name)
+        case VoiceToolName.lostWallet:
+            return parseLostWallet(args, name: name)
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }
@@ -636,7 +710,12 @@ public enum VoiceTextLimits {
         // A task handed over (ADR-570): the user's words and Doddy's brief, as the server allows.
         case "words": ErrandDraft.maxWords
         case "brief": ErrandDraft.maxBrief
+        // A Studio job (ADR-740): the topic and the user's own words, as the server allows.
+        case "topic": StudioJob.maxTopic
+        case "details": StudioJob.maxDetails
         case "query", "place": search
+        // What the person asked about their screen, as `POST /v1/screen/look` takes it.
+        case "question": ScreenLookRequest.maxQuestionScalars
         case "slides": PresentationLimits.slidesJSON
         default: line
         }
@@ -645,7 +724,8 @@ public enum VoiceTextLimits {
 
 /// Links that open other apps. The user always taps; these links never send a message or place a
 /// call themselves. The one way Doddy places a call is a call case the user approved on its card
-/// (ADR-500, superseding ADR-065 for that case only); the voice conversation can't start one.
+/// (ADR-500, superseding ADR-065 for that case only); from a conversation, only through
+/// `call_places` and its own one-tap card (decision 2026-11-09-restaurant-calls-one-tap).
 public enum OpenLinks {
     public static func map(place: String) -> URL? {
         URL(string: "https://maps.apple.com/?q=\(encode(place))")
@@ -725,9 +805,15 @@ public enum VoiceToolReply {
     /// plan summary both read these, so a new result verb must be added here (review C1, D3).
     public static let donePrefixes = [
         "added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:",
+        // A payment the server confirmed (ADR-736); anything unclear is "unknown:", never this.
+        "paid:",
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
         "moved:", "turned off:", "cleared:",
+        // ADR-750 U2: a text the carrier reported as delivered. "sent:" and "queued:" are not done.
+        "delivered:",
+        // ADR-754: Doddy's server booked the call for later (it said so). The call itself is later.
+        "booked:",
         // ADR-570: Doddy's server said it has the task handed over (`errandStarted`).
         "started:",
     ]
@@ -742,6 +828,8 @@ public enum VoiceToolReply {
     public static let declinedReminder = "declined: the user chose not to add this reminder. Nothing was added."
     public static let declinedTimer = "declined: the user chose not to start this timer. Nothing was set."
     public static let declinedMap = "declined: the user chose not to open the map. Nothing was opened."
+    /// A newer ask took the card's place before the user answered it (owner, 10 Nov 2026). Nothing ran.
+    public static let replacedByNewerAsk = "declined: a newer request replaced this card before the user answered it. Nothing was done; ask again if it's still wanted."
     public static let declinedShortcut = "declined: the user chose not to run the shortcut. Nothing was run."
     public static let declinedMessage = "declined: the user chose not to open the draft. Nothing was sent."
 
@@ -804,6 +892,13 @@ public enum VoiceToolReply {
             + ToolData.block([quoted("Tool", name)])
     }
 
+    /// A tool of a feature this build hides (decision 2026-11-07-release-scope). Nothing was looked up, saved or changed, and
+    /// the call isn't logged. The agent says so in one line and carries on with what the app has.
+    public static func hidden(_ name: String) -> String {
+        "not available: this version of the Doddy app doesn't include the tool below, so nothing was looked up, saved or changed. Tell the user in one short sentence that this isn't in the app yet, and go on with what you can do.\n"
+            + ToolData.block([quoted("Tool", name)])
+    }
+
     /// Used when a function is off or its iOS permission is not granted. The conversation screen
     /// shows the access card for it at the same time (ADR-578), so the agent asks for the tap in one
     /// line instead of sending the user to Settings. It starts "<title> isn't connected" as before,
@@ -863,6 +958,16 @@ public enum VoiceToolReply {
     /// Maps opened on the user's tap. Nothing else is claimed. The place follows as data.
     public static func mapOpened(_ place: String) -> String {
         "opened: Apple Maps opened for the place below.\n" + ToolData.block([quoted("Place", place)])
+    }
+
+    /// Maps opened with directions on the user's tap. Doddy can't see the route Maps chose, so
+    /// travel times and lines come from Maps, not from Doddy.
+    public static func routeOpened(_ trip: MapTrip) -> String {
+        var lines = [quoted("To", trip.place)]
+        if let from = trip.from { lines.append(quoted("From", from)) } else { lines.append("From: where the iPhone is") }
+        if let mode = trip.mode { lines.append("By: \(mode.rawValue)") }
+        return "opened: Apple Maps opened with directions for the route below. Doddy can't see the route Maps chose: "
+            + "don't state travel times or lines as if Maps gave them.\n" + ToolData.block(lines)
     }
 
     /// Shortcuts is asked to run; Doddy cannot see whether the shortcut finished.

@@ -19,31 +19,55 @@ public enum CarDecision: Equatable, Sendable {
 public enum CarProfile {
     public static func decision(for request: VoiceToolRequest) -> CarDecision {
         switch request {
-        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .readHealthWeek, .findPhotos, .calculate, .convertUnits,
+        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .readHealthWeek, .findPhotos, .lookAtScreen, .calculate, .convertUnits,
              .convertCurrency, .readList, .listAlarms, .checkStopwatch, .needsClarification, .unsupported, .invalid:
             return .run
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
             return .run
+        case .lostWallet:
+            // A guide (ADR-692): spoken aloud and shown on a card; nothing changes and nothing leaves
+            // the iPhone. Its buttons open a page or dial a number only on the person's own tap.
+            return .run
         case .checkErrands, .findDeals:
             // Reading what a task found, and this week's leaflets (SHOPPING.md), change nothing: the
             // ask is answered by voice like any other look-up.
             return .run
-        case .handOverErrand:
+        case .handOverErrand, .makeSomething:
             // Web research on Doddy's server changes nothing (ADR-570), but starting it takes a tap on
-            // its card, not a spoken yes (ADR-716), so it waits until the user isn't driving.
+            // its card, not a spoken yes (ADR-716; a Studio job too, ADR-742), so it waits until the user isn't driving.
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         case .parkingSpot(let action):
             // Finding the car is a look-up; saving or clearing the spot waits until parked.
             if case .find = action { return .run }
             return .refuse(reason: "Saving or clearing the parking spot is done on the iPhone, not while driving.")
         case .cloudTool(let call):
+            // A payment needs Face ID and often a typed amount on the iPhone: never while driving.
+            if call.name == PaymentToolName.payForPage {
+                return .refuse(reason: "A payment needs Face ID on the iPhone, so not while driving.")
+            }
             return CloudToolName.isWrite(call.name)
                 ? .refuse(reason: "Drafts and tasks in online accounts need a tap on the iPhone, so not while driving.")
                 : .run
         case .draftBlikTransfer:
             // Money (ADR-510): a card to check and a bank app to send from, so never while driving.
             return .refuse(reason: "A BLIK transfer is shown on the iPhone for the user to check and send in their bank app, so it waits until they aren't driving.")
+        case .textMe:
+            // Leaves the iPhone through Doddy's server and Twilio (ADR-750 U2), so not while driving (owner, 2026-10-11),
+            // even though it needs no tap since decision 2026-11-09-restaurant-calls-one-tap.
+            return .refuse(reason: "A text from Doddy's number leaves the iPhone, so it waits until the user isn't driving.")
+        case .callPlaces:
+            // Calls to places in the user's name, approved on a card (decision 2026-11-09-restaurant-calls-one-tap).
+            return .refuse(reason: "Calling places for the user needs a tap on the iPhone, so it waits until the user isn't driving.")
+        case .callMeLater:
+            // A call booked through Doddy's server (ADR-754): the card is the approval.
+            return .refuse(reason: "Booking a call from Doddy needs a tap on the iPhone, so it waits until the user isn't driving.")
+        case .callMeNow:
+            // The card is the approval, and the phone would ring while the user drives.
+            return .refuse(reason: "A call from Doddy needs a tap on the iPhone, so it waits until the user isn't driving.")
+        case .draftInvoice:
+            // An invoice is checked line by line on the screen (ADR-677), so not while driving.
+            return .refuse(reason: "An invoice draft is checked on the iPhone's screen, so it waits until the user isn't driving.")
         case .saveMemory(let text):
             return .askAloud(readBack: CarConfirmation.readBack(saving: text))
         case .addToList(let request):

@@ -1,7 +1,6 @@
 # Settings and Connections: design proposal
 **Status:** design proposal, 2026-10-10, written from main before the Connections work on this line was seen. Connections cards, Reminders, Calendar, Contacts, Timers and Online accounts are already built here (ADR-073–082, 096–105); the plan card for several apps at once is now built too (ADR-204), with "Change" on each step (ADR-205) a practice card in Settings (ADR-206), plans grouped in "What Doddy did" (ADR-208), and Gmail drafts and Todoist tasks as plan steps (ADR-209). "What Doddy did" (ADR-135), Pause all (ADR-134) and "What leaves this iPhone" (ADR-133) are now built.
-**Visual reference:** Pocket Notebook (`design/interface-v1.2/docs/DESIGN-SYSTEM.md`).
-**Clickable study:** `design/settings-and-connections-v0.1/index.html` (fictional data, no real permissions, accounts or writes).
+**Visual reference:** what the app shows now (ADR-548) and Brand Guidelines V2.2 (`design/brand-v2.2/`, ADR-556). This proposal was drawn in Pocket Notebook (deleted, ADR-548); its clickable study, `design/settings-and-connections-v0.1/`, was deleted on 9 Nov 2026 as old design (decision `docs/decisions/2026-11-09-remove-old-design-leftovers.md`). It is in git history (`git log --diff-filter=D -- design/settings-and-connections-v0.1`).
 
 ## 1. The job
 

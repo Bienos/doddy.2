@@ -10,8 +10,9 @@ name: DoddyiPhone
 # team can't have Sign in with Apple, App Groups or push. A Debug build talks to Doddy without Apple
 # sign-in (Settings > Voice > "Developer: talk without Apple sign-in", PR #108). The widgets and
 # "Save to Doddy" can't work without App Groups, so they are left out of the app here (owner, 23 Oct
-# 2026): Xcode asks for a team for the app alone. The shipping project (project.yml) keeps its
-# entitlements and both extensions.
+# 2026): Xcode asks for a team for the app and for DoddyNotificationContent (the expanded note
+# notification, ADR-786: no entitlements, so it stays in). The shipping project (project.yml) keeps its
+# entitlements and all three extensions.
 settings:
   base:
     # No HealthKit either (owner, 25 Oct 2026): Settings › Connections › Apple Health says this build
@@ -20,6 +21,7 @@ settings:
     DODDY_APP_ENTITLEMENTS: ""
     DODDY_WIDGET_ENTITLEMENTS: ""
     DODDY_SHARE_ENTITLEMENTS: ""
+    DODDY_SCREEN_ENTITLEMENTS: ""
     # The code uses plain string literals, never Xcode's generated string symbols. With them on, the
     # widgets' catalog has two keys that differ only by a capital ("New note in Doddy" and
     # "New Note in Doddy") and Xcode refuses to build.
@@ -27,6 +29,8 @@ settings:
 targets:
   Doddy:
     dependencies:REPLACE:
+      # The expanded paper notification (ADR-786): no entitlements and no App Group, so a free team signs it.
+      - target: DoddyNotificationContent
       - package: DoddyCore
         product: DoddyCore
       - package: DoddyCore

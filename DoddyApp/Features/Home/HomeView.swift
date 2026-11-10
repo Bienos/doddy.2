@@ -24,9 +24,6 @@ struct HomeView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Right after the opening (ADR-225) Doddy is ready to talk: the listening pose is up and the
-    /// bar slides in. Absent in previews and tests.
-    @Environment(OpeningModel.self) private var opening: OpeningModel?
     @State private var modal: MemoryModal?
     /// The first visit of a morning waves before he sits (ADR-380).
     @State private var waving = false
@@ -51,16 +48,19 @@ struct HomeView: View {
     /// Translate (ADR-215): the start sheet, and what the user chose on it.
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
-    @State private var showDataFlow = false
     @State private var showCapabilities = false
+    /// A feature tapped in What I can do, opened once that sheet has gone (decision 2026-11-09-what-i-can-do).
+    @State private var abilityToOpen: DoddyAbility?
     @State private var showToday = false
     /// Tasks handed to Doddy (ADR-570): the list and each result card.
     @State private var showErrands = false
     /// The stories behind what the person follows (ADR-656).
     @State private var showFollowing = false
+    /// Phone calls (owner, 9 Nov 2026): calling Doddy, Doddy calling you and calls Doddy makes for you,
+    /// from Home's menu as well as Settings › Notifications › Phone calls.
+    @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
-    @State private var showVoicePicker = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -108,7 +108,6 @@ struct HomeView: View {
             .safeAreaInset(edge: .bottom) {
                 bottomBar
                     .opacity(showFiles ? 0 : 1)
-                    .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
             // ADR-596, ADR-665: the island grows to the sides with his waves while he talks on Home.
@@ -123,24 +122,32 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
-            .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
-            .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
+            .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
             // A finished call's push, tapped (ADR-730): Files, where Calls lists the recaps.
             .sheet(isPresented: Binding(get: { router.isCallRecapsPresented }, set: { router.isCallRecapsPresented = $0 })) { FilesSheet() }
             .sheet(isPresented: $showToday) {
                 HomeTodaySheet(openSettings: { showToday = false; selectedTab = .settings })
             }
-            .sheet(isPresented: $showVoicePicker) { HomeVoiceSheet() }
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
                 case .stopwatch: StopwatchView()
+                // The kitchen timer and the wind-down (ADR-780).
+                case .timer: CountdownView(purpose: .timer)
+                case .windDown: CountdownView(purpose: .windDown)
                 }
+            }
+            // A finished task's or file's push, tapped: Messages, where Doddy's message about it is.
+            .onChange(of: router.isMessagesRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isMessagesRequested = false
+                showAsk = true
             }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
@@ -168,7 +175,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -184,6 +191,11 @@ struct HomeView: View {
                 // Also after a drop Home tells about (ADR-687): the transcript still has the lines.
                 if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
+                }
+                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
+                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
+                if conversation.live != nil, scope.shows(Feature.messages) {
+                    showScreenButton
                 }
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
@@ -221,6 +233,14 @@ struct HomeView: View {
         .accessibilityIdentifier("home.transcript")
     }
 
+    /// Starts sharing the screen with Doddy through iOS's "Start Broadcast" sheet, so he can look when asked.
+    private var showScreenButton: some View {
+        ScreenShareButton(tint: UIColor(Theme.ink))
+            .frame(width: 36, height: 36)
+            .background(Theme.quietSurface, in: Circle())
+            .frame(width: 44, height: 44)
+    }
+
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
     /// the privacy page. The AI disclosure heads it.
     private var moreMenu: some View {
@@ -230,18 +250,30 @@ struct HomeView: View {
                 // first screen at the largest text size, whatever tools are added below it.
                 Button { selectedTab = .settings } label: { Label("Settings", systemImage: "slider.horizontal.3") }
                     .accessibilityIdentifier("home.menu.settings")
-                Button { showTranslator = true } label: { Label("Translate", systemImage: "character.bubble") }
-                    .disabled(!canTalk)
-                    .accessibilityHint("Doddy translates between you and someone who speaks another language.")
-                    .accessibilityIdentifier("home.translate")
+                // Each item below is a feature's way in; the build's scope decides which exist (decision 2026-11-07-release-scope).
+                if scope.shows(.translator) {
+                    Button { showTranslator = true } label: { Label("Translate", systemImage: "character.bubble") }
+                        .disabled(!canTalk)
+                        .accessibilityHint("Doddy translates between you and someone who speaks another language.")
+                        .accessibilityIdentifier("home.translate")
+                }
                 Button { selectedTab = .memories; showFind = true } label: { Label("Find something", systemImage: "magnifyingglass") }
                     .accessibilityIdentifier("home.find")
                 // Tasks handed to Doddy's background worker (ADR-570).
-                Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
-                    .accessibilityIdentifier("home.tasks")
+                if scope.shows(.errands) {
+                    Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
+                        .accessibilityIdentifier("home.tasks")
+                }
+                // Phone calls (owner, 9 Nov 2026): the same screen as Settings › Notifications › Phone calls, which
+                // leads to Calls for you. It says itself when the server or the phone line isn't set up yet.
+                if scope.shows(.phoneCalls) {
+                    Button { showCalls = true } label: { Label("Phone calls", systemImage: "phone") }
+                        .accessibilityIdentifier("home.calls")
+                }
                 // Focus counts down, the stopwatch counts up (ADR-652). One row for both: the menu
                 // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
                 // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
+                // Phone calls took a row on 9 Nov 2026; What leaves this iPhone moved to Settings › Privacy only, to make room.
                 Menu {
                     Button { tool = .focus } label: {
                         if FocusController.shared.session.map({ !$0.isOver }) ?? false {
@@ -259,19 +291,31 @@ struct HomeView: View {
                         }
                     }
                     .accessibilityIdentifier("home.stopwatch")
+                    // A kitchen timer and a wind-down countdown, on the island and in StandBy (ADR-780).
+                    Button { tool = .timer } label: {
+                        if CountdownController.shared.session(.timer).map({ !$0.isOver }) ?? false {
+                            Label("Timer · on", systemImage: "timer.circle")
+                        } else {
+                            Label("Timer", systemImage: "timer.circle")
+                        }
+                    }
+                    .accessibilityIdentifier("home.timer")
+                    Button { tool = .windDown } label: {
+                        if CountdownController.shared.session(.windDown).map({ !$0.isOver }) ?? false {
+                            Label("Wind down · on", systemImage: "moon")
+                        } else {
+                            Label("Wind down", systemImage: "moon")
+                        }
+                    }
+                    .accessibilityIdentifier("home.windDown")
                 } label: {
-                    Label("Focus and stopwatch", systemImage: "timer")
+                    Label("Focus, timers and stopwatch", systemImage: "timer")
                 }
                 .accessibilityIdentifier("home.timers")
                 // Today only points to Settings until something is connected (ADR-326).
                 if hadFirstConversation || calendarOn || remindersOn {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
                         .accessibilityIdentifier("home.today")
-                }
-                // Who runs the voice (ADR-442), once there has been a first conversation (ADR-443).
-                if hadFirstConversation {
-                    Button { showVoicePicker = true } label: { Label("Voice", systemImage: "waveform") }
-                        .accessibilityIdentifier("home.voice")
                 }
             } header: {
                 Text("Doddy is an AI, not a person.")
@@ -280,16 +324,20 @@ struct HomeView: View {
                 // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
                 // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
                 // MemoryJourneyTests). Settings, which leads to Doddy's memory too (ADR-633), heads the menu.
-                Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
-                    .accessibilityIdentifier("home.deals")
+                if scope.shows(.deals) {
+                    Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
+                        .accessibilityIdentifier("home.deals")
+                }
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
-                Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
-                    .accessibilityIdentifier("home.following")
+                if scope.shows(.following) {
+                    Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                        .accessibilityIdentifier("home.following")
+                }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
-                Button { showDataFlow = true } label: { Label("What leaves this iPhone", systemImage: "lock.shield") }
-                    .accessibilityIdentifier("home.dataFlow")
+                // What leaves this iPhone left this menu on 9 Nov 2026 (owner, decision 2026-11-09-phone-calls-on-home-menu)
+                // to make room for Phone calls; it is on Settings › Privacy, as it has been since ADR-580.
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -306,6 +354,8 @@ struct HomeView: View {
     private var notices: some View {
         VStack(spacing: 12) {
             DueRemindersView()
+            // A payment that was sent and never confirmed (ADR-736): hidden unless payments were once switched on.
+            UnconfirmedPaymentsBanner()
             if let problem = store.environment.storageProblem {
                 ProblemView(message: problem, showsDoddy: true, onDoddysScreen: true)
             }
@@ -314,11 +364,11 @@ struct HomeView: View {
                 UnfinishedNoteCard(note: draft, more: UnfinishedNoteStore.shared.book.notes.count - 1) { modal = .capture }
             }
             // A task Doddy finished in the background since the user last looked (ADR-570).
-            if let finished = ErrandsModel.shared.newestUnseen {
+            if scope.shows(.errands), let finished = ErrandsModel.shared.newestUnseen {
                 errandFinishedCard(finished)
             }
             // Leaflets looked up by voice (ADR-666): the list waits on its screen, one tap away.
-            if DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {
+            if scope.shows(.deals), DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {
                 dealsCard(result)
             }
             if profiles.shouldOfferIntroduction {
@@ -337,14 +387,11 @@ struct HomeView: View {
 
     // MARK: Doddy
 
-    /// Doddy is the Talk button. The opening (ADR-225) lands him here, so this reports where "here" is.
+    /// Doddy is the Talk button.
     private var character: some View {
         Button(action: talk) {
             Group {
-                if ready != nil {
-                    // The opening's hand-over lands on this picture, in this place.
-                    UploadedCharacterView(assetName: "UploadedDoddy_Listening", height: 210)
-                } else if DoddyDirector.shared.isActive {
+                if DoddyDirector.shared.isActive {
                     // Motion v2: this picture becomes the persistent Doddy, drawn on the stage
                     // overlaid below (the same 210 pt box, so nothing else on Home moves). A tap
                     // anywhere in the box still talks; a touch on him leans him and a tap on him
@@ -372,21 +419,12 @@ struct HomeView: View {
         // stage's frame (hosted run 39454393739 read the whole 210 pt box as "the stage"). No visible
         // line, because the calm Home's mockup has none.
         .overlay(alignment: .bottom) {
-            if DoddyDirector.shared.isActive && ready == nil {
+            if DoddyDirector.shared.isActive {
                 StageLine(visible: false).padding(.bottom, 31)
             }
         }
-        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [opening] rect in
-            Task { @MainActor in
-                opening?.homeArtBox = ScreenBox(centerX: rect.midX, centerY: rect.midY, height: rect.height)
-            }
-        }
-        // While the opening plays, its Doddy stands in for this one; when it ends, this one is in
-        // the same place, so nothing moves.
-        .opacity(opening?.play == nil ? 1 : 0)
         // With Files open he moves up above the sheet.
         .offset(y: showFiles ? -120 : 0)
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: waving)
         .animation(reduceMotion ? nil : .spring(duration: 0.3, bounce: 0.3), value: perking)
         .task { await waveOnce() }
@@ -598,15 +636,18 @@ struct HomeView: View {
             .buttonStyle(DoddyPressStyle())
             .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
             .accessibilityIdentifier("home.ask")
-            Rectangle().fill(Theme.separator).frame(width: 1, height: 24)
-            Button { showFiles = true } label: {
-                Label("Files", systemImage: "folder")
-                    .padding(.horizontal, 16)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
+            // Files Doddy made on his server (ADR-633): with the feature (decision 2026-11-07-release-scope), the pill is Messages alone.
+            if scope.shows(.files) {
+                Rectangle().fill(Theme.separator).frame(width: 1, height: 24)
+                Button { showFiles = true } label: {
+                    Label("Files", systemImage: "folder")
+                        .padding(.horizontal, 16)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(DoddyPressStyle())
+                .accessibilityIdentifier("home.files")
             }
-            .buttonStyle(DoddyPressStyle())
-            .accessibilityIdentifier("home.files")
         }
         .font(.body.weight(.medium))
         .lineLimit(1)
@@ -619,11 +660,28 @@ struct HomeView: View {
 
     private var canTalk: Bool { store.environment.capabilities.isAvailable(.voiceInput) }
 
+    /// What I can do's rows that open something on Home. Calls open inside that sheet; talking and reminders
+    /// happen in a conversation, so their rows open nothing.
+    private func openAbility() {
+        guard let ability = abilityToOpen else { return }
+        abilityToOpen = nil
+        switch ability {
+        case .notes, .lists: selectedTab = .memories
+        case .messages: showAsk = true
+        case .tasks: showErrands = true
+        case .leaflets: showDeals = true
+        case .talk, .reminders, .phoneCalls, .callsForYou, .translator: break
+        }
+    }
+
+    /// Which features this build shows (decision 2026-11-07-release-scope). Read each time, so the Debug toggle shows on the next draw.
+    private var scope: ReleaseScope { ReleaseScopeStore.current }
+
     /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under
     /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.
     private func talk() {
         guard canTalk else { return }
-        guard !reduceMotion, !hideCharacterArt, ready == nil, conversation.live == nil else {
+        guard !reduceMotion, !hideCharacterArt, conversation.live == nil else {
             conversation.talk(store: store, profile: profiles.profile)
             return
         }
@@ -637,28 +695,19 @@ struct HomeView: View {
         }
     }
 
-    /// Once per launch, when Home appears without the opening: the first time on a morning he waves
-    /// (ADR-380), then sits. Waits a moment first, so an opening that is about to start wins.
+    /// Once per launch, when Home appears: the first time on a morning he waves (ADR-380), then
+    /// sits. Waits a moment first.
     private func waveOnce() async {
         // Motion v2: the one persistent Doddy has his own daily welcome (ADR-555).
         guard !HomeIdle.played, !reduceMotion, !hideCharacterArt, !DoddyDirector.shared.isActive else { return }
         try? await Task.sleep(for: .seconds(0.6))
-        guard !Task.isCancelled, !HomeIdle.played, opening?.play == nil, ready == nil else { return }
+        guard !Task.isCancelled, !HomeIdle.played else { return }
         HomeIdle.played = true
         guard HomeIdle.wavesThisMorning(now: .now) else { return }
         waving = true
         // The wave rests on the open hand a moment before he sits.
         try? await Task.sleep(for: .seconds(DoddyMotion.wave.duration + 0.8))
         waving = false
-    }
-
-    private var ready: OpeningReady? { opening?.ready }
-
-    /// Hidden under the opening until its hand-over, then they slide in as Doddy jumps into
-    /// place. Never hidden under Reduce Motion.
-    private var buttonsShown: Bool {
-        guard let opening, let play = opening.play else { return true }
-        return play.reducedMotion || opening.handingOver
     }
 
     /// Uses only the approved name; without one, "I'm here."
@@ -984,47 +1033,8 @@ private struct HomeTodaySheet: View {
     }
 }
 
-/// Who runs the voice, and OpenAI's model (ADR-442), from the ••• menu. Settings › Voice has the
-/// same picker.
-private struct HomeVoiceSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                VoiceProviderPicker(idPrefix: "home")
-                Spacer()
-            }
-            .padding(24)
-            .background(Theme.canvas)
-            .navigationTitle("Voice")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
-}
-
-/// The bar's entrance after the opening: up from just below, with a little bounce. Instant
-/// (never hidden) under Reduce Motion, where `shown` stays true.
-private struct SlideIn: ViewModifier {
-    let shown: Bool
-    let delay: Double
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(shown ? 1 : 0)
-            .offset(y: shown ? 0 : 28)
-            .animation(.spring(duration: 0.5, bounce: 0.3).delay(delay), value: shown)
-    }
-}
-
 private enum HomeTool: String, Identifiable {
-    case focus, stopwatch
+    case focus, stopwatch, timer, windDown
     var id: String { rawValue }
 }
 
@@ -1084,13 +1094,14 @@ private struct UnfinishedNoteCard: View {
     }
 }
 
-/// Settings › Privacy › What leaves this iPhone, opened from Home's footer (ADR-326).
-private struct DataFlowSheet: View {
+/// Home › ••• › Phone calls (owner, 9 Nov 2026): the Settings screen in a sheet with Done, so it opens
+/// from Home without leaving it. Calls for you is a row on that screen.
+private struct HomeCallsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            DataFlowView()
+            CallsSettingsView()
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { dismiss() }
@@ -1099,3 +1110,4 @@ private struct DataFlowSheet: View {
         }
     }
 }
+

@@ -7,9 +7,10 @@
 //   - every gate (kill switch, hours, destination, limits, agent drift) runs again at dial time.
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
+import { rememberCallbackRoute } from "../callbacks.js";
 import { sameBytes } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
-import { briefSchema, checkBriefContent, type ContentRefusal } from "./brief.js";
+import { briefSchema, checkBriefContent, type Brief, type ContentRefusal } from "./brief.js";
 import type { TaskCallContext } from "./context.js";
 import { callFits } from "./hours.js";
 import {
@@ -37,8 +38,10 @@ export type Refusal =
   | { status: 400; error: "destination_refused"; reason: DestinationRefusal | "own_number" | "doddy_number" | "blocked" }
   | { status: 400; error: "bad_time" }
   | { status: 404; error: "not_found" }
+  | { status: 400; error: "duplicate_place" }
   | { status: 409; error: "no_verified_phone" | "too_many_open_cases" | "not_approvable" | "digest_mismatch" | "outside_hours"
-      | "attempt_open" | "already_answered" | "no_more_attempts" | "not_live" | "taken_over" | "not_takeoverable" | "result_mismatch" }
+      | "attempt_open" | "already_answered" | "no_more_attempts" | "not_live" | "taken_over" | "not_takeoverable" | "result_mismatch"
+      | "part_of_task" | "call_in_progress" }
   | { status: 503; error: "calls_disabled" | "not_configured" };
 
 const ms = (minutes: number) => minutes * 60_000;
@@ -76,15 +79,26 @@ function verifiedPayload(ctx: TaskCallContext, accountId: string, caseId: string
 
 // ---------- create ----------
 
-export async function createCase(ctx: TaskCallContext, accountId: string, body: unknown) {
-  if (ctx.settings.killSwitch) return refuse(503, "calls_disabled");
+/** A brief checked and compiled into its payload, not stored yet. */
+export interface CompiledCase {
+  caseId: string; brief: Brief; payload: CallPayload; digest: Buffer; e164: string; kind: string;
+}
+
+/**
+ * Every check a brief must pass before anything is stored, and its compiled payload and digest.
+ * Shared by a single case and by each place of a task, so a task can't skip a check.
+ */
+export async function compileCase(ctx: TaskCallContext, accountId: string, body: unknown, fieldPrefix = ""):
+  Promise<{ compiled: CompiledCase } | { refusal: Refusal }> {
   const parsed = briefSchema.safeParse(body);
-  if (!parsed.success) return { refusal: { status: 400, error: "invalid_request", fields: parsed.error.issues.map((i) => i.path.join(".")) } as Refusal };
+  if (!parsed.success) {
+    return { refusal: { status: 400, error: "invalid_request", fields: parsed.error.issues.map((i) => fieldPrefix + i.path.join(".")) } as Refusal };
+  }
   const brief = parsed.data;
   const problem = checkBriefContent(brief);
-  if (problem) return { refusal: { status: 400, error: "brief_refused", field: problem.field, reason: problem.reason } as Refusal };
+  if (problem) return { refusal: { status: 400, error: "brief_refused", field: fieldPrefix + problem.field, reason: problem.reason } as Refusal };
   if (brief.maxDurationSecs > ctx.settings.limits.maxDurationSecs) {
-    return { refusal: { status: 400, error: "brief_refused", field: "maxDurationSecs", reason: "too_long" } as Refusal };
+    return { refusal: { status: 400, error: "brief_refused", field: `${fieldPrefix}maxDurationSecs`, reason: "too_long" } as Refusal };
   }
   const dest = classifyDestination(brief.callee.phone);
   if (!dest.ok) return { refusal: { status: 400, error: "destination_refused", reason: dest.reason } as Refusal };
@@ -94,23 +108,42 @@ export async function createCase(ctx: TaskCallContext, accountId: string, body: 
   if (dest.e164 === ctx.config.fromNumber) return { refusal: { status: 400, error: "destination_refused", reason: "doddy_number" } as Refusal };
   // The operator's stop list (TASK_CALL_BLOCKED_NUMBERS, ADR-705): a callee who asked not to be called, refused before anything is built.
   if (ctx.settings.blockedNumbers?.includes(dest.e164)) return { refusal: { status: 400, error: "destination_refused", reason: "blocked" } as Refusal };
-
-  const now = ctx.now();
   const caseId = randomUUID();
   const payload = compilePayload({ caseId, brief, destination: dest, fromNumber: ctx.config.fromNumber, notice: ctx.settings.notice });
-  const digest = payloadDigest(ctx.keys, payload);
+  return { compiled: { caseId, brief, payload, digest: payloadDigest(ctx.keys, payload), e164: dest.e164, kind: dest.kind } };
+}
+
+/** Stores one compiled case, waiting for approval. The caller holds the account's call_cases lock. */
+export async function insertCase(ctx: TaskCallContext, c: Q, accountId: string, cc: CompiledCase, approvableUntil: Date, now: Date,
+  task?: { id: string; position: number }) {
+  await c.query(
+    `INSERT INTO call_cases (id, account_id, kind, language, state, payload_format, payload_key_version, payload_ciphertext,
+       payload_digest, destination_hash, destination_kind, destination_source, max_duration_secs, approvable_until, created_at, updated_at,
+       task_id, task_position)
+     VALUES ($1, $2, 'ask', 'pl', 'awaiting_approval', 1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12, $13)`,
+    [cc.caseId, accountId, ctx.cipher.keyVersion, ctx.cipher.encrypt(canonicalJson(cc.payload), payloadAad(accountId, cc.caseId)),
+      cc.digest, destinationHash(ctx.keys, cc.e164), cc.kind, cc.brief.callee.source, cc.brief.maxDurationSecs, approvableUntil, now,
+      task?.id ?? null, task?.position ?? null]);
+}
+
+export async function openCaseCount(c: Q, accountId: string): Promise<number> {
+  const { rows } = await c.query<{ n: number }>(
+    "SELECT count(*)::int AS n FROM call_cases WHERE account_id = $1 AND state IN ('awaiting_approval', 'active')", [accountId]);
+  return rows[0]?.n ?? 0;
+}
+
+export async function createCase(ctx: TaskCallContext, accountId: string, body: unknown) {
+  if (ctx.settings.killSwitch) return refuse(503, "calls_disabled");
+  const compiledOrRefusal = await compileCase(ctx, accountId, body);
+  if ("refusal" in compiledOrRefusal) return compiledOrRefusal;
+  const cc = compiledOrRefusal.compiled;
+  const { brief, payload, digest, caseId } = cc;
+  const now = ctx.now();
   const approvableUntil = plus(now, ms(PREVIEW_MINUTES));
   const created = await inTransaction(ctx.db, async (c) => {
     await c.query("SELECT pg_advisory_xact_lock(hashtext('call_cases:' || $1))", [accountId]);
-    const { rows } = await c.query<{ n: number }>(
-      "SELECT count(*)::int AS n FROM call_cases WHERE account_id = $1 AND state IN ('awaiting_approval', 'active')", [accountId]);
-    if ((rows[0]?.n ?? 0) >= MAX_OPEN_CASES) return false;
-    await c.query(
-      `INSERT INTO call_cases (id, account_id, kind, language, state, payload_format, payload_key_version, payload_ciphertext,
-         payload_digest, destination_hash, destination_kind, destination_source, max_duration_secs, approvable_until, created_at, updated_at)
-       VALUES ($1, $2, 'ask', 'pl', 'awaiting_approval', 1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)`,
-      [caseId, accountId, ctx.cipher.keyVersion, ctx.cipher.encrypt(canonicalJson(payload), payloadAad(accountId, caseId)),
-        digest, destinationHash(ctx.keys, dest.e164), dest.kind, brief.callee.source, brief.maxDurationSecs, approvableUntil, now]);
+    if (await openCaseCount(c, accountId) >= MAX_OPEN_CASES) return false;
+    await insertCase(ctx, c, accountId, cc, approvableUntil, now);
     return true;
   });
   if (!created) return refuse(409, "too_many_open_cases");
@@ -137,11 +170,13 @@ export async function approve(ctx: TaskCallContext, accountId: string, deviceId:
   }
   const given = Buffer.from(digestHex, "hex");
   const result = await inTransaction(ctx.db, async (c) => {
-    const { rows } = await c.query<{ state: string; payload_digest: Buffer; approvable_until: Date; max_duration_secs: number; created_at: Date }>(
-      `SELECT state, payload_digest, approvable_until, max_duration_secs, created_at FROM call_cases
+    const { rows } = await c.query<{ state: string; payload_digest: Buffer; approvable_until: Date; max_duration_secs: number; created_at: Date; task_id: string | null }>(
+      `SELECT state, payload_digest, approvable_until, max_duration_secs, created_at, task_id FROM call_cases
        WHERE id = $1 AND account_id = $2 FOR UPDATE`, [caseId, accountId]);
     const kase = rows[0];
     if (!kase) return refuse(404, "not_found");
+    // A place of a task is called only through the task's one approval, in its turn (decision 2026-11-09-restaurant-calls-one-tap).
+    if (kase.task_id) return refuse(409, "part_of_task");
     if (!["awaiting_approval", "active"].includes(kase.state) || kase.approvable_until <= now) return refuse(409, "not_approvable");
     if (!sameBytes(kase.payload_digest, given)) return refuse(409, "digest_mismatch");
     if (!callFits(at, kase.max_duration_secs)) return refuse(409, "outside_hours");
@@ -241,6 +276,8 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
       [attemptId, a.account_id, plus(now, ms(24 * 60)), plus(now, ms(2)), ["twilio_call", "twilio_transcription", "elevenlabs_voice"]]);
     await c.query("INSERT INTO call_dial_log (destination_hash, caller_phone_hash, caller_account_hash, dialed_at) VALUES ($1, $2, $3, $4)",
       [a.destination_hash, callerPhone, callerAccount, now]);
+    // A call-back from this number reaches this user (decision 2026-11-09-call-backs-and-contact-calls).
+    await rememberCallbackRoute(c, a.destination_hash, a.account_id, now);
     return { kind: "claimed" as const, payload, accountId: a.account_id };
   });
   if (claim.kind !== "claimed") return claim;

@@ -38,6 +38,8 @@
         "shared_content",
         "imported_legacy_unknown",
         "imported_file",
+        "noted_by_doddy",
+        "conversation_recap",
         "sample_fixture"
       ]
     },

@@ -64,9 +64,11 @@ final class ToolCatalogTests: XCTestCase {
     func testNoChangeRunsWithoutACard() {
         // ASK-01: since 2026-10-18 list changes and the capability-gap row show a card too. Only
         // translator mode, which changes no data, runs without a card: since ADR-619 (owner,
-        // 24 Oct 2026) it starts and stops at once, without asking.
+        // 24 Oct 2026) it starts and stops at once, without asking. And text_me, which can reach
+        // only the user's own verified number, while Texts from Doddy is on (owner, 9 Nov 2026,
+        // decision 2026-11-09-restaurant-calls-one-tap).
         let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval != .card && $0.approval != .serverApproval }.map(\.name))
-        XCTAssertEqual(withoutCard, [VoiceToolName.startTranslator, VoiceToolName.stopTranslator])
+        XCTAssertEqual(withoutCard, [VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe])
         for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name) }
     }
 
@@ -79,8 +81,8 @@ final class ToolCatalogTests: XCTestCase {
             XCTAssertEqual(tool.approval, expected, tool.name)
         }
         XCTAssertEqual(Set(ToolCatalog.all.filter { $0.approval == .runsNow }.map(\.name)),
-                       AskFirst.publicLookups.union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator]),
-                       "public lookups, and translator start and stop (ADR-619)")
+                       AskFirst.publicLookups.union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]),
+                       "public lookups, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
         XCTAssertEqual(AskFirst.publicLookups, ["calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
                                                 "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
         for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }

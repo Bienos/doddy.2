@@ -7,6 +7,7 @@ import SwiftUI
 struct CallCasesView: View {
     @Environment(\.appEnvironment) private var environment
     @Environment(ProfileStore.self) private var profiles
+    @Environment(MemoryStore.self) private var store
     @State private var model: CallCasesModel?
     @State private var editor: EditorItem?
     /// Opened once the editor sheet has closed.
@@ -33,6 +34,10 @@ struct CallCasesView: View {
         .background(Theme.canvas)
         .navigationTitle("Calls for you")
         .navigationBarTitleDisplayMode(.inline)
+        // A call answered while this list is open gets its recap too (decision 2026-11-09-conversation-recaps).
+        .onChange(of: model?.cases ?? []) { _, cases in
+            Task { await RecapKeeper.rememberCalls(cases, store: store) }
+        }
         .navigationDestination(item: $opened) { open in
             if let model {
                 CallCaseView(model: open.model, list: model,
@@ -63,6 +68,8 @@ struct CallCasesView: View {
                                        describe: { UpdatesModel.text(for: $0) })
             }
             await model?.load()
+            if let cases = model?.cases { await RecapKeeper.rememberCalls(cases, store: store) }
+            await RecapKeeper.rememberPhoneCalls(store: store)
             if let openCase, !didOpenRequested, let model, let record = model.cases.first(where: { $0.id == openCase }) {
                 didOpenRequested = true
                 opened = OpenedCase(open: record, in: model)
@@ -110,7 +117,7 @@ struct CallCasesView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(record.title).font(.headline).foregroundStyle(Theme.ink)
                                 Text(record.brief.question).lineLimit(2).foregroundStyle(Theme.ink)
-                                Text("\(CallCaseText.state(record)) · \(DateText.full(record.createdAt))")
+                                Text(verbatim: "\(CallCaseText.state(record)) · \(DateText.full(record.createdAt))")
                                     .font(.footnote).foregroundStyle(Theme.secondaryText)
                             }
                         }

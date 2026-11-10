@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { AccountEraser } from "./account.js";
+import { type AccountLinker, accountSubjectOf } from "./accountLinks.js";
 import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
 import { requireFullAccess, type SessionVerifier } from "./auth.js";
 import { clientAddress } from "./clientAddress.js";
@@ -9,6 +10,7 @@ import type { DeviceSessionIssuer } from "./deviceSession.js";
 import { type DocumentLinks, serveDocument } from "./documents.js";
 import type { Store } from "./store.js";
 import { AppError } from "./errors.js";
+import { PAYMENT_SCENARIOS, type PaymentScenario, type PaymentsService } from "./payments/service.js";
 import type { ConnectedAppsService } from "./service.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
@@ -26,6 +28,8 @@ export interface HttpDeps {
   service: ConnectedAppsService;
   /** Online-account tools (Gmail, Drive, Notion, Todoist). Routes exist only when provided. */
   tools?: CloudToolsService;
+  /** Paying for things (x402). Routes exist only when provided; each says "not set up" until a wallet is. */
+  payments?: PaymentsService;
   verifier: SessionVerifier;
   /** Beta device sign-in (ADR-563). Absent: `POST /v1/session/device` is not found. */
   deviceSessions?: DeviceSessionIssuer | null;
@@ -37,12 +41,40 @@ export interface HttpDeps {
   assist?: AssistService | null;
   /** Deleting the account on this server (ADR-674). Absent: `DELETE /v1/account` is not found. */
   account?: AccountEraser | null;
+  /** An account taking over an iPhone's earlier data (decision 2026-11-08-required-account). Absent: not found. */
+  accountLinker?: AccountLinker | null;
+  /**
+   * What `GET /v1/health` checks and reports (engineering audit, 7 Nov 2026): a database round trip,
+   * so a server whose database is gone answers 503 instead of a static "ok", and the commit that is
+   * running (Render's RENDER_GIT_COMMIT), so "what is live" is one request. Absent: health is static.
+   */
+  health?: { ping(): Promise<void>; commit?: string | null } | null;
   appReturnUrl: string;
   maxBodyBytes: number;
   /** Behind one proxy that appends the client to X-Forwarded-For (Render). For per-client limits. */
   trustProxy?: boolean;
   now?: () => Date;
   log?: (line: Record<string, unknown>) => void;
+}
+
+/** A database that takes longer than this to answer counts as down for health (the request limit is 20 s). */
+const HEALTH_DATABASE_TIMEOUT_MS = 3_000;
+
+async function databaseAnswers(ping: () => Promise<void>): Promise<"ok" | "unavailable"> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      ping(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("timeout")), HEALTH_DATABASE_TIMEOUT_MS);
+      }),
+    ]);
+    return "ok";
+  } catch {
+    return "unavailable";
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 const PLANNED = ["apple_calendar", "apple_reminders", "todoist", "notion"] as const;
@@ -82,8 +114,20 @@ export function createHandler(deps: HttpDeps) {
         "GET /v1/tools": (userId) => tools.catalog(userId),
         "GET /v1/tools/receipts": async (userId) => ({ receipts: await tools.receipts(userId) }),
         "PUT /v1/tools/switch": (userId, body) => tools.setSwitch(userId, body),
+        "PUT /v1/tools/access": (userId, body) => tools.setAppAccess(userId, body),
         "POST /v1/tools/prepare": (userId, body) => tools.prepare(userId, body),
         "POST /v1/tools/run": (userId, body) => tools.run(userId, body),
+      }
+    : {};
+
+  const payments = deps.payments;
+  const paymentsRoutes: Record<string, (userId: string, body: unknown) => unknown | Promise<unknown>> = payments
+    ? {
+        "GET /v1/payments": (userId) => payments.status(userId),
+        "GET /v1/payments/receipts": async (userId) => ({ receipts: await payments.receipts(userId) }),
+        "PUT /v1/payments/switch": (userId, body) => payments.setSwitch(userId, body),
+        "POST /v1/payments/prepare": (userId, body) => payments.prepare(userId, body),
+        "POST /v1/payments/pay": (userId, body) => payments.pay(userId, body),
       }
     : {};
 
@@ -111,8 +155,16 @@ export function createHandler(deps: HttpDeps) {
 
       if (key === "GET /v1/health") {
         route = key;
-        status = 200;
-        return send(res, 200, { status: "ok", mode: service.mode, api: "v1", capabilities: ["calendar.listEvents"] });
+        const database = deps.health ? await databaseAnswers(deps.health.ping) : undefined;
+        status = database === "unavailable" ? 503 : 200;
+        return send(res, status, {
+          status: database === "unavailable" ? "unavailable" : "ok",
+          mode: service.mode,
+          api: "v1",
+          capabilities: ["calendar.listEvents"],
+          ...(database ? { database } : {}),
+          ...(deps.health?.commit ? { commit: deps.health.commit } : {}),
+        });
       }
       if (key === "GET /v1/oauth/return" || key === "GET /v1/oauth/verify") {
         route = key;
@@ -151,11 +203,23 @@ export function createHandler(deps: HttpDeps) {
       // data. No body. The answer is the receipt; `complete: false` says what is still owed.
       if (key === "DELETE /v1/account" && deps.account) {
         route = key;
-        const user = await deps.verifier.verify(header(req, "authorization"), now());
+        const authorization = header(req, "authorization");
+        const user = await deps.verifier.verify(authorization, now());
         if (!user) throw new AppError("unauthenticated");
-        const erasure = await deps.account.erase(user.userId);
+        const subject = accountSubjectOf(authorization);
+        const erasure = await deps.account.erase(user.userId, subject ? [subject] : []);
         status = 200;
         return send(res, 200, erasure);
+      }
+
+      // Decision 2026-11-08-required-account: a Doddy account takes over this iPhone's earlier data,
+      // once, with the iPhone's own device token in the body as proof.
+      if (key === "POST /v1/account/link-device" && deps.accountLinker) {
+        route = key;
+        const body = await readJson(req, deps.maxBodyBytes);
+        const linked = await deps.accountLinker.link(header(req, "authorization"), body, now());
+        status = 200;
+        return send(res, 200, linked);
       }
 
       // Doddy Web (ADR-600): its own routes, then its pages for anything that isn't the API.
@@ -164,7 +228,7 @@ export function createHandler(deps: HttpDeps) {
         const match = web.routes.match(req.method ?? "GET", url.pathname);
         if (match) {
           route = match.route.template;
-          status = await web.routes.serve(match, req, res, now());
+          status = await web.routes.serve(match, req, res, now(), url.searchParams);
           return;
         }
         if ((req.method === "GET" || req.method === "HEAD") && !url.pathname.startsWith("/v1/")) {
@@ -177,7 +241,8 @@ export function createHandler(deps: HttpDeps) {
       const toolkitRoute = tools ? TOOLKIT_ROUTE.exec(key) : null;
       const toolsHandler = toolsRoutes[key];
       const handler = routes[key];
-      if (!handler && !toolsHandler && !toolkitRoute) throw new AppError("not_found");
+      const paymentsHandler = paymentsRoutes[key];
+      if (!handler && !toolsHandler && !toolkitRoute && !paymentsHandler) throw new AppError("not_found");
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
@@ -198,6 +263,16 @@ export function createHandler(deps: HttpDeps) {
       if (scenario && !scenario.success) throw new AppError("invalid_request");
 
       const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
+      if (payments && paymentsHandler) {
+        const rawPayments = header(req, "x-doddy-payments-scenario");
+        if (rawPayments !== undefined) {
+          if (!PAYMENT_SCENARIOS.has(rawPayments)) throw new AppError("invalid_request");
+          payments.applyMockScenario(rawPayments as PaymentScenario);
+        }
+        const paymentsResult = await paymentsHandler(user.userId, body);
+        status = 200;
+        return send(res, 200, paymentsResult);
+      }
       if (tools && (toolsHandler || toolkitRoute)) {
         const rawTools = header(req, "x-doddy-tools-scenario");
         if (rawTools !== undefined) {

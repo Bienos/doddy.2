@@ -31,7 +31,7 @@ groups_for() {
     contracts/*) echo "swift backend node messaging"; return ;;
     schemas/*) echo "swift backend node messaging"; return ;;
     voice-agent/*) echo "swift backend messaging"; return ;;
-    Packages/* | DoddyApp/* | DoddyTests/* | DoddyUITests/* | DoddyWidgets/* | DoddyShare/* \
+    Packages/* | DoddyApp/* | DoddyTests/* | DoddyUITests/* | DoddyWidgets/* | DoddyShare/* | DoddyScreen/* | DoddyNotificationContent/* \
       | Shared/* | Config/* | assets/* | project.yml | project-iphone.yml) echo swift; return ;;
     */*) echo all; return ;;                             # scripts/, tools/, .github/, server/other, new folders
     *.md) echo none; return ;;                           # top-level notes: README, STATUS, DECISIONS

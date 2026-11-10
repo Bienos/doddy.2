@@ -32,19 +32,20 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
             createdAt: DoddyDatabase.truncatedToMilliseconds(message.createdAt), delivery: message.delivery,
             basis: message.basis, noteIDs: message.noteIDs, notesSent: message.notesSent,
             notesSearchFailed: message.notesSearchFailed, document: message.document, hasPhoto: message.hasPhoto,
-            attachedFileName: message.attachedFileName)
+            attachedFileName: message.attachedFileName, isLocalAction: message.isLocalAction)
         let documentJSON = try toStore.document.map { try LearningRows.json($0) }
         try await dbQueue.write { db in
             try db.execute(
                 sql: """
-                INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis, note_ids, notes_sent, notes_search_failed, document_json, has_photo, attached_file_name)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis, note_ids, notes_sent, notes_search_failed, document_json, has_photo, attached_file_name, is_local_action)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 arguments: [
                     toStore.id.uuidString, toStore.sender.rawValue, toStore.text, DoddyDatabase.milliseconds(toStore.createdAt),
                     toStore.delivery.rawValue, toStore.basis?.rawValue, try LearningRows.json(toStore.noteIDs.map(\.uuidString)),
                     toStore.notesSent, toStore.notesSearchFailed ? 1 : 0, documentJSON, toStore.hasPhoto ? 1 : 0,
                     toStore.attachedFileName,
+                    toStore.isLocalAction ? 1 : 0,
                 ])
             guard let stored = try Row.fetchOne(db, sql: "SELECT * FROM thread_messages WHERE id = ?", arguments: [toStore.id.uuidString])
                 .map(Self.message(from:)), stored == toStore else { throw MessageThreadError.verificationFailed }
@@ -121,6 +122,7 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
             id: id, sender: sender, text: row["text"], createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]),
             delivery: delivery, basis: basis, noteIDs: noteIDs, notesSent: row["notes_sent"],
             notesSearchFailed: (row["notes_search_failed"] as Int) == 1, document: document,
-            hasPhoto: (row["has_photo"] as Int) == 1, attachedFileName: row["attached_file_name"])
+            hasPhoto: (row["has_photo"] as Int) == 1, attachedFileName: row["attached_file_name"],
+            isLocalAction: (row["is_local_action"] as Int) == 1)
     }
 }

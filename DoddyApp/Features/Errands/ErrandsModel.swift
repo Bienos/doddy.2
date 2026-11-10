@@ -58,6 +58,14 @@ final class ErrandsModel {
 
     func errand(_ id: UUID) -> StoredErrand? { errands.first { $0.id == id } }
 
+    #if DEBUG
+    /// Test seam only (ADR-821, the screens run): tasks finished since the user last looked, in
+    /// memory only, so Home shows its "Done" card.
+    func seedUnseenForTesting(_ ids: [UUID]) {
+        unseenFinished = ids
+    }
+    #endif
+
     /// The newest finished task the user hasn't opened yet, for Home.
     var newestUnseen: StoredErrand? {
         errands.first { unseenFinished.contains($0.id) && $0.state.isFinished }
@@ -150,7 +158,11 @@ final class ErrandsModel {
             if next.state != errand.state || next.result != errand.result || next.failure != errand.failure {
                 guard let saved = await keep(next) else { return }
                 current = saved
-                if saved.state.isFinished { markUnseen(saved.id) }
+                if saved.state.isFinished {
+                    markUnseen(saved.id)
+                    // Doddy's message in Messages with what he found (owner, 10 Nov 2026).
+                    await ThreadInbox.deliver(errand: saved, now: now)
+                }
             }
         }
         await acknowledgeIfNeeded(current, from: backend, now: now)
@@ -182,7 +194,10 @@ final class ErrandsModel {
             let draft = ErrandDraft(words: words, brief: brief, title: title, language: snapshot.language ?? ErrandDraft.defaultLanguage,
                                     kind: snapshot.kind.flatMap(ErrandKind.init(rawValue:)), priorities: snapshot.priorities ?? [])
             let adopted = StoredErrand(id: snapshot.id, createdAt: snapshot.createdAt, state: .unknown, draft: draft).applying(snapshot, at: now)
-            if let saved = await keep(adopted), saved.state.isFinished { markUnseen(saved.id) }
+            if let saved = await keep(adopted), saved.state.isFinished {
+                markUnseen(saved.id)
+                await ThreadInbox.deliver(errand: saved, now: now)
+            }
         }
     }
 
@@ -234,6 +249,14 @@ final class ErrandsModel {
     // MARK: For the voice agent
 
     /// `{{errands}}` at the start of a conversation.
+    func cachedPromptText(now: Date = Date()) -> String {
+        guard hasLoaded, loadProblem == nil else {
+            return "(The task index is not ready. Use check_errands if the user asks about their tasks.)"
+        }
+        return ErrandsPrompt.render(errands, now: now)
+    }
+
+    /// On-demand readers may load; voice startup uses `cachedPromptText` instead.
     func promptText(now: Date = Date()) async -> String {
         if !hasLoaded { await load() }
         guard loadProblem == nil else { return "(the tasks kept on this iPhone couldn't be read)" }

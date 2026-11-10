@@ -44,6 +44,21 @@ final class HomeConversation {
             || controller.permissionRequest != nil
     }
 
+    /// What Doddy has just made or found that the user taps to use (a file, a contact, the parking
+    /// spot, a presentation, photos, the lost-wallet steps). When it changes to something new, the
+    /// pop-up card comes up by itself (owner, 10 Nov 2026), so nothing waits only in the transcript.
+    /// Empty when there is nothing; never a reason to start a conversation.
+    var resultsToShow: String {
+        guard let controller else { return "" }
+        var parts: [String] = controller.documents.map { "doc:\($0.url.absoluteString)" }
+        if let card = controller.contactCard { parts.append("contact:\(card.query)") }
+        if controller.parkingCard != nil { parts.append("parking") }
+        if let ready = controller.presentationReady { parts.append("deck:\(ready.url.absoluteString)") }
+        if controller.photoResults != nil { parts.append("photos") }
+        if controller.lostWalletCard != nil { parts.append("wallet") }
+        return parts.joined(separator: "|")
+    }
+
     func hold(_ controller: VoiceSessionController) {
         self.controller = controller
     }
@@ -88,14 +103,22 @@ final class HomeConversation {
 
     /// The same check the voice screen makes before it starts by itself (`VoiceView`).
     static func canStartInPlace() async -> Bool {
-        let provider = VoiceProvider.effective(
-            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
         let auth = VoiceAuthSession.shared
         await auth.restore()
-        return (auth.isSignedIn || VoiceConfig.talksWithoutAccount(for: provider)) && VoiceProviderConsent.isGranted(for: provider)
+        return auth.hasVoiceAccess() && VoiceProviderConsent.isGranted()
     }
 
-    private func start(store: MemoryStore, profile: ApprovedProfile) async {
+    /// The Action Button, Back Tap or Siri with Doddy on screen: the conversation starts here, like a
+    /// tap on Doddy, with the shortcut's greeting. False when it can't start in place (the account
+    /// or voice-data gate isn't passed), so the caller opens the voice screen as before.
+    func startFromShortcut(store: MemoryStore, profile: ApprovedProfile, greeting: String) async -> Bool {
+        if live != nil { return true }
+        guard await Self.canStartInPlace() else { return false }
+        await start(store: store, profile: profile, wakeGreeting: greeting)
+        return true
+    }
+
+    private func start(store: MemoryStore, profile: ApprovedProfile, wakeGreeting: String? = nil) async {
         // One conversation at a time (ADR-496): one starting or live elsewhere is the one Home shows.
         if let running = VoiceSessionController.runningConversation {
             controller = running
@@ -103,6 +126,6 @@ final class HomeConversation {
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
-        await controller.start(VoiceConfig.connectionMode, profile: profile)
+        await controller.start(VoiceConfig.connectionMode, profile: profile, wakeGreeting: wakeGreeting)
     }
 }

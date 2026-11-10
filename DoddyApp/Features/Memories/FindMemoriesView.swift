@@ -74,6 +74,8 @@ struct FindMemoriesView: View {
             outcome = result
             isRunning = false
             // Then, without holding up the word results: notes close in meaning, on this iPhone.
+            // Hidden in the beta (decision 2026-11-07-release-scope): the word search stands alone.
+            guard ReleaseScopeStore.current.shows(.meaningSearch) else { return }
             var found: Set<UUID> = []
             if case .matches(let candidates) = result { found = Set(candidates.map(\.memoryID)) }
             let hits = await MeaningService.index.search(question, in: store.memories, excluding: found)
@@ -196,7 +198,11 @@ private struct RecallResultsView: View {
                 let mayDisagree = RecallConflicts.flagged(candidates)
                 if !mayDisagree.isEmpty {
                     let hiddenDisagreeing = mayDisagree.subtracting(shown.map(\.memoryID)).count
-                    Label("\(mayDisagree.count) of these give different numbers for the same thing. Check which one is current; nothing was changed.\(hiddenDisagreeing > 0 ? " \(hiddenDisagreeing) of them \(hiddenDisagreeing == 1 ? "is" : "are") hidden by the filter." : "")", systemImage: "exclamationmark.2")
+                    let hiddenNote = hiddenDisagreeing == 0 ? "" : " " + (hiddenDisagreeing == 1
+                        ? NSLocalizedString("1 of them is hidden by the filter.", comment: "")
+                        : String(format: NSLocalizedString("%lld of them are hidden by the filter.", comment: ""), hiddenDisagreeing))
+                    Label(String(format: NSLocalizedString("%lld of these give different numbers for the same thing. Check which one is current; nothing was changed.", comment: ""),
+                                 mayDisagree.count) + hiddenNote, systemImage: "exclamationmark.2")
                         .font(.footnote)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -206,7 +212,8 @@ private struct RecallResultsView: View {
                 if !choices.isEmpty {
                     MemoryTypeFilterRow(choices: choices, total: candidates.count, selection: $category, active: active)
                     if let active {
-                        Text("Showing \(shown.count) of \(candidates.count) matches: \(active.displayName) only.")
+                        Text(verbatim: String(format: NSLocalizedString("Showing %lld of %lld matches: %@ only.", comment: ""),
+                                             shown.count, candidates.count, active.displayName))
                             .font(.caption).foregroundStyle(Theme.secondaryText)
                             .accessibilityIdentifier("memories.findFilterNote")
                     }

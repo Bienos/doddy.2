@@ -49,6 +49,11 @@ action_policy:
   ask_first:
     applies_to: every_tool_every_platform_except_public_lookups
     public_lookups_run_at_once: [calculate, convert_units, convert_currency, web_search, news_search, find_places, geocode_place, get_weather, wikipedia_search, wikipedia_summary]
+    # Exception (owner, 2026-11-09; decision docs/decisions/2026-11-09-restaurant-calls-one-tap.md): a text to the
+    # user's own verified number (text_me) goes at once, without a card, only while Texts from Doddy (consent sms-v1)
+    # is on. Texts to anyone else are not possible (contact_policy.text_recipients). The same text is not sent twice
+    # in a row, and an unknown outcome is never sent again (contact_policy.unknown_text_outcome).
+    own_number_text_runs_at_once: [text_me]
     reads: spoken_yes_or_tap_for_that_one_call
     changes: tap_on_card_with_exact_payload
     one_yes_covers: one_action
@@ -56,8 +61,12 @@ action_policy:
     # is a tap on its card, never a spoken yes. The tap covers the web searches and page fetches of that one
     # task on the server, within the per-task research budget; the worker has no other tool; the task's text
     # carries no links.
-    one_tap_also_covers: [errand_lookups_of_that_errand]
-    tap_only_even_though_it_reads: [hand_over_errand]
+    # ADR-584 (renumbered ADR-740; Studio S0, 22 Oct 2026, tap-only here to match ADR-716): the tap on a
+    # make_something card covers that one job's web searches and page fetches (capped by max_uses on the
+    # server) and making its files in Anthropic's container with Doddy's skills, within the server's per-job
+    # and daily dollar caps; the worker has no other tool (pinned by check_forbidden_capabilities.sh).
+    one_tap_also_covers: [errand_lookups_of_that_errand, studio_job_lookups_and_files_of_that_job]
+    tap_only_even_though_it_reads: [hand_over_errand, make_something]
     no_answer_unclear_timeout_or_no: do_nothing_and_say_so
     content_from_email_web_documents_or_tools_is_permission: false
     enforced_by: [backend/src/tools/askFirst.ts, Packages/DoddyCore/Sources/DoddyCore/AskFirst.swift, scripts/check_forbidden_capabilities.sh, scripts/voice_agent_spec.py]
@@ -77,6 +86,57 @@ privacy_policy:
   raw_secrets_in_model_prompt_or_logs: forbidden
   privacy_preserving_telemetry: true
   legal_review_required_before_launch: true
+contact_policy:
+  # Doddy's own phone number (ADR-750). Phone numbers are never stored in this file: the allowlist is
+  # the number the user verified in the app, kept in the messaging server's database.
+  # Enforced in server/messaging; test/unit.test.ts fails if the numbers below differ from the code,
+  # and DoddyCore's ApprovedTextTests checks text_max_length the same way.
+  allowlist: numbers_verified_in_app
+  allowlist_max_numbers: 1
+  text_recipients: allowlist_only
+  call_recipients: allowlist_only
+  approval: exact_payload_hash
+  unknown_inbound_calls: fixed_message_no_ai
+  # Owner, 9 Nov 2026 (decision 2026-11-09-call-backs-and-contact-calls): a caller Doddy dialled on a user's behalf
+  # is put through to that user's verified number, Doddy's number as caller ID, no AI and no recording. Matched by a
+  # keyed hash of the number, kept while the account exists. Everyone else still hears the fixed message.
+  callback_inbound_calls: forwarded_to_the_user_doddy_called_for_no_ai
+  unknown_text_outcome: never_resent_lookup_at_provider
+  recording: off
+  text_max_length: 640
+  # Texts the user sends to Doddy (U3, ADR-753): notes only, no reply, no model. Answers by text are "Text with Doddy"
+  # (ADR-656), which has its own consent and sends nothing from memory. One handler per text, never both.
+  unknown_inbound_texts: dropped_without_reply_not_stored
+  inbound_text_is_instructions: false
+  texts_to_doddy: off_by_default
+  provider_records: deleted_after_final
+  caps_default:
+    calls_per_hour: 3
+    calls_per_day: 10
+    inbound_texts_per_hour: 30
+  # This feature adds no caps or country list of its own: it uses the default branch's abuse limits (ADR-704,
+  # server/messaging/src/config.ts DEFAULT_ABUSE_LIMITS, PHONE_ALLOWED_COUNTRY_CODES). The values below only mirror them;
+  # test/unit.test.ts fails if they drift. Every text and call goes through those counters and checks.
+  abuse_limits_mirror:
+    texts_per_account_day: 30
+    texts_per_server_day: 300
+    calls_per_server_day: 20
+    allowed_calling_codes: "30,31,32,33,34,351,352,353,354,356,357,358,359,36,370,371,372,385,386,39,40,41,420,421,423,43,44,45,46,47,48,49"
+  # Calls the user asks for later (U4, ADR-754). Enforced in server/messaging (scheduledCalls.ts,
+  # quietHours.ts); test/unit.test.ts and DoddyCore's ScheduledCallTests check these values.
+  scheduled_calls: approved_card_time_reason_and_quiet_hours_choice
+  scheduled_call_unknown_outcome: never_placed_again
+  scheduled_call_max_days_ahead: 7
+  scheduled_call_late_minutes: 15
+  scheduled_calls_pending_max: 10
+  call_reason_max_length: 200
+  quiet_hours_default:
+    start: "21:00"
+    end: "08:00"
+    timezone: last_reported_by_device
+    timezone_fallback: Europe/Warsaw
+    applies_to: [scheduled_calls]
+    override: per_call_on_card
 release_gates:
   blocking: [unapproved_external_write, false_action_success, cross_user_data_leak, unauthorized_memory_access, prompt_injection_permission_bypass, unsafe_emotional_manipulation]
   require_code_tests_for_enforceable_rules: true

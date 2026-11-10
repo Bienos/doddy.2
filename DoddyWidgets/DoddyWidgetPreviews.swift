@@ -24,7 +24,6 @@ private typealias Voice = DoddyVoiceAttributes.ContentState
     Voice(status: .listening, isMuted: false, islandStyle: .wholeDoddy)
     Voice(status: .speaking, isMuted: false, islandStyle: .wholeDoddy)
     Voice(status: .listening, isMuted: true, islandStyle: .wholeDoddy)
-    Voice(status: .wakeListening, isMuted: false, islandStyle: .wholeDoddy)
 }
 
 #Preview("Voice · compact", as: .dynamicIsland(.compact), using: DoddyVoiceAttributes(startedAt: .now)) {
@@ -56,13 +55,6 @@ private typealias Voice = DoddyVoiceAttributes.ContentState
     DoddyToolAttributes.ContentState(isPaused: true, islandStyle: .wholeDoddy, elapsed: 727)
 }
 
-#Preview("Breathing · island", as: .dynamicIsland(.expanded),
-         using: DoddyToolAttributes(kind: .breathing, startedAt: .now, duration: 120)) {
-    DoddyToolLiveActivity()
-} contentStates: {
-    DoddyToolAttributes.ContentState(isPaused: false, endsAt: .now.addingTimeInterval(90), islandStyle: .wholeDoddy)
-}
-
 #Preview("Shopping · Lock Screen", as: .content, using: ShoppingActivityAttributes(listID: UUID())) {
     ShoppingLiveActivity()
 } contentStates: {
@@ -82,6 +74,46 @@ private typealias Voice = DoddyVoiceAttributes.ContentState
 
 #Preview("Talk to Doddy · Lock Screen", as: .accessoryCircular) {
     TalkToDoddyWidget()
+} timeline: {
+    SnapshotEntry(date: .now, snapshot: .preview)
+}
+
+#Preview("Timer · island", as: .dynamicIsland(.expanded),
+         using: DoddyToolAttributes(kind: .timer, startedAt: .now, duration: 600)) {
+    DoddyToolLiveActivity()
+} contentStates: {
+    DoddyToolAttributes.ContentState(isPaused: false, endsAt: .now.addingTimeInterval(540), label: "Pasta")
+    DoddyToolAttributes.ContentState(isPaused: false, endsAt: nil, label: "Pasta", isFinished: true)
+}
+
+#Preview("Wind-down · Lock Screen", as: .content,
+         using: DoddyToolAttributes(kind: .windDown, startedAt: .now, duration: 900)) {
+    DoddyToolLiveActivity()
+} contentStates: {
+    DoddyToolAttributes.ContentState(isPaused: false, endsAt: .now.addingTimeInterval(800))
+}
+
+#Preview("Note saved · island", as: .dynamicIsland(.expanded),
+         using: DoddyToolAttributes(kind: .noteSaved, startedAt: .now, duration: 0)) {
+    DoddyToolLiveActivity()
+} contentStates: {
+    DoddyToolAttributes.ContentState(isPaused: false, endsAt: nil, isFinished: true)
+}
+
+#Preview("New note", as: .systemSmall) {
+    NewNoteWidget()
+} timeline: {
+    SnapshotEntry(date: .now, snapshot: .preview)
+}
+
+#Preview("Saved thoughts", as: .systemSmall) {
+    SavedNotesWidget()
+} timeline: {
+    SnapshotEntry(date: .now, snapshot: .preview)
+}
+
+#Preview("Saved thoughts · Lock Screen", as: .accessoryRectangular) {
+    SavedNotesWidget()
 } timeline: {
     SnapshotEntry(date: .now, snapshot: .preview)
 }

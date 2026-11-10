@@ -104,6 +104,8 @@ struct IslandRect: Equatable, Sendable {
 SWIFT
 
 files=(
+  # The release scope this build shows (decision 2026-11-07-release-scope); ShortcutRouter and QuickActions read it.
+  DoddyApp/Infrastructure/ReleaseScopeStore.swift
   DoddyApp/Infrastructure/PersonalityPreferences.swift
   DoddyApp/Infrastructure/PinnedNotesStorage.swift
   DoddyApp/Infrastructure/ConversationLogStore.swift
@@ -111,6 +113,11 @@ files=(
   DoddyApp/Infrastructure/LearningStore.swift
   DoddyApp/Infrastructure/MemoryStore.swift
   DoddyApp/Infrastructure/MemoryStore+Lists.swift
+  # Conversation recaps (decision 2026-11-09-conversation-recaps): saves a recap as a note through MemoryStore.
+  DoddyApp/Features/Recaps/RecapKeeper.swift
+  DoddyApp/Features/Recaps/OnDeviceRecapWriter.swift
+  DoddyApp/Features/Recaps/RecapKeeper+Recordings.swift
+  DoddyApp/Features/Recaps/RecapKeeper+Phone.swift
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
   DoddyApp/Infrastructure/LegalAcceptanceStore.swift
@@ -134,18 +141,24 @@ files=(
   DoddyApp/Features/Voice/VoiceConfig.swift
   DoddyApp/Infrastructure/ActivityLogStore.swift
   Shared/Share/ShareInboxFile.swift
+  # Screen sharing with Doddy (decision 2026-11-09-doddy-looks-at-the-screen): the App Group files only.
+  Shared/Screen/ScreenShareFiles.swift
   # SiriNoteLookup picks Doddy's pose for an answer (ADR-313); IslandRect is stubbed above.
   Shared/IslandArt/IslandPose.swift
   # Motion v2: the one Doddy's director, kept free of SwiftUI so it is compiled here.
   DoddyApp/DesignSystem/Motion/DoddyDirector.swift
   # Calls Doddy places for the user (ADR-500): the screens' state, without the views.
   DoddyApp/Features/CallCases/CallCasesModel.swift
+  # Studio (ADR-740): the list, files and delete-with-read-back, without the views.
+  DoddyApp/Features/Studio/StudioModel.swift
   # This week's leaflets (SHOPPING.md 2): the screen's state and the voice tool's answer, without the views.
   DoddyApp/Features/Shopping/DealsModel.swift
   # Price watch (SHOPPING_WATCH.md): the card's flow and the list's state, without the views.
   DoddyApp/Features/Shopping/WatchModel.swift
   # The parcel list (ADR-641): its state and the look-up flow, without the views or the InPost client.
   DoddyApp/Features/Parcels/ParcelsModel.swift
+  # The "Na oku" page's state (ADR-756), without the view or the collector that reads the stores.
+  DoddyApp/Features/OpenLoops/OpenLoopsModel.swift
   # The kept training plan (ADR-625), without the screens.
   DoddyApp/Features/Sport/TrainingPlanStore.swift
   DoddyApp/Features/Sport/PlanText.swift

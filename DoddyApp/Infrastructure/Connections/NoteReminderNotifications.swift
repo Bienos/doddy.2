@@ -172,9 +172,17 @@ extension TimerBanners {
         let requestID = response.notification.request.identifier
         // A call Doddy made for the person has its answer ready (ADR-730): the tap opens Files › Calls,
         // where the recap is. The push says only that (the server sends a kind, never words or ids).
-        if ServerPushKind.parse(response.notification.request.content.userInfo) == .callResult {
+        let serverPush = ServerPushKind.parse(response.notification.request.content.userInfo)
+        if serverPush == .callResult {
             if action != UNNotificationDismissActionIdentifier {
                 await MainActor.run { ShortcutRouter.shared.callRecapsOpened() }
+            }
+            return
+        }
+        // A task or a file Doddy finished (owner, 10 Nov 2026): Messages opens, where his message about it is.
+        if serverPush?.opensMessages == true {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.messagesOpened() }
             }
             return
         }
@@ -215,6 +223,21 @@ extension TimerBanners {
             }
             return
         }
+        // "A thought is ready for review" (ADR-785) opens that note; opening it is what the
+        // review log records. Nothing else changes.
+        if ThoughtReview.isReview(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier,
+               let memoryString = response.notification.request.content.userInfo[ThoughtReview.memoryIDKey] as? String,
+               let memoryID = UUID(uuidString: memoryString) {
+                await MainActor.run {
+                    ThoughtReviewScheduler.opened(memoryID)
+                    NoteReminderRouter.shared.reminders?.pendingOpenMemoryID = memoryID
+                }
+            }
+            return
+        }
+        // A timer's or wind-down's "done" (ADR-780) just opens Doddy.
+        if CountdownSession.isCountdown(notificationID: requestID) { return }
         // The morning check-in (ADR-220) opens its screen; nothing else happens until the user taps.
         if MorningCheckIn.isCheckIn(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

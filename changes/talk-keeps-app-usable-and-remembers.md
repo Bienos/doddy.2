@@ -1,0 +1,5 @@
+Doddy keeps the app usable while he talks, and a long conversation is no longer forgotten whole.
+- Action Button / island start: opening Doddy no longer puts the transcript sheet over the app; Home shows the conversation (`TalkInIsland` → `HomeConversation.hold`, ADR-595). The sheet still opens for a card that needs the user, the island's Show and Transcript.
+- Memory of the last conversation (`VoiceContext`): when the newest conversation was longer than the 4000-character budget, none of it reached the next conversation. Now its last lines are kept, with a note that the start was cut. Doddy's own lines clip at 1000 characters instead of 400, so a list of ideas keeps its names. The 4000 budget is unchanged.
+- Tests added in `VoiceContextTests`. Not run: no Swift toolchain in this session, so `make test-core`, the app build and a device check are all NOT RUN.
+- Not done: Doddy putting his ideas into Messages (needs a new voice tool on the live agent; owner's call), and the silent/hiding island on the first press (needs a device log, `docs/implementation/VOICE_SESSION_STARTS.md`).

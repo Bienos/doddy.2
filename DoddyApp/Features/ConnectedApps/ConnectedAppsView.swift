@@ -116,7 +116,7 @@ struct ConnectedAppsView: View {
                         .accessibilityIdentifier("connectedApps.status")
                 }
                 if let label = model.connection?.accountLabel, model.cardState == .connected {
-                    Text("Calendar: \(label) (name reported by Google)")
+                    Text(verbatim: String(format: NSLocalizedString("Calendar: %@ (name reported by Google)", comment: ""), label))
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -136,7 +136,7 @@ struct ConnectedAppsView: View {
             }
         } footer: {
             if let checked = model.connection?.lastCheckedAt.flatMap(ConnectedAppsDates.instant) {
-                Text("Last checked \(checked.formatted(date: .omitted, time: .shortened))")
+                Text(verbatim: String(format: NSLocalizedString("Last checked %@", comment: ""), checked.formatted(date: .omitted, time: .shortened)))
             }
         }
     }
@@ -263,22 +263,24 @@ struct ConnectedAppsView: View {
                         Button("Save") { Task { await save(event, index: index, window: result.window) } }
                             .buttonStyle(.borderless)
                             .disabled(!store.isStorageAvailable || savingEvents.contains(index))
-                            .accessibilityLabel("Save \(event.title) to memories")
+                            .accessibilityLabel(String(format: NSLocalizedString("Save %@ to memories", comment: ""), event.title))
                     }
                 }
                 .accessibilityElement(children: .combine)
             }
             if result.truncated {
-                Text("Showing the first \(result.events.count) events.").font(.footnote)
+                Text(verbatim: String(format: NSLocalizedString("Showing the first %lld events.", comment: ""), result.events.count)).font(.footnote)
             }
             if result.cancelledHidden > 0 {
-                Text("\(result.cancelledHidden) cancelled event\(result.cancelledHidden == 1 ? "" : "s") hidden.").font(.footnote)
+                Text(verbatim: result.cancelledHidden == 1
+                     ? NSLocalizedString("1 cancelled event hidden.", comment: "")
+                     : String(format: NSLocalizedString("%lld cancelled events hidden.", comment: ""), result.cancelledHidden)).font(.footnote)
             }
             if let saveError {
                 Label(saveError, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
             }
         } header: {
-            Text("Tomorrow · \(result.window.date)")
+            Text(verbatim: String(format: NSLocalizedString("Tomorrow · %@", comment: ""), result.window.date))
         } footer: {
             Text(sourceText(result))
         }
@@ -331,7 +333,9 @@ private struct ReceiptRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(receipt.summary)
-            Text("\(Self.statusText(receipt.status)) · \(receipt.mode == .mock ? "demo" : "live") · \(ConnectedAppsDates.instant(receipt.timestamp)?.formatted(date: .abbreviated, time: .shortened) ?? receipt.timestamp)")
+            Text(verbatim: Self.statusText(receipt.status) + " · "
+                 + (receipt.mode == .mock ? NSLocalizedString("demo", comment: "") : NSLocalizedString("live", comment: ""))
+                 + " · " + (ConnectedAppsDates.instant(receipt.timestamp)?.formatted(date: .abbreviated, time: .shortened) ?? receipt.timestamp))
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -357,11 +361,11 @@ private struct ReceiptsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 ReceiptRow(receipt: receipt)
                 Group {
-                    Text("Operation: \(receipt.operation.rawValue) · \(receipt.capability)")
-                    Text("Account: \(receipt.accountLabel ?? "not shown")")
-                    if let code = receipt.errorCode { Text("Code: \(code)") }
-                    Text("Provider reference: \(receipt.providerReference ?? "none returned")")
-                    Text("Receipt ID: \(receipt.operationId.uuidString)")
+                    Text(verbatim: String(format: NSLocalizedString("Operation: %@ · %@", comment: ""), receipt.operation.rawValue, receipt.capability))
+                    Text(verbatim: String(format: NSLocalizedString("Account: %@", comment: ""), receipt.accountLabel ?? NSLocalizedString("not shown", comment: "")))
+                    if let code = receipt.errorCode { Text(verbatim: String(format: NSLocalizedString("Code: %@", comment: ""), code)) }
+                    Text(verbatim: String(format: NSLocalizedString("Provider reference: %@", comment: ""), receipt.providerReference ?? NSLocalizedString("none returned", comment: "")))
+                    Text(verbatim: String(format: NSLocalizedString("Receipt ID: %@", comment: ""), receipt.operationId.uuidString))
                 }
                 .font(.caption.monospaced())
                 .foregroundStyle(Theme.secondaryText)

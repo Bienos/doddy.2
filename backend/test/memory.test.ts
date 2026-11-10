@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, test } from "node:test";
 import { DEV_IDENTITIES } from "../src/auth.js";
 import { loadConfig } from "../src/config.js";
-import { ProviderError } from "../src/errors.js";
+import { AppError, ProviderError } from "../src/errors.js";
+import { MEMORY_MAX_NOTES, NOTE_SOURCES } from "../src/memory/contract.js";
 import { MemoryCipher } from "../src/memory/crypto.js";
 import { fold, queryTerms } from "../src/memory/search.js";
 import { type ClaudeProvider, ClaudeRefusal, MockClaudeProvider, type StructuredInput } from "../src/tools/claude.js";
@@ -188,6 +191,17 @@ test("notes are encrypted at rest: the stored bytes hold none of the text, and a
   assert.throws(() => new MemoryCipher(Buffer.alloc(32, 5)).decrypt(row.ciphertext, `${ID_A}:note:${uuid(2)}`), "another row's address");
 });
 
+test("a snapshot takes every source a note on the iPhone can have, as listed in schemas/memory.schema.json", async () => {
+  // Before 9 Nov 2026 one note Doddy took on a phone call ("noted_by_doddy") made the whole snapshot fail.
+  const schema = JSON.parse(readFileSync(join(process.cwd(), "..", "schemas", "memory.schema.json"), "utf8"));
+  const own: string[] = schema.properties.source.enum.filter((s: string) => s !== "sample_fixture");
+  assert.deepEqual([...NOTE_SOURCES].sort(), [...own].sort());
+  rig = await startWeb();
+  await turnOn(rig);
+  const res = await putNotes(rig, own.map((source, i) => note(i + 1, `Note ${i + 1}`, { source })));
+  assert.deepEqual(res.body, { count: own.length }, res.text);
+});
+
 const BAD_SNAPSHOTS: [string, () => unknown][] = [
   ["an extra field on a note", () => [{ ...note(1, "ok ok"), transcript: "x" }]],
   ["a blank note", () => [note(1, "   ")]],
@@ -212,6 +226,23 @@ for (const [name, items] of BAD_SNAPSHOTS) {
     assert.equal((await rig.store.memoryNoteRows(ID_A)).length, 1);
   });
 }
+
+test("a note list over the most is refused before any note in it is read; one at the most is stored", async () => {
+  rig = await startWeb();
+  await turnOn(rig);
+  let touched = 0;
+  const trap = new Proxy({}, { get: () => { touched += 1; return undefined; } });
+  await assert.rejects(rig.memory.replaceNotes(ID_A, { items: Array.from({ length: MEMORY_MAX_NOTES + 1 }, () => trap) }), (e: unknown) => e instanceof AppError && e.code === "invalid_request");
+  assert.equal(touched, 0, "no note was looked at");
+
+  const over = await putNotes(rig, Array.from({ length: MEMORY_MAX_NOTES + 1 }, (_, i) => note(i + 1, "a b", { capturedAt: ago(1) })));
+  assert.equal(over.status, 400, over.text.slice(0, 200));
+  assert.equal(over.body.error.code, "invalid_request");
+  assert.equal(over.body.error.message, "That wasn't valid (items). Nothing was stored.");
+  const atMost = await putNotes(rig, Array.from({ length: MEMORY_MAX_NOTES }, (_, i) => note(i + 1, "a b", { capturedAt: ago(1) })));
+  assert.equal(atMost.status, 200, atMost.text.slice(0, 200));
+  assert.equal((await rig.store.memoryNoteRows(ID_A)).length, MEMORY_MAX_NOTES);
+});
 
 test("a refusal names the section and never what was sent", async () => {
   rig = await startWeb();

@@ -52,8 +52,6 @@
   <script src="/i18n.js" defer></script>
   <!-- i18n:dictionary --><script src="/i18n/pt-br.js" defer></script><!-- /i18n:dictionary -->
   <script src="/main.js" defer></script>
-  <script src="/court.js" defer></script>
-  <script src="/memory.js" defer></script>
   <script src="/analytics.js" defer></script>
   <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
        /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
@@ -105,7 +103,6 @@
           <li><a href="#asks">O que você pede</a></li>
           <li><a href="/pt-br/what-can-doddy-do/">O que o Doddy pode fazer?</a></li>
           <li><a href="#meet">Conheça o Doddy</a></li>
-          <li><a href="#play">Jogar</a></li>
           <li><a href="/pt-br/blog/">Blog</a></li>
           <li><a href="#privacy">Privacidade</a></li>
         </ul>
@@ -120,7 +117,6 @@
           <li><a href="#asks">O que você pede</a></li>
           <li><a href="/pt-br/what-can-doddy-do/" class="menu-new">O que o Doddy pode fazer? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">Conheça o Doddy</a></li>
-          <li><a href="#play">Jogar</a></li>
           <li><a href="/pt-br/blog/">Blog</a></li>
           <li><a href="#privacy">Privacidade</a></li>
         </ul>
@@ -143,7 +139,7 @@
             <a class="button" href="#join">Inscreva-se no acesso antecipado</a>
             <a class="text-link" href="#asks">Ver os grandes pedidos</a>
           </div>
-          <p class="fineprint">O Doddy é uma IA, não uma pessoa. Suas notas ficam no seu iPhone.</p>
+          <p class="fineprint">Doddy é uma IA, não uma pessoa. Suas notas ficam guardadas no seu iPhone. A voz, as chamadas, as listas compartilhadas e as contas conectadas enviam dados dele só quando você ativa.</p>
         </div>
         <div class="demo" aria-label="Exemplo: um pedido vira um cartão">
           <p class="ask big">Doddy, organiza a quinta. O dentista passou para as 14h, depois encontro a Alex e preciso de pão.<small>dito em voz alta, 23h30</small></p>
@@ -215,46 +211,6 @@
       </div>
     </section>
 
-    <section class="film" id="film" aria-labelledby="film-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="film-title" class="display-m">Uma manhã em Varsóvia.</h2>
-          <p>Um vídeo curto sobre o Doddy, uma bola que ele nunca chega a largar e um pombo muito determinado. 1 minuto e 15 segundos, melhor com som.</p>
-        </div>
-        <div class="film-stage">
-          <div class="film-card">
-            <span class="tape t1" aria-hidden="true"></span>
-            <span class="tape t2" aria-hidden="true"></span>
-            <div class="player">
-              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Vídeo de marca do Doddy, 1 minuto e 15 segundos">
-                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
-              </video>
-              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>Prévia, sem som</span>
-              <button class="cover" type="button" aria-label="Assistir ao vídeo com som">
-                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
-                <span class="cover-label" aria-hidden="true"><span class="cover-title">Assista ao vídeo</span>1:15 · com som</span>
-              </button>
-            </div>
-          </div>
-          <div class="film-doddy" aria-hidden="true">
-            <p class="says">Sou eu.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
-          </div>
-        </div>
-        <ol class="chapters" aria-label="Pule para um momento do vídeo">
-          <li><button type="button" data-seek="0"><span class="t">0:00</span>Praça do Castelo</button></li>
-          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>Uma grande pergunta</button></li>
-          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Todos os idiomas de uma vez</button></li>
-          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>Perguntando a um local</button></li>
-          <li><button type="button" data-seek="38"><span class="t">0:38</span>O pombo</button></li>
-          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>Coração partido no portão</button></li>
-          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>Fechado</button></li>
-          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
-        </ol>
-        <p class="caption film-caption">Vídeo de marca. Uma história sobre o Doddy, não uma demonstração do app.</p>
-      </div>
-    </section>
-
     <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
     <section class="vs-section" aria-labelledby="vs-title">
       <div class="wrap">
@@ -313,54 +269,6 @@
     </section>
 
     <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
-    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
-      <div class="wrap play-head">
-        <div>
-          <p class="pill"><span class="dot" aria-hidden="true"></span>Enquanto você espera</p>
-          <h2 id="play-intro-title" class="display-m">Dois jogos. Uma bola que ele nunca larga.</h2>
-        </div>
-        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
-      </div>
-    </section>
-
-    <section class="court" id="shoot" aria-labelledby="play-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="play-title" class="display-m">Arremessar</h2>
-          <p>O Doddy nunca chega a largar a bola. Pressione qualquer ponto da quadra, puxe para trás e solte para arremessar. Ou deixe o Doddy tentar.</p>
-        </div>
-        <div class="court-panel">
-          <canvas id="court" width="800" height="520" role="img" aria-label="Jogo de basquete: o Doddy arremessa a bola na cesta. Use o botão Lançar por mim para arremessar."></canvas>
-          <div class="court-bar">
-            <p class="court-score" aria-live="polite">Cestas <strong id="made">0</strong> de <strong id="shots">0</strong> arremessos</p>
-            <button class="button small" id="auto-shot" type="button">Lançar por mim</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="memory" id="remember" aria-labelledby="remember-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="remember-title" class="display-m">Lembrar isto</h2>
-          <p>Seis pequenas coisas, doze cartas. Vire duas por vez e encontre os pares. O Doddy é melhor nisso do que todos nós.</p>
-        </div>
-        <div class="court-panel memory-panel">
-          <div class="memory-stage">
-            <div class="memory-grid" id="memory-grid" role="group" aria-label="Cartas da memória"></div>
-            <div class="memory-doddy">
-              <p class="memory-bubble" id="memory-bubble" aria-live="polite">Vire duas. Encontre o par.</p>
-              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
-            </div>
-          </div>
-          <div class="court-bar">
-            <p class="court-score">Pares <strong id="memory-pairs">0</strong> de 6 · Jogadas <strong id="memory-moves">0</strong></p>
-            <button class="button small" id="memory-restart" type="button">Novo jogo</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="privacy" id="privacy" aria-labelledby="privacy-title">
       <div class="wrap">
         <div class="privacy-panel">
@@ -373,8 +281,8 @@
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
-              <h3>Sem conta</h3>
-              <p>Sem cadastro, sem e-mail, sem senha. Abra o app e comece.</p>
+              <h3>Um só login</h3>
+              <p>Entre com Apple ou Google. Nenhuma senha para lembrar.</p>
             </li>
             <li>
               <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
@@ -387,7 +295,7 @@
               <p>Apague uma nota ou todas. Elas saem da busca na hora.</p>
             </li>
           </ul>
-          <p class="privacy-note">O Doddy é uma IA, não uma pessoa. Algumas coisas que você liga enviam dados para fora do celular: conversas por voz (OpenAI, ou ElevenLabs se você trocar a voz), consultas de clima e Wikipédia (um nome de lugar ou palavras de busca), chamadas e memória nas chamadas (servidor do Doddy, Twilio e ElevenLabs), listas compartilhadas (seu iCloud) e contas conectadas como Gmail ou Todoist (pelo servidor do Doddy). Todo o resto fica no seu iPhone. Tudo isso está em teste.</p>
+          <p class="privacy-note">O Doddy é uma IA, não uma pessoa. Algumas coisas que você liga enviam dados para fora do celular: conversas por voz (ElevenLabs), consultas de clima e Wikipédia (um nome de lugar ou palavras de busca), chamadas e memória nas chamadas (servidor do Doddy, Twilio e ElevenLabs), listas compartilhadas (seu iCloud) e contas conectadas como Gmail ou Todoist (pelo servidor do Doddy). Todo o resto fica no seu iPhone. Tudo isso está em teste.</p>
         </div>
       </div>
     </section>
@@ -445,8 +353,8 @@
               <p id="answers-status" class="status" role="status" aria-live="polite"></p>
             </form>
             <ul class="join-facts" aria-label="O que significa o acesso antecipado">
-              <li><b>Sem conta.</b> Abra o app e comece.</li>
-              <li><b>Suas notas ficam no seu iPhone.</b> E-mail, agenda e arquivos só quando você conectar.</li>
+              <li><b>Um só login.</b> Apple ou Google, e pronto.</li>
+              <li><b>Suas notas ficam guardadas no seu iPhone.</b> Voz, chamadas, listas compartilhadas, e-mail, agenda e arquivos saem dele só quando você ativa.</li>
               <li><b>Apague quando quiser.</b> Seu e-mail, suas notas, tudo.</li>
             </ul>
             <div class="open-app">

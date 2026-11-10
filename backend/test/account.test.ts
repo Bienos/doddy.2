@@ -50,6 +50,13 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
   );
   await q("INSERT INTO tool_switches (user_id, tool, enabled, changed_at) VALUES ($1, 'check_email', 1, 1)", [userId]);
   await q("INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, 1, '{}')", [`tr-${tag}`, userId]);
+  // Payments (ADR-734): receipts and the per-attempt ledger go with the account.
+  await q("INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, 1, '{}')", [`pr-${tag}`, userId]);
+  await q(
+    `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
+     VALUES ($1, $2, 1, 1, 'shop.example', 50000, 'base-sepolia', 'h', 1, 'settled')`,
+    [`pay-${tag}`, userId],
+  );
   await q("INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'ready', 'a.md', 'text/markdown', $3, 1)", [
     `doc-${tag}`,
     userId,
@@ -60,6 +67,22 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
     `INSERT INTO web_sessions (session_id, user_id, token_hash, browser, os, created_at, last_seen_at, expires_at)
      VALUES ($1, $2, $3, 'Safari', 'macOS', 1, 1, 9999999999999)`,
     [`ws-${tag}`, userId, `th-${tag}`],
+  );
+  // ADR-818: a linked Google sign-in, and an iPhone's link ticket not yet opened.
+  await q("INSERT INTO web_identities (identity_id, user_id, provider, created_at) VALUES ($1, $2, 'google', 1)", [uuid(3), userId]);
+  await q(
+    `INSERT INTO web_oauth_states (state_hash, user_id, provider, intent, return_to, verifier, created_at, expires_at)
+     VALUES ($1, $2, 'google', 'link', 'app', 'v', 1, 9999999999999)`,
+    [`os-${tag}`, userId],
+  );
+  await q("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, 'google', 1)", [userId]);
+  // ADR-819: another iPhone signed in to this account.
+  await q("INSERT INTO device_joins (device_user_id, user_id, provider, created_at) VALUES ($1, $2, 'google', 1)", [uuid(5), userId]);
+  // Decision 2026-11-08-required-account: a Doddy account that took over this person's earlier iPhone data.
+  await q("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, 1)", [uuid(6), userId]);
+  await q(
+    `INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, 'google', 1, 9999999999999)`,
+    [`lp-${tag}`, userId, uuid(4)],
   );
   await q("INSERT INTO logbook_state (user_id, enabled, changed_at) VALUES ($1, true, 1)", [userId]);
   await q("INSERT INTO logbook_days (user_id, day, summary, received_at) VALUES ($1, '2026-10-09', '{}', 1)", [userId]);
@@ -98,14 +121,23 @@ test("eraseUser deletes every row of one person, queues every grant for removal,
     for (const table of ERASED_TABLES) assert.ok(erased.deleted[table] >= 1, `${table} had a row of A`);
     const after = await rows(store, ID_A);
     for (const table of ERASED_TABLES) assert.equal(after[table], 0, `${table} still holds A`);
-    // The open sign-in's grant and both connections are owed a removal at the provider.
+    // The open sign-in's grant, both connections, the linked Google sign-in (ADR-818, at Supabase) and
+    // the Doddy account that took over A's data (decision 2026-11-08-required-account) are owed a removal.
     assert.deepEqual(
       erased.cleanups.map((c) => `${c.provider}:${c.connectionId}`).sort(),
-      [`${CALENDAR_PROVIDER}:conn-cal-aaaa`, "gmail:pending-aaaa", "notion:conn-notion-aaaa"].sort(),
+      [
+        `${CALENDAR_PROVIDER}:conn-cal-aaaa`,
+        "gmail:pending-aaaa",
+        "notion:conn-notion-aaaa",
+        "supabase_auth:aaaa0000-0000-4000-8000-000000000003",
+        "supabase_auth:aaaa0000-0000-4000-8000-000000000006",
+      ].sort(),
     );
-    assert.equal(after.cleanups, 3);
-    // The erasure itself cut off A's earlier sign-ins (ADR-709), and that cut-off is kept (KEPT_ON_ERASE).
+    assert.equal(after.cleanups, 5);
+    assert.deepEqual(erased.subjects, ["aaaa0000-0000-4000-8000-000000000006"]);
+    // The erasure itself cut off A's earlier sign-ins (ADR-709) and its account's, and the cut-offs are kept (KEPT_ON_ERASE).
     assert.equal(after.token_floor, 1);
+    assert.equal(await store.tokenFloor("aaaa0000-0000-4000-8000-000000000006"), 1, "the account's own sign-ins end too");
     assert.equal(erased.tokensValidAfter, 1, "the second after the erasure's clock (5 ms)");
     assert.equal(await store.tokenFloor(ID_A), 1);
     assert.equal(await store.tokenFloor(ID_B), 0, "nobody else is cut off");

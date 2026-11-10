@@ -1,10 +1,12 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
+import { textApprovalHash } from "./approval.js";
 import type pg from "pg";
 import { DEFAULT_ABUSE_LIMITS } from "./config.js";
 import { returnCounter, takeCounter } from "./dailyCounters.js";
 import { sha256, type TextCipher } from "./crypto.js";
 import { log } from "./log.js";
 import type { Db } from "./db.js";
+import { scheduleDeletion } from "./providerRecords.js";
 import { isAllowedNumber } from "./phoneCountries.js";
 import type { PushData, PushSender, SendOutcome, SmsSender } from "./providers/types.js";
 import { returnServerSlot, takeServerSlot } from "./serverUsage.js";
@@ -13,6 +15,9 @@ export type Channel = "push" | "sms";
 
 export const MAX_ATTEMPTS = 5;
 export const STALE_SENDING = "5 minutes";
+/** How long after an unknown outcome Twilio's message list is checked (DOD-09), and how often. */
+export const LOOKUP_AFTER = "2 minutes";
+export const MAX_LOOKUPS = 3;
 
 type Queryable = pg.Pool | pg.PoolClient;
 
@@ -70,6 +75,11 @@ export interface EnqueueOptions {
   fingerprint?: string;
   /** When set, the body is stored encrypted instead of in plain text. In production it is required (ADR-706). */
   cipher?: TextCipher;
+  /**
+   * A text the user approved on a card (ADR-750): the hash of the number and the exact text they
+   * saw. The worker checks it again right before sending.
+   */
+  approvalHash?: Buffer;
   /** Texts queued per UTC day: per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
   smsCaps?: { perAccount: number; perServer: number };
 }
@@ -91,16 +101,21 @@ export async function enqueue(
   for (const channel of channels) {
     const id = randomUUID();
     const sealed = opts.cipher?.encrypt(body, bodyAad(accountId, id));
+    // An SMS keeps a hash of its exact text until its outcome is known, so an unknown one can be
+    // found in Twilio's message list (reconcileUnknownSms).
+    const bodyHash = channel === "sms" ? sha256(body) : null;
+    const approval = channel === "sms" ? opts.approvalHash ?? null : null;
     const slots = channel === "sms" ? await takeSmsSlots(db, accountId, idempotencyKey, opts.smsCaps) : undefined;
     let inserted: number | null;
     try {
       ({ rowCount: inserted } = await db.query(
         `INSERT INTO outbound_messages
-           (id, account_id, channel, idempotency_key, body, body_ciphertext, body_key_version, send_at, state, payload_hash)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'queued', $9)
+           (id, account_id, channel, idempotency_key, body, body_ciphertext, body_key_version, send_at, state, payload_hash,
+            body_hash, approved_text, approval_hash)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'queued', $9, $10, $11, $12)
          ON CONFLICT (account_id, channel, idempotency_key) DO NOTHING`,
         [id, accountId, channel, idempotencyKey, sealed ? null : body, sealed ?? null,
-          sealed ? opts.cipher!.keyVersion : null, sendAt, payloadHash]));
+          sealed ? opts.cipher!.keyVersion : null, sendAt, payloadHash, bodyHash, approval !== null, approval]));
     } catch (err) {
       // Inside a transaction the rollback undoes the count anyway; outside one it must be given back here.
       await slots?.giveBack().catch(() => {});
@@ -143,12 +158,15 @@ async function takeSmsSlots(
 
 export async function cancelQueuedSms(db: Queryable, accountId: string): Promise<void> {
   await db.query(
-    `UPDATE outbound_messages SET state = 'cancelled', error_code = 'sms_not_enabled', body = NULL, body_ciphertext = NULL, body_key_version = NULL, updated_at = now()
+    `UPDATE outbound_messages SET state = 'cancelled', error_code = 'sms_not_enabled', ${ERASE}, updated_at = now()
      WHERE account_id = $1 AND channel = 'sms' AND state = 'queued'`,
     [accountId]);
 }
 
-interface Claimed { id: string; account_id: string; channel: Channel; body: string; attempts: number; idempotency_key?: string }
+/** Erases a message's text and its hashes: for a final state whose outcome is known. */
+export const ERASE = "body = NULL, body_ciphertext = NULL, body_key_version = NULL, approval_hash = NULL, body_hash = NULL";
+
+interface Claimed { id: string; account_id: string; channel: Channel; body: string; attempts: number; approval_hash: Buffer | null; idempotency_key?: string }
 interface ClaimedRow extends Omit<Claimed, "body"> { body: string | null; body_ciphertext: Buffer | null }
 
 export interface Senders {
@@ -177,7 +195,7 @@ export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise
      UPDATE outbound_messages m
      SET state = 'sending', attempts = m.attempts + 1, updated_at = now()
      FROM due WHERE m.id = due.id
-     RETURNING m.id, m.account_id, m.channel, m.body, m.body_ciphertext, m.attempts, m.idempotency_key`,
+     RETURNING m.id, m.account_id, m.channel, m.body, m.body_ciphertext, m.attempts, m.approval_hash, m.idempotency_key`,
     [batch]);
   for (const row of rows) {
     // Claimed rows wait their turn in this batch. Refresh the claim just before sending so the
@@ -216,10 +234,15 @@ function openBody(cipher: TextCipher | undefined, row: ClaimedRow): string | und
 
 /**
  * What a tap on this push should open, from the key it was queued under (the call worker queues
- * `call-result:<attempt>`). A kind only: the attempt, the case and the words stay on the server and in the app.
+ * `call-result:<attempt>`, the errand worker `errand-result:<id>`, the file watch `file-watch:<id>`). A kind
+ * only: the attempt, the task, the file and the words stay on the server and in the app. A finished task or
+ * file opens Messages, where Doddy's message about it is (owner, 10 Nov 2026).
  */
 export function pushData(idempotencyKey: string | undefined): PushData | undefined {
-  return idempotencyKey?.startsWith("call-result:") ? { kind: "call-result" } : undefined;
+  if (idempotencyKey?.startsWith("call-result:")) return { kind: "call-result" };
+  if (idempotencyKey?.startsWith("errand-result:")) return { kind: "errand-result" };
+  if (idempotencyKey?.startsWith("file-watch:")) return { kind: "file-ready" };
+  return undefined;
 }
 
 async function sendPush(db: Db, sender: PushSender | undefined, msg: Claimed): Promise<SendOutcome | { kind: "cancelled"; code: string }> {
@@ -254,6 +277,11 @@ async function sendSms(
   // Re-checked at send time: consent may have been withdrawn after the message was queued.
   const to = await smsNumber(db, msg.account_id);
   if (!to) return { kind: "cancelled", code: "sms_not_enabled" };
+  // An approved text goes out only if the number and the text are still exactly what the user
+  // approved (ADR-750, DOD-07): a changed number, or a stored text that changed, sends nothing.
+  if (msg.approval_hash && !timingSafeEqual(textApprovalHash(to, msg.body), msg.approval_hash)) {
+    return { kind: "rejected", code: "approval_mismatch" };
+  }
   // A number verified before the country list existed (or before it changed) is not texted either (ADR-704).
   if (!isAllowedNumber(to, allowedCountryCodes)) return { kind: "cancelled", code: "sms_country_not_allowed" };
   const r = await sender.send(to, msg.body);
@@ -267,15 +295,22 @@ async function sendSms(
 async function finalize(db: Db, msg: Claimed, o: SendOutcome | { kind: "cancelled"; code: string }): Promise<void> {
   const final = async (state: string, code: string | null, providerId: string | null = null) => {
     const r = await db.query(
+      // An unknown outcome keeps its hashes until Twilio's message list has been checked.
       `UPDATE outbound_messages
-       SET state = $2, error_code = $3, provider_message_id = $4, body = NULL, body_ciphertext = NULL, body_key_version = NULL, updated_at = now()
+       SET state = $2, error_code = $3, provider_message_id = $4, body = NULL, body_ciphertext = NULL, body_key_version = NULL,
+         approval_hash = CASE WHEN $2 = 'unknown' THEN approval_hash END,
+         body_hash = CASE WHEN $2 = 'unknown' THEN body_hash END, updated_at = now()
        WHERE id = $1 AND state = 'sending'`,
       [msg.id, state, code, providerId]);
     // The row was reaped meanwhile: the real outcome would otherwise vanish without a trace.
     if (!r.rowCount) log("outcome after reap", { id: msg.id, outcome: state, code });
   };
   switch (o.kind) {
-    case "accepted": await final("sent", null, o.providerId); break;
+    case "accepted":
+      await final("sent", null, o.providerId);
+      // Twilio's record of the text is deleted later (ADR-753), receipt or not.
+      if (msg.channel === "sms") await scheduleDeletion(db, "message", o.providerId);
+      break;
     case "rejected": await final("failed", o.code); break;
     case "unknown": await final("unknown", o.code); break;
     case "cancelled": await final("cancelled", o.code); break;
@@ -288,4 +323,57 @@ async function finalize(db: Db, msg: Claimed, o: SendOutcome | { kind: "cancelle
          WHERE id = $1 AND state = 'sending'`,
         [msg.id, o.code, 30 * 2 ** (msg.attempts - 1)]);
   }
+}
+
+/** One message in Twilio's message list, as the lookup needs it. */
+export interface SentRecord { sid: string; body: string; createdAt: Date; status: string }
+
+/**
+ * Reconciliation first (DOD-09): a text whose outcome is unknown is looked up in Twilio's message
+ * list a little later, by its recipient and the hash of its exact text. Found, it becomes `sent`
+ * with Twilio's id and status; not found, it stays unknown and says so. Never resent here.
+ */
+export async function reconcileUnknownSms(db: Db, sms: SmsSender | undefined, batch = 5): Promise<number> {
+  if (!sms?.recentMessagesTo) return 0;
+  const { rows } = await db.query<{ id: string; body_hash: Buffer; created_at: Date; e164: string; lookup_attempts: number }>(
+    `SELECT m.id, m.body_hash, m.created_at, p.e164, m.lookup_attempts FROM outbound_messages m
+     JOIN phone_numbers p ON p.account_id = m.account_id
+     WHERE m.state = 'unknown' AND m.channel = 'sms' AND m.lookup IS NULL AND m.body_hash IS NOT NULL
+       AND m.updated_at < now() - $1::interval
+     ORDER BY m.updated_at LIMIT $2`, [LOOKUP_AFTER, batch]);
+  for (const row of rows) {
+    const records = await sms.recentMessagesTo(row.e164).catch(() => undefined);
+    if (!records) {
+      // Couldn't ask Twilio: try again after the same wait, then give up and say so.
+      await db.query(
+        `UPDATE outbound_messages SET lookup_attempts = lookup_attempts + 1, updated_at = now(),
+           lookup = CASE WHEN lookup_attempts + 1 >= $2 THEN 'failed' END,
+           approval_hash = CASE WHEN lookup_attempts + 1 >= $2 THEN NULL ELSE approval_hash END,
+           body_hash = CASE WHEN lookup_attempts + 1 >= $2 THEN NULL ELSE body_hash END
+         WHERE id = $1 AND state = 'unknown'`, [row.id, MAX_LOOKUPS]);
+      continue;
+    }
+    const earliest = row.created_at.getTime() - 5 * 60_000;
+    const match = records.find((r) => r.createdAt.getTime() >= earliest && sha256(r.body).equals(row.body_hash));
+    if (match) {
+      try {
+        await db.query(
+          `UPDATE outbound_messages SET state = 'sent', provider_message_id = $2, delivery_status = $3, lookup = 'found',
+             error_code = NULL, approval_hash = NULL, body_hash = NULL, updated_at = now()
+           WHERE id = $1 AND state = 'unknown'`, [row.id, match.sid, match.status]);
+        await scheduleDeletion(db, "message", match.sid);
+      } catch {
+        // That Twilio message already belongs to another row: don't guess, and don't look again.
+        await db.query(
+          `UPDATE outbound_messages SET lookup = 'failed', approval_hash = NULL, body_hash = NULL, updated_at = now()
+           WHERE id = $1 AND state = 'unknown'`, [row.id]);
+      }
+    } else {
+      await db.query(
+        `UPDATE outbound_messages SET lookup = 'not_found', approval_hash = NULL, body_hash = NULL, updated_at = now()
+         WHERE id = $1 AND state = 'unknown'`, [row.id]);
+    }
+    log("unknown text looked up", { id: row.id, found: !!match });
+  }
+  return rows.length;
 }

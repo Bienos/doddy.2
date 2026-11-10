@@ -2,7 +2,7 @@
 
 > **DRAFT. NOT LEGAL ADVICE. NOT REVIEWED. NOT PUBLISHED.**
 >
-> - This file was written from the code and the docs in this repository on 2026-10-11. It is for the owner and a lawyer to review.
+> - This file was written from the code and the docs in this repository on 2026-10-11. It is for the owner and a lawyer to review. On 2026-10-18, sections 5.6, 5.7, 9.1 and Appendix C were updated for Doddy's phone number (units U1 to U4, ADR-750 to ADR-754), which isn't live yet.
 > - It is not published, not linked from the app or the website, and not an approved notice under GDPR, the EU AI Act or App Store rules.
 > - Text in [BRACKETS] is a placeholder. Text tagged **[CONFIRM: ...]** is something the code or docs do not settle.
 > - Every statement is meant to match what the code does today. Where the app's own screens say something different, this is noted in Appendix B.
@@ -118,22 +118,16 @@ Common points:
 | Item | Detail |
 |---|---|
 | Who | Doddy's own small server (`server/voice-token`) on Vercel Functions: project `doddy-voice-token`, team `doddyyyy`, address `doddy-voice-token-beta.vercel.app` (ADR-521). It keeps its records in Upstash Redis. **[CONFIRM: Vercel and Upstash regions, and the processor agreements with both]** |
-| What is sent | **Signing in (once):** Apple's identity token from Sign in with Apple, a one-time number (nonce) that ties it to this request, and Apple's one-time authorization code (used only so the link can be revoked later; ADR-524). **Each conversation:** a short-lived Doddy access token and the voice provider you picked (and, for OpenAI, the model). No audio, transcripts, notes or profile. (ADR-522, `server/voice-token/README.md`.) |
+| What is sent | **Signing in (once):** Apple's identity token from Sign in with Apple, a one-time number (nonce) that ties it to this request, and Apple's one-time authorization code (used only so the link can be revoked later; ADR-524). **Each conversation:** a short-lived Doddy access token and ElevenLabs (the only voice). No audio, transcripts, notes or profile. (ADR-522, `server/voice-token/README.md`.) |
 | What it does | Checks the Apple token with Apple's published keys. If Doddy's Sign in with Apple key is set up, it also swaps the authorization code with Apple for a token that lets it end the Sign in with Apple link when you delete your voice account. Then it swaps your Doddy session for a one-conversation ElevenLabs token or a short-lived OpenAI client secret, so the provider API keys stay on the server. It limits each account to 30 conversations an hour by default. |
 | What it keeps | A keyed pseudonym of your Apple account ID (not the ID itself), your session records, hashes of your refresh tokens (not the tokens), and short-lived counters for one-time numbers and rate limits. If Doddy's Sign in with Apple key is set up, also Apple's refresh token for you, encrypted, kept only to revoke the link and deleted with your account. Refresh tokens last 30 days and rotate on use; access tokens last 10 minutes and stay on the iPhone. **[CONFIRM: whether Apple's identity token carries your email and whether the server reads it; the code keeps only the subject]** |
 | Logged | One line per request: action or provider, outcome, status and duration. No content, credentials, Apple account ID or user identifier (`server/voice-token/README.md`). The hosting platform may keep its own request logs. **[CONFIRM: Vercel log retention and IP logging]** |
 | Opt-in? | Required for voice; nothing else in the app needs it. Settings, Voice has Sign out of voice and Delete voice account. Deleting removes your sessions on the server. Once Doddy's Sign in with Apple key is set up, it first asks Apple to revoke the Sign in with Apple link (ADR-524); the account is deleted even if Apple doesn't answer. Until then, and for accounts made before it, the app tells you to remove it in your Apple ID settings (go-live checklist C8). **[CONFIRM: the key is set and a revoke was seen to work, before this sentence is published]** |
 | Legal basis | **[CONFIRM: proposed: performance of the service you asked for]** |
 
-### 5.3 OpenAI: Doddy's voice (a choice in the voice picker; ElevenLabs is the default, ADR-546)
+### 5.3 OpenAI as a voice: removed on 9 Nov 2026
 
-| Item | Detail |
-|---|---|
-| Who | OpenAI (Realtime API). **[CONFIRM: OpenAI entity, terms, region]** |
-| What is sent | The same as 5.1: your voice, the conversation, notes, list names, personality settings and the rest of the prompt. The prompt, notes and tools go from the phone straight to OpenAI, not through Doddy's server. (`server/voice-token/README.md`, ADR-265.) |
-| When | Only while a conversation is open and the voice picker says OpenAI. ElevenLabs is the default (ADR-546), including for people who never chose; someone who chose OpenAI under ADR-442 keeps it. |
-| Retention | The app says: how long OpenAI keeps the audio and transcript "isn't verified in this build" (`DataFlow`). **[CONFIRM]** |
-| Opt-in? | Yes: nothing goes to OpenAI for voice unless you pick OpenAI in Settings › Voice (or on Home after your first conversation); the picker also picks the model (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`). **[CONFIRM: the consent wording for people who chose OpenAI while it was the default]** |
+OpenAI Realtime, and the voice picker that chose it, were removed from the app and the token server (decision `2026-11-09-elevenlabs-only-voice`). Nothing goes to OpenAI for voice. OpenAI still appears as the language model behind the ElevenLabs agent (section 5.1, checked 24 Oct 2026), for Ask Doddy's fallback and for the news writer (5.x below). Conversations kept on a phone from before this date may be marked as run by OpenAI; they stay on the phone.
 
 ### 5.4 Ask Doddy (typed questions): Doddy's server and Anthropic
 
@@ -165,16 +159,22 @@ Common points:
 | Stored | The number is stored in the database in plain form (`phone_numbers.e164`). Only a hash of the number is kept in the 2-day table that limits repeated codes. Message text is encrypted while queued if the server has its key (otherwise plain) and is erased when the message reaches a final state. **[CONFIRM: encrypt the stored phone number or accept]** |
 | Opt-in? | Yes: you verify the number and agree in the app. A STOP reply cancels texts. |
 | Logs | Ids and counts only. No message text, phone numbers or tokens. (`server/messaging/README.md`, `src/log.ts`.) |
+| **Texts you approve (U2, ADR-752)** | When you ask Doddy in a conversation to text you, a card shows the exact text; only after you tap Send does the text go to the server and then to Twilio, to your own verified number only. It is stored encrypted and erased once Twilio reports a final status. While an outcome is unclear, the server keeps a SHA-256 hash of the text to find it in Twilio's message list, then erases it. 20 approved texts a day per account. |
+| **Texts you send to Doddy's number (U3, ADR-753)** | Off by default ("Accept texts from my number", consent wording `texts-in-v1`). A text from your verified number travels carrier → Twilio → the server. It waits as an encrypted note (`call_notes`, source `text`) until you save or discard it in the app; at most 20 notes wait. Texts from any other number are dropped without a reply: only Twilio's message id is kept, to delete Twilio's record. No model reads it and nothing is sent back by this switch. The server keeps a row per text from you (Twilio's id, state, time) with no text in it. |
+| **Answers by text** | Not part of this feature. An answer by text is "Text with Doddy" (ADR-656, its own switch and consent wording; **[CONFIRM: this draft does not describe it yet. It sends your question to Anthropic, as Messages does, and its answer by text over the phone network. Someone must add it.]**). It sends nothing from your notes or memories. When "Texts to Doddy" is on for your number, your text becomes a note and gets no answer; when it is off, Text with Doddy decides. One handler per text, never both. |
+| **Records at Twilio** | Doddy deletes its message and call records at Twilio `TWILIO_RECORD_DELETE_AFTER_HOURS` after they are final (default 24 hours), strangers' texts included. Twilio says deleted message bodies can stay in its backups for up to 30 days. The server keeps the Twilio ids of deleted records for 30 days. **[CONFIRM: Twilio's own retention]** |
 
 ### 5.7 Doddy messaging server: phone calls with Doddy
 
 | Item | Detail |
 |---|---|
-| What | Doddy can answer calls from your verified number, and can call you ("call me now"). Calls run on an ElevenLabs phone agent through a Twilio number. You set a 6 to 8 digit PIN, stored only as a scrypt hash. Rows record each call: direction, status, conversation ID, call ID, time. |
-| Recording and transcript | The phone agent is set up with no audio recording and transcripts kept 30 days at ElevenLabs (`voice-agent/phone/session.json`, ADR-158). The setup script has not been run: "The phone agent is not created yet" (`voice-agent/README.md`). The agent is configured to use Google's `gemini-2.5-flash` model. Twilio keeps its own call records. **[CONFIRM: all of this; Twilio call-record retention]** |
-| Notes from calls | Notes Doddy takes on a call wait on the server, encrypted, until you confirm or discard them in the app. They have no expiry in the code reviewed for this draft. **[CONFIRM: add an expiry?]** |
-| Limits | Outbound calls: 3 per hour, 10 per day. |
-| Opt-in? | Yes: calls are off until turned on; outbound calls need separate consent (`calls-v1`). |
+| What | Doddy can answer calls from your verified number, and can call you ("call me now"). Calls reach the messaging server first (U1, ADR-750), which lets only your verified number through to an ElevenLabs phone agent; other callers hear one fixed sentence. You set a 6 to 8 digit PIN, stored only as a scrypt hash. Rows record each call: direction, status, conversation ID, call ID, time. |
+| Recording and transcript | The phone agent is set up with no audio recording and transcripts kept 30 days at ElevenLabs (`voice-agent/phone/session.json`, ADR-158). The setup script has not been run: on 2026-10-18 there was no phone agent in ElevenLabs (`voice-agent/README.md`). The agent is configured to use Google's `gemini-2.5-flash` model. Doddy deletes its call records at Twilio a day after each call by default (5.6, "Records at Twilio"). **[CONFIRM: all of this; Twilio call-record retention]** |
+| Notes from calls | Notes Doddy takes on a call wait on the server, encrypted, until you confirm or discard them in the app. At most 20 wait. They have no expiry in the code reviewed for this draft. **[CONFIRM: add an expiry?]** |
+| **Calls you book for later (U4, ADR-754)** | You ask Doddy to call you at a time "about" something. A card shows the time, the exact sentence Doddy will say and a quiet-hours switch; nothing is booked until you tap Book. The server stores the time, the reason (encrypted, at most 200 characters) and your iPhone's time zone (to check quiet hours, 21:00 to 08:00, where you are). At the time, Twilio places the call and Doddy says the reason to whoever answers, voicemail included (the card says so). The reason is erased when the call ends or won't happen; the row (time, state) stays. The time zone stays in your call settings. |
+| Limits | Outbound calls: 3 per hour, 10 per day; at most 10 booked calls waiting, from 1 minute to 7 days ahead. |
+| Opt-in? | Yes: calls are off until turned on; outbound calls need separate consent (`calls-v1`). Turning "Doddy may call me" off cancels booked calls and erases their reasons. |
+| Export | Settings → Phone calls → "Export phone and text history" gives a JSON file of your calls, text statuses and waiting notes (`GET /v1/phone/history`). |
 
 ### 5.8 Doddy messaging server: "Memory on calls" (copy of your notes)
 
@@ -260,13 +260,29 @@ Status: server and web pages built and tested; iPhone rules built and tested in 
 | Logs | Counts, token numbers and timings only, never a note, a turn, a question or an answer (tested with planted strings). The host's own request logs (IP, path, status) are kept by Render. **[CONFIRM: host log retention]** |
 | Legal basis | **[CONFIRM: consent, withdrawn by switching off]** |
 
+### 5.14 Recaps of conversations ("Remember what we talked about"; decision 2026-11-09-conversation-recaps)
+
+A recap is a short note of what was discussed, agreed and left to do after a conversation: three lists of short points, never the words themselves. **Off until you turn on "Remember what we talked about"** (Settings › What Doddy knows). Never for a Private conversation, a conversation with under 30 words from you, or anything from before you turned it on. Each recap is a normal note you can edit or delete.
+
+| Item | Detail |
+|---|---|
+| Four kinds | A conversation with Doddy in the app; a recording written out on this iPhone (Recordings, by a tap on "Write a recap" or automatically with the switch on); a call to or from Doddy's phone line; a call Doddy made for you. |
+| Who writes it | **A conversation or a recording:** Apple's on-device model on this iPhone (iOS 26 with Apple Intelligence in your language): nothing leaves the phone. If it can't, Doddy's messaging server asks Anthropic (Claude), **only** with the separate switch "Recaps on Doddy's server" on (off by default; a tap on "Write a recap" is never that yes). **A call to or from the phone line:** Doddy's messaging server, from the call's transcript, which ElevenLabs sends it after the call (the workspace post-call webhook, signed; the server reads only the phone agent's payloads), and Anthropic (Claude). Only while "Remember what we talked about" is on for your account. **A call Doddy made for you:** this iPhone, by fixed rules, from the call's card and answer; no model and no transcript. |
+| What is sent | For the server writer: the lines of the conversation or recording, or the phone call's transcript, for that one recap. Nothing else: no notes, no profile, no phone number. The same instructions are used on the iPhone and the server (`schemas/fixtures/recap_instructions_v1.json`). |
+| What the server keeps | **Nothing of the words.** `POST /v1/recaps` uses the lines for the one call and drops them. For phone calls the server keeps only the three lists, encrypted with a key bound to your account and the call (`phone_recaps`), until this iPhone has saved them as a note and said so (then the server deletes its copy), or for 30 days. Turning the switch off deletes the ones waiting. Logs hold counts, token numbers and timings, never a word (tested with planted strings: `server/messaging/test/recap.test.ts`, `phoneRecaps.test.ts`). A recap counts as one Messages request against the daily limits (`ASSISTANT_DAILY_PER_ACCOUNT`, `ASSISTANT_DAILY_PER_SERVER`). |
+| What the app checks | A model's answer is a proposal: it must be exactly three lists, at most 6 points of 240 characters, and no point may copy 10 or more words in a row from the conversation, or nothing is saved. "Saved" is shown only after the note was read back. |
+| What stays elsewhere | **ElevenLabs** keeps its own record of a call to the phone line for the retention set on the agent (30 days, no audio: `voice-agent/phone/session.json`; read 10 Nov 2026 on the live agent: audio recording off, retention 30 days, zero-retention off). This feature neither adds to nor shortens it. **Anthropic**: how long it keeps requests is not verified. Render keeps its own request logs (IP, path, status). |
+| Recordings | Until this feature, a recording's words never left the iPhone (ADR-588; the Recordings code still cannot reach the network). They now do only with "Recaps on Doddy's server" on, from a different part of the app. |
+| Legal basis | **[CONFIRM: consent, by the two switches; withdrawn by switching off]** |
+| **[CONFIRM]** | Anthropic entity, terms, region and retention for the API key's organisation; whether telling the caller that a recap is made is required for phone calls (the phone agent says it is an AI in its first sentence; it does not say a recap is made); Apple's terms for the on-device model; the effect on the retention table in Section 9. |
+
 ## 6. Permissions the app asks for
 
 The app asks for these only. Each text below is the app's own wording (`project.yml` and `Config/Doddy-Info.plist`). Not listed means the app does not ask: no camera, no photo library, no motion, no Bluetooth, no health data, no advertising ID, no "Always" location.
 
 | Permission | Why (the app's own words) |
 |---|---|
-| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone." |
+| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it. A voice memo you record on a note stays on this iPhone." |
 | **Speech recognition** | "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere." |
 | **Contacts** | "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections." |
 | **Calendar (full access)** | "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections." |
@@ -287,7 +303,7 @@ The Share extension and the widgets ask for nothing (ADR-311). The Apple Watch a
 
 **AI transparency (draft statement, EU AI Act Article 50).**
 - Doddy is an AI system. When you talk to Doddy, you are talking to software and not to a person.
-- Doddy's voice is generated by a speech system (OpenAI Realtime by default, or ElevenLabs).
+- Doddy's voice is generated by a speech system (ElevenLabs; OpenAI Realtime was removed on 9 Nov 2026).
 - Doddy's answers can be wrong. Check anything that matters.
 - The app says "Doddy is an AI, not a person" on Home and on the Ask screen (`HomeView.swift`, `AskView.swift`). The voice prompt tells Doddy to say plainly that it is an AI when asked. The phone agent says it in its first sentence (`voice-agent/instructions.md`, `voice-agent/phone/instructions.md`, ADR-191, ADR-194).
 - The voice agent's own greeting ("Hey, it's Doddy. what's up?") does not say it is an AI. The disclosure on the voice screen is by text on screen and by answer when asked. **[CONFIRM: with a specialist whether Article 50 needs more, and from what date; whether synthetic audio must be marked; ElevenLabs' and OpenAI's role as provider and ours as deployer]**
@@ -350,7 +366,11 @@ What the app **cannot** delete:
 | Memory copy | Until Memory on calls is turned off | ADR-153 |
 | Notes kept on Doddy's server for the web | Until you turn it off or delete; mirrors the iPhone; 365 days without a send | ADR-603, `backend/src/store.ts` |
 | Conversations kept on Doddy's server for the web | 365 days from when they started, or until you delete them | ADR-603 |
-| Call notes | Until you confirm or discard them **[CONFIRM: expiry]** | `002_calls.sql` |
+| Call notes, and notes from your texts | Until you confirm or discard them **[CONFIRM: expiry]** | `002_calls.sql`, `019_texts_to_doddy.sql` |
+| A row for each text you sent Doddy with "Texts to Doddy" on: state and time only, no text (the text is the note above) | Until the account is deleted **[CONFIRM: retention of these rows]** | `019_texts_to_doddy.sql` |
+| Reason of a booked call | Until the call ends or won't happen; 2 hours after a placed call whose end Twilio never reported | `020_scheduled_calls.sql`, `scheduledCalls.ts` |
+| Booked-call rows (time, state) and your time zone | Until the account is deleted **[CONFIRM: retention]** | `020_scheduled_calls.sql` |
+| Message and call records at Twilio | Deleted by Doddy 24 hours after final by default; Twilio backups up to 30 days | `providerRecords.ts`, ADR-753 |
 | Verification-start records | 2 days (hash of number only) | `routes/phone.ts` |
 | News sent records / digests / feed cache | 14 days / 30 days / 24 hours | `news/digest.ts`, `news/sources.ts` |
 | Backend receipts and usage counters | **[CONFIRM: no pruning today]** | `SECURITY_AND_PERMISSIONS.md` |
@@ -399,7 +419,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A8 | Private conversation is on-device only | ADR-170 |
 | A9 | Translator mode data | `DataFlow.swift` row `translator`; ADR-215 |
 | A10 | Token server behaviour and logs | `server/voice-token/README.md`; `docs/implementation/VOICE_TOKEN_SERVER_STATUS.md` |
-| A11 | OpenAI voice (default), direct from the phone | `server/voice-token/README.md`; ADR-265; `DataFlow.swift` row `openaiVoice` |
+| A11 | ~~OpenAI voice, direct from the phone~~ removed 9 Nov 2026 | decision `2026-11-09-elevenlabs-only-voice` |
 | A12 | Ask Doddy data, limits, no storage, not yet run against Anthropic | `backend/src/assist.ts`; `backend/test/assist.test.ts`; ADR-587 (the old OpenAI gateway: `docs/architecture/ASSISTANT_GATEWAY.md`, ADR-113) |
 | A13 | Messaging server tables, anonymous account, phone number plain, hash-only token | `server/messaging/migrations/001_init.sql` to `007`; `server/messaging/src/routes/account.ts` |
 | A14 | Built-in messaging address empty | `DoddyApp/Infrastructure/Server/ServerConfig.swift` |
@@ -440,6 +460,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A49 | Browser can read, search, export and delete, never switch keeping on | `backend/src/memory/routes.ts`; `backend/test/memory.test.ts` |
 | A50 | Logs hold no note, turn, question or answer | `backend/test/memory.test.ts` (planted strings) |
 | A51 | The switch follows the server's answer; a delete is only reported when the server confirmed | `Packages/DoddyCore/Sources/DoddyCore/OnlineAccounts/WebMemoryModel.swift`; `WebMemoryModelTests.swift` |
+| A52 | Recaps: off by default, never Private, no words kept on the server, the phone-call recap keeps only three encrypted lists until saved or 30 days, the iPhone and the server use the same instructions, a tap is not a yes to the server | `Packages/DoddyCore/Sources/DoddyCore/Recap/`; `DoddyApp/Features/Recaps/`; `server/messaging/src/assistant/recap.ts`, `phoneRecaps.ts`, `routes/phoneRecaps.ts`; `server/messaging/migrations/025_phone_recaps.sql`; decision 2026-11-09-conversation-recaps |
 
 ## Appendix B. Open questions for the owner and the lawyer
 
@@ -524,15 +545,15 @@ Based on the code and `PrivacyInfo.xcprivacy`. Apple counts data that leaves the
 
 | Apple data type | Collected? | Linked to user? | Used for tracking? | Purpose | What and why | Status |
 |---|---|---|---|---|---|---|
-| Audio data (Voice or sound recordings) | Yes | Declared "not linked" in `PrivacyInfo.xcprivacy`. A random install ID is sent as the conversation user ID. | No | App functionality | Your voice goes to ElevenLabs (or OpenAI). | **[CONFIRM: linked or not; ElevenLabs keeps it]** |
-| Other user content | Yes | Declared "linked" | No | App functionality | Notes, list names and items, conversations, drafts, calendar and reminder text, email previews and other results sent to ElevenLabs or the server (which passes Ask Doddy questions to Anthropic). **With "Keep on Doddy's server" on: the text of your notes and conversations, kept on Doddy's server for a year, and read by Claude (Anthropic) to answer a question on the web.** | **[CONFIRM]** |
+| Audio data (Voice or sound recordings) | Yes | Declared "not linked" in `PrivacyInfo.xcprivacy`. A random install ID is sent as the conversation user ID. | No | App functionality | Your voice goes to ElevenLabs. | **[CONFIRM: linked or not; ElevenLabs keeps it]** |
+| Other user content | Yes | Declared "linked" | No | App functionality | Notes, list names and items, conversations, drafts, calendar and reminder text, email previews and other results sent to ElevenLabs or the server (which passes Ask Doddy questions to Anthropic). Since U4, the reason of a call you book (kept until the call is over). **With "Keep on Doddy's server" on: the text of your notes and conversations, kept on Doddy's server for a year, and read by Claude (Anthropic) to answer a question on the web.** | **[CONFIRM]** |
 | Name | Yes | Declared "not linked" | No | App functionality | Your first name or nickname when About you is shared with voice. | **[CONFIRM]** |
-| Phone number | Yes, only if you use texts or calls | Declared "linked" | No | App functionality | Sent to the messaging server and Twilio. | **[CONFIRM]** |
+| Phone number | Yes, only if you use texts or calls | Declared "linked" | No | App functionality | Your verified number goes to the messaging server and Twilio. Doddy texts and calls only that number. | **[CONFIRM]** |
 | User ID | Yes | Declared "linked" | No | App functionality | Anonymous account ID and device token (messaging), session token (backend; also what Ask Doddy uses). | **[CONFIRM]** |
 | Device ID | Yes | Declared "not linked" | No | App functionality | Random install ID (not the advertising ID). Notification token. | **[CONFIRM: a notification token may be a device ID]** |
 | Contacts | Yes, when asked in a voice conversation | Not declared. Probably linked to the voice conversation. | No | App functionality | Contact names and birthday day and month go to ElevenLabs. | **[CONFIRM: missing from the manifest]** |
-| Precise or coarse location | Mostly no. Where you are is sent to Apple Maps, which is Apple. A parking spot stays on the iPhone. | Not declared | No | App functionality | Place reminders, leave-by, parking. | **[CONFIRM: does Apple Maps use count as collection by the app?]** |
-| Emails or text messages | Possibly: email previews and one whole email reach ElevenLabs through your connected account. | Not declared | No | App functionality | Only when you switch the matching tool on. | **[CONFIRM: "Emails or text messages", "Other user content"]** |
+| Precise or coarse location | Mostly no. Where you are is sent to Apple Maps, which is Apple. A parking spot stays on the iPhone. Since U4, the iPhone's time zone (such as `Europe/Warsaw`) goes to the server to check quiet hours for booked calls. | Not declared | No | App functionality | Place reminders, leave-by, parking, quiet hours. | **[CONFIRM: does Apple Maps use count as collection by the app? Does a time zone count as coarse location? The lawyer decides.]** |
+| Emails or text messages | **Draft answer: Yes**, for texts. Since U2 to U4: the text of an SMS you approve leaves the app for the server and Twilio; texts you send Doddy's number with "Texts to Doddy" on are kept on the server as notes (no model reads them and nothing is sent back). Email previews and one whole email also reach ElevenLabs through a connected account. | **Draft answer: linked** (tied to the messaging account and your number). Not declared in `PrivacyInfo.xcprivacy` yet. | No | App functionality | Only when you switch the matching feature on. Apple's category covers the content, sender and recipients of messages. | **[CONFIRM: the owner and the lawyer decide (ADR-752, ADR-753, ADR-754). If yes, `PrivacyInfo.xcprivacy` gains `NSPrivacyCollectedDataTypeEmailsOrTextMessages`, linked, app functionality.]** |
 | Search history | Possibly: web search words go to the backend and Monid; Ask Doddy questions go to Doddy's server and Anthropic. | Not declared | No | App functionality | | **[CONFIRM]** |
 | Photos or videos | No. Photos stay on the iPhone and are chosen with the picker. | | | | | **[CONFIRM]** |
 | Health, fitness, financial info, browsing history, purchases | No | | | | | |

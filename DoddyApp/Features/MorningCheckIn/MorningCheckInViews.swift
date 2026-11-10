@@ -52,7 +52,7 @@ struct MorningCheckInView: View {
                             Text("Nothing left on your lists.").foregroundStyle(Theme.secondaryText)
                         }
                         ForEach(briefing.lists, id: \.listID) { list in
-                            Text("\(list.name) · \(list.openCount) to go")
+                            Text(verbatim: String(format: NSLocalizedString("%@ · %lld to go", comment: ""), list.name, list.openCount))
                         }
                     }
                     .accessibilityIdentifier("checkin.lists")
@@ -64,7 +64,7 @@ struct MorningCheckInView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("checkin.talk")
-                    Text("Talking sends these reminders and list names to ElevenLabs, or OpenAI if you switch Home's voice to it to run the conversation, as any conversation does. Calendar events are read only if Calendar is on in Settings, Connections.")
+                    Text("Talking sends these reminders and list names to ElevenLabs to run the conversation, as any conversation does. Calendar events are read only if Calendar is on in Settings, Connections.")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                     Button("Not now") { dismiss() }.frame(minHeight: 44)
                 }

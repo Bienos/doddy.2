@@ -32,8 +32,7 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
         /// Asked to connect; the microphone opens when the voice service is ready.
         case connecting
         case listening
-        /// What the user says isn't sent. The microphone itself may still be open (the OpenAI test
-        /// voice keeps capturing and drops it), so this still counts as open.
+        /// What the user says isn't sent. The microphone itself may still be open, so this still counts as open.
         case muted
         /// "Listen until I finish" (ADR-364): the conversation is muted and the iPhone records the
         /// turn itself, to write it out on the device.

@@ -28,6 +28,16 @@ public struct ThreadDocument: Equatable, Sendable, Codable {
         self.init(url: document.url, name: document.name, kind: document.kind)
     }
 
+    /// The server's id of this file, read from its link (`…/v1/documents/<24 characters>`), so the bubble can tell from the
+    /// files list whether it is still being made. nil for any other link; the id is only ever compared, never requested.
+    public var documentID: String? {
+        let parts = url.pathComponents
+        guard parts.count >= 2, parts[parts.count - 2] == "documents" else { return nil }
+        let id = parts[parts.count - 1]
+        guard id.count == 24, id.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }) else { return nil }
+        return id
+    }
+
     /// For the bubble: "Deck", "Document", …
     public var label: String {
         switch kind {
@@ -79,11 +89,14 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
     /// The name of a file the person sent with this message (7 Nov 2026). Only the name is kept: the file went with the
     /// question and is not stored.
     public let attachedFileName: String?
+    /// A native action offer/receipt, not a generated answer. Persisted so reopening keeps that distinction.
+    public let isLocalAction: Bool
 
     public init(
         id: UUID = UUID(), sender: Sender, text: String, createdAt: Date, delivery: Delivery,
         basis: Basis? = nil, noteIDs: [UUID] = [], notesSent: Int = 0, notesSearchFailed: Bool = false,
-        document: ThreadDocument? = nil, hasPhoto: Bool = false, attachedFileName: String? = nil
+        document: ThreadDocument? = nil, hasPhoto: Bool = false, attachedFileName: String? = nil,
+        isLocalAction: Bool = false
     ) {
         self.id = id
         self.sender = sender
@@ -97,6 +110,7 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
         self.document = document
         self.hasPhoto = hasPhoto
         self.attachedFileName = attachedFileName
+        self.isLocalAction = isLocalAction
     }
 
     /// A message the user is sending now.
@@ -108,7 +122,7 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, sender, text, createdAt, delivery, basis, noteIDs, notesSent, notesSearchFailed, document, hasPhoto
-        case attachedFileName
+        case attachedFileName, isLocalAction
     }
 
     /// An export written before photos existed has no `hasPhoto`; it reads as false.
@@ -122,7 +136,8 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
             notesSearchFailed: try c.decode(Bool.self, forKey: .notesSearchFailed),
             document: try c.decodeIfPresent(ThreadDocument.self, forKey: .document),
             hasPhoto: try c.decodeIfPresent(Bool.self, forKey: .hasPhoto) ?? false,
-            attachedFileName: try c.decodeIfPresent(String.self, forKey: .attachedFileName))
+            attachedFileName: try c.decodeIfPresent(String.self, forKey: .attachedFileName),
+            isLocalAction: try c.decodeIfPresent(Bool.self, forKey: .isLocalAction) ?? false)
     }
 
     /// Doddy's answer, from what the assistant returned.

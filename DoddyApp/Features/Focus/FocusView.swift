@@ -7,6 +7,8 @@ import SwiftUI
 struct FocusView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// The clock's size grows with Dynamic Type (it was a fixed 44 pt).
+    @ScaledMetric(relativeTo: .largeTitle) private var clockSize: CGFloat = 44
     @State private var minutes = 25
     @State private var label = ""
     @State private var starting = false
@@ -58,7 +60,7 @@ struct FocusView: View {
                 .font(.title2.weight(.medium))
                 .accessibilityAddTraits(.isHeader)
             Picker("Minutes", selection: $minutes) {
-                ForEach(FocusSession.presetMinutes, id: \.self) { Text("\($0) min").tag($0) }
+                ForEach(FocusSession.presetMinutes, id: \.self) { Text(verbatim: String(format: NSLocalizedString("%lld min", comment: ""), $0)).tag($0) }
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("focus.minutes")
@@ -98,7 +100,9 @@ struct FocusView: View {
                                 .monospacedDigit()
                         }
                     }
-                    .font(.system(size: 44, weight: .medium))
+                    .font(.system(size: clockSize, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(Color.islandCream)
                     .accessibilityIdentifier("focus.timeLeft")
                     Text(session.label ?? (session.isPaused ? "Ready when you are" : "One thing at a time"))

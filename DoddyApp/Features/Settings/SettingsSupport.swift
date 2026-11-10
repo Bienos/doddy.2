@@ -183,65 +183,23 @@ struct JSONExport: Transferable {
     }
 }
 
-/// Who runs Doddy's voice, and for OpenAI which model (ADR-265, ADR-442). Same notes, lists, tools
-/// and cards either way; it takes effect when the next conversation starts, and Settings › What
-/// leaves this iPhone follows it. Always in Settings › Voice; on Home only after the first
-/// conversation (ADR-325, ADR-443), so a new user's Home keeps to Talk to Doddy.
-struct VoiceProviderPicker: View {
-    /// "home" or "settings", for the UI tests' identifiers.
-    let idPrefix: String
-    /// Empty until the user chooses; then ElevenLabs (ADR-546).
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
-    @AppStorage(OpenAIRealtimeModel.preferenceKey) private var realtimeModel = OpenAIRealtimeModel.default.rawValue
-
-    var body: some View {
-        let provider = VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true)
-        VStack(alignment: .leading, spacing: 6) {
-            Picker("Voice", selection: Binding(get: { provider.rawValue }, set: { voiceProvider = $0 })) {
-                ForEach(VoiceProvider.allCases) { option in
-                    Text(verbatim: option.shortName).tag(option.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("\(idPrefix).voiceProvider")
-            if provider == .openAIRealtime {
-                Picker("OpenAI model", selection: $realtimeModel) {
-                    ForEach(OpenAIRealtimeModel.allCases) { option in
-                        Text(verbatim: option.shortName).tag(option.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("\(idPrefix).realtimeModel")
-            }
-            Text(verbatim: provider == .openAIRealtime
-                ? "OpenAI Realtime \(OpenAIRealtimeModel(stored: realtimeModel).shortName) runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
-                : "ElevenLabs runs your next conversation.")
-                .font(.caption2).foregroundStyle(Theme.secondaryText)
-            // ADR-633: a Debug build's developer connection reaches ElevenLabs only, so OpenAI asks for
-            // Sign in with Apple, which needs a paid Apple team (not `make project-iphone`).
-            if provider == .openAIRealtime && VoiceConfig.openAIWithoutAccount {
-                // ADR-726: this Debug build asks for OpenAI with no voice account. The server must allow it.
-                Text(verbatim: "This build asks for OpenAI without a Doddy voice account. It works only while the token server allows it; otherwise sign in with Apple.")
-                    .font(.caption2).foregroundStyle(Theme.secondaryText)
-                    .accessibilityIdentifier("\(idPrefix).openAIWithoutAccount")
-            } else if provider == .openAIRealtime && VoiceConfig.directVoiceEnabled {
-                Text(verbatim: "OpenAI needs your Doddy voice account: Sign in with Apple, which needs a paid Apple team. The developer connection only reaches ElevenLabs.")
-                    .font(.caption2).foregroundStyle(Theme.secondaryText)
-                    .accessibilityIdentifier("\(idPrefix).openAINeedsAccount")
-            }
-        }
-    }
-}
-
 /// Voice identity is optional until the first voice feature is used. The persistent session
 /// restores in the background and sign-out revokes it on DODDY's server.
 struct VoiceAccountSettings: View {
     @State private var session = VoiceAuthSession.shared
+    @State private var doddyAccount = DoddyAccountModel.shared
     @State private var confirmDelete = false
+
+    private var voiceAccountValue: String {
+        if session.isSignedIn { return "Connected" }
+        // Decision 2026-11-08-required-account: the Doddy account also opens voice.
+        if doddyAccount.isSignedIn { return NSLocalizedString("Your Doddy account", comment: "") }
+        return "Sign in when you first use voice"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            StatusRow(title: "Voice account", value: session.isSignedIn ? "Connected" : "Sign in when you first use voice")
+            StatusRow(title: "Voice account", value: voiceAccountValue)
                 .accessibilityIdentifier("settings.voiceAccount")
             if session.isSignedIn {
                 Button("Sign out of voice", role: .destructive) {

@@ -23,7 +23,7 @@ export const INTERRUPTED_GRACE_MS = 5 * 60_000;
 export const UNACKED_DAYS = 30;
 
 export const PUSH_TEXT = {
-  done: { pl: "Gotowe. Wynik sprawy czeka w aplikacji.", en: "Done. Your task's result is waiting in the app." },
+  done: { pl: "Gotowe. Wynik czeka w Wiadomościach.", en: "Done. The result is waiting in Messages." },
   failed: { pl: "Nie udało się dokończyć sprawy.", en: "Doddy couldn't finish a task." },
 } as const;
 export const pushText = (kind: "done" | "failed", language: string) => (language === "pl" ? PUSH_TEXT[kind].pl : PUSH_TEXT[kind].en);

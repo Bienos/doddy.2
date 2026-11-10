@@ -6,7 +6,8 @@ extension VoiceToolRequest {
     /// Nil unless `name` is one of the online-account tools. The arguments are passed on untouched
     /// (the server validates them strictly); only "is it a JSON object" is checked here.
     static func parseCloud(name: String, parametersJSON: Data) -> VoiceToolRequest? {
-        guard CloudToolName.all.contains(name) else { return nil }
+        // `pay_for_page` rides the same route (one card, then the server) but is not an online-account tool.
+        guard CloudToolName.all.contains(name) || name == PaymentToolName.payForPage else { return nil }
         guard let arguments = try? JSONDecoder().decode([String: JSONValue].self, from: parametersJSON) else {
             return .invalid(name: name, reason: "arguments must be a JSON object")
         }

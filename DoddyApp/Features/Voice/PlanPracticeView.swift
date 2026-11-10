@@ -78,7 +78,7 @@ struct PlanPracticeView: View {
             Text("What would happen")
                 .font(.headline)
             ForEach(steps) { step in
-                Text("\(step.number). \(results[step.number] ?? "")")
+                Text(verbatim: "\(step.number). \(results[step.number] ?? "")")
                     .font(.subheadline)
             }
             Button("Try again") {

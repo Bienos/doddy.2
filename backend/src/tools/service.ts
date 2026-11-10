@@ -3,6 +3,7 @@ import { type CompleteRequest, CompleteRequestSchema, type ConnectionReason, typ
 import type { Limits } from "../config.js";
 import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
+import { AccessRequestSchema, type AppAccess, isAppsTool, toolsForAccess, translateAppsCall } from "./apps.js";
 import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
 import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
@@ -392,11 +393,11 @@ export class CloudToolsService {
       // A fresh connection never inherits switches from an earlier one.
       await this.store.disableTools(userId, toolNames(id), this.now());
       if (verdict !== "ok") return await done("blocked", blockedSummary(title, verdict), reason);
-      // ADR-563: connecting is the user saying "use this", usually from the Connect card in the
-      // middle of a request, so the account's tools come on with it. ASK-01 is unchanged: every
-      // read still asks, and every send, change or delete still needs a tap on its exact card.
-      for (const name of toolNames(id)) await this.store.setToolEnabled(userId, name, true, this.now());
-      return await done("succeeded", `${title} connected. Doddy can use it now; he still asks before every look and every change.`);
+      // ADR-816 (replaces ADR-563's "tools come on with the connection"): a connection starts with
+      // every tool off, and the user chooses Off, Read only or Read and act for the app
+      // (PUT /v1/tools/access). ASK-01 is unchanged: every read still asks, and every send,
+      // change or delete still needs a tap on its exact card.
+      return await done("succeeded", `${title} connected. Doddy won't use it until you choose what he may do: look only, or look and act.`);
     } catch (error) {
       if (error instanceof AppError) throw error;
       const appError = toAppError(error, title);
@@ -522,6 +523,40 @@ export class CloudToolsService {
     return { toolkit: await this.view(userId, tool.toolkit), receipt };
   }
 
+  /**
+   * One choice per app (ADR-815): Off, Read only, or Read and act. It only sets the app's existing
+   * per-tool switches in bulk, so everything those switches already mean still holds, and ASK-01
+   * still asks before every look and every change. Only tools the account can run come on (the
+   * grant may not cover them all); if none can, nothing changes and the reason is returned.
+   */
+  async setAppAccess(userId: string, body: unknown): Promise<ToolkitResult> {
+    const request = parse(AccessRequestSchema, body);
+    const id = toolkit(request.app);
+    const def = TOOLKITS[id];
+    const wanted = toolsForAccess(id, request.mode);
+    let on = wanted.on;
+    let off = wanted.off;
+    if (on.length > 0) {
+      this.requireConfigured(id);
+      const row = await this.store.getConnection(userId, id);
+      const blocks = on.map((name) => this.blockReason(row, def, this.requireTool(name)));
+      // Only tools the account can really run come on (the grant may not cover them all). If none
+      // can, the account itself is the problem (not connected, expired, wrong grant): refuse, change nothing.
+      const usable = on.filter((_, i) => blocks[i] === null);
+      if (usable.length === 0) {
+        const reason = blocks.find((b) => b !== null)!;
+        throw new AppError(reason.code, { message: reason.message(def.title) });
+      }
+      off = [...off, ...on.filter((name) => !usable.includes(name))];
+      on = usable;
+    }
+    for (const name of off) await this.store.setToolEnabled(userId, name, false, this.now());
+    for (const name of on) await this.store.setToolEnabled(userId, name, true, this.now());
+    const label: Record<AppAccess, string> = { off: "off", read: "read only", act: "read and act" };
+    const receipt = await this.receipt(userId, id, "switch", null, "succeeded", `${def.title} access set to ${label[request.mode]}.`, null, null);
+    return { toolkit: await this.view(userId, id), receipt };
+  }
+
   // ---------------------------------------------------------------- prepare / run
 
   /**
@@ -540,6 +575,12 @@ export class CloudToolsService {
    */
   async prepare(userId: string, body: unknown): Promise<PrepareResult> {
     const request = parse(PrepareRequestSchema, body);
+    if (isAppsTool(request.tool)) {
+      // A1 (ADR-815): a generic call becomes the one reviewed read it maps to, and everything below
+      // (switch, grants, ASK-01 approval bound to the translated arguments, caps) applies to that.
+      const call = translateAppsCall(request.tool, request.arguments);
+      return { ...(await this.prepare(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
+    }
     if (isWebTool(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
     if (isClaudeTool(request.tool)) return this.prepareClaude(userId, request.tool, request.arguments);
     const tool = this.requireTool(request.tool);
@@ -745,6 +786,10 @@ export class CloudToolsService {
 
   async run(userId: string, body: unknown): Promise<RunResult> {
     const request = parse(RunRequestSchema, body);
+    if (isAppsTool(request.tool)) {
+      const call = translateAppsCall(request.tool, request.arguments);
+      return { ...(await this.run(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
+    }
     if (isWebTool(request.tool)) return this.runWebSearch(userId, request.tool, request);
     if (isClaudeTool(request.tool)) return this.runClaude(userId, request.tool, request);
     const tool = this.requireTool(request.tool);
@@ -1030,7 +1075,8 @@ export class CloudToolsService {
         tool,
         text:
           `started: Claude is making the ${info.label} "${doc.title}". It takes one to three minutes. ` +
-          "A button to open it is on the user's screen now; it shows the file as soon as it's ready. Tell the user that in one sentence. Don't read out any link. " +
+          "A card to open it is on the user's screen now, and it also arrives as Doddy's message in Messages in the app, where Share saves it to Files or sends it on. " +
+          "Tell the user that in one sentence. Don't read out any link. " +
           MODEL_TEXT_LABEL,
         count: 1,
         truncated: false,
