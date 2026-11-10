@@ -55,5 +55,23 @@ dokąd."
 Before this change the paragraph was English in every language, and it pointed to "Settings › What leaves this
 iPhone", a path that doesn't exist.
 
+## Examples on the scenes (9 Nov 2026)
+Each scene in the carousel (decision `2026-11-09-what-i-can-do-scenes`) shows one thing you could say, under
+"Say, for example" / "Powiedz na przykład" ("Type, for example" / "Napisz na przykład" for Messages). The words are in
+`WhatICanDo.example`; one short line each, no exclamation marks, never the person's data.
+
+| Feature | English | Polish |
+|---|---|---|
+| Talk | What’s 15% of 240? | Ile to 15% z 240 zł? |
+| Notes | Note: the bike is on level −2. | Zapisz: rower stoi na poziomie −2. |
+| Lists | Add milk and bread to the shopping list. | Dopisz mleko i chleb do zakupów. |
+| Reminders | Remind me at 8 tomorrow to call Mum. | Przypomnij mi jutro o 8, żeby zadzwonić do mamy. |
+| Messages | What’s in this photo? | Co jest na tym zdjęciu? |
+| Phone calls | Call me in an hour. | Zadzwoń do mnie za godzinę. |
+| Calls for you | Ring the repair shop and ask if my laptop is ready. | Zadzwoń do serwisu i zapytaj, czy laptop jest gotowy. |
+| Tasks | Compare flights to Lisbon in May. | Porównaj loty do Lizbony w maju. |
+| Cheapest this week | Where’s butter cheapest this week? | Gdzie w tym tygodniu jest najtańsze masło? |
+| Translate | Translate, I’m talking to someone in Spanish. | Tłumacz, rozmawiam z kimś po hiszpańsku. |
+
 ## Not reviewed yet
 The Polish has not been read by a second bilingual reviewer (§3.8). The owner approved the words on 9 Nov 2026 ("narazie ok", OK for now).

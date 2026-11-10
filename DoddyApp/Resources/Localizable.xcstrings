@@ -6812,65 +6812,6 @@
         }
       }
     },
-    "An example: lost keys": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ein Beispiel: verlorene Schlüssel"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un ejemplo: las llaves perdidas"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un exemple : les clés perdues"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Primjer: izgubljeni ključevi"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un esempio: le chiavi perse"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "例：なくした鍵"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przykład: zgubione klucze"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um exemplo: chaves perdidas"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "举个例子：钥匙丢了"
-          }
-        }
-      }
-    },
     "An unfinished note from before couldn't be read, so it was set aside on this iPhone, not deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -9870,6 +9811,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Both ways": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W obie strony"
           }
         }
       }
@@ -20033,65 +19985,6 @@
         }
       }
     },
-    "Doddy can only find what you told it. It can't see your home or track your things.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy findet nur, was du ihm gesagt hast. Er sieht deine Wohnung nicht und verfolgt deine Sachen nicht."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy solo puede encontrar lo que le has contado. No ve tu casa ni rastrea tus cosas."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy ne peut trouver que ce que tu lui as dit. Il ne voit pas ta maison et ne suit pas tes affaires."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy može pronaći samo ono što mu kažeš. Ne vidi tvoj dom i ne prati tvoje stvari."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy può trovare solo ciò che gli hai detto. Non vede casa tua e non traccia le tue cose."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyが見つけられるのは、あなたが伝えたことだけです。家の中が見えるわけでも、持ち物を追跡しているわけでもありません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy znajdzie tylko to, co mu powiedziałeś. Nie widzi Twojego domu i nie śledzi Twoich rzeczy."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Doddy só encontra o que você contou a ele. Ele não vê sua casa nem rastreia suas coisas."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 只能找到你告诉过他的东西。他看不到你的家，也不会追踪你的物品。"
-          }
-        }
-      }
-    },
     "Doddy can read": {
       "extractionState": "manual",
       "localizations": {
@@ -23013,65 +22906,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy szuka tych słów w artykułach z Twoich tematów i kanałów."
-          }
-        }
-      }
-    },
-    "Doddy looks through what you told it.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy sieht durch, was du ihm gesagt hast."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy repasa lo que le has contado."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy parcourt ce que tu lui as dit."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy pregledava ono što mu kažeš."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy cerca tra ciò che gli hai detto."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyが、あなたが伝えたことの中から探します。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy przegląda to, co mu powiedziałeś."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Doddy procura no que você contou a ele."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 会翻看你告诉过他的内容。"
           }
         }
       }
@@ -31469,65 +31303,6 @@
         }
       }
     },
-    "Found, from your own note.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gefunden, aus deiner eigenen Notiz."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Encontrado, gracias a tu propia nota."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trouvé, grâce à ta propre note."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronađeno, iz tvoje vlastite bilješke."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trovato, grazie alla tua nota."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "あなた自身のメモから見つかりました。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Znalezione dzięki Twojej notatce."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Encontrado, a partir da sua própria nota."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "找到了，来自你自己的笔记。"
-          }
-        }
-      }
-    },
     "From Contacts": {
       "extractionState": "manual",
       "localizations": {
@@ -34551,6 +34326,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Interwały (HIIT)"
+          }
+        }
+      }
+    },
+    "Into your language": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na Twój język"
           }
         }
       }
@@ -58922,6 +58708,17 @@
         }
       }
     },
+    "Pick the languages and start. Doddy stays quiet until someone speaks, then translates straight away.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz języki i zacznij. Doddy milczy, dopóki ktoś nie zacznie mówić, a potem od razu tłumaczy."
+          }
+        }
+      }
+    },
     "Pick the people whose birthday Doddy should remind you of, at 9:00 on the day. Read from Contacts on this iPhone; nothing is sent anywhere or added to Calendar.": {
       "extractionState": "manual",
       "localizations": {
@@ -60822,61 +60619,13 @@
         }
       }
     },
-    "Put the phone on the table between you. Their half of the screen faces them, and Doddy first tells them, in their language, that he's an AI translator.": {
+    "Put the phone between you. Their half of the screen faces them and shows, in their language, that this is an AI translation.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leg das Telefon zwischen euch auf den Tisch. Ihre Hälfte des Bildschirms zeigt zu ihnen, und Doddy sagt ihnen zuerst in ihrer Sprache, dass er ein KI-Übersetzer ist."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pon el teléfono sobre la mesa entre los dos. Su mitad de la pantalla mira hacia la otra persona, y Doddy le dice primero, en su idioma, que es un traductor de IA."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pose le téléphone sur la table entre vous. Leur moitié de l’écran est tournée vers eux, et Doddy leur dit d’abord, dans leur langue, qu’il est un traducteur IA."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stavi telefon na stol između vas. Njihova polovica zaslona okrenuta je prema njima, a Doddy im prvo kaže, na njihovu jeziku, da je AI prevoditelj."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Metti il telefono sul tavolo tra di voi. La loro metà dello schermo è rivolta verso di loro, e Doddy prima dice loro, nella loro lingua, che è un traduttore IA."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電話を二人の間のテーブルに置いてください。相手側の画面半分が相手に向き、Doddyはまず相手の言語で、自分がAI翻訳者であることを伝えます。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Połóż telefon na stole między wami. Ich połowa ekranu jest zwrócona do nich, a Doddy najpierw mówi im w ich języku, że jest tłumaczem SI."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coloque o telefone na mesa entre vocês. A metade da tela da outra pessoa fica virada para ela, e o Doddy primeiro diz a ela, no idioma dela, que é um tradutor de IA."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "把手机放在你们之间的桌子上。屏幕的另一半朝向对方，Doddy 会先用对方的语言告诉对方，他是 AI 翻译。"
+            "value": "Połóż telefon między wami. Ich połowa ekranu jest zwrócona do nich i pokazuje w ich języku, że to tłumaczenie AI."
           }
         }
       }
@@ -77805,6 +77554,17 @@
         }
       }
     },
+    "Swap languages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamień języki"
+          }
+        }
+      }
+    },
     "Swimming": {
       "extractionState": "manual",
       "localizations": {
@@ -78239,65 +77999,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa w wyspie"
-          }
-        }
-      }
-    },
-    "Talk in their language": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In ihrer Sprache sprechen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hablar en su idioma"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parler dans leur langue"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Govori na njihovu jeziku"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parla nella loro lingua"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相手の言語で話す"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mów w ich języku"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Falar no idioma da pessoa"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用对方的语言说"
           }
         }
       }
@@ -83051,65 +82752,6 @@
         }
       }
     },
-    "The keys aren't on the hook.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Schlüssel hängen nicht am Haken."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las llaves no están en el gancho."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les clés ne sont pas sur le crochet."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ključevi nisu na vješalici."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le chiavi non sono al gancio."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "鍵がフックにありません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kluczy nie ma na wieszaku."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As chaves não estão no gancho."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "钥匙不在挂钩上。"
-          }
-        }
-      }
-    },
     "The last week: lighter on weekdays, so you arrive fresh for the goal run.": {
       "extractionState": "manual",
       "localizations": {
@@ -86645,65 +86287,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie ma słów do pokazania."
-          }
-        }
-      }
-    },
-    "There they are.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Da sind sie."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ahí están."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les voilà."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eno ih."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eccole."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ありました。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O, są."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Olha elas aí."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "找到了。"
           }
         }
       }
@@ -97199,65 +96782,6 @@
         }
       }
     },
-    "Way": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Art"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moyen"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Način"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modo"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "方法"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sposób"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modo"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "方式"
-          }
-        }
-      }
-    },
     "Ways to open Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -101647,65 +101171,6 @@
         }
       }
     },
-    "You ask Doddy where they are.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Du fragst Doddy, wo sie sind."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le preguntas a Doddy dónde están."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu demandes à Doddy où elles sont."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pitaš Doddyja gdje su."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chiedi a Doddy dove sono."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "あなたがDoddyに、どこにあるか聞きます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pytasz Doddy’ego, gdzie są."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Você pergunta ao Doddy onde elas estão."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你问 Doddy 它们在哪里。"
-          }
-        }
-      }
-    },
     "You asked for": {
       "extractionState": "manual",
       "localizations": {
@@ -102657,65 +102122,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nastąpiło wylogowanie. Zaloguj się ponownie, żeby dalej korzystać z Doddy’ego."
-          }
-        }
-      }
-    },
-    "You'd saved “keys under the sofa cushion”.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Du hattest „Schlüssel unter dem Sofakissen“ gespeichert."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Habías guardado “llaves bajo el cojín del sofá”."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu avais enregistré « clés sous le coussin du canapé »."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Imaš spremljeno: „ključevi ispod jastuka na kauču“."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avevi salvato “chiavi sotto il cuscino del divano”."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「鍵はソファのクッションの下」と保存していました。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapisałeś „klucze pod poduszką na sofie”."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Você tinha salvado “chaves embaixo da almofada do sofá”."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你之前记下了“钥匙在沙发垫下面”。"
           }
         }
       }
