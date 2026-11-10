@@ -119,6 +119,12 @@ public enum ActivityText {
         "Start stopwatch": "Włącz stoper",
         "Stop stopwatch": "Zatrzymaj stoper",
         "Read stopwatch": "Odczytano stoper",
+        // Decision 2026-11-10-timers-by-voice.
+        "Start focus": "Włącz skupienie",
+        "Stop focus": "Zatrzymaj skupienie",
+        "Read focus": "Odczytano skupienie",
+        "Start wind-down": "Włącz wyciszenie",
+        "Stop wind-down": "Zatrzymaj wyciszenie",
         "Delete events": "Usuń wydarzenia",
         "Move reminders": "Przenieś przypomnienia",
         // Round 4 (ADR-300 onwards).
