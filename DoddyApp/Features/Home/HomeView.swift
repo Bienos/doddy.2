@@ -188,7 +188,7 @@ struct HomeView: View {
                 }
                 // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
                 // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
-                if conversation.live != nil, scope.shows(.messages) {
+                if conversation.live != nil, scope.shows(Feature.messages) {
                     showScreenButton
                 }
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
