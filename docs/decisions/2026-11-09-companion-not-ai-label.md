@@ -25,7 +25,7 @@ Removing the word entirely isn't possible: the EU AI Act (Article 50, applying s
 
 ## Consequences
 - Fewer mentions: the English homepage goes from 8 to 1 (the footer), the app's everyday screens from 5 to 3 short lines, plus the Settings privacy summary.
-- The live ElevenLabs agent keeps its current prompt until the owner says to sync (`docs/OWNER_QUEUE.md` 31); until then voice may still call himself "an AI sidekick".
+- The live ElevenLabs agent's "# Identity" passage was changed on 10 Nov 2026 on the owner's word ("ok change do all"): version `agtvrsn_0801m71zgg3wfj29agemmp6cx39b`, rollback `agtvrsn_5401m70zggkafcz88jshewy89ae8` (`voice-agent/README.md`).
 - Translations of the new lines are drafts, like the rest (ADR-234); the Polish ones were written with the app's existing terms.
 
 ## Evidence
