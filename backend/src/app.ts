@@ -6,7 +6,7 @@ import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSess
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
 import { DeviceSessionIssuer } from "./deviceSession.js";
-import { DocumentLinks } from "./documents.js";
+import { DOCUMENT_STALE_AFTER_MS, DocumentLinks } from "./documents.js";
 import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider } from "./tools/claude.js";
 import { createHandler } from "./http.js";
 import { MemoryChat } from "./memory/chat.js";
@@ -248,6 +248,7 @@ export async function buildApp(
       ...(supabaseUsers ? [accountEraser.sweep([SUPABASE_AUTH_CLEANUP])] : []),
     ])
       .then(() => store.prune(Date.now()))
+      .then(() => store.failStaleDocuments(Date.now(), DOCUMENT_STALE_AFTER_MS))
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => store.pruneTokenFloors(Date.now()))

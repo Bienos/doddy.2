@@ -27,6 +27,20 @@ final class ThreadDocumentTests: XCTestCase {
         XCTAssertNil(ThreadDocument(RunDocument(url: URL(string: "javascript:alert(1)")!, name: "a", kind: "doc", status: .ready)))
     }
 
+    func testTheFilesIDIsReadFromItsLinkAndNothingElseCounts() {
+        let id = "Abcdefghijklmnopqrstuv-_"
+        XCTAssertEqual(id.count, 24)
+        let signed = URL(string: "https://doddy.example.com/v1/documents/\(id)?exp=1792000000&sig=abc")!
+        XCTAssertEqual(ThreadDocument(url: signed, name: "a", kind: "doc").documentID, id)
+        XCTAssertNil(ThreadDocument(url: link, name: "a", kind: "doc").documentID, "not a documents link")
+        let short = URL(string: "https://doddy.example.com/v1/documents/abc")!
+        XCTAssertNil(ThreadDocument(url: short, name: "a", kind: "doc").documentID)
+        let elsewhere = URL(string: "https://doddy.example.com/v1/other/\(id)")!
+        XCTAssertNil(ThreadDocument(url: elsewhere, name: "a", kind: "doc").documentID)
+        let odd = URL(string: "https://doddy.example.com/v1/documents/Abcdefghijklmnopqrstu%2F%2E")!
+        XCTAssertNil(ThreadDocument(url: odd, name: "a", kind: "doc").documentID, "a path trick is not an id")
+    }
+
     func testAFileBubbleIsNotSentToTheModelAsSomethingDoddySaid() {
         let doc = ThreadMessage.file(ThreadDocument(url: link, name: "Plan bety.pptx", kind: "deck"), now: t0.addingTimeInterval(1))
         let question = ThreadMessage(sender: .user, text: "Zrób prezentację", createdAt: t0, delivery: .sent)

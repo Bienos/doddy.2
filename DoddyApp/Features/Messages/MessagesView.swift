@@ -23,6 +23,7 @@ struct MessagesView: View {
     @AppStorage(PreferenceKey.assistantUseNotes) private var useNotes = true
     @State private var model: MessagesModel
     @State private var confirmingDelete = false
+    @State private var showingPrivacy = false
     /// The plan screen opened from a plan offer (ADR-626).
     @State private var planRequest: PlanAskRequest?
     @FocusState private var inputFocused: Bool
@@ -79,6 +80,8 @@ struct MessagesView: View {
                 if !model.messages.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
+                            Button("Privacy", systemImage: "hand.raised") { showingPrivacy = true }
+                                .accessibilityIdentifier("messages.privacy")
                             Button("Delete conversation", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                                 .disabled(model.isSending || model.runningLocalAction != nil)
                         } label: {
@@ -95,6 +98,11 @@ struct MessagesView: View {
                 }
             } message: {
                 Text("It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.")
+            }
+            .alert("Privacy", isPresented: $showingPrivacy) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
             }
             .sheet(item: $planRequest) { request in
                 NavigationStack {
@@ -135,6 +143,10 @@ struct MessagesView: View {
         // The files list belongs to the person (their own session, as the Files sheet reads it), so it doesn't wait for
         // Ask Doddy. It keeps looking while Messages is open: a file takes a minute or two to make.
         .task { await keepFilesFresh() }
+        // A new message may be a file just started: read the list now so its dot shows at once, not after the slow poll.
+        .onChange(of: model.messages.count) { _, _ in
+            Task { await files.refresh(clearingDownloads: false) }
+        }
         .quickLookPreview($preview)
         .task { await ErrandsModel.shared.load() }
         // A failed read shows no cards here; the calls themselves are in Settings › Phone calls.
@@ -212,12 +224,16 @@ struct MessagesView: View {
                                 .foregroundStyle(Theme.error)
                                 .accessibilityIdentifier("messages.notSaved")
                         }
-                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.secondaryText)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .accessibilityIdentifier("ask.disclosure")
+                        // Said once, where a new conversation starts, and always in the menu's Privacy; a running thread
+                        // isn't ended by a paragraph of small print.
+                        if model.messages.isEmpty {
+                            Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                                .accessibilityIdentifier("ask.disclosure")
+                        }
                     }
                     .padding(.top, 14)
                 }
@@ -543,11 +559,19 @@ struct MessagesView: View {
                         Spacer(minLength: 56)
                     }
                 }
-                fileBubble(document)
-                MadeFileShareButton(link: document.url)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.accentText)
-                    .padding(.leading, 14)
+                let making = isMaking(document)
+                if making {
+                    WorkingDot()
+                        .padding(.leading, 18)
+                        .padding(.bottom, 2)
+                }
+                fileBubble(document, making: making)
+                if !making {
+                    MadeFileShareButton(link: document.url)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.accentText)
+                        .padding(.leading, 14)
+                }
             } else {
                 HStack(spacing: 0) {
                     MessageBubble(text: message.text, fromUser: false, tail: tail)
@@ -725,7 +749,7 @@ struct MessagesView: View {
 
     /// The file bubble. Its link opens the file in Safari (Quick Look and Share); until the file is ready its page
     /// says so and checks again by itself, so the thread holds no status.
-    private func fileBubble(_ document: ThreadDocument) -> some View {
+    private func fileBubble(_ document: ThreadDocument, making: Bool) -> some View {
         Button {
             UIApplication.shared.open(document.url)
         } label: {
@@ -739,8 +763,10 @@ struct MessagesView: View {
                         .multilineTextAlignment(.leading)
                     HStack(spacing: 4) {
                         kindName(document.kind)
-                        Text(verbatim: "·")
-                        Text("Tap to open")
+                        if !making {
+                            Text(verbatim: "·")
+                            Text("Tap to open")
+                        }
                     }
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
@@ -753,8 +779,17 @@ struct MessagesView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // Not tappable while it is being made: the link would only say so.
+        .disabled(making)
         .padding(.trailing, 40)
         .accessibilityIdentifier("messages.file")
+    }
+
+    /// True while the server's files list (read every few seconds while Messages is open) says this file is still being
+    /// made. Unknown, not yet read, or no longer in the list all read as "not making": the card opens as before.
+    private func isMaking(_ document: ThreadDocument) -> Bool {
+        guard let id = document.documentID, case .ready(let list) = files.load else { return false }
+        return list.documents.contains { $0.id == id && $0.status == .working }
     }
 
     private static func icon(forKind kind: String) -> String {
@@ -1133,6 +1168,24 @@ private struct TypingBubble: View {
 
     private func dot(opacity: Double) -> some View {
         Circle().fill(Theme.secondaryText).opacity(opacity).frame(width: 8, height: 8)
+    }
+}
+
+/// One quiet dot above a file Doddy is still making: it breathes (opacity only) and stops when Reduce Motion is on.
+private struct WorkingDot: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var dim = false
+
+    var body: some View {
+        Circle()
+            .fill(Theme.secondaryText)
+            .frame(width: 8, height: 8)
+            .opacity(reduceMotion ? 0.7 : (dim ? 0.25 : 1))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: dim)
+            .onAppear { dim = true }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Working on it…")
+            .accessibilityIdentifier("messages.fileWorking")
     }
 }
 

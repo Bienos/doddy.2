@@ -28,6 +28,16 @@ public struct ThreadDocument: Equatable, Sendable, Codable {
         self.init(url: document.url, name: document.name, kind: document.kind)
     }
 
+    /// The server's id of this file, read from its link (`…/v1/documents/<24 characters>`), so the bubble can tell from the
+    /// files list whether it is still being made. nil for any other link; the id is only ever compared, never requested.
+    public var documentID: String? {
+        let parts = url.pathComponents
+        guard parts.count >= 2, parts[parts.count - 2] == "documents" else { return nil }
+        let id = parts[parts.count - 1]
+        guard id.count == 24, id.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }) else { return nil }
+        return id
+    }
+
     /// For the bubble: "Deck", "Document", …
     public var label: String {
         switch kind {
