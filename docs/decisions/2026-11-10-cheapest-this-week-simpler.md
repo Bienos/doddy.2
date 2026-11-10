@@ -15,7 +15,7 @@ The first screen opened with a text field, about twenty shop switches and a loya
 - **Not changed:** the server, the request, the matching and picking rules, what is sent, the partner-link wording (ADR-612/668), the honesty lines.
 
 ## Consequences
-- The screen still only works where it is switched on: it is hidden in Release builds (`ReleaseScope.shipping`, `.deals`) and the messaging server has `DEALS_ENABLED=0` (render.yaml). Turning it on is a separate owner step.
+- Switched on the same day (owner: "ty ustaw wszystko"): `.deals` left `ReleaseScope.shipping`, and on Render `doddy-messaging` got `DEALS_ENABLED=1` with tighter caps than the defaults, `DEALS_DAILY_PER_ACCOUNT=10` (was 30) and `DEALS_DAILY_PER_SERVER=100` (was 1000), because the Anthropic account has no dollar limit (owner queue 2). `render.yaml` still says `"0"` as the default for a new service.
 - The voice tool `find_deals` is on the live agent (read 10 Nov 2026), so "Doddy, how much is milk?" is the same search.
 
 ## Evidence
