@@ -26,7 +26,7 @@ Quick picks: **Doddy's default**, **Focused** (no jokes, brief, neutral, calm; p
 ### How Doddy sounds (ADR-105)
 | Setting | Options (default in bold) | Sent as |
 |---|---|---|
-| Voice | **Doddy** (agent voice `oDULUm0GMltHA6mVZkWh`), Josh `ZoiZ8fuDWInAcwPXaVeq`, Wiktor `Mmjvne5i15kUnfr4fQF3` (native Polish), River `SAz9YHcvj6GT2YYXdXww`, Jessica `cgSgspJ2msm6clMCkdW9`, Will `bIHbv24MWmeRgasZH58o` | `tts.voice_id` |
+| Voice | **Doddy** (the agent's own voice: `oDULUm0GMltHA6mVZkWh` by ADR-051; the live agents speak with `jGk1sjruA9wQTyWDbhL9`, read 10 Nov 2026, change not recorded in a decision), Josh `ZoiZ8fuDWInAcwPXaVeq`, Wiktor `Mmjvne5i15kUnfr4fQF3` (native Polish), River `SAz9YHcvj6GT2YYXdXww`, Jessica `cgSgspJ2msm6clMCkdW9`, Will `bIHbv24MWmeRgasZH58o` | `tts.voice_id` |
 | Speed | Slower 0.85, **Normal 1.0**, Faster 1.15 | `tts.speed` |
 | Expressiveness | Steady 0.75, **Natural 0.5**, Expressive 0.3 | `tts.stability` |
 

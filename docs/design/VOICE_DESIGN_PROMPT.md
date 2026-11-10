@@ -2,7 +2,7 @@
 
 
 *Kept in `docs/design/` (owner, 9 Nov 2026: keep the draft). Written 7 Nov on `claude/tender-franklin-olu7l0` as `voice-agent/VOICE_DESIGN_PROMPT.md`; moved here because `voice-agent/` holds the live agent spec. Still a proposal: nothing on the live agent changes.*
-**Status: proposal.** Nothing here is applied. The live agent still speaks with the owner's pick `oDULUm0GMltHA6mVZkWh` (ADR-051); the Settings list is still the six voices of ADR-105. Adopting a designed voice is an owner decision recorded as its own ADR, after it has been heard on a device in both languages.
+**Status: proposal.** Nothing here is applied. The owner's pick in ADR-051 was `oDULUm0GMltHA6mVZkWh`; the live agents speak with `jGk1sjruA9wQTyWDbhL9` (read 10 Nov 2026; no decision in the repo records the change); the Settings list is still the six voices of ADR-105. Adopting a designed voice is an owner decision recorded as its own ADR, after it has been heard on a device in both languages.
 
 ## Where the brief comes from
 
