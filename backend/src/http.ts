@@ -169,6 +169,7 @@ export function createHandler(deps: HttpDeps) {
       if (key === "GET /v1/oauth/return" || key === "GET /v1/oauth/verify") {
         route = key;
         status = 302;
+        log({ level: "info", correlationId, event: "oauth_return", ...describeReturn(url, key.endsWith("verify")) });
         return redirectToApp(res, url, deps.appReturnUrl, key.endsWith("verify"));
       }
       // The one route that needs no session: it is how the app gets one (ADR-563).
@@ -353,6 +354,27 @@ async function readJson(req: IncomingMessage, maxBytes: number): Promise<unknown
   } catch {
     throw new AppError("invalid_request");
   }
+}
+
+/**
+ * What came back from the sign-in page, for the log: parameter NAMES (shortened, at most 12) and whether
+ * the values we forward were well-formed. Never a value, so no id, token or session address is logged.
+ * It exists so a failed connect can be told apart: nothing came back, only some fields did, or the
+ * fields came back malformed (for example an attempt id with other parameters glued onto it).
+ */
+function describeReturn(url: URL, verifier: boolean): Record<string, unknown> {
+  const names = [...new Set(url.searchParams.keys())].slice(0, 12).map((name) => (/^[A-Za-z0-9_.-]{1,32}$/.test(name) ? name : "other"));
+  const q = url.searchParams;
+  const status = q.get("status");
+  return verifier
+    ? { kind: "verify", names, sessionUriOk: (q.get("session_uri") ?? "") !== "" }
+    : {
+        kind: "return",
+        names,
+        attemptOk: UUID.test(q.get("attempt") ?? ""),
+        statusOk: status === "success" || status === "failed",
+        accountOk: OPAQUE.test(q.get("connected_account_id") ?? ""),
+      };
 }
 
 /**
