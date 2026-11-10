@@ -12,10 +12,10 @@ final class WhatICanDoTests: XCTestCase {
     }
 
     func testTheBetaListsOnlyWhatItShips() {
-        // The beta scope hides calls, tasks and leaflets (ReleaseScope.shipping); the translator is shown
-        // since decision 2026-11-08-translator-in-beta.
+        // The beta scope hides calls and tasks (ReleaseScope.shipping); the translator is shown since decision
+        // 2026-11-08-translator-in-beta, leaflets since 2026-11-10-cheapest-this-week-simpler.
         let rows = WhatICanDo.rows(catalog: shipping, scope: .shipping, serverConfigured: true)
-        XCTAssertEqual(rows.map(\.ability), [.talk, .notes, .lists, .reminders, .messages, .translator])
+        XCTAssertEqual(rows.map(\.ability), [.talk, .notes, .lists, .reminders, .messages, .leaflets, .translator])
         for ability in rows.map(\.ability) {
             if let feature = ability.feature { XCTAssertTrue(ReleaseScope.shipping.shows(feature), "\(ability)") }
         }

@@ -257,8 +257,8 @@ struct HomeView: View {
                         .accessibilityHint("Doddy translates between you and someone who speaks another language.")
                         .accessibilityIdentifier("home.translate")
                 }
-                Button { selectedTab = .memories; showFind = true } label: { Label("Find something", systemImage: "magnifyingglass") }
-                    .accessibilityIdentifier("home.find")
+                // "Find something" left the menu on 10 Nov 2026 (owner: unclear here). Find stays on the notes
+                // screen (Settings › Doddy's memory › Notes) and in a conversation ("what did I save about…").
                 // Tasks handed to Doddy's background worker (ADR-570).
                 if scope.shows(.errands) {
                     Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
@@ -329,8 +329,9 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.deals")
                 }
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
+                // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
                 if scope.shows(.following) {
-                    Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                    Button { showFollowing = true } label: { Label("On my radar", systemImage: "dot.radiowaves.left.and.right") }
                         .accessibilityIdentifier("home.following")
                 }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
