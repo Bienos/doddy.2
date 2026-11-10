@@ -6146,6 +6146,47 @@
         }
       }
     },
+    "All three go to Doddy's server; the words and the note also go to Anthropic, whose Claude does the research. The server deletes its copy once this iPhone has saved the result.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "All three go to Doddy's server; the words and the note also go to Anthropic, whose Claude does the research. The server deletes its copy once this iPad has saved the result."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "All three go to Doddy's server; the words and the note also go to Anthropic, whose Claude does the research. The server deletes its copy once this iPhone has saved the result."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystkie trzy trafiają na serwer Doddy’ego; słowa i notatka trafiają też do Anthropic, którego Claude prowadzi poszukiwania. Serwer usuwa swoją kopię, gdy ten iPad zapisze wynik."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystkie trzy trafiają na serwer Doddy’ego; słowa i notatka trafiają też do Anthropic, którego Claude prowadzi poszukiwania. Serwer usuwa swoją kopię, gdy ten iPhone zapisze wynik."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "All ticked": {
       "extractionState": "manual",
       "localizations": {
@@ -13494,6 +13535,17 @@
         }
       }
     },
+    "Compare flights to Rome for a week next month, under 2000 zł": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porównaj loty do Rzymu na tydzień w przyszłym miesiącu, do 2000 zł"
+          }
+        }
+      }
+    },
     "Confirm": {
       "extractionState": "manual",
       "localizations": {
@@ -14511,6 +14563,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "连接已暂停，所以不会交出任何例行流程，Doddy 也不会提出新的询问。"
+          }
+        }
+      }
+    },
+    "Connections are paused, so nothing goes to Doddy's server. Turn them back on in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc nic nie trafia na serwer Doddy’ego. Włącz je ponownie w Ustawieniach, Połączenia."
           }
         }
       }
@@ -20712,6 +20775,17 @@
         }
       }
     },
+    "Doddy couldn't confirm it started. It may be running: pull down to check before you hand it over again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł potwierdzić, że sprawa ruszyła. Może już działać: przeciągnij w dół, aby sprawdzić, zanim przekażesz ją ponownie."
+          }
+        }
+      }
+    },
     "Doddy couldn't confirm it was removed from this iPhone. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -21905,6 +21979,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy dzwonił już na ten numer wystarczająco często. Nic nie zostało wybrane. Spróbuj później."
+          }
+        }
+      }
+    },
+    "Doddy has it. It's in Your tasks, and the result waits there and in Messages when it's done.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ma tę sprawę. Jest w Twoich sprawach; gdy skończy, wynik będzie czekał tam i w Wiadomościach."
           }
         }
       }
@@ -24245,6 +24330,17 @@
         }
       }
     },
+    "Doddy searches the web and reads pages in the background, as often as this needs. The result waits in Tasks and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka w sieci i czyta strony w tle, tyle, ile trzeba. Wynik będzie czekał w Sprawach i w Wiadomościach."
+          }
+        }
+      }
+    },
     "Doddy starts in English until you pick another language. A change shows the next time you open Doddy: close it first, then open it again.": {
       "extractionState": "manual",
       "localizations": {
@@ -25199,6 +25295,17 @@
         }
       }
     },
+    "Doddy's server didn't accept this task, so nothing started. If it has a link in it, take the link out.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie przyjął tej sprawy, więc nic nie ruszyło. Jeśli jest w niej link, usuń go."
+          }
+        }
+      }
+    },
     "Doddy's server didn't confirm deleting your messaging data, so nothing else was deleted and you're still signed in. Check your connection and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -25221,6 +25328,17 @@
         }
       }
     },
+    "Doddy's server didn't hold exactly these words, so nothing was approved or started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie miał dokładnie tych słów, więc nic nie zostało zatwierdzone ani uruchomione."
+          }
+        }
+      }
+    },
     "Doddy's server doesn't keep this file any more. Ask him to make it again.": {
       "extractionState": "manual",
       "localizations": {
@@ -25239,6 +25357,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego dostaje nazwę sklepu i adres strony, tytuł i Twoją cenę oraz czyta tę stronę za Ciebie. Możesz zatrzymać albo usunąć pilnowanie w każdej chwili."
+          }
+        }
+      }
+    },
+    "Doddy's server has taken as many tasks today as it allows for everyone. Try again tomorrow. Nothing started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego przyjął dziś tyle spraw, ile pozwala dla wszystkich. Spróbuj jutro. Nic nie ruszyło."
           }
         }
       }
@@ -29924,6 +30053,17 @@
         }
       }
     },
+    "Find three quiet cafés in Kraków's Old Town that open before 8": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź trzy spokojne kawiarnie na krakowskim Starym Mieście otwarte przed 8"
+          }
+        }
+      }
+    },
     "Finding memories": {
       "extractionState": "manual",
       "localizations": {
@@ -30952,6 +31092,17 @@
         }
       }
     },
+    "For example:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład:"
+          }
+        }
+      }
+    },
     "For reminders at a place, when you tap “Use where I am”. Never in the background.": {
       "extractionState": "manual",
       "localizations": {
@@ -31807,6 +31958,17 @@
         }
       }
     },
+    "Get the answer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odbierz wynik"
+          }
+        }
+      }
+    },
     "Getting a code…": {
       "extractionState": "manual",
       "localizations": {
@@ -32293,13 +32455,57 @@
         }
       }
     },
-    "Hand Doddy a task in a conversation, like \"compare flights to Rome next month under 2000 zł\". One yes lets Doddy search the web and read pages as often as the task needs, in the background. The result waits here when it's done. Nothing is booked, bought or sent.": {
+    "Hand it to Doddy": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przekaż Doddy’emu sprawę w rozmowie, np. „porównaj loty do Rzymu w przyszłym miesiącu do 2000 zł”. Jedno „tak” pozwala Doddy’emu szukać w sieci i czytać strony w tle tyle razy, ile sprawa wymaga. Gdy skończy, wynik będzie tu czekać. Nic nie jest rezerwowane, kupowane ani wysyłane."
+            "value": "Przekaż Doddy’emu"
+          }
+        }
+      }
+    },
+    "Hand me something to sort out": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daj mi coś do załatwienia"
+          }
+        }
+      }
+    },
+    "Hand over a task": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przekaż sprawę"
+          }
+        }
+      }
+    },
+    "Hand this to Doddy?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przekazać to Doddy’emu?"
+          }
+        }
+      }
+    },
+    "Handing it over…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przekazywanie…"
           }
         }
       }
@@ -33089,6 +33295,17 @@
         }
       }
     },
+    "How it works": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak to działa"
+          }
+        }
+      }
+    },
     "How many photos did I take on Saturday?": {
       "extractionState": "manual",
       "localizations": {
@@ -33350,6 +33567,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我换了一种方式运行"
+          }
+        }
+      }
+    },
+    "I search the web and read pages in the background, then leave the answer here. I never book, buy or send anything.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam w sieci i czytam strony w tle, a odpowiedź zostawiam tutaj. Niczego nie rezerwuję, nie kupuję ani nie wysyłam."
           }
         }
       }
@@ -45669,6 +45897,28 @@
         }
       }
     },
+    "New result": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowy wynik"
+          }
+        }
+      }
+    },
+    "New task": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa sprawa"
+          }
+        }
+      }
+    },
     "Newest first": {
       "extractionState": "manual",
       "localizations": {
@@ -49766,6 +50016,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic szczególnego."
+          }
+        }
+      }
+    },
+    "Nothing is booked, bought or sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie jest rezerwowane, kupowane ani wysyłane."
           }
         }
       }
@@ -55515,6 +55776,17 @@
         }
       }
     },
+    "Open a task to see its result, stop it while it runs, or delete it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz sprawę, żeby zobaczyć wynik, zatrzymać ją w trakcie albo usunąć."
+          }
+        }
+      }
+    },
     "Open camera": {
       "extractionState": "manual",
       "localizations": {
@@ -56855,6 +57127,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "或者直接告诉 Doddy：“把牛奶加到我的购物清单”。"
+          }
+        }
+      }
+    },
+    "Or tell Doddy in a conversation: “Sort this out in the background: …”. For shopping, like “find me a quiet dishwasher”, talking works best: Doddy first asks what matters most to you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Albo powiedz Doddy’emu w rozmowie: „Zajmij się tym w tle: …”. Przy zakupach, np. „znajdź mi cichą zmywarkę”, najlepiej mówić: Doddy najpierw pyta, co jest dla Ciebie najważniejsze."
           }
         }
       }
@@ -60847,6 +61130,17 @@
         }
       }
     },
+    "Puts this example in the box. Nothing is sent yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisuje ten przykład do pola. Nic nie jest jeszcze wysyłane."
+          }
+        }
+      }
+    },
     "Putting it back…": {
       "extractionState": "manual",
       "localizations": {
@@ -63843,6 +64137,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已设置的提醒"
+          }
+        }
+      }
+    },
+    "Reminders, events, tasks and watched prices in one list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia, wydarzenia, sprawy i pilnowane ceny na jednej liście."
           }
         }
       }
@@ -69326,6 +69631,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiedz na przykład"
+          }
+        }
+      }
+    },
+    "Say what you need": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz, czego potrzebujesz"
           }
         }
       }
@@ -76695,6 +77011,17 @@
         }
       }
     },
+    "Step %lld: %@. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krok %lld: %@. %@"
+          }
+        }
+      }
+    },
     "Steps, distance and floors for a day you ask about.": {
       "extractionState": "manual",
       "localizations": {
@@ -78138,6 +78465,17 @@
         }
       }
     },
+    "Take the link out: Doddy finds the pages itself. A site's name on its own, like allegro.pl, is fine.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń link: Doddy sam znajduje strony. Sama nazwa serwisu, np. allegro.pl, jest w porządku."
+          }
+        }
+      }
+    },
     "Taken off": {
       "extractionState": "manual",
       "localizations": {
@@ -78657,6 +78995,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dotknij, by otworzyć"
+          }
+        }
+      }
+    },
+    "Tap yes once": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raz stuknij „Tak”"
           }
         }
       }
@@ -81352,6 +81701,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To dużo kodów w minutę. Poczekaj chwilę i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "That's more than Doddy's server takes (1,000 characters). Make it shorter.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To więcej, niż przyjmuje serwer Doddy’ego (1000 znaków). Skróć to."
           }
         }
       }
@@ -85315,6 +85675,17 @@
         }
       }
     },
+    "The request expired or changed before it was approved. Nothing started; you can hand it over again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prośba wygasła albo zmieniła się przed zatwierdzeniem. Nic nie ruszyło; możesz przekazać ją ponownie."
+          }
+        }
+      }
+    },
     "The restored notes couldn't be confirmed, so nothing from the file was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -85392,6 +85763,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta sama informacja jest zaznaczona dwa razy."
+          }
+        }
+      }
+    },
+    "The same for every typed task: Doddy writes no note of its own.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taka sama dla każdej wpisanej sprawy: Doddy nie pisze własnej notatki."
           }
         }
       }
@@ -91311,6 +91693,17 @@
         }
       }
     },
+    "Title in Tasks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tytuł w Sprawach"
+          }
+        }
+      }
+    },
     "To": {
       "extractionState": "manual",
       "localizations": {
@@ -93935,6 +94328,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "类型"
+          }
+        }
+      }
+    },
+    "Type it above or tell Doddy in a conversation. Dates, a budget and a place help.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz ją powyżej albo powiedz Doddy’emu w rozmowie. Pomogą daty, budżet i miejsce."
           }
         }
       }
@@ -97878,6 +98282,17 @@
         }
       }
     },
+    "What do I need to renew my ID card? Step by step": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co muszę zrobić, żeby wymienić dowód osobisty? Krok po kroku"
+          }
+        }
+      }
+    },
     "What do you want to find?": {
       "extractionState": "manual",
       "localizations": {
@@ -98184,6 +98599,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co dalej"
+          }
+        }
+      }
+    },
+    "What should Doddy sort out?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czym Doddy ma się zająć?"
           }
         }
       }
@@ -98733,6 +99159,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co śledzisz"
+          }
+        }
+      }
+    },
+    "What you hand over shows up here, with what Doddy is doing about it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co przekażesz, pojawi się tutaj razem z tym, co Doddy z tym robi."
           }
         }
       }
@@ -99301,6 +99738,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "When it's done, it waits here and in Messages, with links to the pages Doddy read. Nothing is booked, bought or sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy będzie gotowe, wynik czeka tutaj i w Wiadomościach, z linkami do stron, które Doddy przeczytał. Nic nie jest rezerwowane, kupowane ani wysyłane."
           }
         }
       }
@@ -100933,6 +101381,17 @@
         }
       }
     },
+    "Write what Doddy should sort out first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw wpisz, czym Doddy ma się zająć."
+          }
+        }
+      }
+    },
     "Writing it out on this iPhone…": {
       "extractionState": "manual",
       "localizations": {
@@ -101332,6 +101791,17 @@
         }
       }
     },
+    "Yes, go": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tak, działaj"
+          }
+        }
+      }
+    },
     "Yes, still true": {
       "extractionState": "manual",
       "localizations": {
@@ -101494,6 +101964,17 @@
         }
       }
     },
+    "You already have as many open tasks as Doddy's server allows. Wait for one to finish, or stop one. Nothing started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masz już tyle otwartych spraw, ile pozwala serwer Doddy’ego. Poczekaj, aż któraś się skończy, albo jedną zatrzymaj. Nic nie ruszyło."
+          }
+        }
+      }
+    },
     "You also have an unfinished note from %@. It's kept; it opens the next time you start a new note.": {
       "extractionState": "manual",
       "localizations": {
@@ -101652,6 +102133,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzwonisz ze swojego telefonu. Doddy’ego nie ma na linii i nic nie jest zapisywane."
+          }
+        }
+      }
+    },
+    "You can close the app. When it's done, the result waits here and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Możesz zamknąć aplikację. Gdy będzie gotowe, wynik będzie czekał tutaj i w Wiadomościach."
           }
         }
       }
@@ -102335,6 +102827,17 @@
         }
       }
     },
+    "You see exactly what goes to Doddy's server. One tap lets Doddy search the web and read pages in the background, as often as this task needs.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widzisz dokładnie, co trafia na serwer Doddy’ego. Jedno stuknięcie pozwala Doddy’emu szukać w sieci i czytać strony w tle, tyle razy, ile ta sprawa wymaga."
+          }
+        }
+      }
+    },
     "You send it in your bank app": {
       "extractionState": "manual",
       "localizations": {
@@ -102688,6 +103191,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Teraz Ty rozmawiasz. Rozłącz się w telefonie, aby zakończyć."
+          }
+        }
+      }
+    },
+    "You've handed over as many tasks today as Doddy's server allows. Try again tomorrow. Nothing started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziś przekazano już tyle spraw, ile serwer Doddy’ego pozwala jednej osobie. Spróbuj jutro. Nic nie ruszyło."
           }
         }
       }
@@ -105151,6 +105665,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你和 Doddy\n的这一周"
+          }
+        }
+      }
+    },
+    "Your words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje słowa"
           }
         }
       }
