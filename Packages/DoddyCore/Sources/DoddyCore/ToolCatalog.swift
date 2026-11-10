@@ -136,6 +136,12 @@ public enum ToolCatalog {
         .init(VoiceToolName.startStopwatch, .localChange, .card),
         .init(VoiceToolName.stopStopwatch, .localChange, .card),
         .init(VoiceToolName.checkStopwatch, .lookup, .askFirst),
+        // The focus timer and the wind-down (decision 2026-11-10-timers-by-voice): Doddy's own timers, like the stopwatch.
+        .init(VoiceToolName.startFocus, .localChange, .card),
+        .init(VoiceToolName.stopFocus, .localChange, .card),
+        .init(VoiceToolName.checkFocus, .lookup, .askFirst),
+        .init(VoiceToolName.startWindDown, .localChange, .card),
+        .init(VoiceToolName.stopWindDown, .localChange, .card),
         // Saving or clearing a spot shows a card; "find" asks first (ADR-301, ASK-01). The card is
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),

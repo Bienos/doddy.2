@@ -248,6 +248,13 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case startStopwatch(label: String?)
     case stopStopwatch
     case checkStopwatch
+    /// The focus timer and the wind-down before bed (decision 2026-11-10-timers-by-voice, TimerVoice.swift): started
+    /// and stopped after a card, the focus timer read after a "yes". Minutes are whole and in range.
+    case startFocus(minutes: Int, label: String?)
+    case stopFocus
+    case checkFocus
+    case startWindDown(minutes: Int)
+    case stopWindDown
     /// One place, or a route to it when `from` or `mode` is given (owner, 10 Nov 2026).
     case openMap(place: String, from: String? = nil, mode: MapTravelMode? = nil)
     case runShortcut(name: String)
@@ -409,6 +416,16 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .stopStopwatch
         case VoiceToolName.checkStopwatch:
             return .checkStopwatch
+        case VoiceToolName.startFocus:
+            return parseStartFocus(args, name: name)
+        case VoiceToolName.stopFocus:
+            return .stopFocus
+        case VoiceToolName.checkFocus:
+            return .checkFocus
+        case VoiceToolName.startWindDown:
+            return parseStartWindDown(args, name: name)
+        case VoiceToolName.stopWindDown:
+            return .stopWindDown
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place, from: args.text("from"), mode: MapTravelMode.parse(args.text("mode")))
