@@ -604,4 +604,19 @@ final class DataFlowCallsAndUpdatesTests: XCTestCase {
         XCTAssertTrue(server?.what.contains("after you say yes or tap") ?? false)
         XCTAssertTrue(server?.what.contains("only after you tap its card to confirm") ?? false, "drafts, emails and tasks are tap-only")
     }
+
+    /// Decision 2026-11-09-conversation-recaps: conversation text goes to the server for a recap only with both switches on.
+    func testRecapsGoToTheServerOnlyWithBothSwitches() {
+        var state = DataFlowState(rememberConversations: true, shareProfileWithVoice: false, tokenServerSet: true,
+                                  connectionsOn: [], pauseAll: false, doddyServerSet: false,
+                                  askDoddyOn: false, askDoddyUsesNotes: false, messagingServerSet: true)
+        let off = DataFlow.rows(state).first { $0.id == "recaps" }
+        XCTAssertEqual(off?.isActive, false)
+        XCTAssertEqual(off?.note, "Recaps are written on this iPhone or not at all, so nothing goes there.")
+        state.recapsOnServer = true
+        let on = DataFlow.rows(state).first { $0.id == "recaps" }
+        XCTAssertEqual(on?.isActive, true)
+        XCTAssertTrue(on?.when.contains("Never a Private conversation") ?? false)
+        XCTAssertTrue(on?.note?.contains("keeps only counts, not words") ?? false)
+    }
 }

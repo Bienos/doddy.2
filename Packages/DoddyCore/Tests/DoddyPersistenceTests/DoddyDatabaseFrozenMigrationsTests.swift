@@ -34,6 +34,7 @@ final class DoddyDatabaseFrozenMigrationsTests: XCTestCase {
         "v19_training_log",
         "v20_thread_photo",
         "v21_thread_file",
+        "v22_thread_local_action",
     ]
 
     func testMergedMigrationsKeepTheirNamesAndTheirOrder() {

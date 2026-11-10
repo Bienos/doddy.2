@@ -32,7 +32,9 @@ extension DataFlowState {
             webNotesKept: defaults.bool(forKey: WebMemoryModel.notesKey),
             webConversationsKept: defaults.bool(forKey: WebMemoryModel.conversationsKey),
             inFaktKeySaved: AccountKeyStore.manager(for: .inFakt).state().isSaved,
-            textsToDoddyOn: defaults.bool(forKey: PreferenceKey.textsToDoddyOn))
+            textsToDoddyOn: defaults.bool(forKey: PreferenceKey.textsToDoddyOn),
+            recapsOnServer: flag(RecapSettings.rememberKey, default: RecapSettings.rememberDefault)
+                && flag(RecapSettings.serverWriterKey, default: RecapSettings.serverWriterDefault))
     }
 }
 

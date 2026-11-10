@@ -5,6 +5,35 @@ import XCTest
 
 /// The thread with Doddy, kept on the iPhone (ADR-585, `v17_message_thread`).
 final class SQLiteMessageThreadRepositoryTests: XCTestCase {
+    func testNativeOfferAndReceiptSurviveARealDatabaseReopen() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("action-thread-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let path = directory.appendingPathComponent("thread.sqlite").path
+        let repository = SQLiteMessageThreadRepository(database: try DoddyDatabase(path: path))
+        for text in ["Review this exact note", "Saved note: exact text"] {
+            try await repository.append(ThreadMessage(sender: .doddy, text: text, createdAt: Date(), delivery: .sent,
+                basis: .general, isLocalAction: true))
+        }
+        let reopened = SQLiteMessageThreadRepository(database: try DoddyDatabase(path: path))
+        let rows = try await reopened.recent(limit: 10)
+        XCTAssertEqual(rows.map(\.text), ["Review this exact note", "Saved note: exact text"])
+        XCTAssertTrue(rows.allSatisfy(\.isLocalAction))
+        XCTAssertTrue(rows.allSatisfy { $0.basis == .general })
+    }
+
+    func testUpgradeFromV21KeepsOldThreadAndDefaultsItsOrigin() throws {
+        let queue = try DatabaseQueue()
+        try DoddyDatabase.migrator.migrate(queue, upTo: "v21_thread_file")
+        try queue.write { db in
+            try db.execute(sql: "INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis) VALUES ('old', 'doddy', 'Existing answer', 1, 'sent', 'general')")
+        }
+        try DoddyDatabase.migrator.migrate(queue)
+        try queue.read { db in
+            XCTAssertEqual(try String.fetchOne(db, sql: "SELECT text FROM thread_messages WHERE id='old'"), "Existing answer")
+            XCTAssertEqual(try Int.fetchOne(db, sql: "SELECT is_local_action FROM thread_messages WHERE id='old'"), 0)
+        }
+    }
     private let t0 = Date(timeIntervalSince1970: 1_792_000_000)
 
     private func user(_ text: String, at offset: TimeInterval, _ delivery: ThreadMessage.Delivery = .sent) -> ThreadMessage {

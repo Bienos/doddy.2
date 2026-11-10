@@ -3196,5 +3196,18 @@
   "Your Doddy voice account is saved on this iPhone. Reconnecting doesn’t require another Apple sign-in.": "Twoje konto głosowe Doddy’ego jest zapisane na tym iPhonie. Ponowne połączenie nie wymaga kolejnego logowania przez Apple.",
   "Your saved notes are not used. Turn them on in Settings if you want me to look at them.": "Twoje zapisane notatki nie są używane. Włącz je w Ustawieniach, jeśli chcesz, żebym do nich zaglądał.",
   "thought saved": "zapisana myśl",
-  "thoughts saved": "zapisane myśli"
+  "thoughts saved": "zapisane myśli",
+  "Remember what we talked about": "Pamiętaj, o czym rozmawialiśmy",
+  "After a conversation with Doddy, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.": "Po rozmowie z Doddym i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy podsumowuje ten iPhone, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę.",
+  "A recap of this call is in your notes": "Podsumowanie tej rozmowy jest w Twoich notatkach",
+  "Call with %@, %@": "Rozmowa: %@, %@",
+  "Call, %@": "Rozmowa, %@",
+  "Recap made by Doddy from the call's card and answer, not from the transcript.": "Podsumowanie zrobione przez Doddy’ego z karty rozmowy i odpowiedzi, nie z zapisu rozmowy.",
+  "Recap written on this iPhone.": "Podsumowanie napisane na tym iPhonie.",
+  "Recap written by Claude on Doddy's server.": "Podsumowanie napisane przez Claude’a na serwerze Doddy’ego.",
+  "Discussed": "Omówione",
+  "Agreed": "Ustalone",
+  "Conversation with Doddy, %@": "Rozmowa z Doddym, %@",
+  "Recaps on Doddy's server": "Podsumowania na serwerze Doddy’ego",
+  "With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap.": "Gdy „Podsumowania na serwerze Doddy’ego” są włączone, a ten iPhone nie może sam napisać podsumowania, tekst rozmowy trafia do Twojego serwera wiadomości Doddy’ego i do Anthropic tylko na potrzeby tego jednego podsumowania. Zapisują wyłącznie liczby, nie słowa. Gdy to jest wyłączone, takie rozmowy nie dostają podsumowania."
 }
