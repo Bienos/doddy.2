@@ -6168,6 +6168,17 @@
         }
       }
     },
+    "All day: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cały dzień: %@"
+          }
+        }
+      }
+    },
     "All done": {
       "extractionState": "manual",
       "localizations": {
@@ -7281,6 +7292,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I jeszcze w Przypomnieniach: %lld."
+          }
+        }
+      }
+    },
+    "And %lld more tomorrow.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I jeszcze jutro: %lld."
           }
         }
       }
@@ -9414,6 +9436,17 @@
         }
       }
     },
+    "Back on your list: %@. Checked in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znów na liście: %@. Sprawdzone w Przypomnieniach."
+          }
+        }
+      }
+    },
     "Back squat": {
       "extractionState": "manual",
       "localizations": {
@@ -10371,6 +10404,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kalendarz"
+          }
+        }
+      }
+    },
+    "Calendar is off for Doddy, so events aren't shown here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz jest wyłączony dla Doddy’ego, więc wydarzeń tu nie widać."
           }
         }
       }
@@ -39263,6 +39307,17 @@
         }
       }
     },
+    "Later today": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Później dziś"
+          }
+        }
+      }
+    },
     "Later…": {
       "extractionState": "manual",
       "localizations": {
@@ -42805,6 +42860,17 @@
         }
       }
     },
+    "Mark as done: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oznacz jako zrobione: %@"
+          }
+        }
+      }
+    },
     "Mark done": {
       "extractionState": "manual",
       "localizations": {
@@ -46132,6 +46198,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Następny krok"
+          }
+        }
+      }
+    },
+    "Next up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Następne"
           }
         }
       }
@@ -50189,65 +50266,6 @@
         }
       }
     },
-    "Nothing left on your calendar or reminders today.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Für heute ist in deinem Kalender und deinen Erinnerungen nichts mehr offen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No queda nada en tu calendario ni en tus recordatorios de hoy."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plus rien dans ton calendrier ni tes rappels aujourd’hui."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Za danas ništa više u kalendaru ni podsjetnicima."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Niente altro nel calendario o nei promemoria per oggi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今日のカレンダーとリマインダーに、残っているものはありません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na dziś nic więcej w kalendarzu ani przypomnieniach."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada restou no seu calendário ou nos lembretes hoje."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今天的日历和提醒事项中没有剩余事项。"
-          }
-        }
-      }
-    },
     "Nothing left on your lists.": {
       "extractionState": "manual",
       "localizations": {
@@ -53176,6 +53194,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na radarze wymaga serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
+          }
+        }
+      }
+    },
+    "On now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trwa teraz"
           }
         }
       }
@@ -61815,6 +61844,47 @@
         }
       }
     },
+    "Read from Calendar and Reminders on this iPhone. Nothing here is sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Read from Calendar and Reminders on this iPad. Nothing here is sent anywhere."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Read from Calendar and Reminders on this iPhone. Nothing here is sent anywhere."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Czytane z Kalendarza i Przypomnień na tym iPadzie. Nic stąd nie jest nigdzie wysyłane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Czytane z Kalendarza i Przypomnień na tym iPhonie. Nic stąd nie jest nigdzie wysyłane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Read one day's steps, walking distance and floors climbed, after you say yes or tap": {
       "extractionState": "manual",
       "localizations": {
@@ -63890,6 +63960,39 @@
         }
       }
     },
+    "Reminders are off for Doddy, so nothing was changed. Open it in Reminders instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone dla Doddy’ego, więc nic się nie zmieniło. Zrób to w aplikacji Przypomnienia."
+          }
+        }
+      }
+    },
+    "Reminders are off for Doddy, so nothing was ticked off.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone dla Doddy’ego, więc nic nie zostało odhaczone."
+          }
+        }
+      }
+    },
+    "Reminders are off for Doddy, so they aren't shown here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone dla Doddy’ego, więc ich tu nie widać."
+          }
+        }
+      }
+    },
     "Reminders confirmed it": {
       "extractionState": "manual",
       "localizations": {
@@ -64133,6 +64236,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "已设置的提醒"
+          }
+        }
+      }
+    },
+    "Reminders took “%@” but didn't show it as done afterwards. Check it there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia przyjęły „%@”, ale potem nie pokazały go jako zrobionego. Sprawdź tam."
+          }
+        }
+      }
+    },
+    "Reminders took “%@” but didn't show it as open afterwards. Check it there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia przyjęły „%@”, ale potem nie pokazały go jako otwartego. Sprawdź tam."
           }
         }
       }
@@ -91095,6 +91220,17 @@
         }
       }
     },
+    "Ticked off: %@. Checked in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odhaczone: %@. Sprawdzone w Przypomnieniach."
+          }
+        }
+      }
+    },
     "Ticked: save this": {
       "extractionState": "manual",
       "localizations": {
@@ -107606,6 +107742,28 @@
         }
       }
     },
+    "“%@” changed in Reminders since, so it was left as it is.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie „%@” zmieniło się w międzyczasie, więc zostało tak, jak jest."
+          }
+        }
+      }
+    },
+    "“%@” changed in Reminders, so it wasn't ticked off. This is how it is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie „%@” zmieniło się w Przypomnieniach, więc nie zostało odhaczone. Tak wygląda teraz."
+          }
+        }
+      }
+    },
     "“%@” is no longer shared. It stays on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -107846,6 +108004,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "“%@”的到期时间现在是 %@。"
+          }
+        }
+      }
+    },
+    "“%@” wasn't put back. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie „%@” nie wróciło na listę. %@"
+          }
+        }
+      }
+    },
+    "“%@” wasn't ticked off. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie „%@” nie zostało odhaczone. %@"
           }
         }
       }
