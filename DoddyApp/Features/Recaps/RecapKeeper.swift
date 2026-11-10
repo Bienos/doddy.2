@@ -137,6 +137,8 @@ enum RecapKeeper {
         let title: String = switch (recap.kind, recap.with) {
         case (.voiceConversation, _):
             String(format: NSLocalizedString("Conversation with Doddy, %@", comment: "Recap note title: when"), date)
+        case (.recording, _):
+            String(format: NSLocalizedString("Recording, %@", comment: "Recap note title: when"), date)
         case (_, let with?):
             String(format: NSLocalizedString("Call with %@, %@", comment: "Recap note title: who, when"), with, date)
         case (_, nil):

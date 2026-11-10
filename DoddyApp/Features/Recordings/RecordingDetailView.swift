@@ -2,10 +2,13 @@ import DoddyCore
 import SwiftUI
 
 // One recording (ADR-588): its audio, its words, a search over them, and the parts that answer a
-// question. There is NO written summary and no written answer here, because no provider has been
-// approved (docs/implementation/CAPTURE_AUDIT.md section 5); the page says so. What it does show is
-// real: the words that were recognised on this iPhone, with their times, and where in them a
-// question's words appear. Nothing here is saved as memory unless the user taps Save on a note.
+// question. There is no written answer here, because no provider has been approved for answers
+// (docs/implementation/CAPTURE_AUDIT.md section 5); the page says so. What it does show is real: the
+// words that were recognised on this iPhone, with their times, and where in them a question's words
+// appear. A recap of what was discussed (decision 2026-11-09-conversation-recaps) is written only when
+// the person taps "Write a recap" (or has "Remember what we talked about" on), by Apple's model on this
+// iPhone or, with its own switch on, Doddy's server. Nothing here is saved as memory unless the user taps
+// Save on a note or on a recap.
 
 @MainActor
 @Observable
@@ -23,8 +26,20 @@ final class RecordingDetailModel {
     private(set) var asked = false
     private(set) var links: [RecordingMemoryLink] = []
     private(set) var problem: String?
+    /// The recap of this recording (decision 2026-11-09-conversation-recaps, step 4).
+    private(set) var recap: RecapState = .idle
     var query = ""
     var question = ""
+
+    enum RecapState: Equatable {
+        case idle
+        case writing
+        /// Written and checked, not saved: the person saves it with a tap.
+        case ready(ConversationRecap, noteText: String)
+        /// In the notes, saved and read back.
+        case saved
+        case message(String)
+    }
 
     private let pageSize = 500
     private var repository: (any RecordingRepository)? { AppEnvironment.shared.recordingRepository }
@@ -46,6 +61,7 @@ final class RecordingDetailModel {
             player.load(parts: parts, recordingID: id, files: files)
             try await loadWords()
             links = try await repository.memoryLinks(forRecording: id)
+            if RecapKeeper.hasRecap(recording: id), recap == .idle { recap = .saved }
             problem = nil
         } catch {
             problem = NSLocalizedString("Doddy couldn't read this recording. Nothing was changed.", comment: "")
@@ -130,6 +146,55 @@ final class RecordingDetailModel {
             return nil
         }
     }
+
+    /// Whether a recap can be written now: the words exist and aren't still being written out.
+    var canWriteRecap: Bool {
+        guard let recording else { return false }
+        return recording.transcription == .done && !segments.isEmpty && recap != .writing
+    }
+
+    /// Writes a recap from this recording's words. Not saved until the person taps Save.
+    func writeRecap() async {
+        guard canWriteRecap, let recording else { return }
+        recap = .writing
+        switch await RecapKeeper.writeRecap(for: recording, segments: segments, explicit: true) {
+        case .ready(let written, let noteText):
+            recap = .ready(written, noteText: noteText)
+        case .skipped(.tooShort):
+            recap = .message(NSLocalizedString("Too little was said in this recording to write a recap.", comment: ""))
+        case .skipped:
+            recap = .message(NSLocalizedString("This iPhone can't write a recap in this language, and Recaps on Doddy's server is off. You can turn it on in Settings › What Doddy knows.", comment: ""))
+        case .refused:
+            recap = .message(NSLocalizedString("Doddy couldn't write a recap that followed the rules. Nothing was saved.", comment: ""))
+        case .serverFailed(let failure):
+            recap = .message(Self.serverMessage(failure))
+        }
+    }
+
+    private static func serverMessage(_ failure: ServerRecapClient.Failure) -> String {
+        switch failure {
+        case .offline: NSLocalizedString("Doddy's server can't be reached. Nothing was sent or saved.", comment: "")
+        case .dailyLimitReached: NSLocalizedString("The daily limit for recaps on Doddy's server is reached. Try again tomorrow.", comment: "")
+        case .notConfigured: NSLocalizedString("Recaps on Doddy's server aren't set up yet.", comment: "")
+        case .outcomeUnknown: NSLocalizedString("It's not known whether Doddy's server wrote the recap. Nothing was saved; try again if you want.", comment: "")
+        case .refused, .unavailable: NSLocalizedString("Doddy's server couldn't write a recap. Nothing was saved.", comment: "")
+        }
+    }
+
+    /// Saves the written recap as a note linked to this recording. "Saved" only once it is read back.
+    func saveRecap(store: MemoryStore) async {
+        guard case .ready(let written, let noteText) = recap, let recording else { return }
+        let ok = await RecapKeeper.saveRecap(written, noteText: noteText, recordingID: id,
+                                             recordingTitle: recording.displayTitle(.current), store: store)
+        if ok {
+            links = (try? await repository?.memoryLinks(forRecording: id)) ?? links
+            recap = .saved
+        } else {
+            recap = .message(NSLocalizedString("Doddy couldn't save that note. Nothing was saved.", comment: ""))
+        }
+    }
+
+    func discardRecap() { recap = .idle }
 
     /// Saves one thing as a note, then links it to this recording. "Saved" only once the note is read back.
     func remember(text: String, kind: CaptureMemory.Kind, atMilliseconds: Int, store: MemoryStore) async -> String? {
@@ -320,9 +385,54 @@ struct RecordingDetailView: View {
             if let message = model.quality?.message(language) {
                 Label(message, systemImage: "waveform.badge.exclamationmark").foregroundStyle(Theme.secondaryText)
             }
-            Text("No summary yet. Doddy can't write summaries of recordings yet. The words below were written out on this iPhone, and you can search them.")
-                .foregroundStyle(Theme.secondaryText)
-                .accessibilityIdentifier("recording.summary.none")
+            recapContent
+        }
+    }
+
+    /// What was discussed, never the words: written on this iPhone or, with its own switch on, on Doddy's
+    /// server, and saved as a note only with a tap (or with "Remember what we talked about" on).
+    @ViewBuilder
+    private var recapContent: some View {
+        switch model.recap {
+        case .idle, .message:
+            if case .message(let text) = model.recap {
+                Label { Text(verbatim: text) } icon: { Image(systemName: "info.circle") }
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("recording.recap.message")
+            } else {
+                Text("A recap is what was discussed, agreed and left to do, never the words themselves. It is written on this iPhone when it can, or on Doddy's server if you turned that on in Settings › What Doddy knows.")
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("recording.summary.none")
+            }
+            Button { Task { await model.writeRecap() } } label: { Label("Write a recap", systemImage: "text.badge.checkmark") }
+                .disabled(!model.canWriteRecap)
+                .accessibilityIdentifier("recording.recap.write")
+        case .writing:
+            HStack(spacing: 8) { ProgressView(); Text("Writing the recap…").foregroundStyle(Theme.secondaryText) }
+                .accessibilityIdentifier("recording.recap.writing")
+        case .ready(let written, _):
+            recapPoints("Discussed", written.discussed)
+            recapPoints("Agreed", written.agreed)
+            recapPoints("To do", written.toDo)
+            Text(written.writtenBy == .server ? "Written by Claude on Doddy's server." : "Written on this iPhone.")
+                .font(.footnote).foregroundStyle(Theme.secondaryText)
+            Button { Task { await model.saveRecap(store: store) } } label: { Label("Save as a note", systemImage: "square.and.arrow.down") }
+                .accessibilityIdentifier("recording.recap.save")
+            Button("Discard", role: .destructive) { model.discardRecap() }
+                .accessibilityIdentifier("recording.recap.discard")
+        case .saved:
+            Label("A recap of this recording is in your notes", systemImage: "note.text")
+                .accessibilityIdentifier("recording.recap.saved")
+        }
+    }
+
+    @ViewBuilder
+    private func recapPoints(_ title: LocalizedStringKey, _ points: [String]) -> some View {
+        if !points.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.subheadline.weight(.semibold))
+                ForEach(points, id: \.self) { point in Text(verbatim: "• \(point)") }
+            }
         }
     }
 

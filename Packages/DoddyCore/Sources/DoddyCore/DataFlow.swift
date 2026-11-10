@@ -353,8 +353,8 @@ public enum DataFlow {
                         : "No messaging server is set, so typed questions can't be sent."),
             DataFlowRow(
                 id: "recaps", destination: "Your Doddy messaging server and Anthropic (recaps)",
-                what: "The text of a conversation with Doddy, to write a short recap of what was discussed, when this iPhone can't write it itself.",
-                when: "Only after a conversation ends, with \"Remember what we talked about\" and \"Recaps on Doddy's server\" both on. Never a Private conversation.",
+                what: "The text of a conversation with Doddy, or the words of a recording written out on this iPhone, to write a short recap of what was discussed, when this iPhone can't write it itself.",
+                when: "Only after a conversation ends or you tap \"Write a recap\" on a recording, with \"Recaps on Doddy's server\" on (and \"Remember what we talked about\" on for the automatic ones). Never a Private conversation.",
                 isActive: state.recapsOnServer && state.messagingServerSet,
                 note: !state.recapsOnServer
                     ? "Recaps are written on this iPhone or not at all, so nothing goes there."
@@ -380,7 +380,7 @@ public enum DataFlow {
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
         // Decision 2026-11-09-conversation-recaps: only when this iPhone can't write a recap itself.
-        if active.contains("recaps") { parts.append("Anthropic (recaps of conversations this iPhone can't write)") }
+        if active.contains("recaps") { parts.append("Anthropic (recaps of conversations and recordings this iPhone can't write)") }
         // ADR-603: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
         if active.contains("webMemory") { parts.append("Anthropic (questions you ask on the web about what you keep on Doddy's server)") }
         if active.contains("messagingServer") {
@@ -422,7 +422,7 @@ public enum DataFlow {
         "watches": "the shops' pages, read by your messaging server (prices you watch)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "Anthropic (Ask Doddy, through your messaging server)",
-        "recaps": "Anthropic (recaps of conversations, through your messaging server)",
+        "recaps": "Anthropic (recaps of conversations and recordings, through your messaging server)",
         "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",
     ]
 

@@ -552,17 +552,14 @@ struct KnowledgeSettingsView: View {
                     get: { rememberRecaps },
                     set: { RecapKeeper.setRemember($0); rememberRecaps = $0 }))
                     .accessibilityIdentifier("settings.rememberRecaps")
-                if rememberRecaps {
-                    // The yes for step 3b: the conversation's text goes to Doddy's server and Anthropic for one recap.
-                    Toggle("Recaps on Doddy's server", isOn: $recapsOnServer)
-                        .accessibilityIdentifier("settings.recapsOnServer")
-                }
+                // The yes for the server writing a recap this iPhone can't (a conversation, or a recording when you
+                // tap "Write a recap"): the text goes to Doddy's server and Anthropic for that one recap.
+                Toggle("Recaps on Doddy's server", isOn: $recapsOnServer)
+                    .accessibilityIdentifier("settings.recapsOnServer")
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
-                Text("After a conversation with Doddy, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.")
-                if rememberRecaps {
-                    Text("With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap.")
-                }
+                    Text("After a conversation with Doddy, after a recording written out on this iPhone, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.")
+                    Text("With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the text of the conversation or recording goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those get no recap.")
                 }
             }
         }
