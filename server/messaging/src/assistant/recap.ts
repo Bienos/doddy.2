@@ -18,8 +18,12 @@ export const RECAP_LIMITS = Object.freeze({
   bodyBytes: 128 * 1024,
 });
 
+/** What the app may ask `POST /v1/recaps` for. A call to Doddy's phone line is recapped by the server itself
+ * (`phoneRecaps.ts`), from the post-call webhook, never from a request. */
 export const RECAP_KINDS = ["voice_conversation", "recording"] as const;
 export type RecapKind = (typeof RECAP_KINDS)[number];
+export const RECAP_WRITER_KINDS = [...RECAP_KINDS, "phone_line"] as const;
+export type RecapWriterKind = (typeof RECAP_WRITER_KINDS)[number];
 
 const uuid = z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/);
 const scalars = (s: string) => [...s].length;
@@ -38,10 +42,12 @@ export const RecapRequest = z.strictObject({
 export type RecapRequest = z.output<typeof RecapRequest>;
 
 /** The instructions, word for word as `RecapModelIO.instructions` in the app. */
-export function recapInstructions(kind: RecapKind, languageCode: string): string {
+export function recapInstructions(kind: RecapWriterKind, languageCode: string): string {
   const what = kind === "voice_conversation"
     ? "a conversation between a person and Doddy, their AI assistant"
-    : "a conversation the person recorded with someone, transcribed on their iPhone (speakers aren't marked, and words may be misheard)";
+    : kind === "phone_line"
+      ? "a phone call between a person and Doddy, their AI assistant"
+      : "a conversation the person recorded with someone, transcribed on their iPhone (speakers aren't marked, and words may be misheard)";
   return [
     `You write a short recap of ${what}, so the person remembers what it was about.`,
     `Answer only with JSON: {"discussed": [...], "agreed": [...], "to_do": [...]}.`,
@@ -59,7 +65,7 @@ export function recapInstructions(kind: RecapKind, languageCode: string): string
 }
 
 /** The conversation between tags, as `RecapModelIO.conversation` builds it. */
-export function recapConversation(lines: RecapRequest["lines"]): string {
+export function recapConversation(lines: RecapInput["lines"]): string {
   const label = { person: "Person", doddy: "Doddy", other: "Speaker" } as const;
   const text = lines
     .filter((l) => l.text.trim() !== "")
@@ -91,10 +97,13 @@ export type RecapOutcome =
   | { kind: "refused"; usage?: RecapUsage }
   | { kind: "unparsed"; usage?: RecapUsage };
 
+/** What a writer is given: the kind, the language and the lines (a request from the app has more, which is ignored). */
+export interface RecapInput { kind: RecapWriterKind; language: string; lines: RecapRequest["lines"] }
+
 export interface RecapWriter {
   readonly model: string;
   /** Throws on API errors (network, HTTP, abort); an answer that breaks the shape is "unparsed". */
-  write(req: RecapRequest, signal: AbortSignal): Promise<RecapOutcome>;
+  write(req: RecapInput, signal: AbortSignal): Promise<RecapOutcome>;
 }
 
 export class ClaudeRecapWriter implements RecapWriter {
@@ -106,7 +115,7 @@ export class ClaudeRecapWriter implements RecapWriter {
     this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 1, timeout: 40_000 });
   }
 
-  async write(req: RecapRequest, signal: AbortSignal): Promise<RecapOutcome> {
+  async write(req: RecapInput, signal: AbortSignal): Promise<RecapOutcome> {
     const response = await this.client.messages.create({
       model: this.model,
       max_tokens: 1200,

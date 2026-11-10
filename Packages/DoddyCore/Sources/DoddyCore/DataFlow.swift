@@ -47,6 +47,9 @@ public struct DataFlowState: Equatable, Sendable {
     /// "Remember what we talked about" is on and the person let Doddy's server write recaps this iPhone can't
     /// (decision 2026-11-09-conversation-recaps).
     public var recapsOnServer: Bool
+    /// "Remember what we talked about" is on, so the messaging server writes a recap of each call to and from
+    /// Doddy's phone line from what ElevenLabs sends it after the call (decision 2026-11-09-conversation-recaps).
+    public var phoneRecapsOn: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -60,9 +63,11 @@ public struct DataFlowState: Equatable, Sendable {
         webNotesKept: Bool = false, webConversationsKept: Bool = false,
         inFaktKeySaved: Bool = false,
         textsToDoddyOn: Bool = false,
-        recapsOnServer: Bool = false
+        recapsOnServer: Bool = false,
+        phoneRecapsOn: Bool = false
     ) {
         self.recapsOnServer = recapsOnServer
+        self.phoneRecapsOn = phoneRecapsOn
         self.textsToDoddyOn = textsToDoddyOn
         self.inFaktKeySaved = inFaktKeySaved
         self.webNotesKept = webNotesKept
@@ -361,6 +366,16 @@ public enum DataFlow {
                     : state.messagingServerSet
                         ? "Your messaging server passes the text to Anthropic for this one recap and keeps only counts, not words. The recap is saved as a note on this iPhone."
                         : "No messaging server is set, so recaps can't be written there."),
+            DataFlowRow(
+                id: "phoneRecaps", destination: "Your Doddy messaging server and Anthropic (recaps of phone calls)",
+                what: "What was said in a call to or from Doddy's phone line, which ElevenLabs sends to your messaging server after the call, to write a short recap of what was discussed.",
+                when: "Only after such a call, with \"Remember what we talked about\" on. The server keeps only the recap (three short lists), not the words, until this iPhone saves it as a note, or for 30 days. ElevenLabs keeps its own copy of the call for the time set for the phone agent.",
+                isActive: state.phoneRecapsOn && state.messagingServerSet,
+                note: !state.phoneRecapsOn
+                    ? "Recaps are off, so the server writes none."
+                    : state.messagingServerSet
+                        ? "Your messaging server passes the call's text to Anthropic for that one recap and stores only the recap. It is saved as a note on this iPhone, then deleted on the server."
+                        : "No messaging server is set, so recaps of phone calls can't be written."),
         ]
     }
 
@@ -381,6 +396,7 @@ public enum DataFlow {
         if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
         // Decision 2026-11-09-conversation-recaps: only when this iPhone can't write a recap itself.
         if active.contains("recaps") { parts.append("Anthropic (recaps of conversations and recordings this iPhone can't write)") }
+        if active.contains("phoneRecaps") { parts.append("Anthropic (recaps of calls to Doddy's phone line)") }
         // ADR-603: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
         if active.contains("webMemory") { parts.append("Anthropic (questions you ask on the web about what you keep on Doddy's server)") }
         if active.contains("messagingServer") {
@@ -423,6 +439,7 @@ public enum DataFlow {
         "siri": "Siri (when you ask it)",
         "askDoddy": "Anthropic (Ask Doddy, through your messaging server)",
         "recaps": "Anthropic (recaps of conversations and recordings, through your messaging server)",
+        "phoneRecaps": "Anthropic (recaps of calls to Doddy's phone line, through your messaging server)",
         "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",
     ]
 

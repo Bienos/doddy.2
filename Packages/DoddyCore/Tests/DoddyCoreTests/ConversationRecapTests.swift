@@ -276,6 +276,8 @@ final class ConversationRecapTests: XCTestCase {
                        fixture["voice_conversation"] as? String, "server/messaging/src/assistant/recap.ts")
         XCTAssertEqual(RecapModelIO.instructions(kind: .recording, languageCode: language),
                        fixture["recording"] as? String, "server/messaging/src/assistant/recap.ts")
+        XCTAssertEqual(RecapModelIO.instructions(kind: .phoneLine, languageCode: language),
+                       fixture["phone_line"] as? String, "server/messaging/src/assistant/recap.ts")
         let conversation = try XCTUnwrap(fixture["conversation"] as? [String: Any])
         let lines = try XCTUnwrap(conversation["lines"] as? [[String: String]]).map {
             RecapModelIO.Line(speaker: RecapModelIO.Line.Speaker(rawValue: $0["speaker"] ?? "") ?? .other, text: $0["text"] ?? "")

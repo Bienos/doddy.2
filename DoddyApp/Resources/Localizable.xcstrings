@@ -5725,7 +5725,7 @@
         }
       }
     },
-    "After a conversation with Doddy, after a recording written out on this iPhone, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.": {
+    "After a conversation with Doddy, after a recording written out on this iPhone, after a call to or from Doddy's phone line, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -5734,13 +5734,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "After a conversation with Doddy, after a recording written out on this iPad, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPad, where it has Apple Intelligence in your language. You can edit or delete each recap like any note."
+                  "value": "After a conversation with Doddy, after a recording written out on this iPad, after a call to or from Doddy's phone line, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPad, where it has Apple Intelligence in your language. You can edit or delete each recap like any note."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "After a conversation with Doddy, after a recording written out on this iPhone, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note."
+                  "value": "After a conversation with Doddy, after a recording written out on this iPhone, after a call to or from Doddy's phone line, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note."
                 }
               }
             }
@@ -5752,13 +5752,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Po rozmowie z Doddym, po nagraniu zapisanym na tym iPadzie i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy i nagrania podsumowuje ten iPad, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę."
+                  "value": "Po rozmowie z Doddym, po nagraniu zapisanym na tym iPadzie, po rozmowie telefonicznej z numerem Doddy’ego lub od niego i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy i nagrania podsumowuje ten iPad, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Po rozmowie z Doddym, po nagraniu zapisanym na tym iPhonie i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy i nagrania podsumowuje ten iPhone, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę."
+                  "value": "Po rozmowie z Doddym, po nagraniu zapisanym na tym iPhonie, po rozmowie telefonicznej z numerem Doddy’ego lub od niego i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy i nagrania podsumowuje ten iPhone, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę."
                 }
               }
             }
@@ -58099,6 +58099,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na odebrane połączenie"
+          }
+        }
+      }
+    },
+    "Phone call with Doddy, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa telefoniczna z Doddym, %@"
           }
         }
       }
