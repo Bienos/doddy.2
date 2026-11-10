@@ -142,4 +142,72 @@ final class RecapKeeperTests: XCTestCase {
         XCTAssertEqual(OnDeviceRecapWriter.json(in: "```json\n{\"discussed\": []}\n```"), "{\"discussed\": []}")
         XCTAssertEqual(OnDeviceRecapWriter.json(in: "no json"), "no json")
     }
+
+    // MARK: - Recordings (step 4)
+
+    private func recording(language: String = "pl-PL") -> Recording {
+        Recording(id: UUID(), origin: .app, phase: .saved, languageCode: language, startedAt: Date().addingTimeInterval(-600),
+                  endedAt: Date().addingTimeInterval(-60), durationMilliseconds: 540_000, transcription: .done)
+    }
+
+    private func segments(words: Int) -> [TranscriptSegment] {
+        [TranscriptSegment(index: 0, startMilliseconds: 0, endMilliseconds: 5_000,
+                           text: Array(repeating: "słowo", count: words).joined(separator: " "))]
+    }
+
+    @MainActor
+    func testARecordingsWordsBecomeLinesWithNoSpeakerGuessed() {
+        let lines = RecapKeeper.lines(from: segments(words: 3))
+        XCTAssertEqual(lines.count, 1)
+        XCTAssertEqual(lines.first?.speaker, .other, "no on-device recognizer says who spoke, and Doddy doesn't guess")
+        XCTAssertEqual(RecapKeeper.language(of: recording(language: "pl-PL")), "pl")
+        XCTAssertEqual(RecapKeeper.language(of: recording(language: "en_GB")), "en")
+    }
+
+    @MainActor
+    func testATooShortRecordingIsNotRecappedEvenWhenAskedFor() async {
+        let result = await RecapKeeper.writeRecap(for: recording(), segments: segments(words: RecapRules.minimumWordsFromPerson - 1),
+                                                  explicit: true, defaults: defaults)
+        guard case .skipped(.tooShort) = result else { return XCTFail("\(result)") }
+    }
+
+    @MainActor
+    func testTheTapStandsInForTheSwitchButNeverForTheServerYes() async throws {
+        try XCTSkipIf(OnDeviceRecapWriter.isAvailable(languageCode: "pl"), "this device can write recaps itself")
+        // The switch is off and so is the server yes: a tap is not a yes to sending the words anywhere.
+        XCTAssertFalse(RecapKeeper.isOn(defaults))
+        let result = await RecapKeeper.writeRecap(for: recording(), segments: segments(words: 100), explicit: true, defaults: defaults)
+        guard case .skipped(.noWriter) = result else { return XCTFail("\(result)") }
+    }
+
+    @MainActor
+    func testASavedRecordingRecapIsOneNoteMarkedOnlyAfterTheReadBack() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let rec = recording()
+        let written = try ConversationRecap(kind: .recording, with: nil, endedAt: Date(), discussed: ["Termin wizyty"],
+                                            agreed: [], toDo: ["Zadzwonić w piątek"], writtenBy: .onDevice)
+        XCTAssertFalse(RecapKeeper.hasRecap(recording: rec.id, defaults: defaults))
+        let ok = await RecapKeeper.saveRecap(written, noteText: "Nagranie\n• Termin wizyty", recordingID: rec.id,
+                                             recordingTitle: "Wizyta", store: store, defaults: defaults)
+        XCTAssertTrue(ok)
+        XCTAssertTrue(RecapKeeper.hasRecap(recording: rec.id, defaults: defaults))
+        XCTAssertEqual(store.memories.first?.source, .conversationRecap)
+
+        // A save that fails is not marked.
+        let broken = MemoryStore(environment: .unavailable)
+        let other = recording()
+        let failed = await RecapKeeper.saveRecap(written, noteText: "x", recordingID: other.id, recordingTitle: "", store: broken,
+                                                 defaults: defaults)
+        XCTAssertFalse(failed)
+        XCTAssertFalse(RecapKeeper.hasRecap(recording: other.id, defaults: defaults))
+    }
+
+    @MainActor
+    func testNothingIsRecappedAutomaticallyWhileTheSwitchIsOff() async {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let saved = await RecapKeeper.rememberRecordings([RecordingListItem(recording: recording(), preview: nil)], store: store,
+                                                         defaults: defaults)
+        XCTAssertEqual(saved, 0)
+        XCTAssertTrue(store.memories.isEmpty)
+    }
 }

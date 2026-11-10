@@ -37,7 +37,7 @@
 - If the model's output breaks a rule, the recap is refused and nothing is saved. It is never cut down to fit.
 
 **Remembering ("Raz włączam, potem samo"):**
-- **The switch:** Settings › What Doddy knows, "Remember what we talked about" (`RecapSettings.rememberKey`). It is **off** until the person turns it on, per `memory_policy.explicit_long_term_memory_opt_in_default`. The switch is the explicit act DOD-06 asks for.
+- **The switches:** Settings › What Doddy knows, "Remember what we talked about" and, under it, "Recaps on Doddy's server" (always shown) (`RecapSettings.rememberKey`). It is **off** until the person turns it on, per `memory_policy.explicit_long_term_memory_opt_in_default`. The switch is the explicit act DOD-06 asks for.
 - **After that:** each recap is saved as a note with source `conversation_recap` and no tap. The app says "Saved" only after the store read the note back (DOD-08, `MemoryStore.save`). The note can be opened, corrected and deleted like any note.
 - **Never:**
   - for a Private conversation (ADR-310 private mode);
@@ -57,7 +57,7 @@
 1. This decision. DoddyCore: `ConversationRecap`, `RecapRules`, `RecapPolicy`, `RecapSettings`, `RecapMemoryText`, the model input and output (`RecapModelIO`), the call-for-you recap (`CallCaseRecap`), the `conversation_recap` source (schema, both servers' lists, Doddy Web). No screen yet.
 2. The switch in Settings › What Doddy knows, and `call_for_you` saving its recap when the calls list sees an answered call (`RecapKeeper`); the answer card says when its recap is in the notes.
 3. The writers, in two parts. **3a:** Apple's Foundation Models on the iPhone (`OnDeviceRecapWriter`) and `voice_conversation` at the end of a conversation (`VoiceSessionController.keepLog` → `RecapKeeper.recapConversation`). Without Apple Intelligence in the person's language there is no recap yet. **3b:** `POST /v1/recaps` on the messaging server (Messages' model, key, switch and daily caps; nothing stored), the yes as a second switch under the first ("Recaps on Doddy's server", off by default, its own row in What leaves this iPhone), and the server as the fallback when the iPhone can't write one.
-4. `recording`: a "Recap" button on a recording, and after a recording stops when the switch is on.
+4. `recording` (step 4): a recording's page has a "Write a recap" button (the tap stands in for the "Remember what we talked about" switch, never for the server yes) and a "Save as a note" tap; with the switch on, a recording written out after it was turned on is recapped without a tap (`RecapKeeper+Recordings`). The note is linked to its recording. The words of a recording leave the iPhone only with "Recaps on Doddy's server" on, which is now shown whether or not the first switch is on; ADR-588's guard on the Recordings folder is unchanged, because the upload is made from `Features/Recaps`.
 5. `phone_line`: the post-call webhook for the phone agent, the recap made on the server, sent to the iPhone like a call note and then deleted on the server.
 
 ## Consequences

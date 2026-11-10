@@ -108,4 +108,18 @@ final class WhatICanDoTests: XCTestCase {
             }
         }
     }
+
+    func testEveryFeatureHasAShortExampleInBothLanguages() {
+        for ability in DoddyAbility.allCases {
+            for language in [NotificationLanguage.english, .polish] {
+                let example = WhatICanDo.example(ability, language)
+                XCTAssertFalse(example.isEmpty, "\(ability)")
+                XCTAssertLessThanOrEqual(example.count, 60, "one short line: \(example)")
+                XCTAssertFalse(example.contains("!"), "product voice: no exclamation marks")
+            }
+        }
+        XCTAssertEqual(WhatICanDo.exampleLead(.messages, .polish), "Napisz na przykład", "Messages is typed")
+        XCTAssertEqual(WhatICanDo.exampleLead(.talk, .polish), "Powiedz na przykład")
+        XCTAssertEqual(WhatICanDo.exampleLead(.translator, .english), "Say, for example")
+    }
 }

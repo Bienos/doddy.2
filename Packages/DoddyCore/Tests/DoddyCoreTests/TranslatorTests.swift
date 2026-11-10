@@ -64,11 +64,14 @@ final class TranslatorTests: XCTestCase {
         XCTAssertEqual(proposal.setup(ownerDefault: lang("en"))?.pairText, "English ⇄ Polski")
     }
 
-    func testOnlyStopIsAllowedWhileTranslating() {
+    func testOnlyStopAndStartAreAllowedWhileTranslating() {
         XCTAssertTrue(TranslatorPolicy.allows(.stopTranslator))
+        // A second start_translator is answered "already on" (9 Nov 2026: a refusal made Doddy talk about
+        // it in English instead of translating).
+        XCTAssertTrue(TranslatorPolicy.allows(.startTranslator(TranslatorProposal(kind: .faceToFace, yours: nil, theirs: nil))))
         let refused: [VoiceToolRequest] = [
             .searchMemories(query: "x"), .saveMemory(text: "x"), .lookupContact(name: "x"), .openMap(place: "x"),
-            .startTranslator(TranslatorProposal(kind: .faceToFace, yours: nil, theirs: nil)), .unsupported(name: "x"),
+            .unsupported(name: "x"),
         ]
         for request in refused { XCTAssertFalse(TranslatorPolicy.allows(request), "\(request)") }
         XCTAssertTrue(VoiceToolReply.translatorRefused("search_memories").hasPrefix("refused:"))
@@ -80,11 +83,14 @@ final class TranslatorTests: XCTestCase {
     func testStartedReplyCarriesTheDisclosureInTheirLanguage() {
         let reply = VoiceToolReply.translatorStarted(faceToFace())
         XCTAssertTrue(reply.hasPrefix("started:"))
-        XCTAssertTrue(reply.contains(lang("es").hello))
-        // ADR-619: it started without asking, so Doddy asks what to translate if he wasn't told.
-        XCTAssertTrue(reply.contains("what to translate"))
+        // Owner, 9 Nov 2026: nothing spoken of his own, no disclosure and no "what should I translate?".
+        XCTAssertFalse(reply.contains(lang("es").hello))
+        XCTAssertTrue(reply.contains("Say nothing of your own: no greeting, no AI translator disclosure"))
+        XCTAssertTrue(reply.contains("Polish into Spanish, Spanish into Polish"))
         let detect = VoiceToolReply.translatorStarted(faceToFace("pl", nil))
-        XCTAssertTrue(detect.contains("let them say something first"))
+        XCTAssertTrue(detect.contains("Wait in silence until someone speaks"))
+        XCTAssertTrue(detect.contains("translate what they said into Polish"))
+        XCTAssertTrue(detect.contains("until you have heard it, into English"))
         let listen = VoiceToolReply.translatorStarted(TranslatorSetup(kind: .listen, owner: lang("pl"), other: lang("it"))!)
         XCTAssertTrue(listen.contains("Say nothing to anyone else"))
     }
@@ -255,7 +261,44 @@ extension TranslatorTests {
         let setup = TranslatorSetup(kind: .faceToFace, owner: TranslatorLanguages.named("pl")!, other: TranslatorLanguages.named("es"))!
         let text = TranslatorPrompt.render(setup)
         XCTAssertTrue(text.hasPrefix("Translator mode is on from the start: face to face."))
-        XCTAssertTrue(text.contains(TranslatorLanguages.named("es")!.hello))
+        // Owner, 9 Nov 2026: silent start. No spoken disclosure; their half of the screen shows the AI label.
+        XCTAssertFalse(text.contains(TranslatorLanguages.named("es")!.hello))
+        XCTAssertTrue(text.contains("no AI translator disclosure, no question about what to translate"))
+        XCTAssertTrue(text.contains("Wait in silence until someone speaks"))
+        // The mode is already on: no second start, both directions named.
+        XCTAssertTrue(text.contains("never call start_translator"))
+        XCTAssertTrue(text.contains("Polish into Spanish, Spanish into Polish"))
+        XCTAssertFalse(text.contains("When the app says so"))
+    }
+
+    func testTranslatorOpensInSilence() {
+        // Owner, 9 Nov 2026 ("niech nic nie mówi"): no first message at all, never "Jestem. Co słychać?".
+        let pl = TranslatorLanguages.named("pl")!, es = TranslatorLanguages.named("es")!
+        for setup in [TranslatorSetup(kind: .faceToFace, owner: pl, other: es)!, TranslatorSetup(kind: .faceToFace, owner: pl, other: nil)!,
+                      TranslatorSetup(kind: .listen, owner: pl, other: es)!] {
+            XCTAssertEqual(TranslatorPrompt.openingLine(setup), "")
+        }
+    }
+
+    func testUnknownLanguageStillTranslatesBothWays() {
+        let pl = TranslatorLanguages.named("pl")!
+        let text = TranslatorPrompt.render(TranslatorSetup(kind: .faceToFace, owner: pl, other: nil)!)
+        XCTAssertTrue(text.contains("the first language you hear that isn't Polish is theirs"))
+        XCTAssertTrue(text.contains("translate what they said into Polish"))
+        XCTAssertTrue(text.contains("until you have heard it, into English."))
+        XCTAssertFalse(text.contains("say the AI translator disclosure once"))
+        // An English speaker's fallback is Polish, never English into English.
+        let en = TranslatorPrompt.render(TranslatorSetup(kind: .faceToFace, owner: TranslatorLanguages.english, other: nil)!)
+        XCTAssertTrue(en.contains("until you have heard it, into Polish"))
+    }
+
+    func testASecondStartIsAnsweredAlreadyOn() {
+        let setup = TranslatorSetup(kind: .listen, owner: TranslatorLanguages.named("pl")!, other: TranslatorLanguages.named("de"))!
+        let reply = VoiceToolReply.translatorAlreadyOn(setup)
+        XCTAssertTrue(reply.hasPrefix("started: translator mode is already on"))
+        XCTAssertTrue(reply.contains("don't call start_translator again"))
+        XCTAssertTrue(reply.contains("into Polish for the user"))
+        XCTAssertFalse(reply.contains("refused"))
     }
 }
 
