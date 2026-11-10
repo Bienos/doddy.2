@@ -550,11 +550,11 @@ struct KnowledgeSettingsView: View {
                 // is saved as a note without a tap. Turning it on is not a yes for conversations before it.
                 Toggle("Remember what we talked about", isOn: Binding(
                     get: { rememberRecaps },
-                    set: {
-                        RecapKeeper.setRemember($0)
-                        rememberRecaps = $0
+                    set: { on in
+                        RecapKeeper.setRemember(on)
+                        rememberRecaps = on
                         // Also the server: it writes recaps of calls to Doddy's phone line only while this is on.
-                        Task { await RecapKeeper.syncPhoneRecaps($0) }
+                        Task { await RecapKeeper.syncPhoneRecaps(on) }
                     }))
                     .accessibilityIdentifier("settings.rememberRecaps")
                 // The yes for the server writing a recap this iPhone can't (a conversation, or a recording when you
