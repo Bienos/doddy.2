@@ -144,14 +144,14 @@ final class ScreenAtlasTests: XCTestCase {
                 && self.see(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'memory.open.'")).firstMatch)
         }
         visit("3-memory-06-find-a-match", store: store) { app in
-            guard self.menu(app, ["home.find"]) else { return false }
+            guard app.openFind() else { return false }
             let query = app.textFields["memories.query"]
             guard self.see(query) else { return false }
             query.tapAndType("key\n")
             return self.see(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'memory.open.'")).firstMatch)
         }
         visit("3-memory-07-find-nothing", store: store) { app in
-            guard self.menu(app, ["home.find"]) else { return false }
+            guard app.openFind() else { return false }
             let query = app.textFields["memories.query"]
             guard self.see(query) else { return false }
             query.tapAndType("wifi password at the cabin\n")

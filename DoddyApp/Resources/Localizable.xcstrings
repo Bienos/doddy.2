@@ -804,6 +804,17 @@
         }
       }
     },
+    "%lld shops' leaflets": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki sklepów: %lld"
+          }
+        }
+      }
+    },
     "%lld slides, with the title slide": {
       "extractionState": "manual",
       "localizations": {
@@ -958,6 +969,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "+%@"
+          }
+        }
+      }
+    },
+    "+%lld other shops": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inne sklepy: +%lld"
           }
         }
       }
@@ -2665,6 +2687,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "一个项目、爱好或日常习惯。只分享有帮助的部分就好。"
+          }
+        }
+      }
+    },
+    "A promotion without a printed price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promocja bez ceny w gazetce"
           }
         }
       }
@@ -4571,6 +4604,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaj i sprawdź"
+          }
+        }
+      }
+    },
+    "Add another": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj kolejny"
           }
         }
       }
@@ -10162,17 +10206,6 @@
         }
       }
     },
-    "Butter, nappies size 4, ground coffee": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Masło, pieluchy rozmiar 4, kawa mielona"
-          }
-        }
-      }
-    },
     "Buy at %@": {
       "extractionState": "manual",
       "localizations": {
@@ -12301,6 +12334,28 @@
         }
       }
     },
+    "Check prices": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź ceny"
+          }
+        }
+      }
+    },
+    "Check the leaflet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź w gazetce"
+          }
+        }
+      }
+    },
     "Check the page": {
       "extractionState": "manual",
       "localizations": {
@@ -12378,17 +12433,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź tę wypowiedź."
-          }
-        }
-      }
-    },
-    "Check this week's leaflets": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sprawdź tegotygodniowe gazetki"
           }
         }
       }
@@ -25563,6 +25607,17 @@
         }
       }
     },
+    "Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje. Nic, co Cię identyfikuje, nie trafia do sklepów; Rossmann dostaje nazwy rzeczy jako wyszukiwanie."
+          }
+        }
+      }
+    },
     "Doddy's server searches news sources for these words.": {
       "extractionState": "manual",
       "localizations": {
@@ -29935,65 +29990,6 @@
         }
       }
     },
-    "Find something": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Etwas finden"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buscar algo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chercher quelque chose"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronađi nešto"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trova qualcosa"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "何かを探す"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Znajdź coś"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buscar algo"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "查找内容"
-          }
-        }
-      }
-    },
     "Find something you saved": {
       "extractionState": "manual",
       "localizations": {
@@ -30996,28 +30992,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Śledź te słowa"
-          }
-        }
-      }
-    },
-    "Following": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Śledzone"
-          }
-        }
-      }
-    },
-    "Following needs a Doddy messaging server, and none is connected in this build yet.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Śledzone wymaga serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
           }
         }
       }
@@ -33427,6 +33401,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Akceptuję Regulamin"
+          }
+        }
+      }
+    },
+    "I check this week's leaflets and show where each thing is cheapest.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam gazetki z tego tygodnia i pokazuję, gdzie co jest najtaniej."
           }
         }
       }
@@ -39403,6 +39388,17 @@
         }
       }
     },
+    "Leaflets to check": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki do sprawdzenia"
+          }
+        }
+      }
+    },
     "Learn from how I use Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -43513,6 +43509,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "麦克风已关闭"
+          }
+        }
+      }
+    },
+    "Milk, butter, ground coffee": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mleko, masło, kawa mielona"
           }
         }
       }
@@ -48211,17 +48218,6 @@
         }
       }
     },
-    "Not checked": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie sprawdzone"
-          }
-        }
-      }
-    },
     "Not checked yet": {
       "extractionState": "manual",
       "localizations": {
@@ -48553,17 +48549,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieznane: %@. Nigdy nie liczone jako zero."
-          }
-        }
-      }
-    },
-    "Not looked up": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie wyszukano"
           }
         }
       }
@@ -53169,6 +53154,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pieszo"
+          }
+        }
+      }
+    },
+    "On my radar": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na radarze"
+          }
+        }
+      }
+    },
+    "On my radar needs a Doddy messaging server, and none is connected in this build yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na radarze wymaga serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
           }
         }
       }
@@ -61804,17 +61811,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "由你 iPhone 自带的语音朗读。不会发送到任何地方。"
-          }
-        }
-      }
-    },
-    "Read in part": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przeczytane w części"
           }
         }
       }
@@ -71278,17 +71274,6 @@
         }
       }
     },
-    "Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oddziel rzeczy przecinkami. Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje. Nic, co Cię identyfikuje, nie trafia do sklepów; Rossmann dostaje nazwy rzeczy jako wyszukiwanie."
-          }
-        }
-      }
-    },
     "Server (development)": {
       "extractionState": "manual",
       "localizations": {
@@ -73279,6 +73264,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "购物模式已开启：这个清单显示在你的锁定屏幕上。"
+          }
+        }
+      }
+    },
+    "Shops": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sklepy"
           }
         }
       }
@@ -90594,6 +90590,17 @@
         }
       }
     },
+    "This takes up to half a minute.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To trwa do pół minuty."
+          }
+        }
+      }
+    },
     "This task isn't on this iPhone any more.": {
       "extractionState": "manual",
       "localizations": {
@@ -93241,6 +93248,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "试试你的两下轻点。"
+          }
+        }
+      }
+    },
+    "Try:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład:"
           }
         }
       }
@@ -98293,6 +98311,17 @@
         }
       }
     },
+    "What do you need?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego potrzebujesz?"
+          }
+        }
+      }
+    },
     "What do you want to find?": {
       "extractionState": "manual",
       "localizations": {
@@ -98890,6 +98919,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co zostało zapisane"
+          }
+        }
+      }
+    },
+    "What wasn't checked (%lld)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego nie sprawdzono (%lld)"
           }
         }
       }
@@ -100221,6 +100261,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skąd dokładnie (opcjonalnie, np. ich strona)"
+          }
+        }
+      }
+    },
+    "Where it's cheapest": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdzie najtaniej"
           }
         }
       }
@@ -102133,6 +102184,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzwonisz ze swojego telefonu. Doddy’ego nie ma na linii i nic nie jest zapisywane."
+          }
+        }
+      }
+    },
+    "You can also ask Doddy: “How much is milk this week?”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Możesz też zapytać Doddy’ego: „Ile kosztuje mleko w tym tygodniu?”"
           }
         }
       }
