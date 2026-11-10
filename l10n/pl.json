@@ -3192,7 +3192,7 @@
   "Pick the languages and start. Doddy stays quiet until someone speaks, then translates straight away.": "Wybierz języki i zacznij. Doddy milczy, dopóki ktoś nie zacznie mówić, a potem od razu tłumaczy.",
   "Put the phone between you. Their half of the screen faces them and shows, in their language, that this is an AI translation.": "Połóż telefon między wami. Ich połowa ekranu jest zwrócona do nich i pokazuje w ich języku, że to tłumaczenie AI.",
   "Remember what we talked about": "Pamiętaj, o czym rozmawialiśmy",
-  "After a conversation with Doddy, after a recording written out on this iPhone, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.": "Po rozmowie z Doddym, po nagraniu zapisanym na tym iPhonie i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy i nagrania podsumowuje ten iPhone, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę.",
+  "After a conversation with Doddy, after a recording written out on this iPhone, after a call to or from Doddy's phone line, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.": "Po rozmowie z Doddym, po nagraniu zapisanym na tym iPhonie, po rozmowie telefonicznej z numerem Doddy’ego lub od niego i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy i nagrania podsumowuje ten iPhone, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę.",
   "A recap of this call is in your notes": "Podsumowanie tej rozmowy jest w Twoich notatkach",
   "Call with %@, %@": "Rozmowa: %@, %@",
   "Call, %@": "Rozmowa, %@",
@@ -3224,5 +3224,6 @@
   "Your phone rings when you tap. When you answer, you talk to Doddy on Doddy's phone line. Twilio places the call.": "Twój telefon zadzwoni po stuknięciu. Gdy odbierzesz, rozmawiasz z Doddym na jego linii telefonicznej. Połączenie wykonuje Twilio.",
   "Call me": "Zadzwoń do mnie",
   "Calling you…": "Dzwonię do Ciebie…",
+  "Phone call with Doddy, %@": "Rozmowa telefoniczna z Doddym, %@",
   "Show screen to Doddy": "Pokaż ekran Doddy’emu"
 }

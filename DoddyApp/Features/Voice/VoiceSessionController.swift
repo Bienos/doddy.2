@@ -2808,7 +2808,9 @@ final class VoiceSessionController {
             }
             do {
                 let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
-                await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))
+                // No word matched: the newest notes too, e.g. one saved during this call.
+                let newest = outcome == .noMatch ? await store.newestNotesForVoice(excluding: PrivateNotesStore.current().ids) : .none
+                await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query, newest: newest))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }

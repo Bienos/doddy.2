@@ -260,6 +260,22 @@ Status: server and web pages built and tested; iPhone rules built and tested in 
 | Logs | Counts, token numbers and timings only, never a note, a turn, a question or an answer (tested with planted strings). The host's own request logs (IP, path, status) are kept by Render. **[CONFIRM: host log retention]** |
 | Legal basis | **[CONFIRM: consent, withdrawn by switching off]** |
 
+### 5.14 Recaps of conversations ("Remember what we talked about"; decision 2026-11-09-conversation-recaps)
+
+A recap is a short note of what was discussed, agreed and left to do after a conversation: three lists of short points, never the words themselves. **Off until you turn on "Remember what we talked about"** (Settings › What Doddy knows). Never for a Private conversation, a conversation with under 30 words from you, or anything from before you turned it on. Each recap is a normal note you can edit or delete.
+
+| Item | Detail |
+|---|---|
+| Four kinds | A conversation with Doddy in the app; a recording written out on this iPhone (Recordings, by a tap on "Write a recap" or automatically with the switch on); a call to or from Doddy's phone line; a call Doddy made for you. |
+| Who writes it | **A conversation or a recording:** Apple's on-device model on this iPhone (iOS 26 with Apple Intelligence in your language): nothing leaves the phone. If it can't, Doddy's messaging server asks Anthropic (Claude), **only** with the separate switch "Recaps on Doddy's server" on (off by default; a tap on "Write a recap" is never that yes). **A call to or from the phone line:** Doddy's messaging server, from the call's transcript, which ElevenLabs sends it after the call (the workspace post-call webhook, signed; the server reads only the phone agent's payloads), and Anthropic (Claude). Only while "Remember what we talked about" is on for your account. **A call Doddy made for you:** this iPhone, by fixed rules, from the call's card and answer; no model and no transcript. |
+| What is sent | For the server writer: the lines of the conversation or recording, or the phone call's transcript, for that one recap. Nothing else: no notes, no profile, no phone number. The same instructions are used on the iPhone and the server (`schemas/fixtures/recap_instructions_v1.json`). |
+| What the server keeps | **Nothing of the words.** `POST /v1/recaps` uses the lines for the one call and drops them. For phone calls the server keeps only the three lists, encrypted with a key bound to your account and the call (`phone_recaps`), until this iPhone has saved them as a note and said so (then the server deletes its copy), or for 30 days. Turning the switch off deletes the ones waiting. Logs hold counts, token numbers and timings, never a word (tested with planted strings: `server/messaging/test/recap.test.ts`, `phoneRecaps.test.ts`). A recap counts as one Messages request against the daily limits (`ASSISTANT_DAILY_PER_ACCOUNT`, `ASSISTANT_DAILY_PER_SERVER`). |
+| What the app checks | A model's answer is a proposal: it must be exactly three lists, at most 6 points of 240 characters, and no point may copy 10 or more words in a row from the conversation, or nothing is saved. "Saved" is shown only after the note was read back. |
+| What stays elsewhere | **ElevenLabs** keeps its own record of a call to the phone line for the retention set on the agent (30 days, no audio: `voice-agent/phone/session.json`; read 10 Nov 2026 on the live agent: audio recording off, retention 30 days, zero-retention off). This feature neither adds to nor shortens it. **Anthropic**: how long it keeps requests is not verified. Render keeps its own request logs (IP, path, status). |
+| Recordings | Until this feature, a recording's words never left the iPhone (ADR-588; the Recordings code still cannot reach the network). They now do only with "Recaps on Doddy's server" on, from a different part of the app. |
+| Legal basis | **[CONFIRM: consent, by the two switches; withdrawn by switching off]** |
+| **[CONFIRM]** | Anthropic entity, terms, region and retention for the API key's organisation; whether telling the caller that a recap is made is required for phone calls (the phone agent says it is an AI in its first sentence; it does not say a recap is made); Apple's terms for the on-device model; the effect on the retention table in Section 9. |
+
 ## 6. Permissions the app asks for
 
 The app asks for these only. Each text below is the app's own wording (`project.yml` and `Config/Doddy-Info.plist`). Not listed means the app does not ask: no camera, no photo library, no motion, no Bluetooth, no health data, no advertising ID, no "Always" location.
@@ -444,6 +460,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A49 | Browser can read, search, export and delete, never switch keeping on | `backend/src/memory/routes.ts`; `backend/test/memory.test.ts` |
 | A50 | Logs hold no note, turn, question or answer | `backend/test/memory.test.ts` (planted strings) |
 | A51 | The switch follows the server's answer; a delete is only reported when the server confirmed | `Packages/DoddyCore/Sources/DoddyCore/OnlineAccounts/WebMemoryModel.swift`; `WebMemoryModelTests.swift` |
+| A52 | Recaps: off by default, never Private, no words kept on the server, the phone-call recap keeps only three encrypted lists until saved or 30 days, the iPhone and the server use the same instructions, a tap is not a yes to the server | `Packages/DoddyCore/Sources/DoddyCore/Recap/`; `DoddyApp/Features/Recaps/`; `server/messaging/src/assistant/recap.ts`, `phoneRecaps.ts`, `routes/phoneRecaps.ts`; `server/messaging/migrations/025_phone_recaps.sql`; decision 2026-11-09-conversation-recaps |
 
 ## Appendix B. Open questions for the owner and the lawyer
 

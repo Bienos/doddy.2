@@ -117,6 +117,7 @@ files=(
   DoddyApp/Features/Recaps/RecapKeeper.swift
   DoddyApp/Features/Recaps/OnDeviceRecapWriter.swift
   DoddyApp/Features/Recaps/RecapKeeper+Recordings.swift
+  DoddyApp/Features/Recaps/RecapKeeper+Phone.swift
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
   DoddyApp/Infrastructure/LegalAcceptanceStore.swift

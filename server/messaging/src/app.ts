@@ -37,6 +37,8 @@ import { registryRoutes } from "./routes/registry.js";
 import type { CeidgClient } from "./registry/ceidg.js";
 import type { DealsDeps } from "./deals/service.js";
 import type { AssistantDeps } from "./assistant/deps.js";
+import type { PhoneRecapDeps } from "./phoneRecaps.js";
+import { phoneRecapRoutes } from "./routes/phoneRecaps.js";
 import { watchRoutes } from "./routes/watches.js";
 import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
 
@@ -104,6 +106,8 @@ export interface Deps {
   studioLog?: (msg: string, extra?: object) => void;
   /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
   assistant?: AssistantDeps;
+  /** Recaps of calls to Doddy's phone line (decision 2026-11-09-conversation-recaps, step 5). Needs `cipher` and an Anthropic key. */
+  phoneRecaps?: PhoneRecapDeps;
   /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
   watches?: WatchDeps;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
@@ -207,6 +211,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(fileWatchRoutes(deps, fileWatchCtx));
   await app.register(assistantRoutes(deps));
   await app.register(screenRoutes(deps));
+  await app.register(phoneRecapRoutes(deps));
   await app.register(dealsRoutes(deps));
   await app.register(registryRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));
