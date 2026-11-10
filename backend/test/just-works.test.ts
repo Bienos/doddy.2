@@ -230,10 +230,11 @@ test("make_document: answers at once with a link; the link says 'still making', 
   let release!: () => void;
   const gate = new Promise<void>((r) => (release = r));
   const slow = new MockClaudeProvider();
-  const original = slow.makeDocument.bind(slow);
-  slow.makeDocument = async (args) => {
+  // A deck is made from Claude's structured answers (decision 2026-11-10-better-presentations): held at its first one.
+  const original = slow.structured.bind(slow);
+  slow.structured = async (input) => {
     await gate;
-    return original(args);
+    return original(input);
   };
   rig = await start({}, { claude: slow });
   const res = await run(rig, "make_document", { kind: "deck", title: "Q4 plan: Doddy/beta", request: "Ten slides on the beta plan" });
@@ -255,7 +256,7 @@ test("make_document: answers at once with a link; the link says 'still making', 
   await rig.tools.settle();
   const ready = await local(link);
   assert.equal(ready.status, 200);
-  assert.equal(ready.text, "DEMO deck: Q4 plan: Doddy/beta");
+  assert.ok(ready.text.startsWith("PK"), "the deck is a real PowerPoint file (a ZIP)");
 
   // A changed signature, a changed ID or an expired link opens nothing.
   const forged = new URL(link);
