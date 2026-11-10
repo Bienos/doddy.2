@@ -226,8 +226,13 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .timers, title: "Set alarm", detail: [draft.label.map { "“\($0)”" }, draft.summary].compactMap { $0 }.joined(separator: " · "),
                 isLookup: false, operationKey: AlarmIdempotency.key(draft))
-        case .openMap(let place):
-            return ActivityRequest(app: .maps, title: "Open in Maps", detail: "“\(place)”", isLookup: false)
+        case .openMap(let place, let from, let mode):
+            guard from != nil || mode != nil else {
+                return ActivityRequest(app: .maps, title: "Open in Maps", detail: "“\(place)”", isLookup: false)
+            }
+            return ActivityRequest(
+                app: .maps, title: "Directions in Maps",
+                detail: [from.map { "“\($0)” → " }, "“\(place)”"].compactMap { $0 }.joined(), isLookup: false)
         case .runShortcut(let name):
             return ActivityRequest(app: .shortcuts, title: "Run shortcut", detail: "“\(name)”", isLookup: false)
         case .draftMessage(let draft):

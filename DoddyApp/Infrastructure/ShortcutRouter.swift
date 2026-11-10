@@ -111,6 +111,7 @@ final class ShortcutRouter {
         isWeeklyPlanPresented = false
         isRecordingsPresented = false
         isCallRecapsPresented = false
+        isMessagesRequested = false
         translatorPreset = nil
         talkToDoddyOpened = false
         checkInBriefing = nil
@@ -268,6 +269,17 @@ final class ShortcutRouter {
         guard !isVoicePresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isCallRecapsPresented = true
+    }
+
+    /// A finished task's or file's push was tapped (owner, 10 Nov 2026): Home opens Messages, where Doddy's
+    /// message about it is. Navigation only: it starts nothing and sends nothing. Home takes it once.
+    var isMessagesRequested = false
+
+    func messagesOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in messagesOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isMessagesRequested = true
     }
 
     /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and

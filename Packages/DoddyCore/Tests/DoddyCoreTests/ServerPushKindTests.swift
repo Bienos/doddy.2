@@ -7,6 +7,14 @@ final class ServerPushKindTests: XCTestCase {
         XCTAssertEqual(ServerPushKind.parse(["aps": ["alert": "x"], "doddy": ["kind": "call-result"]]), .callResult)
     }
 
+    func testAFinishedTaskOrFileOpensMessages() {
+        XCTAssertEqual(ServerPushKind.parse(["doddy": ["kind": "errand-result"]]), .errandResult)
+        XCTAssertEqual(ServerPushKind.parse(["doddy": ["kind": "file-ready"]]), .fileReady)
+        XCTAssertTrue(ServerPushKind.errandResult.opensMessages)
+        XCTAssertTrue(ServerPushKind.fileReady.opensMessages)
+        XCTAssertFalse(ServerPushKind.callResult.opensMessages)
+    }
+
     func testNothingElseOpensAnything() {
         XCTAssertNil(ServerPushKind.parse([:]))
         XCTAssertNil(ServerPushKind.parse(["aps": ["alert": "x"]]))

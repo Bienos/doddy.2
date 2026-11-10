@@ -158,7 +158,11 @@ final class ErrandsModel {
             if next.state != errand.state || next.result != errand.result || next.failure != errand.failure {
                 guard let saved = await keep(next) else { return }
                 current = saved
-                if saved.state.isFinished { markUnseen(saved.id) }
+                if saved.state.isFinished {
+                    markUnseen(saved.id)
+                    // Doddy's message in Messages with what he found (owner, 10 Nov 2026).
+                    await ThreadInbox.deliver(errand: saved, now: now)
+                }
             }
         }
         await acknowledgeIfNeeded(current, from: backend, now: now)
@@ -190,7 +194,10 @@ final class ErrandsModel {
             let draft = ErrandDraft(words: words, brief: brief, title: title, language: snapshot.language ?? ErrandDraft.defaultLanguage,
                                     kind: snapshot.kind.flatMap(ErrandKind.init(rawValue:)), priorities: snapshot.priorities ?? [])
             let adopted = StoredErrand(id: snapshot.id, createdAt: snapshot.createdAt, state: .unknown, draft: draft).applying(snapshot, at: now)
-            if let saved = await keep(adopted), saved.state.isFinished { markUnseen(saved.id) }
+            if let saved = await keep(adopted), saved.state.isFinished {
+                markUnseen(saved.id)
+                await ThreadInbox.deliver(errand: saved, now: now)
+            }
         }
     }
 

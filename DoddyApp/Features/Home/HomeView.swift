@@ -143,6 +143,12 @@ struct HomeView: View {
                 case .windDown: CountdownView(purpose: .windDown)
                 }
             }
+            // A finished task's or file's push, tapped: Messages, where Doddy's message about it is.
+            .onChange(of: router.isMessagesRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isMessagesRequested = false
+                showAsk = true
+            }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
                              file: fileForMessages, openSettings: { selectedTab = .settings })
