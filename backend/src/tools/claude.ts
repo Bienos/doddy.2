@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ClaudeSettings } from "../config.js";
+import { DECK_PLAN_STEP, DECK_WRITE_STEP, demoDeck, demoDeckPlan } from "../decks/demo.js";
 import { ProviderError, type ProviderDetail } from "../errors.js";
 
 /**
@@ -132,6 +133,10 @@ export interface StructuredInput {
   /** JSON Schema of the answer; every object needs `additionalProperties: false`. */
   schema: Record<string, unknown>;
   maxTokens: number;
+  /** How hard Claude thinks. Default "low" (Ask Doddy wants a quick answer); a deck's outline uses "medium". */
+  effort?: "low" | "medium" | "high";
+  /** Which step asks, for the mock's demo answers. Never sent to Anthropic. */
+  name?: string;
 }
 
 export interface StructuredResult {
@@ -162,12 +167,17 @@ export function claudeCard(tool: ClaudeToolName, args: Record<string, unknown>):
     return { title: "Ask Claude?", lines: [`${capitalize(String(args.task))}: ${String(args.request)}`, ...material, where], confirmLabel: "Yes, ask" };
   }
   const info = KIND_INFO[args.kind as DocumentKind];
+  // A deck is researched first (decision 2026-11-10-better-presentations): the card says where its topic goes.
+  const research = args.kind === "deck" ? [DECK_RESEARCH_LINE] : [];
   return {
     title: `Make a ${info.label} with Claude?`,
-    lines: [`"${String(args.title)}"`, String(args.request), ...material, "It takes one to three minutes; Doddy gives you a link to open it.", where],
+    lines: [`"${String(args.title)}"`, String(args.request), ...material, ...research, "It takes one to three minutes; Doddy gives you a link to open it.", where],
     confirmLabel: "Yes, make it",
   };
 }
+
+export const DECK_RESEARCH_LINE =
+  "To research it, Doddy's server looks the topic up on Wikipedia and, if your web search is on, on the web (Monid). Pictures come only from Wikimedia Commons, with their author and licence.";
 
 const capitalize = (s: string) => (s ? s[0]!.toUpperCase() + s.slice(1) : s);
 
@@ -267,8 +277,9 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
   }
 
   /**
-   * Structured output (`output_config.format` with a JSON schema) at low effort: Ask Doddy wants a
-   * short, quick answer. Thinking blocks, if any, are skipped; only the text block is the answer.
+   * Structured output (`output_config.format` with a JSON schema), at low effort unless the caller
+   * asks for more: Ask Doddy wants a short, quick answer. Thinking blocks, if any, are skipped; only
+   * the text block is the answer.
    */
   async structured(input: StructuredInput, signal: AbortSignal): Promise<StructuredResult> {
     const response = await this.messages(
@@ -276,7 +287,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
         model: this.settings.model,
         max_tokens: input.maxTokens,
         system: input.system,
-        output_config: { effort: "low", format: { type: "json_schema", schema: input.schema } },
+        output_config: { effort: input.effort ?? "low", format: { type: "json_schema", schema: input.schema } },
         messages: [{ role: "user", content: input.user }],
       },
       signal,
@@ -411,9 +422,11 @@ export class MockClaudeProvider implements ClaudeProvider {
     const info = KIND_INFO[args.kind];
     return { name: fileName(args.title, info.ext), mime: info.mime, bytes: Buffer.from(`DEMO ${info.label}: ${args.title}`), summary: `DEMO ${info.label}.` };
   }
-  /** Demo: a short answer that cites the first note it was offered, if any. */
+  /** Demo: a short answer that cites the first note it was offered, if any; for a deck, the demo plan and outline. */
   async structured(input: StructuredInput): Promise<StructuredResult> {
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
+    if (input.name === DECK_PLAN_STEP) return { value: demoDeckPlan(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
+    if (input.name === DECK_WRITE_STEP) return { value: demoDeck(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
     const props = (input.schema.properties ?? {}) as { sources?: { items?: { enum?: string[] } } };
     const first = props.sources?.items?.enum?.[0];
     // Notes are n1…, conversations c1…, the chat's account parts their own names (ADR-604).
