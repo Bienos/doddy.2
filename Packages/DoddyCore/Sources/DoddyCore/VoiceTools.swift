@@ -260,6 +260,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A call from Doddy's number to the user's verified number at a later time (ADR-754). Shown
     /// on a card with the time and the exact reason; booked only on the user's tap.
     case callMeLater(CallLaterDraft)
+    /// A call from Doddy's number to the user's verified number now (decision 2026-11-10-call-me-now-by-voice).
+    /// Shown on a card with the number's last digits; placed only on the user's tap.
+    case callMeNow
     /// Up to three places, one card, one tap; called one after another until one says yes
     /// (decision 2026-11-09-restaurant-calls-one-tap). Placed by Doddy's messaging server.
     case callPlaces(CallTaskDraft)
@@ -427,6 +430,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .textMe(body: body)
         case VoiceToolName.callMeLater:
             return parseCallMeLater(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.callMeNow:
+            return .callMeNow
         case VoiceToolName.callPlaces:
             return parseCallPlaces(args, name: name)
         case VoiceToolName.makePresentation:

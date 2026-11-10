@@ -37,7 +37,7 @@ public enum ConnectionPause {
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
-             .convertCurrency, .textMe, .callMeLater, .callPlaces:
+             .convertCurrency, .textMe, .callMeLater, .callMeNow, .callPlaces:
             // Currency rates come from the ECB's public file, another service (ADR-300). A text,
             // or a call booked for later, goes through Doddy's server and Twilio (ADR-750).
             true

@@ -10514,6 +10514,17 @@
         }
       }
     },
+    "Call me": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń do mnie"
+          }
+        }
+      }
+    },
     "Call me now": {
       "extractionState": "manual",
       "localizations": {
@@ -10650,6 +10661,17 @@
         }
       }
     },
+    "Call you now?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwonić do Ciebie teraz?"
+          }
+        }
+      }
+    },
     "Call, %@": {
       "extractionState": "manual",
       "localizations": {
@@ -10727,6 +10749,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在呼叫 Doddy"
+          }
+        }
+      }
+    },
+    "Calling you…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwonię do Ciebie…"
           }
         }
       }
@@ -104833,6 +104866,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Historia Twoich rozmów i SMS-ów"
+          }
+        }
+      }
+    },
+    "Your phone rings when you tap. When you answer, you talk to Doddy on Doddy's phone line. Twilio places the call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój telefon zadzwoni po stuknięciu. Gdy odbierzesz, rozmawiasz z Doddym na jego linii telefonicznej. Połączenie wykonuje Twilio."
           }
         }
       }
