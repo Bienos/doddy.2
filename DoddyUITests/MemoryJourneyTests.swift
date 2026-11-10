@@ -44,7 +44,7 @@ final class MemoryJourneyTests: XCTestCase {
         app.buttons["tab.home"].tap()
         app.terminate(); app.launch()
         XCTAssertTrue(app.buttons["home.more"].waitForExistence(timeout: 8))
-        app.tapHomeMenuItem("home.find")
+        app.openFind()
         let query = app.textFields["memories.query"]
         XCTAssertTrue(query.waitForExistence(timeout: 5))
         query.tap(); query.typeText("violet\n")
@@ -75,7 +75,7 @@ final class MemoryJourneyTests: XCTestCase {
         XCTAssertEqual(app.staticTexts["detail.originalText"].label, original)
         screenshot(app, "Native correction with original provenance")
         app.terminate(); app.launch()
-        app.tapHomeMenuItem("home.find")
+        app.openFind()
         let reopened = app.textFields["memories.query"]
         XCTAssertTrue(reopened.waitForExistence(timeout: 5))
         reopened.tap(); reopened.typeText("violet\n")

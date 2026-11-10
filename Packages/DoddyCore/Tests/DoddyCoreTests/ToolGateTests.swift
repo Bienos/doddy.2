@@ -50,7 +50,7 @@ final class ToolGateTests: XCTestCase {
             ToolGate.decide(toolName: name, request: request(name, json), translatorOn: translator, pauseAll: pauseAll,
                             isOn: { _ in on }, scope: .shipping)
         }
-        XCTAssertEqual(decide(VoiceToolName.findDeals, #"{"items":["masło"]}"#), .hidden(.deals))
+        XCTAssertNotEqual(decide(VoiceToolName.findDeals, #"{"items":["masło"]}"#), .hidden(.deals), "leaflets are shown since 10 Nov 2026")
         XCTAssertEqual(decide(VoiceToolName.handOverErrand, "{}", translator: true, pauseAll: true, on: false), .hidden(.errands))
         // The translator is shown in the beta (decision 2026-11-08-translator-in-beta): its tools are never hidden.
         XCTAssertNotEqual(decide(VoiceToolName.startTranslator, "{}"), .hidden(.translator), "translator mode can start")

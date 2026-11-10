@@ -214,7 +214,7 @@ public struct ReleaseScope: Equatable, Sendable {
         .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning, .recordings, .sharedLists,
         .shoppingModeLockScreen, .placeReminders,
         .leaveBy, .parking, .birthdays, .eveningWrapUp, .weeklyLookBack, .weeklyPlan, .steps,
-        .files, .doddyWeb, .cloudMemory, .onlineAccounts, .webSearch, .claudeDocuments, .deals, .errands, .priceWatch,
+        .files, .doddyWeb, .cloudMemory, .onlineAccounts, .webSearch, .claudeDocuments, .errands, .priceWatch,
         .following, .dailyNews, .updates, .phoneCalls, .callCases, .studio, .payments,
         .health, .trainingPlan, .homeKit, .blik, .presentations, .invoices, .parcels, .lostWallet,
     ])

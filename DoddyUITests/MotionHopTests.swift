@@ -192,7 +192,7 @@ final class MotionHopTests: XCTestCase {
     @MainActor
     func testFindWithNothingFoundHeShrugsThere() {
         let app = launch()
-        app.tapHomeMenuItem("home.find")
+        app.openFind()
         let query = app.textFields["memories.query"]
         XCTAssertTrue(query.waitForExistence(timeout: 5))
         query.tap(); query.typeText("zzqx nothing like this\n")

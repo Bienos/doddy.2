@@ -79,6 +79,6 @@ final class NewsFollowVoiceTests: XCTestCase {
         XCTAssertEqual(row.detail, "“CPK”")
         XCTAssertFalse(row.isLookup)
         XCTAssertEqual(ActivityText.title("Follow in Following", .polish), "Śledź w Śledzonych")
-        XCTAssertEqual(ActivityApp.news.title, "Following")
+        XCTAssertEqual(ActivityApp.news.title, "On my radar")
     }
 }
