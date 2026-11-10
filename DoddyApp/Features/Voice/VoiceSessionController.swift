@@ -2779,6 +2779,17 @@ final class VoiceSessionController {
         case .hidden, .translatorRefused, .plan, .run:
             break
         }
+        // Decision 2026-11-09-doddy-looks-at-the-screen: without a fresh picture of the shared screen there is
+        // nothing to ask about. If sharing is off, iOS's own "Start Broadcast" sheet is opened (it reads nothing;
+        // iOS asks the person itself), and the agent tells them to tap it and ask again.
+        if case .lookAtScreen = request {
+            let readiness = ScreenShareFiles.current().readiness
+            if var notReady = ScreenLookSpeech.notReady(readiness) {
+                if readiness == .notSharing, ScreenSharePicker.present() { notReady += " " + ScreenLookSpeech.sheetOpened }
+                await reply(call.toolCallId, notReady)
+                return
+            }
+        }
         // ASK-01 (ADR-483): nothing below runs before the user's yes for exactly this call. Tools
         // with a payload card of their own (and the server's tools) ask through that card.
         switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
@@ -3154,6 +3165,23 @@ final class VoiceSessionController {
                 return
             }
             propose(.camera(toolCallID: call.toolCallId), toolCallID: call.toolCallId)
+        case .lookAtScreen(let question):
+            // After the yes: the picture as it is now, fresh or nothing (sharing may have stopped meanwhile).
+            // It goes to Doddy's server for this one answer and is never kept (decision 2026-11-09-doddy-looks-at-the-screen).
+            let current = ScreenShareFiles.current()
+            guard case .ready(let age) = current.readiness, let jpeg = current.jpeg else {
+                await reply(call.toolCallId, ScreenLookSpeech.notReady(current.readiness) ?? ScreenLookSpeech.result(.invalidRequest).text)
+                return
+            }
+            guard let server = Self.messagingClient() else {
+                let result = ScreenLookSpeech.result(.notConfigured)
+                await reply(call.toolCallId, result.text, isError: result.isError)
+                return
+            }
+            let locale = ConversationLanguage.stored().overrideCode ?? Locale.preferredLanguages.first ?? "en"
+            let outcome = await server.lookAtScreen(ScreenLookRequest(locale: locale, question: question, frameAge: age, jpeg: jpeg))
+            let result = ScreenLookSpeech.result(outcome)
+            await reply(call.toolCallId, result.text, isError: result.isError)
         case .controlHome(let proposal):
             guard devices.access(for: .home) == .granted else {
                 await notConnected(call.toolCallId, .home)

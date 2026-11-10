@@ -144,8 +144,11 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .lostWallet: [VoiceToolName.lostWallet]
         case .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
              .recordings, .sharedLists, .shoppingModeLockScreen, .placeReminders, .eveningWrapUp, .weeklyLookBack,
-             .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .parcels:
+             .weeklyPlan, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .parcels:
             []
+        // "What's on my screen?" asks the Messages route's Claude, with its key, switch and daily caps
+        // (decision 2026-11-09-doddy-looks-at-the-screen), so it comes and goes with Messages.
+        case .messages: [VoiceToolName.lookAtScreen]
         // Calls Doddy makes for the user, started from a conversation (decision 2026-11-09-restaurant-calls-one-tap).
         case .callCases: [VoiceToolName.callPlaces]
         }

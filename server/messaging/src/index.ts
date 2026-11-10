@@ -33,7 +33,7 @@ app.log.info({
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
   studio: !!(providers.studio.api && providers.cipher), studioModels: modelLabel(config.studioSettings.models),
-  assistant: !!providers.assistant.responder, assistantModel: config.assistantSettings.model,
+  assistant: !!providers.assistant.responder, screenLook: !!providers.assistant.screen, assistantModel: config.assistantSettings.model,
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
   dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,

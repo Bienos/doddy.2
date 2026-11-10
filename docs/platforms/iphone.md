@@ -121,6 +121,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 **Extensions:**
 - `DoddyWidgets/`: Home and Lock Screen widgets, controls, Live Activities.
 - `DoddyShare/`: "Save to Doddy" in the Share Sheet.
+- `DoddyScreen/`: screen sharing with Doddy (decision `2026-11-09-doddy-looks-at-the-screen`). A ReplayKit broadcast extension the person starts from iOS's sheet; it keeps one picture of the screen in the App Group (`Shared/Screen/ScreenShareFiles.swift`) and deletes it when sharing ends. No network, no database. The app reads it only for the `look_at_screen` voice tool, after the person's yes, and sends that one picture to `POST /v1/screen/look`; "Show screen" (`Features/Voice/ScreenSharePicker.swift`) is in Home's header while Doddy talks, and Doddy opens iOS's sheet himself when asked and sharing is off. **Not compiled here.**
 - `DoddyNotificationContent/`: the expanded view of a long-pressed note reminder or "thought to review" notification, drawn from the notification's own words (ADR-786). No App Group, network or database.
 
 ## Checks that run without a Mac

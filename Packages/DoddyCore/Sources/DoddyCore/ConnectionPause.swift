@@ -30,6 +30,10 @@ public enum ConnectionPause {
         case .findDeals:
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
             true
+        case .lookAtScreen:
+            // A picture of another app's screen goes to Doddy's server and Anthropic
+            // (decision 2026-11-09-doddy-looks-at-the-screen).
+            true
         case .draftInvoice:
             // A draft on this iPhone's screen (ADR-677); no other app or account is used.
             false

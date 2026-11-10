@@ -18,6 +18,7 @@ import { modelLabel } from "../studio/models.js";
 import type { AssistantDeps } from "../assistant/deps.js";
 import { ClaudeAssistantResponder } from "../assistant/responder.js";
 import { ClaudeRecapWriter } from "../assistant/recap.js";
+import { ClaudeScreenLooker } from "../screen/look.js";
 import type { PhoneRecapDeps } from "../phoneRecaps.js";
 import { PoliteFetcher } from "../deals/fetcher.js";
 import type { DealsDeps } from "../deals/service.js";
@@ -118,6 +119,10 @@ export function providersFrom(config: Config) {
       : undefined,
     recapWriter: as.enabled && config.anthropicApiKey
       ? new ClaudeRecapWriter(config.anthropicApiKey, { model: as.model })
+      : undefined,
+    // "What's on my screen?" (decision 2026-11-09-doddy-looks-at-the-screen): the same key, switch and model.
+    screen: as.enabled && config.anthropicApiKey
+      ? new ClaudeScreenLooker(config.anthropicApiKey, { model: as.model })
       : undefined,
   };
   // Recaps of calls to Doddy's phone line (decision 2026-11-09-conversation-recaps, step 5): the phone agent, the

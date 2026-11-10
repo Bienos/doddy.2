@@ -1,6 +1,7 @@
 import type { AssistantSettings } from "../config.js";
 import type { AssistantResponder } from "./responder.js";
 import type { RecapWriter } from "./recap.js";
+import type { ScreenLooker } from "../screen/look.js";
 
 /** What Messages needs (ADR-586): the switches and caps, and the responder (an Anthropic key). Without a
  * responder or with the switch off, the route answers 503 notConfigured. */
@@ -11,4 +12,8 @@ export interface AssistantDeps {
   recapWriter?: RecapWriter;
   /** How long one model call may take before the route answers timeout. Default 45 s. */
   timeoutMs?: number;
+  /** "What's on my screen?" (decision 2026-11-09-doddy-looks-at-the-screen): same key, switch and caps. Absent: 503. */
+  screen?: ScreenLooker;
+  /** How long one screen look may take before the route answers timeout. Default 20 s (a voice conversation waits). */
+  screenTimeoutMs?: number;
 }

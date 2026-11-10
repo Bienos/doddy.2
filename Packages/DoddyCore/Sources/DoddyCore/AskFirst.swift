@@ -127,6 +127,10 @@ public enum AskFirst {
                         "Do głosu Doddy’ego trafiają tylko liczby i godziny; zdjęcia zostają na Twoim ekranie."),
                 ],
                 confirmLabel: say("Yes, look", "Tak, przejrzyj")))
+        case .lookAtScreen:
+            // A read of the person's own screen: one picture to Doddy's server and Anthropic, after a spoken yes
+            // or a tap (decision 2026-11-09-doddy-looks-at-the-screen). The card says where it goes.
+            return .yesFirst(ScreenLookSpeech.askCard(polish: polish))
         case .readSteps(let day):
             return .yesFirst(AskCard(
                 title: say("Read your steps?", "Odczytać Twoje kroki?"),

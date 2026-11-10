@@ -125,6 +125,7 @@ public enum ToolCatalog {
         .init(VoiceToolName.openTrainingPlan, .handoff, .card),
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .askFirst),
+        .init(VoiceToolName.lookAtScreen, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
