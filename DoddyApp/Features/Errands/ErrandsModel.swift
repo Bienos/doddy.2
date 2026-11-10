@@ -81,25 +81,78 @@ final class ErrandsModel {
         hasLoaded = true
     }
 
-    // MARK: Hand-over (the voice tool, after the user's tap)
+    // MARK: Hand-over (after the user's tap: the voice tool's card, or the Tasks screen's)
 
-    /// Creates the task on the server and approves it with the digest of exactly these words. The
-    /// returned text is the tool result for the agent. Never approves twice, never retries.
+    /// What a hand-over came to. Only `started` means Doddy's server said it has the task.
+    enum HandOverOutcome {
+        case started
+        /// The approval's answer never came back: it may be running. Never approved again by itself.
+        case maybeStarted
+        case notStarted(any Error)
+        /// Refused here before anything was sent (a link, a missing or too long text).
+        case invalid(ErrandDraftIssue)
+        /// "Pause all connections" is on: nothing was sent (Tasks screen only; the voice tools are gated before this).
+        case paused
+        /// A hand-over from the Tasks screen is already on its way: nothing more was sent.
+        case alreadySending
+    }
+
+    /// Set while the Tasks screen's hand-over is on its way, so a second tap sends nothing.
+    private(set) var isHandingOver = false
+
+    /// The voice tool: the same hand-over, as the tool result for the agent.
     func handOver(_ draft: ErrandDraft, now: Date = Date()) async -> String {
+        switch await submit(draft, now: now) {
+        case .started: VoiceToolReply.errandStarted(draft)
+        case .maybeStarted: VoiceToolReply.errandMaybeStarted(draft)
+        case .notStarted(let error): VoiceToolReply.errandNotStarted(error)
+        case .invalid(let issue): VoiceToolReply.failed("The request was incomplete (\(issue.reason)).")
+        case .paused: ConnectionPause.reply
+        case .alreadySending: VoiceToolReply.failed("Another task is being handed over right now. Nothing was sent.")
+        }
+    }
+
+    /// The Tasks screen: words the user typed and then said yes to on the card that showed the words,
+    /// the note and the title (decision 2026-11-10-tasks-redesign). The same request and the same
+    /// single approval as the voice tool. Nothing is sent while Connections are paused, and the
+    /// 30-day log keeps that a task was handed over, not its words or title (as for the voice tool).
+    func handOverTyped(_ draft: ErrandDraft, now: Date = Date(),
+                       isPaused: Bool = UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey)) async -> HandOverOutcome {
+        guard !isHandingOver else { return .alreadySending }
+        guard !isPaused else { return .paused }
+        isHandingOver = true
+        defer { isHandingOver = false }
+        let outcome = await submit(draft, now: now)
+        let logged: ActivityOutcome? = switch outcome {
+        case .started: .done
+        case .maybeStarted: .notSure
+        case .notStarted: .notDone
+        case .invalid, .paused, .alreadySending: nil // Nothing left the iPhone.
+        }
+        if let logged {
+            ActivityLogStore.shared.append(ActivityEntry(at: now, app: .web, title: "Hand over a task", detail: nil,
+                                                         outcome: logged, attempted: true))
+        }
+        return outcome
+    }
+
+    /// Creates the task on the server and approves it with the digest of exactly these words. Never
+    /// approves twice, never retries.
+    private func submit(_ draft: ErrandDraft, now: Date) async -> HandOverOutcome {
         // ADR-716: whoever calls this, nothing with a link in it (or any other issue) is sent to the server.
-        if let issue = draft.validationIssues().first { return VoiceToolReply.failed("The request was incomplete (\(issue.reason)).") }
-        guard let backend else { return VoiceToolReply.errandNotStarted(ErrandError.errandsDisabled) }
+        if let issue = draft.validationIssues().first { return .invalid(issue) }
+        guard let backend else { return .notStarted(ErrandError.errandsDisabled) }
         let preview: ErrandPreview
         do {
             preview = try await backend.createErrand(draft)
         } catch {
-            return VoiceToolReply.errandNotStarted(error)
+            return .notStarted(error)
         }
         let approval: ErrandApproval
         do {
             approval = try await backend.approveErrand(preview.id, digest: preview.digest)
         } catch {
-            return VoiceToolReply.errandNotStarted(error)
+            return .notStarted(error)
         }
         let record = StoredErrand.handedOver(preview, draft: draft, approval: approval, at: now)
         // The server has it either way; a copy that couldn't be kept here is picked up again by
@@ -110,7 +163,7 @@ final class ErrandsModel {
             message = NSLocalizedString("Doddy is working on the task, but this iPhone couldn't keep a copy yet. It will show up in Tasks once Doddy checks again.", comment: "")
         }
         Task { await self.registerForNotifications() }
-        return approval.isConfirmed ? VoiceToolReply.errandStarted(draft) : VoiceToolReply.errandMaybeStarted(draft)
+        return approval.isConfirmed ? .started : .maybeStarted
     }
 
     // MARK: Refresh
