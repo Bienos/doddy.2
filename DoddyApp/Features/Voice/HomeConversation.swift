@@ -44,6 +44,21 @@ final class HomeConversation {
             || controller.permissionRequest != nil
     }
 
+    /// What Doddy has just made or found that the user taps to use (a file, a contact, the parking
+    /// spot, a presentation, photos, the lost-wallet steps). When it changes to something new, the
+    /// pop-up card comes up by itself (owner, 10 Nov 2026), so nothing waits only in the transcript.
+    /// Empty when there is nothing; never a reason to start a conversation.
+    var resultsToShow: String {
+        guard let controller else { return "" }
+        var parts: [String] = controller.documents.map { "doc:\($0.url.absoluteString)" }
+        if let card = controller.contactCard { parts.append("contact:\(card.query)") }
+        if controller.parkingCard != nil { parts.append("parking") }
+        if let ready = controller.presentationReady { parts.append("deck:\(ready.url.absoluteString)") }
+        if controller.photoResults != nil { parts.append("photos") }
+        if controller.lostWalletCard != nil { parts.append("wallet") }
+        return parts.joined(separator: "|")
+    }
+
     func hold(_ controller: VoiceSessionController) {
         self.controller = controller
     }

@@ -234,10 +234,15 @@ function openBody(cipher: TextCipher | undefined, row: ClaimedRow): string | und
 
 /**
  * What a tap on this push should open, from the key it was queued under (the call worker queues
- * `call-result:<attempt>`). A kind only: the attempt, the case and the words stay on the server and in the app.
+ * `call-result:<attempt>`, the errand worker `errand-result:<id>`, the file watch `file-watch:<id>`). A kind
+ * only: the attempt, the task, the file and the words stay on the server and in the app. A finished task or
+ * file opens Messages, where Doddy's message about it is (owner, 10 Nov 2026).
  */
 export function pushData(idempotencyKey: string | undefined): PushData | undefined {
-  return idempotencyKey?.startsWith("call-result:") ? { kind: "call-result" } : undefined;
+  if (idempotencyKey?.startsWith("call-result:")) return { kind: "call-result" };
+  if (idempotencyKey?.startsWith("errand-result:")) return { kind: "errand-result" };
+  if (idempotencyKey?.startsWith("file-watch:")) return { kind: "file-ready" };
+  return undefined;
 }
 
 async function sendPush(db: Db, sender: PushSender | undefined, msg: Claimed): Promise<SendOutcome | { kind: "cancelled"; code: string }> {

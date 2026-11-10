@@ -1,4 +1,5 @@
 import DoddyCore
+import Combine
 import QuickLook
 import SwiftUI
 import UIKit
@@ -126,6 +127,10 @@ struct MessagesView: View {
         }
         .foregroundStyle(Theme.ink)
         .task { await model.load() }
+        // Something Doddy finished while this screen is open (ThreadInbox): shown once, already saved.
+        .onReceive(NotificationCenter.default.publisher(for: ThreadInbox.delivered)) { note in
+            if let message = note.object as? ThreadMessage { model.receive(message) }
+        }
         // Only once Ask Doddy is on: opening Messages with it off makes no call to Doddy's server.
         // The files list belongs to the person (their own session, as the Files sheet reads it), so it doesn't wait for
         // Ask Doddy. It keeps looking while Messages is open: a file takes a minute or two to make.
@@ -235,7 +240,7 @@ struct MessagesView: View {
     /// opens the task's result; nothing is added to the saved thread and nothing is sent.
     @ViewBuilder
     private var taskResults: some View {
-        let shown = ThreadTaskResults.shown(ErrandsModel.shared.errands, now: Date())
+        let shown = ThreadTaskResults.shown(ErrandsModel.shared.errands, now: Date(), thread: model.messages)
         if !shown.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Tasks Doddy finished")
@@ -528,9 +533,21 @@ struct MessagesView: View {
     private func doddyRow(_ message: ThreadMessage, tail: Bool) -> some View {
         let notes = sources(of: message)
         return VStack(alignment: .leading, spacing: 6) {
-            // A file Doddy made is a card with Open; it is not an answer, so it has no "from your notes" line.
+            // A file Doddy made is a card with Open and Share; it is not an answer, so it has no "from your notes"
+            // line. A file Doddy delivered from a voice conversation has a line of his above it (ThreadDelivery).
             if let document = message.document {
+                if let caption = ThreadDelivery.caption(of: message) {
+                    HStack(spacing: 0) {
+                        MessageBubble(text: caption, fromUser: false, tail: false)
+                            .accessibilityLabel(Text(verbatim: "Doddy: \(caption)"))
+                        Spacer(minLength: 56)
+                    }
+                }
                 fileBubble(document)
+                MadeFileShareButton(link: document.url)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.accentText)
+                    .padding(.leading, 14)
             } else {
                 HStack(spacing: 0) {
                     MessageBubble(text: message.text, fromUser: false, tail: tail)
@@ -540,8 +557,21 @@ struct MessagesView: View {
                 }
             }
 
+            // A finished task Doddy delivered (ThreadDelivery: the message has the task's id): its whole result opens here.
+            if message.document == nil, let task = ErrandsModel.shared.errand(message.id) {
+                Button {
+                    openedTask = OpenedTask(id: task.id)
+                } label: {
+                    Label(task.state == .done ? "See everything Doddy found" : "See why", systemImage: "chevron.right.circle")
+                }
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.accentText)
+                .padding(.leading, 14)
+                .accessibilityIdentifier("messages.deliveredTask")
+            }
+
             // Where the answer came from, small and grey under the bubble, as a caption would be.
-            if message.document == nil && !message.isLocalAction {
+            if message.document == nil && !message.isLocalAction && ErrandsModel.shared.errand(message.id) == nil {
             Group {
                 switch message.basis {
                 case .savedNotes:

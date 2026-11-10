@@ -316,6 +316,29 @@ final class StaleToolCallTests: XCTestCase {
         XCTAssertEqual(second.results, [])
     }
 
+    /// Owner, 10 Nov 2026: a card nobody could see blocked every later card ("Another item is waiting"). The
+    /// newest ask now takes the card's place; the replaced one runs nothing and its call is answered declined.
+    @MainActor
+    func testANewAskReplacesTheWaitingCardAndTheOldOneRunsNothing() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.openReminders = [Self.reminder("Buy milk"), Self.reminder("Call mum")]
+        let link = FakeLink()
+        t.controller.beginForTesting(link: link)
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "older", parameters: #"{"title":"Buy milk"}"#).value
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.deleteReminder, id: "newer", parameters: #"{"title":"Call mum"}"#).value
+        for _ in 0..<100 where !link.results.contains(where: { $0.id == "older" }) { await Task.yield() }
+
+        guard case .deleteReminder(let id, _)? = t.controller.pendingAction else {
+            return XCTFail("expected the newer card, got \(String(describing: t.controller.pendingAction))")
+        }
+        XCTAssertEqual(id, "newer")
+        XCTAssertEqual(link.results.first { $0.id == "older" }?.text, VoiceToolReply.replacedByNewerAsk)
+        XCTAssertEqual(t.devices.writeCount, 0, "nothing on the replaced card ran")
+    }
+
     @MainActor
     func testACardOnScreenWhenEndIsTappedRunsNothingAfterTheNextStart() async {
         let t = Harness()

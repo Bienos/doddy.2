@@ -953,7 +953,10 @@ extension VoiceToolReply {
         case .shopping?:
             "It looks for offers in shops in Poland and reads their pages, and the user gets a notification when it's done. Nothing is bought, ordered or sent."
         }
-        return "started: Doddy's server has the task below and works on it in the background. \(work) Tell the user they can close the app.\n"
+        return "started: Doddy's server has the task below and works on it in the background. \(work) "
+            + "When it's done, the result arrives as your message in Messages in the app. Tell the user in one short line to give you "
+            + "a moment and that you'll let them know in Messages, e.g. 'Daj mi chwilę, poszukam i dam ci znać w Wiadomościach.' "
+            + "They can close the app.\n"
             + ToolData.block([quoted("Title", draft.title)])
     }
 

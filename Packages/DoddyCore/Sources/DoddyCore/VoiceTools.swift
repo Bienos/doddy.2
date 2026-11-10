@@ -248,7 +248,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case startStopwatch(label: String?)
     case stopStopwatch
     case checkStopwatch
-    case openMap(place: String)
+    /// One place, or a route to it when `from` or `mode` is given (owner, 10 Nov 2026).
+    case openMap(place: String, from: String? = nil, mode: MapTravelMode? = nil)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
@@ -407,7 +408,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .checkStopwatch
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
-            return .openMap(place: place)
+            return .openMap(place: place, from: args.text("from"), mode: MapTravelMode.parse(args.text("mode")))
         case VoiceToolName.runShortcut:
             guard let shortcut = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .runShortcut(name: shortcut)
@@ -819,6 +820,8 @@ public enum VoiceToolReply {
     public static let declinedReminder = "declined: the user chose not to add this reminder. Nothing was added."
     public static let declinedTimer = "declined: the user chose not to start this timer. Nothing was set."
     public static let declinedMap = "declined: the user chose not to open the map. Nothing was opened."
+    /// A newer ask took the card's place before the user answered it (owner, 10 Nov 2026). Nothing ran.
+    public static let replacedByNewerAsk = "declined: a newer request replaced this card before the user answered it. Nothing was done; ask again if it's still wanted."
     public static let declinedShortcut = "declined: the user chose not to run the shortcut. Nothing was run."
     public static let declinedMessage = "declined: the user chose not to open the draft. Nothing was sent."
 
@@ -947,6 +950,16 @@ public enum VoiceToolReply {
     /// Maps opened on the user's tap. Nothing else is claimed. The place follows as data.
     public static func mapOpened(_ place: String) -> String {
         "opened: Apple Maps opened for the place below.\n" + ToolData.block([quoted("Place", place)])
+    }
+
+    /// Maps opened with directions on the user's tap. Doddy can't see the route Maps chose, so
+    /// travel times and lines come from Maps, not from Doddy.
+    public static func routeOpened(_ trip: MapTrip) -> String {
+        var lines = [quoted("To", trip.place)]
+        if let from = trip.from { lines.append(quoted("From", from)) } else { lines.append("From: where the iPhone is") }
+        if let mode = trip.mode { lines.append("By: \(mode.rawValue)") }
+        return "opened: Apple Maps opened with directions for the route below. Doddy can't see the route Maps chose: "
+            + "don't state travel times or lines as if Maps gave them.\n" + ToolData.block(lines)
     }
 
     /// Shortcuts is asked to run; Doddy cannot see whether the shortcut finished.

@@ -139,6 +139,9 @@ struct RootView: View {
     @State private var homePath: [UUID] = []
     /// How tall the transcript sheet opens (ADR-595): full for Transcript, half for a card.
     @State private var voiceDetent: PresentationDetent = .large
+    /// The conversation's sheet as the pop-up card (owner, 10 Nov 2026): only what waits for the user
+    /// or what Doddy just made. The Transcript button and "Show the conversation" show all of it.
+    @State private var voiceAsCard = false
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -463,7 +466,15 @@ struct RootView: View {
     /// A conversation with a card waiting for the user opens its transcript, half height (ADR-595). Not over
     /// the Face ID cover: `lockLifted` does it after the unlock.
     private func presentTranscriptIfNeeded() {
-        guard HomeConversation.shared.needsYou, !router.isVoicePresented, !AppLock.shared.isLocked else { return }
+        guard HomeConversation.shared.needsYou else { return }
+        presentCard()
+    }
+
+    /// The pop-up card from the bottom: a card to answer, or something Doddy just made. Open
+    /// already (card or transcript), it stays as it is; never over the Face ID cover.
+    private func presentCard() {
+        guard !router.isVoicePresented, !AppLock.shared.isLocked else { return }
+        voiceAsCard = true
         voiceDetent = .medium
         router.isVoicePresented = true
     }
@@ -551,15 +562,27 @@ struct RootView: View {
         // up from the bottom, half height, when a card needs the user.
         .sheet(isPresented: $router.isVoicePresented, onDismiss: {
             voiceDetent = .large
+            voiceAsCard = false
             router.showWaitingDraft()
         }) {
-            VoiceView()
+            VoiceView(asCard: voiceAsCard, onShowConversation: {
+                voiceAsCard = false
+                voiceDetent = .large
+            })
                 .presentationDetents([.medium, .large], selection: $voiceDetent)
                 .presentationDragIndicator(.visible)
+                .presentationBackgroundInteraction(voiceAsCard ? .enabled(upThrough: .medium) : .disabled)
         }
         .onChange(of: HomeConversation.shared.needsYou) { _, needsYou in
             guard needsYou else { return }
             presentTranscriptIfNeeded()
+        }
+        // Something new Doddy made or found comes up as the card too, not only in the transcript.
+        .onChange(of: HomeConversation.shared.resultsToShow) { old, new in
+            // Only for something added, not when a card was closed.
+            let added = Set(new.split(separator: "|")).subtracting(old.split(separator: "|"))
+            guard !added.isEmpty else { return }
+            presentCard()
         }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             OpenDoddyWaysView(model: router.setup)
@@ -642,6 +665,7 @@ struct RootView: View {
                 selectedTab = .home
                 if HomeConversation.shared.forTranscript != nil || VoiceSessionController.runningConversation != nil {
                     voiceDetent = .medium
+                    voiceAsCard = HomeConversation.shared.needsYou
                     router.showConversationStartedElsewhere()
                 }
             }

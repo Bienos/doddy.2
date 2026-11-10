@@ -7,6 +7,13 @@ import Foundation
 public enum ServerPushKind: String, Equatable, Sendable {
     /// A call Doddy made for the person has its answer ready: open Files › Calls.
     case callResult = "call-result"
+    /// A task Doddy worked on in the background finished: open Messages, where his message about it is.
+    case errandResult = "errand-result"
+    /// A file Doddy was making is ready (or failed): open Messages, where the file is.
+    case fileReady = "file-ready"
+
+    /// Opens Messages when tapped (owner, 10 Nov 2026).
+    public var opensMessages: Bool { self == .errandResult || self == .fileReady }
 
     public static func parse(_ userInfo: [AnyHashable: Any]) -> ServerPushKind? {
         guard let hint = userInfo["doddy"] as? [String: Any], let kind = hint["kind"] as? String else { return nil }

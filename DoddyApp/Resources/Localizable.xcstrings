@@ -10165,6 +10165,17 @@
         }
       }
     },
+    "By car": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samochodem"
+          }
+        }
+      }
+    },
     "By continuing, you agree to Doddy's Terms & Conditions and acknowledge the Privacy Policy.": {
       "extractionState": "manual",
       "localizations": {
@@ -10172,6 +10183,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontynuując, akceptujesz Regulamin Doddy’ego i potwierdzasz, że znasz Politykę prywatności."
+          }
+        }
+      }
+    },
+    "By public transport": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Komunikacją miejską"
           }
         }
       }
@@ -19127,6 +19149,17 @@
         }
       }
     },
+    "Directions in Maps?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trasa w Mapach?"
+          }
+        }
+      }
+    },
     "Discard": {
       "extractionState": "manual",
       "localizations": {
@@ -21072,6 +21105,17 @@
         }
       }
     },
+    "Doddy couldn't finish this file. Ask him to make it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie dokończył tego pliku. Poproś go, żeby zrobił go jeszcze raz."
+          }
+        }
+      }
+    },
     "Doddy couldn't keep a copy of this unfinished note on this iPhone (%@). Save it before you leave.": {
       "extractionState": "manual",
       "localizations": {
@@ -22663,6 +22707,17 @@
         }
       }
     },
+    "Doddy is still making it. Try again in a minute.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy jeszcze to robi. Spróbuj za minutę."
+          }
+        }
+      }
+    },
     "Doddy is still making this": {
       "extractionState": "manual",
       "localizations": {
@@ -22899,6 +22954,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy słucha dalej, nawet gdy wyjdziesz z aplikacji, aż stukniesz Zakończ. Nic nie jest zapisywane, wysyłane ani otwierane bez Twojego stuknięcia."
           }
         }
       }
@@ -23356,6 +23422,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 需要在你使用应用期间获取你的位置，才能在某个地点提醒你。没有设置任何内容。请在设置中允许。"
+          }
+        }
+      }
+    },
+    "Doddy needs your tap": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy czeka na Twoje stuknięcie"
           }
         }
       }
@@ -32260,17 +32337,6 @@
         }
       }
     },
-    "He keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Słucha dalej, jeśli wyjdziesz z aplikacji, dopóki nie stukniesz Zakończ. Nic nie jest zapisywane, wysyłane ani otwierane, dopóki tego nie stukniesz."
-          }
-        }
-      }
-    },
     "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.": {
       "extractionState": "manual",
       "localizations": {
@@ -35538,13 +35604,13 @@
         }
       }
     },
-    "It takes a minute or two. Open it now; it shows the file as soon as it's ready.": {
+    "It takes a minute or two. It also lands in Messages and in Files when it's ready.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "To potrwa minutę lub dwie. Otwórz teraz; plik pokaże się, gdy tylko będzie gotowy."
+            "value": "To zajmie minutę lub dwie. Gdy będzie gotowe, trafi też do Wiadomości i do Plików."
           }
         }
       }
@@ -52835,6 +52901,17 @@
         }
       }
     },
+    "On foot": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pieszo"
+          }
+        }
+      }
+    },
     "On unless you turn it off. Doddy counts how you use him: conversations, what he did for you, notes and list items saved. Never the words of your conversations or notes. The counts go to Doddy's server, where you see them in Logbook on the web and Doddy's team can see them with your account. Turning this off stops counting and deletes the counts on the server.": {
       "extractionState": "manual",
       "localizations": {
@@ -67157,6 +67234,17 @@
         }
       }
     },
+    "Save it to Files or send it in Messages, Mail or another app. You choose where it goes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz w Plikach albo wyślij w Wiadomościach, Mailu lub innej aplikacji. Ty wybierasz, gdzie trafi."
+          }
+        }
+      }
+    },
     "Save key": {
       "extractionState": "manual",
       "localizations": {
@@ -69842,6 +69930,17 @@
         }
       }
     },
+    "See everything Doddy found": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz wszystko, co Doddy znalazł"
+          }
+        }
+      }
+    },
     "See how an invoice card looks": {
       "extractionState": "manual",
       "localizations": {
@@ -70078,6 +70177,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zobacz, co znalazł Doddy."
+          }
+        }
+      }
+    },
+    "See why": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz dlaczego"
           }
         }
       }
@@ -73369,6 +73479,17 @@
         }
       }
     },
+    "Show the conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż rozmowę"
+          }
+        }
+      }
+    },
     "Show the newest of them on your screen, with a button to open Photos": {
       "extractionState": "manual",
       "localizations": {
@@ -75490,6 +75611,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "再来一个"
+          }
+        }
+      }
+    },
+    "Start directions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prowadź"
           }
         }
       }
@@ -99652,6 +99784,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skąd są ceny"
+          }
+        }
+      }
+    },
+    "Where you are now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tam, gdzie jesteś teraz"
           }
         }
       }
