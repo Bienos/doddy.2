@@ -1,0 +1,2 @@
+Cheapest this week: new screen in Doddy's colours. One question with items as chips, one "Check prices" button, shops and loyalty apps behind "Change", and the answer as one card (item → best price → shop); a tap shows the item's details. Decision `2026-11-10-cheapest-this-week-simpler`.
+Ran: `swiftc -parse`, string catalog check. Not run: app build and UI tests (hosted Mac job). Still hidden in Release and off on the server (`DEALS_ENABLED=0`): owner step to switch on.
