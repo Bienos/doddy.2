@@ -91,10 +91,10 @@ final class TimerVoiceTests: XCTestCase {
 
     // MARK: Where they run
 
-    func testTheyAreCoreSoTheBetaKeepsThem() {
+    func testTheyAreCoreSoEveryScopeKeepsThem() {
         for name in names {
             XCTAssertTrue(ReleaseScope.coreTools.contains(name), name)
-            XCTAssertNil(ReleaseScope.shipping.hiddenFeature(forTool: name), "\(name) runs in the beta")
+            XCTAssertNil(ReleaseScope.shipping.hiddenFeature(forTool: name), "\(name) runs in every scope")
             XCTAssertFalse(ReleaseScope.shipping.hiddenTools.contains(name), name)
         }
     }

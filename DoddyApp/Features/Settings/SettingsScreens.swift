@@ -354,7 +354,7 @@ struct MemoriesSettingsView: View {
 
             BackupSettingsSection()
 
-            // Hidden in the beta until one real Takeout export has been tried (decision 2026-11-07-release-scope).
+            // Shown since 10 Nov 2026 (decision 2026-11-10-no-beta-scope); no real Takeout export has been tried yet, and the screen says what it reads.
             if ReleaseScopeStore.current.shows(.noteImport) {
                 NoteImportSettingsSection()
             }
@@ -770,9 +770,6 @@ struct AdvancedSettingsView: View {
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     @State private var showStudio = false
     #if DEBUG
-    /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope); on until turned off
-    /// (decision 2026-11-08-debug-shows-every-feature). Only a Debug build has the toggle or reads the key.
-    @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = ReleaseScope.debugShowsEverythingByDefault
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
@@ -808,7 +805,6 @@ struct AdvancedSettingsView: View {
             // Studio (ADR-740): kept here, not on Home's menu (it has no room for a twelfth row, ADR-652) or
             // Settings' first page (ADR-633). Studio is off on the server until the owner turns it on, and says so
             // when it is.
-            // Hidden in the beta with `make_something` (decision 2026-11-07-release-scope).
             if ReleaseScopeStore.current.shows(.studio) {
                 Section {
                     Button("Studio") { showStudio = true }
@@ -834,16 +830,15 @@ struct AdvancedSettingsView: View {
     }
 
     #if DEBUG
-    /// The release scope (decision 2026-11-07-release-scope): what this build hides, and the switch to see it all. Debug only.
+    /// The release scope: every feature is shown in every build since 10 Nov 2026 (decision
+    /// 2026-11-10-no-beta-scope), so the old Debug toggle is gone. Debug only.
     private var releaseScope: some View {
         Section {
-            Toggle("Developer: show every feature", isOn: $previewEverything)
-                .accessibilityIdentifier("settings.previewEverything")
-            StatusRow(title: "Hidden features",
-                      value: previewEverything ? "0" : "\(ReleaseScope.shipping.hidden.count) of \(Feature.allCases.count)")
-            StatusRow(title: "Voice tools kept", value: "\(ReleaseScopeStore.current.hiddenTools.isEmpty ? ToolCatalog.all.count : ToolCatalog.all.count - ReleaseScope.shipping.hiddenTools.count) of \(ToolCatalog.all.count)")
+            let scope = ReleaseScopeStore.current
+            StatusRow(title: "Hidden features", value: "\(scope.hidden.count) of \(Feature.allCases.count)")
+            StatusRow(title: "Voice tools kept", value: "\(ToolCatalog.all.count - scope.hiddenTools.count) of \(ToolCatalog.all.count)")
         } footer: {
-            Text("On (the default in a Debug build): every feature. Off: what the beta ships, as a Release or TestFlight build always shows (docs/implementation/RELEASE_SCOPE.md). A hidden feature's data stays; only its ways in go. Takes effect on the next screen and the next conversation.")
+            Text("Every feature is shown in every build (docs/implementation/RELEASE_SCOPE.md). A feature whose server or permission isn't set up says so itself.")
         }
     }
 

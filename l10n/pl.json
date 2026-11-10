@@ -3141,7 +3141,6 @@
   "Deleting…": "Usuwanie…",
   "Demo — not your real account": "Demo, nie Twoje prawdziwe konto",
   "Dentist": "Dentysta",
-  "Developer: show every feature": "Deweloper: pokaż wszystkie funkcje",
   "Developer: talk without Apple sign-in": "Deweloper: rozmowa bez logowania przez Apple",
   "Doddy hasn't asked to send notifications yet, so your iPhone won't alert you. When it's due, the note waits at the top of Home.": "Doddy jeszcze nie poprosił o zgodę na powiadomienia, więc iPhone Cię nie powiadomi. Gdy nadejdzie czas, notatka poczeka na górze ekranu głównego.",
   "Doddy looks for these words in the stories from your topics and feeds.": "Doddy szuka tych słów w artykułach z Twoich tematów i kanałów.",
@@ -3347,5 +3346,6 @@
   "What wasn't checked (%lld)": "Czego nie sprawdzono (%lld)",
   "Shops": "Sklepy",
   "Leaflets to check": "Gazetki do sprawdzenia",
-  "Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.": "Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje. Nic, co Cię identyfikuje, nie trafia do sklepów; Rossmann dostaje nazwy rzeczy jako wyszukiwanie."
+  "Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.": "Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje. Nic, co Cię identyfikuje, nie trafia do sklepów; Rossmann dostaje nazwy rzeczy jako wyszukiwanie.",
+  "Every feature is shown in every build (docs/implementation/RELEASE_SCOPE.md). A feature whose server or permission isn't set up says so itself.": "Każda funkcja jest widoczna w każdej wersji (docs/implementation/RELEASE_SCOPE.md). Funkcja, której serwer lub zgoda nie są ustawione, sama to mówi."
 }

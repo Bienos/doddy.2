@@ -19270,17 +19270,6 @@
         }
       }
     },
-    "Developer: show every feature": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deweloper: pokaż wszystkie funkcje"
-          }
-        }
-      }
-    },
     "Developer: talk without Apple sign-in": {
       "extractionState": "manual",
       "localizations": {
@@ -28693,6 +28682,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每天"
+          }
+        }
+      }
+    },
+    "Every feature is shown in every build (docs/implementation/RELEASE_SCOPE.md). A feature whose server or permission isn't set up says so itself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każda funkcja jest widoczna w każdej wersji (docs/implementation/RELEASE_SCOPE.md). Funkcja, której serwer lub zgoda nie są ustawione, sama to mówi."
           }
         }
       }

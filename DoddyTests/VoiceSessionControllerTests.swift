@@ -26,9 +26,8 @@ final class VoiceSessionControllerTests: XCTestCase {
         /// "Listening" marks the first conversation as had (ADR-326); `beginForTesting` reaches it,
         /// so the flag is put back too, or the app's later UI tests would skip Home's first visit.
         private let savedFirstConversation: Any?
-        /// The release scope (decision 2026-11-07-release-scope) hides most features in the shipping
-        /// scope; these tests drive every tool, so they run with everything shown (a Debug build reads
-        /// this key) unless a test asks for the shipping scope.
+        /// Every feature is shown in every build since 10 Nov 2026 (decision 2026-11-10-no-beta-scope); the
+        /// Debug preference key is still set so these tests ask for everything explicitly.
         private let savedPreviewEverything: Any?
 
         init(showEverything: Bool = true) {
@@ -115,23 +114,25 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertTrue(t.link.results.first?.text.contains("what to translate") == true)
     }
 
-    /// The shipping scope (decision 2026-11-07-release-scope): a tool whose feature the build hides
-    /// runs nothing and shows no card, and the agent hears that it isn't in this version.
+    /// Every feature is shown since 10 Nov 2026 (decision 2026-11-10-no-beta-scope): no voice tool is refused as
+    /// "not in this version", in either switch position of the Debug preference.
     @MainActor
-    func testHiddenFeaturesToolRunsNothingInTheShippingScope() async {
+    func testEveryVoiceToolIsReachableInTheShippingScope() async {
+        for showEverything in [true, false] {
+            let t = Harness(showEverything: showEverything)
+            defer { t.restore() }
+            XCTAssertEqual(ReleaseScopeStore.current, .shipping)
+            for tool in ToolCatalog.all {
+                XCTAssertNil(ReleaseScopeStore.current.hiddenFeature(forTool: tool.name), "\(tool.name) must be reachable")
+            }
+        }
+        // A tool the beta hid (tasks) now gets past the scope gate; the rest of the gate still applies.
         let t = Harness(showEverything: false)
         defer { t.restore() }
-        XCTAssertEqual(ReleaseScopeStore.current, .shipping)
         t.controller.beginForTesting(link: t.link)
-
-        // The translator (decision 2026-11-08-translator-in-beta) and leaflets (2026-11-10-cheapest-this-week-simpler)
-        // are shown in the beta; tasks stay hidden.
         await t.controller.receiveToolCallForTesting(
             name: VoiceToolName.handOverErrand, id: "errand-2", parameters: #"{"task":"Find a plumber"}"#).value
-
-        XCTAssertNil(t.controller.pendingAction, "no card")
-        XCTAssertEqual(t.link.results.map(\.id), ["errand-2"])
-        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.hidden(VoiceToolName.handOverErrand))
+        XCTAssertNotEqual(t.link.results.first?.text, VoiceToolReply.hidden(VoiceToolName.handOverErrand))
     }
 
     // MARK: Declined card runs nothing
