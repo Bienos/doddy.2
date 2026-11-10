@@ -159,6 +159,10 @@ enum TalkInIsland {
         isStarting = true
         defer { isStarting = false }
         noteShortcutRan()
+        // Where the seconds go between the press and a connected conversation (decision 2026-11-10-voice-start-timing):
+        // fixed stage words and seconds only, on the "voice-audio" log, whatever way the start ends.
+        var timeline = VoiceStartTimeline(startedAt: ProcessInfo.processInfo.systemUptime)
+        defer { log.notice("talk start timing: \(timeline.line(at: ProcessInfo.processInfo.systemUptime), privacy: .public)") }
 
         // The terms come first (ADR-581); the "Before we start" step needs the screen.
         guard !LegalAcceptanceStore.isNeeded else {
@@ -183,6 +187,7 @@ enum TalkInIsland {
         // The same account and voice-data gate as the voice screen (`VoiceView`).
         let auth = VoiceAuthSession.shared
         await auth.restore()
+        timeline.mark(.account, at: ProcessInfo.processInfo.systemUptime)
         guard auth.hasVoiceAccess(), VoiceProviderConsent.isGranted() else {
             throw refused("voice not set up", needsApp: NSLocalizedString("Open Doddy and start a conversation once to set up his voice. After that this works without opening him.", comment: ""))
         }
@@ -191,6 +196,7 @@ enum TalkInIsland {
         let profiles = IntentStores.profiles
         if let profiles, !profiles.hasLoaded { await profiles.load() }
         let profile = profiles?.profile ?? .empty
+        timeline.mark(.profile, at: ProcessInfo.processInfo.systemUptime)
 
         // Another conversation began while this press waited (a tap in the app): leave it.
         guard VoiceSessionController.runningConversation == nil else {
@@ -204,6 +210,7 @@ enum TalkInIsland {
         HomeConversation.shared.hold(controller)
         await controller.start(VoiceConfig.connectionMode, profile: profile,
                                wakeGreeting: greeting(for: profile), withoutOpeningApp: true)
+        timeline.mark(.connect, at: ProcessInfo.processInfo.systemUptime)
         switch controller.phase {
         case .failed(let message):
             // The island or the microphone was refused in the background: opening Doddy fixes it.
