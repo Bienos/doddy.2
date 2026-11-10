@@ -32,6 +32,10 @@ final class VoiceAuthSession {
         }
     }
 
+    /// Seconds of life left in this older voice session's access token; nil when it isn't signed in.
+    /// For `TalkStartAccount`, which decides whether a start restores it.
+    var voiceSessionSecondsLeft: TimeInterval? { isSignedIn ? accessTokenExpiresAt.timeIntervalSinceNow : nil }
+
     func restore() async {
         if isSignedIn, accessTokenExpiresAt.timeIntervalSinceNow > 30 { return }
         // One restore at a time (ADR-672): a second caller waits for the one in flight. Returning at
@@ -203,6 +207,8 @@ final class VoiceAuthSession {
         accessToken = nil
         accessTokenExpiresAt = .distantPast
         isSignedIn = false
+        // A token fetched ahead for this login never outlives it (decision 2026-11-10-action-button-start).
+        VoiceTokenWarmer.shared.clear()
     }
 }
 
@@ -305,5 +311,7 @@ enum VoiceProviderConsent {
     static func reset() {
         UserDefaults.standard.removeObject(forKey: key)
         UserDefaults.standard.removeObject(forKey: retiredOpenAIKey)
+        // Consent withdrawn: a token fetched ahead goes too (decision 2026-11-10-action-button-start).
+        Task { @MainActor in VoiceTokenWarmer.shared.clear() }
     }
 }

@@ -483,6 +483,11 @@ final class VoiceSessionController {
     /// The last start without opening Doddy failed because iOS refused the island or the
     /// microphone in the background, not because of the conversation: opening Doddy fixes it (ADR-579).
     private(set) var backgroundStartRefused = false
+    /// A start without opening Doddy has its Live Activity and audio session up: what the Action
+    /// Button's intent waits for before it returns (decision 2026-11-10-action-button-start).
+    private(set) var backgroundStartReady = false
+    /// Where this start's voice token came from, for the timing line only.
+    private(set) var tokenSource: VoiceTokenSource?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
     var isPrivate = false {
@@ -689,6 +694,8 @@ final class VoiceSessionController {
         islandExpansion = IslandExpansion(isOn: LaunchPreferencesMigration.islandExpands(
             UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool))
         backgroundStartRefused = false
+        backgroundStartReady = false
+        tokenSource = nil
         proposedNoteTexts = []
         saveSuggestions = nil
         suggestionsOffered = false
@@ -741,6 +748,7 @@ final class VoiceSessionController {
                 fail(problem)
                 return
             }
+            backgroundStartReady = true
         }
 
         // The Dynamic Island / Lock Screen buttons reach this conversation through these.
@@ -756,7 +764,12 @@ final class VoiceSessionController {
         // it. Only ElevenLabs through the token server, after consent and the microphone check.
         var earlyToken: Task<Result<String, VoiceTokenError>, Never>?
         if case .tokenServer(let endpoint) = mode {
+            // One fetched ahead (VoiceTokenWarmer) is used once; it is gone from the shelf either way, so a
+            // start that fails to connect with it fetches a fresh one next time, never the same again.
+            let shelved = VoiceTokenWarmer.shared.take(endpoint: endpoint)
+            tokenSource = shelved == nil ? .fetched : .shelf
             earlyToken = Task { () -> Result<String, VoiceTokenError> in
+                if let shelved { return .success(shelved) }
                 do throws(VoiceTokenError) {
                     return .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
                 } catch {

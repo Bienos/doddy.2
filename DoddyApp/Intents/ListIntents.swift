@@ -16,6 +16,16 @@ enum IntentStores {
     /// The reviewed profile, for Talk in the Island's "Hey <name>" (ADR-577).
     static weak var profiles: ProfileStore?
 
+    /// iOS can run an intent in a freshly launched process before `DoddyApp.init` has set the stores.
+    /// Waits for them for up to 2 s (the init takes milliseconds); returns at once when they are set.
+    static func waitForStore() async {
+        var waited = 0
+        while store == nil, waited < 50 {
+            try? await Task.sleep(for: .milliseconds(40))
+            waited += 1
+        }
+    }
+
     static func loaded() async -> MemoryStore? {
         guard let store else { return nil }
         await store.reload()

@@ -11,9 +11,21 @@ public enum VoiceStartStage: String, CaseIterable, Sendable {
     case account
     /// Loading the saved profile when iOS started Doddy just for this press.
     case profile
+    /// The Live Activity and the audio session are up. This is what the Action Button's intent waits
+    /// for; the connect stage then runs on after the intent has returned (decision
+    /// `2026-11-10-action-button-start`).
+    case island
     /// Getting the voice token, joining the ElevenLabs room and the start of the conversation. The token
     /// request is also logged on its own, inside this stage, by `VoiceTokenClient`.
     case connect
+}
+
+/// Where a start's voice token came from. The only thing about the token that is ever logged.
+public enum VoiceTokenSource: String, Sendable {
+    /// Fetched ahead of time (`VoiceTokenShelf`).
+    case shelf = "token shelf"
+    /// Fetched at the press.
+    case fetched = "token fetched"
 }
 
 public struct VoiceStartTimeline: Sendable, Equatable {
@@ -42,8 +54,10 @@ public struct VoiceStartTimeline: Sendable, Equatable {
     public func total(at now: Double) -> Double { Self.clamped(now - startedAt) }
 
     /// "account 0.31 s · profile 0.02 s · connect 2.40 s · total 2.73 s"
-    public func line(at now: Double) -> String {
-        (entries.map { "\($0.stage.rawValue) \(Self.text($0.seconds))" } + ["total \(Self.text(total(at: now)))"])
+    /// With `token`, the fixed word for where the token came from is added at the end.
+    public func line(at now: Double, token: VoiceTokenSource? = nil) -> String {
+        (entries.map { "\($0.stage.rawValue) \(Self.text($0.seconds))" } + ["total \(Self.text(total(at: now)))"]
+            + (token.map { [$0.rawValue] } ?? []))
             .joined(separator: " · ")
     }
 

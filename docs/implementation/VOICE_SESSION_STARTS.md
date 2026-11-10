@@ -101,3 +101,6 @@ Each voice screen makes its own `VoiceSessionController`, and "Hey Doddy" makes 
 
 ## Start timing (10 Nov 2026, decision `2026-11-10-voice-start-timing`)
 After one press of the Action Button, Back Tap or a Siri shortcut, Console.app (the phone connected, filter category `voice-audio`) shows `talk start timing: account … · profile … · connect … · total …` and `voice token request took …`. They say where the seconds go: the login restore, the profile, or connecting (the token request is inside `connect`). Only stage words and seconds are logged. Until someone reads those lines off a phone, no start time here is measured.
+
+## Action Button start and the token shelf (10 Nov 2026, decision `2026-11-10-action-button-start`)
+The Action Button's intent no longer waits for the token request and the connect: it returns once the island and audio session are up (`island` in the timing line), and the connect carries on in a task held by `TalkInIsland`. A voice token is fetched ahead of time when Doddy comes to the front (`VoiceTokenWarmer`, rules in `VoiceTokenShelf`); the timing line now ends with `token shelf` or `token fetched`. Not verified on a device.

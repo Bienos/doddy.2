@@ -13,6 +13,7 @@ After a press, several things run before the first word: restoring the voice log
 - `VoiceTokenClient.fetchToken` logs `voice token request took 0.84 s`.
 - Both go to the `voice-audio` category of subsystem `com.bienos.doddy2.dev`, with `.public` privacy. Only fixed stage words and seconds can appear: no account, token, address, text, note or name.
 - `VoiceSessionController.swift` is not changed (another change is editing its tool handlers).
+- **Update:** the owner chose the token shelf before any numbers came; see `2026-11-10-action-button-start`. The timing line gained the stage `island` and a final `token shelf` / `token fetched`.
 - **Next, from the numbers:** if `token` is a large share of `connect`, fetch the token ahead of time (reading rules already written and tested, kept out of this change: one use per token, same account and server, a few minutes' life, a cool-down after an unused one). If `account` is large, skip the refresh when the stored session is still valid. If `connect` without the token is large, the cause is the room and the first audio, and neither of those two changes would help.
 
 ## Consequences
