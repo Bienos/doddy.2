@@ -98,3 +98,6 @@ Each voice screen makes its own `VoiceSessionController`, and "Hey Doddy" makes 
 - **Keep the audio session active across the hand-over** from the wake listener to the conversation, so a background start can open the microphone. This needs device testing.
 - **If it can't work from the background,** say so: put a "Tap to talk" greeting on the island instead of starting a conversation that can't hear.
 - **One conversation at a time across the app: built 18 Oct (ADR-496).** `VoiceConversationGate` in DoddyCore makes the voice screen show a conversation that is already starting or live instead of starting another, and makes "Hey Doddy" ignored while one runs. It closes the second suspect above. It doesn't touch the background-start stall, which still needs the phone log. Built on Linux and not compiled in Xcode.
+
+## Start timing (10 Nov 2026, decision `2026-11-10-voice-start-timing`)
+After one press of the Action Button, Back Tap or a Siri shortcut, Console.app (the phone connected, filter category `voice-audio`) shows `talk start timing: account … · profile … · connect … · total …` and `voice token request took …`. They say where the seconds go: the login restore, the profile, or connecting (the token request is inside `connect`). Only stage words and seconds are logged. Until someone reads those lines off a phone, no start time here is measured.

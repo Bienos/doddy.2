@@ -132,7 +132,7 @@ struct HomeView: View {
             // A finished call's push, tapped (ADR-730): Files, where Calls lists the recaps.
             .sheet(isPresented: Binding(get: { router.isCallRecapsPresented }, set: { router.isCallRecapsPresented = $0 })) { FilesSheet() }
             .sheet(isPresented: $showToday) {
-                HomeTodaySheet(openSettings: { showToday = false; selectedTab = .settings })
+                TodaySheet(openSettings: { showToday = false; selectedTab = .settings })
             }
             .sheet(item: $tool) { tool in
                 switch tool {
@@ -1010,29 +1010,7 @@ private struct DoddyPressStyle: ButtonStyle {
 
 // MARK: - Sheets from Home
 
-/// Today (it used to be a card on Home), from the ••• menu.
-private struct HomeTodaySheet: View {
-    let openSettings: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                TodayCard(openSettings: openSettings)
-                    .padding(24)
-            }
-            .background(Theme.canvas)
-            .navigationTitle("Today")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-}
+// Today's sheet is `TodaySheet` in Features/Today.
 
 private enum HomeTool: String, Identifiable {
     case focus, stopwatch, timer, windDown

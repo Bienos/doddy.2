@@ -19,6 +19,10 @@
 5. **Done:** a push notification with no words in it ("Gotowe. Wynik czeka w Wiadomościach." / "Done. The result is waiting in Messages."), like call results (ADR-500). Pushes can't carry an id yet (`apns.ts` sends only title and body), so the app checks its open errands when it comes to the front and shows the finished one on Home and in Sprawy. The app saves the result on the iPhone, then tells the server (`ack`), which deletes its copy of the words, brief and result.
 6. **Next conversation:** the app sends the recent errands (title, state, the result's first line) as `{{errands}}`; `check_errands` reads a whole result back to Doddy.
 
+### Typed on the Tasks screen (10 Nov 2026, decision `2026-11-10-tasks-redesign`)
+
+The Tasks screen has a box for the same hand-over without a conversation. The user's words go as typed; with no conversation there is no note from Doddy, so the note is a fixed sentence saying so ("Typed by the user on the Tasks screen, not said in a conversation, so Doddy added no note of its own. Do what the words ask.", Polish for `pl`), and the title is the start of the words cut after a whole word at 60 characters (`ErrandDraft.typed`, DoddyCore `ErrandTyped.swift`). A card shows the three texts in full and what one tap allows; only "Yes, go" sends it, through the same create, preview check and single approval as step 3 (`ErrandsModel.handOverTyped`). A link, words over 1,000 characters or "Pause all connections" stop it before the card. Typed tasks are research tasks; shopping stays in the conversation, which asks for the priorities.
+
 ## Server API (`server/messaging`, bearer = the account's device token)
 
 | Route | Body | Reply | Notes |

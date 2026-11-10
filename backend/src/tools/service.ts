@@ -51,6 +51,9 @@ import {
   MODEL_TEXT_LABEL,
 } from "./claude.js";
 import type { DocumentLinks } from "../documents.js";
+import { MockWikimedia } from "../decks/demo.js";
+import { DeckMaker } from "../decks/maker.js";
+import { type Wikimedia, WikimediaClient } from "../decks/research.js";
 import { MockToolsProvider, type ToolsMockScenario } from "./mock.js";
 import type { ToolsProvider } from "./provider.js";
 import {
@@ -98,6 +101,8 @@ export interface ToolsServiceDeps {
   claude?: ClaudeProvider | null;
   /** Signed links for documents (ADR-564). Null: make_document says "not set up". */
   documentLinks?: DocumentLinks | null;
+  /** Wikipedia and Commons for a deck's research (decision 2026-11-10-better-presentations). Absent: live in live mode, offline demo in mock mode. */
+  wikimedia?: Wikimedia;
   limits: Limits;
   publicBaseUrl: string;
   appReturnUrl: string;
@@ -131,6 +136,8 @@ export class CloudToolsService {
   /** Document jobs running now, per user and in all (ADR-710). Per process, like the provider slots in `UsageLimiter`. */
   private readonly documentJobs = new Map<string, number>();
   private documentJobsTotal = 0;
+  /** Wikipedia and Commons for decks: live in live mode, offline in mock mode. */
+  private readonly wikimedia: Wikimedia;
 
   constructor(private readonly deps: ToolsServiceDeps) {
     this.mode = deps.provider.mode;
@@ -141,6 +148,8 @@ export class CloudToolsService {
     this.provider = deps.provider;
     this.webSearch = deps.webSearch ?? null;
     if (this.webSearch && this.webSearch.mode !== this.mode) throw new Error("web search and online accounts must both be mock or both live");
+    this.wikimedia = deps.wikimedia ?? (this.mode === "live" ? new WikimediaClient() : new MockWikimedia());
+    if (this.wikimedia.mode !== this.mode) throw new Error("Wikimedia and online accounts must both be mock or both live");
     this.limits = deps.limits;
     this.limiter = new UsageLimiter(deps.store, deps.limits);
     this.now = deps.now ?? Date.now;
@@ -1063,7 +1072,7 @@ export class CloudToolsService {
       const name = fileName(doc.title, info.ext);
       const id = await this.store.startDocument(userId, name, info.mime, now);
       const url = this.deps.documentLinks!.link(id, new Date(now));
-      const job = this.makeDocumentInBackground(id, doc, claude).finally(() => {
+      const job = this.makeDocumentInBackground(userId, id, doc, claude).finally(() => {
         slot?.();
         this.background.delete(job);
       });
@@ -1088,6 +1097,21 @@ export class CloudToolsService {
     }
   }
 
+  /**
+   * One web search for a deck's research (decision 2026-11-10-better-presentations): only when web search is set up, the
+   * user's own web search switch is on, and it fits the same daily caps as a web search asked for by voice. Otherwise
+   * the deck is researched from Wikipedia and the material alone.
+   */
+  private async deckSearchAllowed(userId: string): Promise<boolean> {
+    if (!this.webSearch?.isConfigured() || !(await this.webToolOn(userId, WEB_SEARCH_TOOL))) return false;
+    try {
+      await this.limiter.reserveWebSearch(userId, this.now());
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   /** A place for one more document job, or null when this user or the whole server is at its limit (ADR-710). The returned function gives it back; calling it twice is harmless. */
   private takeDocumentSlot(userId: string): (() => void) | null {
     const mine = this.documentJobs.get(userId) ?? 0;
@@ -1105,9 +1129,19 @@ export class CloudToolsService {
     };
   }
 
-  private async makeDocumentInBackground(id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
+  private async makeDocumentInBackground(userId: string, id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
     try {
-      const file = await claude.makeDocument(args, AbortSignal.timeout(DOCUMENT_TIMEOUT_MS));
+      const signal = AbortSignal.timeout(DOCUMENT_TIMEOUT_MS);
+      // A deck is researched, outlined, checked and laid out here (decision 2026-11-10-better-presentations);
+      // the other kinds are made by Claude's own skills as before.
+      const file =
+        args.kind === "deck"
+          ? await new DeckMaker({ claude, wikimedia: this.wikimedia, webSearch: this.webSearch, now: () => new Date(this.now()), ...(this.deps.log ? { log: this.deps.log } : {}) }).make(
+              args,
+              () => this.deckSearchAllowed(userId),
+              signal,
+            )
+          : await claude.makeDocument(args, signal);
       await this.store.finishDocument(id, file.name, file.mime, file.bytes);
       this.deps.log?.({ level: "info", event: "document_ready", kind: args.kind, bytes: file.bytes.length });
     } catch (error) {
