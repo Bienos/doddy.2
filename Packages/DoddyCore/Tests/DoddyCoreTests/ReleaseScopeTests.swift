@@ -59,7 +59,8 @@ final class ReleaseScopeTests: XCTestCase {
         // Shown: what the beta promises (V1_SCOPE.md).
         // The translator is shown too (owner, 8 Nov 2026: decision 2026-11-08-translator-in-beta).
         // Leaflets are shown since 10 Nov 2026 (owner: "ty ustaw wszystko"; decision 2026-11-10-cheapest-this-week-simpler).
-        for feature in [Feature.messages, .photosAndCamera, .translator, .deals] {
+        // Making files and Claude's answers are shown since 10 Nov 2026 (decision 2026-11-10-files-ask-for-details).
+        for feature in [Feature.messages, .photosAndCamera, .translator, .deals, .claudeDocuments] {
             XCTAssertTrue(scope.shows(feature), "\(feature)")
         }
         for tool in ReleaseScope.coreTools {
@@ -70,9 +71,13 @@ final class ReleaseScopeTests: XCTestCase {
                         .planCard, .parking, .leaveBy, .placeReminders] {
             XCTAssertFalse(scope.shows(feature), "\(feature)")
         }
-        for tool in CloudToolName.all {
+        for tool in CloudToolName.all.subtracting(Feature.claudeDocuments.tools) {
             XCTAssertNotNil(scope.hiddenFeature(forTool: tool), "\(tool) runs on the server: hidden in the beta")
         }
+        for tool in [CloudToolName.askClaude, CloudToolName.makeDocument] {
+            XCTAssertNil(scope.hiddenFeature(forTool: tool), "\(tool) runs in the beta")
+        }
+        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.makePresentation), .presentations, "the phone-made deck stays hidden")
         XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.findDeals), "leaflets run in the beta")
         XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.handOverErrand), .errands)
         XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.startTranslator), "the translator runs in the beta")

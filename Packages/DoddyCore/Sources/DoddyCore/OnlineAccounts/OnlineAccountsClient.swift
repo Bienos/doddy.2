@@ -19,6 +19,12 @@ public enum OnlineAccountsError: Error, Equatable, Sendable {
         return nil
     }
 
+    /// The code the server answers `prepare` with when a file request has too little to go on
+    /// (backend/src/tools/documentDetails.ts). Nothing was made, approved or counted.
+    public static let needDetailsCode = "need_details"
+
+    public var isNeedDetails: Bool { code == Self.needDetailsCode }
+
     public var userMessage: String {
         switch self {
         case .notConfigured: "Online accounts need a Doddy server, which isn't set up in this build."

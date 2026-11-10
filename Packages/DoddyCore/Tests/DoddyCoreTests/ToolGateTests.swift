@@ -51,6 +51,8 @@ final class ToolGateTests: XCTestCase {
                             isOn: { _ in on }, scope: .shipping)
         }
         XCTAssertNotEqual(decide(VoiceToolName.findDeals, #"{"items":["masło"]}"#), .hidden(.deals), "leaflets are shown since 10 Nov 2026")
+        XCTAssertNotEqual(decide(CloudToolName.makeDocument, #"{"kind":"deck","title":"Iława","request":"x"}"#), .hidden(.claudeDocuments), "making files is shown since 10 Nov 2026")
+        XCTAssertNotEqual(decide(CloudToolName.askClaude, #"{"task":"answer","request":"x"}"#), .hidden(.claudeDocuments))
         XCTAssertEqual(decide(VoiceToolName.handOverErrand, "{}", translator: true, pauseAll: true, on: false), .hidden(.errands))
         // The translator is shown in the beta (decision 2026-11-08-translator-in-beta): its tools are never hidden.
         XCTAssertNotEqual(decide(VoiceToolName.startTranslator, "{}"), .hidden(.translator), "translator mode can start")

@@ -437,12 +437,12 @@ const linkId = (url: string) => new DocumentLinks(TEST_LINK_KEY, "https://api.do
 
 test("make_document deck: the card says where research goes; the file is a real deck with Doddy's frame", async () => {
   rig = await start();
-  const card = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "deck", title: "Demo Town", request: "A deck" } } });
+  const card = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "deck", title: "Demo Town", request: "A deck for the class" } } });
   assert.ok(card.body.preview.lines.includes(DECK_RESEARCH_LINE));
-  const doc = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "doc", title: "x", request: "y" } } });
+  const doc = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "doc", title: "x", request: "y for the owner" } } });
   assert.ok(!doc.body.preview.lines.includes(DECK_RESEARCH_LINE));
 
-  const res = await run(rig, "make_document", { kind: "deck", title: "Demo Town", request: "A deck" });
+  const res = await run(rig, "make_document", { kind: "deck", title: "Demo Town", request: "A deck for the class" });
   assert.equal(res.status, 200, res.text);
   await rig.tools.settle();
   const row = await rig.store.getDocument(linkId(res.body.document.url));
@@ -459,13 +459,13 @@ test("make_document deck: web research only with the user's web search switch on
   const withWeb = () => new ScriptedClaude([{ ...PLAN, web: ["Demo Town events"] }, goodDeck()]);
   rig = await start({}, { claude: withWeb() });
   await off(rig, "web_search");
-  await run(rig, "make_document", { kind: "deck", title: "Demo Town", request: "A deck" });
+  await run(rig, "make_document", { kind: "deck", title: "Demo Town", request: "A deck for the class" });
   await rig.tools.settle();
   assert.deepEqual(rig.webSearch!.queries, [], "switched off: no search");
   await rig.close();
 
   rig = await start({}, { claude: withWeb() });
-  await run(rig, "make_document", { kind: "deck", title: "Demo Town", request: "A deck" });
+  await run(rig, "make_document", { kind: "deck", title: "Demo Town", request: "A deck for the class" });
   await rig.tools.settle();
   assert.deepEqual(rig.webSearch!.queries, ["Demo Town events"]);
 });

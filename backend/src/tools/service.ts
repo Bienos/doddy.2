@@ -50,6 +50,7 @@ import {
   type MakeDocumentArgs,
   MODEL_TEXT_LABEL,
 } from "./claude.js";
+import { judgeDocumentRequest, needDetailsMessage } from "./documentDetails.js";
 import type { DocumentLinks } from "../documents.js";
 import { MockWikimedia } from "../decks/demo.js";
 import { DeckMaker } from "../decks/maker.js";
@@ -997,6 +998,11 @@ export class CloudToolsService {
   /** ASK-01: a card from the arguments alone and a single-use approval. Nothing goes to Anthropic yet. */
   private async prepareClaude(userId: string, tool: ClaudeToolName, raw: Record<string, unknown>): Promise<PrepareResult> {
     const args = this.claudeArgs(tool, raw);
+    // A too-thin file request is turned away first: no approval, no daily cap, no Claude (decision 2026-11-10-files-ask-for-details).
+    if (tool === MAKE_DOCUMENT_TOOL) {
+      const verdict = judgeDocumentRequest(args as MakeDocumentArgs);
+      if (!verdict.ok) throw new AppError("need_details", { message: needDetailsMessage(verdict.missing) });
+    }
     await this.limiter.reserveRequest(userId, this.now());
     const missing = this.claudeReady(tool);
     if (missing) {
