@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Decided by:** owner. In a conversation where Doddy couldn't text someone: "ale np napisz sms ze swojego numeru to może zrobić", then "a możemy zmienić reguły, że dla moich kontaktów tylko", then, to the proposed signature and limits, "[bez] podpisu, bez limitów albo 50 tylko".
-- **Status:** accepted. Step 1 (the rule in `docs/trust/config/doddy_rules.yaml` and DoddyCore `ContactText`, with tests) applied on branch `claude/adoring-feynman-4exvp8`; steps 2 to 4 to follow.
+- **Status:** accepted. Steps 1 (the rule in `docs/trust/config/doddy_rules.yaml` and DoddyCore `ContactText`) and 2 (the messaging server's route, off by default) are on branch `claude/adoring-feynman-4exvp8-texts-to-contacts`; steps 3 and 4 to follow.
 - **Replaces:** for contacts only, "texts to anyone else are not possible" in decision `2026-11-09-restaurant-calls-one-tap` and `contact_policy.text_recipients: allowlist_only`. The user's own number keeps its own rule (`text_me`, no tap).
 
 ## Why
@@ -17,7 +17,7 @@ On 9 Nov 2026 the owner asked Doddy in a voice conversation whether he could tex
 
 ## Steps
 1. The rule as code and in the rules file, with tests (`Packages/DoddyCore/Sources/DoddyCore/ContactText.swift`, `ContactTextTests`). Sends nothing.
-2. Messaging server: a route that takes a contact's number, the text and the approval hash, checks the hash, the country list, the 50-a-day cap and STOP, and sends from Doddy's number. Tests against Postgres.
+2. Messaging server: `POST /v1/texts/contact` takes the contact's number, the text and the approval hash, checks the hash, the country list, the 50-a-day cap and STOP, and queues the text for the worker, which sends it from Doddy's number. Off unless `CONTACT_TEXTS_ENABLED=1`. Only an account with a verified number of its own may use it, so a real phone stands behind every sender. Migration `025_contact_texts.sql`; tests in `server/messaging/test/contactTexts.test.ts`.
 3. App: a voice tool request and the card (contact, number, text, Send), reading the number from Contacts with the user's permission.
 4. Voice agent: a `text_contact` tool and a line in the instructions. It goes on the live ElevenLabs agent only on the owner's instruction.
 
@@ -29,4 +29,5 @@ On 9 Nov 2026 the owner asked Doddy in a voice conversation whether he could tex
 - Privacy: the contact's number and the text go to Doddy's messaging server and to Twilio.
 
 ## Evidence
-- Step 1: `make test-core` on Linux (Swift 6.1.2); see the pull request for the counts. Nothing sends a text yet.
+- Step 1: `make test-core` on Linux (Swift 6.1.2), 2,796 tests, 0 failures.
+- Step 2: messaging `npm test` against Postgres 16: 883 of 883, 9 of them new. Nothing is deployed, the switch is off, and the app doesn't call the route yet.

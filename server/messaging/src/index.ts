@@ -21,6 +21,7 @@ const deps = {
   accounts: config.supabaseUrl ? createAccountVerifier({ projectUrl: config.supabaseUrl }) : null,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
   fileWatches: { origin: config.documentsOrigin },
+  contactTexts: config.contactTextsEnabled,
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
 const app = await buildApp(deps);
@@ -37,6 +38,7 @@ app.log.info({
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
   dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,
+  contactTexts: config.contactTextsEnabled && !!providers.cipher && !!providers.sms,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   ceidg: !!providers.ceidg,
 }, "configured features");

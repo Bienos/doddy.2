@@ -14,6 +14,7 @@ import { callOpening, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src
 import { DEFAULT_ABUSE_LIMITS } from "../src/config.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES } from "../src/phoneCountries.js";
 import { TEXT_MAX_LENGTH } from "../src/routes/texts.js";
+import { CONTACT_TEXTS_PER_DAY } from "../src/contactTexts.js";
 import { readFileSync } from "node:fs";
 import { connectTwiml, sayAndHangUp, type FixedLine } from "../src/voiceTwiml.js";
 import { classifySms, smsSegments } from "../src/sms.js";
@@ -222,6 +223,9 @@ test("the contact policy in doddy_rules.yaml matches what the server enforces", 
     [DEFAULT_ABUSE_LIMITS.smsPerAccountDay, DEFAULT_ABUSE_LIMITS.smsPerServerDay, DEFAULT_ABUSE_LIMITS.outboundCallsPerServerDay]);
   assert.equal(value("allowed_calling_codes"), `"${DEFAULT_ALLOWED_COUNTRY_CODES.join(",")}"`);
   assert.deepEqual([value("approval"), value("recording"), value("allowlist_max_numbers")], ["exact_payload_hash", "off", "1"]);
+  // Texts to the user's contacts (decision 2026-11-09-texts-to-contacts).
+  assert.deepEqual([value("contact_texts_per_account_day")].map(Number), [CONTACT_TEXTS_PER_DAY]);
+  assert.deepEqual([value("contact_text_signature"), value("contact_text_recipients")], ["none", "iphone_contacts_number_read_by_app"]);
   // Texts to Doddy (U3, ADR-753): notes only; answers by text are Text with Doddy (ADR-656), not this switch.
   assert.deepEqual([value("inbound_texts_per_hour")].map(Number), [INBOUND_TEXTS_PER_HOUR]);
   assert.deepEqual([value("texts_to_doddy"), value("inbound_text_is_instructions")], ["off_by_default", "false"]);

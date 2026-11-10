@@ -8,6 +8,7 @@ import { log } from "./log.js";
 import type { Db } from "./db.js";
 import { scheduleDeletion } from "./providerRecords.js";
 import { isAllowedNumber } from "./phoneCountries.js";
+import { CONTACT_TEXTS_PER_DAY, contactOptedOut, recordContactOptOut } from "./contactTexts.js";
 import type { PushData, PushSender, SendOutcome, SmsSender } from "./providers/types.js";
 import { returnServerSlot, takeServerSlot } from "./serverUsage.js";
 
@@ -82,6 +83,13 @@ export interface EnqueueOptions {
   approvalHash?: Buffer;
   /** Texts queued per UTC day: per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
   smsCaps?: { perAccount: number; perServer: number };
+  /**
+   * A text to one of the user's contacts (decision 2026-11-09-texts-to-contacts): the contact's number. It counts
+   * against the account's texts to contacts (CONTACT_TEXTS_PER_DAY) and the server's cap, not the account's texts to itself.
+   */
+  to?: string;
+  /** Texts to contacts per account per UTC day. Default CONTACT_TEXTS_PER_DAY. */
+  contactTextsPerDay?: number;
 }
 
 /**
@@ -105,17 +113,20 @@ export async function enqueue(
     // found in Twilio's message list (reconcileUnknownSms).
     const bodyHash = channel === "sms" ? sha256(body) : null;
     const approval = channel === "sms" ? opts.approvalHash ?? null : null;
-    const slots = channel === "sms" ? await takeSmsSlots(db, accountId, idempotencyKey, opts.smsCaps) : undefined;
+    const to = channel === "sms" ? opts.to ?? null : null;
+    const slots = channel === "sms"
+      ? await takeSmsSlots(db, accountId, idempotencyKey, opts.smsCaps, to ? opts.contactTextsPerDay ?? CONTACT_TEXTS_PER_DAY : undefined)
+      : undefined;
     let inserted: number | null;
     try {
       ({ rowCount: inserted } = await db.query(
         `INSERT INTO outbound_messages
            (id, account_id, channel, idempotency_key, body, body_ciphertext, body_key_version, send_at, state, payload_hash,
-            body_hash, approved_text, approval_hash)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'queued', $9, $10, $11, $12)
+            body_hash, approved_text, approval_hash, to_e164)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'queued', $9, $10, $11, $12, $13)
          ON CONFLICT (account_id, channel, idempotency_key) DO NOTHING`,
         [id, accountId, channel, idempotencyKey, sealed ? null : body, sealed ?? null,
-          sealed ? opts.cipher!.keyVersion : null, sendAt, payloadHash, bodyHash, approval !== null, approval]));
+          sealed ? opts.cipher!.keyVersion : null, sendAt, payloadHash, bodyHash, approval !== null, approval, to]));
     } catch (err) {
       // Inside a transaction the rollback undoes the count anyway; outside one it must be given back here.
       await slots?.giveBack().catch(() => {});
@@ -141,32 +152,39 @@ export async function enqueue(
  */
 async function takeSmsSlots(
   db: Queryable, accountId: string, idempotencyKey: string, caps?: { perAccount: number; perServer: number },
+  contactTextsPerDay?: number,
 ): Promise<{ giveBack(): Promise<void> } | undefined> {
   const seen = await db.query(
     "SELECT 1 FROM outbound_messages WHERE account_id = $1 AND channel = 'sms' AND idempotency_key = $2", [accountId, idempotencyKey]);
   if (seen.rowCount) return undefined;
-  const perAccount = caps?.perAccount ?? DEFAULT_ABUSE_LIMITS.smsPerAccountDay;
+  // A text to a contact has its own count per account (decision 2026-11-09-texts-to-contacts); every text counts for the server.
+  const scope = contactTextsPerDay === undefined ? "sms_account" : "sms_contact_account";
+  const perAccount = contactTextsPerDay ?? caps?.perAccount ?? DEFAULT_ABUSE_LIMITS.smsPerAccountDay;
   const perServer = caps?.perServer ?? DEFAULT_ABUSE_LIMITS.smsPerServerDay;
   const key = sha256(accountId).toString("hex"); // an account id is a random uuid: a plain hash is enough
-  if (!(await takeCounter(db, "sms_account", key, perAccount))) throw new SmsDailyLimit("account");
+  if (!(await takeCounter(db, scope, key, perAccount))) throw new SmsDailyLimit("account");
   if (!(await takeServerSlot(db, "sms", perServer))) {
-    await returnCounter(db, "sms_account", key);
+    await returnCounter(db, scope, key);
     throw new SmsDailyLimit("server");
   }
-  return { giveBack: async () => { await returnServerSlot(db, "sms"); await returnCounter(db, "sms_account", key); } };
+  return { giveBack: async () => { await returnServerSlot(db, "sms"); await returnCounter(db, scope, key); } };
 }
 
 export async function cancelQueuedSms(db: Queryable, accountId: string): Promise<void> {
   await db.query(
     `UPDATE outbound_messages SET state = 'cancelled', error_code = 'sms_not_enabled', ${ERASE}, updated_at = now()
-     WHERE account_id = $1 AND channel = 'sms' AND state = 'queued'`,
+     WHERE account_id = $1 AND channel = 'sms' AND state = 'queued' AND to_e164 IS NULL`,
     [accountId]);
 }
 
 /** Erases a message's text and its hashes: for a final state whose outcome is known. */
-export const ERASE = "body = NULL, body_ciphertext = NULL, body_key_version = NULL, approval_hash = NULL, body_hash = NULL";
+export const ERASE = "body = NULL, body_ciphertext = NULL, body_key_version = NULL, approval_hash = NULL, body_hash = NULL, to_e164 = NULL";
 
-interface Claimed { id: string; account_id: string; channel: Channel; body: string; attempts: number; approval_hash: Buffer | null; idempotency_key?: string }
+interface Claimed {
+  id: string; account_id: string; channel: Channel; body: string; attempts: number; approval_hash: Buffer | null; idempotency_key?: string;
+  /** A text to a contact: the contact's number. Null: the account's own verified number. */
+  to_e164?: string | null;
+}
 interface ClaimedRow extends Omit<Claimed, "body"> { body: string | null; body_ciphertext: Buffer | null }
 
 export interface Senders {
@@ -195,7 +213,7 @@ export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise
      UPDATE outbound_messages m
      SET state = 'sending', attempts = m.attempts + 1, updated_at = now()
      FROM due WHERE m.id = due.id
-     RETURNING m.id, m.account_id, m.channel, m.body, m.body_ciphertext, m.attempts, m.approval_hash, m.idempotency_key`,
+     RETURNING m.id, m.account_id, m.channel, m.body, m.body_ciphertext, m.attempts, m.approval_hash, m.idempotency_key, m.to_e164`,
     [batch]);
   for (const row of rows) {
     // Claimed rows wait their turn in this batch. Refresh the claim just before sending so the
@@ -214,7 +232,7 @@ export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise
     let outcome: SendOutcome | { kind: "cancelled"; code: string };
     try {
       outcome = msg.channel === "push" ? await sendPush(db, senders.push, msg)
-        : await sendSms(db, senders.sms, msg, senders.allowedCountryCodes ?? DEFAULT_ABUSE_LIMITS.allowedCountryCodes);
+        : await sendSms(db, senders.sms, msg, senders.allowedCountryCodes ?? DEFAULT_ABUSE_LIMITS.allowedCountryCodes, senders.cipher);
     } catch {
       outcome = { kind: "unknown", code: "dispatch_error" };
     }
@@ -266,11 +284,13 @@ async function sendPush(db: Db, sender: PushSender | undefined, msg: Claimed): P
 }
 
 async function sendSms(
-  db: Db, sender: SmsSender | undefined, msg: Claimed, allowedCountryCodes: readonly string[],
+  db: Db, sender: SmsSender | undefined, msg: Claimed, allowedCountryCodes: readonly string[], cipher?: TextCipher,
 ): Promise<SendOutcome | { kind: "cancelled"; code: string }> {
   if (!sender) return { kind: "transient", code: "sms_not_configured" };
-  // Re-checked at send time: consent may have been withdrawn after the message was queued.
-  const to = await smsNumber(db, msg.account_id);
+  const contact = msg.to_e164 ?? undefined;
+  // Re-checked at send time: consent may have been withdrawn after the message was queued, or the contact sent STOP.
+  if (contact && await contactOptedOut(db, cipher, contact)) return { kind: "cancelled", code: "contact_opted_out" };
+  const to = contact ?? await smsNumber(db, msg.account_id);
   if (!to) return { kind: "cancelled", code: "sms_not_enabled" };
   // An approved text goes out only if the number and the text are still exactly what the user
   // approved (ADR-750, DOD-07): a changed number, or a stored text that changed, sends nothing.
@@ -281,7 +301,8 @@ async function sendSms(
   if (!isAllowedNumber(to, allowedCountryCodes)) return { kind: "cancelled", code: "sms_country_not_allowed" };
   const r = await sender.send(to, msg.body);
   if (r.kind === "rejected" && r.unsubscribed) {
-    await db.query("UPDATE phone_numbers SET sms_opted_out_at = now(), updated_at = now() WHERE account_id = $1",
+    if (contact) await recordContactOptOut(db, cipher, contact);
+    else await db.query("UPDATE phone_numbers SET sms_opted_out_at = now(), updated_at = now() WHERE account_id = $1",
       [msg.account_id]);
   }
   return r;
@@ -294,7 +315,8 @@ async function finalize(db: Db, msg: Claimed, o: SendOutcome | { kind: "cancelle
       `UPDATE outbound_messages
        SET state = $2, error_code = $3, provider_message_id = $4, body = NULL, body_ciphertext = NULL, body_key_version = NULL,
          approval_hash = CASE WHEN $2 = 'unknown' THEN approval_hash END,
-         body_hash = CASE WHEN $2 = 'unknown' THEN body_hash END, updated_at = now()
+         body_hash = CASE WHEN $2 = 'unknown' THEN body_hash END,
+         to_e164 = CASE WHEN $2 = 'unknown' THEN to_e164 END, updated_at = now()
        WHERE id = $1 AND state = 'sending'`,
       [msg.id, state, code, providerId]);
     // The row was reaped meanwhile: the real outcome would otherwise vanish without a trace.
@@ -331,9 +353,11 @@ export interface SentRecord { sid: string; body: string; createdAt: Date; status
 export async function reconcileUnknownSms(db: Db, sms: SmsSender | undefined, batch = 5): Promise<number> {
   if (!sms?.recentMessagesTo) return 0;
   const { rows } = await db.query<{ id: string; body_hash: Buffer; created_at: Date; e164: string; lookup_attempts: number }>(
-    `SELECT m.id, m.body_hash, m.created_at, p.e164, m.lookup_attempts FROM outbound_messages m
-     JOIN phone_numbers p ON p.account_id = m.account_id
+    // A text to a contact is looked up by the contact's number; any other by the account's own.
+    `SELECT m.id, m.body_hash, m.created_at, COALESCE(m.to_e164, p.e164) AS e164, m.lookup_attempts FROM outbound_messages m
+     LEFT JOIN phone_numbers p ON p.account_id = m.account_id
      WHERE m.state = 'unknown' AND m.channel = 'sms' AND m.lookup IS NULL AND m.body_hash IS NOT NULL
+       AND COALESCE(m.to_e164, p.e164) IS NOT NULL
        AND m.updated_at < now() - $1::interval
      ORDER BY m.updated_at LIMIT $2`, [LOOKUP_AFTER, batch]);
   for (const row of rows) {
@@ -344,7 +368,8 @@ export async function reconcileUnknownSms(db: Db, sms: SmsSender | undefined, ba
         `UPDATE outbound_messages SET lookup_attempts = lookup_attempts + 1, updated_at = now(),
            lookup = CASE WHEN lookup_attempts + 1 >= $2 THEN 'failed' END,
            approval_hash = CASE WHEN lookup_attempts + 1 >= $2 THEN NULL ELSE approval_hash END,
-           body_hash = CASE WHEN lookup_attempts + 1 >= $2 THEN NULL ELSE body_hash END
+           body_hash = CASE WHEN lookup_attempts + 1 >= $2 THEN NULL ELSE body_hash END,
+           to_e164 = CASE WHEN lookup_attempts + 1 >= $2 THEN NULL ELSE to_e164 END
          WHERE id = $1 AND state = 'unknown'`, [row.id, MAX_LOOKUPS]);
       continue;
     }
@@ -354,18 +379,18 @@ export async function reconcileUnknownSms(db: Db, sms: SmsSender | undefined, ba
       try {
         await db.query(
           `UPDATE outbound_messages SET state = 'sent', provider_message_id = $2, delivery_status = $3, lookup = 'found',
-             error_code = NULL, approval_hash = NULL, body_hash = NULL, updated_at = now()
+             error_code = NULL, approval_hash = NULL, body_hash = NULL, to_e164 = NULL, updated_at = now()
            WHERE id = $1 AND state = 'unknown'`, [row.id, match.sid, match.status]);
         await scheduleDeletion(db, "message", match.sid);
       } catch {
         // That Twilio message already belongs to another row: don't guess, and don't look again.
         await db.query(
-          `UPDATE outbound_messages SET lookup = 'failed', approval_hash = NULL, body_hash = NULL, updated_at = now()
+          `UPDATE outbound_messages SET lookup = 'failed', approval_hash = NULL, body_hash = NULL, to_e164 = NULL, updated_at = now()
            WHERE id = $1 AND state = 'unknown'`, [row.id]);
       }
     } else {
       await db.query(
-        `UPDATE outbound_messages SET lookup = 'not_found', approval_hash = NULL, body_hash = NULL, updated_at = now()
+        `UPDATE outbound_messages SET lookup = 'not_found', approval_hash = NULL, body_hash = NULL, to_e164 = NULL, updated_at = now()
          WHERE id = $1 AND state = 'unknown'`, [row.id]);
     }
     log("unknown text looked up", { id: row.id, found: !!match });

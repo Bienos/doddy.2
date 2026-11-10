@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { clearContactOptOut, recordContactOptOut } from "../contactTexts.js";
 import type { Deps } from "../app.js";
 import { abuseLimits } from "../config.js";
 import { inTransaction } from "../db.js";
@@ -46,10 +47,13 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
           `UPDATE phone_numbers SET sms_opted_out_at = now(), updated_at = now()
            WHERE e164 = $1 RETURNING account_id`, [from]);
         for (const r of rows) await cancelQueuedSms(c, r.account_id);
+        // Any number can answer STOP to a text sent to it as someone's contact (decision 2026-11-09-texts-to-contacts).
+        if (/^\+[1-9][0-9]{7,14}$/.test(from)) await recordContactOptOut(c, deps.cipher, from);
       });
     } else if (kind === "opt_in") {
       await db.query(
         "UPDATE phone_numbers SET sms_opted_out_at = NULL, updated_at = now() WHERE e164 = $1", [from]);
+      await clearContactOptOut(db, deps.cipher, from);
     } else if (kind === "other") {
       const kept = await receiveText(deps, { from, sid, body });
       if (kept === "dropped") {

@@ -105,6 +105,8 @@ export interface Deps {
   assistant?: AssistantDeps;
   /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
   watches?: WatchDeps;
+  /** Texts to the user's contacts (decision 2026-11-09-texts-to-contacts). Off unless true; needs `sms` and `cipher` too. */
+  contactTexts?: boolean;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
   watchLog?: (msg: string, extra?: object) => void;
   /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
