@@ -29,7 +29,7 @@ extension ActivityApp {
         case .home: return "Dom"
         case .health: return "Zdrowie"
         case .training: return "Plan treningowy"
-        case .news: return "Śledzone"
+        case .news: return "Na radarze"
         case .screen: return "Twój ekran"
         }
     }

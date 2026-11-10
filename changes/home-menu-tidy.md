@@ -1,0 +1,2 @@
+Home ••• menu: "Find something" removed (Find stays on the notes screen); "Following" renamed "On my radar" / „Na radarze”; What I can do shows features as tiles and links the Privacy Policy instead of "What leaves this iPhone". Decision `2026-11-10-home-menu-tidy`.
+Ran: DoddyCore tests (2,867, 0 failures), `scripts/ci.sh --only swift,checks` (Studio renderers NOT RUN), string catalog check. Not run: app build and UI tests (hosted Mac job).

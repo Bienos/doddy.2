@@ -443,9 +443,9 @@ struct IslandCompactTrailingView: View {
 struct IslandAuroraView: View {
     let scene: IslandScene
 
-    static let size = CGSize(width: 38, height: 26)
-    /// Seven solid, round-ended bars like the iPhone's call island (owner, 9 Nov 2026).
-    static let lineWidth: CGFloat = 3.4
+    static let size = CGSize(width: 48, height: 26)
+    /// Home's fine lines (ADR-683, option C), back on 10 Nov 2026 (owner: the older lines were better).
+    static let lineWidth: CGFloat = 1.35
 
     var body: some View {
         let columns = scene.aurora
@@ -457,8 +457,12 @@ struct IslandAuroraView: View {
                     ? Color(red: column.colour.red, green: column.colour.green, blue: column.colour.blue)
                     : Color.islandSecondary
                 Capsule()
-                    .fill(colour)
-                    .frame(width: Self.lineWidth, height: max(Self.lineWidth, Self.size.height * CGFloat(column.height)))
+                    .fill(LinearGradient(stops: [
+                        .init(color: colour.opacity(0), location: 0),
+                        .init(color: colour.opacity(0.92), location: 0.5),
+                        .init(color: colour.opacity(0), location: 1),
+                    ], startPoint: .top, endPoint: .bottom))
+                    .frame(width: Self.lineWidth, height: max(1.5, Self.size.height * CGFloat(column.height)))
             }
         }
         .frame(width: Self.size.width, height: Self.size.height)

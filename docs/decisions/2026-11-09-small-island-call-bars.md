@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Decided by:** owner (Pat, 9 Nov 2026): "po naciśnięciu action button albo double tapie … powinien po prostu taki mały extension się pojawić, taki jak mamy zrobiony … twarz … taka normalna … fale … tak samo, jak rozmawiam z kimś na iPhone'ie, … w moich kolorach". Choices: only the small island; smiling "listening" face; vertical bars like a call; orange → amber → rose.
-- **Status:** applied in the pull request of branch `island-small-call-bars`
+- **Status:** applied in #284; its "Waves" bullet replaced by `2026-11-10-island-fine-lines-back`
 - **Replaces:** the look part of ADR-683 (option C "Aurora") and ADR-665 (the strip's fine lines). Their behaviour (beat, widths, glow, Home-only strip) stays.
 
 ## Why

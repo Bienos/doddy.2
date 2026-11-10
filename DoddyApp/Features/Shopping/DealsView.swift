@@ -1,7 +1,11 @@
 import DoddyCore
 import SwiftUI
 
-// "Cheapest this week" (docs/implementation/SHOPPING.md 2, design/shopping-mode-v0.1): the user's
+// "Cheapest this week" (docs/implementation/SHOPPING.md 2, design/shopping-mode-v0.1). Since 10 Nov 2026 (owner:
+// "I say I need milk and this, find how much it costs, and I get which shop has what price"; decision
+// 2026-11-10-cheapest-this-week-simpler) the first screen asks one question with the items as chips and one
+// button; the shops and loyalty apps are on "Change"; the answer is one card, item → price → shop, and each
+// item opens its page with everything below. Before that, the user's
 // items, then for each one the best value offer in the leaflets (the lowest price per kg, l or piece
 // where the sizes are known, `BasketSolver.bestValue`) with what it takes to get that price
 // (the shop's app, a card, a minimum quantity, the last day), the other chains in a line below, and
@@ -21,14 +25,19 @@ struct DealsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(MemoryStore.self) private var store
     private let model = DealsModel.shared
-    @State private var itemsText = ""
+    /// The items, one chip each (owner, 10 Nov 2026: "I say milk and this, find how much it costs").
+    @State private var items: [String] = []
+    /// What is being typed; a comma or Return turns it into chips.
+    @State private var draft = ""
     // E.Leclerc starts off: its leaflets cost a screening on every search (ADR-667).
     @State private var chains: Set<DealsChain> = Set(DealsChain.defaultRead)
     @State private var showBasket = false
+    @State private var showShops = false
     /// The kind picked per item (by its place in the answer); absent: all kinds.
     @State private var kinds: [Int: String] = [:]
     @AppStorage(PreferenceKey.dealsProgramsNotUsed) private var programsStored = ""
     @AppStorage(PreferenceKey.dealsMyShops) private var myShopsStored = "[]"
+    @FocusState private var typing: Bool
     private let language = NotificationLanguage.current
 
     private var programs: DealsPrograms { DealsPrograms(stored: programsStored) }
@@ -37,80 +46,32 @@ struct DealsView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("Butter, nappies size 4, ground coffee", text: $itemsText, axis: .vertical)
-                        .lineLimit(1...6)
-                        .accessibilityIdentifier("deals.items")
-                    fromListButton
-                    NavigationLink {
-                        MyShopsView()
-                    } label: {
-                        LabeledContent("My shops", value: myShops.shops.isEmpty
-                            ? NSLocalizedString("None yet", comment: "no shops picked")
-                            : myShops.chains.map(\.name).joined(separator: ", "))
-                    }
-                    .accessibilityIdentifier("deals.myShops")
-                    if !myShops.shops.isEmpty, Set(myShops.chains) != chains {
-                        Button {
-                            chains = Set(myShops.chains)
-                        } label: {
-                            Label("Only my shops' chains", systemImage: "storefront")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    hero
+                    itemsCard
+                    searchButton
+                    switch model.phase {
+                    case .checking:
+                        checkingCard
+                    case .failed(let message):
+                        card {
+                            Label(message, systemImage: "exclamationmark.triangle")
+                                .foregroundStyle(Theme.error)
                         }
+                    case .idle:
+                        EmptyView()
                     }
-                    ForEach(DealsChain.read + DealsChain.linkOnly, id: \.rawValue) { chain in
-                        Toggle(isOn: binding(for: chain)) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(chain.name)
-                                if !chain.isRead {
-                                    Text("Link to the leaflet only").font(.footnote).foregroundStyle(Theme.secondaryText)
-                                } else if DealsChain.specialty.contains(chain) {
-                                    // ADR-667: the server asks it only when an item is its kind of thing.
-                                    Text("Only for items it sells").font(.footnote).foregroundStyle(Theme.secondaryText)
-                                }
-                            }
-                        }
-                    }
-                    Button {
-                        Task { await search() }
-                    } label: {
-                        Label("Check this week's leaflets", systemImage: "magnifyingglass")
-                    }
-                    .disabled(entries.isEmpty || chains.isEmpty || model.phase == .checking)
-                    .accessibilityIdentifier("deals.search")
-                } footer: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.")
-                        Text("Narrow an item with “tylko” and a brand (masło tylko Łaciate) or with “bez” (mleko bez laktozy).")
+                    if let result = model.lastResult, model.phase != .checking {
+                        results(result)
                     }
                 }
-
-                Section {
-                    DisclosureGroup("My loyalty apps") {
-                        ForEach(DealsProgram.allCases, id: \.rawValue) { program in
-                            Toggle(isOn: programBinding(program)) {
-                                Text(String(format: NSLocalizedString("I use %@", comment: "a chain's loyalty app or card"), program.name))
-                            }
-                            .accessibilityIdentifier("deals.program.\(program.rawValue)")
-                        }
-                    }
-                } footer: {
-                    Text("A price that needs an app you don't use isn't picked or counted in the basket. This choice stays on this iPhone.")
-                }
-
-                switch model.phase {
-                case .checking:
-                    Section { ProgressView("Reading the leaflets…") }
-                case .failed(let message):
-                    Section { Label(message, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error) }
-                case .idle:
-                    EmptyView()
-                }
-
-                if let result = model.lastResult {
-                    results(result)
-                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 32)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .background(Theme.canvas)
+            .foregroundStyle(Theme.ink)
             .navigationTitle("Cheapest this week")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -119,11 +80,19 @@ struct DealsView: View {
                     BasketView(result: result, quantities: model.lastQuantities, programs: programs)
                 }
             }
+            .navigationDestination(for: DealsItemPage.self) { page in
+                if let result = model.lastResult, page.index < result.items.count {
+                    itemPage(result.items[page.index], index: page.index, chainOrder: BasketSolver.chainOrder(result))
+                }
+            }
+            .sheet(isPresented: $showShops) {
+                DealsShopsSheet(chains: $chains, programsStored: $programsStored, myShops: myShops)
+            }
             .onAppear {
                 // Seen here, so Home's card for a voice search goes (ADR-666).
                 model.homeCardSeen()
-                if itemsText.isEmpty, let last = model.lastRequest {
-                    itemsText = last.items.joined(separator: ", ")
+                if items.isEmpty, let last = model.lastRequest {
+                    items = last.items
                     chains = Set(last.chainsAsked)
                 } else if model.lastRequest == nil, !myShops.shops.isEmpty {
                     chains = Set(myShops.chains)
@@ -132,13 +101,171 @@ struct DealsView: View {
         }
     }
 
+    // MARK: The question
+
+    /// Doddy with the leaflets and what this screen does, in one line.
+    private var hero: some View {
+        HStack(alignment: .bottom, spacing: 12) {
+            UploadedCharacterView(assetName: "WholeDoddy_kneeling_inspect", height: 104)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("What do you need?")
+                    .font(.title2.weight(.bold))
+                Text("I check this week's leaflets and show where each thing is cheapest.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 8)
+    }
+
+    /// The items as chips, a field for the next one, examples while it's empty and the user's lists.
+    private var itemsCard: some View {
+        card {
+            VStack(alignment: .leading, spacing: 12) {
+                if !items.isEmpty {
+                    ChipFlow(spacing: 8) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                            itemChip(item, index: index)
+                        }
+                    }
+                }
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(Theme.orangeCue)
+                        .accessibilityHidden(true)
+                    TextField("Items", text: $draft,
+                              prompt: Text(items.isEmpty
+                                  ? NSLocalizedString("Milk, butter, ground coffee", comment: "shopping question, before any item")
+                                  : NSLocalizedString("Add another", comment: "shopping question, after an item")))
+                        .focused($typing)
+                        .submitLabel(.done)
+                        .onSubmit(addDraft)
+                        .onChange(of: draft) { _, new in
+                            if new.contains(",") || new.contains("\n") { addDraft() }
+                        }
+                        .accessibilityIdentifier("deals.items")
+                }
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.canvas))
+                if items.isEmpty && draft.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Try:").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryText)
+                        ChipFlow(spacing: 8) {
+                            ForEach(examples, id: \.self) { example in
+                                Button { add([example]) } label: {
+                                    Text(verbatim: example)
+                                        .font(.subheadline)
+                                        .padding(.horizontal, 12).padding(.vertical, 7)
+                                        .background(Capsule().strokeBorder(Theme.separator, lineWidth: 1))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+                fromListButton
+                Text("You can also ask Doddy: “How much is milk this week?”")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+    }
+
+    private func itemChip(_ item: String, index: Int) -> some View {
+        HStack(spacing: 6) {
+            Text(verbatim: item).font(.subheadline.weight(.semibold))
+            Button {
+                items.remove(at: index)
+            } label: {
+                Image(systemName: "xmark").font(.caption.weight(.bold))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(String(format: NSLocalizedString("Remove %@", comment: "an item on the shopping question"), item)))
+        }
+        .foregroundStyle(Theme.inkOnOrange)
+        .padding(.leading, 12).padding(.trailing, 10).padding(.vertical, 7)
+        .background(Capsule().fill(Theme.orangeCue.opacity(0.9)))
+    }
+
+    /// The big button, then which shops it asks, with a way to change them.
+    private var searchButton: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                addDraft()
+                typing = false
+                Task { await search() }
+            } label: {
+                Label("Check prices", systemImage: "tag")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(allEntries.isEmpty || chains.isEmpty || model.phase == .checking)
+            .accessibilityIdentifier("deals.search")
+            Button { showShops = true } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "storefront").accessibilityHidden(true)
+                    Text(shopsSummary)
+                    Spacer(minLength: 4)
+                    Text("Change").fontWeight(.semibold).foregroundStyle(Theme.accentText)
+                }
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("deals.shops")
+        }
+    }
+
+    private var shopsSummary: String {
+        let read = chains.filter(\.isRead).count
+        if !myShops.shops.isEmpty, Set(myShops.chains) == chains {
+            return NSLocalizedString("My shops", comment: "")
+        }
+        return String(format: NSLocalizedString("%lld shops' leaflets", comment: "how many chains a check reads"), read)
+    }
+
+    private var checkingCard: some View {
+        card {
+            HStack(spacing: 12) {
+                ProgressView()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Reading the leaflets…").font(.headline)
+                    Text("This takes up to half a minute.").font(.footnote).foregroundStyle(Theme.secondaryText)
+                }
+            }
+        }
+    }
+
+    /// A few things people often buy, in the reader's language.
+    private var examples: [String] {
+        language == .polish
+            ? ["mleko", "masło", "jajka", "kawa mielona", "pieluchy 4"]
+            : ["milk", "butter", "eggs", "ground coffee", "nappies size 4"]
+    }
+
     // MARK: Items
 
-    /// What the user typed, split at commas and new lines.
-    private var entries: [String] {
-        itemsText.split(whereSeparator: { $0 == "," || $0 == "\n" })
+    /// The chips and whatever is still in the field.
+    private var allEntries: [String] { items + split(draft) }
+
+    private func split(_ text: String) -> [String] {
+        text.split(whereSeparator: { $0 == "," || $0 == "\n" })
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+    }
+
+    private func addDraft() {
+        let new = split(draft)
+        draft = ""
+        add(new)
+    }
+
+    private func add(_ new: [String]) {
+        for item in new where !items.contains(where: { $0.caseInsensitiveCompare(item) == .orderedSame }) {
+            items.append(item)
+        }
     }
 
     /// The shopping lists with something left to get.
@@ -152,7 +279,10 @@ struct DealsView: View {
                 fill(from: list)
             } label: {
                 Label(String(format: NSLocalizedString("From my list: %@", comment: "fills the items from a shopping list"), list.name), systemImage: "list.bullet")
+                    .font(.subheadline.weight(.semibold))
             }
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.accentText)
             .accessibilityIdentifier("deals.fromList")
         } else if lists.count > 1 {
             Menu {
@@ -161,27 +291,21 @@ struct DealsView: View {
                 }
             } label: {
                 Label("From my list", systemImage: "list.bullet")
+                    .font(.subheadline.weight(.semibold))
             }
+            .foregroundStyle(Theme.accentText)
             .accessibilityIdentifier("deals.fromList")
         }
     }
 
-    /// The list's open items, one per line (a comma inside an item would split it, so it becomes a space).
+    /// The list's open items (a comma inside an item would split it, so it becomes a space).
     private func fill(from list: DoddyList) {
-        itemsText = list.open.map { $0.text.replacingOccurrences(of: ",", with: " ") }.joined(separator: "\n")
-    }
-
-    private func binding(for chain: DealsChain) -> Binding<Bool> {
-        Binding(get: { chains.contains(chain) }, set: { on in if on { chains.insert(chain) } else { chains.remove(chain) } })
-    }
-
-    private func programBinding(_ program: DealsProgram) -> Binding<Bool> {
-        Binding(get: { !programs.notUsed.contains(program) },
-                set: { used in programsStored = programs.setting(program, used: used).stored })
+        items = []
+        add(list.open.map { $0.text.replacingOccurrences(of: ",", with: " ") })
     }
 
     private func search() async {
-        let read = DealsListItems.read(entries)
+        let read = DealsListItems.read(allEntries)
         guard !read.items.isEmpty else { return }
         kinds = [:]
         let order = DealsChain.all.filter { chains.contains($0) }
@@ -193,56 +317,122 @@ struct DealsView: View {
 
     @ViewBuilder
     private func results(_ result: DealsResult) -> some View {
-        Section {
+        let chainOrder = BasketSolver.chainOrder(result)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Where it's cheapest").font(.title3.weight(.bold))
             if let checked = result.checkedDate {
                 Text(String(format: NSLocalizedString("Read %@. Prices are the leaflets'; in the shop they can differ.", comment: ""), DateText.full(checked)))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
             }
+            VStack(spacing: 0) {
+                ForEach(Array(result.items.enumerated()), id: \.offset) { index, item in
+                    if index > 0 { Divider().overlay(Theme.separator) }
+                    NavigationLink(value: DealsItemPage(index: index)) {
+                        summaryRow(item, index: index, chainOrder: chainOrder)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("deals.item.\(index)")
+                }
+            }
+            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
             Button {
                 showBasket = true
             } label: {
                 Label("Work out the basket: one shop or two", systemImage: "cart")
             }
+            .buttonStyle(SecondaryButtonStyle())
             .disabled(!result.items.contains { !$0.offers.isEmpty })
             .accessibilityIdentifier("deals.basket")
         }
-        let chainOrder = BasketSolver.chainOrder(result)
-        ForEach(Array(result.items.enumerated()), id: \.offset) { index, item in
-            Section {
-                itemRows(item, index: index, chainOrder: chainOrder)
-            } header: {
-                Text(header(item, index: index))
+        notes(result)
+    }
+
+    /// One item: its name, the best price and where, the price per unit, how many other shops have it.
+    private func summaryRow(_ item: DealsItemResult, index: Int, chainOrder: [DealsChain]) -> some View {
+        let shown = shownOffers(item, variants: DealsVariants.split(item), index: index)
+        let best = BasketSolver.bestValue(shown, chainOrder: chainOrder, programs: programs)
+        return HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: header(item, index: index)).font(.headline)
+                if let best {
+                    Text(verbatim: best.product).font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(2)
+                    HStack(spacing: 6) {
+                        Text(verbatim: best.chain.name)
+                            .font(.caption.weight(.bold))
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Capsule().fill(Theme.orangeCue.opacity(0.18)))
+                        if best.check {
+                            Text("Check the leaflet").font(.caption.weight(.semibold)).foregroundStyle(Theme.error)
+                        } else if !best.conditions.isEmpty {
+                            Text(verbatim: best.conditions.joined(separator: " · "))
+                                .font(.caption.weight(.semibold)).foregroundStyle(Theme.accentText).lineLimit(1)
+                        }
+                    }
+                } else if !item.promotions.isEmpty {
+                    Text("A promotion without a printed price").font(.footnote).foregroundStyle(Theme.secondaryText)
+                } else {
+                    Text("Not in the leaflets that were read.").font(.footnote).foregroundStyle(Theme.secondaryText)
+                }
             }
-        }
-        if !model.lastLeftOut.isEmpty {
-            Section("Not looked up") {
-                Text(String(format: NSLocalizedString("Up to %lld items of up to %lld characters are checked at once. Not checked: %@", comment: ""),
-                            DealsRequest.maxItems, DealsRequest.maxItemLength, model.lastLeftOut.joined(separator: ", ")))
-                    .font(.footnote).foregroundStyle(Theme.secondaryText)
-            }
-        }
-        let inPart = result.chains.filter { $0.status == .checked && $0.pages != nil }
-        if !inPart.isEmpty {
-            Section("Read in part") {
-                ForEach(Array(inPart.enumerated()), id: \.offset) { _, report in
-                    if let pages = report.pages {
-                        Text(String(format: NSLocalizedString("%@: Doddy read %lld of %lld pages. A cheaper offer may be on the others.", comment: "a leaflet read in part"),
-                                    report.chain.name, pages.read, pages.of))
-                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+            Spacer(minLength: 8)
+            if let best {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(verbatim: best.price.text(language)).font(.title3.weight(.heavy))
+                    if let unit = best.unitPriceMoney, let per = best.unitPrice?.per {
+                        Text(verbatim: "\(unit.text(language))/\(per.rawValue)").font(.caption).foregroundStyle(Theme.secondaryText)
+                    }
+                    let others = Set(shown.map(\.chain)).subtracting([best.chain]).count
+                    if others > 0 {
+                        Text(String(format: NSLocalizedString("+%lld other shops", comment: "other chains with this item"), others))
+                            .font(.caption).foregroundStyle(Theme.secondaryText)
                     }
                 }
             }
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryText)
+                .accessibilityHidden(true)
         }
+        .padding(14)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    /// What wasn't looked up, what was read only in part, what wasn't checked and where to look further.
+    @ViewBuilder
+    private func notes(_ result: DealsResult) -> some View {
+        let inPart = result.chains.filter { $0.status == .checked && $0.pages != nil }
         let notRead = result.chains.filter { !$0.status.wasRead }
-        if !notRead.isEmpty {
-            Section("Not checked") {
-                ForEach(Array(notRead.enumerated()), id: \.offset) { _, report in
-                    ChainNotReadRow(report: report)
+        if !model.lastLeftOut.isEmpty || !inPart.isEmpty || !notRead.isEmpty {
+            card {
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 10) {
+                        if !model.lastLeftOut.isEmpty {
+                            Text(String(format: NSLocalizedString("Up to %lld items of up to %lld characters are checked at once. Not checked: %@", comment: ""),
+                                        DealsRequest.maxItems, DealsRequest.maxItemLength, model.lastLeftOut.joined(separator: ", ")))
+                                .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        }
+                        ForEach(Array(inPart.enumerated()), id: \.offset) { _, report in
+                            if let pages = report.pages {
+                                Text(String(format: NSLocalizedString("%@: Doddy read %lld of %lld pages. A cheaper offer may be on the others.", comment: "a leaflet read in part"),
+                                            report.chain.name, pages.read, pages.of))
+                                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+                            }
+                        }
+                        ForEach(Array(notRead.enumerated()), id: \.offset) { _, report in
+                            ChainNotReadRow(report: report)
+                        }
+                    }
+                    .padding(.top, 8)
+                } label: {
+                    Text(String(format: NSLocalizedString("What wasn't checked (%lld)", comment: "shops or items a leaflet check didn't cover"),
+                                notRead.count + inPart.count + (model.lastLeftOut.isEmpty ? 0 : 1)))
+                        .font(.subheadline.weight(.semibold))
                 }
+                .tint(Theme.ink)
             }
         }
         if let further = result.further?.openable {
-            SearchFurtherSections(further: further)
+            SearchFurtherCards(further: further)
         }
     }
 
@@ -250,6 +440,20 @@ struct DealsView: View {
     private func header(_ item: DealsItemResult, index: Int) -> String {
         guard index < model.lastQuantities.count, let quantity = model.lastQuantities[index] else { return item.query }
         return "\(item.query) · \(quantity.display(polish: language == .polish))"
+    }
+
+    // MARK: One item
+
+    /// Everything about one item: the pick with what it takes, why it was picked, the other shops,
+    /// similar products and promotions without a price. Nothing on the summary hides any of it.
+    private func itemPage(_ item: DealsItemResult, index: Int, chainOrder: [DealsChain]) -> some View {
+        Form {
+            Section { itemRows(item, index: index, chainOrder: chainOrder) }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvas)
+        .navigationTitle(header(item, index: index))
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     @ViewBuilder
@@ -332,6 +536,135 @@ struct DealsView: View {
         }
         if programs.missing(for: offer) != nil { text += " (" + NSLocalizedString("an app you don't use", comment: "") + ")" }
         return text
+    }
+
+    // MARK: Parts
+
+    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
+    }
+}
+
+/// An item's own page in the answer, by its place.
+private struct DealsItemPage: Hashable {
+    let index: Int
+}
+
+/// Which leaflets a check reads, My shops and the loyalty apps: what used to fill the first screen
+/// (owner, 10 Nov 2026: "I don't get it"). Same preferences and identifiers.
+private struct DealsShopsSheet: View {
+    @Binding var chains: Set<DealsChain>
+    @Binding var programsStored: String
+    let myShops: MyShops
+    @Environment(\.dismiss) private var dismiss
+
+    private var programs: DealsPrograms { DealsPrograms(stored: programsStored) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    NavigationLink {
+                        MyShopsView()
+                    } label: {
+                        LabeledContent("My shops", value: myShops.shops.isEmpty
+                            ? NSLocalizedString("None yet", comment: "no shops picked")
+                            : myShops.chains.map(\.name).joined(separator: ", "))
+                    }
+                    .accessibilityIdentifier("deals.myShops")
+                    if !myShops.shops.isEmpty, Set(myShops.chains) != chains {
+                        Button {
+                            chains = Set(myShops.chains)
+                        } label: {
+                            Label("Only my shops' chains", systemImage: "storefront")
+                        }
+                    }
+                }
+                Section {
+                    ForEach(DealsChain.read + DealsChain.linkOnly, id: \.rawValue) { chain in
+                        Toggle(isOn: binding(for: chain)) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(chain.name)
+                                if !chain.isRead {
+                                    Text("Link to the leaflet only").font(.footnote).foregroundStyle(Theme.secondaryText)
+                                } else if DealsChain.specialty.contains(chain) {
+                                    // ADR-667: the server asks it only when an item is its kind of thing.
+                                    Text("Only for items it sells").font(.footnote).foregroundStyle(Theme.secondaryText)
+                                }
+                            }
+                        }
+                        .tint(Theme.orangeCue)
+                    }
+                } header: {
+                    Text("Leaflets to check")
+                } footer: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.")
+                        Text("Narrow an item with “tylko” and a brand (masło tylko Łaciate) or with “bez” (mleko bez laktozy).")
+                    }
+                }
+                Section {
+                    ForEach(DealsProgram.allCases, id: \.rawValue) { program in
+                        Toggle(isOn: programBinding(program)) {
+                            Text(String(format: NSLocalizedString("I use %@", comment: "a chain's loyalty app or card"), program.name))
+                        }
+                        .tint(Theme.orangeCue)
+                        .accessibilityIdentifier("deals.program.\(program.rawValue)")
+                    }
+                } header: {
+                    Text("My loyalty apps")
+                } footer: {
+                    Text("A price that needs an app you don't use isn't picked or counted in the basket. This choice stays on this iPhone.")
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Theme.canvas)
+            .navigationTitle("Shops")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+
+    private func binding(for chain: DealsChain) -> Binding<Bool> {
+        Binding(get: { chains.contains(chain) }, set: { on in if on { chains.insert(chain) } else { chains.remove(chain) } })
+    }
+
+    private func programBinding(_ program: DealsProgram) -> Binding<Bool> {
+        Binding(get: { !programs.notUsed.contains(program) },
+                set: { used in programsStored = programs.setting(program, used: used).stored })
+    }
+}
+
+/// Chips that wrap onto the next line.
+private struct ChipFlow: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, row: CGFloat = 0, widest: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.init(width: width, height: nil))
+            if x > 0, x + size.width > width { x = 0; y += row + spacing; row = 0 }
+            x += size.width + spacing
+            row = max(row, size.height)
+            widest = max(widest, x - spacing)
+        }
+        return CGSize(width: proposal.width ?? widest, height: y + row)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, row: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.init(width: bounds.width, height: nil))
+            if x > bounds.minX, x + size.width > bounds.maxX { x = bounds.minX; y += row + spacing; row = 0 }
+            view.place(at: CGPoint(x: x, y: y), proposal: .init(width: min(size.width, bounds.width), height: size.height))
+            x += size.width + spacing
+            row = max(row, size.height)
+        }
     }
 }
 
@@ -521,17 +854,19 @@ enum DealDayText {
 /// item's search page at the online shops Doddy's server names, in its order. Addresses only: Safari opens the
 /// shop's page and Doddy reads none of them. A partner link is marked on its row and explained below, before
 /// any tap (ADR-612); it opens the same search page through the network.
-private struct SearchFurtherSections: View {
+private struct SearchFurtherCards: View {
     let further: DealsFurther
 
     var body: some View {
-        if !further.leaflets.isEmpty {
-            Section("Leaflets Doddy doesn't read") {
+        VStack(alignment: .leading, spacing: 10) {
+            if !further.leaflets.isEmpty {
+                Text("Leaflets Doddy doesn't read").font(.subheadline.weight(.semibold))
                 ForEach(Array(further.leaflets.enumerated()), id: \.offset) { _, leaflet in
                     if let url = URL(string: leaflet.url) {
                         Link(destination: url) {
-                            VStack(alignment: .leading, spacing: 2) {
+                            HStack {
                                 Text(leaflet.chain.name).foregroundStyle(Theme.ink)
+                                Spacer()
                                 Text("Open the leaflet").font(.footnote)
                             }
                         }
@@ -539,9 +874,8 @@ private struct SearchFurtherSections: View {
                     }
                 }
             }
-        }
-        if !further.searches.isEmpty {
-            Section {
+            if !further.searches.isEmpty {
+                Text("Search further online").font(.subheadline.weight(.semibold)).padding(.top, 4)
                 ForEach(Array(further.searches.enumerated()), id: \.offset) { _, search in
                     ForEach(Array(search.links.enumerated()), id: \.offset) { _, link in
                         if let url = URL(string: link.openURL) {
@@ -559,18 +893,19 @@ private struct SearchFurtherSections: View {
                         }
                     }
                 }
-            } header: {
-                Text("Search further online")
-            } footer: {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("These open the shops' own pages in Safari. Doddy doesn't read them.")
-                    if further.hasPartnerLink {
-                        Text("Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.")
-                            .accessibilityIdentifier("deals.further.partnerNote")
-                    }
+                Text("These open the shops' own pages in Safari. Doddy doesn't read them.")
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+                if further.hasPartnerLink {
+                    Text("Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        .accessibilityIdentifier("deals.further.partnerNote")
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
     }
 }
 
