@@ -407,8 +407,6 @@ final class VoiceSessionController {
     @ObservationIgnored private var mutedBeforeLongTurn = false
     @ObservationIgnored private var longTurnLimit: Task<Void, Never>?
     private(set) var heldSide: TranslatorDirection?
-    /// Opened from Home's Translate: Doddy's greeting comes first, then the app asks for the disclosure.
-    private var translatorNeedsHello = false
     /// Listen only: "Read aloud" off sets Doddy's voice to silent on this iPhone (the lines still
     /// show). `readAloudProblem` is set when the silence couldn't be checked.
     private(set) var readsAloud = true
@@ -659,7 +657,6 @@ final class VoiceSessionController {
         translatorFactsSaved = nil
         holdToTalk = false
         heldSide = nil
-        translatorNeedsHello = false
         readsAloud = true
         readAloudProblem = nil
         privacyLocked = false
@@ -813,7 +810,6 @@ final class VoiceSessionController {
             isPrivate = true
             privacyLocked = true
             translator = TranslatorSession(setup: preset, startedAt: Date())
-            translatorNeedsHello = true
         }
 
         let ref = AttemptRef(self, attempt: attempt)
@@ -836,7 +832,9 @@ final class VoiceSessionController {
             // usual opening ("Hi, I'm Doddy. What's on your mind?" the first time, then "I'm here.
             // What's up?", ADR-556). Used once the agent's first message is {{opening_line}}
             // (voice-agent/session.json); an agent without it ignores the variable.
-            WakeGreeting.variableName: interruptedOpening ?? wakeGreeting ?? WakeGreeting.openingLine(
+            // Translating (9 Nov 2026): Doddy opens with the disclosure to them, or one short line, never "I'm
+            // here. What's up?" followed by an app message (that message made him start the mode again).
+            WakeGreeting.variableName: preset.map(TranslatorPrompt.openingLine) ?? interruptedOpening ?? wakeGreeting ?? WakeGreeting.openingLine(
                 afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish,
                 firstConversation: isFirstConversation),
         ]
@@ -2108,6 +2106,11 @@ final class VoiceSessionController {
     }
 
     private func startTranslator(_ setup: TranslatorSetup, toolCallID: String) async {
+        // Already translating (a start from Home, then the agent asking again): nothing changes.
+        if let current = translator {
+            await reply(toolCallID, VoiceToolReply.translatorAlreadyOn(current.setup))
+            return
+        }
         // Do not carry this conversation's notes, profile or lists into translation (review H3).
         if translatorStartsNewConversation, let mode = startedMode {
             isPrivate = true
@@ -2133,7 +2136,6 @@ final class VoiceSessionController {
     private func endTranslator() {
         guard let session = translator else { return }
         translator = nil
-        translatorNeedsHello = false
         if !readsAloud { setReadAloud(true) }
         if holdToTalk {
             holdToTalk = false
@@ -2478,10 +2480,6 @@ final class VoiceSessionController {
                 translator?.heard(text)
             } else {
                 translator?.said(text)
-                if translatorNeedsHello {
-                    translatorNeedsHello = false
-                    Task { await sendToAgent("Translator mode is on. Do what the translator_start section says now.") }
-                }
             }
             return
         }

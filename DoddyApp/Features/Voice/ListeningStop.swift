@@ -1,13 +1,13 @@
 import AVFAudio
 import DoddyCore
 import Observation
-import SwiftUI
-import UIKit
 import os
 
-/// Audio privacy signal and stop (OP-024, ADR-361). Rules and words are in DoddyCore
-/// (ListeningPrivacy.swift); this reads each microphone user's own state, stops them, and shows
-/// the indicator above every screen.
+/// Stop listening (OP-024, ADR-361). Rules and words are in DoddyCore (ListeningPrivacy.swift); this
+/// reads each microphone user's own state and stops them. The pill that showed above every screen
+/// ("Doddy is listening · Stop listening") was removed on the owner's instruction on 9 Nov 2026
+/// (decision 2026-11-09-no-listening-pill): iOS's own orange dot shows the microphone, and Siri's
+/// "Stop listening in Doddy" still stops everything and says what it stopped.
 @MainActor
 enum ListeningStop {
     private static let log = Logger(subsystem: "com.bienos.doddy2.dev", category: "stop-listening")
@@ -92,37 +92,25 @@ final class MicrophoneHolders {
     }
 }
 
-/// What the indicator shows. Refreshed whenever a conversation or a memo changes.
+/// Who is listening now and the answer to the last Stop listening. No longer drawn as a pill
+/// (9 Nov 2026); kept so Stop listening and the recordings still report one state.
 @MainActor
 @Observable
 final class ListeningIndicatorModel {
     static let shared = ListeningIndicatorModel()
 
     private(set) var indicator: ListeningIndicator?
-    /// The answer to the last Stop listening, shown for a moment (or until tapped when it failed).
+    /// The answer to the last Stop listening, kept for a moment (or until dismissed when it failed).
     private(set) var result: ListeningStopReport?
-    private(set) var isStopping = false
-    /// The voice screen shows its own status and End, so the indicator steps aside there.
-    private(set) var isHidden = false
     @ObservationIgnored private var clearResult: Task<Void, Never>?
 
     private init() {}
 
     func refresh() {
         indicator = ListeningIndicator.current(ListeningStop.snapshot())
-        isHidden = ShortcutRouter.shared.isVoicePresented
-        ListeningIndicatorWindow.shared.update()
     }
 
-    func stop() async {
-        guard !isStopping else { return }
-        isStopping = true
-        let report = await ListeningStop.stopAll()
-        isStopping = false
-        show(report)
-    }
-
-    /// Shows the answer. "Stopped" goes away by itself; a failure stays until dismissed.
+    /// Keeps the answer. "Stopped" goes away by itself; a failure stays until dismissed.
     func show(_ report: ListeningStopReport) {
         result = report
         clearResult?.cancel()
@@ -139,109 +127,5 @@ final class ListeningIndicatorModel {
     func dismissResult() {
         result = nil
         refresh()
-    }
-}
-
-/// A small window above every screen and sheet, holding only the indicator, so it shows over
-/// the capture sheet and Settings too. Taps outside the pill reach the app below.
-@MainActor
-final class ListeningIndicatorWindow {
-    static let shared = ListeningIndicatorWindow()
-    private var window: UIWindow?
-    private var host: UIHostingController<ListeningIndicatorPill>?
-
-    private init() {}
-
-    /// Called when Doddy comes to the front; does nothing once installed.
-    func install() {
-        guard window == nil, let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive }) else { return }
-        let host = UIHostingController(rootView: ListeningIndicatorPill())
-        host.view.backgroundColor = .clear
-        let window = UIWindow(windowScene: scene)
-        // Above sheets and alerts, below the system's own.
-        window.windowLevel = .alert + 1
-        window.rootViewController = host
-        window.backgroundColor = .clear
-        window.isHidden = true
-        self.window = window
-        self.host = host
-        update()
-    }
-
-    func update() {
-        guard let window else { return }
-        let model = ListeningIndicatorModel.shared
-        let shows = !model.isHidden && (model.indicator != nil || model.result != nil)
-        guard shows else {
-            window.isHidden = true
-            return
-        }
-        // Sized once SwiftUI has drawn the new content.
-        DispatchQueue.main.async { [weak self] in self?.layout() }
-    }
-
-    private func layout() {
-        let model = ListeningIndicatorModel.shared
-        guard let window, let host, let scene = window.windowScene,
-              !model.isHidden, model.indicator != nil || model.result != nil else { return }
-        let bounds = scene.screen.bounds
-        let top = scene.windows.first(where: \.isKeyWindow)?.safeAreaInsets.top ?? 47
-        // Leaves the navigation bar's buttons at both edges free.
-        let maxWidth = bounds.width - 120
-        let size = host.sizeThatFits(in: CGSize(width: maxWidth, height: 240))
-        let width = min(maxWidth, size.width)
-        window.frame = CGRect(x: (bounds.width - width) / 2, y: top + 2, width: width, height: size.height)
-        window.isHidden = false
-    }
-}
-
-/// The pill: what is listening, and Stop listening.
-struct ListeningIndicatorPill: View {
-    private let model = ListeningIndicatorModel.shared
-    @State private var expanded = false
-    private var language: NotificationLanguage { .current }
-
-    var body: some View {
-        Group {
-            if let report = model.result {
-                Button { model.dismissResult() } label: {
-                    Label { Text(verbatim: report.reply(language)).font(.footnote).multilineTextAlignment(.leading) } icon: {
-                        Image(systemName: report.stopped ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("listening.result")
-            } else if let indicator = model.indicator {
-                HStack(spacing: 8) {
-                    Button { expanded.toggle(); ListeningIndicatorWindow.shared.update() } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: indicator.symbol).foregroundStyle(.orange)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(verbatim: indicator.title(language))
-                                    .font(.footnote.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
-                                if expanded {
-                                    Text(verbatim: indicator.detail(language)).font(.caption2)
-                                }
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint(Text(verbatim: indicator.detail(language)))
-                    Button { Task { await model.stop() } } label: {
-                        Text(verbatim: ListeningIndicator.stopLabel(language)).font(.footnote.weight(.semibold))
-                    }
-                    .disabled(model.isStopping)
-                    .accessibilityIdentifier("listening.stop")
-                }
-                .accessibilityIdentifier("listening.indicator")
-            }
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 18))
-        .fixedSize(horizontal: false, vertical: true)
     }
 }

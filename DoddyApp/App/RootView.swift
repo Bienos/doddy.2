@@ -255,7 +255,6 @@ struct RootView: View {
             // Logbook (ADR-602): once the notes are read, the days that are due.
             Logbook.sync(store: store)
             await noteReminders.refreshOnForeground()
-            if scenePhase == .active { listeningIndicatorBecameActive() }
             pickUpSharedItem()
             // The weekly "Open Doddy faster" reminder, if it is still wanted (ADR-559).
             await OpenWaysReminderScheduler.refresh(router.setup)
@@ -323,7 +322,6 @@ struct RootView: View {
                 if AppLock.shared.isLocked, !lockCovered { lockEngaged() }
                 PrivacyCover.shared.update(sceneIsActive: true)
             }
-            if phase == .active { listeningIndicatorBecameActive() }
             // On later returns, only the separately opted-in listen-on-open preference applies.
             switch phase {
             case .background: opening.appWentToBackground()
@@ -468,11 +466,6 @@ struct RootView: View {
         guard HomeConversation.shared.needsYou, !router.isVoicePresented, !AppLock.shared.isLocked else { return }
         voiceDetent = .medium
         router.isVoicePresented = true
-    }
-
-    private func listeningIndicatorBecameActive() {
-        // The listening indicator above every screen (ADR-361).
-        ListeningIndicatorWindow.shared.install()
     }
 
     /// A sheet or cover from the router is up (motion v2: Doddy is hidden while it is).

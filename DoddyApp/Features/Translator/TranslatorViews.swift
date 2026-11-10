@@ -352,35 +352,10 @@ struct TranslatorEndCard: View {
     }
 }
 
-/// Languages and the way of translating, on the start screen and on the "Start translating?" card.
-struct TranslatorChoices: View {
-    @Binding var kind: TranslatorKind
-    @Binding var owner: TranslatorLanguage
-    /// Nil: detect when they talk.
-    @Binding var other: TranslatorLanguage?
-
-    var body: some View {
-        Picker("Way", selection: $kind) {
-            Text("Face to face").tag(TranslatorKind.faceToFace)
-            Text("Listen only").tag(TranslatorKind.listen)
-        }
-        .pickerStyle(.segmented)
-        Picker("You speak", selection: $owner) {
-            ForEach(TranslatorLanguages.all) { language in
-                Text(language.label).tag(language)
-            }
-        }
-        Picker(kind == .faceToFace ? "They speak" : "They're speaking", selection: $other) {
-            Text("Detect when they talk").tag(TranslatorLanguage?.none)
-            ForEach(TranslatorLanguages.all.filter { $0 != owner }) { language in
-                Text(language.label).tag(TranslatorLanguage?.some(language))
-            }
-        }
-    }
-}
-
-/// Home › Translate (1): pick the languages, then the conversation opens in translator mode with
-/// no notes, conversations or profile sent to the agent.
+/// Home › Translate (1), redone 9 Nov 2026 (owner: "zrób to menu łatwiejsze w obsłudze i w kolorze Doddy",
+/// decision 2026-11-09-translator-translates-at-once): two big cards for the way, two language buttons with a
+/// swap between them, one-tap chips for the most asked languages, and one orange Start. Then the
+/// conversation opens in translator mode with no notes, conversations or profile sent to the agent.
 struct TranslatorStartView: View {
     @Environment(\.dismiss) private var dismiss
     /// Set when the user taps Start; Home opens the conversation after this sheet has closed.
@@ -388,10 +363,13 @@ struct TranslatorStartView: View {
     @State private var kind = TranslatorKind.faceToFace
     @State private var owner: TranslatorLanguage
     @State private var other: TranslatorLanguage?
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
 
     /// The two languages picked last time (ADR-574), so a second go is one tap.
     private static let lastOwnerKey = "translator.lastOwner"
     private static let lastOtherKey = "translator.lastOther"
+    /// One tap for the languages asked for most; every other one is in the list behind the button.
+    private static let quickCodes = ["en", "de", "es", "fr", "it", "uk", "pl"]
 
     init(chosen: Binding<TranslatorSetup?>) {
         _chosen = chosen
@@ -405,36 +383,180 @@ struct TranslatorStartView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TranslatorChoices(kind: $kind, owner: $owner, other: $other)
-                }
-                Section {
-                    if kind == .faceToFace {
-                        Text("Put the phone on the table between you. Their half of the screen faces them, and Doddy first tells them, in their language, that he's an AI translator.")
-                    } else {
-                        Text("For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    header
+                    HStack(spacing: 12) {
+                        wayCard(.faceToFace, symbol: "person.2.fill", title: Text("Face to face"), detail: Text("Both ways"))
+                        wayCard(.listen, symbol: "ear.fill", title: Text("Listen only"), detail: Text("Into your language"))
                     }
-                    Text("Both voices go to ElevenLabs to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number.")
-                        .foregroundStyle(Theme.secondaryText)
-                }
-                .font(.footnote)
-                Section {
-                    Button("Start translating") {
-                        chosen = TranslatorSetup(kind: kind, owner: owner, other: other)
-                        UserDefaults.standard.set(owner.code, forKey: Self.lastOwnerKey)
-                        UserDefaults.standard.set(other?.code ?? TranslatorLanguages.detectCode, forKey: Self.lastOtherKey)
-                        dismiss()
+                    languages
+                    quickChips
+                    Button {
+                        start()
+                    } label: {
+                        Label("Start translating", systemImage: "character.bubble.fill")
+                            .font(.headline)
+                            .foregroundStyle(Theme.inkOnOrange)
+                            .frame(maxWidth: .infinity, minHeight: 58)
+                            .background(Theme.orangeCue.opacity(owner == other ? 0.4 : 1), in: RoundedRectangle(cornerRadius: 20))
                     }
+                    .buttonStyle(.plain)
                     .disabled(owner == other)
                     .accessibilityIdentifier("translator.start")
+                    notes
                 }
+                .padding(16)
             }
-            .navigationTitle("Talk in their language")
+            .background(Theme.canvas)
+            .navigationTitle("Translate")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
         }
+    }
+
+    private func start() {
+        chosen = TranslatorSetup(kind: kind, owner: owner, other: other)
+        UserDefaults.standard.set(owner.code, forKey: Self.lastOwnerKey)
+        UserDefaults.standard.set(other?.code ?? TranslatorLanguages.detectCode, forKey: Self.lastOtherKey)
+        dismiss()
+    }
+
+    // MARK: Parts
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            if !hideCharacterArt {
+                Image(decorative: "WholeDoddy_wave")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 86)
+                    .doddyArtMarker("doddy.translator.start")
+            }
+            Text("Pick the languages and start. Doddy stays quiet until someone speaks, then translates straight away.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func wayCard(_ way: TranslatorKind, symbol: String, title: Text, detail: Text) -> some View {
+        let selected = kind == way
+        return Button {
+            withAnimation(.snappy) { kind = way }
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                Image(systemName: symbol)
+                    .font(.title2.weight(.semibold))
+                title.font(.headline)
+                detail.font(.footnote)
+                    .opacity(0.8)
+            }
+            .foregroundStyle(selected ? Theme.inkOnOrange : Theme.ink)
+            .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+            .padding(14)
+            .background(selected ? Theme.orangeCue : Theme.quietSurface, in: RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(selected ? Color.clear : Theme.separator, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("translator.way.\(way.rawValue)")
+    }
+
+    /// You ⇄ them, each a button that opens the full list.
+    private var languages: some View {
+        HStack(spacing: 8) {
+            languageMenu(title: Text("You speak"), name: owner.nativeName, id: "translator.owner") {
+                Picker("You speak", selection: $owner) {
+                    ForEach(TranslatorLanguages.all) { Text($0.label).tag($0) }
+                }
+            }
+            Button {
+                guard let current = other else { return }
+                withAnimation(.snappy) {
+                    other = owner
+                    owner = current
+                }
+            } label: {
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.headline)
+                    .foregroundStyle(Theme.inkOnOrange)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.orangeCue, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .disabled(other == nil)
+            .opacity(other == nil ? 0.4 : 1)
+            .accessibilityLabel(Text("Swap languages"))
+            .accessibilityIdentifier("translator.swap")
+            languageMenu(title: kind == .faceToFace ? Text("They speak") : Text("They're speaking"),
+                         name: other?.nativeName ?? NSLocalizedString("Detect when they talk", comment: ""),
+                         id: "translator.other") {
+                Picker("They speak", selection: $other) {
+                    Text("Detect when they talk").tag(TranslatorLanguage?.none)
+                    ForEach(TranslatorLanguages.all.filter { $0 != owner }) { Text($0.label).tag(TranslatorLanguage?.some($0)) }
+                }
+            }
+        }
+    }
+
+    private func languageMenu<Content: View>(title: Text, name: String, id: String,
+                                             @ViewBuilder content: () -> Content) -> some View {
+        Menu {
+            content()
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                title.font(.caption.weight(.semibold)).foregroundStyle(Theme.secondaryText)
+                HStack(spacing: 4) {
+                    Text(verbatim: name).font(.headline).foregroundStyle(Theme.ink)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                    Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(Theme.accentText)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: 1))
+        }
+        .accessibilityIdentifier(id)
+    }
+
+    /// The other person's language in one tap.
+    private var quickChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Self.quickCodes.compactMap(TranslatorLanguages.named).filter { $0 != owner }) { language in
+                    let selected = other == language
+                    Button {
+                        withAnimation(.snappy) { other = language }
+                    } label: {
+                        Text(verbatim: language.nativeName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(selected ? Theme.inkOnOrange : Theme.ink)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .background(selected ? Theme.orangeCue : Theme.quietSurface, in: Capsule())
+                            .overlay(Capsule().strokeBorder(selected ? Color.clear : Theme.separator, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+        }
+    }
+
+    private var notes: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if kind == .faceToFace {
+                Text("Put the phone between you. Their half of the screen faces them and shows, in their language, that this is an AI translation.")
+            } else {
+                Text("For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.")
+            }
+            Text("Both voices go to ElevenLabs to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number.")
+        }
+        .font(.footnote)
+        .foregroundStyle(Theme.secondaryText)
     }
 }

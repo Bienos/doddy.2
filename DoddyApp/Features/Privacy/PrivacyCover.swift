@@ -6,7 +6,7 @@ import UIKit
 /// the Face ID lock is on (ADR-723). Without it the app switcher's picture of Doddy shows the last
 /// screen, and a sheet open over the app would show in it whatever the lock's own cover hides.
 ///
-/// A window of its own, made the way the listening indicator's is (`ListeningIndicatorWindow`):
+/// A window of its own (as the listening pill's was until 9 Nov 2026):
 /// above sheets and alerts, below the system's own. It exists only for a person who turned the lock on;
 /// with the lock off nothing is made and nothing is shown (`AppLockPolicy.coverShown`, tested in DoddyCore).
 /// It is plain, not a blur of what is under it, so the picture holds nothing.
