@@ -158,6 +158,8 @@ public enum ToolCatalog {
         // The card shows the time and the exact reason Doddy will say; the server checks the same
         // approval hash when it books the call and again when it places it (ADR-754).
         .init(VoiceToolName.callMeLater, .placeCall, .card),
+        // The same call as Settings, Phone calls, Call me now; the card shows the number's last digits.
+        .init(VoiceToolName.callMeNow, .placeCall, .card),
         .init(VoiceToolName.callPlaces, .placeCall, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .card),

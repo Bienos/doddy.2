@@ -135,9 +135,9 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .presentations: [VoiceToolName.makePresentation]
         case .photosAndCamera: [VoiceToolName.findPhotos, VoiceToolName.openCamera]
         // Doddy's own phone number (ADR-750 to 755): a text to the person's own number goes with the
-        // texts, a call booked for later with the calls.
+        // texts, a call now or booked for later with the calls.
         case .updates: [VoiceToolName.textMe]
-        case .phoneCalls: [VoiceToolName.callMeLater]
+        case .phoneCalls: [VoiceToolName.callMeLater, VoiceToolName.callMeNow]
         case .invoices: [VoiceToolName.draftInvoice]
         case .studio: [VoiceToolName.makeSomething]
         case .payments: [PaymentToolName.payForPage]

@@ -361,7 +361,8 @@ final class ScheduledCallTests: XCTestCase {
         XCTAssertEqual(tool.runsOn, .phone)
         XCTAssertFalse(tool.planEligible, "a plan card doesn't show the time, reason and quiet-hours choice with their own approval")
         // call_places places calls too, to places on its own card (decision 2026-11-09-restaurant-calls-one-tap).
-        XCTAssertEqual(ToolCatalog.all.filter { $0.effect == .placeCall }.map(\.name), [VoiceToolName.callMeLater, VoiceToolName.callPlaces])
+        XCTAssertEqual(ToolCatalog.all.filter { $0.effect == .placeCall }.map(\.name),
+                       [VoiceToolName.callMeLater, VoiceToolName.callMeNow, VoiceToolName.callPlaces])
         let request = VoiceToolRequest.callMeLater(draft)
         guard case .refuse = CarProfile.decision(for: request) else { return XCTFail("car") }
         XCTAssertTrue(ConnectionPause.applies(to: request))
