@@ -113,6 +113,9 @@ files=(
   DoddyApp/Infrastructure/LearningStore.swift
   DoddyApp/Infrastructure/MemoryStore.swift
   DoddyApp/Infrastructure/MemoryStore+Lists.swift
+  # Conversation recaps (decision 2026-11-09-conversation-recaps): saves a recap as a note through MemoryStore.
+  DoddyApp/Features/Recaps/RecapKeeper.swift
+  DoddyApp/Features/Recaps/OnDeviceRecapWriter.swift
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
   DoddyApp/Infrastructure/LegalAcceptanceStore.swift

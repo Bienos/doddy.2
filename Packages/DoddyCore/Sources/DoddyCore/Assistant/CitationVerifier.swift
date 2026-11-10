@@ -17,6 +17,7 @@ public struct VerifiedAnswer: Equatable, Sendable {
     public var proposal: AssistantProposal? = nil
     /// A training plan the person asked for, offered as a card (ADR-626). The plan screen opens only on a tap.
     public var planAsk: PlanAsk? = nil
+    public var localAction: LocalMessageAction? = nil
 
     public var basis: AnswerBasis { sources.isEmpty ? .general : .savedNotes }
 }
@@ -36,6 +37,7 @@ public enum CitationVerifier {
             guard let record = allowed[id], seen.insert(id).inserted else { throw .invalidCitations }
             sources.append(record)
         }
-        return VerifiedAnswer(text: reply.text, sources: sources, proposal: reply.proposal, planAsk: reply.planAsk)
+        return VerifiedAnswer(text: reply.text, sources: sources, proposal: reply.proposal, planAsk: reply.planAsk,
+                              localAction: request.localActions == nil ? nil : reply.localAction)
     }
 }

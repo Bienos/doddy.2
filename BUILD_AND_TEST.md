@@ -268,3 +268,7 @@ Without the backend you can drive the same flow with curl, e.g.
 | "Needs attention" after connecting | Granted access isn't provably read-only (auth config scopes too broad, or scopes not reported). Fix the auth config and reconnect |
 | Simulator can't reach `http://localhost:8787` | App Transport Security may block plain http (unverified); use an HTTPS tunnel |
 | `Not starting. Invalid configuration: …` | Read the named variables; values are never printed |
+
+### Messages local actions
+
+Run `scripts/test_messages_model.sh` for pending-action/one-shot/account/cancellation behavior; `swift test --package-path Packages/DoddyCore --filter "LocalMessageActionTests|ServerAssistantClientTests"` for the allowlist, wire opt-in and compatibility fallback. The iOS `DeviceMessageActionsTests` uses in-memory SQLite for typed notes/lists, private-list exclusion, consent and stale-scope guards; it never writes EventKit. `server/messaging`: `npm test` with a disposable `TEST_DATABASE_URL` runs the real route and a local model stand-in, including opt-in/legacy behavior. No external model keys are needed. On a physical phone check reminder permission denial, allow, connection/Pause-all changes, duplicate/read-back and notifications; also test relative dates across DST and the deployed server with the eight user intents.

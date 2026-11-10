@@ -335,6 +335,8 @@ struct CallLiveSection: View {
 struct CallResultSections: View {
     let record: StoredCallCase
     let result: CallResultCard
+    /// The recaps saved on this iPhone (`RecapLedger`): a key is there only after the note was read back.
+    @AppStorage(RecapSettings.ledgerKey) private var recapLedger = "[]"
 
     var body: some View {
         Section {
@@ -365,6 +367,11 @@ struct CallResultSections: View {
             }
             if result.callbackPromised {
                 Label("Doddy said you'd call back about something outside the card.", systemImage: "arrow.uturn.left.circle")
+            }
+            if RecapLedger(stored: recapLedger).contains(RecapLedger.key(callCase: record.id, attempt: record.resultAttemptId)) {
+                Label("A recap of this call is in your notes", systemImage: "note.text")
+                    .font(.footnote)
+                    .accessibilityIdentifier("callResult.recapSaved")
             }
         } header: {
             Text("Answer")

@@ -1,0 +1,7 @@
+Messages can propose saving/finding notes, creating/reading/changing lists and adding reminders. Exact-payload cards require a tap; native storage receipts decide the result. Account/lock/consent/switch checks and one-shot execution prevent stale or repeated actions.
+Decision: 2026-11-09-messages-local-actions. The server change must be deployed before this capability works in a shipped app; old servers continue plain chat. No live deployment or agent change was made.
+Validation results are recorded in the pull request. Physical-device EventKit/notification and live-model selection checks remain outstanding.
+
+Native offers/receipts now persist with a valid thread basis and a separate origin flag (additive v22 migration). A real SQLite round-trip/reopen test, v21 upgrade test and native model-to-executor-to-thread integration test cover the actual storage constraints; fake-thread tests alone missed the invalid nil-basis draft.
+
+Review follow-up (9 Nov 2026): an action card's offer and result now reach the model only as a fixed stand-in line (`ThreadRules.localActionStandIn`), so a note search or list read on the phone is never sent as an earlier turn, even with "Use my notes" off. The offer bubble now names what was offered and says nothing changes without a tap (`LocalMessageAction.offerText`), so it stays true after the card is gone. A note saved from a card is stored as `noted_by_doddy` ("Noted by Doddy, saved by you"): Doddy wrote the words, the person tapped.

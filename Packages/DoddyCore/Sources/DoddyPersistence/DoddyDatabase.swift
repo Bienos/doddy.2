@@ -472,6 +472,10 @@ public final class DoddyDatabase: Sendable {
         migrator.registerMigration("v21_thread_file") { db in
             try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN attached_file_name TEXT CHECK (attached_file_name IS NULL OR length(attached_file_name) > 0)")
         }
+        // Local action offers/receipts keep a valid basis for old readers, and their own origin for the UI.
+        migrator.registerMigration("v22_thread_local_action") { db in
+            try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN is_local_action INTEGER NOT NULL DEFAULT 0 CHECK (is_local_action IN (0, 1))")
+        }
         return migrator
     }
 

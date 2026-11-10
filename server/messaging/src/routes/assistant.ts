@@ -12,6 +12,7 @@ import type { Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { AssistRequest, LIMITS, WIRE_MESSAGE, WIRE_STATUS, type WireCode } from "../assistant/request.js";
 import { addTokens, reserve } from "../assistant/usage.js";
+import { RECAP_LIMITS, RecapRequest } from "../assistant/recap.js";
 
 export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const auth = requireDevice(deps.db);
@@ -66,6 +67,7 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
         citedMemoryIDs: outcome.sources.map((id) => id.toLowerCase()), usage: outcome.usage,
         ...(outcome.proposal ? { proposal: outcome.proposal } : {}),
         ...(outcome.plan ? { plan: outcome.plan } : {}),
+        ...(body.localActions && outcome.localAction ? { localAction: outcome.localAction } : {}),
       };
     } catch (err) {
       if (timedOut) return fail("timeout", body.requestId);
@@ -73,6 +75,65 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
       const e = err as { status?: unknown; name?: unknown };
       req.log.error({ status: typeof e.status === "number" ? e.status : undefined, kind: err instanceof Anthropic.APIError ? "api" : String(e.name) },
         "assistant provider error");
+      return fail("providerUnavailable", body.requestId);
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+
+  // Conversation recaps (decision 2026-11-09-conversation-recaps, step 3b): three short lists of what a
+  // conversation was about, when the iPhone can't write them itself and the person said yes. The lines are
+  // used for this one call and dropped; the request counts as one Messages request against the same caps.
+  app.post("/v1/recaps", {
+    preHandler: auth,
+    bodyLimit: RECAP_LIMITS.bodyBytes,
+    config: { rateLimit: { max: 30, timeWindow: "1 hour" } },
+  }, async (req, reply) => {
+    const fail = (code: WireCode, requestId?: string) => reply.code(WIRE_STATUS[code]).send({
+      schemaVersion: 1, ...(requestId ? { requestId } : {}), error: { code, message: WIRE_MESSAGE[code] },
+    });
+
+    const writer = assistant?.recapWriter;
+    if (!assistant || !assistant.settings.enabled || !writer) return fail("notConfigured");
+
+    const parsed = RecapRequest.safeParse(req.body);
+    if (!parsed.success) return fail("invalidRequest");
+    const body = parsed.data;
+
+    const accountId = principal(req).accountId;
+    const reservation = await reserve(deps.db, accountId, {
+      perAccount: assistant.settings.dailyPerAccount, perServer: assistant.settings.dailyPerServer,
+      newAccountPool: assistant.settings.dailyForNewAccounts, newAccountHours: assistant.settings.newAccountHours,
+    });
+    if (reservation !== "ok") {
+      req.log.warn({ cap: reservation }, "recap daily cap reached");
+      return fail("dailyLimitReached", body.requestId);
+    }
+
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, assistant.timeoutMs ?? 45_000);
+    reply.raw.once("close", () => { if (!reply.raw.writableFinished) controller.abort(); });
+
+    try {
+      const outcome = await writer.write(body, controller.signal);
+      if (outcome.usage) await addTokens(deps.db, accountId, outcome.usage).catch(() => {});
+      if (outcome.kind !== "ok") {
+        req.log.warn({ model: writer.model, outcome: outcome.kind }, "recap not written");
+        return fail(outcome.kind === "refused" ? "refused" : "providerUnavailable", body.requestId);
+      }
+      req.log.info({
+        model: writer.model, kind: body.kind, lines: body.lines.length,
+        points: outcome.recap.discussed.length + outcome.recap.agreed.length + outcome.recap.to_do.length,
+        inputTokens: outcome.usage.inputTokens, outputTokens: outcome.usage.outputTokens,
+      }, "recap written");
+      return { schemaVersion: 1, requestId: body.requestId, ...outcome.recap, usage: outcome.usage };
+    } catch (err) {
+      if (timedOut) return fail("timeout", body.requestId);
+      if (controller.signal.aborted) return reply;
+      const e = err as { status?: unknown; name?: unknown };
+      req.log.error({ status: typeof e.status === "number" ? e.status : undefined, kind: err instanceof Anthropic.APIError ? "api" : String(e.name) },
+        "recap provider error");
       return fail("providerUnavailable", body.requestId);
     } finally {
       clearTimeout(timer);
