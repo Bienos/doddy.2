@@ -619,4 +619,22 @@ final class DataFlowCallsAndUpdatesTests: XCTestCase {
         XCTAssertTrue(on?.when.contains("Never a Private conversation") ?? false)
         XCTAssertTrue(on?.note?.contains("keeps only counts, not words") ?? false)
     }
+
+    /// Decision 2026-11-09-conversation-recaps, step 5: the text of a phone call reaches the server and Anthropic
+    /// for a recap only with "Remember what we talked about" on.
+    func testPhoneCallRecapsAreNamedAndOnlyWithTheSwitch() {
+        var state = DataFlowState(rememberConversations: true, shareProfileWithVoice: false, tokenServerSet: true,
+                                  connectionsOn: [], pauseAll: false, doddyServerSet: false,
+                                  askDoddyOn: false, askDoddyUsesNotes: false, messagingServerSet: true)
+        let off = DataFlow.rows(state).first { $0.id == "phoneRecaps" }
+        XCTAssertEqual(off?.isActive, false)
+        XCTAssertEqual(off?.note, "Recaps are off, so the server writes none.")
+        state.phoneRecapsOn = true
+        let on = DataFlow.rows(state).first { $0.id == "phoneRecaps" }
+        XCTAssertEqual(on?.isActive, true)
+        XCTAssertTrue(on?.when.contains("keeps only the recap") ?? false)
+        XCTAssertTrue(on?.when.contains("ElevenLabs keeps its own copy") ?? false, "the row doesn't claim the call is gone everywhere")
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("recaps of calls to Doddy's phone line"))
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("recaps of calls to Doddy's phone line"))
+    }
 }

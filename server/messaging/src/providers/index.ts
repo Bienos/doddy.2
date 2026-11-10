@@ -18,6 +18,7 @@ import { modelLabel } from "../studio/models.js";
 import type { AssistantDeps } from "../assistant/deps.js";
 import { ClaudeAssistantResponder } from "../assistant/responder.js";
 import { ClaudeRecapWriter } from "../assistant/recap.js";
+import type { PhoneRecapDeps } from "../phoneRecaps.js";
 import { PoliteFetcher } from "../deals/fetcher.js";
 import type { DealsDeps } from "../deals/service.js";
 import { CeidgClient } from "../registry/ceidg.js";
@@ -119,6 +120,12 @@ export function providersFrom(config: Config) {
       ? new ClaudeRecapWriter(config.anthropicApiKey, { model: as.model })
       : undefined,
   };
+  // Recaps of calls to Doddy's phone line (decision 2026-11-09-conversation-recaps, step 5): the phone agent, the
+  // workspace webhook's secret, and the same Claude writer and daily caps as Messages. Without any of them, no recap.
+  const phoneRecaps: PhoneRecapDeps = {
+    phoneAgentId: config.phoneAgent?.agentId, webhookSecret: config.elevenLabsWebhookSecret,
+    writer: assistant.recapWriter, settings: as,
+  };
   // Studio (ADR-740): the model API only with an Anthropic key, the switch on (STUDIO_ENABLED, default 0) and Doddy's
   // skills. The key is read from the server's environment only (rule 6): nothing here or in the app holds one.
   const sts = config.studioSettings;
@@ -146,6 +153,7 @@ export function providersFrom(config: Config) {
     errands,
     studio,
     assistant,
+    phoneRecaps,
     deals,
     // ADR-685: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.
     ceidg: config.ceidg ? new CeidgClient(config.ceidg) : undefined,

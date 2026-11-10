@@ -380,6 +380,8 @@ export interface Config {
   twilioRecordDeleteAfterHours: number;
   quietHours: QuietHours;
   taskCalls?: TaskCallConfig;
+  /** The workspace post-call webhook's HMAC secret, also when task calls are off (phone-line recaps use it). */
+  elevenLabsWebhookSecret?: string;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
   shoppingSettings: ShoppingSettings;
@@ -440,6 +442,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       start: e.QUIET_HOURS_START ? parseClock(e.QUIET_HOURS_START)! : QUIET_HOURS_DEFAULT.start,
       end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,
     },
+    elevenLabsWebhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
     taskCalls: all<TaskCallConfig>({
       twilioAccountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
       twilioAuthToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
