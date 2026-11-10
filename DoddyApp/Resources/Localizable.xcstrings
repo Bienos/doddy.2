@@ -29806,65 +29806,6 @@
         }
       }
     },
-    "Find something": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Etwas finden"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buscar algo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chercher quelque chose"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronađi nešto"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trova qualcosa"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "何かを探す"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Znajdź coś"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buscar algo"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "查找内容"
-          }
-        }
-      }
-    },
     "Find something you saved": {
       "extractionState": "manual",
       "localizations": {
@@ -30856,28 +30797,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Śledź te słowa"
-          }
-        }
-      }
-    },
-    "Following": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Śledzone"
-          }
-        }
-      }
-    },
-    "Following needs a Doddy messaging server, and none is connected in this build yet.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Śledzone wymaga serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
           }
         }
       }
@@ -52908,6 +52827,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pieszo"
+          }
+        }
+      }
+    },
+    "On my radar": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na radarze"
+          }
+        }
+      }
+    },
+    "On my radar needs a Doddy messaging server, and none is connected in this build yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na radarze wymaga serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
           }
         }
       }

@@ -55,7 +55,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .home: "Home"
         case .health: "Apple Health"
         case .training: "Training plan"
-        case .news: "Following"
+        case .news: "On my radar"
         case .screen: "Your screen"
         }
     }

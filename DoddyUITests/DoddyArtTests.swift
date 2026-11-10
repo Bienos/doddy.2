@@ -33,7 +33,7 @@ final class DoddyArtTests: XCTestCase {
     func testNoMatchShrugsAndHidingTheArtRemovesIt() {
         for hide in [false, true] {
             let app = launch(hideArt: hide)
-            app.tapHomeMenuItem("home.find")
+            app.openFind()
             let query = app.textFields["memories.query"]
             XCTAssertTrue(query.waitForExistence(timeout: 5))
             query.tap(); query.typeText("zzqx nothing like this\n")
