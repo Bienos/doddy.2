@@ -69,6 +69,7 @@ struct CallCasesView: View {
             }
             await model?.load()
             if let cases = model?.cases { await RecapKeeper.rememberCalls(cases, store: store) }
+            await RecapKeeper.rememberPhoneCalls(store: store)
             if let openCase, !didOpenRequested, let model, let record = model.cases.first(where: { $0.id == openCase }) {
                 didOpenRequested = true
                 opened = OpenedCase(open: record, in: model)
