@@ -39,6 +39,14 @@ final class VoiceStartTimelineTests: XCTestCase {
     }
 
     func testTheStageWordsAreFixed() {
-        XCTAssertEqual(VoiceStartStage.allCases.map(\.rawValue), ["account", "profile", "connect"])
+        XCTAssertEqual(VoiceStartStage.allCases.map(\.rawValue), ["account", "profile", "island", "connect"])
+    }
+
+    func testTheLineSaysWhereTheTokenCameFromInFixedWords() {
+        var timeline = VoiceStartTimeline(startedAt: 0)
+        timeline.mark(.connect, at: 1)
+        XCTAssertEqual(timeline.line(at: 1, token: .shelf), "connect 1.00 s · total 1.00 s · token shelf")
+        XCTAssertEqual(timeline.line(at: 1, token: .fetched), "connect 1.00 s · total 1.00 s · token fetched")
+        XCTAssertEqual(timeline.line(at: 1), "connect 1.00 s · total 1.00 s")
     }
 }

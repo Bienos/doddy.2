@@ -51,6 +51,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         // One delegate for every banner: timers, nudges and Doddy's updates show while the app is open.
         UNUserNotificationCenter.current().delegate = TimerBanners.shared
+        // A voice token is fetched ahead when Doddy comes to the front, so Talk only has to connect
+        // (decision 2026-11-10-action-button-start). Warms only in the foreground, never on a background launch.
+        MainActor.assumeIsolated { VoiceTokenWarmer.shared.install() }
         return true
     }
 

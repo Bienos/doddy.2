@@ -104,7 +104,11 @@ final class HomeConversation {
     /// The same check the voice screen makes before it starts by itself (`VoiceView`).
     static func canStartInPlace() async -> Bool {
         let auth = VoiceAuthSession.shared
-        await auth.restore()
+        // Not for a Doddy account: it passes the gate alone (decision 2026-11-10-action-button-start).
+        if TalkStartAccount.needsRestore(accountSignedIn: DoddyAccountModel.shared.isSignedIn,
+                                         voiceSessionSecondsLeft: auth.voiceSessionSecondsLeft) {
+            await auth.restore()
+        }
         return auth.hasVoiceAccess() && VoiceProviderConsent.isGranted()
     }
 

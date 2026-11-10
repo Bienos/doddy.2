@@ -1,0 +1,3 @@
+The Action Button's intent now returns once the Dynamic Island and audio session are up, and the connect carries on behind it; a voice token is fetched ahead of time when Doddy comes to the front (consent, microphone and sign-in first), so a press only has to connect. A Doddy account no longer restores the older voice login on a press; a cold-launch press waits up to 2 s for the stores; the extension's copy of the intent logs that it ran.
+Decision `docs/decisions/2026-11-10-action-button-start.md` (how to read the log is in it).
+Run: DoddyCore tests (Linux), `swiftc -parse` on changed app files. Not run: the app (no Xcode), anything on a phone.
