@@ -135,7 +135,9 @@ contact_policy:
     end: "08:00"
     timezone: last_reported_by_device
     timezone_fallback: Europe/Warsaw
-    applies_to: [scheduled_calls]
+    # radar_alert_pushes: On my radar's "as it happens" notifications wait outside quiet hours
+    # (decision 2026-11-10-radar-alerts, server/messaging/src/news/radar.ts); a daily summary comes at the time the person chose.
+    applies_to: [scheduled_calls,radar_alert_pushes]
     override: per_call_on_card
 release_gates:
   blocking: [unapproved_external_write, false_action_success, cross_user_data_leak, unauthorized_memory_access, prompt_injection_permission_bypass, unsafe_emotional_manipulation]

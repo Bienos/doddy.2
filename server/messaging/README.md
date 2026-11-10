@@ -29,7 +29,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Leaflets (ADR-609) | `POST /v1/deals/search` (below) |
 | Price watches | `/v1/watches…` (below) |
 | Studio (ADR-740) | `POST /v1/studio` · `POST /v1/studio/:id/{approve,cancel}` · `GET /v1/studio` · `GET/DELETE /v1/studio/:id` · `GET /v1/studio/:id/files/:name` (below) |
-| News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` · `POST /v1/news/feed` (the stories behind the follows sent with the request, as cards, nothing stored; ADR-656) |
+| News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` · `POST /v1/news/feed` (the stories behind the follows sent with the request, as cards, nothing stored; ADR-656) · `GET/PUT /v1/news/radar`, `POST /v1/news/radar/seen` (alerts the person opted into; `RADAR_ALERTS_ENABLED`) |
 | Health | `GET /healthz` |
 
 All `/v1` routes except account creation need `Authorization: Bearer <deviceToken>`.
@@ -191,6 +191,12 @@ Once a day at the user's local time, the worker builds a short news message:
 4. **Send:** push (short list; links are in the app) and/or SMS (up to 3 stories with links, ≤640 characters), through the outbox. One scheduled digest per local day, guaranteed by a unique index.
 - **Custom feed URLs** are fetched with protections against reaching the server's own network: private and reserved addresses are blocked, the address is checked at connect time (so a DNS change can't swap one in), redirects are re-checked, and size and time are capped.
 - **Sent to Anthropic or OpenAI (whichever key is set, ADR-197):** topic labels plus public headlines and summaries. Never memories, phone numbers or account IDs.
+
+## On my radar: the feed and its alerts (decision 2026-11-10-radar-alerts)
+`POST /v1/news/feed` takes a follow as `{catalogId}`, `{label, keywords}` or `{label, feedUrl, keywords?}` (https, public addresses only) and answers `follows: [{label, sources: [{name, ok}], searchedFeeds?, cards}]` beside the cards. Words are matched with `src/news/match.ts` (Polish and English endings; fixture `schemas/fixtures/radar_match_v1.json`, shared with DoddyCore) in every catalog feed and the person's own feeds. `GET /v1/news/catalog` lists each topic's publishers (`sources`).
+- **Alerts** (only a follow the person let the server check): `PUT /v1/news/radar` `{language, timeZone, alerts: [{followKey, label, catalogId? | keywords | feedUrl?, alertWords, mode: instant|daily, dailyTime?}]}` replaces the account's list (≤10; an empty list always works); `GET /v1/news/radar` → `{available, push, alerts, hits}`; `POST /v1/news/radar/seen {ids?}`. Code: `src/news/radar.ts`, `src/routes/radar.ts`, migration `026_radar_alerts.sql`.
+- **Worker** (`radarLoop`): due alerts claimed with `SKIP LOCKED`, next check moved first; new matching stories after the alert's start recorded once per account (`radar_hits`, 14 days); one push per alert per pass through the outbox: as it happens outside quiet hours, ≤8 a day per account, a story found >6 h late listed in the app only; once a day at the person's time (writer lines through `validateLines` and labelled, or headlines), skipped when >2 h late. No device, sender or key: listed in the app only. Logs: counts and SQLSTATE codes.
+- **Env:** `RADAR_ALERTS_ENABLED` (default `0`: `503 radar_disabled` for a new alert, no worker loop).
 
 ## Run locally
 ```sh

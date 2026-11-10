@@ -12,6 +12,8 @@ struct FollowingView: View {
     private let model = FollowingModel.shared
     @State private var showAdd = false
     @State private var showManage = false
+    /// The follow whose "tell me when" is being changed.
+    @State private var alertFor: NewsFollow?
     private let polish = FollowingModel.polish
 
     var body: some View {
@@ -32,6 +34,13 @@ struct FollowingView: View {
                     if let message = model.message {
                         notice(Text(message))
                     }
+                    // On my radar (decision 2026-11-10-radar-alerts): the tapped follow's sources, its "tell me when",
+                    // and what Doddy's server spotted for it (or for all follows).
+                    if let follow = model.selectedFollow {
+                        FollowDetail(model: model, follow: follow, polish: polish, tellMe: { alertFor = follow })
+                    }
+                    SpottedList(model: model, follow: model.selectedFollow, polish: polish,
+                                open: { hit in if let link = hit.link { openURL(link) } })
                     if model.cards.isEmpty, model.isLoading {
                         ProgressView().frame(maxWidth: .infinity).padding(40)
                     } else if model.cards.isEmpty, model.fetchedAt != nil, model.problem == nil, !model.follows.isEmpty {
@@ -47,6 +56,7 @@ struct FollowingView: View {
                             .accessibilityAddTraits(.isHeader)
                         ForEach(section.cards) { card in
                             StoryCard(card: card, polish: polish, now: model.fetchedAt ?? Date(),
+                                      flags: model.flaggedWords(on: card),
                                       isSaved: model.savedStoryIDs.contains(card.id),
                                       open: { if let link = card.link { openURL(link) } },
                                       save: { Task { await model.save(card) } })
@@ -58,6 +68,13 @@ struct FollowingView: View {
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(16)
+                    }
+                    if model.alerts.anyServerChecks(model.follows) {
+                        Text("Except what you let Doddy's server check for you: it keeps that follow, its words and how to tell you, until you turn checking off.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 16)
                     }
                 }
             }
@@ -72,8 +89,9 @@ struct FollowingView: View {
             }
             .refreshable { await model.refresh() }
             .task { await model.refresh() }
-            .sheet(isPresented: $showAdd, onDismiss: { Task { await model.refresh() } }) { AddFollowSheet(model: model) }
+            .sheet(isPresented: $showAdd, onDismiss: { Task { await model.refresh() } }) { RadarAddSheet(model: model) }
             .sheet(isPresented: $showManage, onDismiss: { Task { await model.refresh() } }) { ManageFollowsSheet(model: model) }
+            .sheet(item: $alertFor) { follow in RadarAlertSheet(model: model, follow: follow) }
         }
     }
 
@@ -82,7 +100,16 @@ struct FollowingView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: 14) {
                 ForEach(model.follows.follows) { follow in
-                    FollowBubble(follow: follow)
+                    // A tap shows only this follow's stories; a second tap shows them all again.
+                    Button {
+                        model.selectedFollowID = model.selectedFollowID == follow.id ? nil : follow.id
+                    } label: {
+                        FollowBubble(follow: follow, isSelected: model.selectedFollowID == follow.id,
+                                     hasNew: model.unseenCount(for: follow) > 0)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(model.selectedFollowID == follow.id ? .isSelected : [])
+                    .accessibilityHint(Text("Shows only this follow's stories"))
                 }
                 Button { showAdd = true } label: {
                     VStack(spacing: 6) {
@@ -112,18 +139,29 @@ struct FollowingView: View {
     }
 }
 
-/// One follow in the top row: a ring in Doddy's orange, the initial, the name under it.
+/// One follow in the top row: a ring in Doddy's orange, the initial, the name under it. Filled when it is the
+/// one being shown; a dot when Doddy's server spotted something not seen yet.
 private struct FollowBubble: View {
     let follow: NewsFollow
+    var isSelected = false
+    var hasNew = false
 
     var body: some View {
         VStack(spacing: 6) {
-            ZStack {
-                Circle().strokeBorder(Theme.orangeCue, lineWidth: 2.5)
-                Circle().fill(Theme.quietSurface).padding(4)
-                Text(follow.label.first.map { String($0).uppercased() } ?? "•")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
+            ZStack(alignment: .topTrailing) {
+                ZStack {
+                    Circle().strokeBorder(Theme.orangeCue, lineWidth: isSelected ? 4 : 2.5)
+                    Circle().fill(isSelected ? Theme.orangeCue : Theme.quietSurface).padding(isSelected ? 6 : 4)
+                    Text(follow.label.first.map { String($0).uppercased() } ?? "•")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(isSelected ? Theme.inkOnOrange : Theme.ink)
+                }
+                if hasNew {
+                    Circle().fill(Theme.orangeCue)
+                        .frame(width: 14, height: 14)
+                        .overlay(Circle().strokeBorder(Theme.canvas, lineWidth: 2))
+                        .accessibilityLabel(Text("New stories spotted"))
+                }
             }
             .frame(width: 64, height: 64)
             Text(follow.label)
@@ -143,6 +181,8 @@ private struct StoryCard: View {
     let card: NewsCard
     let polish: Bool
     let now: Date
+    /// The person's own "tell me when" words this story mentions (matched on this iPhone).
+    var flags: [String] = []
     let isSaved: Bool
     let open: () -> Void
     let save: () -> Void
@@ -178,6 +218,12 @@ private struct StoryCard: View {
             .accessibilityLabel(Text("Open the full story"))
 
             VStack(alignment: .leading, spacing: 6) {
+                if !flags.isEmpty {
+                    Label { Text(verbatim: flags.joined(separator: ", ")) } icon: { Image(systemName: "flag.fill") }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.accentText)
+                        .accessibilityLabel(Text(String(format: NSLocalizedString("Mentions your words: %@", comment: ""), flags.joined(separator: ", "))))
+                }
                 Text(card.title)
                     .font(.headline)
                     .foregroundStyle(Theme.ink)
@@ -241,69 +287,6 @@ private struct StoryCard: View {
         Image(systemName: "newspaper")
             .font(.system(size: 40, weight: .light))
             .foregroundStyle(Theme.secondaryText)
-    }
-}
-
-/// Add a follow: a topic from Doddy's catalog, or the person's own words.
-private struct AddFollowSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    let model: FollowingModel
-    @State private var name = ""
-    @State private var keywordsText = ""
-    @State private var note: String?
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Name, e.g. CPK", text: $name)
-                    TextField("Words to look for, comma separated", text: $keywordsText)
-                        .textInputAutocapitalization(.never)
-                    Button("Follow these words") {
-                        guard let follow = NewsFollowList.words(name: name, keywordsText: keywordsText) else {
-                            note = NSLocalizedString("Give it a name and at least one word of two or more letters.", comment: "")
-                            return
-                        }
-                        if model.add(follow) { dismiss() } else { note = NSLocalizedString("You already follow that, or you follow ten things already.", comment: "") }
-                    }
-                    .disabled(name.isEmpty || keywordsText.isEmpty)
-                    .accessibilityIdentifier("following.addWords")
-                } header: {
-                    Text("My own words")
-                } footer: {
-                    if model.keywordSearch {
-                        Text("Doddy's server searches news sources for these words.")
-                    } else {
-                        Text("Doddy's server looks for these words in the stories of your other follows.")
-                    }
-                }
-                Section("Topics") {
-                    if model.availableTopics.isEmpty, model.catalog.isEmpty {
-                        Text("Loading topics…").foregroundStyle(Theme.secondaryText)
-                    }
-                    ForEach(model.availableTopics) { topic in
-                        Button {
-                            if model.add(.topic(id: topic.id, label: topic.label)) { dismiss() }
-                        } label: {
-                            HStack {
-                                Text(topic.label).foregroundStyle(Theme.ink)
-                                Spacer()
-                                Image(systemName: "plus.circle").foregroundStyle(Theme.accentText)
-                            }
-                        }
-                    }
-                }
-                if let note {
-                    Section { Label(note, systemImage: "info.circle") }
-                }
-            }
-            .scrollContentBackground(.hidden)
-            .background(Theme.canvas)
-            .navigationTitle("Follow")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-            .task { await model.loadCatalog() }
-        }
     }
 }
 

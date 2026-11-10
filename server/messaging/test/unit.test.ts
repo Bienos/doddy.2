@@ -231,7 +231,7 @@ test("the contact policy in doddy_rules.yaml matches what the server enforces", 
       value("call_reason_max_length")].map(Number),
     [SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALL_LATE_MINUTES, SCHEDULED_CALLS_PENDING_MAX, CALL_REASON_MAX_LENGTH]);
   assert.deepEqual([value("start"), value("end"), value("timezone_fallback"), value("applies_to"), value("scheduled_call_unknown_outcome")],
-    [`"${formatClock(QUIET_HOURS_DEFAULT.start)}"`, `"${formatClock(QUIET_HOURS_DEFAULT.end)}"`, DEFAULT_TIME_ZONE, "[scheduled_calls]",
+    [`"${formatClock(QUIET_HOURS_DEFAULT.start)}"`, `"${formatClock(QUIET_HOURS_DEFAULT.end)}"`, DEFAULT_TIME_ZONE, "[scheduled_calls,radar_alert_pushes]",
       "never_placed_again"]);
   assert.doesNotMatch(block, /\+\d{6,}/, "no phone number in the rules file");
 });

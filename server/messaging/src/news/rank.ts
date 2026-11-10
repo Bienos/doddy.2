@@ -1,6 +1,7 @@
 import { sha256 } from "../crypto.js";
 import { fold } from "../memorySearch.js";
 import type { NewsItem } from "./feeds.js";
+import { matchesKeyword } from "./match.js";
 
 export interface TopicItems {
   label: string;
@@ -33,10 +34,8 @@ export function urlHash(raw: string): Buffer {
   return sha256(normalizeUrl(raw));
 }
 
-function matches(text: string, keyword: string): boolean {
-  const k = fold(keyword).trim();
-  return k.length > 1 && fold(text).includes(k);
-}
+// Allows for Polish and English word endings ("kryptowaluty" finds "kryptowalut"), news/match.ts.
+const matches = (text: string, keyword: string): boolean => matchesKeyword(text, keyword);
 
 /**
  * Deterministic shortlist before any AI: recent (36 h), not sent before, deduplicated by URL

@@ -10,7 +10,7 @@ import { studioContext } from "./studio/context.js";
 import { modelLabel } from "./studio/models.js";
 import { watchContext } from "./watches/context.js";
 import { fileWatchContext } from "./fileWatches.js";
-import { log, runWorkerLoop } from "./workerLoop.js";
+import { log, radarContext, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
@@ -20,7 +20,7 @@ const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   accounts: config.supabaseUrl ? createAccountVerifier({ projectUrl: config.supabaseUrl }) : null,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
-  fileWatches: { origin: config.documentsOrigin },
+  fileWatches: { origin: config.documentsOrigin }, radar: { enabled: config.radarAlertsEnabled },
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
 const app = await buildApp(deps);
@@ -38,6 +38,7 @@ app.log.info({
   dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
+  radarAlerts: config.radarAlertsEnabled,
   ceidg: !!providers.ceidg,
 }, "configured features");
 
@@ -53,8 +54,10 @@ if (config.runWorkerInWeb) {
   const studioCtx = studioContext(db, providers.studio, providers.cipher, providers.push, log);
   const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
   const fileWatchCtx = fileWatchContext(db, { origin: config.documentsOrigin }, providers.cipher, providers.push, log);
+  const radarCtx = radarContext(db, config.radarAlertsEnabled, providers.news, providers.push, providers.cipher, config.quietHours);
   workerDone = runWorkerLoop(db, {
-    ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, scheduledCalls: scheduledCallsFrom(config, providers),
+    ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, radar: radarCtx,
+    scheduledCalls: scheduledCallsFrom(config, providers),
   }, () => stopping);
 }
 

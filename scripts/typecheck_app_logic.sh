@@ -96,6 +96,14 @@ enum WatchPush {
 }
 SWIFT
 
+# On my radar's model (decision 2026-11-10-radar-alerts) words server errors with UpdatesModel's text, and
+# UpdatesModel imports UserNotifications; only that one function is needed here.
+cat > "$work/UpdatesModelStub.swift" <<'SWIFT'
+enum UpdatesModel {
+    static func text(for error: any Error) -> String { "" }
+}
+SWIFT
+
 # The one type IslandPose.swift needs from the island drawing model (ADR-313).
 cat > "$work/IslandRectStub.swift" <<'SWIFT'
 struct IslandRect: Equatable, Sendable {
@@ -164,12 +172,13 @@ files=(
   DoddyApp/Features/Sport/PlanText.swift
   # The training log's state (sport plan stage 3, ADR-642), without the screens or the file it lives in.
   DoddyApp/Features/Sport/TrainingLogModel.swift
+  DoddyApp/Features/News/FollowingModel.swift
   # TrainingLogDatabase.swift (the file it lives in) imports DoddyPersistence, which this script cannot link.
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
-swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "$work/ServerConfigStub.swift" "$work/WatchPushStub.swift" "${files[@]}"
+swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "$work/ServerConfigStub.swift" "$work/WatchPushStub.swift" "$work/UpdatesModelStub.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"
 
 # App files that import no UI framework but aren't in the list: most use types this script can't
