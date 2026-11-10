@@ -763,11 +763,21 @@ final class VoiceSessionController {
 
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
-        await store.reload()
+        let contextInterval = LaunchWork.signposter.beginInterval("Voice startup context")
+        // A bounded, coherent read instead of loading the screens' whole store, correction history,
+        // media and reminders. Translator starts read none of the owner's personal storage.
+        let startup: VoiceStartupSnapshot?
+        if preset == nil {
+            startup = try? await store.environment.memoryRepository.voiceStartupSnapshot(excluding: PrivateNotesStore.current().ids)
+        } else {
+            startup = nil
+        }
+        LaunchWork.signposter.endInterval("Voice startup context", contextInterval)
         // Ended (or ended and started again) while the notes loaded.
         guard attempt == startAttempt, phase == .connecting else { return }
         // Private notes (ADR-310) never reach the voice agent.
-        var notes = VoiceContext.savedNotes(PrivateNotesStore.current().shareable(store.memories))
+        let privateIDs = PrivateNotesStore.current().ids
+        var notes = startup?.notesContext(excluding: privateIDs) ?? VoiceStartupSnapshot.unavailableNotes
         // After a drop the agent is told it was cut off (ADR-360), within the same switch.
         var recent = logs.isEnabled
             ? SessionRecovery.withResumeNote(VoiceContext.recentConversations(logs.logs), logs: logs.logs, now: Date())
@@ -778,15 +788,15 @@ final class VoiceSessionController {
         let interruptedOpening = logs.isEnabled && preset == nil && checkIn == nil
             ? SessionRecovery.interruptedOpening(logs: logs.logs, now: Date(), polish: ConversationLanguage.stored() == .polish)
             : nil
-        var listsText = ListsPrompt.render(store.lists)
+        var listsText = startup?.listsContext(excluding: privateIDs) ?? VoiceStartupSnapshot.unavailableLists
         if let templates = ListTemplateStore.current().promptLine { listsText += "\n" + templates }
         var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
         startedMode = mode
         sharedOwnerContext = preset == nil
         // What Doddy learned and the user confirmed (ADR-440), only when they switched it on.
-        var learnedText = await store.learning?.voiceContext() ?? LearningPrompt.notShared
+        var learnedText = preset == nil ? (store.learning?.cachedVoiceContext() ?? LearningPrompt.notShared) : LearningPrompt.notShared
         // Tasks handed to Doddy's background worker (ADR-570): titles, states, the start of a result.
-        var errandsText = await ErrandsModel.shared.promptText()
+        var errandsText = preset == nil ? ErrandsModel.shared.cachedPromptText() : "(not shared: translating)"
         // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
         // so it has nothing of the owner's to repeat to the other person.
         if let preset {
@@ -1263,6 +1273,12 @@ final class VoiceSessionController {
         // Logbook (ADR-602): its times, how it ended and its language, never its words; not a private one.
         Logbook.conversationEnded(startedAt: log.startedAt, endedAt: log.endedAt, ended: log.ended,
                                   language: WebMemory.language(), isPrivate: isPrivate)
+        // A recap note of what was discussed, written on this iPhone, only with "Remember what we talked
+        // about" on and never for a Private conversation (decision 2026-11-09-conversation-recaps).
+        let recapLines = kept.map { RecapModelIO.Line(speaker: $0.fromUser ? .person : .doddy, text: $0.text) }
+        let memories = store
+        Task { await RecapKeeper.recapConversation(lines: recapLines, startedAt: log.startedAt, endedAt: log.endedAt,
+                                                   isPrivate: isPrivate, store: memories) }
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         logs.append(log)
     }
@@ -2752,6 +2768,13 @@ final class VoiceSessionController {
         case .searchMemories(let query):
             // "#car": exactly the notes with that tag (ADR-333). Private notes stay out.
             if let tag = NoteTags.tagQuery(query) {
+                // Startup no longer loads the whole screen store. A tagged read is on demand.
+                await store.reload()
+                guard isCurrent(call.toolCallId) else { return }
+                guard store.loadError == nil else {
+                    await reply(call.toolCallId, VoiceToolReply.failed(store.loadError ?? "Saved notes could not be read."), isError: true)
+                    return
+                }
                 let notes = NoteTags.filter(PrivateNotesStore.current().shareable(store.memories), tag: tag)
                 await reply(call.toolCallId, VoiceToolReply.taggedNotes(tag, notes: notes))
                 return

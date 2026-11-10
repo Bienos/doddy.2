@@ -239,6 +239,18 @@ final class LearningStore {
 
     // MARK: For the voice agent
 
+    /// Startup uses only a completed local load; housekeeping/exports never delay the microphone.
+    func cachedVoiceContext(now: Date = Date()) -> String {
+        guard Self.sharedWithVoice else { return LearningPrompt.notShared }
+        guard hasLoaded, problem == nil else {
+            return "(Confirmed learned context is not ready for this conversation. Do not infer personal facts.)"
+        }
+        let context = LearningContextAssembler.assemble(
+            facts: facts, procedures: procedures, connectionsOn: Self.connectionsOn(),
+            connectionsPaused: Self.connectionsPaused, now: now, budget: LearningPrompt.voiceBudget)
+        return LearningPrompt.render(context, shared: true)
+    }
+
     /// The text for `{{learned_context}}`. Without the user's switch, nothing is read.
     func voiceContext() async -> String {
         guard let service else { return LearningPrompt.notShared }

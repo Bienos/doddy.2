@@ -48,6 +48,11 @@ export const AssistRequest = z.strictObject({
   userText: text(LIMITS.userText),
   turns: z.array(z.strictObject({ role: z.enum(["user", "assistant"]), text: text(LIMITS.turnText) })).max(LIMITS.turns).default([]),
   memories: z.array(memory).max(LIMITS.memories).default([]),
+  localActions: z.strictObject({
+    version: z.literal(1),
+    localNow: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
+    timeZone: z.string().min(1).max(80).refine(v => { try { new Intl.DateTimeFormat("en", { timeZone: v }); return true; } catch { return false; } }),
+  }).optional(),
   /** A photo sent with this question only (Messages, 28 Oct 2026). Passed to the model and never stored or logged. */
   image: z.strictObject({
     mediaType: z.literal("image/jpeg"),

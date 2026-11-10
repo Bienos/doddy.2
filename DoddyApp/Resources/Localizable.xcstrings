@@ -2798,6 +2798,17 @@
         }
       }
     },
+    "A recap of this call is in your notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie tej rozmowy jest w Twoich notatkach"
+          }
+        }
+      }
+    },
     "A receipt, a label, where you parked. Doddy reads its text on this iPhone; the photo is never sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -5662,6 +5673,47 @@
         }
       }
     },
+    "After a conversation with Doddy, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "After a conversation with Doddy, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations are recapped on this iPad, where it has Apple Intelligence in your language. You can edit or delete each recap like any note."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "After a conversation with Doddy, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Po rozmowie z Doddym i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy podsumowuje ten iPad, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Po rozmowie z Doddym i po rozmowie, którą Doddy przeprowadzi za Ciebie, do notatek trafia krótkie podsumowanie: co omówiono, co ustalono i co zostało do zrobienia. Nigdy zapis rozmowy, nigdy rozmowa prywatna i nic sprzed włączenia tej opcji. Rozmowy podsumowuje ten iPhone, jeśli ma Apple Intelligence w Twoim języku. Każde podsumowanie możesz edytować albo usunąć jak zwykłą notatkę."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "After research in the British Journal of Sports Medicine (2025), ACSM's 2026 guidance on strength training and WHO's 2020 guidelines.": {
       "extractionState": "manual",
       "localizations": {
@@ -5702,6 +5754,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zgadzać się na cokolwiek, rezerwować, zamawiać ani potwierdzać"
+          }
+        }
+      }
+    },
+    "Agreed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustalone"
           }
         }
       }
@@ -10517,6 +10580,17 @@
         }
       }
     },
+    "Call with %@, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa: %@, %@"
+          }
+        }
+      }
+    },
     "Call you later?": {
       "extractionState": "manual",
       "localizations": {
@@ -10524,6 +10598,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zadzwonić do Ciebie później?"
+          }
+        }
+      }
+    },
+    "Call, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa, %@"
           }
         }
       }
@@ -14746,6 +14831,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa przerwana"
+          }
+        }
+      }
+    },
+    "Conversation with Doddy, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa z Doddym, %@"
           }
         }
       }
@@ -19307,6 +19403,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在断开连接…"
+          }
+        }
+      }
+    },
+    "Discussed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omówione"
           }
         }
       }
@@ -61507,6 +61614,17 @@
         }
       }
     },
+    "Recap made by Doddy from the call's card and answer, not from the transcript.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie zrobione przez Doddy’ego z karty rozmowy i odpowiedzi, nie z zapisu rozmowy."
+          }
+        }
+      }
+    },
     "Recap of a conversation, kept by your setting": {
       "extractionState": "manual",
       "localizations": {
@@ -61514,6 +61632,69 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podsumowanie rozmowy, zachowane według Twojego ustawienia"
+          }
+        }
+      }
+    },
+    "Recap written by Claude on Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie napisane przez Claude’a na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
+    "Recap written on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Recap written on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Recap written on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Podsumowanie napisane na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Podsumowanie napisane na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Recaps on Doddy's server": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowania na serwerze Doddy’ego"
           }
         }
       }
@@ -62321,6 +62502,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "记住关于你的这一点？"
+          }
+        }
+      }
+    },
+    "Remember what we talked about": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamiętaj, o czym rozmawialiśmy"
           }
         }
       }
@@ -99814,6 +100006,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przy urazie albo bólu, który trening mógłby pogorszyć, niech najpierw obejrzy to fizjoterapeuta lub lekarz. Doddy nie leczy urazów i nie układa planów rehabilitacji."
+          }
+        }
+      }
+    },
+    "With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "With “Recaps on Doddy's server” on, when this iPad can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy „Podsumowania na serwerze Doddy’ego” są włączone, a ten iPad nie może sam napisać podsumowania, tekst rozmowy trafia do Twojego serwera wiadomości Doddy’ego i do Anthropic tylko na potrzeby tego jednego podsumowania. Zapisują wyłącznie liczby, nie słowa. Gdy to jest wyłączone, takie rozmowy nie dostają podsumowania."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy „Podsumowania na serwerze Doddy’ego” są włączone, a ten iPhone nie może sam napisać podsumowania, tekst rozmowy trafia do Twojego serwera wiadomości Doddy’ego i do Anthropic tylko na potrzeby tego jednego podsumowania. Zapisują wyłącznie liczby, nie słowa. Gdy to jest wyłączone, takie rozmowy nie dostają podsumowania."
+                }
+              }
+            }
           }
         }
       }

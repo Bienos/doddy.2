@@ -73,6 +73,20 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual(rows.map((r) => [r.requests, Number(r.input_tokens), Number(r.output_tokens)]), [[1, 120, 18]]);
   });
 
+  test("local proposal crosses the route only when this phone opted in", async () => {
+    const w = await world();
+    const a = await w.account();
+    const localAction = { name: "save_memory" as const, parametersJSON: JSON.stringify({ text: "Exact note" }) };
+    const result = async (): Promise<AssistOutcome> => ({ kind: "ok", answer: "Confirm the card", sources: [], usage: { inputTokens: 1, outputTokens: 1 }, localAction });
+    w.responder!.steps.push(result, result);
+    const opted = await w.ask(a.h, wire({ localActions: { version: 1, localNow: "2026-11-09T19:30", timeZone: "Europe/Warsaw" } }));
+    assert.equal(opted.statusCode, 200);
+    assert.deepEqual(opted.json().localAction, localAction);
+    const legacy = await w.ask(a.h, wire());
+    assert.equal(legacy.statusCode, 200);
+    assert.ok(!("localAction" in legacy.json()));
+  });
+
   test("a file the model offers is passed on as `proposal`; with none asked for the key is absent", async () => {
     const w = await world();
     const a = await w.account();

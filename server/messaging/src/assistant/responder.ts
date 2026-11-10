@@ -4,13 +4,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { answerJsonSchema, answerSchema, buildInput, buildInstructions, readPlanOffer, readProposal, type PlanOffer, type Proposal } from "./prompt.js";
 import { fileText, type AssistRequest } from "./request.js";
+import { readLocalAction, type LocalAction } from "./localActions.js";
 
 export interface AssistUsage { inputTokens: number; outputTokens: number }
 
 export type AssistOutcome =
   | { kind: "ok"; answer: string; /** Real note ids, in the order cited, each once. */ sources: string[]; usage: AssistUsage;
       /** A file the user asked for, offered as a card (ADR-606). Absent when none was asked for. */ proposal?: Proposal;
-      /** A training plan the user asked for, offered as a card (ADR-626). Absent when none was asked for. */ plan?: PlanOffer }
+      /** A training plan the user asked for, offered as a card (ADR-626). Absent when none was asked for. */ plan?: PlanOffer;
+      localAction?: LocalAction }
   | { kind: "refused"; usage?: AssistUsage }
   | { kind: "unparsed"; usage?: AssistUsage };
 
@@ -54,8 +56,8 @@ export class ClaudeAssistantResponder implements AssistantResponder {
     const response = await this.client.messages.create({
       model: this.model,
       max_tokens: MAX_OUTPUT_TOKENS,
-      output_config: { effort: this.effort, format: { type: "json_schema", schema: answerJsonSchema(aliasToId.size > 0) } },
-      system: buildInstructions(req.locale),
+      output_config: { effort: this.effort, format: { type: "json_schema", schema: answerJsonSchema(aliasToId.size > 0, req.localActions !== undefined) } },
+      system: buildInstructions(req.locale, req.localActions !== undefined),
       messages: [{ role: "user", content: attachmentBlocks(req).length > 0
         // The photo or file first, then the text that says what it is for; it goes to this call only.
         ? [...attachmentBlocks(req), { type: "text", text: input }]
@@ -84,6 +86,8 @@ export class ClaudeAssistantResponder implements AssistantResponder {
     }
     const proposal = readProposal(parsed.data.proposal);
     const plan = readPlanOffer(parsed.data.plan);
-    return { kind: "ok", answer: parsed.data.answer, sources, usage, ...(proposal ? { proposal } : {}), ...(plan ? { plan } : {}) };
+    const localAction = req.localActions ? readLocalAction(parsed.data.local_action) : undefined;
+    return { kind: "ok", answer: parsed.data.answer, sources, usage,
+             ...(localAction ? { localAction } : { ...(proposal ? { proposal } : {}), ...(plan ? { plan } : {}) }) };
   }
 }
