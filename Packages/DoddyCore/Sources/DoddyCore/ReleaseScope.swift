@@ -279,6 +279,10 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.moveReminders, VoiceToolName.undoLast,
         VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm,
         VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.checkStopwatch,
+        // The focus timer and the wind-down by voice (decision 2026-11-10-timers-by-voice): Home's menu no longer
+        // starts them, so in every scope a conversation is their way in.
+        VoiceToolName.startFocus, VoiceToolName.stopFocus, VoiceToolName.checkFocus,
+        VoiceToolName.startWindDown, VoiceToolName.stopWindDown,
         VoiceToolName.lookupContact, VoiceToolName.draftMessage,
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
         VoiceToolName.openMap, VoiceToolName.runShortcut,

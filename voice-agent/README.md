@@ -28,6 +28,8 @@ adding one adapter, not rewriting the app or the agent.
 
 **Release scope (decision `2026-11-07-release-scope`, 7 Nov 2026):** the app refuses the tools of a feature its build hides (`ReleaseScope.shipping` in DoddyCore; `docs/implementation/RELEASE_SCOPE.md` lists the 67 tools the beta's agent should lose and the 41 it keeps). The spec here still describes every tool; taking the hidden ones off the live agent is the owner's change, as always.
 
+**`start_focus`, `stop_focus`, `check_focus`, `start_wind_down` and `stop_wind_down` (decision `docs/decisions/2026-11-10-timers-by-voice.md`, 10 Nov 2026) are in `tools.json` only; they are NOT on the live ElevenLabs agent yet** (`elevenlabs_tool_id` is `not_synced`). Home's ••• menu no longer starts the focus timer, the kitchen timer, the wind-down or the stopwatch, so until these five are created and attached, a build with this change has no way to start focus or a wind-down (the stopwatch tools and `set_timer` are live). `instructions.md` (the prompt) is unchanged: each tool's description says when to use it and how it differs from `set_timer`. To sync, render each with `python3 -I scripts/voice_agent_spec.py elevenlabs`, create it, attach it, write its id here and in `tools.json`, then `compare`.
+
 **`make_something` (Studio, ADR-740, ADR-742) is in `tools.json` and `instructions.md` only; it is NOT on the live ElevenLabs agent** (`elevenlabs_tool_id` is `not_synced`, and its prompt lines were not applied). The agent is changed only on the owner's separate instruction, and Studio is off on the server by default. An app build that has it answers the tool; the live agent never calls it.
 
 **OpenAI Realtime voice: removed on 9 Nov 2026** (decision `2026-11-09-elevenlabs-only-voice`). The app, the voice picker and the token server's OpenAI path are gone; ElevenLabs is the only voice. The notes below about OpenAI describe what existed (ADR-265, ADR-442, ADR-546) and are kept as history.
@@ -48,7 +50,7 @@ Every tool asks first (ASK-01, `x_doddy.ask`): a read, or a request to Claude, w
 | iPhone Calendar and Reminders | `read_calendar`, `find_free_time`, `create_calendar_event`, `change_calendar_event`, `delete_calendar_event`, `delete_calendar_events`, `create_reminder`, `change_reminder`, `delete_reminder`, `move_reminders`, `undo_last`, `remind_when_to_leave`; `propose_plan` puts several changes on one card | The app |
 | Contacts and messages | `lookup_contact`, `upcoming_birthdays`, `draft_message` (the user sends it). `draft_blik_transfer` was removed on 5 Nov (ADR-810, above) | The app |
 | Sums and conversions | `calculate`, `convert_units`, `convert_currency` | The app |
-| Timers, alarms, stopwatch | `set_timer`, `set_alarm`, `list_alarms`, `cancel_alarm`, `start_stopwatch`, `stop_stopwatch`, `check_stopwatch` | The app |
+| Timers, alarms, stopwatch, focus, wind-down | `set_timer`, `set_alarm`, `list_alarms`, `cancel_alarm`, `start_stopwatch`, `stop_stopwatch`, `check_stopwatch`, `start_focus`, `stop_focus`, `check_focus`, `start_wind_down`, `stop_wind_down` (the last five not on the live agent yet) | The app |
 | Lists | `add_to_list`, `add_ingredients`, `read_list`, `check_off`, `remove_from_list`, `create_list` | The app |
 | The phone itself | `open_map`, `parking_spot`, `run_shortcut`, `open_camera`, `find_photos`, `control_home` (Apple Home), `follow_news` (Doddy's Following feed), `make_presentation` (Keynote only) | The app |
 | Health and sport | `read_steps`, `read_health_week`, `open_training_plan` | The app |

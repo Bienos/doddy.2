@@ -347,6 +347,17 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .timers, title: "Stop stopwatch", detail: "Doddy's stopwatch", isLookup: false)
         case .checkStopwatch:
             return ActivityRequest(app: .timers, title: "Read stopwatch", detail: "Doddy's stopwatch", isLookup: true)
+        case .startFocus(let minutes, let label):
+            return ActivityRequest(app: .timers, title: "Start focus",
+                                   detail: ([TimerVoice.length(minutes)] + (label.map { ["“\($0)”"] } ?? [])).joined(separator: " · "), isLookup: false)
+        case .stopFocus:
+            return ActivityRequest(app: .timers, title: "Stop focus", detail: "Doddy's focus timer", isLookup: false)
+        case .checkFocus:
+            return ActivityRequest(app: .timers, title: "Read focus", detail: "Doddy's focus timer", isLookup: true)
+        case .startWindDown(let minutes):
+            return ActivityRequest(app: .timers, title: "Start wind-down", detail: TimerVoice.length(minutes), isLookup: false)
+        case .stopWindDown:
+            return ActivityRequest(app: .timers, title: "Stop wind-down", detail: "Doddy's wind-down", isLookup: false)
         case .deleteCalendarEvents(let range):
             return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
         case .moveReminders(let dueBy, let to):

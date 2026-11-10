@@ -30650,76 +30650,6 @@
         }
       }
     },
-    "Focus · on": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fokus · an"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Concentración · activa"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Concentration · en cours"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fokus · uključen"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Focus · attivo"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "集中 · オン"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skupienie · trwa"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foco · ativo"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "专注 · 进行中"
-          }
-        }
-      }
-    },
-    "Focus, timers and stopwatch": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skupienie, minutniki i stoper"
-          }
-        }
-      }
-    },
     "Focused": {
       "extractionState": "manual",
       "localizations": {
@@ -56627,6 +56557,17 @@
         }
       }
     },
+    "Opens its screen with Pause and Stop.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera jego ekran z przyciskami Pauza i Zatrzymaj."
+          }
+        }
+      }
+    },
     "Opens sign-in options": {
       "extractionState": "manual",
       "localizations": {
@@ -77450,17 +77391,6 @@
         }
       }
     },
-    "Stopwatch · on": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stoper · włączony"
-          }
-        }
-      }
-    },
     "Straight from your note": {
       "extractionState": "manual",
       "localizations": {
@@ -91045,17 +90975,6 @@
         }
       }
     },
-    "Timer · on": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Minutnik · włączony"
-          }
-        }
-      }
-    },
     "Timers, alarms and reminders you set always come, at any hour. Doddy's own check-ins and plans stay quiet from 22:00 to 7:00: a time in those hours moves to 7:00 or 21:30. A tip from Doddy never comes on a day a check-in already did.": {
       "extractionState": "manual",
       "localizations": {
@@ -100222,17 +100141,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyciszenie przed snem"
-          }
-        }
-      }
-    },
-    "Wind down · on": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wyciszenie · włączone"
           }
         }
       }

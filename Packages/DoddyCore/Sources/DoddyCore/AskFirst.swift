@@ -174,6 +174,33 @@ public enum AskFirst {
                 title: say("Read your stopwatch?", "Sprawdzić stoper?"),
                 lines: [say("How long it has been running", "Ile czasu już mierzy")],
                 confirmLabel: say("Yes, read it", "Tak, sprawdź")))
+        // Decision 2026-11-10-timers-by-voice: the card shows the exact length (and the focus line) that starts.
+        case .startFocus(let minutes, let label):
+            return .tapFirst(AskCard(
+                title: say("Start focus?", "Włączyć skupienie?"),
+                lines: [TimerVoice.length(minutes)] + (label.map { ["“\($0)”"] } ?? []),
+                confirmLabel: say("Start", "Włącz")))
+        case .stopFocus:
+            return .tapFirst(AskCard(
+                title: say("Stop focus?", "Zatrzymać skupienie?"),
+                lines: [say("It stops now, before its time is up", "Zatrzyma się teraz, przed czasem")],
+                confirmLabel: say("Stop", "Zatrzymaj")))
+        case .checkFocus:
+            return .yesFirst(AskCard(
+                title: say("Check your focus timer?", "Sprawdzić skupienie?"),
+                lines: [say("How much time is left", "Ile czasu zostało")],
+                confirmLabel: say("Yes, check", "Tak, sprawdź")))
+        case .startWindDown(let minutes):
+            return .tapFirst(AskCard(
+                title: say("Start a wind-down?", "Włączyć wyciszenie przed snem?"),
+                lines: [say("\(TimerVoice.length(minutes)), then it's time to put the phone down",
+                            "\(TimerVoice.length(minutes)), potem pora odłożyć telefon")],
+                confirmLabel: say("Start", "Włącz")))
+        case .stopWindDown:
+            return .tapFirst(AskCard(
+                title: say("Stop the wind-down?", "Zatrzymać wyciszenie?"),
+                lines: [say("It stops now, with no notification", "Zatrzyma się teraz, bez powiadomienia")],
+                confirmLabel: say("Stop", "Zatrzymaj")))
         case .readList(let name):
             return .yesFirst(AskCard(
                 title: say("Read a list?", "Przeczytać listę?"),

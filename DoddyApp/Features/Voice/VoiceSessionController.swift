@@ -2968,6 +2968,44 @@ final class VoiceSessionController {
         case .checkStopwatch:
             StopwatchController.shared.refresh()
             await reply(call.toolCallId, VoiceToolReply.stopwatchReading(StopwatchController.shared.watch, now: Date()))
+        // The focus timer and the wind-down (decision 2026-11-10-timers-by-voice). The user already tapped on the ask
+        // card (ASK-01). One of each at a time: a running one is never replaced. Every reply is read back from the
+        // controller after the change, so Doddy never says one runs or stopped when it didn't.
+        case .startFocus(let minutes, let label):
+            let focus = FocusController.shared
+            focus.refresh()
+            if let running = focus.session, !running.isOver {
+                await reply(call.toolCallId, VoiceToolReply.countdownAlreadyThere(.focus, running, now: Date()))
+                return
+            }
+            await focus.start(minutes: minutes, label: label)
+            await reply(call.toolCallId, VoiceToolReply.countdownStarted(
+                .focus, focus.session, alertConfirmed: focus.notificationConfirmed, calendar: .current))
+        case .stopFocus:
+            let focus = FocusController.shared
+            focus.refresh()
+            let before = focus.session
+            if before.map({ !$0.isOver }) == true { focus.stop() }
+            await reply(call.toolCallId, VoiceToolReply.countdownStopped(.focus, before: before, after: focus.session, now: Date()))
+        case .checkFocus:
+            FocusController.shared.refresh()
+            await reply(call.toolCallId, VoiceToolReply.focusReading(FocusController.shared.session, now: Date(), calendar: .current))
+        case .startWindDown(let minutes):
+            let countdowns = CountdownController.shared
+            countdowns.refresh()
+            if let running = countdowns.session(.windDown), !running.isOver {
+                await reply(call.toolCallId, VoiceToolReply.countdownAlreadyThere(.windDown, running, now: Date()))
+                return
+            }
+            let outcome = await countdowns.start(seconds: minutes * 60, purpose: .windDown, label: nil)
+            await reply(call.toolCallId, VoiceToolReply.countdownStarted(
+                .windDown, countdowns.session(.windDown), alertConfirmed: outcome == .verified, calendar: .current))
+        case .stopWindDown:
+            let countdowns = CountdownController.shared
+            countdowns.refresh()
+            let before = countdowns.session(.windDown)
+            if before.map({ !$0.isOver }) == true { countdowns.stop(.windDown) }
+            await reply(call.toolCallId, VoiceToolReply.countdownStopped(.windDown, before: before, after: countdowns.session(.windDown), now: Date()))
         case .listAlarms:
             // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
             // list is said as such, never as "none" (voice-agent review 2).

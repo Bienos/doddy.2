@@ -357,6 +357,54 @@
     },
     {
       "type": "function",
+      "name": "start_focus",
+      "description": "Propose a focus timer on the user's iPhone: it counts down for the minutes given and shows on the Lock Screen, in the Dynamic Island and on Doddy's Home, with a notification when the time is up if notifications are on. Use it when the user asks to focus, or for focus time or a focus session ('skupienie', 'tryb skupienia', 'pomodoro'). Give minutes only if the user said a length; leave it out for the usual 25. Give a short label only if the user said what the focus is for. For a plain countdown ('set a timer for the pasta') use set_timer; for a quiet countdown before sleep use start_wind_down. One focus timer at a time: if one is running, the result starts with 'failed' and says how long is left. The app shows the card and the user must tap Start; the result starts with 'added', 'declined' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should start focus.' (Polish: 'Potwierdź na ekranie, jeśli mam włączyć skupienie.'). Never say it is running unless the result starts with added, and say when it ends only from the result.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "minutes": {"type": "number", "description": "Whole minutes from 1 to 180, for example 45. Leave out if the user gave no length (25 is used)."},
+          "label": {"type": "string", "description": "A short label such as 'raport', only if the user said what the focus is for. Leave out otherwise."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "stop_focus",
+      "description": "Propose stopping the user's focus timer before its time is up. Use it only when the user asks to stop or end their focus. The app shows the card and the user must tap Stop; the result starts with 'changed' and says how much time was left, or with 'declined' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should stop focus.' (Polish: 'Potwierdź na ekranie, jeśli mam zatrzymać skupienie.'). Never say it is stopped unless the result starts with changed.",
+      "parameters": {"type": "object", "properties": {}, "required": []},
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "check_focus",
+      "description": "Read the user's focus timer: whether it is running, paused, stopped or over, and how much time is left. Use it when the user asks how long is left of their focus. Say only the time the result gives, never one you worked out yourself. Ask: yes/tap.",
+      "parameters": {"type": "object", "properties": {}, "required": []},
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "start_wind_down",
+      "description": "Propose a wind-down before sleep on the user's iPhone: a quiet countdown on the Lock Screen, in StandBy and on Doddy's Home, then a notification that it is time to put the phone down if notifications are on. Use it when the user asks to wind down before bed ('wyciszenie', 'wyciszenie przed snem'). Give minutes only if the user said a length; leave it out for the usual 10. It has no label. For a focus session use start_focus; for an ordinary timer use set_timer. One wind-down at a time: if one is running, the result starts with 'failed'. The app shows the card and the user must tap Start; the result starts with 'added', 'declined' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should start the wind-down.' (Polish: 'Potwierdź na ekranie, jeśli mam włączyć wyciszenie.'). Never say it is running unless the result starts with added.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "minutes": {"type": "number", "description": "Whole minutes from 1 to 60, for example 15. Leave out if the user gave no length (10 is used)."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "stop_wind_down",
+      "description": "Propose stopping the user's wind-down before its time is up; no notification comes then. Use it only when the user asks to stop or end the wind-down. The app shows the card and the user must tap Stop; the result starts with 'changed' and says how much time was left, or with 'declined' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should stop the wind-down.' (Polish: 'Potwierdź na ekranie, jeśli mam zatrzymać wyciszenie.'). Never say it is stopped unless the result starts with changed.",
+      "parameters": {"type": "object", "properties": {}, "required": []},
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "follow_news",
       "description": "Propose following something in Following, Doddy's feed of news stories on the user's iPhone (Home's menu, then Following): a topic, or the user's own words such as a company, a place or a person. Use it when the user asks to follow, track or keep an eye on news about something ('śledź CPK', 'chcę śledzić wiadomości o Orlenie', 'follow sport'). For one of these topics pass topic and nothing else: world, poland (what's happening in Poland), europe, technology, ai, business, science, health, sport, crypto. Otherwise pass name, a short name in the user's words, and words only if the words to look for in stories differ from the name (for 'śledź CPK' pass name 'CPK' and leave words out). Never pass more than the user asked for. The app shows a card and the user must tap Follow; the result starts with 'added', 'declined' or 'failed' (already followed, or ten things followed already). Before this tool runs, say only one short line, for example 'Tap Follow on screen if I should follow it.' (Polish: 'Stuknij Śledź na ekranie, jeśli mam to śledzić.'). Never say it is followed unless the result starts with added, and never tell the user any news from this tool: it returns no stories.",
       "parameters": {
