@@ -666,7 +666,7 @@
       "name": "call_me_now",
       "description": "Ring the user's own phone now from Doddy's own number, the one they verified in Doddy's Settings. Use it only when the user asks Doddy to call them now, for example 'call me', 'zadzwoń do mnie teraz' or 'ring my phone'. It can never call anyone else; for a call at a later time use call_me_later. When the user answers, they talk to Doddy on Doddy's phone line. The card shows the last digits of the number; nothing is placed until the user taps. Before this tool runs, say only one short line, for example 'Confirm on screen and I'll ring you.' The result starts with 'requested' (the phone is being rung; not answered yet), 'declined', 'failed' (no call was placed; the reason follows) or 'unknown'. Never say the call connected. After 'unknown', never call this tool again unless the user asks.",
       "parameters": {"type": "object", "properties": {}, "required": []},
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1301m724k8bfegwr7kaextr677tv"}
     },
     {
       "type": "function",
