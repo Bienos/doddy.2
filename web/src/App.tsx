@@ -1,8 +1,10 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
+import { insideSignInPopup } from "./auth/popup.js";
 import { useSession } from "./auth/session.js";
 import { AppShell } from "./components/AppShell.js";
 import { DoddyFigure } from "./components/Brand.js";
+import { PopupDone } from "./components/PopupDone.js";
 import { ErrorState, Loading } from "./components/States.js";
 import { useI18n } from "./i18n/i18n.js";
 import { ActivityPage } from "./pages/ActivityPage.js";
@@ -47,6 +49,8 @@ export function App() {
     );
   }
   if (state.status === "signedOut") return <SignInPage />;
+  // The small sign-in window (auth/popup.ts) has done its job: the page that opened it takes over.
+  if (insideSignInPopup()) return <PopupDone />;
   // Outside the workspace menu and shell: its own page, for the owner's accounts only.
   if (location.pathname === "/admin") {
     return (
