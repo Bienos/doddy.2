@@ -22,7 +22,7 @@ struct FollowingView: View {
                         .padding(.vertical, 12)
                     Divider()
                     if !model.isServerConfigured {
-                        notice(Text("Following needs a Doddy messaging server, and none is connected in this build yet."))
+                        notice(Text("On my radar needs a Doddy messaging server, and none is connected in this build yet."))
                     } else if model.follows.isEmpty {
                         notice(Text("You're not following anything. Add a topic or your own words above."))
                     }
@@ -62,7 +62,7 @@ struct FollowingView: View {
                 }
             }
             .background(Theme.canvas)
-            .navigationTitle("Following")
+            .navigationTitle("On my radar")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

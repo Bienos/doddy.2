@@ -158,6 +158,18 @@ extension XCUIApplication {
         item.tap()
     }
 
+    /// Find (search saved notes): on the notes screen, reached from Settings › Doddy's memory. It left Home's
+    /// ••• menu on 10 Nov 2026 (owner: the menu row wasn't clear). Returns whether the search field showed.
+    @MainActor
+    @discardableResult
+    func openFind() -> Bool {
+        goToTab("memories")
+        let find = buttons["memories.find"]
+        guard find.waitForExistence(timeout: 5) else { return false }
+        find.tap()
+        return textFields["memories.query"].waitForExistence(timeout: 5)
+    }
+
     /// Home's + is a menu since 5 Nov 2026 (Take a photo, Choose a photo, New note): opens the new-note screen.
     @MainActor
     func openNewNote() {
