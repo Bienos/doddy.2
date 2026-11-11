@@ -19,11 +19,11 @@ Voice already has `get_weather`, `convert_currency` (ECB), and `find_deals`. Thi
 | 5 | Confirm the air-quality source | Direct link to official GIOŚ monitoring map; no inferred citywide measurements. |
 | 6 | PLN exchange-rate comparison | Reads NBP EUR/USD/GBP reference rates and publication date. |
 | 7 | Convert a typed amount | Converts a user-entered amount to PLN using NBP's fetched, dated reference rate. |
-| 8 | Track an InPost parcel | Validates a user-entered 24-digit number and opens official InPost tracking URL. **Does not fetch parcel status.** |
+| 8 | Track an InPost parcel | Opens the **existing consent-first ParcelsView** to fetch real parcel status after user enables it and adds/refreshes a number, when the release scope permits; also offers an official tracking URL handoff. |
 | 9 | Find a parcel locker | Opens official InPost Paczkomat/PaczkoPunkt map. |
 | 10 | Compare Polish grocery promotions | Opens the **existing** DODDY DealsView/leaflet/basket flow, if the release scope enables it. No new grocery provider API. |
 
-**Five source groups:** IMGW, GIOŚ, NBP, InPost, existing DODDY grocery leaflets. InPost is a **link handoff**, not a connected account. Group 5 reuses existing functionality. Public-data network integrations newly added in this PR: **3** (IMGW, GIOŚ, NBP).
+**Five source groups:** IMGW, GIOŚ, NBP, InPost, existing DODDY grocery leaflets. InPost reuses the pre-existing `ParcelsView` / `InPostTrackingClient` for explicit, consent-first tracking and adds a website handoff; this PR does not introduce new carrier API access or account login. Group 5 reuses existing functionality. Public-data network integrations newly added in this PR: **3** (IMGW, GIOŚ, NBP).
 
 ## Sources and access
 
@@ -49,7 +49,7 @@ Voice already has `get_weather`, `convert_currency` (ECB), and `find_deals`. Thi
 - `Packages/DoddyCore/Sources/DoddyCore/PolandPack.swift` — Foundation-only, testable models and endpoint allowlists, numeric input and city validation, TERYT warning matching, no hidden network calls.
 - `Packages/DoddyCore/Tests/DoddyCoreTests/PolandPackTests.swift` — sample-payload tests for every source, missing data, spoofed tracking numbers, and URL checks.
 - `DoddyApp/Features/Poland/PolandPackView.swift` — on-demand SwiftUI. Concurrent fetches through `AppHTTPTransport`, explicit missing-data states, choice of five cities, local city preference, checked handoff, source/time attribution. Never network-calls before the sheet opens.
-- `DoddyApp/Features/Home/HomeView.swift` — More menu route; grocery link uses existing scope gate.
+- `DoddyApp/Features/Home/HomeView.swift` — More menu route; grocery and parcel-status links use existing release-scope gates.
 
 ### Required QA before merge
 
@@ -62,7 +62,7 @@ Voice already has `get_weather`, `convert_currency` (ECB), and `find_deals`. Thi
 
 ### Not part of this PR
 
-- InPost account login, status fetch, locker opening, or notifications (needs authorized provider access).
+- New InPost account login, locker opening, background parcel polling, or notifications. Existing consent-first parcel status lookup is reused without changing its network implementation.
 - Wykop API, OLX partner app, Jakdojade commercial API, Ceneo/Allegro search, payment and bookings.
 - Direct tool calls from the live ElevenLabs agent; do not mark these as voice-enabled.
 - Automated local recommendations or proactive background alerts.
