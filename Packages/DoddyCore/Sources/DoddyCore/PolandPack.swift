@@ -127,7 +127,7 @@ public struct PolandAirStation: Sendable, Equatable {
                     == city.name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "pl_PL"))
             else { return nil }
             return PolandAirStation(id: id, city: stationCity, name: title)
-        }.first
+        }
     }
 }
 
