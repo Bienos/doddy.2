@@ -114,8 +114,8 @@ struct FoodDeliveryView: View {
                     Text(copy("Szukaj w Mapach Apple", "Search Apple Maps"))
                 } footer: {
                     Text(copy(
-                        "Zapytanie i miasto są wysyłane do Map Apple dopiero po naciśnięciu Szukaj. Nie wysyłamy lokalizacji telefonu.",
-                        "Your query and city are sent to Apple Maps only when you search. The phone's location is not sent."
+                        "Wyszukiwanie obsługują Mapy Apple, zgodnie z zasadami prywatności Apple. Doddy nie prosi o dostęp do dokładnej lokalizacji urządzenia.",
+                        "Searches use Apple Maps under Apple's privacy policy. Doddy does not request access to the device's precise location."
                     ))
                 }
 
@@ -146,6 +146,12 @@ struct FoodDeliveryView: View {
         let dish = searchTerm.trimmingCharacters(in: .whitespacesAndNewlines)
         let town = city.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !dish.isEmpty, !town.isEmpty, !searching else { return }
+        guard dish.count <= 80, town.count <= 80 else {
+            places = []
+            didSearch = true
+            searchError = copy("Skróć nazwę dania lub miasta.", "Please shorten the dish or city name.")
+            return
+        }
         searching = true
         didSearch = false
         searchError = nil
