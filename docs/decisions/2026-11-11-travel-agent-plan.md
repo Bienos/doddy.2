@@ -7,6 +7,13 @@
   - booking: "Przygotowuje, płacisz sam";
   - email: "Tak ma dostęp do maila normalnie".
 
+  Then, for stage 1:
+  - when Gmail is read: "Tylko na żądanie" (only on request);
+  - how an email is read: "AI ze sprawdzaniem" (a model, with every value checked against the email);
+  - sample emails: "Tak, tylko do wzorów" (the owner's mail read for layouts only, no real email in the repository);
+  - where trips show: "Karta na Home, gdy jest wyjazd".
+
+  So in point 8 below, the mailbox is read only when the person asks.
   The design and the order of stages are this pull request's proposal; **owner approval of the plan as a whole is pending**.
 - **Status:** proposed (the four answers above are the owner's)
 - **Replaces:** version 1 of this decision (same day, a source-by-source plan). Builds on ADR-570 (errands), ADR-607 (shopping runner), `2026-11-10-radar-alerts`, `2026-11-09-restaurant-calls-one-tap`.

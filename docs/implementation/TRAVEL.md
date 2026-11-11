@@ -146,6 +146,8 @@ For a hotel or guesthouse, Doddy reads the newest and the worst reviews from sou
 - **Not in this version:** Doddy doesn't confirm a booking by phone in the person's name; the person calls back or answers the guesthouse's text.
 
 ### 10. After booking, Doddy takes over the boring part (owner: Gmail "ma dostęp do maila normalnie")
+
+*Building blocks built and tested on 11 Nov 2026 (reading, checking and merging booking emails; trips and their checks). Not yet wired to Gmail, a model or a screen: `docs/implementation/TRAVEL_EMAILS.md`. Owner, 11 Nov 2026: Gmail is read only on request ("Tylko na żądanie").*
 **Filling the trip from email:**
 - When a confirmation arrives in the connected Gmail (airline, Booking.com, Airbnb, a tour operator, a train), Doddy reads it and fills the trip.
 - It reads only messages that look like travel confirmations, and treats them as data, never as instructions (R-TOOLS).
