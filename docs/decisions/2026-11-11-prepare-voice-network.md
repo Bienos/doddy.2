@@ -9,6 +9,8 @@
 
 While the app is active and voice access, provider consent and microphone permission are already granted, call LiveKit's public `Room.prepareConnection(url:token:)` for the pinned ElevenLabs media host, with **no token**. Never prepare while Pause all is on, a conversation is starting/running, or voice is unconfigured. Recheck these gates when the scheduled task runs. Permit at most one request per two minutes, independently of whether a voice token is held. A press awaits neither preparation nor any new permission prompt.
 
+A signed-in owner is required separately from voice access: the Debug developer connection alone may authorise a press, but never an idle provider request while signed out. The gate test explicitly keeps voice access true and removes the signed-in owner.
+
 This does not call `Room.connect`, start an ElevenLabs conversation, publish an audio track, record, or send notes/profile/conversation content. The SDK's live Room is created separately by ElevenLabs. Keep that integration and the pinned packages unchanged.
 
 ## What the pinned SDK actually does

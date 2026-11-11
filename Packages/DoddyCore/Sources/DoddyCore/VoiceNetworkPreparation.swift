@@ -5,16 +5,18 @@ import Foundation
 public struct VoicePreparationConditions: Equatable, Sendable {
     public var foreground: Bool
     public var hasVoiceAccess: Bool
+    public var hasSignedInOwner: Bool
     public var consentGranted: Bool
     public var microphoneAllowed: Bool
     public var paused: Bool
     public var conversationRunning: Bool
     public var configured: Bool
 
-    public init(foreground: Bool, hasVoiceAccess: Bool, consentGranted: Bool,
+    public init(foreground: Bool, hasVoiceAccess: Bool, hasSignedInOwner: Bool, consentGranted: Bool,
                 microphoneAllowed: Bool, paused: Bool, conversationRunning: Bool, configured: Bool) {
         self.foreground = foreground
         self.hasVoiceAccess = hasVoiceAccess
+        self.hasSignedInOwner = hasSignedInOwner
         self.consentGranted = consentGranted
         self.microphoneAllowed = microphoneAllowed
         self.paused = paused
@@ -23,7 +25,7 @@ public struct VoicePreparationConditions: Equatable, Sendable {
     }
 
     public var mayPrepare: Bool {
-        foreground && hasVoiceAccess && consentGranted && microphoneAllowed
+        foreground && hasVoiceAccess && hasSignedInOwner && consentGranted && microphoneAllowed
             && !paused && !conversationRunning && configured
     }
 }

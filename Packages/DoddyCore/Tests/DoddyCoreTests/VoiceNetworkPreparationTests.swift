@@ -3,13 +3,13 @@ import XCTest
 
 final class VoiceNetworkPreparationTests: XCTestCase {
     private var allowed: VoicePreparationConditions {
-        VoicePreparationConditions(foreground: true, hasVoiceAccess: true, consentGranted: true,
+        VoicePreparationConditions(foreground: true, hasVoiceAccess: true, hasSignedInOwner: true, consentGranted: true,
                                    microphoneAllowed: true, paused: false, conversationRunning: false, configured: true)
     }
 
     func testEveryPermissionAndReadinessGateBlocksPreparationWithoutSpendingItsBudget() {
         let blockers: [(WritableKeyPath<VoicePreparationConditions, Bool>, Bool)] = [
-            (\.foreground, false), (\.hasVoiceAccess, false), (\.consentGranted, false),
+            (\.foreground, false), (\.hasVoiceAccess, false), (\.hasSignedInOwner, false), (\.consentGranted, false),
             (\.microphoneAllowed, false), (\.paused, true), (\.conversationRunning, true), (\.configured, false),
         ]
         for (key, value) in blockers {

@@ -87,6 +87,9 @@ final class VoiceTokenWarmer {
         return VoicePreparationConditions(
             foreground: UIApplication.shared.applicationState == .active,
             hasVoiceAccess: VoiceAuthSession.shared.hasVoiceAccess(),
+            // The Debug developer connection alone isn't a signed-in owner. It may be used
+            // on a press, but never authorises provider requests while signed out.
+            hasSignedInOwner: owner != nil,
             consentGranted: VoiceProviderConsent.isGranted(),
             microphoneAllowed: AVAudioApplication.shared.recordPermission == .granted,
             paused: paused, conversationRunning: VoiceSessionController.runningConversation != nil,
