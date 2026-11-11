@@ -97,9 +97,18 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     static let scanLimit = 5_000
 
     public func query(_ query: String, limit: Int) async throws -> [MemoryCandidate] {
+        try await self.query(query, limit: limit, excluding: [])
+    }
+
+    /// Left-out notes (private ones, ADR-310) are excluded in SQL, before the index limit and the
+    /// scan, and so also before the final cut: they never take a place a findable note could have
+    /// (audit 9 Nov 2026, F03). They don't count when judging typos either.
+    public func query(_ query: String, limit: Int, excluding ids: Set<UUID>) async throws -> [MemoryCandidate] {
         let terms = RecallMatching.terms(query)
         guard let pattern = RecallMatching.ftsPattern(terms), limit > 0 else { return [] }
         let sample = MemorySource.sampleFixture.rawValue
+        // One bound JSON value avoids SQLite's variable-count limit for a large set.
+        let excluded = String(decoding: try JSONEncoder().encode(ids.map(\.uuidString)), as: UTF8.self)
         // Each row comes with its stored folded text, so matching doesn't fold every note again.
         let hits = try await dbQueue.read { db -> [Hit] in
             let indexed = try Row.fetchAll(
@@ -108,9 +117,10 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                     SELECT memories.* FROM memories
                     JOIN memories_fts ON memories_fts.rowid = memories.rowid
                     WHERE memories_fts MATCH ? AND memories.source != ?
+                      AND memories.id NOT IN (SELECT value FROM json_each(?))
                     ORDER BY bm25(memories_fts) LIMIT ?
                     """,
-                arguments: [pattern, sample, limit]
+                arguments: [pattern, sample, excluded, limit]
             ).map(Self.hit)
             // Typos and spoken numbers can't be expressed as FTS terms, so when the index finds
             // fewer than asked, the newest notes are also checked with the same word rules.
@@ -121,10 +131,11 @@ public final class SQLiteMemoryRepository: MemoryRepository {
             let scanned = try Row.fetchAll(
                 db,
                 sql: """
-                    SELECT * FROM memories WHERE source != ?
+                    SELECT * FROM memories
+                    WHERE source != ? AND id NOT IN (SELECT value FROM json_each(?))
                     ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC LIMIT ?
                     """,
-                arguments: [sample, Self.scanLimit]
+                arguments: [sample, excluded, Self.scanLimit]
             ).map(Self.hit)
             return indexed + scanned
         }

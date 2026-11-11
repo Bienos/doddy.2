@@ -42,6 +42,18 @@ final class PrivateNotesTests: XCTestCase {
         XCTAssertEqual(outcome, .noMatch)
     }
 
+    /// A service that can't leave notes out itself still never returns them (the protocol's default).
+    func testExcludingFallsBackToFilteringTheAnswer() async throws {
+        let pin = try note("Bank PIN 4417"), keys = try note("Keys in the blue tin")
+        struct Fixed: RecallService {
+            let outcome: RecallOutcome
+            func recall(_ question: String, limit: Int) async throws -> RecallOutcome { outcome }
+        }
+        let both = Fixed(outcome: .matches([MemoryCandidate(record: pin, matchedTerms: ["pin"]), MemoryCandidate(record: keys, matchedTerms: ["blue"])]))
+        let outcome = try await both.recall("pin", limit: 20, excluding: [pin.id])
+        XCTAssertEqual(outcome, .matches([MemoryCandidate(record: keys, matchedTerms: ["blue"])]))
+    }
+
     func testWhenTheAppAsksAgain() {
         XCTAssertFalse(PrivateNotes.needsUnlock(lockOn: false, unlockedAt: nil, backgroundSince: nil, now: now))
         XCTAssertTrue(PrivateNotes.needsUnlock(lockOn: true, unlockedAt: nil, backgroundSince: nil, now: now))

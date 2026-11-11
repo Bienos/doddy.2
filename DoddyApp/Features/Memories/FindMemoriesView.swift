@@ -69,7 +69,7 @@ struct FindMemoriesView: View {
         isRunning = true
         do {
             try await Task.sleep(for: .milliseconds(250))
-            let result = try await store.recall(question)
+            let result = try await store.recallIncludingPrivate(question)
             guard !Task.isCancelled else { return }
             outcome = result
             isRunning = false

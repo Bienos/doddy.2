@@ -68,7 +68,15 @@ public struct ShareableRecallService: RecallService {
         self.privateIDs = privateIDs
     }
 
+    /// Private notes are left out inside the search, before the limit, so a crowd of private
+    /// matches can't hide a note that may be found (audit 9 Nov 2026, F03). The answer is
+    /// filtered again in case the set changed or a base service can't leave notes out.
     public func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
-        PrivateNotes(ids: privateIDs()).shareable(try await base.recall(question, limit: limit))
+        try await recall(question, limit: limit, excluding: [])
+    }
+
+    public func recall(_ question: String, limit: Int, excluding ids: Set<UUID>) async throws -> RecallOutcome {
+        let hidden = privateIDs().union(ids)
+        return PrivateNotes(ids: hidden).shareable(try await base.recall(question, limit: limit, excluding: hidden))
     }
 }

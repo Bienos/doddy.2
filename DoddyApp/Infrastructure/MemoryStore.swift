@@ -210,7 +210,16 @@ final class MemoryStore {
         await reload()
     }
 
+    /// Search for anything that takes notes out of the app's own screens (voice, typed actions):
+    /// private notes (ADR-310) are left out inside the search, before the limit of 20, so many
+    /// private matches can't hide a note that may be found (audit 9 Nov 2026, F03). Callers still
+    /// filter the answer with the current private set.
     func recall(_ question: String) async throws -> RecallOutcome {
+        try await environment.recallService.recall(question, limit: 20, excluding: PrivateNotesStore.current().ids)
+    }
+
+    /// The app's own search screen: private notes are found too, and their words show only after Face ID.
+    func recallIncludingPrivate(_ question: String) async throws -> RecallOutcome {
         try await environment.recallService.recall(question, limit: 20)
     }
 

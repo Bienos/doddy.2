@@ -24,6 +24,9 @@ public protocol MemoryRepository: Sendable {
     /// Small, coherent startup context; private notes are excluded before the limits.
     func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot
     func query(_ query: String, limit: Int) async throws -> [MemoryCandidate]
+    /// The same, with the given notes left out before the limit, so they can't take the places of
+    /// notes that may be found (private notes, ADR-310).
+    func query(_ query: String, limit: Int, excluding ids: Set<UUID>) async throws -> [MemoryCandidate]
     func update(id: UUID, currentText: String) async throws -> MemoryRecord
     /// Changes only the note's type. Read back before success; the words, dates and "edited"
     /// state stay as they are.
@@ -51,6 +54,15 @@ public protocol MemoryRepository: Sendable {
 }
 
 extension MemoryRepository {
+    /// Stores that can't leave notes out in the search itself ask for room for them: every left-out note could
+    /// be a match, so the limit grows by their number and the cut is made after they are gone.
+    public func query(_ query: String, limit: Int, excluding ids: Set<UUID>) async throws -> [MemoryCandidate] {
+        guard !ids.isEmpty else { return try await self.query(query, limit: limit) }
+        let (room, overflow) = limit.addingReportingOverflow(ids.count)
+        return Array(try await self.query(query, limit: overflow ? Int.max : room)
+            .filter { !ids.contains($0.record.id) }.prefix(limit))
+    }
+
     public func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot {
         throw DoddyError.capabilityUnavailable(.memoryStorage)
     }
@@ -105,6 +117,15 @@ public enum RecallCopy {
 /// Deterministic, source-grounded lookup over stored memories.
 public protocol RecallService: Sendable {
     func recall(_ question: String, limit: Int) async throws -> RecallOutcome
+    /// The same, with the given notes never found and never taking a place within the limit.
+    func recall(_ question: String, limit: Int, excluding ids: Set<UUID>) async throws -> RecallOutcome
+}
+
+extension RecallService {
+    /// For a service that can't leave notes out itself: the left-out notes are dropped from the answer.
+    public func recall(_ question: String, limit: Int, excluding ids: Set<UUID>) async throws -> RecallOutcome {
+        PrivateNotes(ids: ids).shareable(try await recall(question, limit: limit))
+    }
 }
 
 /// One earlier turn of the current chat. Chats live in memory only and are never saved as notes.

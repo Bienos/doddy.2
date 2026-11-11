@@ -63,7 +63,13 @@ public struct RepositoryRecallService: RecallService {
     }
 
     public func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
-        let candidates = try await repository.query(question, limit: limit)
+        try await recall(question, limit: limit, excluding: [])
+    }
+
+    /// The left-out notes are excluded inside the search, before the limit (audit 9 Nov 2026, F03).
+    public func recall(_ question: String, limit: Int, excluding ids: Set<UUID>) async throws -> RecallOutcome {
+        let candidates = try await repository.query(question, limit: limit, excluding: ids)
+            .filter { !ids.contains($0.record.id) }
             .filter { $0.record.source.isEligibleForPersonalRecall && !$0.matchedTerms.isEmpty && $0.record.category != .list }
         return candidates.isEmpty ? .noMatch : .matches(candidates)
     }

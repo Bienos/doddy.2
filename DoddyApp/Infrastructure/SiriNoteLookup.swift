@@ -21,9 +21,11 @@ enum SiriNoteLookup {
         guard environment.storageProblem == nil else { return SiriReadback.storageUnavailable }
         guard !query.allSatisfy(\.isWhitespace) else { return SiriReadback.emptyQuery }
         do {
-            // Private notes (ADR-310) are never read out by Siri.
-            let outcome = PrivateNotes(stored: defaults.string(forKey: PrivateNotes.storageKey))
-                .shareable(try await environment.recallService.recall(query, limit: 20))
+            // Private notes (ADR-310) are never read out by Siri, and are left out before the limit so they
+            // can't hide a note Siri may read (audit 9 Nov 2026, F03).
+            let privateNotes = PrivateNotes(stored: defaults.string(forKey: PrivateNotes.storageKey))
+            let outcome = privateNotes
+                .shareable(try await environment.recallService.recall(query, limit: 20, excluding: privateNotes.ids))
             return SiriReadback.reply(outcome, question: query) { SiriReadback.savedText($0, now: now, calendar: calendar) }
         } catch {
             return SiriReadback.searchFailed
