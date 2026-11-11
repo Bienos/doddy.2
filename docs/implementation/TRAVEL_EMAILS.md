@@ -1,6 +1,6 @@
 # Travel, stage 1: trips from booking emails
 
-**Status, 11 Nov 2026: building blocks only, tested; nothing is wired to Gmail, to a model or to a screen yet.** Plan: `docs/implementation/TRAVEL.md` section 3.10. Decision: `docs/decisions/2026-11-11-travel-agent-plan.md`.
+**Status, 11 Nov 2026: wired to Gmail and a model on the `doddy` server, with a Trips screen and a Home card in the app. Server and DoddyCore tested here; the SwiftUI views are not compiled here (the hosted Mac job builds them); nothing has run against a real mailbox, a real model or a device.** Plan: `docs/implementation/TRAVEL.md` section 3.10. Decision: `docs/decisions/2026-11-11-travel-agent-plan.md`.
 
 ## The owner's choices (11 Nov 2026)
 
@@ -66,11 +66,30 @@ The model behind `TravelReader` is not chosen or wired yet. Its answer is parsed
 
 Check-in times are worked out in the departure airport's time zone (8 Dec, 14:00 in Kraków → opens 5 Dec, 14:00). A free-cancellation deadline is in the property's time, which the email states but Doddy can't place, so the reminder is set by day.
 
-## Not built yet (next pull requests)
+## Wiring (built 11 Nov 2026)
 
-1. **Wiring:** a backend route (or a read tool with the existing Gmail grant and ask-first card) that runs `TRAVEL_GMAIL_QUERY` through Composio, reads each email with a chosen model, and returns `TravelBooking[]`. Nothing is kept on the server. Needs: the model (Claude Haiku is the likely default), a per-request and daily cap, and the "What leaves this iPhone" and privacy-policy lines saying that booking emails go to Anthropic.
-2. **App:** the trip card on Home, the trip screen with its checks, "Sprawdź moje rezerwacje", and the reminder and calendar cards made from a check on a tap.
-3. **Voice:** a `check_my_trips` tool (the live agent changes only on the owner's word).
+**Server (`doddy`, `backend/`):**
+- `POST /v1/travel/prepare` → the ask-first card (`find_trips_in_gmail`). It runs the same gates as `read_email`: Gmail connected, grants fine, the user's **Read an email** switch on. A server without a model answers `live_not_configured`. Nothing is read.
+- `POST /v1/travel/scan {approvalId}` → one search per yes (single use, 2 minutes, bound to the user, the Gmail connection and the fixed search). It runs `TRAVEL_GMAIL_QUERY` through Composio (`TRAVEL_GMAIL_FETCH` in `tools/catalog.ts`, not a voice tool), then reads every email at once with `ClaudeTravelReader`, each email cut at 14 s so the whole search fits the app's 20-second request. It answers `{emailsFound, emailsUnreadable, emailsNotTravel, bookings}`.
+- **Model:** `DODDY_CHAT_MODEL` (Claude Haiku by default), else `DODDY_CLAUDE_MODEL`.
+- **Limits:** one tool run, and one Claude unit per five emails against `DODDY_LIMIT_USER_DAILY_CLAUDE`.
+- **Kept:** a receipt with counts. Nothing from the emails is kept. The log line has counts and tokens only.
+- **Mock mode:** one demo Ryanair email and a demo reading, so the screen can be tried without a mailbox.
+
+**App:**
+- **Trips screen:** Home's ••• menu › Trips (`DoddyApp/Features/Trips/`). "Find my trips in Gmail" asks for the card, and the card's "Search Gmail" runs the one search.
+- **Storage:** the result is saved in `Application Support/Trips/trips-v1.json` and read back before the screen says it is saved (`TripStore`).
+- **What the screen shows:** trips with "Before you go", "Not going ahead", each booking's newest email as a link to Gmail, and "Forget my trips", which is checked.
+- **Home card:** while a trip is under way or starts within 60 days; the cross hides it for that trip.
+- **Plain refusals:** Gmail not connected, Read an email off, not set up, daily limit, expired yes, or couldn't search.
+- **What leaves this iPhone:** the Doddy server row now names the trip search.
+
+## Not built yet
+
+1. **Reminders and calendar entries from a check.** Today the checks are information with their sources. A tap should open the existing reminder or calendar card.
+2. **Voice:** a `check_my_trips` tool. It needs `voice-agent/tools.json` and the live agent, which change only on the owner's word.
+3. **Privacy policy page:** the site's policy needs the same line before real users.
+4. **More than 25 emails,** or emails older than 400 days.
 
 ## Known gaps
 

@@ -61,6 +61,8 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
+    /// Trips found in booking emails (decision 2026-11-11-travel-agent-plan, TRAVEL_EMAILS.md).
+    @State private var showTrips = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -126,6 +128,7 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showTrips, onDismiss: { TripsModel.shared.reload() }) { TripsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
@@ -295,6 +298,12 @@ struct HomeView: View {
                     Button { showFollowing = true } label: { Label("On my radar", systemImage: "dot.radiowaves.left.and.right") }
                         .accessibilityIdentifier("home.following")
                 }
+                // Trips from booking emails (owner, 11 Nov 2026: "the full list next to Tasks"). In this section,
+                // not the first, for the same reason as the leaflets above. Gmail is read only from its own button.
+                if scope.shows(.onlineAccounts) {
+                    Button { showTrips = true } label: { Label("Trips", systemImage: "airplane") }
+                        .accessibilityIdentifier("home.trips")
+                }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
@@ -331,6 +340,10 @@ struct HomeView: View {
             // A task Doddy finished in the background since the user last looked (ADR-570).
             if scope.shows(.errands), let finished = ErrandsModel.shared.newestUnseen {
                 errandFinishedCard(finished)
+            }
+            // The next trip, while one is close (owner: "Karta na Home, gdy jest wyjazd"), from the trips saved here.
+            if scope.shows(.onlineAccounts), let trip = TripsModel.shared.homeTrip {
+                TripHomeCardView(trip: trip) { showTrips = true }
             }
             // Leaflets looked up by voice (ADR-666): the list waits on its screen, one tap away.
             if scope.shows(.deals), DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {

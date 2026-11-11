@@ -14,6 +14,7 @@ import { cloudTool } from "../src/tools/catalog.js";
 import { CloudToolsService } from "../src/tools/service.js";
 import { MockWebSearchProvider, type WebSearchProvider } from "../src/tools/websearch.js";
 import { type ClaudeProvider, isClaudeTool, MockClaudeProvider } from "../src/tools/claude.js";
+import type { TravelReader } from "../src/travel/reader.js";
 import { DocumentLinks } from "../src/documents.js";
 import { Clock, USER_A } from "./helpers.js";
 
@@ -35,7 +36,7 @@ export const TEST_LINK_KEY = Buffer.alloc(32, 7);
 
 export async function start(
   limits: Parameters<typeof testLimits>[0] = {},
-  o: { webSearch?: WebSearchProvider | null; claude?: ClaudeProvider | null; documentLinks?: boolean } = {},
+  o: { webSearch?: WebSearchProvider | null; claude?: ClaudeProvider | null; documentLinks?: boolean; travelReader?: TravelReader } = {},
 ): Promise<Rig> {
   const store = await Store.memory();
   const clock = new Clock(Date.parse("2026-10-10T10:00:00Z"));
@@ -45,7 +46,7 @@ export async function start(
   const webSearch = o.webSearch === undefined ? new MockWebSearchProvider() : o.webSearch;
   const claude = o.claude === undefined ? new MockClaudeProvider() : o.claude;
   const documentLinks = o.documentLinks === false ? null : new DocumentLinks(TEST_LINK_KEY, common.publicBaseUrl);
-  const tools = new CloudToolsService({ ...common, provider, webSearch, claude, documentLinks, completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
+  const tools = new CloudToolsService({ ...common, provider, webSearch, claude, documentLinks, ...(o.travelReader ? { travelReader: o.travelReader } : {}), completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
   const handler = createHandler({
     service,

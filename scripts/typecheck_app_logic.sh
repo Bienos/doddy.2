@@ -104,6 +104,25 @@ enum UpdatesModel {
 }
 SWIFT
 
+# The trips model (TRAVEL_EMAILS.md) builds its server client like OnlineAccountsClientFactory: the device
+# session and the Keychain (Security) and the URLSession transport; only the calls it makes are needed here.
+cat > "$work/TravelSessionStubs.swift" <<'SWIFT'
+import DoddyCore
+import Foundation
+enum DeviceSession {
+    static func serverURL() -> URL? { nil }
+    static func ensure(server: URL, now: Date = Date()) async -> Bool { false }
+    static func renew(server: URL) async -> Bool { false }
+}
+enum KeychainSessionStore {
+    static func read() -> BoundSessionToken? { nil }
+}
+struct URLSessionTransport: HTTPTransport {
+    static let shared = URLSessionTransport()
+    func send(_ request: HTTPRequest) async throws -> (status: Int, body: Data) { (500, Data()) }
+}
+SWIFT
+
 # The one type IslandPose.swift needs from the island drawing model (ADR-313).
 cat > "$work/IslandRectStub.swift" <<'SWIFT'
 struct IslandRect: Equatable, Sendable {

@@ -115,10 +115,14 @@ export async function buildApp(
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
   // Document links are signed with the session key; without one, make_document says "not set up".
   const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
+  // Booking emails are read by the small chat model (DODDY_CHAT_MODEL) when the server has one.
+  const travelClaude =
+    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : claude) : claude;
   const tools = new CloudToolsService({
     store,
     provider: toolsProvider,
     claude,
+    travelClaude,
     documentLinks,
     webSearch,
     limits: config.limits,

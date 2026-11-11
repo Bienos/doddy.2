@@ -154,7 +154,7 @@ public enum TripCheckText {
         return String(format: "%d %@, %02d:%02d", c.day!, month, c.hour!, c.minute!)
     }
 
-    static func day(_ d: TripDay, polish: Bool) -> String {
+    public static func day(_ d: TripDay, polish: Bool) -> String {
         let pl = ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia", "września", "października", "listopada", "grudnia"]
         let en = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
         return polish ? "\(d.day) \(pl[d.month - 1])" : "\(d.day) \(en[d.month - 1])"
