@@ -209,7 +209,16 @@ struct PolandPackView: View {
             .refreshable { await refresh() }
             .task(id: cityCode) { await refresh() }
             .sheet(isPresented: $showDeals) { DealsView() }
-            .sheet(isPresented: $showParcels) { ParcelsView() }
+            .sheet(isPresented: $showParcels) {
+                NavigationStack {
+                    ParcelsView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button(t("Zamknij", "Close")) { showParcels = false }
+                            }
+                        }
+                }
+            }
         }
     }
 
