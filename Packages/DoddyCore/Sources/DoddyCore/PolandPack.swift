@@ -216,11 +216,11 @@ public enum PolishContext {
 
     public static func city(_ text: String) -> PolandCity? {
         switch normalised(text).replacingOccurrences(of: "-", with: "").replacingOccurrences(of: " ", with: "") {
-        case "warszawa", "wawa", "wwa": return .warszawa
-        case "krakow", "krk": return .krakow
-        case "gdansk", "3citygdansk": return .gdansk
-        case "wroclaw", "wro": return .wroclaw
-        case "poznan", "poz": return .poznan
+        case "warszawa", "warszawie", "wwarszawie", "wawa", "wwa": return .warszawa
+        case "krakow", "krakowie", "wkrakowie", "krk": return .krakow
+        case "gdansk", "gdansku", "wgdansku": return .gdansk
+        case "wroclaw", "wroclawiu", "wewroclawiu", "wro": return .wroclaw
+        case "poznan", "poznaniu", "wpoznaniu", "poz": return .poznan
         default: return nil
         }
     }
