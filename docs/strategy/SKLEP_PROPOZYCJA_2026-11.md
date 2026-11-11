@@ -79,7 +79,7 @@ Wnioski:
 
 Płacenie przez Doddy'ego (opcja D) nie jest dziś możliwe w Polsce i zostaje poza zakresem (2.2).
 
-**Rekomendacja: B, budowana w kolejności A → B.** Część A nie czeka na żadną zgodę i daje użytkownikowi całą sekcję. Zgłoszenia do sieci idą równolegle, a feedy dochodzą jako kolejne źródło ofert za tym samym interfejsem (`OfferSource`). Opcję C warto sprawdzić jednym tanim testem (50 polskich zapytań w darmowym limicie Channel3), zanim cokolwiek na niej zbudujemy.
+**Rekomendacja po drugiej rundzie (sekcja 10): B, ale zaczynamy od „Sprawdź to" i pilnowania cen, nie od wyszukiwarki.** Pierwotna rekomendacja: B, budowana w kolejności A → B. Część A nie czeka na żadną zgodę i daje użytkownikowi całą sekcję. Zgłoszenia do sieci idą równolegle, a feedy dochodzą jako kolejne źródło ofert za tym samym interfejsem (`OfferSource`). Opcję C warto sprawdzić jednym tanim testem (50 polskich zapytań w darmowym limicie Channel3), zanim cokolwiek na niej zbudujemy.
 
 ## 4. Jak ma wyglądać sekcja
 
@@ -178,3 +178,91 @@ Najważniejsze źródła:
 - Apple: https://developer.apple.com/app-store/review/guidelines/
 - Prawo: https://eur-lex.europa.eu/legal-content/PL/TXT/PDF/?uri=CELEX%3A52021XC1229%2806%29 · https://uokik.gov.pl/download/27128 · https://uokik.gov.pl/influencer-marketing
 - Zachowania: https://www.przelewy24.pl/en/news/ecommerce-2025-zakupy-online-trendy-polscy-konsumenci · https://itwiz.pl/juz-61-polakow-korzysta-z-chatbotow-ai-podczas-zakupow/ · https://www.nngroup.com/articles/comparison-tables/ · https://tech.co/news/ai-shopping-assistants-not-ready-holidays
+
+## 10. Druga runda: co da się zrobić lepiej (11 lis 2026, po pytaniu właściciela)
+
+Krytyka własnej propozycji: sekcje 3 do 6 opisują porządną porównywarkę. Ceneo i Allegro już nią są, mają lepsze dane i miliony użytkowników. Sama wyszukiwarka z trzema kartami nie da ludziom powodu, żeby otworzyć Doddy'ego zamiast nich. Poniżej to, czego one nie mogą zrobić, a Doddy może, bo jest asystentem z pamięcią, głosem i dostępem do rzeczy użytkownika. Wszystko to pomysły; nic nie jest zbudowane.
+
+### 10.1 Odwrócić kierunek: „Sprawdź to", zanim „Znajdź mi to"
+
+Ludzie już przeglądają sklepy. Najczęstszy moment to „patrzę na produkt i nie wiem, czy to dobra cena", a nie „nie wiem, czego chcę". Trzy wejścia, każde oparte na czymś, co w repo już jest:
+
+| Wejście | Jak | Co już jest [Repo] |
+|---|---|---|
+| **Udostępnij do Doddy'ego** | W Safari albo w aplikacji sklepu: Udostępnij › Doddy › „Sprawdź cenę" albo „Pilnuj ceny" | Rozszerzenie `DoddyShare` („Save to Doddy"); odczyt ceny ze strony (`check_offer_page`) |
+| **„Zerknij na ekran"** | Głosem, gdy na ekranie jest produkt: Doddy czyta nazwę i cenę z ekranu użytkownika i szuka tego samego gdzie indziej | `look_at_screen` (decyzja 2026-11-09) |
+| **Kod kreskowy w sklepie** | Skan w sklepie stacjonarnym: „w internecie od X zł" | Kody kreskowe na listach (#140); wyszukiwanie po EAN w Tradedoubler |
+
+Dlaczego to lepsze:
+- **Omija zamknięte API Allegro.** Użytkownik sam pokazuje ofertę, którą ogląda; Doddy nie czyta Allegro hurtowo. Czy odczyt z ekranu użytkownika jest zgodny z regulaminem Allegro, nie sprawdzono; cena z ekranu ma etykietę „z Twojego ekranu, 14:32" i nie jest ceną potwierdzoną.
+- **Produkt jest znany dokładnie** (konkretna strona, często EAN), więc znika największe źródło błędów: zły wariant.
+- **Jedno dotknięcie do alertu**, bez wpisywania czegokolwiek.
+- Mały zakres: nie wymaga feedów ani zgód sieci.
+
+### 10.2 Produkty od razu, ceny po potwierdzeniu
+
+Zamiast czekać minuty na gotowy wynik: karty pojawiają się w kilka sekund z nazwą i zdjęciem oraz napisem „sprawdzam cenę…", a ceny dochodzą po kolei, każda po odczycie. Zasada właściciela „tylko potwierdzone ceny" zostaje nietknięta, a czekanie przestaje wyglądać jak brak odpowiedzi. Karta, której ceny nie udało się potwierdzić, mówi to wprost.
+
+### 10.3 Pamięć, którą widać i którą można poprawić
+
+Przewaga nad każdą porównywarką: Doddy wie, co dla tej osoby ważne. Rozmiary, marki, których nie chce, „zawsze paczkomat", budżet, to, co ma w domu (lista „W domu" już istnieje).
+- Tylko notatki zapisane jawnie przez użytkownika; nic wywnioskowanego po cichu.
+- Karta mówi, z czego skorzystała: „wziąłem pod uwagę: rozmiar 43, bez marki X", z przyciskiem do poprawienia.
+- Nigdy „zapamiętałem" bez potwierdzonego zapisu.
+
+### 10.4 Po zakupie: tu jest powód, żeby wracać
+
+Porównywarka kończy się na kliknięciu. Doddy może zostać z użytkownikiem dalej, na jego prośbę i za zgodą na każde źródło:
+- **Paczka:** status InPost już jest (`Features/Parcels`).
+- **Termin zwrotu:** przypomnienie przed końcem 14 dni na odstąpienie od umowy.
+- **Paragon i gwarancja:** notatka z datą zakupu i przypomnienie przed końcem gwarancji.
+- **Z poczty:** przy podłączonym Gmailu Doddy może, na prośbę, znaleźć potwierdzenie zamówienia i zaproponować powyższe. Treść maila to dane, nie polecenia; nic nie jest zapisywane bez dotknięcia.
+
+To łączy zakupy z „Na oku" (`OpenLoops`), gdzie pilnowane ceny i paczki już są na jednej liście.
+
+### 10.5 Historia cen: zacząć zbierać od razu
+
+Historii nie da się odtworzyć wstecz. Każdy potwierdzony odczyt (wyszukiwanie, sprawdzenie, pilnowanie) może zostawiać wiersz: produkt, sklep, cena, czas, bez danych użytkownika. Po kilku miesiącach daje to „czy to dobra cena" i uczciwe „to nie jest prawdziwa obniżka" przed Black Week, kiedy 43% Polaków nie wierzy promocjom [S]. Koszt jest pomijalny; wymaga nowej tabeli na serwerze (nowa migracja, po wszystkich istniejących) i wpisu w polityce prywatności.
+
+### 10.6 Zarabianie: abonament przed prowizją
+
+Prowizje dadzą mało i późno (sekcja 7), a każda sieć może odmówić. Pewniejsze:
+- **Limity w planach** (Free / Mate / Pro z `DODI_PLAN_2026-10.md`): na przykład 2 pilnowane ceny za darmo, więcej w płatnym; liczby do decyzji właściciela.
+- **Neutralność jako cecha produktu:** „Doddy'emu nikt nie płaci za kolejność". Linki partnerskie zostają jako dodatek z wyłącznikiem.
+- **Ceneo za kliknięcie** jest pierwszym programem wartym zgłoszenia: płaci za przejście, więc nie zależy od tego, czy atrybucja zakupu przetrwa w aplikacji.
+
+### 10.7 Mierzyć od pierwszego dnia
+
+Bez tego nie będzie wiadomo, czy funkcja działa. Liczniki bez treści (tylko zdarzenia):
+- odsetek sprawdzeń zakończonych potwierdzoną ceną;
+- odsetek wyników z przejściem do sklepu;
+- pilnowane ceny na osobę i odsetek alertów otwartych;
+- **trafność ceny przy dotknięciu:** ponowny odczyt w chwili przejścia do sklepu i porównanie z pokazaną ceną. To jedyna liczba, która mówi, czy obietnica „prawdziwe ceny" jest dotrzymana.
+
+### 10.8 Poprawiona kolejność prac
+
+| Etap | Zakres | Czeka na |
+|---|---|---|
+| **1. „Sprawdź to" i „Pilnuj"** | Udostępnianie z Safari i aplikacji sklepów; karta z potwierdzoną ceną; pilnowanie jednym dotknięciem i głosem; lista pilnowanych; zapis historii cen; liczniki | Włączenie `WATCHES_ENABLED` i działające powiadomienia (APNs, `docs/OWNER_QUEUE.md` 8) |
+| **2. „Znajdź mi to" na nowo** | Sekcja „Zakupy", trzy karty z cenami dochodzącymi na żywo, porównanie, pamięć widoczna na karcie; „zerknij na ekran" dla zakupów | Nic z zewnątrz |
+| **3. Feedy** | Convertiser, Tradedoubler; to samo w kilku sklepach po EAN; alert na kilka sklepów; kod kreskowy | Zgody sieci (krok 0 z sekcji 6, startuje od razu) |
+| **4. Po zakupie** | Termin zwrotu, gwarancja, paczka, potwierdzenia z poczty | Decyzja właściciela o zakresie odczytu poczty |
+
+Etap 1 jest najmniejszy, używa tego, co jest zbudowane, nie zależy od żadnej sieci i od pierwszego dnia zbiera dane, które mówią, czy warto budować resztę.
+
+**Black Week (27 lis 2026):** to najlepszy moment na pilnowanie cen, ale nie należy na niego obiecywać. Żadna wersja nie ma jeszcze kompilacji w TestFlight, a nic z zakupów nie było uruchomione na telefonie (`STATUS.md`).
+
+### 10.9 Co odradzam mimo pokusy
+
+- **Nieproszone oferty** („masz urodziny mamy, kup…"): konstytucja i wcześniejsza decyzja (propozycja z 1 lis, S6). Pomysły na prezent tylko na prośbę.
+- **Automatyczny zakup przy cenie docelowej** (jak Amazon): nie ma dostawcy w Polsce, a ryzyko złego wariantu jest udokumentowane.
+- **Skrobanie Allegro lub Ceneo** przez serwer: zakaz w regulaminach, blokady, ryzyko dla programów partnerskich.
+- **Własna kasa lub portfel:** licencja płatnicza.
+
+### 10.10 Dodatkowe decyzje dla właściciela
+
+9. Czy zaczynamy od „Sprawdź to" i pilnowania (10.8, etap 1) zamiast od wyszukiwarki.
+10. Czy serwer może zapisywać historię potwierdzonych cen bez danych użytkownika (10.5).
+11. Limity pilnowania w planach i czy to funkcja płatna (10.6).
+12. Czy „zerknij na ekran" może służyć do zakupów, także w aplikacji Allegro (10.1; regulamin Allegro niesprawdzony).
+13. Czy Doddy może, na prośbę, szukać potwierdzeń zamówień w podłączonej poczcie (10.4).
