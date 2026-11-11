@@ -47,6 +47,9 @@ public struct DataFlowState: Equatable, Sendable {
     /// "Remember what we talked about" is on and the person let Doddy's server write recaps this iPhone can't
     /// (decision 2026-11-09-conversation-recaps).
     public var recapsOnServer: Bool
+    /// "Remember what we talked about" is on, so the messaging server writes a recap of each call to and from
+    /// Doddy's phone line from what ElevenLabs sends it after the call (decision 2026-11-09-conversation-recaps).
+    public var phoneRecapsOn: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -60,9 +63,11 @@ public struct DataFlowState: Equatable, Sendable {
         webNotesKept: Bool = false, webConversationsKept: Bool = false,
         inFaktKeySaved: Bool = false,
         textsToDoddyOn: Bool = false,
-        recapsOnServer: Bool = false
+        recapsOnServer: Bool = false,
+        phoneRecapsOn: Bool = false
     ) {
         self.recapsOnServer = recapsOnServer
+        self.phoneRecapsOn = phoneRecapsOn
         self.textsToDoddyOn = textsToDoddyOn
         self.inFaktKeySaved = inFaktKeySaved
         self.webNotesKept = webNotesKept
@@ -115,7 +120,9 @@ public enum DataFlow {
         messaging.append("your phone number, only if you confirm it with a code for texts or calls")
         messaging.append("the news topics and feeds you pick, if you turn on daily news")
         // ADR-656: the follows go with each request to the feed and are not stored there.
-        messaging.append("the topics and words you follow, each time you open or refresh Following (the server keeps none of them)")
+        messaging.append("the topics, words and own feed addresses you follow, each time you open or refresh Following (the server keeps none of them)")
+        // Decision 2026-11-10-radar-alerts: only a follow the person let the server check is kept there.
+        messaging.append("a follow you let Doddy's server check for you, only that one: its name, words or feed address, the words to look out for, how and when to tell you, and your time zone, kept with the stories it found (14 days) until you turn checking off")
         if state.memoryCopyOn { messaging.append("a copy of your saved notes, for phone calls with Doddy") }
         if state.textsToDoddyOn { messaging.append("the texts you send Doddy's number, kept as notes until you save or discard them") }
 
@@ -226,7 +233,7 @@ public enum DataFlow {
             // ADR-575: web, news and places searches run at once, without asking, and go on to Monid.
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (web search; Google, Microsoft Outlook, Notion, Todoist via Composio)",
-                what: "A random device ID that Doddy made and keeps in this iPhone's Keychain; it signs this iPhone in. Then what you ask for: the words of a web, news or places search, which go at once without asking and on to Monid, the search service Doddy's server uses; a date or a search word for a look-up in one of your accounts, after you say yes or tap; and the text of a draft, email, reply or task, only after you tap its card to confirm. An email you send or forward goes on to its recipient. Never your saved notes, except the copy you choose to keep on Doddy's server (see the rows below). With Read an email or Read a Notion page on, that one email or page comes back. If you start a payment, the web address of the page you pay for goes there too: the server reads the price from that site, and pays only after you confirm with Face ID.",
+                what: "A random device ID that Doddy made and keeps in this iPhone's Keychain; it signs this iPhone in. Then what you ask for: the words of a web, news or places search, which go at once without asking and on to Monid, the search service Doddy's server uses; a date or a search word for a look-up in one of your accounts, when you ask for it; and the text of a draft, email, reply or task, only after you tap its card to confirm. An email you send or forward goes on to its recipient. Never your saved notes, except the copy you choose to keep on Doddy's server (see the rows below). With Read an email or Read a Notion page on, that one email or page comes back. If you start a payment, the web address of the page you pay for goes there too: the server reads the price from that site, and pays only after you confirm with Face ID.",
                 when: "When this iPhone signs in or renews its session (about every 30 days), when Doddy looks something up on the web or uses an online-account tool you switched on, when you use Online accounts or Connected Apps, and when you start a payment.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet
@@ -257,7 +264,7 @@ public enum DataFlow {
                 when: "When you turn on notifications, texts, phone calls or daily news, or use Ask Doddy, tasks, leaflets or watched prices (they have rows of their own), and while they are on; and each time you open or refresh Following.",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
-                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews. Following fetches the publishers' public feeds for what you follow and sends your own words to GNews when the server has a key; no AI sees them."
+                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews. Following fetches the publishers' public feeds for what you follow, and your own feed from its address, and sends your own words to GNews when the server has a key; no AI sees them. A follow it checks for you sends its notifications through Apple; a daily summary sends the day's public headlines to \(writer) to write short lines."
                     : "No messaging server is set, so nothing goes there."),
             // Messages to the user (POST /v1/updates, ADR-148, review of 4 Nov 2026): the app itself sends only the two
             // test messages, on a tap (UpdatesModel.sendTest); what the other features send has its own rows. Text with
@@ -314,7 +321,7 @@ public enum DataFlow {
             DataFlowRow(
                 id: "deals", destination: "Your Doddy messaging server, the shops' leaflet pages and Anthropic (leaflets)",
                 what: "The names of the items you ask about and which shops to check. Doddy's server fetches the shops' leaflet pages itself and, for leaflets that are only pictures, sends those pages and the item names to Anthropic's Claude to read. For Rossmann, the item names go to rossmann.pl as a search from Doddy's server. Nothing that identifies you goes to any shop. Never your saved notes, lists or profile.",
-                when: "Only when you say yes to checking this week's leaflets.",
+                when: "Only when you ask Doddy to check this week's leaflets.",
                 isActive: state.messagingServerSet && !state.pauseAll,
                 note: !state.messagingServerSet
                     ? "No messaging server is set, so leaflets can't be checked."
@@ -353,14 +360,24 @@ public enum DataFlow {
                         : "No messaging server is set, so typed questions can't be sent."),
             DataFlowRow(
                 id: "recaps", destination: "Your Doddy messaging server and Anthropic (recaps)",
-                what: "The text of a conversation with Doddy, to write a short recap of what was discussed, when this iPhone can't write it itself.",
-                when: "Only after a conversation ends, with \"Remember what we talked about\" and \"Recaps on Doddy's server\" both on. Never a Private conversation.",
+                what: "The text of a conversation with Doddy, or the words of a recording written out on this iPhone, to write a short recap of what was discussed, when this iPhone can't write it itself.",
+                when: "Only after a conversation ends or you tap \"Write a recap\" on a recording, with \"Recaps on Doddy's server\" on (and \"Remember what we talked about\" on for the automatic ones). Never a Private conversation.",
                 isActive: state.recapsOnServer && state.messagingServerSet,
                 note: !state.recapsOnServer
                     ? "Recaps are written on this iPhone or not at all, so nothing goes there."
                     : state.messagingServerSet
                         ? "Your messaging server passes the text to Anthropic for this one recap and keeps only counts, not words. The recap is saved as a note on this iPhone."
                         : "No messaging server is set, so recaps can't be written there."),
+            DataFlowRow(
+                id: "phoneRecaps", destination: "Your Doddy messaging server and Anthropic (recaps of phone calls)",
+                what: "What was said in a call to or from Doddy's phone line, which ElevenLabs sends to your messaging server after the call, to write a short recap of what was discussed.",
+                when: "Only after such a call, with \"Remember what we talked about\" on. The server keeps only the recap (three short lists), not the words, until this iPhone saves it as a note, or for 30 days. ElevenLabs keeps its own copy of the call for the time set for the phone agent.",
+                isActive: state.phoneRecapsOn && state.messagingServerSet,
+                note: !state.phoneRecapsOn
+                    ? "Recaps are off, so the server writes none."
+                    : state.messagingServerSet
+                        ? "Your messaging server passes the call's text to Anthropic for that one recap and stores only the recap. It is saved as a note on this iPhone, then deleted on the server."
+                        : "No messaging server is set, so recaps of phone calls can't be written."),
         ]
     }
 
@@ -373,14 +390,15 @@ public enum DataFlow {
         return list + ". Each only when you use it; What leaves this iPhone says what goes."
     }
 
-    /// Settings → Privacy "Online answers": the AI services that can get what you say or type right now.
+    /// Settings → Privacy "Cloud AI": the AI services that can get what you say or type right now.
     public static func cloudAISummary(_ state: DataFlowState) -> String {
         let active = Set(rows(state).filter(\.isActive).map(\.id))
         var parts: [String] = []
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
         // Decision 2026-11-09-conversation-recaps: only when this iPhone can't write a recap itself.
-        if active.contains("recaps") { parts.append("Anthropic (recaps of conversations this iPhone can't write)") }
+        if active.contains("recaps") { parts.append("Anthropic (recaps of conversations and recordings this iPhone can't write)") }
+        if active.contains("phoneRecaps") { parts.append("Anthropic (recaps of calls to Doddy's phone line)") }
         // ADR-603: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
         if active.contains("webMemory") { parts.append("Anthropic (questions you ask on the web about what you keep on Doddy's server)") }
         if active.contains("messagingServer") {
@@ -422,7 +440,8 @@ public enum DataFlow {
         "watches": "the shops' pages, read by your messaging server (prices you watch)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "Anthropic (Ask Doddy, through your messaging server)",
-        "recaps": "Anthropic (recaps of conversations, through your messaging server)",
+        "recaps": "Anthropic (recaps of conversations and recordings, through your messaging server)",
+        "phoneRecaps": "Anthropic (recaps of calls to Doddy's phone line, through your messaging server)",
         "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",
     ]
 

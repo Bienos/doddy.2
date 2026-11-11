@@ -126,7 +126,7 @@ struct ConnectionsSettingsView: View {
                     .accessibilityIdentifier("settings.invoices")
                 }
                 // ADR-735: USDC for pages that ask for payment. Off until the server has a wallet and the person turns it on.
-                // Hidden in the beta with its voice tool. Home's "a payment wasn't confirmed" banner stays in every build.
+                // Shown since 10 Nov 2026 (decision 2026-11-10-no-beta-scope); payments are off on the server by flag and say so. Home's "a payment wasn't confirmed" banner stays in every build.
                 if scope.shows(.payments) {
                     NavigationLink {
                         PaymentsScreen()

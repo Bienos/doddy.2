@@ -46,8 +46,11 @@ final class StepCountTests: XCTestCase {
     func testRules() {
         let request = VoiceToolRequest.readSteps(StepDay(daysAgo: 1)!)
         XCTAssertEqual(VoiceConnection.serving(VoiceToolName.readSteps), .steps)
-        guard case .yesFirst(let card) = AskFirst.need(for: request) else { return XCTFail("a read asks first (ASK-01)") }
-        XCTAssertEqual(card.lines, ["Yesterday, from Motion & Fitness"])
+        // Decision 2026-11-11-asked-for-runs-at-once: the user asked, so Doddy reads the steps at once; the
+        // Steps switch in Connections is still asked once, on its own sheet.
+        XCTAssertEqual(AskFirst.need(for: request), .runsNow)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.readSteps)?.approval, .runsNow)
+        XCTAssertEqual(StepDay(daysAgo: 1)!.text, "Yesterday")
         XCTAssertTrue(ConnectionPause.applies(to: request))
         XCTAssertEqual(CarProfile.decision(for: request), .run, "a read is fine while driving")
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.readSteps)?.effect, .lookup)

@@ -1,0 +1,3 @@
+Voice: focus and the wind-down start by voice (`start_focus`, `stop_focus`, `check_focus`, `start_wind_down`, `stop_wind_down`; a card and a tap, replies read back from the timers). Home's ••• menu lost "Focus, timers and stopwatch"; a running one shows as a row on Home that opens its screen with Pause and Stop. Decision `docs/decisions/2026-11-10-timers-by-voice.md`.
+Ran: DoddyCore tests, `scripts/ci.sh --only swift,checks`, the voice agent spec check, the catalog check, `swiftc -parse` on the app files changed. Not run: Xcode build, UI tests, a device, a real conversation.
+Owner step: the five tools are `not_synced`; add them to the live agent before or right after this ships (`docs/OWNER_QUEUE.md` item 35), or focus and the wind-down can't be started.

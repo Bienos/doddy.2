@@ -11,6 +11,7 @@ import type { CallRegistrar, OutboundCaller, PhoneVerifier, PushSender, SmsSende
 import { callRoutes } from "./routes/calls.js";
 import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { newsRoutes } from "./routes/news.js";
+import { radarRoutes } from "./routes/radar.js";
 import type { NewsDeps } from "./news/digest.js";
 import type { QuietHours } from "./quietHours.js";
 import { accountRoutes } from "./routes/account.js";
@@ -31,11 +32,14 @@ import { studioRoutes } from "./routes/studio.js";
 import { fileWatchContext, type FileWatchContext, type FileWatchDeps } from "./fileWatches.js";
 import { studioContext, type StudioContext, type StudioDeps } from "./studio/context.js";
 import { assistantRoutes } from "./routes/assistant.js";
+import { screenRoutes } from "./routes/screen.js";
 import { dealsRoutes } from "./routes/deals.js";
 import { registryRoutes } from "./routes/registry.js";
 import type { CeidgClient } from "./registry/ceidg.js";
 import type { DealsDeps } from "./deals/service.js";
 import type { AssistantDeps } from "./assistant/deps.js";
+import type { PhoneRecapDeps } from "./phoneRecaps.js";
+import { phoneRecapRoutes } from "./routes/phoneRecaps.js";
 import { watchRoutes } from "./routes/watches.js";
 import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
 
@@ -76,6 +80,8 @@ export interface Deps {
   quietHours?: QuietHours;
   /** News digests: feeds always; keyword search and AI writer when configured. */
   news?: NewsDeps;
+  /** On my radar alerts (decision 2026-11-10-radar-alerts): RADAR_ALERTS_ENABLED. Off: nothing new is stored. */
+  radar?: { enabled: boolean };
   logger?: boolean;
   /** Proxies in front that append to X-Forwarded-For (Render: 1). Default 1. */
   trustProxyHops?: number;
@@ -103,6 +109,8 @@ export interface Deps {
   studioLog?: (msg: string, extra?: object) => void;
   /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
   assistant?: AssistantDeps;
+  /** Recaps of calls to Doddy's phone line (decision 2026-11-09-conversation-recaps, step 5). Needs `cipher` and an Anthropic key. */
+  phoneRecaps?: PhoneRecapDeps;
   /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
   watches?: WatchDeps;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
@@ -199,12 +207,15 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(scheduledCallRoutes(deps));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));
+  await app.register(radarRoutes(deps));
   await app.register(callCaseRoutes(deps, taskCtx));
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));
   await app.register(studioRoutes(deps, studioCtx));
   await app.register(fileWatchRoutes(deps, fileWatchCtx));
   await app.register(assistantRoutes(deps));
+  await app.register(screenRoutes(deps));
+  await app.register(phoneRecapRoutes(deps));
   await app.register(dealsRoutes(deps));
   await app.register(registryRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));

@@ -190,7 +190,7 @@ folks recommend
    all off by default, plus the usual iOS permission prompt.
 4. Doddy only says "saved" or "added" once your phone confirms it. Early on we caught it saying
    "I'm saving this" before anyone had tapped, and we changed that.
-5. It tells you it's an AI. In its introduction Doddy says "I'm a digital companion powered by AI, not a person."
+5. It never pretends to be a person. Ask Doddy whether it's an AI and it says so plainly.
    That's becoming the law in the EU too. Under the AI Act, AI systems that talk to people have to
    make it clear they're AI, and those transparency rules apply from 2 August 2026
    ([European Commission](https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems)).

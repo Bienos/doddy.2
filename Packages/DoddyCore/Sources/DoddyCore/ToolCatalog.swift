@@ -90,21 +90,22 @@ public enum ToolCatalog {
     private static let byName: [String: ToolDescriptor] = Dictionary(uniqueKeysWithValues: all.map { ($0.name, $0) })
 
     private static let phone: [ToolDescriptor] = [
-        // Notes and lists (ADR-216). Since ASK-01 list changes show a card too.
-        .init(VoiceToolName.searchMemories, .lookup, .askFirst),
+        // Notes and lists (ADR-216). Since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once) looking, adding and
+        // ticking off run at once; saving a note, a new list and removing items keep their cards.
+        .init(VoiceToolName.searchMemories, .lookup, .runsNow),
         .init(VoiceToolName.saveMemory, .localChange, .card),
         .init(VoiceToolName.remindAboutNote, .localChange, .card),
-        .init(VoiceToolName.readList, .lookup, .askFirst),
-        .init(VoiceToolName.addToList, .localChange, .card),
-        .init(VoiceToolName.checkOff, .localChange, .card),
+        .init(VoiceToolName.readList, .lookup, .runsNow),
+        .init(VoiceToolName.addToList, .localChange, .runsNow),
+        .init(VoiceToolName.checkOff, .localChange, .runsNow),
         .init(VoiceToolName.removeFromList, .localChange, .card),
         .init(VoiceToolName.createList, .localChange, .card),
         .init(VoiceToolName.addIngredients, .localChange, .card),
         // One row on this iPhone, a category only (ADR-440).
-        .init(VoiceToolName.noteCapabilityGap, .localChange, .card),
+        .init(VoiceToolName.noteCapabilityGap, .localChange, .runsNow),
         // Calendar and Reminders.
-        .init(VoiceToolName.readCalendar, .lookup, .askFirst),
-        .init(VoiceToolName.findFreeTime, .lookup, .askFirst),
+        .init(VoiceToolName.readCalendar, .lookup, .runsNow),
+        .init(VoiceToolName.findFreeTime, .lookup, .runsNow),
         .init(VoiceToolName.createCalendarEvent, .localChange, .card),
         .init(VoiceToolName.createReminder, .localChange, .card),
         .init(VoiceToolName.changeCalendarEvent, .localChange, .card),
@@ -115,26 +116,33 @@ public enum ToolCatalog {
         .init(VoiceToolName.moveReminders, .localChange, .card),
         .init(VoiceToolName.undoLast, .localChange, .card),
         // Contacts, timers and alarms, places.
-        .init(VoiceToolName.lookupContact, .lookup, .askFirst),
-        .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
+        .init(VoiceToolName.lookupContact, .lookup, .runsNow),
+        .init(VoiceToolName.upcomingBirthdays, .lookup, .runsNow),
         // Motion & Fitness, read only (ADR-568).
-        .init(VoiceToolName.readSteps, .lookup, .askFirst),
+        .init(VoiceToolName.readSteps, .lookup, .runsNow),
         // Apple Health, the week as a summary, after its own consent (ADR-623).
-        .init(VoiceToolName.readHealthWeek, .lookup, .askFirst),
+        .init(VoiceToolName.readHealthWeek, .lookup, .runsNow),
         // Opens the plan screen on a tap; the safety questions are asked there, never by the agent (ADR-626).
-        .init(VoiceToolName.openTrainingPlan, .handoff, .card),
+        .init(VoiceToolName.openTrainingPlan, .handoff, .runsNow),
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
-        .init(VoiceToolName.findPhotos, .lookup, .askFirst),
+        .init(VoiceToolName.findPhotos, .lookup, .runsNow),
+        .init(VoiceToolName.lookAtScreen, .lookup, .runsNow),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
-        .init(VoiceToolName.listAlarms, .lookup, .askFirst),
+        .init(VoiceToolName.listAlarms, .lookup, .runsNow),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
         // Follow something in Following (ADR-657): Doddy's own feature on this iPhone.
-        .init(VoiceToolName.followNews, .localChange, .card),
+        .init(VoiceToolName.followNews, .localChange, .runsNow),
         // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
-        .init(VoiceToolName.startStopwatch, .localChange, .card),
-        .init(VoiceToolName.stopStopwatch, .localChange, .card),
-        .init(VoiceToolName.checkStopwatch, .lookup, .askFirst),
+        .init(VoiceToolName.startStopwatch, .localChange, .runsNow),
+        .init(VoiceToolName.stopStopwatch, .localChange, .runsNow),
+        .init(VoiceToolName.checkStopwatch, .lookup, .runsNow),
+        // The focus timer and the wind-down (decision 2026-11-10-timers-by-voice): Doddy's own timers, like the stopwatch.
+        .init(VoiceToolName.startFocus, .localChange, .runsNow),
+        .init(VoiceToolName.stopFocus, .localChange, .runsNow),
+        .init(VoiceToolName.checkFocus, .lookup, .runsNow),
+        .init(VoiceToolName.startWindDown, .localChange, .runsNow),
+        .init(VoiceToolName.stopWindDown, .localChange, .runsNow),
         // Saving or clearing a spot shows a card; "find" asks first (ADR-301, ASK-01). The card is
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),
@@ -157,6 +165,8 @@ public enum ToolCatalog {
         // The card shows the time and the exact reason Doddy will say; the server checks the same
         // approval hash when it books the call and again when it places it (ADR-754).
         .init(VoiceToolName.callMeLater, .placeCall, .card),
+        // The same call as Settings, Phone calls, Call me now; the card shows the number's last digits.
+        .init(VoiceToolName.callMeNow, .placeCall, .card),
         .init(VoiceToolName.callPlaces, .placeCall, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .card),
@@ -170,13 +180,12 @@ public enum ToolCatalog {
         // iPhone; one tap covers every look-up of that task. A tap and not a spoken yes (ADR-716):
         // its text goes to a server that opens what it names. Checking what it found is a read.
         .init(VoiceToolName.handOverErrand, .handoff, .card),
-        .init(VoiceToolName.checkErrands, .lookup, .askFirst),
+        .init(VoiceToolName.checkErrands, .lookup, .runsNow),
         // A Studio job (ADR-740): web research and files made on Doddy's server, paid from Doddy's account.
         // A tap and not a spoken yes (ADR-742), like a handed-over task: it spends money.
         .init(VoiceToolName.makeSomething, .handoff, .card),
-        // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
-        // changes; it asks first until the owner decides whether it joins the public look-ups.
-        .init(VoiceToolName.findDeals, .lookup, .askFirst),
+        // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing changes. At once since 11 Nov 2026.
+        .init(VoiceToolName.findDeals, .lookup, .runsNow),
         // Paying for one web page (ADR-734 to 736; off by default, not on the live agent). The agent only
         // names the page; Doddy's server's own terms are on the payment card, and only a tap (plus the typed
         // amount from the threshold) and a fresh Face ID start it. Counted as a handoff because it hands one
@@ -195,6 +204,7 @@ public enum ToolCatalog {
     private static let cloud: [ToolDescriptor] = CloudToolName.all.sorted().map { name in
         CloudToolName.isWrite(name)
             ? ToolDescriptor(name, .accountWrite, .serverApproval)
-            : ToolDescriptor(name, .lookup, AskFirst.publicLookups.contains(name) ? .runsNow : .serverAsk)
+            // Every read through Doddy's server runs at once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once).
+            : ToolDescriptor(name, .lookup, .runsNow)
     }
 }

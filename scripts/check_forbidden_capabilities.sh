@@ -70,7 +70,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyShare DoddyNotificationContent DoddyWatch DoddyWatchWidgets DoddyMac DoddyMacWidgets Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyShare DoddyScreen DoddyNotificationContent DoddyWatch DoddyWatchWidgets DoddyMac DoddyMacWidgets Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import Analytics'
@@ -222,34 +222,33 @@ fi
 if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_only; then
   echo "FAIL: password, passkey or credential-provider APIs; only Sign in with Apple is allowed (ADR-494)." >&2; status=1
 fi
-# ASK-01 (ADR-483): a tool without a way to ask first fails here. Only the public lookups of
-# ADR-575 (web, weather, Wikipedia, news, places, sums, conversions), translator start and
-# stop (ADR-619, run on the phone) and text_me to the user's own number (decision
-# 2026-11-09-restaurant-calls-one-tap, run on the phone) may run at once.
-if ! python3 -I - voice-agent/tools.json <<'PY'
+# ASK-01 (ADR-483) as it stands since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once): a tool that changes,
+# sends, deletes, calls or pays must run on the phone behind a card ('tap' with confirm_on_screen). Only the tools in
+# scripts/voice_agent_spec.py's RUNS_NOW may run at once: ADR-575's public lookups, translator start and stop
+# (ADR-619), text_me to the user's own number, looks at the user's own things, reads through Doddy's server and
+# Doddy's own small actions. RUNS_NOW mirrors AskFirst.runsAtOnce in DoddyCore, which ToolCatalogTests pins.
+if ! python3 -I - voice-agent/tools.json scripts <<'PY'
 import json, sys
-PUBLIC = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
-          "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
-MODES = {"start_translator", "stop_translator", "text_me"}
+sys.path.insert(0, sys.argv[2])
+from voice_agent_spec import RUNS_NOW, RUNS_NOW_MODES, RUNS_NOW_OWN_TEXT, PUBLIC_LOOKUPS
+PHONE_ONLY = RUNS_NOW - PUBLIC_LOOKUPS
 bad = []
 for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
     x = t.get("x_doddy", {})
+    name = t.get("name")
     if x.get("ask") == "runs_now":
-        # ADR-575: public lookups run at once; they may never be a change.
-        # ADR-619: translator start and stop run at once, on the phone, with no card.
-        # Decision 2026-11-09-restaurant-calls-one-tap: text_me to the user's own number too.
-        name = t.get("name")
-        if x.get("confirm_on_screen") or not (name in PUBLIC or (name in MODES and x.get("runs_on") == "phone")):
+        # Never a card, and never anything outside the list; everything but the public lookups runs on the phone.
+        if x.get("confirm_on_screen") or name not in RUNS_NOW or (name in PHONE_ONLY and x.get("runs_on") != "phone"):
             bad.append(name)
         continue
-    if x.get("runs_on") != "phone" or x.get("ask") not in ("yes_or_tap", "tap") or (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
-        bad.append(t.get("name"))
+    if x.get("runs_on") != "phone" or x.get("ask") != "tap" or not x.get("confirm_on_screen"):
+        bad.append(name)
 if bad:
     print("tools without an ask:", ", ".join(map(str, bad)))
     sys.exit(1)
 PY
 then
-  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen), except ADR-575's public lookups, ADR-619's translator start and stop and text_me to the user's own number." >&2; status=1
+  echo "FAIL: ASK-01: every voice tool that changes something must run on the phone behind a card (x_doddy.ask 'tap' with confirm_on_screen); only voice_agent_spec.py's RUNS_NOW may run at once (decision 2026-11-11-asked-for-runs-at-once)." >&2; status=1
 fi
 voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
 if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then
@@ -347,6 +346,19 @@ if [ -f "$health_file" ]; then
 fi
 if grep -RInE "$camera_and_library_never" "${dirs[@]}" project.yml Config | code_only; then
   echo "FAIL: a capture session or a write to the photo library; Doddy only reads the library and uses iOS's camera screen (ADR-569)." >&2; status=1
+fi
+# Decision 2026-11-09-doddy-looks-at-the-screen: the screen is read only by the broadcast extension, which the
+# person starts from iOS's own sheet (iOS shows it is running). No in-app screen recorder anywhere, and the
+# extension and its shared file code have no network and no database: the app sends a picture only after a yes.
+if grep -RInE --include='*.swift' 'RPScreenRecorder|RPBroadcastSampleHandler' "${dirs[@]}" | code_only | grep -vE '^DoddyScreen/'; then
+  echo "FAIL: screen capture outside DoddyScreen/; only the broadcast extension the person starts may see the screen (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
+fi
+# Sharing starts only from iOS's own sheet, opened by the one picker file (a button, or the person's spoken ask).
+if grep -RInE --include='*.swift' 'RPSystemBroadcastPickerView' "${dirs[@]}" | code_only | grep -v '^DoddyApp/Features/Voice/ScreenSharePicker.swift:'; then
+  echo "FAIL: iOS's screen-sharing sheet opened outside DoddyApp/Features/Voice/ScreenSharePicker.swift (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' 'URLSession|URLRequest|NWConnection|DatabaseQueue|DatabasePool|import DoddyPersistence|import GRDB' DoddyScreen Shared/Screen | code_only; then
+  echo "FAIL: the screen-sharing extension may not use the network or a database; it only leaves one picture in the App Group (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
 fi
 if grep -RInE "$location_tracking" "${dirs[@]}" project.yml | code_only; then
   echo "FAIL: \"Always\" or background location is not allowed; place reminders use \"While Using\" only." >&2; status=1

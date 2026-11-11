@@ -3,7 +3,7 @@ import type { TextCipher } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
 import { log } from "../log.js";
 import { EncryptionNotConfigured, enqueue, SmsDailyLimit, usableChannels, type Channel } from "../outbox.js";
-import { catalogById } from "./catalog.js";
+import { ALL_CATALOG_FEEDS, catalogById, type CatalogFeed } from "./catalog.js";
 import { pushBody, smsBody } from "./compose.js";
 import type { NewsItem } from "./feeds.js";
 import { shortlist, type TopicItems } from "./rank.js";
@@ -131,35 +131,99 @@ async function gatherTopics(db: Db, news: NewsDeps, accountId: string, language:
   return gatherItems(db, news, topics, feeds.map((f) => f.url), language, now);
 }
 
-export interface FollowedTopic { catalog_id: string | null; label: string; keywords: string[] }
+export interface FollowedTopic {
+  catalog_id: string | null;
+  label: string;
+  keywords: string[];
+  /** On my radar: the person's own RSS or Atom feed (checked by checkUrl before it gets here). */
+  feed_url?: string | null;
+}
+
+/** What one follow read: its publishers, and whether each answered (On my radar shows them). */
+export interface FollowSources {
+  /** The publishers behind a catalog topic or the person's own feed. Empty for the person's own words. */
+  sources: { name: string; ok: boolean }[];
+  /** The person's own words: how many publishers' feeds were looked through for them. */
+  searchedFeeds?: number;
+}
+
+export interface GatherOptions {
+  /**
+   * Where the person's own words are looked for, besides a news search when the server has one:
+   * "follows" (the daily digest, as before): the stories of their other topics;
+   * "catalog" (On my radar): every feed in the catalog and their own feeds, so "Tesla" finds stories
+   * even when they follow nothing else (the live server has no news search key, read 10 Nov 2026).
+   */
+  keywordPool?: "follows" | "catalog";
+  /** Filled with each follow's sources, by label. */
+  report?: Map<string, FollowSources>;
+}
+
+const hostOf = (url: string) => {
+  try { return new URL(url).hostname; } catch { return url; }
+};
 
 /**
  * Fetches (through the shared cache) what the given topics and feeds carry right now. Used by the
- * daily digest with the account's saved topics, and by the feed (ADR-656) with the follows the
- * iPhone sends along, which are never stored.
+ * daily digest with the account's saved topics, by the feed (ADR-656) with the follows the iPhone
+ * sends along, which are never stored, and by radar alerts (decision 2026-11-10-radar-alerts).
+ * A catalog story carries the publisher's short name ("CoinDesk"), not its feed's long title.
  */
 export async function gatherItems(
   db: Db, news: NewsDeps, topics: FollowedTopic[], feedUrls: string[], language: "en" | "pl", now: Date,
+  options: GatherOptions = {},
 ): Promise<TopicItems[]> {
-  const feed = async (url: string) => (await cached(db, `feed:${url}`, 30, () => news.feeds.fetchFeed(url))).items;
+  // One fetch per address per call, however many follows share it.
+  const fetched = new Map<string, Promise<{ ok: boolean; title?: string; items: NewsItem[] }>>();
+  const load = (url: string) => {
+    let pending = fetched.get(url);
+    if (!pending) {
+      pending = cached(db, `feed:${url}`, 30, () => news.feeds.fetchFeed(url));
+      fetched.set(url, pending);
+    }
+    return pending;
+  };
+  const named = async (f: CatalogFeed) => {
+    const r = await load(f.url);
+    return { name: f.name, ok: r.ok, items: r.items.map((i) => ({ ...i, source: f.name })) };
+  };
 
   const out: TopicItems[] = [];
   const pool: NewsItem[] = [];
+  const read = new Set<string>(feedUrls);
   for (const t of topics) {
+    if (t.feed_url) {
+      const r = await load(t.feed_url);
+      read.add(t.feed_url);
+      pool.push(...r.items);
+      out.push({ label: t.label, keywords: t.keywords, curated: t.keywords.length === 0, items: r.items });
+      options.report?.set(t.label, { sources: [{ name: r.title || hostOf(t.feed_url), ok: r.ok }] });
+      continue;
+    }
     const cat = t.catalog_id ? catalogById.get(t.catalog_id) : undefined;
     if (!cat) continue;
-    const items = (await Promise.all(cat.feeds.map(feed))).flat();
+    const answers = await Promise.all(cat.feeds.map(named));
+    for (const f of cat.feeds) read.add(f.url);
+    const items = answers.flatMap((r) => r.items);
     pool.push(...items);
     out.push({ label: t.label, keywords: t.keywords, curated: true, items });
+    options.report?.set(t.label, { sources: answers.map((r) => ({ name: r.name, ok: r.ok })) });
   }
   if (feedUrls.length) {
-    const items = (await Promise.all(feedUrls.map(feed))).flat();
+    const items = (await Promise.all(feedUrls.map(load))).flatMap((r) => r.items);
     pool.push(...items);
     out.push({ label: language === "pl" ? "Twoje źródła" : "Your feeds", keywords: [], curated: true, items });
   }
-  // The user's own keyword topics: a news search when configured, plus matches in every feed loaded above.
+  const keywordTopics = topics.filter((x) => !x.catalog_id && !x.feed_url && x.keywords.length);
+  let searchPool = pool;
+  if (options.keywordPool === "catalog" && keywordTopics.length) {
+    const everything = await Promise.all(ALL_CATALOG_FEEDS.map(named));
+    for (const f of ALL_CATALOG_FEEDS) read.add(f.url);
+    searchPool = [...pool, ...everything.flatMap((r) => r.items)];
+  }
+  // The user's own keyword topics: a news search when configured, plus matches in the pool above.
   let searches = 0;
-  for (const t of topics.filter((x) => !x.catalog_id && x.keywords.length)) {
+  for (const t of keywordTopics) {
     let found: NewsItem[] = [];
     const q = searchQuery(t.keywords);
     if (news.search && q && searches < MAX_SEARCHES) {
@@ -168,7 +232,8 @@ export async function gatherItems(
       found = (await cached(db, `search:${language}:${q}`, 60, async () => ({ items: await news.search!.search(q, language, since) }))).items;
     }
     out.push({ label: t.label, keywords: t.keywords, curated: true, items: found });
-    out.push({ label: t.label, keywords: t.keywords, curated: false, items: pool });
+    out.push({ label: t.label, keywords: t.keywords, curated: false, items: searchPool });
+    options.report?.set(t.label, { sources: [], searchedFeeds: read.size });
   }
   return out;
 }

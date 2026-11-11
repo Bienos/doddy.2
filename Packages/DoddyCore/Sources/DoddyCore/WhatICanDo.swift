@@ -136,11 +136,11 @@ public enum WhatICanDo {
         case (.talk, .english):
             Words(title: "Talk to Doddy",
                   does: "Ask out loud and get a short answer. Doddy can look things up in your notes while you talk.",
-                  youControl: "Your voice is sent only while a conversation is on. What leaves this iPhone shows where.")
+                  youControl: "Your voice is sent only while a conversation is on. The Privacy Policy says where.")
         case (.talk, .polish):
             Words(title: "Porozmawiaj z Doddym",
                   does: "Pytasz na głos i dostajesz krótką odpowiedź. W trakcie rozmowy Doddy może zajrzeć do Twoich notatek.",
-                  youControl: "Głos jest wysyłany tylko w trakcie rozmowy. Dokąd, pokazuje ekran „Co opuszcza tego iPhone’a”.")
+                  youControl: "Głos jest wysyłany tylko w trakcie rozmowy. Dokąd, opisuje Polityka prywatności.")
 
         case (.notes, .english):
             Words(title: "Notes",
@@ -161,13 +161,14 @@ public enum WhatICanDo {
                   youControl: "Ty decydujesz, co na nie trafia.")
 
         case (.reminders, .english):
-            Words(title: "Reminders and calendar",
-                  does: "Ask in a conversation and Doddy prepares a reminder or a calendar event.",
-                  youControl: "Nothing is added until you confirm it on screen.")
+            // Timers, focus, the stopwatch and the wind-down start only by voice since decision 2026-11-10-timers-by-voice.
+            Words(title: "Reminders, calendar and timers",
+                  does: "Ask in a conversation and Doddy prepares a reminder, a calendar event or a timer. Focus, the stopwatch and a wind-down before bed start the same way.",
+                  youControl: "Nothing is added or started until you confirm it on screen.")
         case (.reminders, .polish):
-            Words(title: "Przypomnienia i kalendarz",
-                  does: "Poproś w rozmowie, a Doddy przygotuje przypomnienie albo wydarzenie w kalendarzu.",
-                  youControl: "Nic nie zostanie dodane, dopóki nie potwierdzisz tego na ekranie.")
+            Words(title: "Przypomnienia, kalendarz i minutniki",
+                  does: "Poproś w rozmowie, a Doddy przygotuje przypomnienie, wydarzenie w kalendarzu albo minutnik. Tak samo włączysz skupienie, stoper i wyciszenie przed snem.",
+                  youControl: "Nic nie zostanie dodane ani włączone, dopóki nie potwierdzisz tego na ekranie.")
 
         case (.messages, .english):
             Words(title: "Messages",
@@ -222,6 +223,36 @@ public enum WhatICanDo {
             Words(title: "Tłumacz",
                   does: "Doddy tłumaczy rozmowę między Tobą a kimś, kto mówi w innym języku.",
                   youControl: "Ty decydujesz, kiedy zaczyna i kiedy kończy.")
+        }
+    }
+}
+
+extension WhatICanDo {
+    /// "Say, for example": one thing a person could ask, shown on the feature's scene in What I can do
+    /// (owner, 9 Nov 2026: show the features more vividly). An example of asking, never the person's data
+    /// and never a claim that it was done. Messages is typed, so its example is something to type.
+    public static func example(_ ability: DoddyAbility, _ language: NotificationLanguage) -> String {
+        let polish = language == .polish
+        switch ability {
+        case .talk: return polish ? "Ile to 15% z 240 zł?" : "What’s 15% of 240?"
+        case .notes: return polish ? "Zapisz: rower stoi na poziomie −2." : "Note: the bike is on level −2."
+        case .lists: return polish ? "Dopisz mleko i chleb do zakupów." : "Add milk and bread to the shopping list."
+        case .reminders: return polish ? "Przypomnij mi jutro o 8, żeby zadzwonić do mamy." : "Remind me at 8 tomorrow to call Mum."
+        case .messages: return polish ? "Co jest na tym zdjęciu?" : "What’s in this photo?"
+        case .phoneCalls: return polish ? "Zadzwoń do mnie za godzinę." : "Call me in an hour."
+        case .callsForYou: return polish ? "Zadzwoń do serwisu i zapytaj, czy laptop jest gotowy." : "Ring the repair shop and ask if my laptop is ready."
+        case .tasks: return polish ? "Porównaj loty do Lizbony w maju." : "Compare flights to Lisbon in May."
+        case .leaflets: return polish ? "Gdzie w tym tygodniu jest najtańsze masło?" : "Where’s butter cheapest this week?"
+        case .translator: return polish ? "Tłumacz, rozmawiam z kimś po hiszpańsku." : "Translate, I’m talking to someone in Spanish."
+        }
+    }
+
+    /// "Say" or "Type", over the example.
+    public static func exampleLead(_ ability: DoddyAbility, _ language: NotificationLanguage) -> String {
+        let typed = ability == .messages
+        switch language {
+        case .polish: return typed ? "Napisz na przykład" : "Powiedz na przykład"
+        case .english: return typed ? "Type, for example" : "Say, for example"
         }
     }
 }

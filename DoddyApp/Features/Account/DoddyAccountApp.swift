@@ -18,7 +18,10 @@ extension DoddyAccountModel {
             config: DoddyAccountSetup.config(), transport: URLSessionTransport.shared,
             store: DoddyAccountKeychain(), authenticator: SystemWebAuthenticator())
         model.afterSignIn = { session in await DoddyAccountServers.bringEarlierData(session) }
-        model.afterSignOut = { DoddyAccountServers.forgetAccountTokens() }
+        model.afterSignOut = {
+            DoddyAccountServers.forgetAccountTokens()
+            VoiceTokenWarmer.shared.clear()
+        }
         return model
     }()
 }

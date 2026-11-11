@@ -2,6 +2,28 @@
 
 Owner, 28 Oct 2026 (in Polish): a news "plugin" where you follow what you want, shown like an Instagram feed, built on keywords, and by default "what's happening in Poland". Branch `claude/message-tracking-plugin-rd0cbn`. **On the default branch since 7 Nov 2026 (#195, through `claude/magical-cray-4299gg`); compiled and tested in #195's hosted Mac job (run 42004675828, 5 Nov); not seen on a device. `doddy-messaging` serves `POST /v1/news/feed` since its 7 Nov deploy of `174ba21`.** Status of each part is at the end; the "Not run" list there is from 28 Oct.
 
+## On my radar: fixes, Add sheet, own feeds and alerts (10 Nov 2026, branch `claude/radar-alerts`)
+
+Owner, 10 Nov 2026 (in Polish): "I added a cryptocurrency section and it doesn't work. Adding needs to be nicer … say when Doddy should tell them about an event, by keywords." Decision `docs/decisions/2026-11-10-radar-alerts.md`. The screen is being renamed "On my radar" / "Na radarze" in #315; this branch keeps `main`'s title.
+
+**Why crypto showed nothing** (read 10 Nov): the live server has no `GNEWS_API_KEY` (`newsSearch: false` in its start log), so a follow of the person's own words was looked for only in their other follows' stories (Poland's four feeds), with a plain substring test that missed Polish endings ("kryptowaluty" vs "kryptowalut"); the crypto topic had one publisher (CoinDesk, behind a redirect); and tapping a follow did nothing, so its few cards were lost among Poland's.
+
+| Part | Where | State |
+|---|---|---|
+| Matching that allows for Polish and English endings, case and diacritics; phrases in order | `server/messaging/src/news/match.ts`, DoddyCore `RadarMatch`, fixture `schemas/fixtures/radar_match_v1.json` | Tested on both sides (31 shared cases) |
+| Words looked for in every catalog feed (33) and the person's own feeds, not only their other follows | `gatherItems(…, { keywordPool: "catalog" })`, feed route | Tested |
+| Crypto: CoinDesk (canonical address), Cointelegraph, Decrypt, The Block, Bitcoin.pl; Europe + BBC News; a short publisher name per catalog feed | `news/catalog.ts` | Feeds fetched and parsed here on 10 Nov; not from Render |
+| Per follow: its publishers and whether each answered, or how many feeds were searched; every follow gets its best 4 stories in the 40 | `POST /v1/news/feed` → `follows[]`; `buildFeed` | Tested |
+| Tap a follow: only its stories, its sources, its "tell me" line, "Nothing from the last two days for …" | `FollowingView.swift`, `RadarViews.swift` (`FollowDetail`) | **Not compiled** (no Xcode) |
+| **Add to radar** sheet: type anything; topic suggestion ("bitcoin" → Kryptowaluty, with its publishers), the words, or an own RSS/Atom feed (checked first, https only) | `RadarViews.swift` (`RadarAddSheet`), DoddyCore `RadarSuggest`, `NewsFollow.feed` | Rules tested; view **not compiled** |
+| "Tell me when" words (a flag on matching cards) and how: Here only / As it happens / Once a day; the last two only with "Let Doddy's server check this for you" | `RadarAlertFields`, `RadarAlertSheet`, DoddyCore `RadarAlert`, `RadarAlertList` | Rules tested; views **not compiled** |
+| Server alerts: `PUT/GET /v1/news/radar`, `POST /v1/news/radar/seen`; worker `radarLoop`; tables `radar_alerts`, `radar_hits` | `news/radar.ts`, `routes/radar.ts`, `026_radar_alerts.sql` | Tested against PostgreSQL 16; **off** (`RADAR_ALERTS_ENABLED=0`) |
+| "Doddy spotted": what the server found, shown whether or not a notification went out; a dot on the follow until seen | `SpottedList` | View **not compiled** |
+
+How alerts behave: an alert counts only stories published after it was turned on; each story is recorded once per account (that is the dedupe); "as it happens" sends at most one notification per alert per check (`On your radar · Tesla: “<headline>” (Reuters)`, `+N more in Doddy`), waits in quiet hours, lists a story found more than 6 hours late in the app only, and stops at 8 a day; "once a day" sends a count and up to three lines at the chosen time (AI lines from the existing news writer only through `validateLines`, labelled; otherwise headlines), and is skipped if more than 2 hours late. No device token, no push sender or no encryption key: the stories are listed in the app only. Until APNs works in production (OWNER_QUEUE 8) that is where they are. The worker runs inside the free web service, which sleeps when idle; OWNER_QUEUE 34 has the steps.
+
+Voice: `follow_news` is unchanged. The proposed extension (alert words and how, kept "Here only" until the person turns the server switch on on screen) is in the decision and needs `voice-agent/tools.json` and `VoiceSessionController.swift`.
+
 ## What it is
 
 Home › ••• › **Following** (Polish: *Śledzone*). Across the top, a row of round badges, one per follow, like a row of stories, and a dashed **+** to add one. Under it, the stories as cards, newest first, with a day heading between Today, Yesterday and Earlier:
@@ -13,7 +35,7 @@ Home › ••• › **Following** (Polish: *Śledzone*). Across the top, a ro
 
 A new person follows one thing: **"Co się dzieje w Polsce" / "What's happening in Poland"**, which is the server's `poland` topic (TVN24, Polsat News, Notes from Poland, Rzeczpospolita feeds; `server/messaging/src/news/catalog.ts`). **Follow** adds a topic from the server's catalog (the same ten as Daily news) or the person's own words: a name and comma-separated keywords. **Edit** reorders the row or stops following. At most ten follows.
 
-What it is **not**: there is no AI anywhere in it. A card is the publisher's headline, summary, picture and link as the feed carried them; nothing is written, picked or summarised by Doddy. Nothing is pushed: it is a screen the person opens. Daily news (ADR-174, `N1_NEWS_STATUS.md`) is unchanged and separate.
+What it is **not**: there is no AI anywhere in it. A card is the publisher's headline, summary, picture and link as the feed carried them; nothing is written, picked or summarised by Doddy. Nothing is pushed: it is a screen the person opens. (Since 10 Nov 2026, above: an alert the person turns on can push, and a daily summary may have AI lines, labelled.) Daily news (ADR-174, `N1_NEWS_STATUS.md`) is unchanged and separate.
 
 ## How it works
 

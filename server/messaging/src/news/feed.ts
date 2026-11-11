@@ -21,14 +21,32 @@ export interface FeedCard {
 export const FEED_LIMIT = 40;
 export const FEED_WINDOW_HOURS = 48;
 export const FEED_PER_SOURCE = 6;
+/** Each follow's best stories that make the cut before the rest are filled by fit (On my radar, 10 Nov 2026). */
+export const FEED_PER_FOLLOW = 4;
 
 /**
  * Picks the cards: the last two days, deduplicated by link and title, at most six per publisher,
- * a keyword follow only where the words really appear; the best-fitting stories make the cut
- * (`shortlist`), then they are shown newest first, the way a feed reads.
+ * a keyword follow only where the words really appear. Every follow first gets its best few, so a
+ * busy topic such as Poland (four publishers) can't crowd a quiet one out of the 40; the rest are the
+ * best-fitting stories (`shortlist`). They are shown newest first, the way a feed reads.
  */
 export function buildFeed(topics: TopicItems[], now: Date, limit = FEED_LIMIT): FeedCard[] {
-  const picked = shortlist(topics, new Set(), now, { limit, perSource: FEED_PER_SOURCE, windowHours: FEED_WINDOW_HOURS });
+  const all = shortlist(topics, new Set(), now, { limit: 10 * FEED_LIMIT, perSource: FEED_PER_SOURCE, windowHours: FEED_WINDOW_HOURS });
+  const chosen = new Set<string>();
+  for (const label of new Set(topics.map((t) => t.label))) {
+    let n = 0;
+    for (const c of all) {
+      if (n >= FEED_PER_FOLLOW || chosen.size >= limit) break;
+      if (!c.topics.includes(label)) continue;
+      chosen.add(c.id);
+      n++;
+    }
+  }
+  for (const c of all) {
+    if (chosen.size >= limit) break;
+    chosen.add(c.id);
+  }
+  const picked = all.filter((c) => chosen.has(c.id));
   const order = new Map(topics.map((t, i) => [t.label, i] as const));
   return picked
     .filter((c): c is typeof c & { publishedAt: string } => typeof c.publishedAt === "string")

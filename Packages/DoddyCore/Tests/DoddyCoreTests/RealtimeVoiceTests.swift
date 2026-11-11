@@ -37,20 +37,27 @@ final class RealtimeVoiceTests: XCTestCase {
         })
         XCTAssertEqual(RealtimeToolCatalog.unhandledPhoneTools(tools, handled: routable), [])
         // The online-account tools exist in the spec, run on the phone, and only the writes ask for a
-        // tap; the reads ask too, for a spoken yes or a tap (ASK-01).
+        // tap. Since decision 2026-11-11-asked-for-runs-at-once every read through Doddy's server runs
+        // at once, as web search, news and places already did (ADR-575); none waits for a spoken yes.
         let cloud = tools.filter { CloudToolName.all.contains($0.name) }
         XCTAssertEqual(Set(cloud.map(\.name)), CloudToolName.all)
         XCTAssertTrue(cloud.allSatisfy { $0.runsOn == .phone })
         XCTAssertEqual(Set(cloud.filter(\.confirmOnScreen).map(\.name)), CloudToolName.writes)
-        XCTAssertEqual(Set(cloud.filter { $0.ask == .yesOrTap }.map(\.name)),
-                       CloudToolName.all.subtracting(CloudToolName.writes).subtracting(AskFirst.publicLookups))
-        // Web search, news and places run at once (ADR-575).
-        XCTAssertEqual(Set(cloud.filter { $0.ask == .runsNow }.map(\.name)), ["web_search", "news_search", "find_places"])
+        XCTAssertEqual(Set(cloud.filter { $0.ask == .tap }.map(\.name)), CloudToolName.writes)
+        XCTAssertEqual(Set(cloud.filter { $0.ask == .yesOrTap }.map(\.name)), [])
+        let cloudReads = CloudToolName.all.subtracting(CloudToolName.writes)
+        XCTAssertEqual(Set(cloud.filter { $0.ask == .runsNow }.map(\.name)), cloudReads)
+        XCTAssertTrue(cloudReads.isSuperset(of: ["web_search", "news_search", "find_places", "check_email", "read_email", "ask_claude",
+                                                 "make_document", "list_todoist_tasks"]))
+        // In the whole spec: a tool runs at once exactly when the app says so, and no tool is yes_or_tap.
+        XCTAssertEqual(Set(tools.filter { $0.ask == .runsNow }.map(\.name)), Set(tools.map(\.name).filter(AskFirst.runsAtOnce)))
+        XCTAssertEqual(tools.filter { $0.ask == .yesOrTap }.map(\.name), [])
+        XCTAssertEqual(Set(tools.filter { $0.ask == .tap }.map(\.name)), Set(tools.filter(\.confirmOnScreen).map(\.name)))
         let save = try XCTUnwrap(tools.first { $0.name == VoiceToolName.saveMemory })
         XCTAssertEqual(save.runsOn, .phone)
         XCTAssertTrue(save.confirmOnScreen)
         XCTAssertEqual(save.requiredParameters, ["text"])
-        // ASK-01: every tool that asks runs on the phone. The web tools are ADR-575's public
+        // ASK-01: every tool that shows a card runs on the phone. The web tools are ADR-575's public
         // lookups (weather, Wikipedia), which run at once on ElevenLabs.
         XCTAssertEqual(tools.first { $0.name == "get_weather" }?.runsOn, .web)
         XCTAssertTrue(tools.allSatisfy { ($0.runsOn == .phone || $0.ask == .runsNow) && $0.ask != nil })

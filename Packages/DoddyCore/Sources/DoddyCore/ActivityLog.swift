@@ -27,6 +27,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case training
     /// Following, the feed of what the person follows (ADR-656, ADR-657).
     case news
+    /// The screen the person shares with Doddy (decision 2026-11-09-doddy-looks-at-the-screen).
+    case screen
 
     public var title: String {
         switch self {
@@ -53,7 +55,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .home: "Home"
         case .health: "Apple Health"
         case .training: "Training plan"
-        case .news: "Following"
+        case .news: "On my radar"
+        case .screen: "Your screen"
         }
     }
 }
@@ -226,8 +229,13 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .timers, title: "Set alarm", detail: [draft.label.map { "“\($0)”" }, draft.summary].compactMap { $0 }.joined(separator: " · "),
                 isLookup: false, operationKey: AlarmIdempotency.key(draft))
-        case .openMap(let place):
-            return ActivityRequest(app: .maps, title: "Open in Maps", detail: "“\(place)”", isLookup: false)
+        case .openMap(let place, let from, let mode):
+            guard from != nil || mode != nil else {
+                return ActivityRequest(app: .maps, title: "Open in Maps", detail: "“\(place)”", isLookup: false)
+            }
+            return ActivityRequest(
+                app: .maps, title: "Directions in Maps",
+                detail: [from.map { "“\($0)” → " }, "“\(place)”"].compactMap { $0 }.joined(), isLookup: false)
         case .runShortcut(let name):
             return ActivityRequest(app: .shortcuts, title: "Run shortcut", detail: "“\(name)”", isLookup: false)
         case .draftMessage(let draft):
@@ -248,6 +256,8 @@ public struct ActivityRequest: Equatable, Sendable {
             local.timeZone = draft.timeZone
             let time = VoiceToolReply.localText(draft.at, hasTime: true, calendar: local)
             return ActivityRequest(app: .messages, title: "Call you later from Doddy's number", detail: time, logDetail: time, isLookup: false)
+        case .callMeNow:
+            return ActivityRequest(app: .messages, title: "Call you now from Doddy's number", detail: nil, isLookup: false)
         case .callPlaces(let draft):
             // The places' names, never their numbers or the question (decision 2026-11-09-restaurant-calls-one-tap).
             let names = draft.places.map(\.name).joined(separator: ", ")
@@ -269,6 +279,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:
             return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
+        case .lookAtScreen:
+            // The question can name someone on the screen, so the log keeps only that Doddy looked.
+            return ActivityRequest(app: .screen, title: "Looked at your screen", detail: nil, isLookup: true)
         case .controlHome(let proposal):
             // The log keeps what was done, not the room or accessory words.
             return ActivityRequest(app: .home, title: "Control the home", detail: proposal.summary, logDetail: nil, isLookup: false)
@@ -334,6 +347,17 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .timers, title: "Stop stopwatch", detail: "Doddy's stopwatch", isLookup: false)
         case .checkStopwatch:
             return ActivityRequest(app: .timers, title: "Read stopwatch", detail: "Doddy's stopwatch", isLookup: true)
+        case .startFocus(let minutes, let label):
+            return ActivityRequest(app: .timers, title: "Start focus",
+                                   detail: ([TimerVoice.length(minutes)] + (label.map { ["“\($0)”"] } ?? [])).joined(separator: " · "), isLookup: false)
+        case .stopFocus:
+            return ActivityRequest(app: .timers, title: "Stop focus", detail: "Doddy's focus timer", isLookup: false)
+        case .checkFocus:
+            return ActivityRequest(app: .timers, title: "Read focus", detail: "Doddy's focus timer", isLookup: true)
+        case .startWindDown(let minutes):
+            return ActivityRequest(app: .timers, title: "Start wind-down", detail: TimerVoice.length(minutes), isLookup: false)
+        case .stopWindDown:
+            return ActivityRequest(app: .timers, title: "Stop wind-down", detail: "Doddy's wind-down", isLookup: false)
         case .deleteCalendarEvents(let range):
             return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
         case .moveReminders(let dueBy, let to):

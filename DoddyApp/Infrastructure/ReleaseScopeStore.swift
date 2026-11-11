@@ -1,10 +1,10 @@
 import DoddyCore
 import Foundation
 
-/// Which features this build shows (decision 2026-11-07-release-scope). A Release or TestFlight build
-/// shows everything for now (`ReleaseScope.shipping` returns with the beta) and never reads the switch. A Debug build shows every feature
-/// until Settings › About › Advanced › "Show every feature" is turned off (decision
-/// 2026-11-08-debug-shows-every-feature), so the owner sees the whole app when running from Xcode.
+/// Which features this build shows. Every build shows everything since 10 Nov 2026 (decision
+/// 2026-11-10-no-beta-scope: `ReleaseScope.shipping` is `.everything`). A Debug build still reads the
+/// `previewEverythingKey` preference (the Advanced toggle is gone; a launch argument still works), and
+/// the answer is the same either way.
 /// Read at each use, not cached: the switch takes effect on the next screen, and the next tool call,
 /// without a restart.
 enum ReleaseScopeStore {
@@ -16,10 +16,8 @@ enum ReleaseScopeStore {
         let setting: Bool? = defaults.object(forKey: key) == nil ? nil : defaults.bool(forKey: key)
         return ReleaseScope.debug(showEverything: setting)
         #else
-        // Owner, 8 Nov 2026: "don't hide anything, the beta comes later". Until the beta, every build shows
-        // everything. To bring the beta scope back, return `.shipping` here (decision
-        // 2026-11-08-show-everything-until-beta).
-        return .everything
+        // Owner, 10 Nov 2026: "forget the beta as if it didn't exist". Every build shows everything.
+        return .shipping
         #endif
     }
 

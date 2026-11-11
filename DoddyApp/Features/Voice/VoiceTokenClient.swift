@@ -1,12 +1,21 @@
 import DoddyCore
 import Foundation
+import os
 
 /// Fetches a short-lived ElevenLabs credential from DODDY's server. It sends a DODDY
 /// session bearer, never an owner/provider key or conversation content.
 struct VoiceTokenClient: Sendable {
     let endpoint: URL
+    private static let log = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     /// ElevenLabs conversation token. Sends no body: ElevenLabs is the only voice (9 Nov 2026).
     func fetchToken() async throws(VoiceTokenError) -> String {
+        // How long the token server took, on the "voice-audio" log with the start's other stages
+        // (decision 2026-11-10-voice-start-timing): seconds only.
+        let began = ProcessInfo.processInfo.systemUptime
+        defer {
+            let took = VoiceStartTimeline.text(ProcessInfo.processInfo.systemUptime - began)
+            Self.log.notice("voice token request took \(took, privacy: .public)")
+        }
         let (status, data, retryAfter) = try await post()
         return try VoiceTokenServer.token(status: status, body: data, retryAfter: retryAfter).get()
     }

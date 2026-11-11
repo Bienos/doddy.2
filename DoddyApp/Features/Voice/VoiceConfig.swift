@@ -8,6 +8,10 @@ enum VoiceConfig {
     /// belonged to a previous team's project and now answers 402 DEPLOYMENT_DISABLED.
     static let tokenEndpointAddress = "https://doddy-voice-token-beta.vercel.app/api/voice-token"
 
+    /// The media host used by the pinned ElevenLabs SDK 3.3.1's ConnectionConstants.
+    /// Only its public network route is warmed: no token, room join, microphone or conversation.
+    static let mediaEndpointAddress = "wss://livekit.rtc.elevenlabs.io"
+
     static var tokenEndpoint: URL? { VoiceTokenServer.endpoint(from: tokenEndpointAddress) }
 
     // MARK: Developer connection (ADR-551)

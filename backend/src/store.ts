@@ -1063,6 +1063,14 @@ export class Store {
     await this.db.query("UPDATE documents SET status = 'failed', body = NULL WHERE id = $1 AND status = 'working'", [id]);
   }
 
+  /**
+   * Files still "working" past `olderThanMs` have lost their job (it runs in the server's memory, so a restart ends it) and
+   * become "failed", so their link says so instead of waiting for good. Returns how many.
+   */
+  async failStaleDocuments(now: number, olderThanMs: number): Promise<number> {
+    return (await this.db.query("UPDATE documents SET status = 'failed', body = NULL WHERE status = 'working' AND created_at < $1", [now - olderThanMs])).rowCount;
+  }
+
   async getDocument(id: string): Promise<DocumentRow | null> {
     const row = await this.one<DocumentRow>(this.db, "SELECT id, user_id, status, name, mime, body, created_at FROM documents WHERE id = $1", [id]);
     if (!row) return null;

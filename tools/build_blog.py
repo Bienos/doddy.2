@@ -280,7 +280,7 @@ def _page(title: str, description: str, path: str, main: str, og_type: str = "we
         </ul>
         <!-- i18n:switcher-footer --><!-- /i18n:switcher-footer -->
       </div>
-      <p>Doddy is a digital companion powered by AI, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
+      <p>Doddy is a digital companion, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
       <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>
       <p>Google Analytics also measures visits and sets cookies.</p>
       <p>© 2026 Doddy</p>

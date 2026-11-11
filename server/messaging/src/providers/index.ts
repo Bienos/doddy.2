@@ -18,7 +18,9 @@ import { modelLabel } from "../studio/models.js";
 import type { AssistantDeps } from "../assistant/deps.js";
 import { ClaudeAssistantResponder } from "../assistant/responder.js";
 import { ClaudeRecapWriter } from "../assistant/recap.js";
-import { PoliteFetcher } from "../deals/fetcher.js";
+import { ClaudeScreenLooker } from "../screen/look.js";
+import type { PhoneRecapDeps } from "../phoneRecaps.js";
+import { CachingFetcher, PoliteFetcher } from "../deals/fetcher.js";
 import type { DealsDeps } from "../deals/service.js";
 import { CeidgClient } from "../registry/ceidg.js";
 import { AnthropicDealsModel } from "../deals/vision.js";
@@ -96,7 +98,9 @@ export function providersFrom(config: Config) {
   const ds = config.dealsSettings;
   const deals: DealsDeps = {
     settings: ds,
-    fetcher,
+    // Leaflet pages are kept a few hours (11 Nov 2026: most chains timed out on every search). Shop pages for errands
+    // and price watches still read fresh.
+    fetcher: new CachingFetcher(fetcher),
     model: ds.enabled && config.anthropicApiKey ? new AnthropicDealsModel(config.anthropicApiKey, { model: ds.visionModel }) : undefined,
     log,
     // ADR-666: the same partner rules as shopping errands (ADR-612), added after the picks.
@@ -118,6 +122,16 @@ export function providersFrom(config: Config) {
     recapWriter: as.enabled && config.anthropicApiKey
       ? new ClaudeRecapWriter(config.anthropicApiKey, { model: as.model })
       : undefined,
+    // "What's on my screen?" (decision 2026-11-09-doddy-looks-at-the-screen): the same key, switch and model.
+    screen: as.enabled && config.anthropicApiKey
+      ? new ClaudeScreenLooker(config.anthropicApiKey, { model: as.model })
+      : undefined,
+  };
+  // Recaps of calls to Doddy's phone line (decision 2026-11-09-conversation-recaps, step 5): the phone agent, the
+  // workspace webhook's secret, and the same Claude writer and daily caps as Messages. Without any of them, no recap.
+  const phoneRecaps: PhoneRecapDeps = {
+    phoneAgentId: config.phoneAgent?.agentId, webhookSecret: config.elevenLabsWebhookSecret,
+    writer: assistant.recapWriter, settings: as,
   };
   // Studio (ADR-740): the model API only with an Anthropic key, the switch on (STUDIO_ENABLED, default 0) and Doddy's
   // skills. The key is read from the server's environment only (rule 6): nothing here or in the app holds one.
@@ -146,6 +160,7 @@ export function providersFrom(config: Config) {
     errands,
     studio,
     assistant,
+    phoneRecaps,
     deals,
     // ADR-685: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.
     ceidg: config.ceidg ? new CeidgClient(config.ceidg) : undefined,

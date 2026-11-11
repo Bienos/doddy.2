@@ -1,11 +1,13 @@
 import DoddyCore
 import SwiftUI
 
-/// Home → Timer and Home → Wind down (ADR-780): a plain countdown. The timer takes 3, 5, 10 or
+/// The kitchen timer and the wind-down (ADR-780): a plain countdown. The timer takes 3, 5, 10 or
 /// 15 minutes and an optional label ("Pasta"); the wind-down 5 to 20 minutes and no label. While
 /// one runs the island and the Lock Screen (and so StandBy) show the focus board with the
-/// time left and Pause / Stop; this screen shows the same. A timer by voice is a different path
-/// (AlarmKit, ADR-650) and does not start this one.
+/// time left and Pause / Stop; this screen shows the same. Since decision 2026-11-10-timers-by-voice
+/// Home's menu no longer opens it: the wind-down starts by voice (`start_wind_down`), and this screen
+/// opens from Home's row while one runs. A timer by voice is a different path (`set_timer`, AlarmKit,
+/// ADR-650) and does not start this one.
 struct CountdownView: View {
     let purpose: CountdownSession.Purpose
     @Environment(\.dismiss) private var dismiss

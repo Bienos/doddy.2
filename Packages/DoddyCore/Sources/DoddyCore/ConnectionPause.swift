@@ -14,9 +14,11 @@ public enum ConnectionPause {
         case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator,
              .calculate, .convertUnits, .parkingSpot, .addIngredients,
              .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap,
-             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews:
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews,
+             .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown:
             // The stopwatch is Doddy's own tool on this iPhone (ADR-652), and so are the plan screen
-            // (ADR-626) and the follow list of Following (ADR-657): no other app or account.
+            // (ADR-626), the follow list of Following (ADR-657), and the focus timer and wind-down
+            // (decision 2026-11-10-timers-by-voice): no other app or account.
             false
         case .checkErrands:
             // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
@@ -30,6 +32,10 @@ public enum ConnectionPause {
         case .findDeals:
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
             true
+        case .lookAtScreen:
+            // A picture of another app's screen goes to Doddy's server and Anthropic
+            // (decision 2026-11-09-doddy-looks-at-the-screen).
+            true
         case .draftInvoice:
             // A draft on this iPhone's screen (ADR-677); no other app or account is used.
             false
@@ -37,7 +43,7 @@ public enum ConnectionPause {
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
-             .convertCurrency, .textMe, .callMeLater, .callPlaces:
+             .convertCurrency, .textMe, .callMeLater, .callMeNow, .callPlaces:
             // Currency rates come from the ECB's public file, another service (ADR-300). A text,
             // or a call booked for later, goes through Doddy's server and Twilio (ADR-750).
             true

@@ -112,7 +112,7 @@ private struct ReportFooter: View {
         VStack(spacing: 6) {
             Rectangle().fill(Paper.line).frame(height: 0.5)
             HStack(alignment: .top) {
-                Text("Doddy can get things wrong, and prices and availability can change after the time they were checked. Check the price in the shop before you pay.")
+                Text("Prices and availability can change after the time they were checked. Check the price in the shop before you pay.")
                     .font(.system(size: 7.5)).foregroundStyle(Paper.muted)
                 Spacer(minLength: 12)
                 Text(verbatim: "\(page) / 2").font(.system(size: 7.5)).foregroundStyle(Paper.muted)

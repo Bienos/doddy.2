@@ -61,6 +61,8 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
+    /// Poland-first public information: IMGW, GIOŚ, NBP, InPost handoff and existing leaflets.
+    @State private var showPolandPack = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -126,13 +128,16 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showPolandPack) {
+                PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
+            }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
             // A finished call's push, tapped (ADR-730): Files, where Calls lists the recaps.
             .sheet(isPresented: Binding(get: { router.isCallRecapsPresented }, set: { router.isCallRecapsPresented = $0 })) { FilesSheet() }
             .sheet(isPresented: $showToday) {
-                HomeTodaySheet(openSettings: { showToday = false; selectedTab = .settings })
+                TodaySheet(openSettings: { showToday = false; selectedTab = .settings })
             }
             .sheet(item: $tool) { tool in
                 switch tool {
@@ -142,6 +147,12 @@ struct HomeView: View {
                 case .timer: CountdownView(purpose: .timer)
                 case .windDown: CountdownView(purpose: .windDown)
                 }
+            }
+            // A finished task's or file's push, tapped: Messages, where Doddy's message about it is.
+            .onChange(of: router.isMessagesRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isMessagesRequested = false
+                showAsk = true
             }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
@@ -169,7 +180,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday || showPolandPack)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -189,6 +200,13 @@ struct HomeView: View {
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
                 Spacer()
+                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
+                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
+                // On the trailing side, beside the menu (owner, 11 Nov 2026: "ta kropka w złym miejscu, bo
+                // zasłania"): next to the transcript capsule iOS's round record glyph sat on the wordmark.
+                if conversation.live != nil, scope.shows(Feature.messages) {
+                    showScreenButton
+                }
                 moreMenu
             }
         }
@@ -222,9 +240,16 @@ struct HomeView: View {
         .accessibilityIdentifier("home.transcript")
     }
 
+    /// Starts sharing the screen with Doddy through iOS's "Start Broadcast" sheet, so he can look when asked.
+    private var showScreenButton: some View {
+        ScreenShareButton(tint: UIColor(Theme.ink))
+            .frame(width: 36, height: 36)
+            .background(Theme.quietSurface, in: Circle())
+            .frame(width: 44, height: 44)
+    }
+
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
-    /// the privacy page. No header: the voice and Messages screens and Settings say what Doddy is
-    /// (decision 2026-11-09-companion-not-ai-label).
+    /// the privacy page.
     private var moreMenu: some View {
         Menu {
             Section {
@@ -239,8 +264,8 @@ struct HomeView: View {
                         .accessibilityHint("Doddy translates between you and someone who speaks another language.")
                         .accessibilityIdentifier("home.translate")
                 }
-                Button { selectedTab = .memories; showFind = true } label: { Label("Find something", systemImage: "magnifyingglass") }
-                    .accessibilityIdentifier("home.find")
+                // "Find something" left the menu on 10 Nov 2026 (owner: unclear here). Find stays on the notes
+                // screen (Settings › Doddy's memory › Notes) and in a conversation ("what did I save about…").
                 // Tasks handed to Doddy's background worker (ADR-570).
                 if scope.shows(.errands) {
                     Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
@@ -252,54 +277,17 @@ struct HomeView: View {
                     Button { showCalls = true } label: { Label("Phone calls", systemImage: "phone") }
                         .accessibilityIdentifier("home.calls")
                 }
-                // Focus counts down, the stopwatch counts up (ADR-652). One row for both: the menu
-                // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
-                // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
-                // Phone calls took a row on 9 Nov 2026; What leaves this iPhone moved to Settings › Privacy only, to make room.
-                Menu {
-                    Button { tool = .focus } label: {
-                        if FocusController.shared.session.map({ !$0.isOver }) ?? false {
-                            Label("Focus · on", systemImage: "timer")
-                        } else {
-                            Label("Focus", systemImage: "timer")
-                        }
-                    }
-                    .accessibilityIdentifier("home.focus")
-                    Button { tool = .stopwatch } label: {
-                        if StopwatchController.shared.watch.map({ !$0.isOver }) ?? false {
-                            Label("Stopwatch · on", systemImage: "stopwatch")
-                        } else {
-                            Label("Stopwatch", systemImage: "stopwatch")
-                        }
-                    }
-                    .accessibilityIdentifier("home.stopwatch")
-                    // A kitchen timer and a wind-down countdown, on the island and in StandBy (ADR-780).
-                    Button { tool = .timer } label: {
-                        if CountdownController.shared.session(.timer).map({ !$0.isOver }) ?? false {
-                            Label("Timer · on", systemImage: "timer.circle")
-                        } else {
-                            Label("Timer", systemImage: "timer.circle")
-                        }
-                    }
-                    .accessibilityIdentifier("home.timer")
-                    Button { tool = .windDown } label: {
-                        if CountdownController.shared.session(.windDown).map({ !$0.isOver }) ?? false {
-                            Label("Wind down · on", systemImage: "moon")
-                        } else {
-                            Label("Wind down", systemImage: "moon")
-                        }
-                    }
-                    .accessibilityIdentifier("home.windDown")
-                } label: {
-                    Label("Focus, timers and stopwatch", systemImage: "timer")
-                }
-                .accessibilityIdentifier("home.timers")
+                // Focus, the timers and the stopwatch left this menu on 10 Nov 2026 (owner: "lepiej to schować i po prostu
+                // wywoływać to na komendę do Doddy'ego", decision 2026-11-10-timers-by-voice). A conversation starts them;
+                // one that runs shows on Home (`RunningTimersView`), and a tap there opens its screen with Pause and Stop.
                 // Today only points to Settings until something is connected (ADR-326).
                 if hadFirstConversation || calendarOn || remindersOn {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
                         .accessibilityIdentifier("home.today")
                 }
             }
+            // The "Doddy is an AI, not a person." header left this menu on 11 Nov 2026 (owner: "nie chcę używać słowa AI
+            // w ogóle w mówieniu o Dodim … usuń tam Dodi AI"); asked directly, Doddy still says what he is (DOD-03).
             Section {
                 // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
                 // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
@@ -308,9 +296,16 @@ struct HomeView: View {
                     Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                         .accessibilityIdentifier("home.deals")
                 }
+                // Poland Pack reads official local data only when opened; no startup request.
+                Button { showPolandPack = true } label: {
+                    Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
+                          systemImage: "mappin.and.ellipse")
+                }
+                .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
+                // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
                 if scope.shows(.following) {
-                    Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                    Button { showFollowing = true } label: { Label("On my radar", systemImage: "dot.radiowaves.left.and.right") }
                         .accessibilityIdentifier("home.following")
                 }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
@@ -333,6 +328,9 @@ struct HomeView: View {
     /// Only what needs the user now. Each card hides itself when there is nothing to show.
     private var notices: some View {
         VStack(spacing: 12) {
+            // A focus, a timer, a wind-down or the stopwatch that runs now (decision 2026-11-10-timers-by-voice): they
+            // start by voice, so this is where one is seen and, through its screen, paused or stopped.
+            RunningTimersView { tool = $0 }
             DueRemindersView()
             // A payment that was sent and never confirmed (ADR-736): hidden unless payments were once switched on.
             UnconfirmedPaymentsBanner()
@@ -657,8 +655,8 @@ struct HomeView: View {
     /// Which features this build shows (decision 2026-11-07-release-scope). Read each time, so the Debug toggle shows on the next draw.
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 
-    /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under
-    /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.
+    /// Start in the tap's turn (ADR-595), with the hop alongside it. Only animation cleanup waits:
+    /// a decorative hop must never add latency before account, token or provider setup.
     private func talk() {
         guard canTalk else { return }
         guard !reduceMotion, !hideCharacterArt, conversation.live == nil else {
@@ -667,10 +665,10 @@ struct HomeView: View {
         }
         tapHops &+= 1
         perking = true
+        conversation.talk(store: store, profile: profiles.profile)
         Task {
-            try? await Task.sleep(for: .seconds(0.35))
-            conversation.talk(store: store, profile: profiles.profile)
-            try? await Task.sleep(for: .seconds(0.8))
+            // Keep the previous visual lifetime (0.35 + 0.8 s), outside the start path.
+            try? await Task.sleep(for: .seconds(1.15))
             perking = false
         }
     }
@@ -989,33 +987,106 @@ private struct DoddyPressStyle: ButtonStyle {
 
 // MARK: - Sheets from Home
 
-/// Today (it used to be a card on Home), from the ••• menu.
-private struct HomeTodaySheet: View {
-    let openSettings: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                TodayCard(openSettings: openSettings)
-                    .padding(24)
-            }
-            .background(Theme.canvas)
-            .navigationTitle("Today")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-}
+// Today's sheet is `TodaySheet` in Features/Today.
 
 private enum HomeTool: String, Identifiable {
     case focus, stopwatch, timer, windDown
     var id: String { rawValue }
+}
+
+/// Doddy's own timers that run now, one small row each (decision 2026-11-10-timers-by-voice). Since they left Home's
+/// ••• menu they start in a conversation, so this is how a running or paused one is seen without the Lock Screen
+/// or the island (an iPad, Live Activities off), and a tap opens its screen with Pause and Stop. Nothing shows when
+/// none runs. The time ticks by itself, so Home isn't redrawn every second.
+private struct RunningTimersView: View {
+    let open: (HomeTool) -> Void
+
+    private var focus: FocusSession? { FocusController.shared.session.flatMap { $0.isOver ? nil : $0 } }
+    private var stopwatch: Stopwatch? { StopwatchController.shared.watch.flatMap { $0.isOver ? nil : $0 } }
+    private func countdown(_ purpose: CountdownSession.Purpose) -> CountdownSession? {
+        CountdownController.shared.session(purpose).flatMap { $0.isOver ? nil : $0 }
+    }
+
+    var body: some View {
+        let timer = countdown(.timer), windDown = countdown(.windDown)
+        if focus != nil || stopwatch != nil || timer != nil || windDown != nil {
+            VStack(spacing: 8) {
+                if let focus {
+                    row(.focus, paused: focus.isPaused) {
+                        Label("Focus", systemImage: "timer")
+                    } time: {
+                        clock(endsAt: focus.endsAt, remaining: focus.remaining(at: Date()))
+                    }
+                }
+                if let timer {
+                    row(.timer, paused: timer.isPaused) {
+                        Label("Timer", systemImage: "timer.circle")
+                    } time: {
+                        clock(endsAt: timer.endsAt, remaining: timer.remaining(at: Date()))
+                    }
+                }
+                if let windDown {
+                    row(.windDown, paused: windDown.isPaused) {
+                        Label("Wind down", systemImage: "moon")
+                    } time: {
+                        clock(endsAt: windDown.endsAt, remaining: windDown.remaining(at: Date()))
+                    }
+                }
+                if let stopwatch {
+                    row(.stopwatch, paused: stopwatch.isPaused) {
+                        Label("Stopwatch", systemImage: "stopwatch")
+                    } time: {
+                        if let from = stopwatch.countsFrom {
+                            IslandElapsedText(startedAt: from)
+                        } else {
+                            Text(verbatim: Stopwatch.clock(stopwatch.elapsed(at: Date()))).monospacedDigit()
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// A running countdown ticks down to its end; a paused one shows the time left as it stopped.
+    @ViewBuilder
+    private func clock(endsAt: Date?, remaining: TimeInterval) -> some View {
+        if let endsAt {
+            IslandCountdownText(end: endsAt)
+        } else {
+            Text(verbatim: DoddyToolAttributes.clock(remaining)).monospacedDigit()
+        }
+    }
+
+    private func row<Name: View, Time: View>(_ tool: HomeTool, paused: Bool, @ViewBuilder name: () -> Name,
+                                             @ViewBuilder time: () -> Time) -> some View {
+        Button { open(tool) } label: {
+            HStack(spacing: 10) {
+                name()
+                    .font(.subheadline.weight(.semibold))
+                Spacer(minLength: 8)
+                if paused {
+                    Text("Paused")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                time()
+                    .font(.subheadline.weight(.semibold))
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 48)
+            .background(Theme.quietSurface, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(DoddyPressStyle())
+        .foregroundStyle(Theme.ink)
+        .accessibilityHint("Opens its screen with Pause and Stop.")
+        .accessibilityIdentifier("home.running.\(tool.rawValue)")
+    }
 }
 
 /// Whether Home's once-a-launch greeting has played (ADR-313, ADR-380).

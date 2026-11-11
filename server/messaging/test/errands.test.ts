@@ -124,7 +124,7 @@ describe("errands against real Postgres", { skip: dbSkip }, () => {
 
     // The push says only that a result is waiting.
     await dispatchDue(db, { push: w.push, cipher: testCipher });
-    assert.deepEqual(w.push.sent.map((p) => p.body), ["Gotowe. Wynik sprawy czeka w aplikacji."]);
+    assert.deepEqual(w.push.sent.map((p) => p.body), ["Gotowe. Wynik czeka w Wiadomościach."]);
 
     assert.equal((await w.api("POST", `/v1/errands/${draft.id}/ack`, { resultDigest: "0".repeat(64) })).statusCode, 409);
     const acked = await w.api("POST", `/v1/errands/${draft.id}/ack`, { resultDigest: got.resultDigest });

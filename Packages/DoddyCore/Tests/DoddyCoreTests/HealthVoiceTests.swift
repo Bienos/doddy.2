@@ -16,17 +16,16 @@ final class HealthVoiceTests: XCTestCase {
 
     private var now: Date { at(24, 9, 30) }
 
-    func testTheToolParsesAndAsksFirst() {
+    func testTheToolParsesAndRunsAtOnce() {
         let request = VoiceToolRequest.parse(name: VoiceToolName.readHealthWeek, parametersJSON: Data("{}".utf8), now: now, calendar: calendar)
         XCTAssertEqual(request, .readHealthWeek)
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.readHealthWeek)?.approval, .askFirst, "ASK-01: a read of the person's data asks first")
+        // Decision 2026-11-11-asked-for-runs-at-once: the user asked about their week, so Doddy reads it at once.
+        // Apple Health's own consent is still asked once, on its own sheet.
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.readHealthWeek)?.approval, .runsNow)
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.readHealthWeek)?.effect, .lookup)
-        guard case .yesFirst(let card) = AskFirst.need(for: request, calendar: calendar) else {
-            return XCTFail("expected a yes first")
-        }
-        XCTAssertEqual(card.title, "Read your week from Apple Health?")
-        XCTAssertTrue(card.lines.contains("A short summary goes to Doddy's voice"), "the card says the summary leaves the iPhone")
-        XCTAssertFalse(AskFirst.publicLookups.contains(VoiceToolName.readHealthWeek), "never a public lookup that runs at once")
+        XCTAssertEqual(AskFirst.need(for: request, calendar: calendar), .runsNow)
+        XCTAssertTrue(AskFirst.ownLooks.contains(VoiceToolName.readHealthWeek))
+        XCTAssertFalse(AskFirst.publicLookups.contains(VoiceToolName.readHealthWeek), "a look at the person's own data, not a public lookup")
     }
 
     func testItIsLoggedPausedAndAllowedInTheCar() {

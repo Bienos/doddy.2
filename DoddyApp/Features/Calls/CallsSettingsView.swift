@@ -34,7 +34,11 @@ struct CallsSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .disabled(model.isWorking)
         .overlay { if model.isWorking { ProgressView() } }
-        .task { await model.refresh() }
+        .task {
+            await model.refresh()
+            // Recaps of calls to Doddy's phone line waiting on the server (decision 2026-11-09-conversation-recaps).
+            await RecapKeeper.rememberPhoneCalls(store: store)
+        }
         .onDisappear { model.clearExport() }
     }
 

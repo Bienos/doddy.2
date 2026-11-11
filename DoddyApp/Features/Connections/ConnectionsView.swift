@@ -403,7 +403,7 @@ struct ConnectionInfo {
                 symbol: "figure.walk",
                 examples: [NSLocalizedString("How many steps today?", comment: ""), NSLocalizedString("How far did I walk yesterday?", comment: "")],
                 canDo: [
-                    NSLocalizedString("Read one day's steps, walking distance and floors climbed, after you say yes or tap", comment: ""),
+                    NSLocalizedString("Read one day's steps, walking distance and floors climbed, when you ask", comment: ""),
                     NSLocalizedString("Today and the six days before it, which is what your iPhone keeps", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("That day's numbers, when Doddy uses them in a conversation.", comment: ""),
@@ -414,7 +414,7 @@ struct ConnectionInfo {
                 symbol: "photo.on.rectangle",
                 examples: [NSLocalizedString("How many photos did I take on Saturday?", comment: ""), NSLocalizedString("Show me my photos from last week", comment: "")],
                 canDo: [
-                    NSLocalizedString("Count the photos and videos you took on a day or over up to a month, after you say yes or tap", comment: ""),
+                    NSLocalizedString("Count the photos and videos you took on a day or over up to a month, when you ask", comment: ""),
                     NSLocalizedString("Show the newest of them on your screen, with a button to open Photos", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.", comment: ""),

@@ -193,6 +193,10 @@ const schema = z.object({
   // Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka on request (ADR-660) and keeps only counts. "0" answers 503 deals_disabled.
   // Image pages need ANTHROPIC_API_KEY (Claude Haiku reads them); the caps count requests per UTC day.
   DEALS_ENABLED: z.enum(["0", "1"]).default("0"),
+  // On my radar alerts (decision 2026-11-10-radar-alerts): "1" lets the iPhone store follows the person chose to have
+  // checked, and runs the worker that records new matching stories and queues their pushes. "0" (the default)
+  // answers 503 radar_disabled to a new alert, still accepts turning them off, and runs no checks.
+  RADAR_ALERTS_ENABLED: z.enum(["0", "1"]).default("0"),
   // Company registers (ADR-685): CEIDG's JWT, which the owner gets free at biznes.gov.pl (e-service 00_9999_00,
   // signing in with mObywatel or a trusted profile). Not set: GET /v1/registry/ceidg answers 503 registry_disabled.
   CEIDG_API_TOKEN: z.string().min(20).optional(),
@@ -380,6 +384,8 @@ export interface Config {
   twilioRecordDeleteAfterHours: number;
   quietHours: QuietHours;
   taskCalls?: TaskCallConfig;
+  /** The workspace post-call webhook's HMAC secret, also when task calls are off (phone-line recaps use it). */
+  elevenLabsWebhookSecret?: string;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
   shoppingSettings: ShoppingSettings;
@@ -389,6 +395,8 @@ export interface Config {
   /** CEIDG (ADR-685): only with a token; the base is checked to be CEIDG's own host when the client is made. */
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
+  /** On my radar alerts (RADAR_ALERTS_ENABLED, off by default): routes store alerts and the worker checks them. */
+  radarAlertsEnabled: boolean;
   /** Where Doddy's backend serves file links (`DOCUMENTS_ORIGIN`, no trailing slash); null turns file-ready pushes off. */
   documentsOrigin: string | null;
   assistantSettings: AssistantSettings;
@@ -440,6 +448,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       start: e.QUIET_HOURS_START ? parseClock(e.QUIET_HOURS_START)! : QUIET_HOURS_DEFAULT.start,
       end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,
     },
+    elevenLabsWebhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
     taskCalls: all<TaskCallConfig>({
       twilioAccountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
       twilioAuthToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
@@ -502,6 +511,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     dealsSearchShops: e.DEALS_SEARCH_SHOPS,
     ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
+    radarAlertsEnabled: e.RADAR_ALERTS_ENABLED === "1",
     documentsOrigin: e.DOCUMENTS_ORIGIN ? e.DOCUMENTS_ORIGIN.replace(/\/$/, "") : null,
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",

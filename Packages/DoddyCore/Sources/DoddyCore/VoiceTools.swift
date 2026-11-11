@@ -248,7 +248,15 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case startStopwatch(label: String?)
     case stopStopwatch
     case checkStopwatch
-    case openMap(place: String)
+    /// The focus timer and the wind-down before bed (decision 2026-11-10-timers-by-voice, TimerVoice.swift): started
+    /// and stopped after a card, the focus timer read after a "yes". Minutes are whole and in range.
+    case startFocus(minutes: Int, label: String?)
+    case stopFocus
+    case checkFocus
+    case startWindDown(minutes: Int)
+    case stopWindDown
+    /// One place, or a route to it when `from` or `mode` is given (owner, 10 Nov 2026).
+    case openMap(place: String, from: String? = nil, mode: MapTravelMode? = nil)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
@@ -260,6 +268,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A call from Doddy's number to the user's verified number at a later time (ADR-754). Shown
     /// on a card with the time and the exact reason; booked only on the user's tap.
     case callMeLater(CallLaterDraft)
+    /// A call from Doddy's number to the user's verified number now (decision 2026-11-10-call-me-now-by-voice).
+    /// Shown on a card with the number's last digits; placed only on the user's tap.
+    case callMeNow
     /// Up to three places, one card, one tap; called one after another until one says yes
     /// (decision 2026-11-09-restaurant-calls-one-tap). Placed by Doddy's messaging server.
     case callPlaces(CallTaskDraft)
@@ -276,6 +287,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
     case openCamera
+    /// One picture of the screen the person shares with Doddy, read by Claude for their question, after a yes
+    /// (decision 2026-11-09-doddy-looks-at-the-screen).
+    case lookAtScreen(question: String)
     /// Turn a light, outlet or fan on or off, or run a scene, in HomeKit (HomeCommand.swift). The
     /// app resolves the words to one exact accessory and shows a card with it before anything runs.
     case controlHome(HomeProposal)
@@ -402,9 +416,19 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .stopStopwatch
         case VoiceToolName.checkStopwatch:
             return .checkStopwatch
+        case VoiceToolName.startFocus:
+            return parseStartFocus(args, name: name)
+        case VoiceToolName.stopFocus:
+            return .stopFocus
+        case VoiceToolName.checkFocus:
+            return .checkFocus
+        case VoiceToolName.startWindDown:
+            return parseStartWindDown(args, name: name)
+        case VoiceToolName.stopWindDown:
+            return .stopWindDown
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
-            return .openMap(place: place)
+            return .openMap(place: place, from: args.text("from"), mode: MapTravelMode.parse(args.text("mode")))
         case VoiceToolName.runShortcut:
             guard let shortcut = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .runShortcut(name: shortcut)
@@ -427,6 +451,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .textMe(body: body)
         case VoiceToolName.callMeLater:
             return parseCallMeLater(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.callMeNow:
+            return .callMeNow
         case VoiceToolName.callPlaces:
             return parseCallPlaces(args, name: name)
         case VoiceToolName.makePresentation:
@@ -441,6 +467,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:
             return .openCamera
+        case VoiceToolName.lookAtScreen:
+            guard let question = args.text("question") else { return .invalid(name: name, reason: "missing question") }
+            return .lookAtScreen(question: question)
         case VoiceToolName.controlHome:
             return parseControlHome(args, name: name)
         case VoiceToolName.startTranslator:
@@ -702,6 +731,8 @@ public enum VoiceTextLimits {
         case "topic": StudioJob.maxTopic
         case "details": StudioJob.maxDetails
         case "query", "place": search
+        // What the person asked about their screen, as `POST /v1/screen/look` takes it.
+        case "question": ScreenLookRequest.maxQuestionScalars
         case "slides": PresentationLimits.slidesJSON
         default: line
         }
@@ -814,6 +845,8 @@ public enum VoiceToolReply {
     public static let declinedReminder = "declined: the user chose not to add this reminder. Nothing was added."
     public static let declinedTimer = "declined: the user chose not to start this timer. Nothing was set."
     public static let declinedMap = "declined: the user chose not to open the map. Nothing was opened."
+    /// A newer ask took the card's place before the user answered it (owner, 10 Nov 2026). Nothing ran.
+    public static let replacedByNewerAsk = "declined: a newer request replaced this card before the user answered it. Nothing was done; ask again if it's still wanted."
     public static let declinedShortcut = "declined: the user chose not to run the shortcut. Nothing was run."
     public static let declinedMessage = "declined: the user chose not to open the draft. Nothing was sent."
 
@@ -942,6 +975,16 @@ public enum VoiceToolReply {
     /// Maps opened on the user's tap. Nothing else is claimed. The place follows as data.
     public static func mapOpened(_ place: String) -> String {
         "opened: Apple Maps opened for the place below.\n" + ToolData.block([quoted("Place", place)])
+    }
+
+    /// Maps opened with directions on the user's tap. Doddy can't see the route Maps chose, so
+    /// travel times and lines come from Maps, not from Doddy.
+    public static func routeOpened(_ trip: MapTrip) -> String {
+        var lines = [quoted("To", trip.place)]
+        if let from = trip.from { lines.append(quoted("From", from)) } else { lines.append("From: where the iPhone is") }
+        if let mode = trip.mode { lines.append("By: \(mode.rawValue)") }
+        return "opened: Apple Maps opened with directions for the route below. Doddy can't see the route Maps chose: "
+            + "don't state travel times or lines as if Maps gave them.\n" + ToolData.block(lines)
     }
 
     /// Shortcuts is asked to run; Doddy cannot see whether the shortcut finished.

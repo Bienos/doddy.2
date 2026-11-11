@@ -5,7 +5,8 @@
 //
 // The default transport is node:https with every resolved address checked at connect time (no private or
 // local networks, as in news/safeFetch.ts), so an address from a page can't reach this server's own network.
-// Tests inject a fake `fetch`. Only the robots files are cached (in memory, per origin); pages never are.
+// Tests inject a fake `fetch`. The robots files are cached (in memory, per origin). Pages are cached only by
+// `CachingFetcher` below, briefly and in memory, so one leaflet read serves the searches of the next hours.
 import { lookup as dnsLookup } from "node:dns";
 import https from "node:https";
 import { pipeline, Readable } from "node:stream";
@@ -403,5 +404,73 @@ export class PoliteFetcher implements PageFetcher {
     } finally {
       clearTimeout(timer);
     }
+  }
+}
+
+/**
+ * A short-lived page cache in front of a fetcher (11 Nov 2026). On the live server (free plan, one small instance)
+ * each search read every chain's site again: 6 to 9 of 10 chains failed with `timeout` per search (log of 11 Nov,
+ * 08:13 and 08:26 UTC), Biedronka alone fetching about 97 page images inside the 25 s budget. A leaflet changes once a
+ * week, so a page read once now serves the next searches for `ttlMs`. Only successful answers are kept, in memory,
+ * for everyone alike (nothing in it is linked to a person), within `maxBytes`, oldest first out. Two searches asking
+ * for the same page at once share one fetch.
+ */
+export class CachingFetcher implements PageFetcher {
+  private readonly entries = new Map<string, { expires: number; result: Extract<FetchResult, { kind: "ok" }> }>();
+  private readonly inFlight = new Map<string, Promise<FetchResult>>();
+  private bytes = 0;
+
+  constructor(
+    /** The fetcher underneath; the same polite fetcher (one robots.txt cache, one user agent) as everything else. */
+    readonly inner: PageFetcher,
+    private readonly ttlMs = 3 * 3600_000,
+    private readonly maxBytes = 48 * 1024 * 1024,
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  async fetchPage(url: string, opts: FetchPageOptions = {}): Promise<FetchResult> {
+    // The same address asked for with different rules (accept, AI input) is a different request.
+    const key = `${opts.aiInput === true ? "ai" : "-"} ${opts.accept ?? "*/*"} ${url}`;
+    const hit = this.entries.get(key);
+    if (hit && hit.expires > this.now()) {
+      // Most recently used last, so the oldest goes first when the cache is full.
+      this.entries.delete(key);
+      this.entries.set(key, hit);
+      return hit.result;
+    }
+    if (hit) this.drop(key);
+    const pending = this.inFlight.get(key);
+    if (pending) return pending;
+    // A shared fetch is not stopped by one caller's deadline; each caller still stops waiting at its own.
+    const { signal, ...shared } = opts;
+    const started = this.inner.fetchPage(url, shared).then((result) => {
+      if (result.kind === "ok" && result.body.length <= this.maxBytes / 8) this.keep(key, result);
+      return result;
+    }).finally(() => this.inFlight.delete(key));
+    this.inFlight.set(key, started);
+    if (!signal) return started;
+    return new Promise<FetchResult>((resolve) => {
+      const onAbort = () => resolve({ kind: "failed", reason: "timeout" });
+      if (signal.aborted) return onAbort();
+      signal.addEventListener("abort", onAbort, { once: true });
+      started.then((r) => { signal.removeEventListener("abort", onAbort); resolve(r); });
+    });
+  }
+
+  private keep(key: string, result: Extract<FetchResult, { kind: "ok" }>): void {
+    this.drop(key);
+    this.entries.set(key, { expires: this.now() + this.ttlMs, result });
+    this.bytes += result.body.length;
+    for (const [oldest] of this.entries) {
+      if (this.bytes <= this.maxBytes) break;
+      this.drop(oldest);
+    }
+  }
+
+  private drop(key: string): void {
+    const entry = this.entries.get(key);
+    if (!entry) return;
+    this.bytes -= entry.result.body.length;
+    this.entries.delete(key);
   }
 }

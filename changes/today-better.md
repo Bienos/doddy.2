@@ -1,0 +1,3 @@
+Today (Home › ••• › Today and the morning check-in) shows the day at a glance: a summary line worked out by code, on now and next up (time to go, place and Open in Maps), later today with free time between events, reminders with a verified tick and Undo, and the first three things tomorrow. Decision `docs/decisions/2026-11-10-today-at-a-glance.md`.
+Ran: DoddyCore `swift test` (2880, 0 failures; 11 new `TodayGlanceTests`), `scripts/ci.sh --only swift,checks` (PASS; Studio renderers NOT RUN as known), `swiftc -parse` on the app files, strings `--check`. Not compiled: the app (no Xcode). Not run on a device.
+No deploy or owner step, apart from reviewing the design.
