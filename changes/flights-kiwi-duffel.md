@@ -1,0 +1,3 @@
+Flights by voice (decision `docs/decisions/2026-11-11-flights-kiwi-search-duffel-booking.md`): `find_flights` (Kiwi.com, PLN, low-cost airlines, a Kiwi.com button per flight), `find_bookable_flights` and `book_flight` (Duffel, test mode only, a tap on the exact booking, "booked" only with Duffel's reference), `check_flight_booking`.
+Server: `backend/src/flights/`; off until `FLIGHT_SEARCH_ENABLED`, `DUFFEL_ACCESS_TOKEN` and `FLIGHT_BOOKING_ENABLED` are set (OWNER_QUEUE 39). The four tools are `not_synced` on the live agent.
+Ran: backend typecheck and tests, `scripts/ci.sh --only checks`, the secrets manifest tests. Not run: Swift (no compiler here: DoddyCore tests and the app are not compiled), any real Duffel call (no key), a device.

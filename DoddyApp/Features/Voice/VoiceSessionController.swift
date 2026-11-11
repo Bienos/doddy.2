@@ -359,6 +359,8 @@ final class VoiceSessionController {
     private(set) var accountMessage: String?
     /// ADR-564: files Claude is making in this conversation, newest first. Each opens by its link.
     private(set) var documents: [RunDocument] = []
+    /// find_flights: the latest search's flights on Kiwi.com, as buttons (never read out by the agent).
+    private(set) var flightLinks: [RunLink] = []
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -3701,6 +3703,7 @@ final class VoiceSessionController {
                 let prepared = try await client.prepare(cloud)
                 let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
                 await keepMadeDocument(result)
+                keepFlightLinks(result)
                 await reply(toolCallID, VoiceToolReply.cloudResult(result))
             } else {
                 // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
@@ -3733,6 +3736,12 @@ final class VoiceSessionController {
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
         }
+    }
+
+    /// find_flights: the flights' Kiwi.com pages become buttons; a new search replaces the old ones.
+    private func keepFlightLinks(_ result: RunResult) {
+        guard result.tool == CloudToolName.findFlights else { return }
+        flightLinks = (result.links ?? []).filter(\.isKiwi)
     }
 
     /// ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.

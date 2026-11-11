@@ -30573,6 +30573,17 @@
         }
       }
     },
+    "Flights on Kiwi.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loty na Kiwi.com"
+          }
+        }
+      }
+    },
     "Focus": {
       "extractionState": "manual",
       "localizations": {
@@ -60771,6 +60782,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ceny mogą się zmienić po godzinie sprawdzenia. Kupujesz na stronie sklepu: płacisz sklepowi Apple Pay, BLIK-iem albo kartą, a Doddy nie widzi płatności."
+          }
+        }
+      }
+    },
+    "Prices from Kiwi.com just now; they can change. You book and pay on Kiwi.com.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny z Kiwi.com sprzed chwili; mogą się zmienić. Rezerwujesz i płacisz na Kiwi.com."
           }
         }
       }

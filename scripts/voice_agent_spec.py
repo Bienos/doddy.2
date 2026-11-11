@@ -54,7 +54,10 @@ RUNS_NOW_SMALL_ACTIONS = {"start_stopwatch", "stop_stopwatch", "start_focus", "s
 # a single-use approval for exactly the call, and the app uses it straight away.
 RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search_notion", "read_notion_page", "check_outlook_email",
                          "read_outlook_email", "read_outlook_calendar", "read_google_calendar", "list_todoist_tasks",
-                         "ask_claude", "make_document"}
+                         "ask_claude", "make_document",
+                         # Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): searches and the booking check.
+                         # book_flight is not here: it waits for a tap on the card with the exact booking.
+                         "find_flights", "find_bookable_flights", "check_flight_booking"}
 RUNS_NOW = PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT | RUNS_NOW_OWN_LOOKS | RUNS_NOW_SMALL_ACTIONS | RUNS_NOW_SERVER_READS
 APP_INSTRUCTIONS = SPEC / "instructions.md"
 
