@@ -4,19 +4,19 @@ import SwiftUI
 
 // Live Shopify commerce via Doddy's authenticated backend and Shop MCP (UCP).
 // NO locally invented products, cached prices, payment tokens or order placement.
-private struct ShopifyResult: Decodable, Sendable {
+struct ShopifyResult: Decodable, Sendable {
     let products: [ShopifyProduct]
     let messages: [String]
     let source: String
     let market: String
 }
-private struct ShopifyProduct: Decodable, Identifiable, Sendable {
+struct ShopifyProduct: Decodable, Identifiable, Sendable {
     let productId: String
     let title: String
     let variants: [ShopifyVariant]
     var id: String { productId }
 }
-private struct ShopifyVariant: Decodable, Identifiable, Sendable {
+struct ShopifyVariant: Decodable, Identifiable, Sendable {
     let variantId: String
     let title: String
     let merchant: String
@@ -27,17 +27,17 @@ private struct ShopifyVariant: Decodable, Identifiable, Sendable {
     let productURL: String?
     var id: String { variantId }
 }
-private struct ShopifyCheckoutTotal: Decodable, Sendable {
+struct ShopifyCheckoutTotal: Decodable, Sendable {
     let type: String
     let displayText: String
     let amount: Int
 }
-private struct ShopifyCheckoutLink: Decodable, Sendable {
+struct ShopifyCheckoutLink: Decodable, Sendable {
     let type: String
     let title: String
     let url: String
 }
-private struct ShopifyCheckout: Decodable, Identifiable, Sendable {
+struct ShopifyCheckout: Decodable, Identifiable, Sendable {
     let checkoutURL: String
     let shop: String
     let seller: String
@@ -50,7 +50,7 @@ private struct ShopifyCheckout: Decodable, Identifiable, Sendable {
     var id: String { checkoutURL }
 }
 
-private enum ShopifyLiveClient {
+enum ShopifyLiveClient {
     struct Search: Encodable { let query: String }
     struct Prepare: Encodable {
         let variantId: String
@@ -83,8 +83,10 @@ private enum ShopifyLiveClient {
     }
 
     @MainActor
-    static func prepare(_ variant: ShopifyVariant) async throws -> ShopifyCheckout {
-        try await call(path: "v1/shopify/checkout", body: Prepare(variantId: variant.variantId, shop: variant.shop, quantity: 1))
+    static func prepare(_ variant: ShopifyVariant, quantity: Int = 1) async throws -> ShopifyCheckout {
+        guard (1...10).contains(quantity) else { throw Problem.invalidReply }
+        return try await call(path: "v1/shopify/checkout",
+                              body: Prepare(variantId: variant.variantId, shop: variant.shop, quantity: quantity))
     }
 }
 
