@@ -226,7 +226,7 @@ export async function buildApp(
     tools,
     payments,
     shopify,
-    shopifyLimiter: shopify ? new UsageLimiter(store, config.limits) : undefined,
+    ...(shopify ? { shopifyLimiter: new UsageLimiter(store, config.limits) } : {}),
     verifier,
     deviceSessions,
     web,
