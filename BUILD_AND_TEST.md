@@ -99,7 +99,7 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds come from Xcode Cloud only (ADR-697,
 `docs/implementation/XCODE_CLOUD.md`).
 
-The Ubuntu 24.04 checks/Swift jobs install the same dependency packages through
+The Ubuntu 24.04 checks/Swift/Node/messaging jobs install the same dependency packages through
 `scripts/ci_install_ubuntu_packages.sh`. If the default apt sources fail, it retries
 with isolated package lists from the HTTPS kernel.org Ubuntu mirror, authenticated
 by the runner's existing Ubuntu archive keyring. Release, updates, security and

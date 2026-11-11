@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstrap the two Ubuntu 24.04 CI jobs without depending on one mirror's DNS.
+# Bootstrap Ubuntu 24.04 CI jobs without depending on one mirror's DNS.
 # Run as root (sudo on the hosted runner, already root in swift:6.1-noble).
 # The fallback uses the image's Ubuntu signing key, isolated apt lists and the
 # same Noble release/update/security/backport channels. No trust checks change.
