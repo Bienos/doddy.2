@@ -27,6 +27,7 @@ import { AnthropicDealsModel } from "../deals/vision.js";
 import { log } from "../log.js";
 import { AffiliateLinks } from "../shopping/affiliate.js";
 import { SerperOfferSource } from "../shopping/offers.js";
+import { EbayUsedOfferSource, UsedGoodsOfferRouter } from "../shopping/ebay.js";
 import { RoutingErrandResearcher, ShoppingErrandResearcher } from "../shopping/runner.js";
 import type { WatchDeps } from "../watches/context.js";
 
@@ -86,7 +87,10 @@ export function providersFrom(config: Config) {
       ? new RoutingErrandResearcher(
         new ClaudeErrandResearcher(config.anthropicApiKey, { model: es.model, effort: es.effort, budget: es.budget }),
         new ShoppingErrandResearcher(config.anthropicApiKey, {
-          offers: new SerperOfferSource(ss.serperApiKey), fetcher,
+          offers: new UsedGoodsOfferRouter(
+            new SerperOfferSource(ss.serperApiKey),
+            new EbayUsedOfferSource(ss.ebayClientId, ss.ebayClientSecret),
+          ), fetcher,
           maxOfferSearches: ss.maxOfferSearches, maxPageChecks: ss.maxPageChecks,
           affiliate: new AffiliateLinks(ss.affiliateRules),
           budget: es.budget,
