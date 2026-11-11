@@ -234,14 +234,21 @@ struct PolandPackView: View {
         // Stations are the slowest GIOŚ endpoint (2 req/min). Cache the static listing in this sheet
         // across city changes and refresh gestures. The index itself is read each time.
         if stationListing == nil {
-            stationListing = try? await PolandPackFetcher.data(PolandOpenData.airStationsURL)
+            stationListing = try? await PolandStationsCache.shared.current()
         }
         var candidateAir: PolandAirIndex?
-        if let data = stationListing,
-           let station = try? PolandAirStation.find(in: data, city: chosen),
-           let url = PolandOpenData.airIndexURL(stationID: station.id),
-           let payload = try? await PolandPackFetcher.data(url) {
-            candidateAir = try? PolandAirIndex.parse(payload, station: station.name)
+        if let data = stationListing, let stations = try? PolandAirStation.all(in: data, city: chosen) {
+            // Several stations may lack an overall index. Check a bounded number, never
+            // guess a category or quietly fall back to an unrelated city's monitor.
+            for station in stations.prefix(5) {
+                guard !Task.isCancelled, requestID == currentRequestID else { break }
+                if let url = PolandOpenData.airIndexURL(stationID: station.id),
+                   let payload = try? await PolandPackFetcher.data(url),
+                   let reading = try? PolandAirIndex.parse(payload, station: station.name) {
+                    candidateAir = reading
+                    break
+                }
+            }
         }
 
         let newWeather = await weatherResult
@@ -289,5 +296,18 @@ private enum PolandPackFetcher {
               let result = try? JSONDecoder().decode(PolandExchangeRate.self, from: payload),
               result.latest != nil else { return nil }
         return result
+    }
+}
+
+/// In-memory metadata cache across sheet re-openings; GIOŚ throttles station-list requests.
+private actor PolandStationsCache {
+    static let shared = PolandStationsCache()
+    private var cached: (date: Date, data: Data)?
+
+    func current() async throws -> Data {
+        if let cached, Date().timeIntervalSince(cached.date) < 15 * 60 { return cached.data }
+        let listing = try await PolandPackFetcher.data(PolandOpenData.airStationsURL)
+        cached = (Date(), listing)
+        return listing
     }
 }
