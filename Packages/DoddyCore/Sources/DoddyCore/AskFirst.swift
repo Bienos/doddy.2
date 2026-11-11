@@ -233,6 +233,21 @@ public enum AskFirst {
             // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
             // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.
             return .yesFirst(DealsAsk.card(request, polish: polish))
+        case .shopifySearch:
+            // Public merchant catalog: the user's search phrase goes to Shopify.
+            return .runsNow
+        case .shopifyPrepareCheckout(let index, let quantity):
+            // Real merchant cart creation is an external write. A tap on the card is required.
+            // The voice controller shows the selected exact, provider-verified offer details.
+            return .tapFirst(AskCard(
+                title: say("Prepare this Shopify checkout?", "Przygotować koszyk Shopify?"),
+                lines: [
+                    say("Result number: \(index)", "Oferta numer: \(index)"),
+                    say("Quantity: \(quantity)", "Liczba sztuk: \(quantity)"),
+                    say("Nothing is paid or ordered. The merchant handles checkout.",
+                        "Nic nie jest opłacane ani zamawiane. Zakup kończysz u sprzedawcy."),
+                ],
+                confirmLabel: say("Prepare checkout", "Przygotuj koszyk")))
         case .addToList(let request):
             return .tapFirst(AskCard(
                 title: say("Add to \(request.list)?", "Dodać do listy „\(request.list)”?"),
