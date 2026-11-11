@@ -49,6 +49,16 @@ Generated files (string catalogs, site pages, blog, web assets, tokens) are neve
 last, because it translates the English pages that `build_blog.py` and `build_day.py` write; `scripts/test_regen.sh`
 (in the `checks` group) checks that.
 
+Voice startup regression tests (no provider calls or microphone):
+`swift test --package-path Packages/DoddyCore --filter 'VoiceTokenSupplyTests|VoiceTokenShelfTests|VoiceStartTimelineTests'`
+(on Linux add the same flags as `make test-core`). These cover an unfinished warm-up joined by a press,
+single use under concurrent presses, late answers after clear/sign-out, different servers, refusal without
+duplicate retries, and the existing expiry/cool-down rules. On an iPhone, test a tap just after opening,
+after sign-in/consent and after ending a conversation; end while connecting and sign out while a token is
+pending. Check `voice-audio`: one request when the tap joins a warm-up (`token warming`), then
+`voice first speaking event after start`. Measure audible playback separately; an SDK speaking event can
+arrive before audio. No device latency has been measured for this fix.
+
 ### Gateway (Node, no network, no keys)
 
 ```sh

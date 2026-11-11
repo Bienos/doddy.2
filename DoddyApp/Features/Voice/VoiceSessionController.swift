@@ -232,6 +232,12 @@ final class VoiceSessionController {
             updateVoiceMeter()
             // Doddy started speaking: the island may open up for a moment (ADR-577).
             if phase == .speaking, oldValue != .speaking { expandIslandIfDue() }
+            if phase == .speaking, let began = firstSpeechRequestedAt {
+                firstSpeechRequestedAt = nil
+                let took = VoiceStartTimeline.text(ProcessInfo.processInfo.systemUptime - began)
+                let source = tokenSource?.rawValue ?? "no token"
+                Self.audioLog.notice("voice first speaking event after start: \(took, privacy: .public), \(source, privacy: .public)")
+            }
             // Listening comes only from the provider's own event: this conversation really
             // connected. Counted once per conversation, for when the "Open Doddy faster" card
             // returns after "Later" (ADR-559; it was the Hey Doddy card's, ADR-328).
@@ -488,6 +494,9 @@ final class VoiceSessionController {
     private(set) var backgroundStartReady = false
     /// Where this start's voice token came from, for the timing line only.
     private(set) var tokenSource: VoiceTokenSource?
+    /// Monotonic, from Home's tap (including its access check), or start() for other entry points.
+    /// Cleared at the first real SDK speaking event; no transcript or credential enters the log.
+    @ObservationIgnored private var firstSpeechRequestedAt: Double?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
     var isPrivate = false {
@@ -601,7 +610,7 @@ final class VoiceSessionController {
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil,
-        withoutOpeningApp: Bool = false
+        withoutOpeningApp: Bool = false, requestedAt: Double? = nil
     ) async {
         guard !isLive else { return }
         // One owner of the audio session (ADR-695): while a Capture recording (ADR-588), a voice memo,
@@ -620,6 +629,7 @@ final class VoiceSessionController {
         }
         startsInProgress += 1
         defer { startsInProgress -= 1 }
+        firstSpeechRequestedAt = requestedAt ?? ProcessInfo.processInfo.systemUptime
         // The previous conversation's lines and unanswered cards are kept before they're cleared,
         // even when it ended in a failure nothing else recorded (ADR-360).
         keepLog()
@@ -766,12 +776,11 @@ final class VoiceSessionController {
         if case .tokenServer(let endpoint) = mode {
             // One fetched ahead (VoiceTokenWarmer) is used once; it is gone from the shelf either way, so a
             // start that fails to connect with it fetches a fresh one next time, never the same again.
-            let shelved = VoiceTokenWarmer.shared.take(endpoint: endpoint)
-            tokenSource = shelved == nil ? .fetched : .shelf
             earlyToken = Task { () -> Result<String, VoiceTokenError> in
-                if let shelved { return .success(shelved) }
                 do throws(VoiceTokenError) {
-                    return .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                    let token = try await VoiceTokenWarmer.shared.token(endpoint: endpoint)
+                    if attempt == startAttempt { tokenSource = token.source }
+                    return .success(token.value)
                 } catch {
                     return .failure(error)
                 }
@@ -941,7 +950,9 @@ final class VoiceSessionController {
                 fetched = await earlyToken.value
             } else {
                 do throws(VoiceTokenError) {
-                    fetched = .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                    let token = try await VoiceTokenWarmer.shared.token(endpoint: endpoint)
+                    if attempt == startAttempt { tokenSource = token.source }
+                    fetched = .success(token.value)
                 } catch {
                     fetched = .failure(error)
                 }
@@ -1264,6 +1275,8 @@ final class VoiceSessionController {
             activity.sessionID = nil
         }
         await active?.endConversation()
+        // Prepare the next tap while Home is idle; never open another room or microphone here.
+        VoiceTokenWarmer.shared.warmIfDue()
     }
 
     /// Stop listening from Siri or the indicator (OP-024, ADR-361): ends the conversation like End,
