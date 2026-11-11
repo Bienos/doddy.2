@@ -1219,5 +1219,7 @@
   "What's in this photo?": "この写真には何が写っていますか？",
   "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "このiPhoneと、Doddy Web用にDoddyのサーバーにあるコピーから削除されます。保存したメモには影響ありません。",
   "Couldn't delete the copy on the web": "Web上のコピーを削除できませんでした",
-  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "会話はこのiPhoneから削除されましたが、Doddy Web用のコピーが削除されたことをDoddyのサーバーが確認していません。確認されるまでWebにまだ表示されることがあります。"
+  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "会話はこのiPhoneから削除されましたが、Doddy Web用のコピーが削除されたことをDoddyのサーバーが確認していません。確認されるまでWebにまだ表示されることがあります。",
+  "Food": "フード",
+  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "アプリがあればアプリを、なければウェブサイトを開きます。Doddyは注文を見ることも、注文することもしません。"
 }

@@ -3350,5 +3350,7 @@
   "Read one day's steps, walking distance and floors climbed, when you ask": "Odczytać kroki, przebyty dystans i pokonane piętra z jednego dnia, gdy o to poprosisz",
   "Count the photos and videos you took on a day or over up to a month, when you ask": "Policzyć zdjęcia i filmy zrobione jednego dnia albo w okresie do miesiąca, gdy o to poprosisz",
   "Turn on the switch above, or choose Here only.": "Włącz przełącznik powyżej albo wybierz Tylko tutaj.",
-  "Only %lld of %lld shops' leaflets could be read this time. Try again in a few minutes; what was read is kept for a while, so the next check is quicker.": "Tym razem udało się przeczytać gazetki tylko %lld z %lld sklepów. Spróbuj za kilka minut; to, co już przeczytane, zostaje na chwilę zapamiętane, więc następne sprawdzenie będzie szybsze."
+  "Only %lld of %lld shops' leaflets could be read this time. Try again in a few minutes; what was read is kept for a while, so the next check is quicker.": "Tym razem udało się przeczytać gazetki tylko %lld z %lld sklepów. Spróbuj za kilka minut; to, co już przeczytane, zostaje na chwilę zapamiętane, więc następne sprawdzenie będzie szybsze.",
+  "Food": "Jedzenie",
+  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Otwiera aplikację, jeśli ją masz, albo stronę. Doddy nie widzi ani nie składa zamówienia."
 }

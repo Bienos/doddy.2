@@ -63,6 +63,8 @@ struct HomeView: View {
     @State private var showDeals = false
     /// Poland-first public information: IMGW, GIOŚ, NBP, InPost handoff and existing leaflets.
     @State private var showPolandPack = false
+    /// The food-delivery apps (Uber Eats, Wolt, Glovo, Pyszne.pl), each a tap away (decision 2026-11-11-food-button).
+    @State private var showFood = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -128,6 +130,7 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showFood) { FoodView() }
             .sheet(isPresented: $showPolandPack) {
                 PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
             }
@@ -296,6 +299,9 @@ struct HomeView: View {
                     Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                         .accessibilityIdentifier("home.deals")
                 }
+                // The food-delivery apps the owner adds to (11 Nov 2026): one row each, opened from here, nothing sent.
+                Button { showFood = true } label: { Label("Food", systemImage: "fork.knife") }
+                    .accessibilityIdentifier("home.food")
                 // Poland Pack reads official local data only when opened; no startup request.
                 Button { showPolandPack = true } label: {
                     Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
