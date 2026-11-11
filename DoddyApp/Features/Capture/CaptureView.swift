@@ -15,6 +15,9 @@ struct CaptureView: View {
     @State private var errorMessage: String?
     @State private var saved: MemoryRecord?
     @State private var confirmDiscard = false
+    /// Preview only: user-shared URLs never fetch an external provider automatically.
+    @State private var showVintedReview = false
+    @State private var showBookingShortcut = false
     /// A saved note with the same words (ADR-184). Shown instead of saving until the user picks.
     @State private var duplicate: MemoryRecord?
     @State private var allowDuplicate = false
@@ -90,6 +93,34 @@ struct CaptureView: View {
                             Label("Shared into Doddy from a shortcut. Check it, change it if you like, then tap Save. Nothing is saved until you do.", systemImage: "square.and.arrow.down")
                                 .font(.footnote).foregroundStyle(Theme.secondaryText)
                                 .accessibilityIdentifier("capture.sharedNotice")
+                        }
+                        if isShared, let listing = SharedVintedListing(sharedText: text) {
+                            Button {
+                                showVintedReview = true
+                            } label: {
+                                Label("Review this Vinted listing", systemImage: "tag")
+                            }
+                            .buttonStyle(SecondaryButtonStyle())
+                            .accessibilityIdentifier("capture.reviewVinted")
+                            .sheet(isPresented: $showVintedReview) {
+                                VintedListingReviewView(listing: listing)
+                            }
+                            Text("The link was shared by you. Doddy does not scan Vinted or verify the seller.")
+                                .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        }
+                        if isShared, let url = BookingService.sharedBookingURL(in: text) {
+                            Button {
+                                showBookingShortcut = true
+                            } label: {
+                                Label("Save this booking link in My services", systemImage: "calendar.badge.plus")
+                            }
+                            .buttonStyle(SecondaryButtonStyle())
+                            .accessibilityIdentifier("capture.saveBookingLink")
+                            .sheet(isPresented: $showBookingShortcut) {
+                                MyServicesView(initialBookingURL: url)
+                            }
+                            Text("This saves a local shortcut, not a reservation. Book directly with the service.")
+                                .font(.footnote).foregroundStyle(Theme.secondaryText)
                         }
                         Text("What would you like to keep?").font(.subheadline)
                         MemoryTextEditor(text: $text, label: "The detail").focused($editorFocused)
