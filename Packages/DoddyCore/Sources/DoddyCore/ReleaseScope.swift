@@ -128,6 +128,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .webSearch: [CloudToolName.webSearch, "news_search", "find_places"]
         case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument]
         case .deals: [VoiceToolName.findDeals]
+        case .shopifyShopping: [VoiceToolName.shopifySearch, VoiceToolName.shopifyPrepareCheckout]
         case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands]
         case .following: [VoiceToolName.followNews]
         case .health: [VoiceToolName.readHealthWeek]
