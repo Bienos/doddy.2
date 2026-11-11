@@ -47,6 +47,9 @@ final class ConnectedServicesTests: XCTestCase {
         XCTAssertTrue(second.removing(id: second.items[0].id).items.contains(where: { $0.provider == .simplyBook }))
         XCTAssertTrue(SavedBookingServices(stored: "not json").items.isEmpty)
         XCTAssertNil(SavedBookingServices().adding(name: "Bad", url: "https://booksy.com.evil.test/"))
+        XCTAssertNil(SavedBookingServices().adding(name: "Private", url: "https://booksy.com/pl-pl/123?access_token=private"))
+        XCTAssertNil(SavedBookingServices().adding(name: "Private fragment", url: "https://booksy.com/pl-pl/123#oauth"))
+
     }
 
     func testOnlySharedVintedItemLinksCanOpenListingReview() {
