@@ -63,7 +63,8 @@ export class EbayUsedOfferSource implements OfferSource {
       const url = new URL("https://api.ebay.com/buy/browse/v1/item_summary/search");
       url.searchParams.set("q", q);
       url.searchParams.set("limit", "10");
-      url.searchParams.set("filter", "conditions:{USED}");
+      // eBay Buy API requires same-market delivery filtering for shopper results.
+      url.searchParams.set("filter", "conditions:{USED},deliveryCountry:PL");
       const response = await this.fetchImpl(url, {
         headers: {
           Authorization: "Bearer " + token,
