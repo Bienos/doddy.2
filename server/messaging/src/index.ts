@@ -39,6 +39,7 @@ app.log.info({
   watches: config.watchSettings.enabled && !!providers.cipher,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   radarAlerts: config.radarAlertsEnabled,
+  deliveries: config.uberDirect ? config.uberDirect.mode : false,
   ceidg: !!providers.ceidg,
 }, "configured features");
 

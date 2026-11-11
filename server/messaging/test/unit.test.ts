@@ -9,7 +9,7 @@ import { loadConfig } from "../src/config.js";
 import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsCallRegistrar } from "../src/providers/elevenlabs.js";
 import { isValidTwilioSignature, TwilioClient, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
-import { approvalHash, callApprovalHash, textApprovalHash } from "../src/approval.js";
+import { approvalHash, callApprovalHash, textApprovalHash, deliveryApprovalHash } from "../src/approval.js";
 import { callOpening, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
 import { DEFAULT_ABUSE_LIMITS } from "../src/config.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES } from "../src/phoneCountries.js";
@@ -167,6 +167,11 @@ test("approval hashes reproduce the shared vectors (contracts/phone/approval-vec
       const [, , , at, reason, quiet] = v.fields;
       assert.ok(quiet === "0" || quiet === "1", v.description);
       assert.equal(callApprovalHash(to!, at!, reason!, quiet === "1").toString("hex"), v.sha256, v.description);
+    }
+    if (version === "doddy-approval-1" && kind === "delivery") {
+      const [, , id, fee, currency, pickup, dropoff, dropoffPhone, items, note] = v.fields;
+      assert.equal(deliveryApprovalHash(id!, Number(fee), currency!, { pickup: pickup!, dropoff: dropoff!, dropoffPhone: dropoffPhone!, items: items!, note: note! })
+        .toString("hex"), v.sha256, v.description);
     }
   }
   assert.ok(file.vectors.some((v) => v.fields[1] === "call"), "call vectors are there too (ADR-754)");
