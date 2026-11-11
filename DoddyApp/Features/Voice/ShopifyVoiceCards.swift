@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Screen-only UI for Shopify voice results. Prices and seller names come exclusively
 /// from Shop MCP through Doddy's authenticated backend, never from the model.
-private enum ShopifyVoiceMoney {
+enum ShopifyVoiceMoney {
     static func format(_ minor: Int, currency: String) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
