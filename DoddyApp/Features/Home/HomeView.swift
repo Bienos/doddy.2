@@ -61,6 +61,8 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
+    /// Shopping in one place: "Find me this", watched prices and the leaflets (ShoppingHubView).
+    @State private var showShopping = false
     /// Poland-first public information: IMGW, GIOŚ, NBP, InPost handoff and existing leaflets.
     @State private var showPolandPack = false
     /// The food-delivery apps (Uber Eats, Wolt, Glovo, Pyszne.pl), each a tap away (decision 2026-11-11-food-button).
@@ -130,6 +132,7 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showShopping) { ShoppingHubView() }
             .sheet(isPresented: $showFood) { FoodView() }
             .sheet(isPresented: $showPolandPack) {
                 PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
@@ -298,6 +301,13 @@ struct HomeView: View {
                 if scope.shows(.deals) {
                     Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                         .accessibilityIdentifier("home.deals")
+                }
+                // Shopping in one place (owner, 11 Nov 2026): typing "Find me this", the searches handed over and
+                // watched prices. Shown when tasks are, because that is what a search is. "Cheapest this week"
+                // keeps its own row above: UI tests and Home's leaflet card open it directly.
+                if scope.shows(.errands) {
+                    Button { showShopping = true } label: { Label("Shopping", systemImage: "bag") }
+                        .accessibilityIdentifier("home.shopping")
                 }
                 // The food-delivery apps the owner adds to (11 Nov 2026): one row each, opened from here, nothing sent.
                 Button { showFood = true } label: { Label("Food", systemImage: "fork.knife") }

@@ -171,6 +171,7 @@ final class DeviceConnections {
     // MARK: Photos and camera (ADR-569)
 
     var cameraAvailable: Bool { CameraAccess.isAvailable }
+    var homeAvailable: Bool { HomeKitClient.isAvailable }
 
     func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound {
         PhotoLibrarySearch.find(request, now: now)
@@ -857,6 +858,8 @@ protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Send
     var stepCountingAvailable: Bool { get }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals
     var cameraAvailable: Bool { get }
+    /// False on a build without the HomeKit entitlement.
+    var homeAvailable: Bool { get }
     func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
@@ -885,6 +888,7 @@ extension DeviceConnecting {
     var stepCountingAvailable: Bool { false }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals { throw DeviceConnections.Failure.stepsNotAllowed }
     var cameraAvailable: Bool { false }
+    var homeAvailable: Bool { true }
     func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound { .empty }
     func readEvents(in range: VoiceTimeRange) async -> [CalendarEventSummary] { events(in: range) }
     func readContacts(named name: String) async throws -> [DeviceConnections.ContactMatch] { try findContacts(named: name) }

@@ -6219,6 +6219,47 @@
         }
       }
     },
+    "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPad has saved the result."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystko to trafia na serwer Doddy'ego; słowa, notatka i to, co najważniejsze, trafiają też do Anthropic, którego Claude robi rozeznanie. Hasła wyszukiwania, które Claude z nich układa, trafiają do Google Shopping przez Serper, a serwer Doddy'ego otwiera strony sklepów. Serwer usuwa swoją kopię, gdy ten iPad zapisze wynik."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystko to trafia na serwer Doddy'ego; słowa, notatka i to, co najważniejsze, trafiają też do Anthropic, którego Claude robi rozeznanie. Hasła wyszukiwania, które Claude z nich układa, trafiają do Google Shopping przez Serper, a serwer Doddy'ego otwiera strony sklepów. Serwer usuwa swoją kopię, gdy ten iPhone zapisze wynik."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "All off": {
       "extractionState": "manual",
       "localizations": {
@@ -10017,6 +10058,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "W obie strony"
+          }
+        }
+      }
+    },
+    "Brand": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marka"
           }
         }
       }
@@ -22506,6 +22558,17 @@
         }
       }
     },
+    "Doddy is looking. The picks will wait here, in Tasks and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka. Propozycje będą czekać tutaj, w Sprawach i w Wiadomościach."
+          }
+        }
+      }
+    },
     "Doddy is making a call for you": {
       "extractionState": "manual",
       "localizations": {
@@ -23014,6 +23077,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 最后听到你说"
+          }
+        }
+      }
+    },
+    "Doddy looks for offers and reads each shop's own page. A price he couldn't confirm there isn't shown, and he says so.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka ofert i czyta stronę każdego sklepu. Ceny, której tam nie potwierdził, nie pokazuje, i mówi o tym."
+          }
+        }
+      }
+    },
+    "Doddy looks for offers in shops in Poland in the background and reads each shop's own page. A price he couldn't confirm there isn't shown. The result waits in Shopping, in Tasks and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka w tle ofert w sklepach w Polsce i czyta stronę każdego sklepu. Ceny, której tam nie potwierdził, nie pokazuje. Wynik czeka w Zakupach, w Sprawach i w Wiadomościach."
           }
         }
       }
@@ -29615,6 +29700,17 @@
         }
       }
     },
+    "Fast delivery": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szybka dostawa"
+          }
+        }
+      }
+    },
     "Faster": {
       "extractionState": "manual",
       "localizations": {
@@ -29773,6 +29869,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Doddy 中查找"
+          }
+        }
+      }
+    },
+    "Find it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź"
+          }
+        }
+      }
+    },
+    "Find me this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź mi to"
           }
         }
       }
@@ -30860,6 +30978,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na przykład:"
+          }
+        }
+      }
+    },
+    "For example: a quiet 45 cm dishwasher under 2000 zł": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: cicha zmywarka 45 cm do 2000 zł"
           }
         }
       }
@@ -32028,6 +32157,17 @@
         }
       }
     },
+    "Good reviews": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobre opinie"
+          }
+        }
+      }
+    },
     "Google Calendar": {
       "extractionState": "manual",
       "localizations": {
@@ -32142,6 +32282,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "明白了。"
+          }
+        }
+      }
+    },
+    "Groceries and everyday things: where each is cheapest in this week's leaflets.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedzenie i rzeczy na co dzień: gdzie każda jest najtańsza w gazetkach z tego tygodnia."
           }
         }
       }
@@ -33302,6 +33453,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Znam swój najdłuższy bieg z ostatnich 30 dni"
+          }
+        }
+      }
+    },
+    "I look through shops in Poland and bring back up to three picks, each with a price I read on the shop's own page. You buy in the shop; I never buy anything.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądam sklepy w Polsce i przynoszę do trzech propozycji, każdą z ceną odczytaną na stronie sklepu. Kupujesz w sklepie; ja nigdy niczego nie kupuję."
           }
         }
       }
@@ -49711,6 +49873,17 @@
         }
       }
     },
+    "Nothing chosen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie wybrano"
+          }
+        }
+      }
+    },
     "Nothing coming up.": {
       "extractionState": "manual",
       "localizations": {
@@ -50024,6 +50197,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic nie wysyła się samo: za każdym razem Wiadomości otwierają się z tekstem, a Ty stukasz Wyślij."
+          }
+        }
+      }
+    },
+    "Nothing is sent until you say yes on the next card. Doddy works on it in the background; the result waits here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie jest wysyłane, dopóki nie powiesz „tak” na następnej karcie. Doddy pracuje nad tym w tle; wynik czeka tutaj."
           }
         }
       }
@@ -52551,6 +52735,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szturchnięcie przed: %@"
+          }
+        }
+      }
+    },
+    "Number %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer %lld"
           }
         }
       }
@@ -55806,6 +56001,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otworzyć miejsce lub adres w Mapach Apple, gdy stukniesz Otwórz w Mapach"
+          }
+        }
+      }
+    },
+    "Open a result and tap “Watch the price” on a pick. You give your price, and Doddy tells you once when the shop's page shows that price or less.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz wynik i dotknij „Pilnuj ceny” przy propozycji. Podajesz swoją cenę, a Doddy powie Ci raz, gdy strona sklepu pokaże tę cenę albo niższą."
           }
         }
       }
@@ -60632,6 +60838,17 @@
         }
       }
     },
+    "Price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena"
+          }
+        }
+      }
+    },
     "Price on the page now": {
       "extractionState": "manual",
       "localizations": {
@@ -61311,6 +61528,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在恢复…"
+          }
+        }
+      }
+    },
+    "Quality": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jakość"
           }
         }
       }
@@ -73336,6 +73564,17 @@
         }
       }
     },
+    "Shopping": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakupy"
+          }
+        }
+      }
+    },
     "Shopping mode": {
       "extractionState": "manual",
       "localizations": {
@@ -75468,6 +75707,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mikrofonu używa coś innego w Doddym. Zakończ to, aby z nim porozmawiać."
+          }
+        }
+      }
+    },
+    "Something else, e.g. white, made in the EU": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś innego, np. biała, wyprodukowana w UE"
           }
         }
       }
@@ -82713,6 +82963,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置生日提醒。请重试。"
+          }
+        }
+      }
+    },
+    "The buy button opens the shop's own page in Safari. The shop takes the payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przycisk zakupu otwiera stronę sklepu w Safari. Płatność przyjmuje sklep."
           }
         }
       }
@@ -97813,6 +98074,17 @@
         }
       }
     },
+    "Warranty": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gwarancja"
+          }
+        }
+      }
+    },
     "Was due %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -98667,6 +98939,17 @@
         }
       }
     },
+    "What are you looking for?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego szukasz?"
+          }
+        }
+      }
+    },
     "What do I need to renew my ID card? Step by step": {
       "extractionState": "manual",
       "localizations": {
@@ -98973,6 +99256,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co opuszcza telefon"
+          }
+        }
+      }
+    },
+    "What matters most, in order": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co najważniejsze, w kolejności"
+          }
+        }
+      }
+    },
+    "What matters most? Tap in your order.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co jest najważniejsze? Dotykaj w swojej kolejności."
           }
         }
       }
@@ -102890,6 +103195,17 @@
         }
       }
     },
+    "You get up to three picks with the reason for each, and you can ask Doddy to watch a price.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostajesz do trzech propozycji z uzasadnieniem każdej i możesz poprosić Doddy'ego o pilnowanie ceny."
+          }
+        }
+      }
+    },
     "You have %lld templates, the most Doddy keeps. Remove one under New list first.": {
       "extractionState": "manual",
       "localizations": {
@@ -103078,6 +103394,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To już jest zapisane (%@)."
+          }
+        }
+      }
+    },
+    "You say what you need and what matters most. By voice works too: “find me a quiet dishwasher”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mówisz, czego potrzebujesz i co jest najważniejsze. Głosem też działa: „znajdź mi cichą zmywarkę”."
           }
         }
       }
@@ -105792,6 +106119,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoje zapisane notatki nie są używane. Włącz je w Ustawieniach, jeśli chcesz, żebym do nich zaglądał."
+          }
+        }
+      }
+    },
+    "Your searches": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje wyszukiwania"
           }
         }
       }
