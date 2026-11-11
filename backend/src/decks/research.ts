@@ -295,11 +295,17 @@ export class WikimediaClient implements Wikimedia {
 
 /** Untrusted text made safe to place between tags: no angle brackets, one-space runs, clipped at a word. */
 export function dataText(text: string, max: number): string {
-  const flat = text.replace(/[<>]/g, " ").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  const flat = wellFormed(text).replace(/[<>]/g, " ").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
   if (flat.length <= max) return flat;
-  const cut = flat.slice(0, max);
+  // The cut can fall between the two halves of one character (an emoji in a web snippet): the half goes too.
+  const cut = wellFormed(flat.slice(0, max));
   const at = Math.max(cut.lastIndexOf("\n"), cut.lastIndexOf(". "));
   return (at > max * 0.6 ? cut.slice(0, at + 1) : cut).trimEnd();
+}
+
+/** Text without half characters (lone UTF-16 surrogates), which a JSON request body can't carry as valid Unicode. */
+export function wellFormed(text: string): string {
+  return text.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "");
 }
 
 /** Reference sections say nothing a slide can use; they are dropped. */
@@ -333,7 +339,7 @@ export function articleText(extract: string): string {
 /** Commons' HTML fields ("<a href=…>Foo</a>") as plain words. */
 export function plainText(html: string, max: number): string {
   const text = String(decodeEntities(html.replace(/<[^>]*>/g, " "))).replace(/\s+/g, " ").trim();
-  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+  return text.length <= max ? wellFormed(text) : `${wellFormed(text.slice(0, max - 1)).trimEnd()}…`;
 }
 
 function fileTitle(fileName: string): string {

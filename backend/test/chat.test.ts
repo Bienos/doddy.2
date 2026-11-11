@@ -329,7 +329,8 @@ test("an Anthropic error becomes a status, its error type and a fixed hint; the 
       ["provider_unavailable", { status: 401, type: "authentication_error", hint: "api_key" }],
       ["provider_unavailable", { status: 400, type: "invalid_request_error", hint: "credit_balance" }],
       ["provider_unavailable", { status: 404, type: "not_found_error", hint: "model" }],
-      ["provider_unavailable", { status: 400, type: "invalid_request_error", hint: null }],
+      // No fixed hint fits: only the API's own words are kept, never the planted one.
+      ["provider_unavailable", { status: 400, type: "invalid_request_error", hint: "words:messages_content_allowed" }],
       ["provider_unavailable", { status: 400, type: null, hint: null }],
       ["provider_unavailable", { status: 500, type: null, hint: null }],
       ["rate_limited", { status: 429, type: "rate_limit_error", hint: null }],
