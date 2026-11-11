@@ -1,38 +1,79 @@
-# Travel is built in five stages on what Doddy already has, with referral links first and in-app booking last
+# Travel is one trip that Doddy carries from the first idea to the way home; the person books and pays at the seller
 
 - **Date:** 2026-11-11
-- **Decided by:** proposal, owner approval pending. The request is the owner's (11 Nov 2026, in Polish, shortened): "będziemy teraz tworzyli funkcję podróż … podłączył do różnych portali podróżniczych … Wakacyjni Piraci, Booking … Skyscanner, Kayak … Airbnb … agent cały czas jest w trybie czuwania … jak coś wpadnie … od razu daje znać … planer … powinien dodać pytania, jeżeli czegoś mu brakowało … robi raport, rozpiskę … opcję zadzwonienia za ciebie … możliwość bukowania … last minute, sam z siebie szukać … Trzeba zrobić research, jak to trzeba zrobić i zaplanować to".
-- **Status:** proposed
-- **Replaces:** nothing. Builds on ADR-570 (errands), ADR-607 (shopping runner), `2026-11-10-radar-alerts`, `2026-11-09-restaurant-calls-one-tap`.
+- **Decided by:** owner, 11 Nov 2026, in Polish. The request: "będziemy teraz tworzyli funkcję podróż … podłączył do różnych portali podróżniczych … tryb czuwania … planer … pytania, jeżeli czegoś mu brakowało … raport … zadzwonienia za ciebie … bukowania … last minute, sam z siebie szukać", then "zrób to … ciekawiej … jak ludzie teraz wyszukują … 100 razy lepiej". Answers to four questions the same day:
+  - who it is for: "Wszyscy po równo";
+  - initiative: "Sam podsuwa pomysły";
+  - booking: "Przygotowuje, płacisz sam";
+  - email: "Tak ma dostęp do maila normalnie".
+
+  The design and the order of stages are this pull request's proposal; **owner approval of the plan as a whole is pending**.
+- **Status:** proposed (the four answers above are the owner's)
+- **Replaces:** version 1 of this decision (same day, a source-by-source plan). Builds on ADR-570 (errands), ADR-607 (shopping runner), `2026-11-10-radar-alerts`, `2026-11-09-restaurant-calls-one-tap`.
 
 ## Why
 
-The research (`docs/implementation/TRAVEL.md`, 11 Nov 2026) found that the portals the owner named don't give a company of Doddy's size a search API: Skyscanner and Kayak approve by traffic, Booking.com needs a managed-partner contract, Airbnb has no API or affiliate programme and forbids bots, Wakacyjni Piraci and Fly4free publish no feed. Scraping them is ruled out by their terms and by court decisions. What can be used today is Kiwi.com's public MCP server (live flights with booking links), Travelpayouts (cached prices and partner links), wakacje.pl's TravelLead (packages), Stay22 (links into Booking.com and Expedia) and Viator.
+Research on how people plan trips and use AI for it (`docs/implementation/TRAVEL.md` sections 1 and 9) found:
+- a long, scattered search;
+- price-first hunting from several airports;
+- two Polish markets (packages and DIY);
+- domestic stays booked by phone;
+- hidden fees and low-cost airline rules as the top pains;
+- confirmations scattered across email and screenshots;
+- AI planners that fail on invented places, wrong hours and prices.
 
-The same research found that taking payment for travel, or bundling a flight and a hotel, makes a company a travel seller under the Polish package-travel act, while sending the person to the seller does not.
+People use AI to plan but not to book: 12% would let it book in Europe. No product covers the Polish traveller end to end in Polish.
 
-Doddy already has the engine: background tasks with a result card, a runner whose prices come from code, watches and radar alerts with pushes, and phone calls to places.
+The portals the owner named give a company of Doddy's size no search API, and scraping is ruled out (version 1's research, kept in section 7).
 
 ## Decision
 
-1. **Five stages, in this order:** (1) the trip planner, (2) standby watches, (3) Doddy's own finds, (4) calls for a trip, (5) booking. Each is its own pull request or more; none starts before the owner says so.
-2. **Sources:** only APIs, feeds and partner links whose terms allow our use. No scraping of Skyscanner, Kayak, Booking.com, Airbnb, Ryanair, Wizz Air or Google Flights. The named portals appear as partner or plain links until they grant access.
-3. **Referral first:** through stages 1 to 4 the person books and pays on the seller's site. Doddy never says "booked" on its own authority.
-4. **In-app booking (stage 5b)** needs a separate owner decision after a lawyer's opinion, and covers flights only.
-5. **Prices** on cards and in pushes come from the code's record of a source's answer, with the source and the time; a watch push is sent only after a live re-check; wording states facts, never a percentage reduction.
-6. **Calls abroad** stay off until the owner decides the countries and a lawyer confirms the rules; Polish places use Calls for you as it is.
-7. **Every part ships behind its own switch, default off**, like errands and radar.
+1. **One trip (Wyjazd)** holds everything from the first idea to the way home, through four moments: dreaming, choosing, going, there and after.
+2. **Doddy recognises the kind of trip:** deal hunt, package, city break, domestic, or a fixed trip. It changes its questions, sources and card to match, and says what it assumed.
+3. **Doddy asks only what it can't know.** It fills dates from the calendar and companions and likes from saved notes, with at most three questions, one at a time. New likes are saved only with a yes.
+4. **The answer in seconds by voice, details on screen:** three options with one recommendation, the real door-to-door total, and what is not included or not checked. A package is compared with the same trip done on your own.
+5. **Every price, place and hour comes from a source in this run,** with the source and time. This is enforced in code, as in the shopping runner. Visa and entry rules come only with an official link.
+6. **Standby:** flexible watches, a live re-check before every push, and factual wording. Doddy also sends three ideas a week, on by default for people who use travel and off in one tap.
+7. **Guesthouse calls** use Calls for you for Polish numbers. A deposit is prepared as a transfer draft; Doddy never pays.
+8. **After booking**, Doddy reads travel confirmations in the connected Gmail as data. It fills the trip and proposes, on cards:
+   - calendar entries;
+   - the free-cancellation reminder;
+   - online check-in;
+   - when to leave;
+   - document checks;
+   - a packing list.
+
+   It watches the price of a cancellable stay and doesn't rebook.
+9. **At the destination and afterwards:**
+   - a today view that also works offline;
+   - for a delayed or cancelled flight, Doddy explains the EU261 rights and drafts the claim email for the person to send;
+   - a cost split for the trip's people.
+10. **No booking or payment inside Doddy.**
+11. **Order of work:**
+    1. the trip and filling it from email;
+    2. the planner;
+    3. standby and ideas;
+    4. guesthouse calls;
+    5. there and after;
+    6. planning together.
+
+    Each part ships behind its own switch, default off.
 
 ## Consequences
 
-- The owner must open partner accounts and ask Kiwi about commercial use (owner queue 37). If Kiwi says no, stage 1 runs on Travelpayouts' cached prices, which are older and thinner for Polish routes, and the report must say "from about".
-- Airbnb and Booking.com prices won't be read by Doddy; the person sees a link. That is less than the owner asked for, and it is what is obtainable.
-- Standby needs an always-on worker (the free Render plan sleeps) and working APNs (owner queue 8).
-- Cost per trip report is model tokens plus searches, as for errands; watches cost almost nothing on cached prices. Partner commission is possible but small (about 4% on packages, a few percent elsewhere) and not yet signed.
-- Privacy: route, dates and party size go to the sources; the privacy policy and "What leaves this iPhone" need a travel section before a switch goes on.
+- **Stage 1 needs no travel partner,** so it can start first. It needs real confirmation emails as test fixtures, with personal data removed, which only the owner can provide.
+- **Reading email for confirmations** is a new use of the Gmail connection. Before it is switched on, the in-app text, "What leaves this iPhone" and the privacy policy must say:
+  - what is read;
+  - where it is read;
+  - what is kept.
+- **Weekly ideas are an unprompted push.** Watch opt-out rates; the owner may want them off by default.
+- **Partner accounts and Kiwi's answer** gate stage 2 (owner queue 37).
+- **Standby needs** an always-on worker and working APNs (owner queue 8).
+- **Automatic flight-delay detection** needs a flight-status source that hasn't been researched yet.
+- **Planning together** needs a decision on whether companions need a Doddy account.
 
 ## Evidence
 
-- Read in the repository: `server/messaging/src/errands/researcher.ts`, `src/watches/`, `src/taskCalls/opening.ts`, `server/messaging/README.md`, `voice-agent/tools.json`, the decisions named above.
-- Web research by two research agents on 11 Nov 2026; sources in `docs/implementation/TRAVEL.md` section 6. Several official pages refused to load and were read through search summaries; those points are marked *unverified* there.
-- **Not run:** no travel API was called, no partner account exists, no code was written, nothing was compiled or tested. The legal points are not legal advice.
+- **Web research** by four research agents on 11 Nov 2026: two on sources and law, two on how people plan and use AI. Reddit could not be read; several statistics are from UK, US or German surveys or from vendors, as marked in the plan.
+- **Read in the repository:** errands, watches, radar, task calls, the voice tool list.
+- **Not run:** no travel API was called, no code was written, nothing compiled or tested. The legal points are not legal advice.
