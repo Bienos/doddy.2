@@ -3352,6 +3352,11 @@ final class VoiceSessionController {
                 return
             }
             await reply(call.toolCallId, await StudioModel.shared.make(job))
+        case .polandInfo(let request):
+            // Voice and the Poland Pack screen use the same source-backed reader.
+            // The existing AskFirst card has already been accepted at this point.
+            let response = await PolandVoiceReader.answer(request, polish: Self.cardsInPolish)
+            await reply(call.toolCallId, response)
         case .findDeals(let request):
             // SHOPPING.md 2: after the ask card's yes, one request to Doddy's server, which reads the
             // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.
