@@ -294,7 +294,7 @@ struct HomeView: View {
                 }
                 // Real external ordering pages (Uber Eats, Glovo, Wolt, Pyszne.pl, Bolt Food).
                 // Checkout stays with each provider; opening a page never counts as an order.
-                Button { showFoodDelivery = true } label: { Label("Order food", systemImage: "fork.knife") }
+                Button { showFoodDelivery = true } label: { Label(NotificationLanguage.current == .polish ? "Zamów jedzenie" : "Order food", systemImage: "fork.knife") }
                     .accessibilityIdentifier("home.foodDelivery")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
                 // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
