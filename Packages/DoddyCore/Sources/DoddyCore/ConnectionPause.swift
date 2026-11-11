@@ -29,6 +29,9 @@ public enum ConnectionPause {
         case .handOverErrand, .makeSomething:
             // Doddy's server searches and reads the web for it (ADR-570, ADR-740).
             true
+        case .polandInfo:
+            // A user-approved read of official IMGW, GIOŚ or NBP data on the iPhone.
+            true
         case .findDeals:
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
             true
