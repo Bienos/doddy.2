@@ -61,6 +61,8 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
+    /// Poland-first public information: IMGW, GIOŚ, NBP, InPost handoff and existing leaflets.
+    @State private var showPolandPack = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -126,6 +128,9 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showPolandPack) {
+                PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
+            }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
@@ -175,7 +180,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday || showPolandPack)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -289,6 +294,12 @@ struct HomeView: View {
                     Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                         .accessibilityIdentifier("home.deals")
                 }
+                // Poland Pack reads official local data only when opened; no startup request.
+                Button { showPolandPack = true } label: {
+                    Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
+                          systemImage: "mappin.and.ellipse")
+                }
+                .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
                 // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
                 if scope.shows(.following) {
