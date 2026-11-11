@@ -100,4 +100,17 @@ final class HomeCommandTests: XCTestCase {
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.controlHome)?.approval, .card)
         XCTAssertEqual(ActivityRequest.describe(request, calendar: .current)?.app, .home)
     }
+
+    func testBuildWithoutHomeKitEntitlementIsMissing() {
+        XCTAssertTrue(HomeKitEntitlement.isMissing(profile: "<key>aps-environment</key>"))
+    }
+
+    func testBuildWithHomeKitEntitlementIsNotMissing() {
+        XCTAssertFalse(HomeKitEntitlement.isMissing(profile: "<key>com.apple.developer.homekit</key><true/>"))
+    }
+
+    func testNoProfileMeansNothingSaysItIsMissing() {
+        XCTAssertFalse(HomeKitEntitlement.isMissing(profile: nil))
+        XCTAssertFalse(HomeKitEntitlement.isMissing(profile: ""))
+    }
 }
