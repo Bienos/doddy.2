@@ -99,7 +99,16 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds come from Xcode Cloud only (ADR-697,
 `docs/implementation/XCODE_CLOUD.md`).
 
+The Ubuntu 24.04 checks/Swift jobs install the same dependency packages through
+`scripts/ci_install_ubuntu_packages.sh`. If the default apt sources fail, it retries
+with isolated package lists from the HTTPS kernel.org Ubuntu mirror, authenticated
+by the runner's existing Ubuntu archive keyring. Release, updates, security and
+backports stay on Noble; signature/TLS checks and all test commands stay enabled.
+Both attempts are bounded and a failed fallback fails the job. The checks group
+tests primary success, download/install failures, fallback failure and cleanup.
+
 **Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-684)** runs these jobs side by side:
+
 - `changes` (Ubuntu, seconds): `scripts/ci_needs_mac.sh` decides whether the pull request needs the macOS build
   (any changed file that can reach an Xcode target or its tests), and `scripts/ci_groups.sh` decides which Linux
   groups it needs. An unlisted path, or no list, runs everything.
