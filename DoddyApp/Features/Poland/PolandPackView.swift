@@ -6,6 +6,7 @@ import SwiftUI
 /// The screen is loaded only when requested; it adds no weight to voice startup.
 struct PolandPackView: View {
     let dealsEnabled: Bool
+    let parcelTrackingEnabled: Bool
 
     @Environment(\.dismiss) private var dismiss
     @AppStorage("polandPack.city") private var cityCode = PolandCity.warszawa.rawValue
@@ -20,6 +21,7 @@ struct PolandPackView: View {
     @State private var hasLoaded = false
     @State private var currentRequestID = UUID()
     @State private var showDeals = false
+    @State private var showParcels = false
 
     private var city: PolandCity { PolandCity(rawValue: cityCode) ?? .warszawa }
     private var polish: Bool { NotificationLanguage.current == .polish }
@@ -149,6 +151,12 @@ struct PolandPackView: View {
                 }
 
                 Section {
+                    if parcelTrackingEnabled {
+                        Button { showParcels = true } label: {
+                            Label(t("Moje paczki — sprawdź status", "My parcels — check status"), systemImage: "shippingbox.circle")
+                        }
+                        .accessibilityIdentifier("poland.parcels")
+                    }
                     TextField(t("24-cyfrowy numer paczki", "24-digit tracking number"), text: $shipmentNumber)
                         .keyboardType(.numberPad)
                         .accessibilityIdentifier("poland.parcel.number")
@@ -164,7 +172,7 @@ struct PolandPackView: View {
                 } header: {
                     Label(t("Paczki InPost", "InPost parcels"), systemImage: "shippingbox")
                 } footer: {
-                    Text(t("DODDY nie odczytuje statusu paczki ani konta InPost. Link otwiera oficjalny serwis.", "DODDY does not read your parcel status or InPost account. Links open the official service."))
+                    Text(t("Moje paczki sprawdza status dopiero po włączeniu listy i świadomym dodaniu lub odświeżeniu numeru. Link otwiera serwis InPost.", "My parcels checks status only after enabling the list and explicitly adding or refreshing a number. The link opens InPost."))
                 }
 
                 if dealsEnabled {
@@ -201,6 +209,7 @@ struct PolandPackView: View {
             .refreshable { await refresh() }
             .task(id: cityCode) { await refresh() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showParcels) { ParcelsView() }
         }
     }
 
