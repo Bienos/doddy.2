@@ -36,4 +36,27 @@ final class ShareInboxTests: XCTestCase {
         XCTAssertNil(ShareInboxItem.decoded(Data("{}".utf8)))
         XCTAssertNil(ShareInboxItem.decoded(Data(#"{"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF","text":"","sharedAt":"2027-01-15T08:00:00Z"}"#.utf8)))
     }
+    func testConnectedServicesAreOnlyRecognisedOnTrustedHosts() throws {
+        let cases: [(String, ConnectedSharedService)] = [
+            ("https://www.vinted.pl/items/123", .vinted),
+            ("Look here https://vinted.com/items/456", .vinted),
+            ("https://booksy.com/pl-pl/12345", .booksy),
+            ("https://my-salon.simplybook.me/v2/", .simplyBook),
+        ]
+        for (link, expected) in cases {
+            let item = try XCTUnwrap(ShareInboxItem.compose(text: link, link: nil, sharedAt: now))
+            XCTAssertEqual(item.connectedService, expected)
+        }
+        for link in [
+            "https://vinted.pl.evil.example/items/123",
+            "https://fakevinted.pl/items/123",
+            "https://booksy.com.evil.example/appointment",
+            "http://vinted.pl/items/123",
+            "javascript:alert(1)",
+        ] {
+            let item = try XCTUnwrap(ShareInboxItem.compose(text: link, link: nil, sharedAt: now))
+            XCTAssertNil(item.connectedService, "Must not trust a lookalike or non-HTTPS link")
+        }
+    }
+
 }
