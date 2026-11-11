@@ -259,15 +259,17 @@ struct PolandPackView: View {
 
 private enum PolandPackFetcher {
     static func data(_ url: URL) async throws -> Data {
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 12
-        request.setValue("application/json, application/ld+json", forHTTPHeaderField: "Accept")
-        let (bytes, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw PolandDataError.unavailable
-        }
-        guard bytes.count <= 2_000_000 else { throw PolandDataError.tooLarge }
-        return bytes
+        // The repository's approved, ephemeral, no-redirect transport keeps networking
+        // out of the SwiftUI view and enforces its hard response size limit.
+        let response = try await AppHTTPTransport().send(GatewayHTTPRequest(
+            url: url,
+            method: "GET",
+            headers: ["Accept": "application/json, application/ld+json"],
+            body: nil,
+            timeout: 12
+        ))
+        guard response.status == 200 else { throw PolandDataError.unavailable }
+        return response.body
     }
     static func weather(_ city: PolandCity) async throws -> PolandWeather {
         try JSONDecoder().decode(PolandWeather.self, from: await data(PolandOpenData.weatherURL(city: city)))
