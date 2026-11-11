@@ -25,6 +25,11 @@ struct ErrandsView: View {
     @State private var note: HandOverNote?
     @FocusState private var typing: Bool
 
+    /// Optional local-only prefill from a user-reviewed shared listing. Approval still happens inside this view.
+    init(initialWords: String = "") {
+        _words = State(initialValue: initialWords)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
