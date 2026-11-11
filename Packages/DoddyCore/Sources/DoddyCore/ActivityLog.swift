@@ -395,6 +395,12 @@ public struct ActivityRequest: Equatable, Sendable {
         case .makeSomething(let job):
             // ADR-740: the 30-day log keeps that a Studio job was asked for, not its topic.
             return ActivityRequest(app: .web, title: "Make a research brief", detail: "\u{201C}\(job.topic)\u{201D}", logDetail: nil, isLookup: false)
+        case .polandInfo(let request):
+            // Only source/topic and explicitly selected city; no raw provider response in the log.
+            return ActivityRequest(
+                app: .web, title: "Checked Polish public data",
+                detail: request.label + (request.city.map { " · " + $0.name } ?? ""),
+                logDetail: request.label, isLookup: true)
         case .findDeals(let request):
             // SHOPPING.md: the card shows the items; the 30-day log keeps only how many and where.
             let count = request.items.count

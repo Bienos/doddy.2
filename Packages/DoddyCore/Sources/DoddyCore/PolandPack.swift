@@ -202,3 +202,67 @@ public enum PolandOpenData {
         return URL(string: "https://api.nbp.pl/api/exchangerates/rates/a/\(normalized.lowercased())/?format=json")
     }
 }
+
+ 
+// MARK: - Polish context / controlled voice lookup
+
+/// A tiny, offline vocabulary, not a knowledge dump. Normalisation never chooses a city by GPS.
+public enum PolishContext {
+    public static func normalised(_ text: String) -> String {
+        // Foundation diacritic folding does not reliably transliterate Polish Ł/ł.
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pl_PL"))
+            .lowercased()
+            .replacingOccurrences(of: "ł", with: "l")
+    }
+
+    public static func city(_ text: String) -> PolandCity? {
+        switch normalised(text).replacingOccurrences(of: "-", with: "").replacingOccurrences(of: " ", with: "") {
+        case "warszawa", "warszawie", "wwarszawie", "wawa", "wwa": return .warszawa
+        case "krakow", "krakowie", "wkrakowie", "krk": return .krakow
+        case "gdansk", "gdansku", "wgdansku": return .gdansk
+        case "wroclaw", "wroclawiu", "wewroclawiu", "wro": return .wroclaw
+        case "poznan", "poznaniu", "wpoznaniu", "poz": return .poznan
+        default: return nil
+        }
+    }
+
+    public static func topic(_ text: String) -> PolandInfoTopic? {
+        switch normalised(text) {
+        case "weather", "pogoda", "temperatura", "wiatr": return .weather
+        case "warnings", "ostrzezenia", "alerty", "burze": return .warnings
+        case "air", "powietrze", "jakosc powietrza", "smog": return .air
+        case "rates", "kursy", "waluty", "kurs euro", "eur", "usd", "gbp": return .rates
+        default: return nil
+        }
+    }
+}
+
+public enum PolandInfoTopic: String, Equatable, Sendable, CaseIterable {
+    case weather, warnings, air, rates
+}
+
+public struct PolandVoiceRequest: Equatable, Sendable {
+    public let topic: PolandInfoTopic
+    public let city: PolandCity?
+
+    /// City is required for location-sensitive information; no silent Warsaw default.
+    public init?(topic: String, city: String?) {
+        guard let parsed = PolishContext.topic(topic) else { return nil }
+        let selected = city.flatMap(PolishContext.city)
+        guard parsed == .rates || selected != nil else { return nil }
+        // Unknown city must never silently resolve to a different one.
+        if let city, !city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, selected == nil { return nil }
+        self.topic = parsed
+        self.city = parsed == .rates ? nil : selected
+    }
+
+    public var label: String {
+        switch topic {
+        case .weather: "IMGW weather"
+        case .warnings: "IMGW warnings"
+        case .air: "GIOŚ air quality"
+        case .rates: "NBP rates"
+        }
+    }
+}

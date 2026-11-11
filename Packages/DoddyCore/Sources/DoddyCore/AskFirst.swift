@@ -229,6 +229,12 @@ public enum AskFirst {
             // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
             // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
             return .tapFirst(StudioAsk.card(job))
+        case .polandInfo(let request):
+            let source = request.label + (request.city.map { " · " + $0.name } ?? "")
+            return .yesFirst(AskCard(
+                title: say("Check official Polish data?", "Sprawdzić polskie dane urzędowe?"),
+                lines: [source],
+                confirmLabel: say("Yes, check", "Tak, sprawdź")))
         case .findDeals(let request):
             // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
             // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.
