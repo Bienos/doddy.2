@@ -66,7 +66,7 @@ function rows(payload: unknown): unknown[] {
 }
 function normalizePost(item: unknown): WykopItem | null {
   const row = record(item);
-  if (!row || !Number.isSafeInteger(row.id) || (row.id as number) <= 0) return null;
+  if (!row || typeof row.id !== "number" || !Number.isSafeInteger(row.id) || row.id <= 0) return null;
   const content = textOnly(row.content);
   if (!content || row.adult === true) return null;
   return {
