@@ -222,12 +222,14 @@ test("price watches (shopping stage 2): off by default, 5 open, a check every 6 
   for (const env of bad) assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...env }), JSON.stringify(env));
 });
 
-test("price watches read pages through the one shared polite fetcher, with the configured settings", async () => {
+test("price watches and leaflets read pages through the one shared polite fetcher, with the configured settings", async () => {
   const { providersFrom } = await import("../src/providers/index.js");
-  const { PoliteFetcher } = await import("../src/deals/fetcher.js");
+  const { CachingFetcher, PoliteFetcher } = await import("../src/deals/fetcher.js");
   const p = providersFrom(loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1", WATCHES_CHECK_HOURS: "12", WATCHES_MAX_OPEN: "3" }));
-  assert.ok(p.watches.fetcher instanceof PoliteFetcher);
-  assert.equal(p.watches.fetcher, p.deals.fetcher, "the same instance as the leaflets (one robots.txt cache, one user agent)");
+  assert.ok(p.watches.fetcher instanceof PoliteFetcher, "price watches read fresh pages");
+  // Leaflets go through a short-lived page cache (11 Nov 2026) in front of the same polite fetcher.
+  assert.ok(p.deals.fetcher instanceof CachingFetcher);
+  assert.equal((p.deals.fetcher as InstanceType<typeof CachingFetcher>).inner, p.watches.fetcher, "the same instance underneath (one robots.txt cache, one user agent)");
   assert.deepEqual(p.watches.settings, { enabled: true, maxOpen: 3, checkHours: 12 });
 });
 

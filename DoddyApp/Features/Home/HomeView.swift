@@ -249,7 +249,7 @@ struct HomeView: View {
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
-    /// the privacy page. The AI disclosure heads it.
+    /// the privacy page.
     private var moreMenu: some View {
         Menu {
             Section {
@@ -285,9 +285,9 @@ struct HomeView: View {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
                         .accessibilityIdentifier("home.today")
                 }
-            } header: {
-                Text("Doddy is an AI, not a person.")
             }
+            // The "Doddy is an AI, not a person." header left this menu on 11 Nov 2026 (owner: "nie chcę używać słowa AI
+            // w ogóle w mówieniu o Dodim … usuń tam Dodi AI"); asked directly, Doddy still says what he is (DOD-03).
             Section {
                 // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
                 // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,

@@ -137,39 +137,46 @@ struct RadarAlertFields: View {
             Text("Leave it empty for every new story. Stories that mention these words get a flag.")
         }
         Section {
-            Picker("How should Doddy tell you?", selection: $how) {
-                Text("Here only").tag(RadarHow.app)
-                Text("As it happens").tag(RadarHow.instant)
-                Text("Once a day").tag(RadarHow.daily)
+            // While Doddy's server checks nobody's follows, only "Here only" is offered (11 Nov 2026): the other two
+            // used to grey out Add with nothing saying why, and the toggle that would have unlocked it was disabled.
+            if !serverOff {
+                Picker("How should Doddy tell you?", selection: $how) {
+                    Text("Here only").tag(RadarHow.app)
+                    Text("As it happens").tag(RadarHow.instant)
+                    Text("Once a day").tag(RadarHow.daily)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("radar.how")
             }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("radar.how")
             if how == .daily {
                 DatePicker("At", selection: $time, displayedComponents: .hourAndMinute)
             }
-            if how != .app {
+            if how != .app && !serverOff {
                 Toggle("Let Doddy's server check this for you", isOn: $serverChecks)
-                    .disabled(serverOff)
                     .accessibilityIdentifier("radar.serverChecks")
             }
         } header: {
             Text("How should Doddy tell you?")
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                if how == .app {
+                if how == .app || serverOff {
                     Text("Shown on this screen when you open it. Nothing about this follow is kept on Doddy's server.")
+                    if serverOff {
+                        Text("Doddy's server doesn't check follows for anyone yet, so this one shows here only.")
+                    }
                 } else {
                     Text("Doddy's server keeps this follow: its name, its words or feed address, the words above, how and when to tell you, and your time zone. It reads the publishers' feeds about every 20 minutes and sends a notification: as it happens outside quiet hours (21:00–8:00) and at most 8 a day, or once a day at your time. Turning it off deletes it from the server.")
                     if how == .daily {
                         Text("A daily summary may have short lines written by AI from the publishers' headlines; it says so when it does.")
                     }
-                    if serverOff {
-                        Text("Doddy's server doesn't check follows for anyone yet, so this one shows here only.")
-                    } else if model.radar?.push == false {
+                    if model.radar?.push == false {
                         Text("Notifications can't reach this iPhone yet, so what Doddy finds is listed here.")
                     }
                     if problem == .wordsNeeded {
                         Text("As it happens needs words to look out for.").foregroundStyle(Theme.error)
+                    } else if !serverChecks {
+                        // Say why Add waits, instead of only greying it out.
+                        Text("Turn on the switch above, or choose Here only.").foregroundStyle(Theme.error)
                     }
                 }
             }
@@ -233,8 +240,11 @@ struct RadarAddSheet: View {
         return RadarAlert(followID: follow.id, words: NewsTopic.keywords(from: wordsText), how: how, dailyTime: RadarClock.text(time)).problem(for: follow)
     }
 
+    /// The server doesn't check follows: whatever was picked, the follow is kept here only (the picker is hidden).
+    private var hereOnly: Bool { how == .app || model.radar?.available == false }
+
     private var canAdd: Bool {
-        follow != nil && !saving && !model.follows.isFull && (how == .app || (serverChecks && problem == nil))
+        follow != nil && !saving && !model.follows.isFull && (hereOnly || (serverChecks && problem == nil))
     }
 
     var body: some View {
@@ -478,7 +488,7 @@ struct RadarAlertSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .disabled(saving || (how != .app && (!serverChecks || problem != nil)))
+                        .disabled(saving || (how != .app && model.radar?.available != false && (!serverChecks || problem != nil)))
                         .accessibilityIdentifier("radar.saveAlert")
                 }
             }

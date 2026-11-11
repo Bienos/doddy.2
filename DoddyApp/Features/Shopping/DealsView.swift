@@ -320,6 +320,16 @@ struct DealsView: View {
         let chainOrder = BasketSolver.chainOrder(result)
         VStack(alignment: .leading, spacing: 10) {
             Text("Where it's cheapest").font(.title3.weight(.bold))
+            // Said first, not inside "What wasn't checked" (11 Nov 2026): when most leaflets couldn't be read this time,
+            // "Not in the leaflets that were read" under every item read as "nothing is on offer".
+            let read = result.chains.filter { $0.status.wasRead }.count
+            if result.chains.count > 1, read * 2 < result.chains.count {
+                Label(String(format: NSLocalizedString("Only %lld of %lld shops' leaflets could be read this time. Try again in a few minutes; what was read is kept for a while, so the next check is quicker.", comment: "most leaflets failed"),
+                             read, result.chains.count), systemImage: "exclamationmark.triangle")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.error)
+                    .accessibilityIdentifier("deals.mostNotRead")
+            }
             if let checked = result.checkedDate {
                 Text(String(format: NSLocalizedString("Read %@. Prices are the leaflets'; in the shop they can differ.", comment: ""), DateText.full(checked)))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)

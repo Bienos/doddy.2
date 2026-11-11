@@ -102,7 +102,7 @@ struct MessagesView: View {
             .alert("Privacy", isPresented: $showingPrivacy) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
+                Text("This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
             }
             .sheet(item: $planRequest) { request in
                 NavigationStack {
@@ -200,13 +200,28 @@ struct MessagesView: View {
                     if model.messages.isEmpty && model.error == nil && model.storage != .loading {
                         intro
                     }
-                    ForEach(Array(model.messages.enumerated()), id: \.element.id) { index, message in
-                        messageBlock(at: index, message)
-                            .id(message.id)
+                    // One timeline (owner, 11 Nov 2026): a file Doddy made without a bubble takes its place by the
+                    // time it was made, instead of a section under the newest message that looked pinned there.
+                    ForEach(timeline) { item in
+                        switch item {
+                        case .message(let index, let message):
+                            messageBlock(at: index, message)
+                                .id(message.id)
+                        case .localFile(let file):
+                            localFileCard(file)
+                        case .serverFile(let document):
+                            serverFileCard(document)
+                        }
                     }
                     taskResults
                     callResults
-                    attachments
+                    if let problem = files.downloadProblem ?? LocalMadeFilesStore.shared.problem {
+                        Label(problem, systemImage: "exclamationmark.triangle")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.error)
+                            .padding(.top, 8)
+                            .accessibilityIdentifier("messages.attachmentProblem")
+                    }
                     if model.isSending {
                         TypingBubble()
                             .padding(.top, 8)
@@ -227,7 +242,7 @@ struct MessagesView: View {
                         // Said once, where a new conversation starts, and always in the menu's Privacy; a running thread
                         // isn't ended by a paragraph of small print.
                         if model.messages.isEmpty {
-                            Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
+                            Text("This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
                                 .font(.footnote)
                                 .foregroundStyle(Theme.secondaryText)
                                 .multilineTextAlignment(.center)
@@ -368,67 +383,48 @@ struct MessagesView: View {
         LocalMadeFiles.shown(LocalMadeFilesStore.shared.files, now: Date())
     }
 
-    /// Ready files Doddy made that are not already bubbles above: the ones made on this iPhone, then the server's. A tap
-    /// opens one in Quick Look, whose Share button saves or sends it; nothing is added to the saved thread.
-    @ViewBuilder
-    private var attachments: some View {
-        let local = localFiles
-        let made = madeDocuments
-        let making = makingDocuments
-        if !local.isEmpty || !made.isEmpty || !making.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Files Doddy made for you")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                    .accessibilityAddTraits(.isHeader)
-                ForEach(local) { file in
-                    Button {
-                        preview = LocalMadeFilesStore.shared.url(for: file)
-                    } label: {
-                        LocalMadeFileRow(file: file)
-                            .padding(.horizontal, 12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .contextMenu {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            LocalMadeFilesStore.shared.remove(file.id)
-                        }
-                    }
-                    .accessibilityIdentifier("messages.localFile")
-                }
-                ForEach(made) { document in
-                    Button {
-                        Task { preview = await files.download(document) }
-                    } label: {
-                        MadeDocumentRow(document: document, downloading: files.downloading == document.id)
-                            .padding(.horizontal, 12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(files.downloading != nil)
-                    .accessibilityIdentifier("messages.attachment")
-                }
-                ForEach(making) { document in
-                    // Not tappable until it is ready; the row says Doddy is still making it.
-                    MadeDocumentRow(document: document, downloading: false)
-                        .padding(.horizontal, 12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .accessibilityIdentifier("messages.attachmentMaking")
-                }
-                if let problem = files.downloadProblem ?? LocalMadeFilesStore.shared.problem {
-                    Label(problem, systemImage: "exclamationmark.triangle")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.error)
-                        .accessibilityIdentifier("messages.attachmentProblem")
-                }
-            }
-            .padding(.top, 14)
-            .padding(.trailing, 40)
+    /// The thread with the files Doddy made that have no bubble of their own, each at the time it was made.
+    private var timeline: [ThreadTimeline.Item] {
+        ThreadTimeline.items(messages: model.messages, local: localFiles, server: madeDocuments + makingDocuments)
+    }
+
+    /// A file made on this iPhone in a voice conversation (kept a week). A tap opens it in Quick Look, whose Share
+    /// button saves or sends it; long-press to delete it.
+    private func localFileCard(_ file: LocalMadeFile) -> some View {
+        Button {
+            preview = LocalMadeFilesStore.shared.url(for: file)
+        } label: {
+            LocalMadeFileRow(file: file)
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                LocalMadeFilesStore.shared.remove(file.id)
+            }
+        }
+        .padding(.top, 8)
+        .padding(.trailing, 40)
+        .accessibilityIdentifier("messages.localFile")
+    }
+
+    /// A file on Doddy's server with no bubble in this thread: tappable once ready, "being made" until then.
+    private func serverFileCard(_ document: MadeDocument) -> some View {
+        Button {
+            Task { preview = await files.download(document) }
+        } label: {
+            MadeDocumentRow(document: document, downloading: files.downloading == document.id)
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(files.downloading != nil || document.status != .ready)
+        .padding(.top, 8)
+        .padding(.trailing, 40)
+        .accessibilityIdentifier(document.status == .ready ? "messages.attachment" : "messages.attachmentMaking")
     }
 
     private var intro: some View {
@@ -552,21 +548,24 @@ struct MessagesView: View {
             // A file Doddy made is a card with Open and Share; it is not an answer, so it has no "from your notes"
             // line. A file Doddy delivered from a voice conversation has a line of his above it (ThreadDelivery).
             if let document = message.document {
-                if let caption = ThreadDelivery.caption(of: message) {
+                // What the server says now, not the words the bubble was saved with (11 Nov 2026): "ready" once it
+                // lists the file ready, and a failure said plainly instead of a card that looks ready to open.
+                let state = fileState(document)
+                if let caption = state.caption(for: message, polish: Self.polish) {
                     HStack(spacing: 0) {
                         MessageBubble(text: caption, fromUser: false, tail: false)
                             .accessibilityLabel(Text(verbatim: "Doddy: \(caption)"))
                         Spacer(minLength: 56)
                     }
                 }
-                let making = isMaking(document)
+                let making = state == .making
                 if making {
                     WorkingDot()
                         .padding(.leading, 18)
                         .padding(.bottom, 2)
                 }
-                fileBubble(document, making: making)
-                if !making {
+                fileBubble(document, making: making, failed: state == .failed)
+                if !making && state != .failed {
                     MadeFileShareButton(link: document.url)
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(Theme.accentText)
@@ -749,7 +748,7 @@ struct MessagesView: View {
 
     /// The file bubble. Its link opens the file in Safari (Quick Look and Share); until the file is ready its page
     /// says so and checks again by itself, so the thread holds no status.
-    private func fileBubble(_ document: ThreadDocument, making: Bool) -> some View {
+    private func fileBubble(_ document: ThreadDocument, making: Bool, failed: Bool = false) -> some View {
         Button {
             UIApplication.shared.open(document.url)
         } label: {
@@ -763,7 +762,10 @@ struct MessagesView: View {
                         .multilineTextAlignment(.leading)
                     HStack(spacing: 4) {
                         kindName(document.kind)
-                        if !making {
+                        if failed {
+                            Text(verbatim: "·")
+                            Text("Not made")
+                        } else if !making {
                             Text(verbatim: "·")
                             Text("Tap to open")
                         }
@@ -779,17 +781,23 @@ struct MessagesView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        // Not tappable while it is being made: the link would only say so.
-        .disabled(making)
+        // Not tappable while it is being made, or when it failed: the link would only say so.
+        .disabled(making || failed)
+        .opacity(failed ? 0.6 : 1)
         .padding(.trailing, 40)
         .accessibilityIdentifier("messages.file")
     }
 
     /// True while the server's files list (read every few seconds while Messages is open) says this file is still being
     /// made. Unknown, not yet read, or no longer in the list all read as "not making": the card opens as before.
-    private func isMaking(_ document: ThreadDocument) -> Bool {
-        guard let id = document.documentID, case .ready(let list) = files.load else { return false }
-        return list.documents.contains { $0.id == id && $0.status == .working }
+    private func fileState(_ document: ThreadDocument) -> ThreadFileState {
+        guard case .ready(let list) = files.load else { return .unknown }
+        return ThreadFileState.of(document, in: list.documents)
+    }
+
+    /// The app is shown in Polish (the bubble's words are chosen in DoddyCore, like the delivered ones).
+    private static var polish: Bool {
+        (Bundle.main.preferredLocalizations.first ?? "en").lowercased().hasPrefix("pl")
     }
 
     private static func icon(forKind kind: String) -> String {
