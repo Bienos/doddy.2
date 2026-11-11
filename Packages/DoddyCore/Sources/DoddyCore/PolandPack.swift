@@ -109,6 +109,11 @@ public struct PolandAirStation: Sendable, Equatable {
     public let name: String
 
     public static func find(in data: Data, city: PolandCity) throws -> PolandAirStation? {
+        try all(in: data, city: city).first
+    }
+
+    /// More than one GIOŚ station may be present in a city. Some have no current AQI.
+    public static func all(in data: Data, city: PolandCity) throws -> [PolandAirStation] {
         guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let stations = response["Lista stacji pomiarowych"] as? [[String: Any]] else {
             throw PolandDataError.invalidResponse
