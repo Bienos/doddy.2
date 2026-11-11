@@ -29,6 +29,8 @@ public enum VoiceToolName {
     public static let makeSomething = "make_something"
     /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
     public static let findDeals = "find_deals"
+    /// Official Polish IMGW/GIOŚ/NBP public data after user's approval, no GPS or accounts.
+    public static let getPolandInfo = "get_poland_info"
 }
 
 /// The functions a user turns on or off in Settings, Connections. The ones that need no iOS permission
@@ -334,6 +336,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
+    /// Polish public-data lookup; selected city is explicit, never inferred from location.
+    case polandInfo(PolandVoiceRequest)
     /// Builds or changes the invoice draft on screen (ADR-677, InvoiceVoice.swift). Nothing is sent.
     case draftInvoice(InvoiceVoiceUpdate)
     /// "I lost my wallet" (ADR-692): a checklist of official steps on a card. Doddy does none of them;
@@ -490,6 +494,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseMakeSomething(args, name: name)
         case VoiceToolName.findDeals:
             return parseFindDeals(args, name: name)
+        case VoiceToolName.getPolandInfo:
+            guard let topic = args.text("topic") else {
+                return .invalid(name: name, reason: "missing topic (weather, warnings, air or rates)")
+            }
+            guard let request = PolandVoiceRequest(topic: topic, city: args.text("city")) else {
+                return .invalid(name: name, reason: "choose weather, warnings, air or rates; for local topics specify Warszawa, Kraków, Gdańsk, Wrocław or Poznań")
+            }
+            return .polandInfo(request)
         case VoiceToolName.draftInvoice:
             return parseDraftInvoice(args, name: name)
         case VoiceToolName.lostWallet:
