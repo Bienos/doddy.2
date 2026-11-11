@@ -4002,7 +4002,7 @@
         "confirm_on_screen": false,
         "ask": "yes_or_tap",
         "speak_before": "force",
-        "timeout_secs": 45,
+        "timeout_secs": 60,
         "elevenlabs_tool_id": "not_synced"
       }
     },
