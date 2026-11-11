@@ -66,4 +66,14 @@ final class SharedShopPageTests: XCTestCase {
         XCTAssertEqual(draft.digest, PriceWatchDraft(title: "Zmywarka Bosch", shop: "mediaexpert.pl", url: page,
                                                       thresholdMinor: 189_900).digest)
     }
+
+    func testThePersonsOwnNameReplacesTheTitle() throws {
+        let shared = try XCTUnwrap(SharedShopPage.parse(page))
+        XCTAssertEqual(shared.titled("  Zmywarka   do kuchni | ").title, "Zmywarka do kuchni")
+        XCTAssertEqual(shared.titled("   ").title, shared.title, "no name: the title stays")
+        XCTAssertEqual(shared.titled("x").url, page)
+        XCTAssertEqual(shared.titled("x").shop, "mediaexpert.pl")
+        XCTAssertLessThanOrEqual(shared.titled(String(repeating: "ż", count: 500)).title.utf16.count, PriceWatchDraft.maxTitle)
+        XCTAssertEqual(shared.id, page)
+    }
 }

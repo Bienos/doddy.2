@@ -40,6 +40,14 @@ public struct SharedShopPage: Equatable, Sendable {
             title: PriceWatchDraft.clipped(title.isEmpty ? shop : title, to: PriceWatchDraft.maxTitle))
     }
 
+    /// The same page with the person's own name for it, when they gave one: tidied and cut like a shared
+    /// title. Empty words leave the title as it was.
+    public func titled(_ words: String) -> SharedShopPage {
+        let name = Self.tidied(words)
+        guard !name.isEmpty else { return self }
+        return SharedShopPage(url: url, shop: shop, title: PriceWatchDraft.clipped(name, to: PriceWatchDraft.maxTitle))
+    }
+
     /// The price watch for this page and the person's price. The same draft, digest and yes card as a
     /// watch started from a pick; the currency is złoty because the card asks for the price in złoty.
     public func watchDraft(thresholdMinor: Int, language: String = PriceWatchDraft.defaultLanguage) -> PriceWatchDraft {
@@ -68,4 +76,9 @@ public struct SharedShopPage: Equatable, Sendable {
         let separators = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "-\u{2013}\u{2014}|:\u{00B7}\u{2022}"))
         return flat.trimmingCharacters(in: separators)
     }
+}
+
+extension SharedShopPage: Identifiable {
+    /// One page per address, so a sheet can be opened for it.
+    public var id: String { url }
 }
