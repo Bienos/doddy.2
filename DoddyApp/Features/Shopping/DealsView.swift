@@ -650,7 +650,7 @@ private struct DealsShopsSheet: View {
 }
 
 /// Chips that wrap onto the next line.
-private struct ChipFlow: Layout {
+struct ChipFlow: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {

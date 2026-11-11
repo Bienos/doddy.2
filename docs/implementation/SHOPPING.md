@@ -167,6 +167,15 @@ Instructions: about 870 tokens for a page read, 260 for a screening call (charac
 - **Voice:** `find_deals {items, chains?}` (a read of public data: the ask card under ASK-01; whether leaflet look-ups join the public look-ups that run at once is an open owner decision), and `hand_over_errand` with `kind: "shopping"` and `priorities`.
 - **Screens:** "Najtaniej w tym tygodniu" (since ADR-661: "Z mojej listy", "Moje aplikacje lojalnościowe", the price per piece under a multi-buy, the real cut or "to nie jest prawdziwa obniżka", the deposit, timing, promotions without a price, a kind filter), "Koszyk" (quantities, line notes, "Przed wyjściem", shared as text with the checklist), the three picks inside a task's result, the PDF report (drawn on the iPhone from the stored result: no model, nothing sent), "Kup w sklepie" (the shop's page in Safari, or its partner link when `buyUrl` is present, with the caption above; its own checkout; recorded in What Doddy did as "opened", never as bought).
 
+## Shopping in one place (11 Nov 2026)
+
+Owner, 11 Nov 2026: "skończ co już mamy" (finish what we have), after the proposal `docs/strategy/SKLEP_PROPOZYCJA_2026-11.md`. No new capability and no server change: one screen gathers what existed.
+
+- **Home › ••• › Shopping** (`ShoppingHubView`, shown when tasks are): "Find me this" typed, the shopping tasks already handed over, watched prices (`WatchesSection`, when price watch is in scope) and a row to "Cheapest this week" (when leaflets are in scope). "Cheapest this week" keeps its own row on Home's menu.
+- **"Find me this" by typing.** Until now a shopping task could only be handed over by voice. The words and "What matters most?" (six suggestions and the person's own, tapped in order, at most 5: `ShoppingPriorities` in DoddyCore) become `ErrandDraft.typedShopping`: `kind: "shopping"`, the priorities in that order, a fixed note saying it was typed on the Shopping screen. Same checks (no link, the limits), same `POST /v1/errands`, same digest rule as section 1.
+- **The yes card** is the typed task's card (`TypedHandOverSheet`) with one more field, the priorities numbered in their order, and for a shopping task its own three lines: what Doddy does, that nothing is bought, and where the words go (Doddy's server, Anthropic, search phrases to Google Shopping through Serper, shop pages opened by the server). Only "Yes, go" sends anything; "Doddy is looking" is said only when the server answered that it has the task.
+- **Checked:** DoddyCore `ErrandTypedTests` (14 tests, Swift 6.1.2 on Linux): the draft, the digest changing with the order, refusals, the priority rule. `swiftc -parse` on the four changed app files. **Not checked:** the SwiftUI is not compiled (no Xcode here) and nothing was seen on a device; no UI test opens the screen.
+
 ## Stage 3: buying through Doddy
 
 Designed and its safety rules built, nothing connected: `docs/implementation/SHOPPING_CHECKOUT.md` (ADR-613).
