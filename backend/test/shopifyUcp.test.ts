@@ -93,7 +93,7 @@ test("real cart and checkout are created with the exact Shopify variant and no p
 });
 
 test("wrong merchant, changed price availability, or missing selected variant never creates a cart", async () => {
-  const { service, calls } = session({ get_product: document({ product }) });
+  const { service, calls } = session({ lookup_catalog: document({ products: [product] }) });
   await assert.rejects(service.prepareCheckout({
     variantId, shop: "unrelated.myshopify.com", quantity: 1,
   }), (e: unknown) => e instanceof AppError && e.code === "refused");
