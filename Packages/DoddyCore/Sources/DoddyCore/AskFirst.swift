@@ -233,9 +233,15 @@ public enum AskFirst {
             // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
             // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.
             return .yesFirst(DealsAsk.card(request, polish: polish))
-        case .shopifySearch:
-            // Public merchant catalog: the user's search phrase goes to Shopify.
-            return .runsNow
+        case .shopifySearch(let query):
+            // Not an exception to ASK-01: these product words go to Shop MCP through Doddy's
+            // server ONLY after a spoken yes or tap on the exact search phrase.
+            return .yesFirst(AskCard(
+                title: say("Search real Shopify offers?", "Przeszukać oferty Shopify?"),
+                lines: [say("Search words: ", "Szukam: ") + query,
+                        say("Your words go to Shopify. No cart or payment is created.",
+                            "Twoje słowa trafią do Shopify. Nie tworzymy koszyka ani płatności.")],
+                confirmLabel: say("Yes, search", "Tak, szukaj")))
         case .shopifyPrepareCheckout(let index, let quantity):
             // Real merchant cart creation is an external write. A tap on the card is required.
             // The voice controller shows the selected exact, provider-verified offer details.
