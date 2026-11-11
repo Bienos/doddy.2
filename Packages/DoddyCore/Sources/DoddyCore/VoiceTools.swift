@@ -509,6 +509,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
                   (1...5).contains(position), position.rounded(.towardZero) == position else {
                 return .invalid(name: name, reason: "select one of the five results shown (index 1–5)")
             }
+            guard !args.has("quantity") || args.number("quantity") != nil else {
+                return .invalid(name: name, reason: "quantity must be a number, not text")
+            }
             let quantity = args.number("quantity") ?? 1
             guard quantity.isFinite, (1...10).contains(quantity), quantity.rounded(.towardZero) == quantity else {
                 return .invalid(name: name, reason: "quantity must be a whole number from 1 to 10")
