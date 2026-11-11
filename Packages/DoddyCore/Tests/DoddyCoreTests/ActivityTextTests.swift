@@ -71,6 +71,7 @@ final class ActivityTextTests: XCTestCase {
             .openTrainingPlan(PlanAsk(goal: .tenK, daysPerWeek: 3, minutesPerSession: 45)),
             // SHOPPING.md.
             .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),
+            .shopifySearch(query: "czarna bluza"), .shopifyPrepareCheckout(index: 1, quantity: 2),
             .followNews(.words(name: "CPK", keywords: ["CPK"])),
             .lookAtScreen(question: "Co to jest?"),
         ]
