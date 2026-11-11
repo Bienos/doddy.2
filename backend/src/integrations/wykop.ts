@@ -145,7 +145,6 @@ export class WykopReadOnly {
         headers: { authorization: `Bearer ${bearer}`, accept: "application/json" },
         signal: controller.signal,
         redirect: "error",
-        cache: "no-store",
       });
       if (response.status === 401 || response.status === 403) throw new WykopUnavailable("unauthorized");
       if (response.status === 429) throw new WykopUnavailable("rate_limited");
