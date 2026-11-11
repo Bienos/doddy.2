@@ -32,7 +32,7 @@ describe("read-only eBay used-goods offers", () => {
     assert.equal(calls[0]?.init?.method, "POST");
     const query = new URL(calls[1]!.url);
     assert.equal(query.host, "api.ebay.com");
-    assert.equal(query.searchParams.get("filter"), "conditions:{USED}");
+    assert.equal(query.searchParams.get("filter"), "conditions:{USED},deliveryCountry:PL");
     assert.equal(query.searchParams.get("q"), "używane słuchawki");
     assert.equal((calls[1]!.init?.headers as Record<string, string>)["X-EBAY-C-MARKETPLACE-ID"], "EBAY_PL");
     await source.search("używane słuchawki");
