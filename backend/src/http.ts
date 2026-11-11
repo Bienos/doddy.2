@@ -13,6 +13,7 @@ import { AppError } from "./errors.js";
 import { PAYMENT_SCENARIOS, type PaymentScenario, type PaymentsService } from "./payments/service.js";
 import type { ConnectedAppsService } from "./service.js";
 import type { ShopifyUcpService } from "./shopify/ucp.js";
+import type { UsageLimiter } from "./policy.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
 import type { WebRoutes } from "./web/routes.js";
@@ -33,6 +34,8 @@ export interface HttpDeps {
   payments?: PaymentsService;
   /** Live Shopify Shop MCP search and merchant-owned checkout. No payment or order submission. */
   shopify?: ShopifyUcpService | null;
+  /** Durable, per-user Shopify provider call limits plus provider concurrency slots. */
+  shopifyLimiter?: UsageLimiter;
   verifier: SessionVerifier;
   /** Beta device sign-in (ADR-563). Absent: `POST /v1/session/device` is not found. */
   deviceSessions?: DeviceSessionIssuer | null;
@@ -278,7 +281,12 @@ export function createHandler(deps: HttpDeps) {
       if (shopifyHandler) {
         // Only the iPhone’s full authenticated session reaches the live storefront.
         // A merchant cart or checkout is never a payment or a placed order.
-        const result = await shopifyHandler(body);
+        const result = deps.shopifyLimiter
+          ? await (async () => {
+              await deps.shopifyLimiter!.reserveToolRun(user.userId, now().getTime());
+              return deps.shopifyLimiter!.withSlot(user.userId, () => shopifyHandler(body));
+            })()
+          : await shopifyHandler(body); // Legacy harness injects a one-call fake; production always supplies limiter.
         status = 200;
         return send(res, 200, result);
       }
