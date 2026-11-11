@@ -1322,7 +1322,7 @@ final class VoiceSessionController {
         let recapLines = kept.map { RecapModelIO.Line(speaker: $0.fromUser ? .person : .doddy, text: $0.text) }
         let memories = store
         Task { await RecapKeeper.recapConversation(lines: recapLines, startedAt: log.startedAt, endedAt: log.endedAt,
-                                                   isPrivate: isPrivate, store: memories) }
+                                                   isPrivate: isPrivate, conversationID: log.id, store: memories) }
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         logs.append(log)
     }

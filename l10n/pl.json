@@ -3351,5 +3351,9 @@
   "Read one day's steps, walking distance and floors climbed, when you ask": "Odczytać kroki, przebyty dystans i pokonane piętra z jednego dnia, gdy o to poprosisz",
   "Count the photos and videos you took on a day or over up to a month, when you ask": "Policzyć zdjęcia i filmy zrobione jednego dnia albo w okresie do miesiąca, gdy o to poprosisz",
   "Turn on the switch above, or choose Here only.": "Włącz przełącznik powyżej albo wybierz Tylko tutaj.",
-  "Only %lld of %lld shops' leaflets could be read this time. Try again in a few minutes; what was read is kept for a while, so the next check is quicker.": "Tym razem udało się przeczytać gazetki tylko %lld z %lld sklepów. Spróbuj za kilka minut; to, co już przeczytane, zostaje na chwilę zapamiętane, więc następne sprawdzenie będzie szybsze."
+  "Only %lld of %lld shops' leaflets could be read this time. Try again in a few minutes; what was read is kept for a while, so the next check is quicker.": "Tym razem udało się przeczytać gazetki tylko %lld z %lld sklepów. Spróbuj za kilka minut; to, co już przeczytane, zostaje na chwilę zapamiętane, więc następne sprawdzenie będzie szybsze.",
+  "Delete conversation and recap note": "Usuń rozmowę i podsumowanie",
+  "Delete conversation, keep recap note": "Usuń rozmowę, zachowaj podsumowanie",
+  "This removes the conversation history from this iPhone. Doddy also made a recap note from it: you can delete that too, or keep it. Copies on Doddy's server or ElevenLabs may remain.": "Historia tej rozmowy zostanie usunięta z tego iPhone’a. Doddy zrobił z niej też notatkę z podsumowaniem: możesz ją usunąć albo zachować. Kopie na serwerze Doddy lub w ElevenLabs mogą pozostać.",
+  "The conversation was deleted, but its recap note couldn't be deleted and is still kept. You can delete it from Notes.": "Rozmowa została usunięta, ale jej podsumowania nie udało się usunąć i nadal jest zachowane. Możesz je usunąć w Notatkach."
 }

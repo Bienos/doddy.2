@@ -156,6 +156,41 @@ final class RecapKeeperTests: XCTestCase {
     }
 
     @MainActor
+    func testASavedRecapIsLinkedToItsConversation() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let conversation = UUID()
+        let outcome = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                        isPrivate: false, conversationID: conversation, store: store,
+                                                        defaults: defaults) { _, _, _ in
+            Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        XCTAssertEqual(outcome, .saved)
+        XCTAssertEqual(RecapKeeper.links(defaults).memoryID(for: conversation), store.memories.first?.id)
+    }
+
+    @MainActor
+    func testDeletingTheConversationWhileTheRecapIsWrittenSavesNothing() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let conversation = UUID()
+        let outcome = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                        isPrivate: false, conversationID: conversation, store: store,
+                                                        defaults: defaults) { _, _, _ in
+            RecapKeeper.updateLinks(self.defaults) { $0.tombstoning([conversation]) }
+            return Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        XCTAssertEqual(outcome, .sourceDeleted)
+        XCTAssertTrue(store.memories.isEmpty)
+        XCTAssertNil(RecapKeeper.links(defaults).memoryID(for: conversation))
+        XCTAssertTrue(RecapKeeper.ledger(defaults).keys.isEmpty, "Not marked: nothing was saved")
+    }
+
+    @MainActor
     func testRevokingServerRecapConsentDuringGenerationPreventsSave() async throws {
         let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
         let start = Date()

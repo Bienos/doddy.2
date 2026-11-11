@@ -39,6 +39,17 @@ enum RecapKeeper {
         return Date(timeIntervalSince1970: seconds)
     }
 
+    /// Which recap note belongs to which conversation, and which conversations were deleted.
+    static func links(_ defaults: UserDefaults = .standard) -> RecapLinks {
+        RecapLinks(stored: defaults.string(forKey: RecapLinks.key))
+    }
+
+    /// Reads, changes and writes the links in one step. Everything here runs on the main actor with no
+    /// suspension in between, so two changes cannot overwrite each other.
+    static func updateLinks(_ defaults: UserDefaults = .standard, _ change: (RecapLinks) -> RecapLinks) {
+        defaults.set(change(links(defaults)).stored, forKey: RecapLinks.key)
+    }
+
     static func ledger(_ defaults: UserDefaults = .standard) -> RecapLedger {
         RecapLedger(stored: defaults.string(forKey: RecapSettings.ledgerKey))
     }
@@ -88,13 +99,17 @@ enum RecapKeeper {
         case refused
         /// The note couldn't be saved and read back: nothing claimed, nothing marked.
         case notSaved
+        /// The person deleted the conversation while its recap was being written: no recap was kept.
+        case sourceDeleted
     }
 
     /// After a conversation with Doddy ends: a recap note, written on this iPhone, if the switch is on, the
     /// conversation isn't Private and the person said enough. `startedAt` identifies the conversation, so
-    /// it is recapped once.
+    /// it is recapped once. `conversationID` is the kept conversation's id: the saved note is linked to it, so
+    /// deleting the conversation can offer to delete the note, and a deleted conversation gets no recap.
     @discardableResult
     static func recapConversation(lines: [RecapModelIO.Line], startedAt: Date, endedAt: Date, isPrivate: Bool,
+                                  conversationID: UUID? = nil,
                                   store: MemoryStore, defaults: UserDefaults = .standard,
                                   onDeviceAvailable: Bool? = nil,
                                   write: @MainActor (RecapWriter, [RecapModelIO.Line], String) async throws -> Data = writeConversation) async -> ConversationOutcome {
@@ -111,6 +126,7 @@ enum RecapKeeper {
         let key = "voice_conversation:\(Int64((startedAt.timeIntervalSince1970 * 1000).rounded()))"
         guard writer == .onDevice || writer == .server, !ledger(defaults).contains(key), !conversationsInFlight.contains(key),
               RecapPolicy.endedAfterSwitchOn(endedAt, since: since(defaults)) else { return .notNew }
+        if let conversationID, links(defaults).isDeleted(conversationID) { return .sourceDeleted }
         let consentSince = since(defaults)
         let consentEpoch = defaults.string(forKey: RecapSettings.rememberEpochKey)
         conversationsInFlight.insert(key)
@@ -133,9 +149,21 @@ enum RecapKeeper {
         }
         guard writer != .server || serverYes(defaults) else { return .skipped(.noWriter) }
         guard !ledger(defaults).contains(key) else { return .notNew }
+        if let conversationID, links(defaults).isDeleted(conversationID) { return .sourceDeleted }
         do {
-            _ = try await store.save(text: text, category: .other, source: .conversationRecap, capturedAt: recap.endedAt)
+            let saved = try await store.save(text: text, category: .other, source: .conversationRecap,
+                                             capturedAt: recap.endedAt)
             defaults.set(ledger(defaults).adding(key).stored, forKey: RecapSettings.ledgerKey)
+            if let conversationID {
+                // The conversation may have been deleted while the note was being saved. Then the note
+                // goes too; if it can't be removed it stays linked, so it is still found and reported.
+                if links(defaults).isDeleted(conversationID) {
+                    if (try? await store.delete(id: saved.id)) != nil { return .sourceDeleted }
+                    updateLinks(defaults) { $0.linking(conversation: conversationID, memory: saved.id, evenIfDeleted: true) }
+                } else {
+                    updateLinks(defaults) { $0.linking(conversation: conversationID, memory: saved.id) }
+                }
+            }
             return .saved
         } catch {
             return .notSaved

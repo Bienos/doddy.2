@@ -516,7 +516,7 @@ struct KnowledgeSettingsView: View {
                     StatusRow(title: "Remembered conversations", value: "\(conversationLogs.logs.count) of the last \(ConversationLogStore.maxLogs)")
                 }
                 .accessibilityIdentifier("settings.rememberedConversations")
-                Button("Forget remembered conversations", role: .destructive) { conversationLogs.clear() }
+                Button("Forget remembered conversations", role: .destructive) { ConversationDeletion.clearAll(logs: conversationLogs) }
                     .disabled(conversationLogs.logs.isEmpty && conversationLogs.problem == nil)
                 if let problem = conversationLogs.problem {
                     Label(problem, systemImage: "exclamationmark.triangle")
