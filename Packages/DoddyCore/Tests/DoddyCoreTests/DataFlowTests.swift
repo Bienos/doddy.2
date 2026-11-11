@@ -363,7 +363,7 @@ final class DataFlowSummaryTests: XCTestCase {
         XCTAssertTrue(after.isActive)
         XCTAssertNil(after.note)
         for part in ["random device ID", "Keychain", "web, news or places search", "go at once without asking", "Monid",
-                     "after you say yes or tap", "only after you tap its card to confirm",
+                     "one of your accounts, when you ask for it", "only after you tap its card to confirm",
                      "Never your saved notes, except the copy you choose to keep on Doddy's server"] {
             XCTAssertTrue(after.what.contains(part), part)
         }
@@ -579,9 +579,9 @@ final class DataFlowCallsAndUpdatesTests: XCTestCase {
         XCTAssertFalse(watches.when.contains("say yes"))
     }
 
-    /// Reads that still accept a spoken yes keep their wording; a write never says "say yes" without a tap. The rows that may
-    /// mention a spoken yes are the leaflets (a read) and the Doddy server row (reads: "say yes or tap").
-    func testOnlyReadsStillMentionASpokenYes() {
+    /// Since 11 Nov 2026 a read the user asks for runs at once (decision 2026-11-11-asked-for-runs-at-once): no row
+    /// says "say yes" any more, and a write still says it waits for a tap on its card.
+    func testNoRowAsksForASpokenYesAndWritesStillNeedATap() {
         var all = withServer
         all.doddyServerSet = true
         all.webNotesKept = true
@@ -597,11 +597,11 @@ final class DataFlowCallsAndUpdatesTests: XCTestCase {
         let mentioning = DataFlow.rows(all)
             .filter { [$0.what, $0.when, $0.note ?? ""].contains { $0.localizedCaseInsensitiveContains("say yes") } }
             .map(\.id)
-        XCTAssertEqual(Set(mentioning), ["deals", "doddyServer"])
+        XCTAssertEqual(Set(mentioning), [])
         let deals = DataFlow.rows(all).first { $0.id == "deals" }
-        XCTAssertEqual(deals?.when, "Only when you say yes to checking this week's leaflets.", "find_deals is a read and still accepts a spoken yes")
+        XCTAssertEqual(deals?.when, "Only when you ask Doddy to check this week's leaflets.")
         let server = DataFlow.rows(all).first { $0.id == "doddyServer" }
-        XCTAssertTrue(server?.what.contains("after you say yes or tap") ?? false)
+        XCTAssertTrue(server?.what.contains("a look-up in one of your accounts, when you ask for it") ?? false)
         XCTAssertTrue(server?.what.contains("only after you tap its card to confirm") ?? false, "drafts, emails and tasks are tap-only")
     }
 

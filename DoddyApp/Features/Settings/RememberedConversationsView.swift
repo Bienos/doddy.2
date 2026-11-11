@@ -145,7 +145,7 @@ private struct ConversationLogDetailView: View {
             Section("What was said") {
                 ForEach(Array(log.lines.enumerated()), id: \.offset) { _, line in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(line.fromUser ? "You" : "Doddy (AI)")
+                        Text(line.fromUser ? "You" : "Doddy")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(line.fromUser ? Theme.accentText : Theme.secondaryText)
                         Text(line.text)

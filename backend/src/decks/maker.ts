@@ -117,7 +117,12 @@ export class DeckMaker {
 
   private async structured(input: Parameters<ClaudeProvider["structured"]>[0], signal: AbortSignal): Promise<unknown> {
     try {
-      return (await this.deps.claude.structured(input, signal)).value;
+      // `promptFallback`: both steps are checked whole by code afterwards (`ResearchPlan`, `checkDeck`), so when
+      // Anthropic refuses the compiled schema the same request is asked once with the schema as words instead.
+      const result = await this.deps.claude.structured({ ...input, promptFallback: true }, signal);
+      // Content-free: the step and what Anthropic said to the schema.
+      if (result.schemaRefused) this.deps.log?.({ level: "warn", event: "deck_schema_refused", step: input.name ?? null, ...result.schemaRefused });
+      return result.value;
     } catch (error) {
       // Claude declined the topic: the file fails like any other failure, with nothing made up instead.
       if (error instanceof ClaudeRefusal) throw new ProviderError("malformed_provider_result");

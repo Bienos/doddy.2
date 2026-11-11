@@ -586,8 +586,8 @@ struct PrivacySettingsView: View {
     /// The privacy summary that used to be at the bottom of Home (ADR-326).
     private var privacySummary: String {
         memoryCopyOn
-            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
-            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
+            ? NSLocalizedString("Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
+            : NSLocalizedString("Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
     }
 
     var body: some View {
@@ -628,7 +628,7 @@ struct PrivacySettingsView: View {
                         : listenOnOpen ? "Only while talking. A conversation starts when you open Doddy; turn that off under Voice"
                         : "Only while talking")
                 StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
-                StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? DataFlow.cloudAISummary(.current()) : "Off (not built)")
+                StatusRow(title: "Online answers", value: privacy.cloudAIEnabled ? DataFlow.cloudAISummary(.current()) : "Off (not built)")
                 StatusRow(title: "Sync", value: privacy.syncText)
             }
             .accessibilityIdentifier("settings.privacy")
@@ -713,7 +713,7 @@ struct AskDoddySettingsView: View {
                 StatusRow(title: "Status", value: assistantStatus)
                     .accessibilityIdentifier("settings.assistantStatus")
             } footer: {
-                Text("Doddy's server keeps the AI key, so no key is stored on your iPhone. This iPhone uses its anonymous Doddy account to prove it may use the server.")
+                Text("Doddy's server keeps the key, so no key is stored on your iPhone. This iPhone uses its anonymous Doddy account to prove it may use the server.")
             }
         }
         .settingsPage()

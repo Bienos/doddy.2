@@ -6,11 +6,14 @@ import { DECK_PLAN_STEP, DECK_WRITE_STEP, DEMO_ARTICLE_TEXT, demoDeck, MockWikim
 import { DeckMaker, readBack, writeRequest } from "../src/decks/maker.js";
 import { escape, fitSize, renderDeck, slideText, wrappedLines } from "../src/decks/render.js";
 import {
-  articleText, dataText, type DeckImage, freeLicence, gatherResearch, imageKind, plainText, type ResearchPack, webSources, WikimediaClient,
+  articleText, dataText, type DeckImage, freeLicence, gatherResearch, imageKind, plainText, type ResearchPack, webSources, wellFormed, WikimediaClient,
 } from "../src/decks/research.js";
 import { checkDeck, type Deck, DECK_JSON_SCHEMA, dropBroken, normalized, numbersIn, numberTokens, sameNumber } from "../src/decks/spec.js";
 import { crc32, unzip, zip } from "../src/decks/zip.js";
-import { ClaudeRefusal, DECK_RESEARCH_LINE, type MakeDocumentArgs, MockClaudeProvider, type StructuredInput, type StructuredResult } from "../src/tools/claude.js";
+import {
+  AnthropicClaudeProvider, anthropicDetail, ClaudeRefusal, DECK_RESEARCH_LINE, isRequestRefusal, jsonObjectIn, type MakeDocumentArgs, MockClaudeProvider,
+  type StructuredInput, type StructuredResult,
+} from "../src/tools/claude.js";
 import { MockWebSearchProvider } from "../src/tools/websearch.js";
 import { off, type Rig, run, start, TEST_LINK_KEY } from "./toolsRig.js";
 
@@ -421,6 +424,103 @@ test("maker: a deck that can't be fixed, a refusal or a broken plan fails honest
     const maker = new DeckMaker({ claude: new ScriptedClaude(answers), wikimedia: new MockWikimedia(), webSearch: null });
     await assert.rejects(maker.make(ARGS, async () => false, AbortSignal.timeout(5_000)), (e: ProviderError) => e.code === "malformed_provider_result");
   }
+});
+
+// ------------------------------------------------------------------ a schema Anthropic refuses (11 Nov 2026)
+
+/** Anthropic's Messages API, offline: each request is answered by the next function; every request body is kept. */
+function scriptedAnthropic(replies: ((body: any) => Response)[]) {
+  const bodies: any[] = [];
+  const impl = (async (_input: unknown, init?: { body?: string }) => {
+    const body = JSON.parse(init?.body ?? "{}");
+    bodies.push(body);
+    return replies.shift()!(body);
+  }) as unknown as typeof fetch;
+  return { impl, bodies };
+}
+const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const answer = (value: unknown, around = (s: string) => s) => () => reply({ content: [{ type: "text", text: around(JSON.stringify(value)) }], stop_reason: "end_turn" });
+/** What the live server answered to both decks on 11 Nov 2026: a 400 whose message named none of the old hints. */
+const refusedSchema = () => reply({ type: "error", error: { type: "invalid_request_error", message: "The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas." } }, 400);
+
+test("maker, live adapter: when Anthropic refuses the outline's schema the deck is still made, asked once more with the schema as words", async () => {
+  const replies = [answer(PLAN), refusedSchema, answer(goodDeck(), (s) => "```json\n" + s + "\n```")];
+  const fake = scriptedAnthropic(replies);
+  const claude = new AnthropicClaudeProvider({ apiKey: "sk-ant-test-key-1234", model: "claude-sonnet-5-5" }, fake.impl, "https://anthropic.test");
+  const logs: Record<string, unknown>[] = [];
+  const make = () => new DeckMaker({ claude, wikimedia: new MockWikimedia(), webSearch: null, log: (l) => logs.push(l) }).make(ARGS, async () => false, AbortSignal.timeout(5_000));
+  const file = await make();
+  assert.equal(file.slideCount, 10);
+  readBack(file.bytes, file.slideCount);
+
+  const [plan, refused, retry] = fake.bodies;
+  assert.equal(plan.output_config.format.type, "json_schema");
+  assert.deepEqual(refused.output_config, { effort: "medium", format: { type: "json_schema", schema: DECK_JSON_SCHEMA } });
+  assert.deepEqual(retry.output_config, { effort: "medium" }, "the retry sends no compiled schema");
+  assert.ok(retry.system.startsWith(refused.system) && retry.system.includes(JSON.stringify(DECK_JSON_SCHEMA)), "the schema is in the prompt instead");
+  assert.deepEqual(retry.messages, refused.messages, "the request and the sources are the same");
+  assert.deepEqual(logs.find((l) => l.event === "deck_schema_refused"), { level: "warn", event: "deck_schema_refused", step: DECK_WRITE_STEP, status: 400, type: "invalid_request_error", hint: "grammar" });
+  assert.doesNotMatch(JSON.stringify(logs), /Demo Town|compiled grammar/, "logs carry no content and none of Anthropic's message");
+
+  // The next deck on this server doesn't send the refused request again.
+  fake.bodies.length = 0;
+  replies.push(answer(PLAN), answer(goodDeck()));
+  await make();
+  assert.equal(fake.bodies.length, 2);
+  assert.deepEqual(fake.bodies[1].output_config, { effort: "medium" });
+});
+
+test("maker, live adapter: a schema-free answer is still checked by code, and a failure that isn't about the request is not retried", async () => {
+  // Without the compiled schema the answer can be any JSON: code's checks still decide, and an unusable one fails honestly.
+  const wrong = scriptedAnthropic([answer(PLAN), refusedSchema, answer({ slides: "none" }), answer({ still: "wrong" })]);
+  const claude = new AnthropicClaudeProvider({ apiKey: "sk-ant-test-key-1234", model: "claude-sonnet-5-5" }, wrong.impl, "https://anthropic.test");
+  await assert.rejects(new DeckMaker({ claude, wikimedia: new MockWikimedia(), webSearch: null }).make(ARGS, async () => false, AbortSignal.timeout(5_000)), (e: ProviderError) => e.code === "malformed_provider_result");
+
+  // The key, the balance and the model are not the schema's fault: one request, and the error as it was.
+  for (const message of ["invalid x-api-key", "Your credit balance is too low", "model: claude-nope"]) {
+    const fake = scriptedAnthropic([answer(PLAN), () => reply({ type: "error", error: { type: "invalid_request_error", message } }, 400)]);
+    const provider = new AnthropicClaudeProvider({ apiKey: "sk-ant-test-key-1234", model: "claude-sonnet-5-5" }, fake.impl, "https://anthropic.test");
+    await assert.rejects(new DeckMaker({ claude: provider, wikimedia: new MockWikimedia(), webSearch: null }).make(ARGS, async () => false, AbortSignal.timeout(5_000)), (e: ProviderError) => e.code === "provider_unavailable" && e.detail?.status === 400);
+    assert.equal(fake.bodies.length, 2, message);
+  }
+
+  // When the retry is refused too, the schema wasn't the reason: that error is reported and nothing is remembered.
+  const both = scriptedAnthropic([answer(PLAN), refusedSchema, () => reply({ type: "error", error: { type: "invalid_request_error", message: "prompt is too long" } }, 400), answer(PLAN), answer(goodDeck())]);
+  const stubborn = new AnthropicClaudeProvider({ apiKey: "sk-ant-test-key-1234", model: "claude-sonnet-5-5" }, both.impl, "https://anthropic.test");
+  const maker = () => new DeckMaker({ claude: stubborn, wikimedia: new MockWikimedia(), webSearch: null }).make(ARGS, async () => false, AbortSignal.timeout(5_000));
+  await assert.rejects(maker(), (e: ProviderError) => e.detail?.hint === "too_long");
+  await maker();
+  assert.equal(both.bodies[4].output_config.format.type, "json_schema", "the schema is tried again next time");
+});
+
+test("the log's hint names a schema Anthropic can't compile, a request that is too long and broken text; only request-shaped 400s are retried", async () => {
+  const hint = async (message: string, status = 400) => (await anthropicDetail(reply({ type: "error", error: { type: "invalid_request_error", message } }, status))).hint;
+  assert.equal(await hint("The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas."), "grammar");
+  assert.equal(await hint("Schema is too complex for compilation."), "grammar");
+  assert.equal(await hint("Schemas contains too many parameters with union types (17 parameters)"), "grammar");
+  assert.equal(await hint("output_config.format.schema: For 'integer' type, property 'minimum' is not supported"), "output_config");
+  assert.equal(await hint("Invalid schemas for response"), "schema");
+  assert.equal(await hint("prompt is too long: 250000 tokens > 200000 maximum"), "too_long");
+  assert.equal(await hint("The request body is not valid JSON: no low surrogate in string"), "encoding");
+  assert.equal(await hint("something nobody has seen before"), null);
+  assert.equal(await hint("messages.0.content.3: Zażółć gęślą jaźń 12345 text content blocks must be non-empty"), "words:messages_content_text_blocks_must_empty", "only the API's own words, in order");
+
+  const detail = (hintValue: string | null, status = 400) => ({ status, type: "invalid_request_error", hint: hintValue });
+  for (const h of [null, "grammar", "schema", "output_config", "too_long", "encoding", "max_tokens"]) assert.ok(isRequestRefusal(detail(h)), String(h));
+  for (const h of ["credit_balance", "api_key", "model", "workspace"]) assert.ok(!isRequestRefusal(detail(h)), h);
+  assert.ok(!isRequestRefusal(detail(null, 401)) && !isRequestRefusal(detail(null, 500)) && !isRequestRefusal(undefined));
+
+  assert.equal(jsonObjectIn('Here it is:\n```json\n{"a":{"b":1}}\n```\nDone.'), '{"a":{"b":1}}');
+  assert.throws(() => jsonObjectIn("no object here"));
+});
+
+test("research text never carries half a character: a cut through an emoji drops it", () => {
+  const snippet = `${"a".repeat(399)}\u{1F1F5}\u{1F1F1} and more words that are cut away`;
+  const cut = dataText(snippet, 400);
+  assert.equal(cut, "a".repeat(399));
+  assert.equal(wellFormed("ok \uD83D"), "ok ");
+  assert.equal(wellFormed("\uDE00 ok \u{1F600}"), " ok \u{1F600}");
+  assert.equal(plainText(`${"b".repeat(8)}\u{1F600}tail`, 10), `${"b".repeat(8)}…`);
 });
 
 test("maker: what Claude reads marks sources and material as data and lists the pictures", () => {

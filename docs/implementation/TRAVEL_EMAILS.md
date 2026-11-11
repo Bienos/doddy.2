@@ -6,7 +6,7 @@
 
 | Question | Answer |
 |---|---|
-| When Doddy reads Gmail for bookings | "Tylko na żądanie": only when the person asks ("sprawdź moje rezerwacje", or a button on the trip screen). Nothing reads the mailbox in the background and the server keeps nothing. |
+| When Doddy reads Gmail for bookings | "Tylko na żądanie": only when the person asks (the button on the trip screen; later "sprawdź moje rezerwacje" by voice). Under `2026-11-11-asked-for-runs-at-once` the request itself is the yes. Nothing reads the mailbox in the background and the server keeps nothing. |
 | How a booking is read from an email | "AI ze sprawdzaniem": a model reads the cleaned text into a fixed schema; code keeps a value only if the email says it. |
 | Sample emails | "Tak, tylko do wzorów": the owner's own confirmations were read in this session to learn their layouts. Only made-up emails with the same layouts are in the repository (`backend/test/travelFixtures.ts`). |
 | Where trips show in the app | "Karta na Home, gdy jest wyjazd": a card on Home while a trip is coming up; the full list next to Tasks. |
@@ -69,7 +69,7 @@ Check-in times are worked out in the departure airport's time zone (8 Dec, 14:00
 ## Wiring (built 11 Nov 2026)
 
 **Server (`doddy`, `backend/`):**
-- `POST /v1/travel/prepare` → the ask-first card (`find_trips_in_gmail`). It runs the same gates as `read_email`: Gmail connected, grants fine, the user's **Read an email** switch on. A server without a model answers `live_not_configured`. Nothing is read.
+- `POST /v1/travel/prepare` → the single-use approval for the search (`find_trips_in_gmail`; its preview text is unused by the app since `2026-11-11-asked-for-runs-at-once`). It runs the same gates as `read_email`: Gmail connected, grants fine, the user's **Read an email** switch on. A server without a model answers `live_not_configured`. Nothing is read.
 - `POST /v1/travel/scan {approvalId}` → one search per yes (single use, 2 minutes, bound to the user, the Gmail connection and the fixed search). It runs `TRAVEL_GMAIL_QUERY` through Composio (`TRAVEL_GMAIL_FETCH` in `tools/catalog.ts`, not a voice tool), then reads every email at once with `ClaudeTravelReader`, each email cut at 14 s so the whole search fits the app's 20-second request. It answers `{emailsFound, emailsUnreadable, emailsNotTravel, bookings}`.
 - **Model:** `DODDY_CHAT_MODEL` (Claude Haiku by default), else `DODDY_CLAUDE_MODEL`.
 - **Limits:** one tool run, and one Claude unit per five emails against `DODDY_LIMIT_USER_DAILY_CLAUDE`.
@@ -77,7 +77,7 @@ Check-in times are worked out in the departure airport's time zone (8 Dec, 14:00
 - **Mock mode:** one demo Ryanair email and a demo reading, so the screen can be tried without a mailbox.
 
 **App:**
-- **Trips screen:** Home's ••• menu › Trips (`DoddyApp/Features/Trips/`). "Find my trips in Gmail" asks for the card, and the card's "Search Gmail" runs the one search.
+- **Trips screen:** Home's ••• menu › Trips (`DoddyApp/Features/Trips/`). The tap on "Find my trips in Gmail" is the yes (owner's decision `2026-11-11-asked-for-runs-at-once`: what the person asks for runs at once). The app asks for the server's single-use approval and uses it straight away for one search; there is no in-app card. What leaves the iPhone is written under the button.
 - **Storage:** the result is saved in `Application Support/Trips/trips-v1.json` and read back before the screen says it is saved (`TripStore`).
 - **What the screen shows:** trips with "Before you go", "Not going ahead", each booking's newest email as a link to Gmail, and "Forget my trips", which is checked.
 - **Home card:** while a trip is under way or starts within 60 days; the cross hides it for that trip.

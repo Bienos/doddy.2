@@ -41,7 +41,9 @@ struct FollowingView: View {
                     }
                     SpottedList(model: model, follow: model.selectedFollow, polish: polish,
                                 open: { hit in if let link = hit.link { openURL(link) } })
-                    if model.cards.isEmpty, model.isLoading {
+                    // The stories on screen, not all of them (11 Nov 2026): a follow just added and tapped showed a blank
+                    // area while its first stories were being read, because other follows' stories were already there.
+                    if model.visibleCards.isEmpty, model.isLoading {
                         ProgressView().frame(maxWidth: .infinity).padding(40)
                     } else if model.cards.isEmpty, model.fetchedAt != nil, model.problem == nil, !model.follows.isEmpty {
                         notice(Text("Nothing from the last two days for what you follow. Pull down to look again."))

@@ -26,6 +26,22 @@ extension ErrandDraft {
             : "Typed by the user on the Tasks screen, not said in a conversation, so Doddy added no note of its own. Do what the words ask."
     }
 
+    /// The draft for "Find me this" typed on the Shopping screen (docs/implementation/SHOPPING.md 1):
+    /// the words as typed, what matters most in the order the person tapped it, and the fixed
+    /// shopping note. The same request, checks and digest as a shopping task handed over by voice.
+    public static func typedShopping(_ words: String, priorities: [String], language: String) -> ErrandDraft {
+        let code = typedLanguage(language)
+        return ErrandDraft(words: words, brief: typedShoppingNote(language: code), title: typedTitle(words),
+                           language: code, kind: .shopping, priorities: priorities)
+    }
+
+    /// The note sent with a typed shopping task. Polish for `pl`, English otherwise.
+    public static func typedShoppingNote(language: String) -> String {
+        language == "pl"
+            ? "Wpisane przez użytkownika na ekranie Zakupy, nie powiedziane w rozmowie, więc Doddy nie dopisał własnej notatki. Znajdź to, o co proszą słowa, według podanych priorytetów."
+            : "Typed by the user on the Shopping screen, not said in a conversation, so Doddy added no note of its own. Find what the words ask for, by the priorities given."
+    }
+
     /// The first line of the words, with runs of spaces made one. Longer than `typedTitleLength`, it
     /// is cut after the last whole word that fits and ends in "…"; one word longer than that is cut
     /// inside the word. Empty words give an empty title (the draft is then refused as missing words).
@@ -55,5 +71,28 @@ extension ErrandDraft {
     public static func typedLanguage(_ localization: String) -> String {
         let code = localization.split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map { $0.lowercased() } ?? ""
         return isLanguageCode(code) ? code : "en"
+    }
+}
+
+/// "What matters most?" on the Shopping screen: the person taps what matters, and the order of the
+/// taps is the order Doddy's server ranks by. A second tap takes one back out; nothing is added
+/// past the limit a shopping task allows, and the same word twice (ignoring case) is one choice.
+public enum ShoppingPriorities {
+    /// `chosen` after a tap on `priority`: removed when it was there, added at the end when there
+    /// is room, unchanged when the list is full or the word is empty or too long.
+    public static func toggled(_ priority: String, in chosen: [String]) -> [String] {
+        let word = priority.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let index = chosen.firstIndex(where: { $0.lowercased() == word.lowercased() }) {
+            var next = chosen
+            next.remove(at: index)
+            return next
+        }
+        guard !word.isEmpty, word.utf16.count <= ErrandDraft.maxPriority, chosen.count < ErrandDraft.maxPriorities else { return chosen }
+        return chosen + [word]
+    }
+
+    /// The place of `priority` in the order, from 1, or nil when it isn't chosen.
+    public static func place(of priority: String, in chosen: [String]) -> Int? {
+        chosen.firstIndex(where: { $0.lowercased() == priority.lowercased() }).map { $0 + 1 }
     }
 }

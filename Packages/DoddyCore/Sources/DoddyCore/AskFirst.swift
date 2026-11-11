@@ -27,6 +27,20 @@ import Foundation
 // and only while they have turned on Texts from Doddy; the server still checks the approval hash of exactly that
 // text and number. Texts to anyone else are impossible, not just asked about.
 //
+// A third change, 11 Nov 2026 (owner: "jak ja pytam się do niego coś, to on cały czas musi mieć zatwierdzenie …
+// powinien być bardziej proaktywny, nie dopytywać się wszystkiego, tylko od razu pokazywać albo mówić informacje",
+// decision 2026-11-11-asked-for-runs-at-once): what the user asks for is the yes. Looking at the user's own
+// things to answer them (notes, lists, calendar, contacts, birthdays, photos, steps, the Health week, alarms,
+// Doddy's timers, the parking spot, a task's result, this week's leaflets, the shared screen, and every read
+// through an online account or Claude) runs at once, with no card and no spoken question. So do Doddy's own
+// small things that are undone in one step: his stopwatch, focus timer and wind-down, adding to or ticking off
+// one of his lists, following a topic, opening the training plan screen, and the capability-gap category.
+// The standing consents stay where they were: each Connections switch (Calendar, Contacts, Photos, Health …)
+// is asked once on its own sheet, an online account is connected once, and screen sharing is started by the
+// person in iOS's own sheet. What still needs a tap on a card with the exact payload is everything that
+// changes something outside Doddy's own lists and timers, sends, deletes, books, shares, calls, or starts
+// paid background work (a handed-over task, a Studio job): DOD-07 is unchanged.
+//
 // This file is the rule as code, so it is tested on Linux: which ask each tool needs (`AskFirst`),
 // what counts as a spoken yes (`SpokenYes`), and the one check the app makes before running a
 // tool (`AskLedger.mayRun`).
@@ -64,8 +78,10 @@ public enum AskFirst {
         /// Online accounts: Doddy's server makes the card and a single-use approval
         /// (backend/src/tools/askFirst.ts). A read runs on a tap or a spoken yes; a write on a tap only.
         case serverCard(isWrite: Bool)
-        /// A public lookup (`publicLookups`, ADR-575): runs at once, no card. For the web ones the
-        /// app still gets the server's single-use approval and uses it straight away.
+        /// Runs at once, no card: a public lookup (`publicLookups`, ADR-575), a look at the user's own things
+        /// they just asked about, or one of Doddy's own small reversible actions (`ownSmallActions`; decision
+        /// 2026-11-11-asked-for-runs-at-once). For the server's tools the app still gets the server's
+        /// single-use approval and uses it straight away.
         case runsNow
     }
 
@@ -77,6 +93,34 @@ public enum AskFirst {
         CloudToolName.webSearch, "news_search", "find_places",
     ]).union(ToolCatalog.webLookups)
 
+    /// Looks at the user's own things on this iPhone, or at what Doddy's server holds for them, that run at once
+    /// since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). Each one's Connections switch, where it has
+    /// one, is still asked once on its own sheet (`ToolGate`). `parking_spot` is not listed: only its "find" runs
+    /// at once, saving and clearing keep their cards.
+    public static let ownLooks: Set<String> = [
+        VoiceToolName.searchMemories, VoiceToolName.readList, VoiceToolName.readCalendar, VoiceToolName.findFreeTime,
+        VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays, VoiceToolName.findPhotos, VoiceToolName.lookAtScreen,
+        VoiceToolName.readSteps, VoiceToolName.readHealthWeek, VoiceToolName.listAlarms, VoiceToolName.checkStopwatch,
+        VoiceToolName.checkFocus, VoiceToolName.checkErrands, VoiceToolName.findDeals,
+    ]
+
+    /// Doddy's own small things that run at once since 11 Nov 2026: each is undone in one step (stop, untick,
+    /// unfollow, close the screen) and none reaches another app, an account or another person.
+    public static let ownSmallActions: Set<String> = [
+        VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.startFocus, VoiceToolName.stopFocus,
+        VoiceToolName.startWindDown, VoiceToolName.stopWindDown, VoiceToolName.addToList, VoiceToolName.checkOff,
+        VoiceToolName.followNews, VoiceToolName.openTrainingPlan, VoiceToolName.noteCapabilityGap,
+    ]
+
+    /// True for a tool that never shows a card and never waits: the public lookups, the looks and the small actions
+    /// above, every read through Doddy's server (an online account, Claude), translator start and stop, and a text
+    /// to the user's own number. `voice-agent/tools.json` says `ask: runs_now` for exactly these.
+    public static func runsAtOnce(_ name: String) -> Bool {
+        if publicLookups.contains(name) || ownLooks.contains(name) || ownSmallActions.contains(name) { return true }
+        if [VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe].contains(name) { return true }
+        return CloudToolName.all.contains(name) && !CloudToolName.isWrite(name)
+    }
+
     /// Every request has an answer here; the switch has no default, so a new tool doesn't compile
     /// until it says how it asks.
     /// `polish`: the app is shown in Polish, for the cards whose words are chosen here (ADR-666: leaflets).
@@ -87,130 +131,22 @@ public enum AskFirst {
         switch request {
         case .unsupported, .invalid, .needsClarification:
             return .nothingRuns
-        case .searchMemories(let query):
-            return .yesFirst(AskCard(
-                title: say("Search your notes?", "Przeszukać Twoje notatki?"),
-                lines: [say("For: ", "Szukam: ") + query],
-                confirmLabel: say("Yes, search", "Tak, szukaj")))
-        case .readCalendar(let range):
-            return .yesFirst(AskCard(
-                title: say("Read your calendar?", "Przeczytać Twój kalendarz?"),
-                lines: [span(range.start, range.end, calendar: calendar, polish: polish)],
-                confirmLabel: say("Yes, read it", "Tak, przeczytaj")))
-        case .findFreeTime(let request):
-            let last = calendar.date(byAdding: .day, value: max(request.days - 1, 0), to: request.firstDay) ?? request.firstDay
-            let first = day(request.firstDay, calendar: calendar)
-            return .yesFirst(AskCard(
-                title: say("Look for free time in your calendar?", "Poszukać wolnego czasu w kalendarzu?"),
-                lines: [request.days > 1
-                    ? say(first + " to " + day(last, calendar: calendar), "Od " + first + " do " + day(last, calendar: calendar))
-                    : first],
-                confirmLabel: say("Yes, look", "Tak, poszukaj")))
-        case .lookupContact(let name):
-            return .yesFirst(AskCard(
-                title: say("Look up a contact?", "Wyszukać kontakt?"),
-                lines: [say("Name: ", "Kto: ") + name],
-                confirmLabel: say("Yes, look it up", "Tak, wyszukaj")))
-        case .upcomingBirthdays(let days):
-            return .yesFirst(AskCard(
-                title: say("Check birthdays in Contacts?", "Sprawdzić urodziny w Kontaktach?"),
-                lines: [say("The next \(days) days", "Najbliższe dni: \(days)")],
-                confirmLabel: say("Yes, check", "Tak, sprawdź")))
+        // Decision 2026-11-11-asked-for-runs-at-once: the user asked, so Doddy looks and answers. No card, no question.
+        case .searchMemories, .readList, .readCalendar, .findFreeTime, .lookupContact, .upcomingBirthdays, .findPhotos,
+             .readSteps, .readHealthWeek, .listAlarms, .checkStopwatch, .checkFocus, .parkingSpot(.find), .checkErrands, .findDeals:
+            return .runsNow
+        case .lookAtScreen:
+            // The person started screen sharing themselves in iOS's own sheet, and iOS shows that it is on the whole
+            // time: that is the yes for Doddy to look while it stays on (decision 2026-11-11-asked-for-runs-at-once,
+            // replacing "each look asks first" in 2026-11-09-doddy-looks-at-the-screen). With sharing off nothing is
+            // looked at: the app opens iOS's sheet instead.
+            return .runsNow
         case .calculate, .convertUnits, .convertCurrency:
             return .runsNow
-        case .findPhotos(let request):
-            return .yesFirst(AskCard(
-                title: say("Look through your photos?", "Przejrzeć Twoje zdjęcia?"),
-                lines: [
-                    polish ? photoDays(request, calendar: calendar) : request.text(calendar: calendar),
-                    say("Only the counts and times go to Doddy's voice; the photos stay on your screen.",
-                        "Do głosu Doddy’ego trafiają tylko liczby i godziny; zdjęcia zostają na Twoim ekranie."),
-                ],
-                confirmLabel: say("Yes, look", "Tak, przejrzyj")))
-        case .lookAtScreen:
-            // A read of the person's own screen: one picture to Doddy's server and Anthropic, after a spoken yes
-            // or a tap (decision 2026-11-09-doddy-looks-at-the-screen). The card says where it goes.
-            return .yesFirst(ScreenLookSpeech.askCard(polish: polish))
-        case .readSteps(let day):
-            return .yesFirst(AskCard(
-                title: say("Read your steps?", "Odczytać Twoje kroki?"),
-                lines: [say("\(day.text), from Motion & Fitness", "\(stepDay(day)), z Ruchu i fitness")],
-                confirmLabel: say("Yes, read them", "Tak, odczytaj")))
-        case .readHealthWeek:
-            return .yesFirst(AskCard(
-                title: say("Read your week from Apple Health?", "Odczytać Twój tydzień ze Zdrowia?"),
-                lines: [say("Workouts, sleep and heart, the last 7 days", "Treningi, sen i serce z ostatnich 7 dni"),
-                        say("A short summary goes to Doddy's voice", "Krótkie podsumowanie trafia do głosu Doddy’ego")],
-                confirmLabel: say("Yes, read it", "Tak, odczytaj")))
-        case .openTrainingPlan(let ask):
-            // ADR-626: opens a screen and makes nothing; a tap, because it changes what the person sees.
-            return .tapFirst(AskCard(
-                title: say("Make a training plan?", "Ułożyć plan treningowy?"),
-                lines: ask.cardLines(polish: polish),
-                confirmLabel: say("Open", "Otwórz")))
-        case .listAlarms:
-            return .yesFirst(AskCard(
-                title: say("Check Doddy's alarms?", "Sprawdzić alarmy Doddy’ego?"),
-                lines: [say("The alarms Doddy set on this iPhone", "Alarmy, które Doddy ustawił na tym iPhonie")],
-                confirmLabel: say("Yes, check", "Tak, sprawdź")))
-        case .followNews(let ask):
-            // ADR-657: a change to what the person follows, so a tap.
-            return .tapFirst(AskCard(
-                title: say("Follow this?", "Śledzić to?"),
-                lines: ask.cardLines(polish: polish),
-                confirmLabel: say("Follow", "Śledź")))
-        case .startStopwatch(let label):
-            return .tapFirst(AskCard(
-                title: say("Start a stopwatch?", "Włączyć stoper?"),
-                lines: [label.map { "“\($0)”" } ?? say("It counts up until you stop it", "Liczy czas, dopóki go nie zatrzymasz")],
-                confirmLabel: say("Start", "Włącz")))
-        case .stopStopwatch:
-            return .tapFirst(AskCard(
-                title: say("Stop the stopwatch?", "Zatrzymać stoper?"),
-                lines: [say("It stops and keeps the time it reached", "Zatrzyma się i zachowa zmierzony czas")],
-                confirmLabel: say("Stop", "Zatrzymaj")))
-        case .checkStopwatch:
-            return .yesFirst(AskCard(
-                title: say("Read your stopwatch?", "Sprawdzić stoper?"),
-                lines: [say("How long it has been running", "Ile czasu już mierzy")],
-                confirmLabel: say("Yes, read it", "Tak, sprawdź")))
-        // Decision 2026-11-10-timers-by-voice: the card shows the exact length (and the focus line) that starts.
-        case .startFocus(let minutes, let label):
-            return .tapFirst(AskCard(
-                title: say("Start focus?", "Włączyć skupienie?"),
-                lines: [TimerVoice.length(minutes)] + (label.map { ["“\($0)”"] } ?? []),
-                confirmLabel: say("Start", "Włącz")))
-        case .stopFocus:
-            return .tapFirst(AskCard(
-                title: say("Stop focus?", "Zatrzymać skupienie?"),
-                lines: [say("It stops now, before its time is up", "Zatrzyma się teraz, przed czasem")],
-                confirmLabel: say("Stop", "Zatrzymaj")))
-        case .checkFocus:
-            return .yesFirst(AskCard(
-                title: say("Check your focus timer?", "Sprawdzić skupienie?"),
-                lines: [say("How much time is left", "Ile czasu zostało")],
-                confirmLabel: say("Yes, check", "Tak, sprawdź")))
-        case .startWindDown(let minutes):
-            return .tapFirst(AskCard(
-                title: say("Start a wind-down?", "Włączyć wyciszenie przed snem?"),
-                lines: [say("\(TimerVoice.length(minutes)), then it's time to put the phone down",
-                            "\(TimerVoice.length(minutes)), potem pora odłożyć telefon")],
-                confirmLabel: say("Start", "Włącz")))
-        case .stopWindDown:
-            return .tapFirst(AskCard(
-                title: say("Stop the wind-down?", "Zatrzymać wyciszenie?"),
-                lines: [say("It stops now, with no notification", "Zatrzyma się teraz, bez powiadomienia")],
-                confirmLabel: say("Stop", "Zatrzymaj")))
-        case .readList(let name):
-            return .yesFirst(AskCard(
-                title: say("Read a list?", "Przeczytać listę?"),
-                lines: [say("List: ", "Lista: ") + name],
-                confirmLabel: say("Yes, read it", "Tak, przeczytaj")))
-        case .parkingSpot(.find):
-            return .yesFirst(AskCard(
-                title: say("Find your parking spot?", "Znaleźć miejsce parkowania?"),
-                lines: [say("Uses where your iPhone is now", "Korzysta z tego, gdzie jest teraz Twój iPhone")],
-                confirmLabel: say("Yes, find it", "Tak, znajdź")))
+        // Doddy's own timers, lists and follows: started, ticked or added at once; each is undone in one step.
+        case .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
+             .addToList, .checkOff, .followNews, .openTrainingPlan, .noteCapabilityGap:
+            return .runsNow
         // ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
         // tłumaczyć"), replacing ADR-542: translator mode starts and stops the moment the user asks.
         // It reads nothing and sends nothing; the conversation turns private, and the other person
@@ -222,25 +158,12 @@ public enum AskFirst {
             // that opens what it names, and a spoken "yes" could be anything the microphone heard, so
             // only a tap starts it (ADR-716). The card shows whose each text is, in full.
             return .tapFirst(ErrandAsk.handOverCard(draft, polish: polish))
-        case .checkErrands:
-            return .yesFirst(ErrandAsk.checkCard(polish: polish))
         case .makeSomething(let job):
             // ADR-740: web research and files made in Anthropic's container, paid from Doddy's account.
             // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
             // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
             return .tapFirst(StudioAsk.card(job))
-        case .findDeals(let request):
-            // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
-            // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.
-            return .yesFirst(DealsAsk.card(request, polish: polish))
-        case .addToList(let request):
-            return .tapFirst(AskCard(
-                title: say("Add to \(request.list)?", "Dodać do listy „\(request.list)”?"),
-                lines: request.items, confirmLabel: say("Add", "Dodaj")))
-        case .checkOff(let request):
-            return .tapFirst(AskCard(
-                title: say("Tick off on \(request.list)?", "Odhaczyć na liście „\(request.list)”?"),
-                lines: request.items, confirmLabel: say("Tick off", "Odhacz")))
+        // Taking something away keeps its card: a tap on exactly what goes.
         case .removeFromList(let request):
             return .tapFirst(AskCard(
                 title: say("Remove from \(request.list)?", "Usunąć z listy „\(request.list)”?"),
@@ -250,18 +173,11 @@ public enum AskFirst {
                 title: say("Forget your parking spot?", "Zapomnieć miejsce parkowania?"),
                 lines: [say("The one spot kept on this iPhone is removed.", "Jedyne miejsce zapisane na tym iPhonie zostanie usunięte.")],
                 confirmLabel: say("Forget it", "Zapomnij")))
-        case .noteCapabilityGap(let category):
-            return .tapFirst(AskCard(
-                title: say("Note that Doddy couldn't do this?", "Zanotować, czego Doddy nie umie?"),
-                lines: [polish
-                    ? "Na tym iPhonie zostaje tylko temat: \(gapTopic(category))"
-                    : "Kept on this iPhone as a category only: \(category.rawValue.replacingOccurrences(of: "_", with: " "))"],
-                confirmLabel: say("Note it", "Zanotuj")))
-        case .leaveBy(let request):
-            // Working out the trip reads where the iPhone is and asks Apple Maps, so nothing of it
-            // happens, and the agent hears nothing of it, until this tap; the payload card with the
-            // place Maps found and the leave time follows (ADR-718).
-            return .tapFirst(LeaveByAsk.card(request, calendar: calendar, polish: polish))
+        case .leaveBy:
+            // One card, not two (11 Nov 2026): the trip is worked out at once (where the iPhone is, and Apple Maps,
+            // under iOS's own location permission), and the payload card with the place Maps found and the leave
+            // time is the tap that sets the notification (ADR-718's first card is gone).
+            return .ownPayloadCard
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
@@ -283,7 +199,10 @@ public enum AskFirst {
             // inFakt is the card's own tap, bound to the digest of what it shows (ADR-640).
             return .ownPayloadCard
         case .cloudTool(let call):
-            return !call.isWrite && publicLookups.contains(call.name) ? .runsNow : .serverCard(isWrite: call.isWrite)
+            // A read through Doddy's server (an inbox, a calendar, a page, Claude writing something) runs at once
+            // since 11 Nov 2026; the server's single-use approval is still made for exactly this call. A write
+            // keeps the server's card and a tap.
+            return call.isWrite ? .serverCard(isWrite: true) : .runsNow
         }
     }
 
@@ -298,47 +217,6 @@ public enum AskFirst {
     /// What the agent hears when the user said no, didn't answer, or the card went away.
     public static func notAsked(_ toolName: String) -> String {
         "declined: the user didn't say yes to \(toolName), so Doddy did nothing and read nothing. Say so in one short sentence; don't try again unless the user asks."
-    }
-
-    private static func day(_ date: Date, calendar: Calendar) -> String {
-        let c = calendar.dateComponents([.year, .month, .day], from: date)
-        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
-    }
-
-    private static func span(_ start: Date, _ end: Date, calendar: Calendar, polish: Bool) -> String {
-        let time = { (d: Date) -> String in
-            let c = calendar.dateComponents([.hour, .minute], from: d)
-            return String(format: "%02d:%02d", c.hour ?? 0, c.minute ?? 0)
-        }
-        let from = "\(day(start, calendar: calendar)) \(time(start))", to = "\(day(end, calendar: calendar)) \(time(end))"
-        return polish ? "Od \(from) do \(to)" : "From \(from) to \(to)"
-    }
-
-    private static func photoDays(_ request: PhotoSearchRequest, calendar: Calendar) -> String {
-        let first = day(request.firstDay, calendar: calendar)
-        guard request.days > 1, let last = calendar.date(byAdding: .day, value: request.days - 1, to: request.firstDay) else { return first }
-        return "Od \(first) do \(day(last, calendar: calendar))"
-    }
-
-    private static func stepDay(_ day: StepDay) -> String {
-        switch day.daysAgo {
-        case 0: "Dzisiaj"
-        case 1: "Wczoraj"
-        default: "\(day.daysAgo) dni temu"
-        }
-    }
-
-    /// The category the capability-gap card names, in Polish.
-    static func gapTopic(_ category: CapabilityGapCategory) -> String {
-        switch category {
-        case .sendMessage: "wysyłanie wiadomości"
-        case .payment: "płatności"
-        case .music: "muzyka"
-        case .smartHome: "inteligentny dom"
-        case .otherAppControl: "sterowanie inną aplikacją"
-        case .webAction: "działanie na stronie"
-        case .unknown: "inne"
-        }
     }
 }
 

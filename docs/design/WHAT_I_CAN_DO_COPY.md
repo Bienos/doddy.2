@@ -39,13 +39,13 @@ The beta scope (`ReleaseScope.shipping`) lists Talk to Doddy, Notes, Lists, Remi
 Debug builds list all ten.
 
 ## The opening paragraph
-English, in a build with voice and reminders: "I'm an AI assistant, not a person. Your notes are kept on this iPhone.
+English, in a build with voice and reminders: "Your notes are kept on this iPhone.
 When we talk, your voice and the notes I use go to ElevenLabs to run the conversation. I can add a reminder or a
 calendar event and help with a few other apps, but only after you confirm each one on screen. The first time I need
 one of your apps, I ask you on screen to allow it. I never send a message myself. Settings › Privacy › What leaves
 this iPhone shows everything that is sent, and where."
 
-Polish: "Jestem AI, nie człowiekiem. Twoje notatki są przechowywane na tym iPhonie. Kiedy rozmawiamy, Twój głos i
+Polish: "Twoje notatki są przechowywane na tym iPhonie. Kiedy rozmawiamy, Twój głos i
 notatki, z których korzystam, trafiają do ElevenLabs, który obsługuje rozmowę. Mogę dodać przypomnienie albo
 wydarzenie w kalendarzu i pomóc w kilku innych aplikacjach, ale każdą rzecz najpierw potwierdzasz na ekranie. Gdy
 pierwszy raz potrzebuję którejś z Twoich aplikacji, proszę Cię na ekranie o zgodę. Nigdy nie wysyłam wiadomości. To
@@ -75,3 +75,5 @@ Each scene in the carousel (decision `2026-11-09-what-i-can-do-scenes`) shows on
 
 ## Not reviewed yet
 The Polish has not been read by a second bilingual reviewer (§3.8). The owner approved the words on 9 Nov 2026 ("narazie ok", OK for now).
+
+Since 11 Nov 2026 the paragraph no longer opens with "I'm an AI assistant, not a person." (owner: no "AI" label for Doddy in the app's words). Asked directly, Doddy still says what he is (DOD-03).

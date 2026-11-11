@@ -61,6 +61,10 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
+    /// Shopping in one place: "Find me this", watched prices and the leaflets (ShoppingHubView).
+    @State private var showShopping = false
+    /// Poland-first public information: IMGW, GIOŚ, NBP, InPost handoff and existing leaflets.
+    @State private var showPolandPack = false
     /// Trips found in booking emails (decision 2026-11-11-travel-agent-plan, TRAVEL_EMAILS.md).
     @State private var showTrips = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
@@ -128,6 +132,10 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showShopping) { ShoppingHubView() }
+            .sheet(isPresented: $showPolandPack) {
+                PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
+            }
             .sheet(isPresented: $showTrips, onDismiss: { TripsModel.shared.reload() }) { TripsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
@@ -178,7 +186,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday || showPolandPack)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -195,14 +203,16 @@ struct HomeView: View {
                 if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
                 }
-                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
-                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
-                if conversation.live != nil, scope.shows(Feature.messages) {
-                    showScreenButton
-                }
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
                 Spacer()
+                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
+                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
+                // On the trailing side, beside the menu (owner, 11 Nov 2026: "ta kropka w złym miejscu, bo
+                // zasłania"): next to the transcript capsule iOS's round record glyph sat on the wordmark.
+                if conversation.live != nil, scope.shows(Feature.messages) {
+                    showScreenButton
+                }
                 moreMenu
             }
         }
@@ -245,7 +255,7 @@ struct HomeView: View {
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
-    /// the privacy page. The AI disclosure heads it.
+    /// the privacy page.
     private var moreMenu: some View {
         Menu {
             Section {
@@ -281,9 +291,9 @@ struct HomeView: View {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
                         .accessibilityIdentifier("home.today")
                 }
-            } header: {
-                Text("Doddy is an AI, not a person.")
             }
+            // The "Doddy is an AI, not a person." header left this menu on 11 Nov 2026 (owner: "nie chcę używać słowa AI
+            // w ogóle w mówieniu o Dodim … usuń tam Dodi AI"); asked directly, Doddy still says what he is (DOD-03).
             Section {
                 // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
                 // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
@@ -292,6 +302,19 @@ struct HomeView: View {
                     Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                         .accessibilityIdentifier("home.deals")
                 }
+                // Shopping in one place (owner, 11 Nov 2026): typing "Find me this", the searches handed over and
+                // watched prices. Shown when tasks are, because that is what a search is. "Cheapest this week"
+                // keeps its own row above: UI tests and Home's leaflet card open it directly.
+                if scope.shows(.errands) {
+                    Button { showShopping = true } label: { Label("Shopping", systemImage: "bag") }
+                        .accessibilityIdentifier("home.shopping")
+                }
+                // Poland Pack reads official local data only when opened; no startup request.
+                Button { showPolandPack = true } label: {
+                    Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
+                          systemImage: "mappin.and.ellipse")
+                }
+                .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
                 // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
                 if scope.shows(.following) {
@@ -655,8 +678,8 @@ struct HomeView: View {
     /// Which features this build shows (decision 2026-11-07-release-scope). Read each time, so the Debug toggle shows on the next draw.
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 
-    /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under
-    /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.
+    /// Start in the tap's turn (ADR-595), with the hop alongside it. Only animation cleanup waits:
+    /// a decorative hop must never add latency before account, token or provider setup.
     private func talk() {
         guard canTalk else { return }
         guard !reduceMotion, !hideCharacterArt, conversation.live == nil else {
@@ -665,10 +688,10 @@ struct HomeView: View {
         }
         tapHops &+= 1
         perking = true
+        conversation.talk(store: store, profile: profiles.profile)
         Task {
-            try? await Task.sleep(for: .seconds(0.35))
-            conversation.talk(store: store, profile: profiles.profile)
-            try? await Task.sleep(for: .seconds(0.8))
+            // Keep the previous visual lifetime (0.35 + 0.8 s), outside the start path.
+            try? await Task.sleep(for: .seconds(1.15))
             perking = false
         }
     }

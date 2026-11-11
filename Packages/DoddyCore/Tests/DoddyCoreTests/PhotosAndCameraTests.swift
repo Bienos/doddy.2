@@ -3,7 +3,8 @@ import XCTest
 @testable import DoddyCore
 
 /// find_photos and open_camera (ADR-569): which days, the 31-day bound, what the agent hears
-/// (counts and times, never what the pictures show) and how each asks first.
+/// (counts and times, never what the pictures show), and how each runs: finding photos at once
+/// (decision 2026-11-11-asked-for-runs-at-once), the camera only from its card's tap.
 final class PhotosAndCameraTests: XCTestCase {
     private let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
@@ -67,8 +68,11 @@ final class PhotosAndCameraTests: XCTestCase {
     func testRules() {
         let find = VoiceToolRequest.findPhotos(PhotoSearchRequest(firstDay: day(18), days: 1)!)
         XCTAssertEqual(VoiceConnection.serving(VoiceToolName.findPhotos), .photos)
-        guard case .yesFirst(let card) = AskFirst.need(for: find, calendar: calendar) else { return XCTFail("a read asks first (ASK-01)") }
-        XCTAssertEqual(card.lines.first, "2026-10-18")
+        // Decision 2026-11-11-asked-for-runs-at-once: the user asked, so Doddy looks at once; the Photos
+        // switch in Connections is still asked once, on its own sheet.
+        XCTAssertEqual(AskFirst.need(for: find, calendar: calendar), .runsNow)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findPhotos)?.approval, .runsNow)
+        XCTAssertEqual(PhotoSearchRequest(firstDay: day(18), days: 1)!.text(calendar: calendar), "2026-10-18")
         XCTAssertTrue(ConnectionPause.applies(to: find))
         XCTAssertEqual(CarProfile.decision(for: find), .run)
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findPhotos)?.effect, .lookup)

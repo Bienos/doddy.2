@@ -203,7 +203,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # reportlab and matplotlib: Doddy Studio's two renderers, run on the samples by the checks group (ADR-740).
       - name: Python for the checks
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-yaml python3-reportlab python3-matplotlib
+        run: sudo scripts/ci_install_ubuntu_packages.sh python3-yaml python3-reportlab python3-matplotlib
       - name: scripts/ci.sh --only checks
         run: scripts/ci.sh --only checks
 
@@ -229,7 +229,7 @@ jobs:
             swiftpm-6.1-
 
       - name: SQLite headers and Python for the checks
-        run: apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev python3 python3-yaml
+        run: scripts/ci_install_ubuntu_packages.sh libsqlite3-dev python3 python3-yaml
 
       - name: Tool versions
         run: |
@@ -278,7 +278,7 @@ jobs:
       # the tests skip as before, so it can't turn the job red by itself.
       - name: Install redis-server for the voice token server's script tests
         continue-on-error: true
-        run: sudo apt-get install -y --no-install-recommends redis-server
+        run: sudo scripts/ci_install_ubuntu_packages.sh redis-server
       - name: scripts/ci.sh --only node
         run: scripts/ci.sh --only node
 
@@ -314,7 +314,7 @@ jobs:
       # Python with reportlab and matplotlib: scripts/ci.sh --only messaging also runs Studio's server checks on files
       # the real renderers make from the skills' samples (scripts/check_studio_crosscheck.sh, ADR-740).
       - name: Python for the Studio cross-check
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3 python3-reportlab python3-matplotlib
+        run: sudo scripts/ci_install_ubuntu_packages.sh python3 python3-reportlab python3-matplotlib
       - name: scripts/ci.sh --only messaging
         run: scripts/ci.sh --only messaging
 

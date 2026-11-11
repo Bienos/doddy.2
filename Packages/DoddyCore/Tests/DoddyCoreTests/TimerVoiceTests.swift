@@ -2,8 +2,8 @@ import XCTest
 @testable import DoddyCore
 
 /// Decision 2026-11-10-timers-by-voice: the focus timer and the wind-down start, stop and (focus) read by voice.
-/// Start and stop need a tap on a card that shows the exact length; reading asks "yes" first; and Doddy says only
-/// what the session the app read back says.
+/// Since decision 2026-11-11-asked-for-runs-at-once starting, stopping and reading run at once (Doddy's own timers,
+/// undone in one step), and Doddy says only what the session the app read back says.
 final class TimerVoiceTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_792_000_000)
     private let names = [VoiceToolName.startFocus, VoiceToolName.stopFocus, VoiceToolName.checkFocus,
@@ -54,33 +54,25 @@ final class TimerVoiceTests: XCTestCase {
         XCTAssertEqual(label?.count, FocusSession.maxLabelLength, "the card shows the line exactly as the Lock Screen will")
     }
 
-    // MARK: Asking first
+    // MARK: Running at once
 
-    func testStartingAndStoppingNeedATapAndReadingAsksYes() throws {
-        guard case .tapFirst(let card) = AskFirst.need(for: .startFocus(minutes: 45, label: "Raport")) else { return XCTFail() }
-        XCTAssertEqual(card.title, "Start focus?")
-        XCTAssertEqual(card.lines, ["45 min", "“Raport”"], "the card shows exactly the length and the line")
-        XCTAssertEqual(card.confirmLabel, "Start")
-        guard case .tapFirst(let plain) = AskFirst.need(for: .startFocus(minutes: 25, label: nil)) else { return XCTFail() }
-        XCTAssertEqual(plain.lines, ["25 min"])
-        guard case .tapFirst(let windDown) = AskFirst.need(for: .startWindDown(minutes: 15), polish: true) else { return XCTFail() }
-        XCTAssertEqual(windDown.title, "Włączyć wyciszenie przed snem?")
-        XCTAssertEqual(windDown.lines, ["15 min, potem pora odłożyć telefon"])
-        for request in [VoiceToolRequest.startFocus(minutes: 25, label: nil), .stopFocus, .startWindDown(minutes: 10), .stopWindDown] {
-            XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: request)), "\(request): a change needs a tap, not a spoken yes")
+    func testStartingStoppingAndReadingRunAtOnce() throws {
+        for request in [VoiceToolRequest.startFocus(minutes: 45, label: "Raport"), .startFocus(minutes: 25, label: nil), .stopFocus, .checkFocus,
+                        .startWindDown(minutes: 15), .stopWindDown] {
+            let need = AskFirst.need(for: request)
+            XCTAssertEqual(need, .runsNow, "\(request)")
+            XCTAssertFalse(AskFirst.needsTap(need), "\(request)")
+            XCTAssertEqual(AskFirst.need(for: request, polish: true), .runsNow, "\(request)")
         }
-        let read = AskFirst.need(for: .checkFocus)
-        guard case .yesFirst = read else { return XCTFail("\(read)") }
-        XCTAssertFalse(AskFirst.needsTap(read), "a spoken yes is enough to read it")
     }
 
-    func testTheCatalogAgreesWithTheCards() throws {
+    func testTheCatalogAgreesThatTheyRunAtOnce() throws {
         for (name, effect, approval) in [
-            (VoiceToolName.startFocus, ToolDescriptor.Effect.localChange, ToolDescriptor.Approval.card),
-            (VoiceToolName.stopFocus, .localChange, .card),
-            (VoiceToolName.checkFocus, .lookup, .askFirst),
-            (VoiceToolName.startWindDown, .localChange, .card),
-            (VoiceToolName.stopWindDown, .localChange, .card),
+            (VoiceToolName.startFocus, ToolDescriptor.Effect.localChange, ToolDescriptor.Approval.runsNow),
+            (VoiceToolName.stopFocus, .localChange, .runsNow),
+            (VoiceToolName.checkFocus, .lookup, .runsNow),
+            (VoiceToolName.startWindDown, .localChange, .runsNow),
+            (VoiceToolName.stopWindDown, .localChange, .runsNow),
         ] {
             let descriptor = try XCTUnwrap(ToolCatalog.descriptor(name), name)
             XCTAssertEqual(descriptor.effect, effect, name)
@@ -106,7 +98,7 @@ final class TimerVoiceTests: XCTestCase {
         for name in names { XCTAssertNil(VoiceConnection.serving(name), name) }
     }
 
-    func testInTheCarTheReadingIsAnsweredAndStartingWaitsForATap() {
+    func testInTheCarTheReadingIsAnsweredAndStartingIsRefused() {
         XCTAssertEqual(CarProfile.decision(for: .checkFocus), .run)
         for request in [VoiceToolRequest.startFocus(minutes: 25, label: nil), .stopFocus, .startWindDown(minutes: 10), .stopWindDown] {
             guard case .refuse = CarProfile.decision(for: request) else { return XCTFail("\(request)") }

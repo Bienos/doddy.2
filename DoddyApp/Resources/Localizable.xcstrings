@@ -697,6 +697,17 @@
         }
       }
     },
+    "%lld of %lld on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włączone: %lld z %lld"
+          }
+        }
+      }
+    },
     "%lld of them are hidden by the filter.": {
       "extractionState": "manual",
       "localizations": {
@@ -3698,65 +3709,6 @@
         }
       }
     },
-    "AI answers": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "KI-Antworten"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respuestas IA"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Réponses IA"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI odgovori"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Risposte dell'IA"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AIの回答"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odpowiedzi SI"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respostas da IA"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI 回答"
-          }
-        }
-      }
-    },
     "ALARM": {
       "extractionState": "manual",
       "localizations": {
@@ -6267,6 +6219,58 @@
         }
       }
     },
+    "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPad has saved the result."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystko to trafia na serwer Doddy'ego; słowa, notatka i to, co najważniejsze, trafiają też do Anthropic, którego Claude robi rozeznanie. Hasła wyszukiwania, które Claude z nich układa, trafiają do Google Shopping przez Serper, a serwer Doddy'ego otwiera strony sklepów. Serwer usuwa swoją kopię, gdy ten iPad zapisze wynik."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystko to trafia na serwer Doddy'ego; słowa, notatka i to, co najważniejsze, trafiają też do Anthropic, którego Claude robi rozeznanie. Hasła wyszukiwania, które Claude z nich układa, trafiają do Google Shopping przez Serper, a serwer Doddy'ego otwiera strony sklepów. Serwer usuwa swoją kopię, gdy ten iPhone zapisze wynik."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "All off": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystkie wyłączone"
+          }
+        }
+      }
+    },
     "All three go to Doddy's server; the words and the note also go to Anthropic, whose Claude does the research. The server deletes its copy once this iPhone has saved the result.": {
       "extractionState": "manual",
       "localizations": {
@@ -8445,61 +8449,13 @@
         }
       }
     },
-    "Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's an AI and doesn't have moods.": {
+    "Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's a character and doesn't have moods.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gilt ab deinem nächsten Sprachgespräch. Die Stimmung ändert, wie Doddy klingt, nicht, was er fühlt: Er ist eine KI und hat keine Stimmungen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se aplica desde tu próxima conversación de voz. El ánimo cambia cómo suena Doddy, no lo que siente: es una IA y no tiene estados de ánimo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "S’applique à partir de ta prochaine conversation vocale. L’humeur change la façon dont Doddy sonne, pas ce qu’il ressent : c’est une IA et il n’a pas d’humeurs."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. Raspoloženje mijenja kako Doddy zvuči, a ne što osjeća: on je AI i nema raspoloženja."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vale dalla tua prossima conversazione vocale. L'umore cambia come suona Doddy, non ciò che prova: è un'IA e non ha umori."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "次の音声会話から適用されます。「気分」はDoddyの話し方を変えるだけで、感じ方を変えるものではありません。DoddyはAIなので、気分はありません。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Działa od następnej rozmowy głosowej. Nastrój zmienia to, jak Doddy brzmi, a nie to, co czuje: jest SI i nie ma nastrojów."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vale a partir da sua próxima conversa por voz. O ânimo muda como o Doddy soa, não o que ele sente: ele é uma IA e não tem estados de ânimo."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "从你的下一次语音对话开始生效。心情只改变 Doddy 的语气，不改变他的感受：他是 AI，没有心情。"
+            "value": "Działa od następnej rozmowy głosowej. Nastrój zmienia to, jak Doddy brzmi, a nie to, co czuje: jest postacią i nie ma nastrojów."
           }
         }
       }
@@ -10113,6 +10069,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "W obie strony"
+          }
+        }
+      }
+    },
+    "Brand": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marka"
           }
         }
       }
@@ -13571,65 +13538,6 @@
         }
       }
     },
-    "Cloud AI": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cloud-KI"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IA en la nube"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IA dans le cloud"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI u oblaku"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IA nel cloud"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クラウドAI"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SI w chmurze"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IA na nuvem"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "云端 AI"
-          }
-        }
-      }
-    },
     "Code": {
       "extractionState": "manual",
       "localizations": {
@@ -16603,13 +16511,13 @@
         }
       }
     },
-    "Count the photos and videos you took on a day or over up to a month, after you say yes or tap": {
+    "Count the photos and videos you took on a day or over up to a month, when you ask": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Policzyć zdjęcia i filmy zrobione jednego dnia albo w okresie do miesiąca, gdy powiesz tak albo stukniesz"
+            "value": "Policzyć zdjęcia i filmy zrobione jednego dnia albo w okresie do miesiąca, gdy o to poprosisz"
           }
         }
       }
@@ -22717,221 +22625,6 @@
         }
       }
     },
-    "Doddy is an AI, not a doctor or a coach, and this plan isn't medical advice. Stop at once if you get pain in your chest, neck, jaw or arm, feel faint or dizzy, are unusually short of breath, or your heart races. In an emergency call 112.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy to AI, nie lekarz ani trener, a ten plan nie jest poradą medyczną. Przerwij od razu, jeśli poczujesz ból w klatce piersiowej, szyi, szczęce lub ramieniu, zrobi Ci się słabo albo zakręci Ci się w głowie, masz nietypową duszność lub serce kołacze. W nagłym wypadku dzwoń pod 112."
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy to AI, a nie lekarz ani trener. Przy bólu, zawrotach głowy albo czymkolwiek, co Cię niepokoi, idź do lekarza."
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a person.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy ist eine KI, kein Mensch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy es una IA, no una persona."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy est une IA, pas une personne."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy je AI, ne osoba."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy è un'IA, non una persona."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DoddyはAIであり、人ではありません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy to AI, nie człowiek."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Doddy é uma IA, não uma pessoa."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 是 AI，不是真人。"
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. Notes are kept on this iPad, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPad only; Google Calendar reading is in Settings › Connections › Online accounts."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Notatki są na tym iPadzie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPadzie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Notatki są na tym iPhonie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. Notes stay on this iPad; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPad only; Google Calendar reading is in Settings › Connections › Online accounts."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Notatki zostają na tym iPadzie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPadzie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Notatki zostają na tym iPhonie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPad until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPad or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPadzie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie lub plik, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie ani plik nie są przechowywane ani na tym iPadzie, ani na serwerze; w tej rozmowie zostaje tylko nazwa pliku. Kopia tej rozmowy, bez zdjęć i plików, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie lub plik, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie ani plik nie są przechowywane ani na tym iPhonie, ani na serwerze; w tej rozmowie zostaje tylko nazwa pliku. Kopia tej rozmowy, bez zdjęć i plików, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "Doddy is an AI. Prices and availability can change after the time they were checked. Check the price in the shop before you pay.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy to AI. Ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz."
-          }
-        }
-      }
-    },
     "Doddy is calling…": {
       "extractionState": "manual",
       "localizations": {
@@ -23009,6 +22702,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy jest zablokowany. Otwórz Doddy’ego i odblokuj go, żeby porozmawiać."
+          }
+        }
+      }
+    },
+    "Doddy is looking. The picks will wait here, in Tasks and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka. Propozycje będą czekać tutaj, w Sprawach i w Wiadomościach."
           }
         }
       }
@@ -23315,6 +23019,28 @@
         }
       }
     },
+    "Doddy isn't a doctor or a coach, and this plan isn't medical advice. Stop at once if you get pain in your chest, neck, jaw or arm, feel faint or dizzy, are unusually short of breath, or your heart races. In an emergency call 112.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie jest lekarzem ani trenerem, a ten plan nie jest poradą medyczną. Przerwij od razu, jeśli poczujesz ból w klatce piersiowej, szyi, szczęce lub ramieniu, zrobi Ci się słabo albo zakręci Ci się w głowie, masz nietypową duszność lub serce kołacze. W nagłym wypadku dzwoń pod 112."
+          }
+        }
+      }
+    },
+    "Doddy isn't a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie jest lekarzem ani trenerem. Przy bólu, zawrotach głowy albo czymkolwiek, co Cię niepokoi, idź do lekarza."
+          }
+        }
+      }
+    },
     "Doddy isn't listening · %lld notes saved": {
       "extractionState": "manual",
       "localizations": {
@@ -23510,6 +23236,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy szuka rezerwacji lotów, noclegów, wycieczek i pociągów, a potem wypisuje, czego wymaga każdy wyjazd: odprawy online, dokumentów, darmowego anulowania i tego, co płaci się na miejscu."
+          }
+        }
+      }
+    },
+    "Doddy looks for offers and reads each shop's own page. A price he couldn't confirm there isn't shown, and he says so.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka ofert i czyta stronę każdego sklepu. Ceny, której tam nie potwierdził, nie pokazuje, i mówi o tym."
+          }
+        }
+      }
+    },
+    "Doddy looks for offers in shops in Poland in the background and reads each shop's own page. A price he couldn't confirm there isn't shown. The result waits in Shopping, in Tasks and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka w tle ofert w sklepach w Polsce i czyta stronę każdego sklepu. Ceny, której tam nie potwierdził, nie pokazuje. Wynik czeka w Zakupach, w Sprawach i w Wiadomościach."
           }
         }
       }
@@ -25894,61 +25642,13 @@
         }
       }
     },
-    "Doddy's server keeps the AI key, so no key is stored on your iPhone. This iPhone uses its anonymous Doddy account to prove it may use the server.": {
+    "Doddy's server keeps the key, so no key is stored on your iPhone. This iPhone uses its anonymous Doddy account to prove it may use the server.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der KI-Schlüssel liegt auf dem Doddy-Server, daher ist auf deinem iPhone kein Schlüssel gespeichert. Dieses iPhone nutzt sein anonymes Doddy-Konto, um zu belegen, dass es den Server nutzen darf."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La clave de la IA la guarda el servidor de Doddy, así que no hay ninguna clave en tu iPhone. Este iPhone usa su cuenta anónima de Doddy para demostrar que puede usar el servidor."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La clé de l’IA est gardée par le serveur de Doddy, donc aucune clé n’est stockée sur ton iPhone. Cet iPhone utilise son compte Doddy anonyme pour prouver qu’il peut utiliser le serveur."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ključ za AI čuva Doddyjev poslužitelj, pa se na tvom iPhoneu ne pohranjuje nikakav ključ. Ovaj iPhone koristi svoj anonimni Doddy račun kako bi dokazao da smije koristiti poslužitelj."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La chiave dell’IA è custodita dal server di Doddy, quindi sul tuo iPhone non è salvata nessuna chiave. Questo iPhone usa il suo account Doddy anonimo per dimostrare di poter usare il server."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AIのキーはDoddyのサーバーが保管するため、iPhoneにはキーを保存しません。このiPhoneは、サーバーを使ってよいことを示すために、匿名のDoddyアカウントを使います。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Klucz SI trzyma serwer Doddy’ego, więc na iPhonie nie ma żadnego klucza. Ten iPhone korzysta z anonimowego konta Doddy’ego, żeby udowodnić, że może korzystać z serwera."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A chave da IA fica no servidor do Doddy, então nenhuma chave é guardada no seu iPhone. Este iPhone usa sua conta anônima do Doddy para provar que pode usar o servidor."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI 密钥由 Doddy 的服务器保管，所以你的 iPhone 上不会存放任何密钥。这部 iPhone 使用其匿名 Doddy 账户来证明它可以使用该服务器。"
+            "value": "Klucz trzyma serwer Doddy’ego, więc na iPhonie nie ma żadnego klucza. Ten iPhone korzysta z anonimowego konta Doddy’ego, żeby udowodnić, że może korzystać z serwera."
           }
         }
       }
@@ -30170,6 +29870,17 @@
         }
       }
     },
+    "Fast delivery": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szybka dostawa"
+          }
+        }
+      }
+    },
     "Faster": {
       "extractionState": "manual",
       "localizations": {
@@ -30251,65 +29962,6 @@
         }
       }
     },
-    "Files Doddy made for you": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dateien, die Doddy für dich erstellt hat"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Archivos que Doddy hizo para ti"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fichiers que Doddy a créés pour toi"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Datoteke koje je Doddy napravio za tebe"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File che Doddy ha creato per te"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyが作ったファイル"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pliki, które Doddy dla ciebie zrobił"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arquivos que o Doddy fez para você"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 为你制作的文件"
-          }
-        }
-      }
-    },
     "Find": {
       "extractionState": "manual",
       "localizations": {
@@ -30387,6 +30039,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Doddy 中查找"
+          }
+        }
+      }
+    },
+    "Find it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź"
+          }
+        }
+      }
+    },
+    "Find me this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź mi to"
           }
         }
       }
@@ -30479,17 +30153,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Znajdź trzy spokojne kawiarnie na krakowskim Starym Mieście otwarte przed 8"
-          }
-        }
-      }
-    },
-    "Find your trips in Gmail?": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Znaleźć Twoje wyjazdy w Gmailu?"
           }
         }
       }
@@ -31437,6 +31100,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na przykład:"
+          }
+        }
+      }
+    },
+    "For example: a quiet 45 cm dishwasher under 2000 zł": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: cicha zmywarka 45 cm do 2000 zł"
           }
         }
       }
@@ -32668,6 +32342,17 @@
         }
       }
     },
+    "Good reviews": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobre opinie"
+          }
+        }
+      }
+    },
     "Google Calendar": {
       "extractionState": "manual",
       "localizations": {
@@ -32782,6 +32467,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "明白了。"
+          }
+        }
+      }
+    },
+    "Groceries and everyday things: where each is cheapest in this week's leaflets.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedzenie i rzeczy na co dzień: gdzie każda jest najtańsza w gazetkach z tego tygodnia."
           }
         }
       }
@@ -33942,6 +33638,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Znam swój najdłuższy bieg z ostatnich 30 dni"
+          }
+        }
+      }
+    },
+    "I look through shops in Poland and bring back up to three picks, each with a price I read on the shop's own page. You buy in the shop; I never buy anything.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądam sklepy w Polsce i przynoszę do trzech propozycji, każdą z ceną odczytaną na stronie sklepu. Kupujesz w sklepie; ja nigdy niczego nie kupuję."
           }
         }
       }
@@ -49131,6 +48838,17 @@
         }
       }
     },
+    "Not made": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie powstał"
+          }
+        }
+      }
+    },
     "Not my At home list": {
       "extractionState": "manual",
       "localizations": {
@@ -50078,6 +49796,47 @@
         }
       }
     },
+    "Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notes are kept on this iPad, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPad only; Google Calendar reading is in Settings › Connections › Online accounts."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notatki są na tym iPadzie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPadzie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notatki są na tym iPhonie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Notes on Doddy's server:": {
       "extractionState": "manual",
       "localizations": {
@@ -50266,6 +50025,47 @@
         }
       }
     },
+    "Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notes stay on this iPad; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPad only; Google Calendar reading is in Settings › Connections › Online accounts."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notatki zostają na tym iPadzie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPadzie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notatki zostają na tym iPhonie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i Anthropic tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączenia › Konta online."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Notes waiting for you": {
       "extractionState": "manual",
       "localizations": {
@@ -50306,6 +50106,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic się nie zmieni, dopóki nie stukniesz."
+          }
+        }
+      }
+    },
+    "Nothing chosen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie wybrano"
           }
         }
       }
@@ -50623,6 +50434,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic nie wysyła się samo: za każdym razem Wiadomości otwierają się z tekstem, a Ty stukasz Wyślij."
+          }
+        }
+      }
+    },
+    "Nothing is sent until you say yes on the next card. Doddy works on it in the background; the result waits here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie jest wysyłane, dopóki nie powiesz „tak” na następnej karcie. Doddy pracuje nad tym w tle; wynik czeka tutaj."
           }
         }
       }
@@ -53154,6 +52976,17 @@
         }
       }
     },
+    "Number %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer %lld"
+          }
+        }
+      }
+    },
     "Number from Contacts: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -54480,6 +54313,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "在线账户需要一台 Doddy 服务器。请在设置 › 已连接的应用服务器中设置其地址和会话令牌。"
+          }
+        }
+      }
+    },
+    "Online answers": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedzi online"
+          }
+        }
+      }
+    },
+    "Only %lld of %lld shops' leaflets could be read this time. Try again in a few minutes; what was read is kept for a while, so the next check is quicker.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tym razem udało się przeczytać gazetki tylko %lld z %lld sklepów. Spróbuj za kilka minut; to, co już przeczytane, zostaje na chwilę zapamiętane, więc następne sprawdzenie będzie szybsze."
           }
         }
       }
@@ -56383,6 +56238,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otworzyć miejsce lub adres w Mapach Apple, gdy stukniesz Otwórz w Mapach"
+          }
+        }
+      }
+    },
+    "Open a result and tap “Watch the price” on a pick. You give your price, and Doddy tells you once when the shop's page shows that price or less.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz wynik i dotknij „Pilnuj ceny” przy propozycji. Podajesz swoją cenę, a Doddy powie Ci raz, gdy strona sklepu pokaże tę cenę albo niższą."
           }
         }
       }
@@ -61150,6 +61016,17 @@
         }
       }
     },
+    "Price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena"
+          }
+        }
+      }
+    },
     "Price on the page now": {
       "extractionState": "manual",
       "localizations": {
@@ -61168,6 +61045,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cena, gdy Doddy ją znalazł"
+          }
+        }
+      }
+    },
+    "Prices and availability can change after the time they were checked. Check the price in the shop before you pay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz."
           }
         }
       }
@@ -61818,6 +61706,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在恢复…"
+          }
+        }
+      }
+    },
+    "Quality": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jakość"
           }
         }
       }
@@ -62482,13 +62381,13 @@
         }
       }
     },
-    "Read one day's steps, walking distance and floors climbed, after you say yes or tap": {
+    "Read one day's steps, walking distance and floors climbed, when you ask": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odczytać kroki, przebyty dystans i pokonane piętra z jednego dnia, gdy powiesz tak albo stukniesz"
+            "value": "Odczytać kroki, przebyty dystans i pokonane piętra z jednego dnia, gdy o to poprosisz"
           }
         }
       }
@@ -65769,6 +65668,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "已移除本次导入添加的内容（%lld 项）。已核对。"
+          }
+        }
+      }
+    },
+    "Removes what Doddy's server keeps for you and your sign-in. Notes on this iPhone stay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Removes what Doddy's server keeps for you and your sign-in. Notes on this iPad stay."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Removes what Doddy's server keeps for you and your sign-in. Notes on this iPhone stay."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usuwa to, co serwer Doddy’ego trzyma dla Ciebie, i Twoje logowanie. Notatki na tym iPadzie zostają."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usuwa to, co serwer Doddy’ego trzyma dla Ciebie, i Twoje logowanie. Notatki na tym iPhonie zostają."
+                }
+              }
+            }
           }
         }
       }
@@ -70592,17 +70532,6 @@
         }
       }
     },
-    "Search Gmail": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przeszukaj Gmaila"
-          }
-        }
-      }
-    },
     "Search for": {
       "extractionState": "manual",
       "localizations": {
@@ -73835,6 +73764,17 @@
         }
       }
     },
+    "Shopping": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakupy"
+          }
+        }
+      }
+    },
     "Shopping mode": {
       "extractionState": "manual",
       "localizations": {
@@ -75967,6 +75907,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mikrofonu używa coś innego w Doddym. Zakończ to, aby z nim porozmawiać."
+          }
+        }
+      }
+    },
+    "Something else, e.g. white, made in the EU": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś innego, np. biała, wyprodukowana w UE"
           }
         }
       }
@@ -83216,6 +83167,17 @@
         }
       }
     },
+    "The buy button opens the shop's own page in Safari. The shop takes the payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przycisk zakupu otwiera stronę sklepu w Safari. Płatność przyjmuje sklep."
+          }
+        }
+      }
+    },
     "The call can't be taken over now: it hasn't started talking, or less than 30 seconds are left.": {
       "extractionState": "manual",
       "localizations": {
@@ -88796,6 +88758,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "To potwierdzenie wygaśnie za %lld s."
+          }
+        }
+      }
+    },
+    "This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This conversation is saved on this iPad until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPad or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ta rozmowa jest zapisana na tym iPadzie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie lub plik, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie ani plik nie są przechowywane ani na tym iPadzie, ani na serwerze; w tej rozmowie zostaje tylko nazwa pliku. Kopia tej rozmowy, bez zdjęć i plików, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie lub plik, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie ani plik nie są przechowywane ani na tym iPhonie, ani na serwerze; w tej rozmowie zostaje tylko nazwa pliku. Kopia tej rozmowy, bez zdjęć i plików, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
+                }
+              }
+            }
           }
         }
       }
@@ -94940,6 +94943,17 @@
         }
       }
     },
+    "Turn on the switch above, or choose Here only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz przełącznik powyżej albo wybierz Tylko tutaj."
+          }
+        }
+      }
+    },
     "Turn on the training log first. Nothing was saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -95338,65 +95352,6 @@
         }
       }
     },
-    "Typed AI questions": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Getippte KI-Fragen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preguntas escritas a la IA"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questions écrites à l’IA"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pisana pitanja za AI"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Domande scritte all'IA"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字入力のAIへの質問"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pisane pytania do SI"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perguntas digitadas à IA"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字 AI 提问"
-          }
-        }
-      }
-    },
     "Typed in": {
       "extractionState": "manual",
       "localizations": {
@@ -95404,6 +95359,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisany ręcznie"
+          }
+        }
+      }
+    },
+    "Typed questions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pisane pytania"
           }
         }
       }
@@ -98401,6 +98367,17 @@
         }
       }
     },
+    "Warranty": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gwarancja"
+          }
+        }
+      }
+    },
     "Was due %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -99255,6 +99232,17 @@
         }
       }
     },
+    "What are you looking for?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego szukasz?"
+          }
+        }
+      }
+    },
     "What do I need to renew my ID card? Step by step": {
       "extractionState": "manual",
       "localizations": {
@@ -99561,6 +99549,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co opuszcza telefon"
+          }
+        }
+      }
+    },
+    "What matters most, in order": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co najważniejsze, w kolejności"
+          }
+        }
+      }
+    },
+    "What matters most? Tap in your order.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co jest najważniejsze? Dotykaj w swojej kolejności."
           }
         }
       }
@@ -103489,6 +103499,17 @@
         }
       }
     },
+    "You get up to three picks with the reason for each, and you can ask Doddy to watch a price.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostajesz do trzech propozycji z uzasadnieniem każdej i możesz poprosić Doddy'ego o pilnowanie ceny."
+          }
+        }
+      }
+    },
     "You have %lld templates, the most Doddy keeps. Remove one under New list first.": {
       "extractionState": "manual",
       "localizations": {
@@ -103677,6 +103698,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To już jest zapisane (%@)."
+          }
+        }
+      }
+    },
+    "You say what you need and what matters most. By voice works too: “find me a quiet dishwasher”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mówisz, czego potrzebujesz i co jest najważniejsze. Głosem też działa: „znajdź mi cichą zmywarkę”."
           }
         }
       }
@@ -106402,6 +106434,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoje zapisane notatki nie są używane. Włącz je w Ustawieniach, jeśli chcesz, żebym do nich zaglądał."
+          }
+        }
+      }
+    },
+    "Your searches": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje wyszukiwania"
           }
         }
       }

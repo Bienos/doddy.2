@@ -2,7 +2,8 @@ import DoddyCore
 import SwiftUI
 
 // The trips screen (TRAVEL_EMAILS.md): the trips Doddy found in the person's booking emails, what each
-// one asks of them before they go, and the one button that searches Gmail, after its own card.
+// one asks of them before they go, and the one button that searches Gmail. The tap is the yes (decision
+// 2026-11-11-asked-for-runs-at-once); what leaves the iPhone is said right under the button.
 // Words built in DoddyCore (`TripCheckText`, `TripHomeCard`, `TravelScanProblem`) are shown verbatim.
 
 struct TripsView: View {
@@ -78,15 +79,11 @@ struct TripsView: View {
                     }
                 }
                 Button {
-                    Task { await model.ask() }
+                    Task { await model.find() }
                 } label: {
                     Label(model.saved == nil ? "Find my trips in Gmail" : "Check Gmail again", systemImage: "envelope.badge")
                 }
                 .accessibilityIdentifier("trips.find")
-            case .preparing:
-                ProgressView()
-            case let .waitingForYes(card):
-                askCard(card)
             case .searching:
                 HStack(spacing: 12) {
                     ProgressView()
@@ -94,30 +91,14 @@ struct TripsView: View {
                 }
             }
         } footer: {
-            if model.saved == nil, case .idle = model.phase {
-                Text("Doddy looks for flight, stay, holiday and train bookings, then lists what each trip needs: online check-in, documents, free cancellation and what's paid there.")
+            VStack(alignment: .leading, spacing: 6) {
+                if model.saved == nil, case .idle = model.phase {
+                    Text("Doddy looks for flight, stay, holiday and train bookings, then lists what each trip needs: online check-in, documents, free cancellation and what's paid there.")
+                }
+                Text("Doddy searches Gmail for booking emails from the last 400 days (airlines, Booking.com, Airbnb, travel agents, trains) and reads up to 25 of them.")
+                Text("Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, and nothing is kept on Doddy's server. Your trips are saved on this iPhone only.")
             }
         }
-    }
-
-    /// ASK-01: what will happen, in the person's language, and one button. Nothing is read before it.
-    private func askCard(_ card: PrepareResult) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Find your trips in Gmail?").font(.headline)
-            Text("Doddy searches Gmail for booking emails from the last 400 days (airlines, Booking.com, Airbnb, travel agents, trains) and reads up to 25 of them.")
-            Text("Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, and nothing is kept on Doddy's server. Your trips are saved on this iPhone only.")
-                .foregroundStyle(Theme.secondaryText)
-            HStack {
-                Button("Not now") { model.cancelCard() }
-                    .buttonStyle(.bordered)
-                Spacer()
-                Button("Search Gmail") { Task { await model.search(card) } }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("trips.searchGmail")
-            }
-        }
-        .font(.subheadline)
-        .padding(.vertical, 4)
     }
 }
 

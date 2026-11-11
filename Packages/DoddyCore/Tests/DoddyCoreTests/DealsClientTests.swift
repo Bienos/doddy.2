@@ -233,30 +233,29 @@ final class DealsClientTests: XCTestCase {
         XCTAssertEqual(AskFirst.need(for: parse("{}")), .nothingRuns)
     }
 
-    func testFindDealsAsksFirstWithACardAndIsNotAPublicLookup() {
+    func testFindDealsRunsAtOnceAndIsNotAPublicLookup() {
         let deals = DealsRequest(items: ["masło", "kawa mielona"], chains: [.lidl, .kaufland])
+        // Decision 2026-11-11-asked-for-runs-at-once: the user asked for this week's leaflets, so Doddy
+        // reads them at once. No card, no spoken question.
         let need = AskFirst.need(for: .findDeals(deals))
-        XCTAssertEqual(need, .yesFirst(AskCard(
+        XCTAssertEqual(need, .runsNow)
+        XCTAssertFalse(AskFirst.needsTap(need))
+        XCTAssertTrue(AskFirst.ownLooks.contains(VoiceToolName.findDeals))
+        // The card builder is still there (no longer shown before a search); its words stay exact.
+        XCTAssertEqual(DealsAsk.card(deals), AskCard(
             title: "Check this week's leaflets?",
             lines: [
                 "Items: masło, kawa mielona",
                 "Shops: Lidl, Kaufland (leaflet link only)",
                 "Doddy reads the leaflets on its server. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.",
             ],
-            confirmLabel: "Yes, check")))
-        XCTAssertFalse(AskFirst.needsTap(need), "a read: a spoken yes or a tap")
+            confirmLabel: "Yes, check"))
         XCTAssertEqual(DealsAsk.card(DealsRequest(items: ["masło"])).lines[1], "Shops: Biedronka, Lidl, Dino, Rossmann, Aldi, Żabka, Delikatesy Centrum, Lewiatan, Natura, Action, pet, shoe and home shops when an item fits")
-        // Whether leaflets run at once is the owner's open decision: until then they ask.
+        // It runs at once as a look the user asked for, not as one of the public lookups (ADR-575).
         XCTAssertFalse(AskFirst.publicLookups.contains(VoiceToolName.findDeals))
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findDeals)?.effect, .lookup)
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findDeals)?.approval, .askFirst)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findDeals)?.approval, .runsNow)
         XCTAssertNil(VoiceConnection.serving(VoiceToolName.findDeals))
-        // One spoken yes runs exactly this request, once.
-        var ledger = AskLedger()
-        let now = Date(timeIntervalSince1970: 1_792_000_000)
-        ledger.asked("c1", request: .findDeals(deals), needsTap: false, at: now)
-        XCTAssertEqual(ledger.answer(.userSaid("tak"), for: "c1", at: now.addingTimeInterval(1)), .granted)
-        XCTAssertFalse(ledger.mayRun("c1", request: .findDeals(DealsRequest(items: ["masło"])), at: now.addingTimeInterval(2)))
     }
 
     func testPauseCarAndWhatDoddyDid() {

@@ -6,7 +6,9 @@ final class CapabilityIntroductionTests: XCTestCase {
     func testShippingBuildMentionsRemindersAndConfirmationNotTheOldDenial() {
         for serverConfigured in [true, false] {
             let text = CapabilityIntroduction.text(for: .shipping(serverConfigured: serverConfigured))
-            XCTAssertTrue(text.hasPrefix("I'm an AI assistant, not a person."))
+            XCTAssertTrue(text.hasPrefix("Your notes are kept on this iPhone."))
+            // Owner, 11 Nov 2026: no "AI" label for Doddy in the app's words.
+            XCTAssertFalse(text.contains(" AI"))
             XCTAssertTrue(text.contains("I can add a reminder"))
             XCTAssertTrue(text.contains("only after you confirm each one on screen"))
             // ADR-578: apps are allowed from the conversation, the first time one is needed.
@@ -36,7 +38,8 @@ final class CapabilityIntroductionTests: XCTestCase {
         let english = CapabilityIntroduction.text(for: .shipping(serverConfigured: true))
         let polish = CapabilityIntroduction.text(for: .shipping(serverConfigured: true), language: .polish)
         XCTAssertNotEqual(polish, english)
-        XCTAssertTrue(polish.hasPrefix("Jestem AI, nie człowiekiem."))
+        XCTAssertTrue(polish.hasPrefix("Twoje notatki są przechowywane na tym iPhonie."))
+        XCTAssertFalse(polish.contains(" AI"))
         XCTAssertTrue(polish.contains("ElevenLabs"))
         XCTAssertTrue(polish.contains("potwierdzasz na ekranie"))
         XCTAssertTrue(polish.hasSuffix("Co wysyłam i dokąd, opisuje Polityka prywatności."))

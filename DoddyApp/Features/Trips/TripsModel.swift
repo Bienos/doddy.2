@@ -3,7 +3,9 @@ import Foundation
 import Observation
 
 // Trips from booking emails (decision 2026-11-11-travel-agent-plan; docs/implementation/TRAVEL_EMAILS.md).
-// Owner, 11 Nov 2026: Gmail is read only when the person asks ("Tylko na żądanie"); the server keeps
+// Owner, 11 Nov 2026: Gmail is read only when the person asks ("Tylko na żądanie"), and what the person asks
+// for runs at once (decision 2026-11-11-asked-for-runs-at-once): the tap on "Find my trips in Gmail" is the
+// yes, so the server's single-use approval is asked for and used straight away, with no card. The server keeps
 // nothing, so the bookings are saved on this iPhone (`TripStore`) and read back before the screen says so.
 // The rules (trips, checks, the words) are in DoddyCore and tested on Linux; this file only moves data.
 
@@ -33,10 +35,6 @@ final class TripsModel {
 
     enum Phase: Equatable {
         case idle
-        /// Asking the server for its card.
-        case preparing
-        /// The card is up; nothing has been read yet.
-        case waitingForYes(PrepareResult)
         case searching
         /// The last search, as the server and the store said.
         case done(emails: Int, bookings: Int, unreadable: Int)
@@ -76,26 +74,23 @@ final class TripsModel {
         }
     }
 
-    /// Step one: the server's card. Nothing is read from Gmail here.
-    func ask() async {
-        phase = .preparing
+    /// The person's tap: the server's single-use approval for exactly this search, used at once for one
+    /// search; then the bookings are saved here and read back before the screen says they are saved.
+    func find() async {
+        guard phase != .searching else { return }
+        phase = .searching
         guard var client = await TravelClientFactory.ready() else { phase = .problem(.notSetUp); return }
+        let card: PrepareResult
         do {
-            phase = .waitingForYes(try await client.prepareScan())
+            card = try await client.prepareScan()
         } catch OnlineAccountsError.unauthenticated {
             guard let renewed = await TravelClientFactory.renewed() else { phase = .problem(.unavailable); return }
             client = renewed
-            do { phase = .waitingForYes(try await client.prepareScan()) } catch { phase = .problem(TravelScanProblem(error)) }
+            do { card = try await client.prepareScan() } catch { phase = .problem(TravelScanProblem(error)); return }
         } catch {
             phase = .problem(TravelScanProblem(error))
+            return
         }
-    }
-
-    /// Step two, only from the card's own button: one search, then saved here and read back.
-    func search(_ card: PrepareResult) async {
-        guard case .waitingForYes(let shown) = phase, shown == card else { return }
-        phase = .searching
-        guard let client = TravelClientFactory.make() else { phase = .problem(.notSetUp); return }
         let result: TravelScanResponse
         do {
             result = try await client.scan(approvalId: card.approvalId)
@@ -112,8 +107,6 @@ final class TripsModel {
             phase = .notSaved
         }
     }
-
-    func cancelCard() { phase = .idle }
 
     /// Deletes the file; true only when it is gone.
     func forget() -> Bool {

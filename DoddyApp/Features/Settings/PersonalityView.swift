@@ -116,7 +116,7 @@ struct PersonalityView: View {
             } header: {
                 Text("Fine-tune")
             } footer: {
-                Text("Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's an AI and doesn't have moods.")
+                Text("Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's a character and doesn't have moods.")
             }
             .accessibilityIdentifier("settings.personality.dials")
 

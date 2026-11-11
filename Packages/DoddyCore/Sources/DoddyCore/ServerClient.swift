@@ -503,13 +503,20 @@ private struct ErrorBody: Decodable { let error: String?; let fields: [String]? 
 
 /// ISO 8601 timestamps as the messaging server writes them (with or without fractional seconds).
 public enum ServerDates {
+    // Made once (11 Nov 2026): sorting On my radar's 40 cards parsed every date twice per comparison, each time with
+    // two new formatters, on every redraw. ISO8601DateFormatter is thread-safe once configured.
+    nonisolated(unsafe) private static let fractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    nonisolated(unsafe) private static let plain = ISO8601DateFormatter()
+
     public static func parse(_ text: String) -> Date? {
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return fractional.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+        fractional.date(from: text) ?? plain.date(from: text)
     }
 
     public static func format(_ date: Date) -> String {
-        ISO8601DateFormatter().string(from: date)
+        plain.string(from: date)
     }
 }

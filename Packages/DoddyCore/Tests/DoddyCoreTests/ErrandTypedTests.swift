@@ -87,4 +87,66 @@ final class ErrandTypedTests: XCTestCase {
             XCTAssertEqual(ErrandDraft.typedLanguage(odd), "en", odd)
         }
     }
+
+    // MARK: "Find me this", typed on the Shopping screen
+
+    func testATypedShoppingTaskIsAShoppingTaskWithThePrioritiesInOrder() {
+        let draft = ErrandDraft.typedShopping("  Cicha zmywarka 45 cm do 2000 zł\n", priorities: ["Cisza", "Cena"], language: "pl-PL")
+        XCTAssertEqual(draft.words, "Cicha zmywarka 45 cm do 2000 zł")
+        XCTAssertEqual(draft.kind, .shopping)
+        XCTAssertEqual(draft.priorities, ["Cisza", "Cena"])
+        XCTAssertEqual(draft.language, "pl")
+        XCTAssertEqual(draft.title, "Cicha zmywarka 45 cm do 2000 zł")
+        XCTAssertEqual(draft.brief, ErrandDraft.typedShoppingNote(language: "pl"))
+        XCTAssertEqual(draft.validationIssues(), [])
+        // The yes is bound to the kind and to the order of the priorities.
+        XCTAssertTrue(draft.canonicalJSON.contains("\"kind\":\"shopping\""))
+        XCTAssertTrue(draft.canonicalJSON.contains("\"priorities\":[\"Cisza\",\"Cena\"]"))
+        let swapped = ErrandDraft.typedShopping("Cicha zmywarka 45 cm do 2000 zł", priorities: ["Cena", "Cisza"], language: "pl")
+        XCTAssertNotEqual(draft.digest, swapped.digest)
+        XCTAssertNotEqual(draft.digest, ErrandDraft.typed("Cicha zmywarka 45 cm do 2000 zł", language: "pl").digest)
+    }
+
+    func testATypedShoppingTaskWithNoPrioritiesIsStillValid() {
+        let draft = ErrandDraft.typedShopping("Quiet dishwasher", priorities: [], language: "en")
+        XCTAssertEqual(draft.kind, .shopping)
+        XCTAssertEqual(draft.validationIssues(), [])
+        XCTAssertEqual(draft.brief, ErrandDraft.typedShoppingNote(language: "en"))
+    }
+
+    func testTheShoppingNoteFitsAndHasNoLink() {
+        for language in ["pl", "en"] {
+            let note = ErrandDraft.typedShoppingNote(language: language)
+            XCTAssertLessThanOrEqual(note.utf16.count, ErrandDraft.maxBrief)
+            XCTAssertFalse(LinkShape.isIn(note))
+        }
+        XCTAssertEqual(ErrandDraft.typedShopping("Leise Spülmaschine", priorities: [], language: "de").brief,
+                       ErrandDraft.typedShoppingNote(language: "en"))
+    }
+
+    func testATypedShoppingTaskIsRefusedLikeAnyOther() {
+        XCTAssertEqual(ErrandDraft.typedShopping("  ", priorities: [], language: "pl").validationIssues(), [.missingWords, .missingTitle])
+        XCTAssertTrue(ErrandDraft.typedShopping("Zmywarka z https://example.com/x", priorities: [], language: "pl")
+            .validationIssues().contains(.containsLink))
+    }
+
+    func testTappingAPriorityAddsItInOrderAndTappingAgainTakesItOut() {
+        var chosen: [String] = []
+        chosen = ShoppingPriorities.toggled("Cena", in: chosen)
+        chosen = ShoppingPriorities.toggled("Cisza", in: chosen)
+        XCTAssertEqual(chosen, ["Cena", "Cisza"])
+        XCTAssertEqual(ShoppingPriorities.place(of: "Cisza", in: chosen), 2)
+        XCTAssertNil(ShoppingPriorities.place(of: "Marka", in: chosen))
+        chosen = ShoppingPriorities.toggled("cena", in: chosen)
+        XCTAssertEqual(chosen, ["Cisza"], "the same word in another case is the same choice")
+        XCTAssertEqual(ShoppingPriorities.toggled("  ", in: chosen), chosen)
+        XCTAssertEqual(ShoppingPriorities.toggled(String(repeating: "a", count: ErrandDraft.maxPriority + 1), in: chosen), chosen)
+    }
+
+    func testNoMorePrioritiesThanAShoppingTaskAllows() {
+        var chosen: [String] = []
+        for index in 0..<(ErrandDraft.maxPriorities + 2) { chosen = ShoppingPriorities.toggled("p\(index)", in: chosen) }
+        XCTAssertEqual(chosen.count, ErrandDraft.maxPriorities)
+        XCTAssertEqual(ErrandDraft.typedShopping("Zmywarka", priorities: chosen, language: "pl").validationIssues(), [])
+    }
 }

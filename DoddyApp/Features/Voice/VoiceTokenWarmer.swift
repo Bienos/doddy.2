@@ -1,6 +1,7 @@
 import AVFAudio
 import DoddyCore
 import Foundation
+import LiveKit
 import Observation
 import UIKit
 import os
@@ -18,6 +19,8 @@ final class VoiceTokenWarmer {
     static let shared = VoiceTokenWarmer()
 
     private let supply = VoiceTokenSupply()
+    private var networkPolicy = VoiceNetworkPreparationPolicy()
+    private var networkRoom: Room?
     private var observers: [NSObjectProtocol] = []
     private static let log = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
 
@@ -65,14 +68,47 @@ final class VoiceTokenWarmer {
 
     /// Asks for a token now if the rules allow it.
     func warmIfDue() {
-        guard UIApplication.shared.applicationState == .active,
-              !Self.paused, VoiceProviderConsent.isGranted(),
-              AVAudioApplication.shared.recordPermission == .granted,
-              VoiceSessionController.runningConversation == nil,
-              case .tokenServer(let endpoint) = VoiceConfig.connectionMode,
-              VoiceAuthSession.shared.hasVoiceAccess(), let owner = Self.owner else { return }
+        let conditions = Self.conditions
+        guard conditions.mayPrepare else { return }
+        // Independent of the token's age/cool-down, and never awaited by a tap. Even a held
+        // token doesn't prepare the provider's network route for the SDK's room connection.
+        if networkPolicy.request(if: conditions, at: ProcessInfo.processInfo.systemUptime) {
+            prepareNetwork()
+        }
+        guard case .tokenServer(let endpoint) = VoiceConfig.connectionMode, let owner = Self.owner else { return }
         if supply.warm(endpoint: endpoint, owner: owner, fetch: Self.fetch) {
             Self.log.notice("token shelf: preparing one")
+        }
+    }
+
+    private static var conditions: VoicePreparationConditions {
+        let configured: Bool
+        if case .notSetUp = VoiceConfig.connectionMode { configured = false } else { configured = true }
+        return VoicePreparationConditions(
+            foreground: UIApplication.shared.applicationState == .active,
+            hasVoiceAccess: VoiceAuthSession.shared.hasVoiceAccess(),
+            // The Debug developer connection alone isn't a signed-in owner. It may be used
+            // on a press, but never authorises provider requests while signed out.
+            hasSignedInOwner: owner != nil,
+            consentGranted: VoiceProviderConsent.isGranted(),
+            microphoneAllowed: AVAudioApplication.shared.recordPermission == .granted,
+            paused: paused, conversationRunning: VoiceSessionController.runningConversation != nil,
+            configured: configured)
+    }
+
+    private func prepareNetwork() {
+        Task { @MainActor in
+            // A sign-out, Pause all, a background transition or a start can win the queue.
+            guard Self.conditions.mayPrepare else { return }
+            let room = networkRoom ?? Room()
+            networkRoom = room
+            // LiveKit 2.19.0 Room+Region.prepareConnection: for this non-LiveKit-Cloud host,
+            // schedules a credential-free HTTPS HEAD through HTTP.prewarmConnection. It
+            // never calls connect or touches an audio track. The SDK owns that HEAD task,
+            // swallows its network errors and returns before it finishes; log the request,
+            // never "connected" or a preparation duration. This isn't the SDK's live Room.
+            Self.log.notice("voice network preparation requested")
+            try? await room.prepareConnection(url: VoiceConfig.mediaEndpointAddress, token: nil)
         }
     }
 

@@ -6,9 +6,11 @@ import Foundation
 public enum CapabilityIntroduction {
     public static func text(for catalog: CapabilityCatalog, language: NotificationLanguage = .english) -> String {
         let polish = language == .polish
+        // No "I'm an AI" opener since 11 Nov 2026 (owner: "nie chcę używać słowa AI w ogóle w mówieniu o Dodim").
+        // Asked directly, Doddy still says plainly what he is (DOD-03, voice-agent/instructions.md).
         var sentences = polish
-            ? ["Jestem AI, nie człowiekiem.", "Twoje notatki są przechowywane na tym iPhonie."]
-            : ["I'm an AI assistant, not a person.", "Your notes are kept on this iPhone."]
+            ? ["Twoje notatki są przechowywane na tym iPhonie."]
+            : ["Your notes are kept on this iPhone."]
         if isBuilt(.voiceInput, in: catalog) {
             sentences.append(polish
                 ? "Kiedy rozmawiamy, Twój głos i notatki, z których korzystam, trafiają do ElevenLabs, który obsługuje rozmowę."

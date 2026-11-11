@@ -184,13 +184,20 @@ final class MadeDocumentsModel {
         } catch WebLinkError.unauthenticated {
             // A refused session is renewed once; a second refusal is a failure, not another loop.
             guard let renewed = await MadeDocumentsClientFactory.renewed() else {
-                load = .failed(NSLocalizedString("Couldn't reach Doddy's server. Try again in a moment.", comment: ""))
+                fail(NSLocalizedString("Couldn't reach Doddy's server. Try again in a moment.", comment: ""), quietly: !clearingDownloads)
                 return
             }
-            do { load = .ready(try await renewed.documents()) } catch { load = .failed(Self.text(for: error)) }
+            do { load = .ready(try await renewed.documents()) } catch { fail(Self.text(for: error), quietly: !clearingDownloads) }
         } catch {
-            load = .failed(Self.text(for: error))
+            fail(Self.text(for: error), quietly: !clearingDownloads)
         }
+    }
+
+    /// A background re-read that fails keeps the list it had (11 Nov 2026): replacing it made Messages' file cards
+    /// vanish and come back with every poll. A refresh the person asked for still shows the problem.
+    private func fail(_ message: String, quietly: Bool) {
+        if quietly, case .ready = load { return }
+        load = .failed(message)
     }
 
     /// Doddy is making a file for this person right now (as of the last refresh).
