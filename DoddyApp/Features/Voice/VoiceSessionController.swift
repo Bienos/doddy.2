@@ -2871,8 +2871,8 @@ final class VoiceSessionController {
                             "\(selected.productTitle) — \(variant.title)",
                             "\(variant.merchant) (\(variant.shop))",
                             polish ? "Sztuki: \(quantity)" : "Quantity: \(quantity)",
-                            polish ? "Cena katalogowa: \(variant.priceMinor) najmniejszych jednostek \(variant.currency) za sztukę (bez dostawy)" :
-                                     "Catalog unit price: \(variant.priceMinor) minor units of \(variant.currency) (before shipping)",
+                            polish ? "Cena katalogowa za sztukę: \(ShopifyVoiceMoney.format(variant.priceMinor, currency: variant.currency)) (bez dostawy)" :
+                                     "Catalog unit price: \(ShopifyVoiceMoney.format(variant.priceMinor, currency: variant.currency)) (before shipping)",
                             polish ? "Stworzymy prawdziwy koszyk. Nie zapłacimy ani nie złożymy zamówienia." :
                                      "Creates a real cart. No payment or order is submitted.",
                         ],
