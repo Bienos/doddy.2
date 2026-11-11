@@ -47,8 +47,8 @@ enum UITestLaunch {
         // "Before we start" (ADR-581) would cover every first screen; Debug builds skip it with
         // this. `LegalAcceptanceUITests` turns it off to test the step itself.
         if legalAccepted { arguments += ["-legalAcceptanceSkippedForUITests", "YES"] }
-        // The release scope (decision 2026-11-07-release-scope) hides most features in the shipping build; the UI tests cover
-        // every screen, so they run with everything shown (a Debug build honours this key). The UI test
+        // Every feature is shown in every build since 10 Nov 2026 (decision 2026-11-10-no-beta-scope); this key is
+        // kept so the UI tests keep asking for everything explicitly (a Debug build honours it). The UI test
         // target doesn't link DoddyCore, so this is `ReleaseScope.previewEverythingKey` spelled out;
         // `ReleaseScopeTests.testPreviewKeyIsTheOneTheUITestsPass` keeps the two the same.
         arguments += ["-releaseScope.previewEverything", "YES"]
