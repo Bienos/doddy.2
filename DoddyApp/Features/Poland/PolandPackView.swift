@@ -18,6 +18,7 @@ struct PolandPackView: View {
     @State private var conversionAmount = "100"
     @State private var isLoading = false
     @State private var hasLoaded = false
+    @State private var currentRequestID = UUID()
     @State private var showDeals = false
 
     private var city: PolandCity { PolandCity(rawValue: cityCode) ?? .warszawa }
@@ -150,7 +151,6 @@ struct PolandPackView: View {
                 Section {
                     TextField(t("24-cyfrowy numer paczki", "24-digit tracking number"), text: $shipmentNumber)
                         .keyboardType(.numberPad)
-                        .textContentType(.none)
                         .accessibilityIdentifier("poland.parcel.number")
                     if let link = PolandParcel.trackingURL(number: shipmentNumber) {
                         Link(t("Śledź na stronie InPost", "Track on InPost"), destination: link)
@@ -218,7 +218,8 @@ struct PolandPackView: View {
     }
 
     private func refresh() async {
-        guard !isLoading else { return }
+        let requestID = UUID()
+        currentRequestID = requestID
         isLoading = true
         weather = nil
         warnings = nil
@@ -246,10 +247,7 @@ struct PolandPackView: View {
         let newWeather = await weatherResult
         let newWarnings = await warningResult
         let newRates = await currencyResult
-        guard !Task.isCancelled, chosen == city else {
-            isLoading = false
-            return
-        }
+        guard !Task.isCancelled, chosen == city, requestID == currentRequestID else { return }
         weather = newWeather
         warnings = newWarnings
         air = candidateAir
