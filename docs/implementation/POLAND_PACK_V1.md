@@ -34,7 +34,7 @@ Voice already has `get_weather`, `convert_currency` (ECB), and `find_deals`. Thi
 - GIOŚ official docs: https://powietrze.gios.gov.pl/pjp/content/api
   - `GET https://api.gios.gov.pl/pjp-api/v1/rest/station/findAll?page=0&size=500`
   - `GET https://api.gios.gov.pl/pjp-api/v1/rest/aqindex/getIndex/{stationId}`
-  - **DO NOT** use pre-`/v1/` endpoints (retired 30 June 2025). Response is JSON-LD with Polish keys such as `Lista stacji pomiarowych`, `AqIndex`, `Wartość indeksu`. GIOŚ says live readings can be revised and requires clear source attribution. Station listing is cached in the active sheet to avoid repeated calls to restricted endpoints.
+  - **DO NOT** use pre-`/v1/` endpoints (retired 30 June 2025). Response is JSON-LD with Polish keys such as `Lista stacji pomiarowych`, `AqIndex`, `Wartość indeksu`. GIOŚ says live readings can be revised and requires clear source attribution. Station metadata is cached in memory for 15 minutes across sheet openings, and up to five stations in the selected city can be checked until a current index is found. Queries use the already approved `AppHTTPTransport` with an ephemeral, no-redirect session and a 512 KiB response cap.
 - NBP official docs: https://api.nbp.pl/
   - `GET https://api.nbp.pl/api/exchangerates/rates/a/{eur|usd|gbp}/?format=json`
   - Latest published *table A* rates; holidays/weekends may have no new rate. Values are **not** bank buying/selling rates.
@@ -48,7 +48,7 @@ Voice already has `get_weather`, `convert_currency` (ECB), and `find_deals`. Thi
 
 - `Packages/DoddyCore/Sources/DoddyCore/PolandPack.swift` — Foundation-only, testable models and endpoint allowlists, numeric input and city validation, TERYT warning matching, no hidden network calls.
 - `Packages/DoddyCore/Tests/DoddyCoreTests/PolandPackTests.swift` — sample-payload tests for every source, missing data, spoofed tracking numbers, and URL checks.
-- `DoddyApp/Features/Poland/PolandPackView.swift` — on-demand SwiftUI. Concurrent fetches, explicit missing-data states, choice of five cities, local city preference, checked handoff, source/time attribution. Never network-calls before the sheet opens.
+- `DoddyApp/Features/Poland/PolandPackView.swift` — on-demand SwiftUI. Concurrent fetches through `AppHTTPTransport`, explicit missing-data states, choice of five cities, local city preference, checked handoff, source/time attribution. Never network-calls before the sheet opens.
 - `DoddyApp/Features/Home/HomeView.swift` — More menu route; grocery link uses existing scope gate.
 
 ### Required QA before merge
