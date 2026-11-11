@@ -50,12 +50,22 @@ public struct SavedBookingService: Codable, Equatable, Identifiable, Sendable {
 
     public var bookingURL: URL? { URL(string: url) }
 
+    /// A public booking shortcut must not silently persist OAuth/password/session URLs in defaults.
+    private static func hasCredentialQuery(in url: URL) -> Bool {
+        let sensitive = Set(["token", "access_token", "refresh_token", "auth", "api_key",
+                             "secret", "session", "sessionid", "password", "code"])
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        return items.contains { sensitive.contains($0.name.lowercased()) }
+    }
+
     public init?(id: UUID = UUID(), name: String, url: String) {
         let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
         guard (1...80).contains(cleanName.count), !cleanName.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains),
               cleanURL.count <= 1500, let parsed = URL(string: cleanURL), let provider = BookingService.identify(parsed),
-              parsed.path != "" && parsed.path != "/" else { return nil }
+              parsed.path != "" && parsed.path != "/",
+              parsed.fragment == nil,
+              !Self.hasCredentialQuery(in: parsed) else { return nil }
         self.id = id
         self.name = cleanName
         self.url = parsed.absoluteString
