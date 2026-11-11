@@ -27,6 +27,16 @@ private struct ShopifyVariant: Decodable, Identifiable, Sendable {
     let productURL: String?
     var id: String { variantId }
 }
+private struct ShopifyCheckoutTotal: Decodable, Sendable {
+    let type: String
+    let displayText: String
+    let amount: Int
+}
+private struct ShopifyCheckoutLink: Decodable, Sendable {
+    let type: String
+    let title: String
+    let url: String
+}
 private struct ShopifyCheckout: Decodable, Identifiable, Sendable {
     let checkoutURL: String
     let shop: String
@@ -34,6 +44,8 @@ private struct ShopifyCheckout: Decodable, Identifiable, Sendable {
     let currency: String?
     let totalMinor: Int?
     let messages: [String]
+    let totals: [ShopifyCheckoutTotal]
+    let links: [ShopifyCheckoutLink]
     let status: String
     var id: String { checkoutURL }
 }
@@ -199,12 +211,30 @@ struct ShopifyLiveShoppingView: View {
                             Text(details.seller)
                             Text(details.shop).font(.caption).foregroundStyle(Theme.secondaryText)
                         }
-                        if let total = details.totalMinor, let currency = details.currency {
-                            Section(tr("Kwota według checkoutu", "Checkout total")) {
-                                Text(price(total, currency: currency))
-                                Text(tr("Podatki, dostawa i dostępność mogą się zmienić u sprzedawcy.",
-                                        "Taxes, shipping and availability may change at the merchant."))
+                        if let currency = details.currency {
+                            Section(tr("Kwoty podane przez sprzedawcę", "Merchant totals")) {
+                                ForEach(Array(details.totals.enumerated()), id: \.offset) { _, line in
+                                    HStack {
+                                        Text(line.displayText)
+                                        Spacer(minLength: 8)
+                                        Text(price(line.amount, currency: currency))
+                                    }
+                                }
+                                Text(tr("Dostawa i podatki mogą zmienić się po podaniu adresu.",
+                                        "Shipping and tax may change after you enter your address."))
                                     .font(.footnote)
+                                    .foregroundStyle(Theme.secondaryText)
+                            }
+                        }
+                        if !details.links.isEmpty {
+                            Section(tr("Warunki sprzedawcy", "Merchant terms and policies")) {
+                                ForEach(Array(details.links.enumerated()), id: \.offset) { _, policy in
+                                    if let url = URL(string: policy.url), url.scheme == "https" {
+                                        Link(destination: url) {
+                                            Label(policy.title, systemImage: "arrow.up.right")
+                                        }
+                                    }
+                                }
                             }
                         }
                         if !details.messages.isEmpty {
@@ -273,7 +303,12 @@ struct ShopifyLiveShoppingView: View {
     }
 
     private func price(_ minor: Int, currency: String) -> String {
-        let value = Double(minor) / 100
-        return value.formatted(.currency(code: currency))
+        // ISO 4217 minor units are not always hundredths (JPY: 0, KWD: 3).
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currency
+        let places = max(0, min(3, formatter.maximumFractionDigits))
+        let amount = Double(minor) / pow(10, Double(places))
+        return formatter.string(from: NSNumber(value: amount)) ?? "\(minor) \(currency)"
     }
 }
