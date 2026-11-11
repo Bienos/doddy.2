@@ -22,8 +22,16 @@ enum SiriNoteLookup {
         guard !query.allSatisfy(\.isWhitespace) else { return SiriReadback.emptyQuery }
         do {
             // Private notes (ADR-310) are never read out by Siri.
-            let outcome = PrivateNotes(stored: defaults.string(forKey: PrivateNotes.storageKey))
-                .shareable(try await environment.recallService.recall(query, limit: 20))
+            let excluded = PrivateNotes(stored: defaults.string(forKey: PrivateNotes.storageKey)).ids
+            let found = try await environment.recallService.recall(query, limit: 20, excluding: excluded)
+            try Task.checkCancellation()
+            // UserDefaults stays on this actor; re-read it after the awaited scoped search.
+            let current = PrivateNotes(stored: defaults.string(forKey: PrivateNotes.storageKey)).ids
+            let outcome = PrivateNotes(ids: current.union(excluded)).shareable(found)
+            guard isAllowed(defaults) else { return SiriReadback.switchedOff }
+            guard AppLockPolicy.allows(.readNotesAloud, isLocked: AppLockGate.isLocked()) else {
+                return AppLockPolicy.lockedAnswer
+            }
             return SiriReadback.reply(outcome, question: query) { SiriReadback.savedText($0, now: now, calendar: calendar) }
         } catch {
             return SiriReadback.searchFailed

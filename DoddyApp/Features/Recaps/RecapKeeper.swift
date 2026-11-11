@@ -13,8 +13,10 @@ import Foundation
 /// Calls answered before the switch was turned on are left alone.
 @MainActor
 enum RecapKeeper {
+    private static var conversationsInFlight: Set<String> = []
     /// Turning the switch on or off. On records when, so only conversations after it are recapped.
     static func setRemember(_ on: Bool, defaults: UserDefaults = .standard, now: Date = Date()) {
+        defaults.set(UUID().uuidString, forKey: RecapSettings.rememberEpochKey)
         defaults.set(on, forKey: RecapSettings.rememberKey)
         if on {
             defaults.set(now.timeIntervalSince1970, forKey: RecapSettings.rememberSinceKey)
@@ -93,36 +95,44 @@ enum RecapKeeper {
     /// it is recapped once.
     @discardableResult
     static func recapConversation(lines: [RecapModelIO.Line], startedAt: Date, endedAt: Date, isPrivate: Bool,
-                                  store: MemoryStore, defaults: UserDefaults = .standard) async -> ConversationOutcome {
+                                  store: MemoryStore, defaults: UserDefaults = .standard,
+                                  onDeviceAvailable: Bool? = nil,
+                                  write: @MainActor (RecapWriter, [RecapModelIO.Line], String) async throws -> Data = writeConversation) async -> ConversationOutcome {
         let personWords = lines.filter { $0.speaker == .person }.map(\.text).joined(separator: " ")
         let language = languageCode
         let decision = RecapPolicy.decide(kind: .voiceConversation, rememberOn: isOn(defaults), isPrivate: isPrivate,
                                           wordsFromPerson: RecapPolicy.wordCount(personWords),
-                                          onDeviceAvailable: OnDeviceRecapWriter.isAvailable(languageCode: language),
+                                          onDeviceAvailable: onDeviceAvailable ?? OnDeviceRecapWriter.isAvailable(languageCode: language),
                                           serverYes: serverYes(defaults))
         guard case .recap(let writer) = decision else {
             if case .skip(let why) = decision { return .skipped(why) }
             return .refused
         }
         let key = "voice_conversation:\(Int64((startedAt.timeIntervalSince1970 * 1000).rounded()))"
-        guard writer == .onDevice || writer == .server, !ledger(defaults).contains(key),
+        guard writer == .onDevice || writer == .server, !ledger(defaults).contains(key), !conversationsInFlight.contains(key),
               RecapPolicy.endedAfterSwitchOn(endedAt, since: since(defaults)) else { return .notNew }
+        let consentSince = since(defaults)
+        let consentEpoch = defaults.string(forKey: RecapSettings.rememberEpochKey)
+        conversationsInFlight.insert(key)
+        defer { conversationsInFlight.remove(key) }
         let recap: ConversationRecap
         let text: String
         do {
-            let answer: Data
-            if writer == .onDevice {
-                answer = try await OnDeviceRecapWriter.write(kind: .voiceConversation, lines: lines, languageCode: language)
-            } else {
-                answer = try await ServerRecapClient(server: ServerConfig.client())
-                    .write(kind: .voiceConversation, lines: lines, languageCode: language)
-            }
+            let answer = try await write(writer, lines, language)
             recap = try RecapModelIO.read(answer, kind: .voiceConversation, with: nil, endedAt: endedAt,
                                           writtenBy: writer, conversation: RecapModelIO.plainText(lines))
             text = try RecapMemoryText.text(recap, labels: labels(for: recap))
         } catch {
             return .refused
         }
+        // A model can outlive the person's consent. An off/on cycle is a new permission epoch,
+        // not permission to complete an older extraction. Never mark it in the ledger on refusal.
+        guard !Task.isCancelled, isOn(defaults), since(defaults) == consentSince,
+              defaults.string(forKey: RecapSettings.rememberEpochKey) == consentEpoch else {
+            return .skipped(.switchedOff)
+        }
+        guard writer != .server || serverYes(defaults) else { return .skipped(.noWriter) }
+        guard !ledger(defaults).contains(key) else { return .notNew }
         do {
             _ = try await store.save(text: text, category: .other, source: .conversationRecap, capturedAt: recap.endedAt)
             defaults.set(ledger(defaults).adding(key).stored, forKey: RecapSettings.ledgerKey)
@@ -130,6 +140,14 @@ enum RecapKeeper {
         } catch {
             return .notSaved
         }
+    }
+
+    private static func writeConversation(_ writer: RecapWriter, _ lines: [RecapModelIO.Line], _ language: String) async throws -> Data {
+        if writer == .onDevice {
+            return try await OnDeviceRecapWriter.write(kind: .voiceConversation, lines: lines, languageCode: language)
+        }
+        return try await ServerRecapClient(server: ServerConfig.client())
+            .write(kind: .voiceConversation, lines: lines, languageCode: language)
     }
 
     static func labels(for recap: ConversationRecap) -> RecapMemoryText.Labels {

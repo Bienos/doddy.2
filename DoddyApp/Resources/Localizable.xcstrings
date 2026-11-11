@@ -31085,6 +31085,47 @@
         }
       }
     },
+    "Forgetting these conversations removes this iPhone's history. Saved notes and recap notes stay and may still be used. Server or provider copies may remain.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forgetting these conversations removes this iPad's history. Saved notes and recap notes stay and may still be used. Server or provider copies may remain."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forgetting these conversations removes this iPhone's history. Saved notes and recap notes stay and may still be used. Server or provider copies may remain."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapomnienie rozmów usuwa ich historię z tego iPada. Zapisane notatki i podsumowania pozostają i nadal mogą być używane. Kopie na serwerze lub u dostawcy mogą pozostać."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapomnienie rozmów usuwa ich historię z tego iPhone’a. Zapisane notatki i podsumowania pozostają i nadal mogą być używane. Kopie na serwerze lub u dostawcy mogą pozostać."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Formal": {
       "extractionState": "manual",
       "localizations": {
@@ -35183,47 +35224,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "它会从这台 iPhone 和 Doddy 可使用的内容中移除。这无法撤销。"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs may keep its own record as described in Settings › Privacy.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "It is removed from this iPad and won't be brought up again. Notes you saved during it stay, and ElevenLabs may keep its own record as described in Settings › Privacy."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs may keep its own record as described in Settings › Privacy."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zostanie usunięta z tego iPada i nie będzie już przywoływana. Notatki zapisane podczas niej zostają, a ElevenLabs może przechowywać własny zapis, jak opisano w Ustawieniach › Prywatność."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zostanie usunięta z tego iPhone’a i nie będzie już przywoływana. Notatki zapisane podczas niej zostają, a ElevenLabs może przechowywać własny zapis, jak opisano w Ustawieniach › Prywatność."
                 }
               }
             }
@@ -90433,6 +90433,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "这会从这台 iPhone 上移除所有笔记、所有清单及其项目、搜索索引和所有未完成的笔记，且无法撤销。你共享的清单会停止共享，所以你邀请的人也会失去它们。如果“通话记忆”已开启，你 Doddy 消息服务器上的副本会被清空。已导出的文件和较早的备份不受影响。Doddy 从你说的话中学到的所有内容，以及你修正过的计数，也会一并移除。“Doddy 做过的事”中的笔记和清单记录同样会被移除。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "This removes the conversation history from this iPhone. Saved notes and recap notes stay and may still be used. Copies on Doddy's server or ElevenLabs may remain.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This removes the conversation history from this iPad. Saved notes and recap notes stay and may still be used. Copies on Doddy's server or ElevenLabs may remain."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This removes the conversation history from this iPhone. Saved notes and recap notes stay and may still be used. Copies on Doddy's server or ElevenLabs may remain."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Historia tej rozmowy zostanie usunięta z tego iPada. Zapisane notatki i podsumowania pozostaną i nadal mogą być używane. Kopie na serwerze Doddy lub w ElevenLabs mogą pozostać."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Historia tej rozmowy zostanie usunięta z tego iPhone’a. Zapisane notatki i podsumowania pozostaną i nadal mogą być używane. Kopie na serwerze Doddy lub w ElevenLabs mogą pozostać."
                 }
               }
             }

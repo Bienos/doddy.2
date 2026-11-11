@@ -69,6 +69,15 @@ public struct ShareableRecallService: RecallService {
     }
 
     public func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
-        PrivateNotes(ids: privateIDs()).shareable(try await base.recall(question, limit: limit))
+        try await recall(question, limit: limit, excluding: [])
+    }
+
+    public func recall(_ question: String, limit: Int, excluding excluded: Set<UUID>) async throws -> RecallOutcome {
+        guard limit > 0 else { return .noMatch }
+        let scope = privateIDs().union(excluded)
+        let outcome = try await base.recall(question, limit: limit, excluding: scope)
+        try Task.checkCancellation()
+        // Read again AFTER the await: privacy may have changed while storage was working.
+        return PrivateNotes(ids: privateIDs().union(scope)).shareable(outcome)
     }
 }

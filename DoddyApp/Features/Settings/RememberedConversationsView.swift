@@ -178,5 +178,5 @@ private struct ConversationLogDetailView: View {
 }
 
 private enum ConversationLogDeleteCopy {
-    static let message = NSLocalizedString("It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs may keep its own record as described in Settings › Privacy.", comment: "")
+    static let message = NSLocalizedString("This removes the conversation history from this iPhone. Saved notes and recap notes stay and may still be used. Copies on Doddy's server or ElevenLabs may remain.", comment: "")
 }

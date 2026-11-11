@@ -1,5 +1,7 @@
 # iPhone and iPad
 
+**Memory audit and foundation (10 Nov 2026, development branch):** reports, actual changes, measurements and remaining privacy gaps are in [memory/RAG implementation evidence](../architecture/memory-rag/DODDY-MEMORY-RAG-IMPLEMENTATION.md). Reuses local GRDB/FTS5 and existing consent controls. The branch repairs scoped selection, history writes, semantic-cache invalidation and voice recap consent; it does not add semantic voice search or account isolation. Simulator unit tests passed (168 passed, 1 availability skip); physical-device voice performance is unmeasured. No merge or deployment is implied.
+
 **Build:**
 - `make project`, scheme `Doddy`: the shipping build. The Apple Watch app is paused (ADR-572) and is not in it.
 - `make project-iphone`, scheme `Doddy`: the same with no entitlements, so a free Apple team can sign it. The widgets and "Save to Doddy" are left out of the app, because they need the App Group (owner, 23 Oct). It has no Apple Health: the Health screen says this build can't use it (owner, 25 Oct; to try it, see `project-iphone.yml`).

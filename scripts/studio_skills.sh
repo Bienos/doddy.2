@@ -73,9 +73,26 @@ PY
   # The checker must catch a broken file: orange text, a tiny label, an external link.
   mkdir -p "$work/broken"
   cp "$work/out-en/"* "$work/broken/"
-  sed -i -e '0,/fill="#171715"/s//fill="#FF6A00"/' -e '0,/font-size="30"/s//font-size="12"/' \
-    -e 's#</svg>#<a href="https://example.org/"><text x="1" y="1" font-size="30" fill="\#171715">x</text></a></svg>#' \
-    "$work/broken/infographic.svg"
+  if ! "${PY[@]}" - "$work/broken/infographic.svg" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+svg = path.read_text(encoding="utf-8")
+for original, replacement in [
+    ('fill="#171715"', 'fill="#FF6A00"'),
+    ('font-size="30"', 'font-size="12"'),
+    ('</svg>', '<a href="https://example.org/"><text x="1" y="1" font-size="30" fill="#171715">x</text></a></svg>'),
+]:
+    if original not in svg:
+        raise SystemExit(f"Cannot create broken SVG: missing {original}")
+    svg = svg.replace(original, replacement, 1)
+path.write_text(svg, encoding="utf-8")
+PY
+  then
+    echo "FAIL could not create the broken SVG fixture"
+    return 1
+  fi
   if "${PY[@]}" "$SKILLS_DIR/tools/check_outputs.py" --content "$work/en.json" --dir "$work/broken" > "$work/broken.txt"; then
     echo "FAIL the checker passed a broken SVG"
     failures=$((failures + 1))

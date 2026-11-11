@@ -24,6 +24,8 @@ public protocol MemoryRepository: Sendable {
     /// Small, coherent startup context; private notes are excluded before the limits.
     func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot
     func query(_ query: String, limit: Int) async throws -> [MemoryCandidate]
+    /// Personal recall: exclude lists, fixtures and private IDs before matching and limits.
+    func queryNotes(_ query: String, limit: Int, excluding privateIDs: Set<UUID>) async throws -> [MemoryCandidate]
     func update(id: UUID, currentText: String) async throws -> MemoryRecord
     /// Changes only the note's type. Read back before success; the words, dates and "edited"
     /// state stay as they are.
@@ -51,6 +53,16 @@ public protocol MemoryRepository: Sendable {
 }
 
 extension MemoryRepository {
+    /// Compatibility for adapters without scoped queries. Production SQLite overrides this to
+    /// filter before ranking/limits; this fallback is private-safe but may return fewer results.
+    public func queryNotes(_ query: String, limit: Int, excluding privateIDs: Set<UUID>) async throws -> [MemoryCandidate] {
+        guard limit > 0 else { return [] }
+        return try await self.query(query, limit: limit).filter {
+            $0.record.category != .list && $0.record.source.isEligibleForPersonalRecall
+                && !privateIDs.contains($0.memoryID)
+        }
+    }
+
     public func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot {
         throw DoddyError.capabilityUnavailable(.memoryStorage)
     }
@@ -105,6 +117,15 @@ public enum RecallCopy {
 /// Deterministic, source-grounded lookup over stored memories.
 public protocol RecallService: Sendable {
     func recall(_ question: String, limit: Int) async throws -> RecallOutcome
+    func recall(_ question: String, limit: Int, excluding privateIDs: Set<UUID>) async throws -> RecallOutcome
+}
+
+extension RecallService {
+    /// Existing adapters remain private-safe. RepositoryRecallService pushes this scope into SQL.
+    public func recall(_ question: String, limit: Int, excluding privateIDs: Set<UUID>) async throws -> RecallOutcome {
+        guard limit > 0 else { return .noMatch }
+        return PrivateNotes(ids: privateIDs).shareable(try await recall(question, limit: limit))
+    }
 }
 
 /// One earlier turn of the current chat. Chats live in memory only and are never saved as notes.

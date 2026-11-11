@@ -48,4 +48,41 @@ final class PrivateNotesTests: XCTestCase {
         XCTAssertFalse(PrivateNotes.needsUnlock(lockOn: true, unlockedAt: now, backgroundSince: now.addingTimeInterval(30), now: now.addingTimeInterval(59)))
         XCTAssertTrue(PrivateNotes.needsUnlock(lockOn: true, unlockedAt: now, backgroundSince: now, now: now.addingTimeInterval(61)))
     }
+
+    private final class Scope: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: Set<UUID> = []
+        func read() -> Set<UUID> { lock.withLock { value } }
+        func hide(_ id: UUID) { lock.withLock { _ = value.insert(id) } }
+    }
+
+    func testPrivacyIsReadAgainAfterAnAwaitedSearch() async throws {
+        let record = try note("Synthetic private result")
+        let scope = Scope()
+        struct ChangingRecall: RecallService {
+            let record: MemoryRecord
+            let scope: Scope
+            func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
+                await Task.yield()
+                scope.hide(record.id)
+                return .matches([MemoryCandidate(record: record, matchedTerms: ["result"])])
+            }
+        }
+        let service = ShareableRecallService(base: ChangingRecall(record: record, scope: scope), privateIDs: { scope.read() })
+        let outcome = try await service.recall("result", limit: 5)
+        XCTAssertEqual(outcome, .noMatch, "A note made private during the read cannot leave the phone")
+    }
+
+    func testNestedRecallScopeKeepsCallerExclusions() async throws {
+        let record = try note("Synthetic caller exclusion")
+        struct Fixed: RecallService {
+            let record: MemoryRecord
+            func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
+                .matches([MemoryCandidate(record: record, matchedTerms: ["exclusion"])])
+            }
+        }
+        let service = ShareableRecallService(base: Fixed(record: record), privateIDs: { [] })
+        let outcome = try await service.recall("exclusion", limit: 5, excluding: [record.id])
+        XCTAssertEqual(outcome, .noMatch)
+    }
 }

@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "date": "2026-11-10",
+    "baseline": "7a651eb27a20e04cab6663e107726a161d9dd7d1",
+    "host": "arm64 macOS 27.0.1",
+    "configuration": "SwiftPM Debug, Swift 6.4.2",
+    "warmups": 2,
+    "samples_per_workload": 20,
+    "percentile": "nearest rank",
+    "limitations": [
+      "Synthetic local SQLite only; no iPhone audio or battery measurement",
+      "One before and one after run; no randomized paired trials or statistical confidence intervals",
+      "No paid/provider calls; no user content"
+    ]
+  },
+  "summary": {
+    "positive_queries": 9,
+    "negative_queries": 4,
+    "recall_at_5": 0.7777777777777778,
+    "macro_precision_at_5": 0.15555555555555556,
+    "precision_of_returned_records": 1.0,
+    "expected_empty_results": 4,
+    "model_answer_correctness": null,
+    "false_memory_rate": null,
+    "limitations": "Small hand-authored diagnostic fixture. Runner success is not evidence of a production quality gate. No model answers generated."
+  },
+  "cases": [
+    {
+      "answerable": true,
+      "case": "music",
+      "precision_at_5": 0.2,
+      "recall_at_5": 1,
+      "relevant_returned": 1,
+      "returned": 1
+    },
+    {
+      "answerable": true,
+      "case": "restaurant_en",
+      "precision_at_5": 0.2,
+      "recall_at_5": 1,
+      "relevant_returned": 1,
+      "returned": 1
+    },
+    {
+      "answerable": true,
+      "case": "decision",
+      "precision_at_5": 0.2,
+      "recall_at_5": 1,
+      "relevant_returned": 1,
+      "returned": 1
+    },
+    {
+      "answerable": true,
+      "case": "keys_pl",
+      "precision_at_5": 0.2,
+      "recall_at_5": 1,
+      "relevant_returned": 1,
+      "returned": 1
+    },
+    {
+      "answerable": true,
+      "case": "code_en",
+      "precision_at_5": 0.2,
+      "recall_at_5": 1,
+      "relevant_returned": 1,
+      "returned": 1
+    },
+    {
+      "answerable": true,
+      "case": "birthday_en",
+      "precision_at_5": 0.2,
+      "recall_at_5": 1,
+      "relevant_returned": 1,
+      "returned": 1
+    },
+    {
+      "answerable": true,
+      "case": "current_job",
+      "precision_at_5": 0.2,
+      "recall_at_5": 1,
+      "relevant_returned": 1,
+      "returned": 1
+    },
+    {
+      "answerable": true,
+      "case": "restaurant_paraphrase",
+      "precision_at_5": 0,
+      "recall_at_5": 0,
+      "relevant_returned": 0,
+      "returned": 0
+    },
+    {
+      "answerable": true,
+      "case": "jazz_paraphrase_en",
+      "precision_at_5": 0,
+      "recall_at_5": 0,
+      "relevant_returned": 0,
+      "returned": 0
+    },
+    {
+      "answerable": false,
+      "case": "unknown_blood",
+      "empty_result": true,
+      "precision_at_5": 0,
+      "relevant_returned": 0,
+      "returned": 0
+    },
+    {
+      "answerable": false,
+      "case": "unknown_school",
+      "empty_result": true,
+      "precision_at_5": 0,
+      "relevant_returned": 0,
+      "returned": 0
+    },
+    {
+      "answerable": false,
+      "case": "private",
+      "empty_result": true,
+      "precision_at_5": 0,
+      "relevant_returned": 0,
+      "returned": 0
+    },
+    {
+      "answerable": false,
+      "case": "edited_away",
+      "empty_result": true,
+      "precision_at_5": 0,
+      "relevant_returned": 0,
+      "returned": 0
+    }
+  ]
+}
