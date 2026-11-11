@@ -46,7 +46,7 @@ Providers require the user's own address/login/payment inside their official sit
 
 ## Upgrade to in-Doddy ordering
 
-See [FOOD_ORDERING_RESEARCH_2026-11-11.md](FOOD_ORDERING_RESEARCH_2026-11-11.md) on the research branch / PR #328. The complete consumer ordering workflow requires official production credentials and scopes (Uber Consumer Delivery early access) or a contracted merchant that will accept orders plus optional delivery logistics API. Replace this **external handoff** with an authorized adapter on a separate PR, reusing `CheckoutDraft` and `ConfirmationPolicy`.
+See [DODDY Food Phase 0 research (PR #328)](https://github.com/Bienos/doddy.2/pull/328) on the research branch / PR #328. The complete consumer ordering workflow requires official production credentials and scopes (Uber Consumer Delivery early access) or a contracted merchant that will accept orders plus optional delivery logistics API. Replace this **external handoff** with an authorized adapter on a separate PR, reusing `CheckoutDraft` and `ConfirmationPolicy`.
 
 ## Primary source links
 
