@@ -65,7 +65,7 @@ test("invalid client input is rejected before any Shopify tool call", async () =
 
 test("real cart and checkout are created with the exact Shopify variant and no payment tool", async () => {
   const { service, calls } = session({
-    get_product: document({ product }),
+    lookup_catalog: document({ products: [product] }),
     create_cart: document({ cart: { id: "gid://shopify/Cart/real-merchant-cart", continue_url: "https://tog24.myshopify.com/cart/c/real" } }),
     create_checkout: document({
       checkout: {
@@ -82,7 +82,8 @@ test("real cart and checkout are created with the exact Shopify variant and no p
   assert.equal(checkout.seller, "TOG24");
   assert.equal(checkout.status, "awaiting_buyer");
   assert.deepEqual(checkout.messages, ["Delivery price may change at checkout."]);
-  assert.deepEqual(calls.map(c => c.name), ["get_product", "create_cart", "create_checkout"]);
+  assert.deepEqual(calls.map(c => c.name), ["lookup_catalog", "create_cart", "create_checkout"]);
+  assert.deepEqual(calls[0]?.args.catalog.ids, [variantId], "Recheck the exact variant, not the product's featured option");
   assert.equal(calls[1]?.args.cart.line_items[0].quantity, 2);
   assert.equal(calls[1]?.args.cart.line_items[0].item.id, variantId);
   assert.equal(calls[2]?.args.checkout.cart_id, "gid://shopify/Cart/real-merchant-cart");
@@ -96,12 +97,12 @@ test("wrong merchant, changed price availability, or missing selected variant ne
   await assert.rejects(service.prepareCheckout({
     variantId, shop: "unrelated.myshopify.com", quantity: 1,
   }), (e: unknown) => e instanceof AppError && e.code === "refused");
-  assert.deepEqual(calls.map(c => c.name), ["get_product"]);
+  assert.deepEqual(calls.map(c => c.name), ["lookup_catalog"]);
 });
 
 test("fraudulent checkout links and malformed seller payloads fail closed", async () => {
   const { service, calls } = session({
-    get_product: document({ product }),
+    lookup_catalog: document({ products: [product] }),
     create_cart: document({ cart: { id: "gid://shopify/Cart/c" } }),
     create_checkout: document({ checkout: { continue_url: "https://evil.example/pay", currency: "PLN" } }),
   });
