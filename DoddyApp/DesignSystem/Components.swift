@@ -131,8 +131,8 @@ extension Capability {
         switch self {
         case .memoryStorage: NSLocalizedString("Saving memories", comment: "")
         case .memoryRecall: NSLocalizedString("Finding memories", comment: "")
-        case .cloudAssistant: NSLocalizedString("AI answers", comment: "")
-        case .textAssistant: NSLocalizedString("Typed AI questions", comment: "")
+        case .cloudAssistant: NSLocalizedString("Online answers", comment: "")
+        case .textAssistant: NSLocalizedString("Typed questions", comment: "")
         case .voiceInput: NSLocalizedString("Listening (voice)", comment: "")
         case .voiceOutput: NSLocalizedString("Speaking (voice)", comment: "")
         case .reminders: NSLocalizedString("Reminders", comment: "")

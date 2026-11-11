@@ -32,21 +32,25 @@ final class NewsFollowVoiceTests: XCTestCase {
         XCTAssertEqual(ids, NewsFollowAsk.catalog.map(\.id))
     }
 
-    func testFollowingNeedsATapAndShowsExactlyWhat() throws {
-        let need = AskFirst.need(for: .followNews(.words(name: "CPK", keywords: ["CPK", "lotnisko"])))
-        guard case .tapFirst(let card) = need else { return XCTFail("\(need)") }
-        XCTAssertEqual(card.title, "Follow this?")
-        XCTAssertEqual(card.confirmLabel, "Follow")
-        XCTAssertEqual(card.lines, ["“CPK”", "Stories with: CPK, lotnisko", "Shown in Following, in Home's menu"])
-        XCTAssertTrue(AskFirst.needsTap(need))
-        guard case .tapFirst(let topic) = AskFirst.need(for: .followNews(.topic(id: "poland"))) else { return XCTFail() }
-        XCTAssertEqual(topic.lines.first, "Topic: What's happening in Poland")
+    func testFollowingRunsAtOnceAndSaysExactlyWhat() throws {
+        // Decision 2026-11-11-asked-for-runs-at-once: following a topic is one of Doddy's own small things,
+        // undone by unfollowing, so it runs at once with no card.
+        let ask = NewsFollowAsk.words(name: "CPK", keywords: ["CPK", "lotnisko"])
+        let need = AskFirst.need(for: .followNews(ask))
+        XCTAssertEqual(need, .runsNow)
+        XCTAssertFalse(AskFirst.needsTap(need))
+        XCTAssertEqual(AskFirst.need(for: .followNews(.topic(id: "poland"))), .runsNow)
+        XCTAssertTrue(AskFirst.ownSmallActions.contains(VoiceToolName.followNews))
+        // What is followed is still described exactly.
+        XCTAssertEqual(ask.cardLines, ["“CPK”", "Stories with: CPK, lotnisko", "Shown in Following, in Home's menu"])
+        XCTAssertEqual(NewsFollowAsk.topic(id: "poland").cardLines.first, "Topic: What's happening in Poland")
         let descriptor = try XCTUnwrap(ToolCatalog.descriptor("follow_news"))
         XCTAssertEqual(descriptor.effect, .localChange)
-        XCTAssertEqual(descriptor.approval, .card)
+        XCTAssertEqual(descriptor.approval, .runsNow)
         XCTAssertNil(VoiceConnection.serving(VoiceToolName.followNews), "no Connections switch serves it")
         XCTAssertFalse(ConnectionPause.applies(to: .followNews(.topic(id: "sport"))), "Doddy's own feature, outside Pause all")
-        guard case .refuse = CarProfile.decision(for: .followNews(.topic(id: "sport"))) else { return XCTFail("needs a tap, not while driving") }
+        // CarProfile is unchanged by the decision: it still waits until the user isn't driving.
+        guard case .refuse = CarProfile.decision(for: .followNews(.topic(id: "sport"))) else { return XCTFail("not while driving (CarProfile)") }
     }
 
     func testAddedOnlyWhenTheListHasIt() {

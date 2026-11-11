@@ -503,7 +503,7 @@ struct HealthShareConsentSheet: View {
                         }
                         point(Text("You can take this back on the Apple Health screen at any time."))
                     }
-                    Text("Doddy is an AI, not a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.")
+                    Text("Doddy isn't a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                     Button("Allow") { answer(true) }

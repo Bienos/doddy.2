@@ -2829,8 +2829,9 @@ final class VoiceSessionController {
                 return
             }
         }
-        // ASK-01 (ADR-483): nothing below runs before the user's yes for exactly this call. Tools
-        // with a payload card of their own (and the server's tools) ask through that card.
+        // ASK-01 (ADR-483) as it stands since 11 Nov 2026: a change with no card of its own waits here for the
+        // user's tap for exactly this call. Tools with a payload card of their own (and the server's writes)
+        // ask through that card. What the user asked to see or start of their own runs at once (`.runsNow`).
         switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
         case .yesFirst(let card), .tapFirst(let card):
             guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
@@ -2841,7 +2842,8 @@ final class VoiceSessionController {
                 return
             }
         case .nothingRuns, .ownPayloadCard, .serverCard, .runsNow:
-            // .runsNow (ADR-575): a public lookup (a sum, a conversion, the web) runs at once.
+            // .runsNow: a public lookup (ADR-575), a look at the user's own things or one of Doddy's own small
+            // actions (decision 2026-11-11-asked-for-runs-at-once) runs at once.
             break
         }
         switch request {
@@ -2982,11 +2984,11 @@ final class VoiceSessionController {
             guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .followNews(let ask):
-            // The user already tapped Follow on the ask card (ASK-01). Said from the list as it is
+            // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). Said from the list as it is
             // kept on this iPhone after the write, never assumed (ADR-657).
             await reply(call.toolCallId, VoiceToolReply.newsFollow(FollowingModel.shared.follow(ask)))
         case .startStopwatch(let label):
-            // The user already tapped Start on the ask card (ASK-01). One stopwatch at a time: a
+            // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). One stopwatch at a time: a
             // second start reports the one running and changes nothing (ADR-652).
             switch StopwatchController.shared.start(label: label) {
             case .started(let watch):
@@ -3007,8 +3009,8 @@ final class VoiceSessionController {
         case .checkStopwatch:
             StopwatchController.shared.refresh()
             await reply(call.toolCallId, VoiceToolReply.stopwatchReading(StopwatchController.shared.watch, now: Date()))
-        // The focus timer and the wind-down (decision 2026-11-10-timers-by-voice). The user already tapped on the ask
-        // card (ASK-01). One of each at a time: a running one is never replaced. Every reply is read back from the
+        // The focus timer and the wind-down (decision 2026-11-10-timers-by-voice), at once since 11 Nov 2026
+        // (decision 2026-11-11-asked-for-runs-at-once). One of each at a time: a running one is never replaced. Every reply is read back from the
         // controller after the change, so Doddy never says one runs or stopped when it didn't.
         case .startFocus(let minutes, let label):
             let focus = FocusController.shared
@@ -3200,7 +3202,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
             }
         case .openTrainingPlan(let ask):
-            // ADR-626: the user already tapped Open on the ask card. The screen asks the safety questions and makes the
+            // ADR-626, at once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). The screen asks the safety questions and makes the
             // plan; the agent hears only that it is open, never the answers or the plan.
             if isCurrent(call.toolCallId) { planRequest = PlanAskRequest(ask: ask) }
             await reply(call.toolCallId, VoiceToolReply.trainingPlanOpened(ask))
@@ -3243,7 +3245,8 @@ final class VoiceSessionController {
             }
             propose(.camera(toolCallID: call.toolCallId), toolCallID: call.toolCallId)
         case .lookAtScreen(let question):
-            // After the yes: the picture as it is now, fresh or nothing (sharing may have stopped meanwhile).
+            // Sharing is on (checked above) and that is the person's yes since 11 Nov 2026 (decision
+            // 2026-11-11-asked-for-runs-at-once): the picture as it is now, fresh or nothing.
             // It goes to Doddy's server for this one answer and is never kept (decision 2026-11-09-doddy-looks-at-the-screen).
             let current = ScreenShareFiles.current()
             guard case .ready(let age) = current.readiness, let jpeg = current.jpeg else {
@@ -3353,7 +3356,7 @@ final class VoiceSessionController {
             }
             await reply(call.toolCallId, await StudioModel.shared.make(job))
         case .findDeals(let request):
-            // SHOPPING.md 2: after the ask card's yes, one request to Doddy's server, which reads the
+            // SHOPPING.md 2: at once since 11 Nov 2026, one request to Doddy's server, which reads the
             // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.
             await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
         case .lostWallet(let situation):
@@ -3688,11 +3691,12 @@ final class VoiceSessionController {
                     .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
                     toolCallID: toolCallID)
             } else if AskFirst.need(for: .cloudTool(cloud)) == .runsNow {
-                // ADR-575: web search, news and places read nothing of the user's, so they run at
-                // once. The server's single-use approval is still made for exactly these words and
-                // used straight away.
+                // ADR-575, and since 11 Nov 2026 every read through Doddy's server (decision
+                // 2026-11-11-asked-for-runs-at-once): the user asked, so it runs at once. The server's
+                // single-use approval is still made for exactly these words and used straight away.
                 let prepared = try await client.prepare(cloud)
                 let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
+                await keepMadeDocument(result)
                 await reply(toolCallID, VoiceToolReply.cloudResult(result))
             } else {
                 // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
@@ -3720,26 +3724,29 @@ final class VoiceSessionController {
         }
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
-            // ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
-            if let document = result.document {
-                documents.insert(document, at: 0)
-                // ADR-616: "ready" only when the server says the file is ready.
-                switch document.status {
-                case .ready: flashIsland(.resultReady(.document))
-                case .working:
-                    flashIsland(.resultReady(.documentStarted))
-                    // One notification when it is done, if the messaging server is set up for it.
-                    FileReadyPush.watch(document)
-                case .failed: break
-                }
-                // Also Doddy's own message in Messages, with the file to open and share from (owner, 10 Nov 2026).
-                // A private conversation keeps nothing on this iPhone, so it adds nothing there either.
-                if !isPrivate { await ThreadInbox.deliver(document: document, polish: Self.cardsInPolish) }
-            }
+            await keepMadeDocument(result)
             await reply(toolCallID, VoiceToolReply.cloudResult(result))
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
         }
+    }
+
+    /// ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
+    private func keepMadeDocument(_ result: RunResult) async {
+        guard let document = result.document else { return }
+        documents.insert(document, at: 0)
+        // ADR-616: "ready" only when the server says the file is ready.
+        switch document.status {
+        case .ready: flashIsland(.resultReady(.document))
+        case .working:
+            flashIsland(.resultReady(.documentStarted))
+            // One notification when it is done, if the messaging server is set up for it.
+            FileReadyPush.watch(document)
+        case .failed: break
+        }
+        // Also Doddy's own message in Messages, with the file to open and share from (owner, 10 Nov 2026).
+        // A private conversation keeps nothing on this iPhone, so it adds nothing there either.
+        if !isPrivate { await ThreadInbox.deliver(document: document, polish: Self.cardsInPolish) }
     }
 
     /// ADR-563: what the agent hears when a server tool fails. An account that isn't connected gets

@@ -22,8 +22,6 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 header
-                // Decision 2026-11-08-required-account: only in a build with Doddy accounts set up.
-                DoddyAccountSettingsSection()
                 doddySection
                 connectionsSection
                 iPhoneSection
@@ -75,7 +73,7 @@ struct SettingsView: View {
             NavigationLink {
                 VoiceSettingsView()
             } label: {
-                StatusRow(title: NSLocalizedString("Voice", comment: ""), value: "ElevenLabs")
+                SettingsRow(icon: "waveform", title: NSLocalizedString("Voice", comment: ""))
             }
             .accessibilityIdentifier("settings.voice")
             NavigationLink {
@@ -84,8 +82,8 @@ struct SettingsView: View {
                     stackID = UUID()
                 })
             } label: {
-                StatusRow(title: NSLocalizedString("Doddy's memory", comment: "Settings row: notes, lists and what Doddy knows"),
-                          value: String(format: NSLocalizedString("%lld notes", comment: "Settings › Doddy's memory: how many notes"), store.memories.count))
+                SettingsRow(icon: "books.vertical", title: NSLocalizedString("Doddy's memory", comment: "Settings row: notes, lists and what Doddy knows"),
+                            value: String(format: NSLocalizedString("%lld notes", comment: "Settings › Doddy's memory: how many notes"), store.memories.count))
             }
             .accessibilityIdentifier("settings.memory")
         }
@@ -97,7 +95,7 @@ struct SettingsView: View {
             NavigationLink {
                 ConnectionsSettingsView()
             } label: {
-                StatusRow(title: NSLocalizedString("Connections", comment: ""), value: connectionSummary)
+                SettingsRow(icon: "link", title: NSLocalizedString("Connections", comment: ""), value: connectionSummary)
             }
             .accessibilityIdentifier("settings.connectionsHub")
             // Its page uses its own controller; re-read when coming back from it.
@@ -105,7 +103,7 @@ struct SettingsView: View {
             NavigationLink {
                 NotificationsSettingsView()
             } label: {
-                Text("Notifications")
+                SettingsRow(icon: "bell", title: NSLocalizedString("Notifications", comment: ""))
             }
             .accessibilityIdentifier("settings.notifications")
         }
@@ -117,20 +115,20 @@ struct SettingsView: View {
                 Form { AppLanguageSettingsSection() }
                     .navigationTitle("Language")
             } label: {
-                StatusRow(title: NSLocalizedString("Language", comment: ""),
-                          value: AppLanguageStore.chosen().nativeName ?? NSLocalizedString("Same as this iPhone", comment: ""))
+                SettingsRow(icon: "globe", title: NSLocalizedString("Language", comment: ""),
+                            value: AppLanguageStore.chosen().nativeName ?? NSLocalizedString("Same as this iPhone", comment: ""))
             }
             .accessibilityIdentifier("settings.language")
             NavigationLink {
                 AppearanceSettingsView()
             } label: {
-                Text("Appearance")
+                SettingsRow(icon: "paintbrush", title: NSLocalizedString("Appearance", comment: ""))
             }
             .accessibilityIdentifier("settings.appearance")
             NavigationLink {
                 PrivacySettingsView()
             } label: {
-                Text("Privacy")
+                SettingsRow(icon: "hand.raised", title: NSLocalizedString("Privacy", comment: ""))
             }
             .accessibilityIdentifier("settings.privacyScreen")
         }
@@ -143,11 +141,9 @@ struct SettingsView: View {
             NavigationLink {
                 AboutSettingsView()
             } label: {
-                StatusRow(title: NSLocalizedString("About", comment: "Settings row: help, terms, version"), value: Self.versionText)
+                SettingsRow(icon: "info.circle", title: NSLocalizedString("About", comment: "Settings row: help, terms, version"), value: Self.versionText)
             }
             .accessibilityIdentifier("settings.about")
-        } footer: {
-            Text("Doddy is an AI, not a person.")
         }
     }
 
@@ -156,7 +152,9 @@ struct SettingsView: View {
     private var connectionSummary: String {
         if pauseAllConnections { return NSLocalizedString("Paused", comment: "") }
         let on = VoiceConnection.allCases.filter { connections.state(of: $0) == .on }.count
-        return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
+        return on == 0
+            ? NSLocalizedString("All off", comment: "Settings › Connections: none is on")
+            : String(format: NSLocalizedString("%lld of %lld on", comment: "Settings › Connections: how many are on"), on, VoiceConnection.allCases.count)
     }
 
     /// The language the screens are showing, for the Polish or English legal pages.
@@ -188,6 +186,9 @@ struct SettingsView: View {
 struct AboutSettingsView: View {
     var body: some View {
         Form {
+            // Decision 2026-11-08-required-account: only in a build with Doddy accounts set up. One page down from
+            // Settings since 11 Nov 2026, so the first page is about Doddy, not the sign-in.
+            DoddyAccountSettingsSection()
             Section {
                 Link(destination: SettingsView.helpURL) {
                     Label("Help", systemImage: "questionmark.circle")
@@ -230,5 +231,32 @@ struct AboutSettingsView: View {
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
         .foregroundStyle(Theme.ink)
+    }
+}
+
+/// A first-page Settings row (11 Nov 2026): a small tile with the row's symbol in Doddy's orange, the title and,
+/// when there is one, a quiet value. The title is looked up in the string catalog like `StatusRow`'s.
+struct SettingsRow: View {
+    let icon: String
+    let title: String
+    var value: String? = nil
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.inkOnOrange)
+                .frame(width: 30, height: 30)
+                .background(Theme.orangeCue, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .accessibilityHidden(true)
+            Text(NSLocalizedString(title, comment: ""))
+            Spacer(minLength: 12)
+            if let value {
+                Text(value)
+                    .foregroundStyle(Theme.secondaryText)
+                    .lineLimit(1)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }

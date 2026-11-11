@@ -366,3 +366,27 @@ extension DoddyServerClient {
         return page
     }
 }
+
+/// Which label Doddy's server gave each follow in one feed answer (11 Nov 2026). The server names a catalog topic in
+/// the request's language ("Polska"), while the follow keeps the words it was added with ("Co się dzieje w Polsce"), so
+/// matching stories by the follow's own label found nothing: tapping the default follow showed an empty list. The
+/// server answers one report per requested follow, in the request's order, so the order is the link.
+public enum NewsFeedLabels {
+    /// Follow id → the label the server used. A follow with no report keeps its own label.
+    public static func byFollow(requested: [NewsFollow], reports: [NewsFollowReport]) -> [String: String] {
+        var labels: [String: String] = [:]
+        guard requested.count == reports.count else {
+            // An answer for another list (a follow was added meanwhile): only labels that match as they are.
+            for follow in requested where reports.contains(where: { $0.label == follow.label }) { labels[follow.id] = follow.label }
+            return labels
+        }
+        for (follow, report) in zip(requested, reports) { labels[follow.id] = report.label }
+        return labels
+    }
+
+    /// The stories of one follow.
+    public static func cards(of follow: NewsFollow, in cards: [NewsCard], labels: [String: String]) -> [NewsCard] {
+        let label = labels[follow.id] ?? follow.label
+        return cards.filter { $0.follows.contains(label) }
+    }
+}

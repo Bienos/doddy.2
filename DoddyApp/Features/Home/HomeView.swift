@@ -197,14 +197,16 @@ struct HomeView: View {
                 if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
                 }
-                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
-                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
-                if conversation.live != nil, scope.shows(Feature.messages) {
-                    showScreenButton
-                }
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
                 Spacer()
+                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
+                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
+                // On the trailing side, beside the menu (owner, 11 Nov 2026: "ta kropka w złym miejscu, bo
+                // zasłania"): next to the transcript capsule iOS's round record glyph sat on the wordmark.
+                if conversation.live != nil, scope.shows(Feature.messages) {
+                    showScreenButton
+                }
                 moreMenu
             }
         }
@@ -247,7 +249,7 @@ struct HomeView: View {
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
-    /// the privacy page. The AI disclosure heads it.
+    /// the privacy page.
     private var moreMenu: some View {
         Menu {
             Section {
@@ -283,9 +285,9 @@ struct HomeView: View {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
                         .accessibilityIdentifier("home.today")
                 }
-            } header: {
-                Text("Doddy is an AI, not a person.")
             }
+            // The "Doddy is an AI, not a person." header left this menu on 11 Nov 2026 (owner: "nie chcę używać słowa AI
+            // w ogóle w mówieniu o Dodim … usuń tam Dodi AI"); asked directly, Doddy still says what he is (DOD-03).
             Section {
                 // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
                 // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,

@@ -113,14 +113,19 @@ final class PreTapRepliesTests: XCTestCase {
                        mode: .transit, bufferMinutes: 15)
     }
 
-    func testTheTripIsAskedAboutBeforeAnythingIsRead() {
+    func testTheTripGoesStraightToItsPayloadCard() {
         let parsed = VoiceToolRequest.parse(
             name: VoiceToolName.remindWhenToLeave,
             parametersJSON: Data(#"{"place":"Dentysta, Marszałkowska 1","arrive_by":"2099-11-05T17:30","mode":"transit","buffer_minutes":15}"#.utf8))
         guard case .leaveBy = parsed else { return XCTFail("\(parsed)") }
+        // One card, not two (11 Nov 2026): the trip is worked out at once, under iOS's own location permission,
+        // and only the payload card's tap (place Maps found, leave time) sets the notification.
         let need = AskFirst.need(for: .leaveBy(request), calendar: calendar)
-        guard case .tapFirst(let card) = need else { return XCTFail("the location is read only after a tap, got \(need)") }
-        XCTAssertTrue(AskFirst.needsTap(need), "a spoken yes can't send the app to read where the iPhone is")
+        XCTAssertEqual(need, .ownPayloadCard)
+        XCTAssertTrue(AskFirst.needsTap(need), "a spoken yes can't set the reminder")
+        XCTAssertEqual(AskFirst.need(for: .leaveBy(request), calendar: calendar, polish: true), .ownPayloadCard)
+        // The first card's builder is still there (no longer shown by AskFirst); its words stay exact.
+        let card = LeaveByAsk.card(request, calendar: calendar)
         XCTAssertEqual(card.title, "Work out when to leave?")
         XCTAssertEqual(card.confirmLabel, "Work it out")
         XCTAssertEqual(card.lines[0], "To: Dentysta, Marszałkowska 1")
@@ -131,7 +136,7 @@ final class PreTapRepliesTests: XCTestCase {
         XCTAssertFalse(card.lines.joined().contains("Leave at"), "no time derived from the position yet")
     }
 
-    func testASpokenYesNeverReadsThePosition() {
+    func testASpokenYesNeverSetsTheLeaveReminder() {
         var ledger = AskLedger()
         let request = VoiceToolRequest.leaveBy(self.request)
         ledger.asked("c1", request: request, needsTap: AskFirst.needsTap(AskFirst.need(for: request, calendar: calendar)), at: Date(timeIntervalSince1970: 1_800_000_000))

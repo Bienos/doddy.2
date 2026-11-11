@@ -20,7 +20,7 @@ import { ClaudeAssistantResponder } from "../assistant/responder.js";
 import { ClaudeRecapWriter } from "../assistant/recap.js";
 import { ClaudeScreenLooker } from "../screen/look.js";
 import type { PhoneRecapDeps } from "../phoneRecaps.js";
-import { PoliteFetcher } from "../deals/fetcher.js";
+import { CachingFetcher, PoliteFetcher } from "../deals/fetcher.js";
 import type { DealsDeps } from "../deals/service.js";
 import { CeidgClient } from "../registry/ceidg.js";
 import { AnthropicDealsModel } from "../deals/vision.js";
@@ -98,7 +98,9 @@ export function providersFrom(config: Config) {
   const ds = config.dealsSettings;
   const deals: DealsDeps = {
     settings: ds,
-    fetcher,
+    // Leaflet pages are kept a few hours (11 Nov 2026: most chains timed out on every search). Shop pages for errands
+    // and price watches still read fresh.
+    fetcher: new CachingFetcher(fetcher),
     model: ds.enabled && config.anthropicApiKey ? new AnthropicDealsModel(config.anthropicApiKey, { model: ds.visionModel }) : undefined,
     log,
     // ADR-666: the same partner rules as shopping errands (ADR-612), added after the picks.

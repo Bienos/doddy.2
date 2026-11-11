@@ -574,7 +574,9 @@ final class PermissionSheetTests: XCTestCase {
 
         XCTAssertEqual(t.controller.permissionRequest?.connection, .calendar)
         XCTAssertEqual(t.controller.permissionRequest?.kind, .turnOn)
-        XCTAssertNotNil(t.controller.permissionRequest?.askCard, "a read: the sheet shows exactly what will be read")
+        // Since 11 Nov 2026 a read runs at once (decision 2026-11-11-asked-for-runs-at-once): the switch's sheet is the
+        // only question, with no ask card of its own on it.
+        XCTAssertNil(t.controller.permissionRequest?.askCard, "a read: the sheet is the only question")
         XCTAssertTrue(t.link.results.isEmpty, "the call waits for the answer")
 
         await t.controller.declinePermission()
@@ -684,14 +686,11 @@ final class VoiceReviewFixesTests: XCTestCase {
         let t = Harness()
         defer { t.restore() }
         t.controller.beginForTesting(link: t.link)
-        // The harness's store has no learning store, so nothing can be written.
+        // The harness's store has no learning store, so nothing can be written. Since 11 Nov 2026 the gap row is
+        // written at once, with no card (decision 2026-11-11-asked-for-runs-at-once).
         await t.controller.receiveToolCallForTesting(
             name: VoiceToolName.noteCapabilityGap, id: "gap-1", parameters: #"{"category":"music"}"#).value
-        guard case .ask? = t.controller.pendingAction else {
-            return XCTFail("ASK-01: the gap is noted after a tap, got \(String(describing: t.controller.pendingAction))")
-        }
-
-        await t.controller.confirmPendingAction()
+        XCTAssertNil(t.controller.pendingAction, "no card replaces whatever was waiting")
 
         XCTAssertEqual(t.link.results.map(\.id), ["gap-1"])
         XCTAssertEqual(t.link.results.first?.text, LearningPrompt.gapNotNoted)
@@ -755,13 +754,13 @@ final class CallInterruptionTests: XCTestCase {
     }
 }
 
-/// find_photos and open_camera (ADR-569) with the fake device: a read asks first and the agent
-/// hears counts only; a device without a camera says so instead of asking for a permission.
+/// find_photos and open_camera (ADR-569) with the fake device: a read runs at once (since 11 Nov 2026) and the
+/// agent hears counts only; a device without a camera says so instead of asking for a permission.
 final class PhotosAndCameraControllerTests: XCTestCase {
     private typealias Harness = VoiceSessionControllerTests.Harness
 
     @MainActor
-    func testFindPhotosAsksThenShowsCountsOnly() async {
+    func testFindPhotosRunsAtOnceAndShowsCountsOnly() async {
         let t = Harness()
         defer { t.restore() }
         let key = VoiceConnection.photos.preferenceKey
@@ -771,12 +770,7 @@ final class PhotosAndCameraControllerTests: XCTestCase {
         t.controller.beginForTesting(link: t.link)
 
         await t.controller.receiveToolCallForTesting(name: VoiceToolName.findPhotos, id: "photos-1", parameters: #"{"day":"today"}"#).value
-        guard case .ask? = t.controller.pendingAction else {
-            return XCTFail("ASK-01: a read asks first, got \(String(describing: t.controller.pendingAction))")
-        }
-        XCTAssertTrue(t.link.results.isEmpty)
-
-        await t.controller.confirmPendingAction()
+        XCTAssertNil(t.controller.pendingAction, "no card: the user asked (decision 2026-11-11-asked-for-runs-at-once)")
 
         XCTAssertEqual(t.link.results.map(\.id), ["photos-1"])
         XCTAssertTrue(t.link.results.first?.text.hasPrefix("No photos or videos") == true, t.link.results.first?.text ?? "")

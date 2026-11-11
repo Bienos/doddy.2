@@ -55,7 +55,9 @@ final class FollowingModel {
     /// Ids of stories saved to notes in this session, so the bookmark fills in.
     private(set) var savedStoryIDs: Set<String> = []
     /// The follow whose stories alone are shown (a tap on its circle); nil shows them all.
-    var selectedFollowID: String?
+    var selectedFollowID: String? {
+        didSet { if selectedFollowID != oldValue { regroup() } }
+    }
     /// What Doddy's server checks for this account and what it found; nil until asked.
     private(set) var radar: RadarServerState?
 
@@ -79,13 +81,24 @@ final class FollowingModel {
         selectedFollowID.flatMap { id in follows.follows.first { $0.id == id } }
     }
 
-    /// The cards on screen: all of them, or only the selected follow's.
+    /// The cards on screen: all of them, or only the selected follow's, by the label the server gave it (11 Nov 2026).
     var visibleCards: [NewsCard] {
         guard let follow = selectedFollow else { return cards }
-        return cards.filter { $0.follows.contains(follow.label) }
+        return NewsFeedLabels.cards(of: follow, in: cards, labels: serverLabels)
     }
 
-    var sections: [NewsFeedSection] { NewsFeedSections.group(visibleCards, now: now()) }
+    /// Worked out once per change of what is shown, not on every redraw: the grouping parses every card's date.
+    private(set) var sections: [NewsFeedSection] = []
+
+    private func regroup() {
+        sections = NewsFeedSections.group(visibleCards, now: now())
+    }
+
+    /// Follow id → the label the server used for it in the last answer (`NewsFeedLabels`).
+    private var serverLabels: [String: String] = [:]
+    /// Each refresh gets a number; only the newest one's answer is kept (a pull, the screen opening and a sheet
+    /// closing could each start one, and an older answer finishing last used to replace a newer one).
+    private var refreshNumber = 0
 
     /// Catalog topics not followed yet, for the add sheet.
     var availableTopics: [NewsCatalogTopic] {
@@ -93,7 +106,8 @@ final class FollowingModel {
     }
 
     func report(for follow: NewsFollow) -> NewsFollowReport? {
-        reports.first { $0.label == follow.label }
+        let label = serverLabels[follow.id] ?? follow.label
+        return reports.first { $0.label == label }
     }
 
     /// Where a follow's stories come from, from the last refresh or, before one, the catalog.
@@ -112,7 +126,7 @@ final class FollowingModel {
 
     /// The person's "tell me when" words a card mentions, for the small flag on it.
     func flaggedWords(on card: NewsCard) -> [String] {
-        let words = follows.follows.filter { card.follows.contains($0.label) }.flatMap { alert(for: $0).words }
+        let words = follows.follows.filter { card.follows.contains(serverLabels[$0.id] ?? $0.label) }.flatMap { alert(for: $0).words }
         guard !words.isEmpty else { return [] }
         return RadarMatch.matched("\(card.title)\n\(card.summary)", keywords: Array(Set(words)).sorted())
     }
@@ -297,24 +311,33 @@ final class FollowingModel {
 
     func refresh() async {
         guard let backend else { return }
+        refreshNumber += 1
+        let mine = refreshNumber
         guard let request = follows.request(language: language) else {
             cards = []
             reports = []
+            serverLabels = [:]
             problem = nil
+            regroup()
             return
         }
+        let requested = follows.follows
         isLoading = true
         problem = nil
-        defer { isLoading = false }
         do {
             let page = try await backend.newsFeed(request)
+            guard mine == refreshNumber else { return }
             cards = page.cards
             reports = page.follows ?? []
+            serverLabels = NewsFeedLabels.byFollow(requested: requested, reports: reports)
             keywordSearch = page.keywordSearch
             fetchedAt = ServerDates.parse(page.fetchedAt) ?? now()
         } catch {
+            guard mine == refreshNumber else { return }
             problem = UpdatesModel.text(for: error)
         }
+        regroup()
+        isLoading = false
         await loadRadar()
     }
 
