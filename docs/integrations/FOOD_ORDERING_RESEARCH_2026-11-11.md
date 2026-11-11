@@ -3,11 +3,11 @@
 **Research date:** 2026-11-11  
 **Status:** DESIGN / RESEARCH ONLY. No food-provider credentials, live restaurant inventory, cart submission, payments, or production rollout have been validated.  
 **Market:** Poland first; iPhone/SwiftUI; ElevenLabs voice, existing Doddy backend and messaging infrastructure.  
-**Decision requested:** Approve a mock-only vertical slice *after* reviewing this document. Do not deploy/order/pay on the strength of this document.
+**Product decision (owner, 2026-11-11): NO DEMO.** Do not build a user-facing prototype with fictional restaurants, food offers, simulated prices, dummy providers, simulated checkout or test orders presented as a product. Start with authorized, verifiable **real-provider integration** and genuine available functionality. Provider contractual approval / credentials remain prerequisites for consumer purchases. Internal fakes are permitted **only as isolated automated tests**, never as a user-facing fallback. No production payments/orders without enabled and approved provider integration.
 
 ## Executive decision
 
-Build a **provider-capability-driven food experience**. Start with a clearly labeled simulated ordering flow and an approved/provider-verified external handoff, **not** an unsupported multi-platform comparison or checkout. Seek access to Uber **Consumer Delivery** API for real consumer ordering. In parallel consider a directly contracted restaurant + Wolt Drive/Glovo On-Demand fulfillment pilot: this is a different business model with the restaurant as seller and a courier service as delivery supplier.
+Build a **provider-capability-driven food experience**. Start with an **authorized live provider integration** (genuine restaurant/menu/quote/checkout only when the provider grants those capabilities), **not** simulated restaurants or fake checkout. If the relevant scopes are not available, the corresponding feature remains unavailable; a verified official handoff is optional but is not falsely described as in-app ordering. Seek access to Uber **Consumer Delivery** API for real consumer ordering. In parallel consider a directly contracted restaurant + Wolt Drive/Glovo On-Demand fulfillment pilot: this is a different business model with the restaurant as seller and a courier service as delivery supplier.
 
 **Critical distinction:** An API for restaurant POS, incoming orders or courier dispatch is **not** a consumer API that can browse a platform marketplace and purchase on behalf of an end user.
 
@@ -60,7 +60,7 @@ Open code questions to resolve with tests and implementation review:
 
 ## Product scope: explicit capability tiers
 
-**Tier 0 (simulated; first build)**: user asks for food; deterministic mock restaurants/menu/fees/availability marked **DEMO**; item options; mock cart; approval card; simulated status; no provider login, payment, external order, or provider comparison claims. May test navigation using only officially documented links verified for the provider and location.
+**Tier 0 (production prerequisites; first engineering task):** secure credentials/configuration and a provider capability registry, typed live order contracts, lawful account-linking contract, persistent idempotent submission ledger and order status reconciliation. No user-facing fake data. Consumer checkout endpoints are unimplemented until officially documented and granted. A feature must return unavailable when authorization is absent. Integration/unit tests may use injected deterministic stubs, not exposed in app or production.
 
 **Tier 1 (real discovery / handoff)**: show real data only from an authorized, attributed and sufficiently fresh source; provider-specific link to its supported web/app surface; display `Open in provider`, **never `Order placed`**. No promises of preserved cart unless provider docs confirm and an actual test verifies it. Where real menus/fees are unavailable, show no fabricated prices, ETAs, ratings or availability.
 
@@ -75,7 +75,7 @@ Voice/typed intent → FoodIntentRouter → FoodService
                                       │
                provider registry / capability declarations
                                       │
-     MockFoodProvider | authorized consumer provider | direct-merchant provider
+     Authorized Consumer Provider | Authorized Direct-Merchant Provider
                                       │
                  Normalized menu, offers, quote
                                       │
@@ -137,7 +137,7 @@ interface FoodProvider {
 
 ## Minimum automated test cases (must be green before Tier 2)
 
-1. Mock-only provider never makes network calls or records a real purchase.
+1. With missing provider approval/credentials, all live capabilities fail closed; no implicit test/live crossover and no fake data returned.
 2. Unavailable capability returns unsupported, not a synthetic result.
 3. Item price or option changes invalidate quote digest.
 4. Delivery address or tip/fee changes invalidate consent.
@@ -173,23 +173,25 @@ interface FoodProvider {
 
 ## First implementation PR after Phase 0 acceptance
 
-**PR A — Mock and contracts, no externally executable purchasing**
-- Model `FoodProviderCapabilities` and provider registry with fail-closed tests.
-- Implement deterministic `MockFoodProvider` and typed `FoodQuote` response for demo.
-- Add `FoodIntent` routing behind local feature flag (no change to live ElevenLabs agent).
-- Render a single SwiftUI FoodSuggestionCard + review card with a visible `DEMO` label.
-- Reuse checkout canonicalization; verify fee breakdown and changed payload rejection.
-- Add 10+ focused core tests, CI gates and Polish/English UI copy.
-- Add truthful `Open provider` handoff only for specifically verified URLs; otherwise omit.
-- No real provider tokens, payment SDK, active purchase endpoints or deploy.
+**PR A — Production-grade integration foundation (NO user-facing demo)**
+- Model `FoodProviderCapabilities` and a strict provider registry with fail-closed tests.
+- Provide configuration and account linking only for providers with documented flows, obtained scopes and secure credentials; otherwise capability stays disabled.
+- Add validated typed menu, variant, quote, order-attempt and provider receipt contracts, without fabricated restaurant inventory.
+- Reuse and extend the existing checkout validation/canonicalization, explicit approval policy, persisted idempotency key and post-submit reconciliation path; test every state transition.
+- Add an adapter for the **first actually authorized integration** once partner documentation and credentials are supplied. Do not guess private Uber Consumer Delivery endpoints from unrelated Eats Marketplace APIs.
+- Wire a real-data-only UI behind an environment/feature gate after the provider returns authentic restaurant/menu/quote data; no fake UI cards in production.
+- Add realistic contract/integration tests with isolated in-process stubbed HTTP; they are tests, not a demo delivered to users. Verify CI and on-device workflow when credentials are available.
+- Keep production checkout and voice agent unsynced until explicit approval + the gates above pass.
 
-**Not in PR A:** full 5-provider scraping, full marketplace comparison, access to real Uber Consumer Delivery scopes, orders/payments, live agent tool sync, production deployment, Dynamic Island delivery ETA, or claims of confirmed restaurants.
+**Not in PR A without access:** pretend integration or discovery, fake prices, unapproved payments/orders, full 5-provider comparison, app-store release, production deployments or unauthorized provider API calls.
 
 ## Decision log
 
-**Approved direction from product conversation:** Do Phase 0 research and produce safety-first architecture; stage a proposal for review. **Not approved or executed:** using real accounts, live merchant outreach, credential creation, paying, ordering, changing production services, changing the live voice agent, or merging a PR.
+**Approved direction from product conversation:** The owner rejected demos; the next engineering work must target **real integrations only**, not fictional user-facing MVP output. Research and production-grade contracts may proceed. **Not approved or executed:** using real accounts, live merchant outreach, credential creation, paying, ordering, changing production services, changing the live voice agent, or merging a PR.
 
-**Recommended next action:** approve PR A and get a direct response from the Uber Consumer Delivery team about Poland eligibility. Consider one Warsaw restaurant + Wolt Drive as a separate pilot while consumer marketplace access is being negotiated.
+**Provider blocking fact (verified 2026-11-11):** Uber Consumer Delivery detailed specifications, test credentials and scopes are granted case-by-case; the official linked SurveyMonkey intake resolves to a CLOSED SURVEY. Do not misrepresent Eats Marketplace merchant Orders API as a consumer checkout workaround.
+
+**Recommended next action:** secure a direct Uber Consumer Delivery partnership contact and eligibility confirmation for Poland, and/or a named Warsaw restaurant authorized to take direct orders plus Wolt Drive/Glovo On-Demand for courier dispatch. Then implement the first *genuine* provider flow. Without one of those authorizations, real in-Doddy ordering is blocked.
 
 ---
 *This document is intentionally a source-linked implementation decision draft, not evidence that a provider integration works.*
