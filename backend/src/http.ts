@@ -12,6 +12,7 @@ import type { Store } from "./store.js";
 import { AppError } from "./errors.js";
 import { PAYMENT_SCENARIOS, type PaymentScenario, type PaymentsService } from "./payments/service.js";
 import type { ConnectedAppsService } from "./service.js";
+import type { ShopifyUcpService } from "./shopify/ucp.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
 import type { WebRoutes } from "./web/routes.js";
@@ -30,6 +31,8 @@ export interface HttpDeps {
   tools?: CloudToolsService;
   /** Paying for things (x402). Routes exist only when provided; each says "not set up" until a wallet is. */
   payments?: PaymentsService;
+  /** Live Shopify Shop MCP search and merchant-owned checkout. No payment or order submission. */
+  shopify?: ShopifyUcpService | null;
   verifier: SessionVerifier;
   /** Beta device sign-in (ADR-563). Absent: `POST /v1/session/device` is not found. */
   deviceSessions?: DeviceSessionIssuer | null;
@@ -117,6 +120,14 @@ export function createHandler(deps: HttpDeps) {
         "PUT /v1/tools/access": (userId, body) => tools.setAppAccess(userId, body),
         "POST /v1/tools/prepare": (userId, body) => tools.prepare(userId, body),
         "POST /v1/tools/run": (userId, body) => tools.run(userId, body),
+      }
+    : {};
+
+  const shopify = deps.shopify;
+  const shopifyRoutes: Record<string, (body: unknown) => Promise<unknown>> = shopify
+    ? {
+        "POST /v1/shopify/search": (body) => shopify.search(body),
+        "POST /v1/shopify/checkout": (body) => shopify.prepareCheckout(body),
       }
     : {};
 
@@ -242,7 +253,8 @@ export function createHandler(deps: HttpDeps) {
       const toolsHandler = toolsRoutes[key];
       const handler = routes[key];
       const paymentsHandler = paymentsRoutes[key];
-      if (!handler && !toolsHandler && !toolkitRoute && !paymentsHandler) throw new AppError("not_found");
+      const shopifyHandler = shopifyRoutes[key];
+      if (!handler && !toolsHandler && !toolkitRoute && !paymentsHandler && !shopifyHandler) throw new AppError("not_found");
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
@@ -263,6 +275,13 @@ export function createHandler(deps: HttpDeps) {
       if (scenario && !scenario.success) throw new AppError("invalid_request");
 
       const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
+      if (shopifyHandler) {
+        // Only the iPhone’s full authenticated session reaches the live storefront.
+        // A merchant cart or checkout is never a payment or a placed order.
+        const result = await shopifyHandler(body);
+        status = 200;
+        return send(res, 200, result);
+      }
       if (payments && paymentsHandler) {
         const rawPayments = header(req, "x-doddy-payments-scenario");
         if (rawPayments !== undefined) {
