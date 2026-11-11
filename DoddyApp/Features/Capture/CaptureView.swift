@@ -98,28 +98,32 @@ struct CaptureView: View {
                             Button {
                                 showVintedReview = true
                             } label: {
-                                Label("Review this Vinted listing", systemImage: "tag")
+                                Label(NotificationLanguage.current == .polish ? "Sprawdź ofertę Vinted" : "Review this Vinted listing", systemImage: "tag")
                             }
                             .buttonStyle(SecondaryButtonStyle())
                             .accessibilityIdentifier("capture.reviewVinted")
                             .sheet(isPresented: $showVintedReview) {
                                 VintedListingReviewView(listing: listing)
                             }
-                            Text("The link was shared by you. Doddy does not scan Vinted or verify the seller.")
+                            Text(NotificationLanguage.current == .polish
+                                 ? "Link został udostępniony przez Ciebie. DODDY nie skanuje Vinted ani nie sprawdza sprzedawcy."
+                                 : "The link was shared by you. Doddy does not scan Vinted or verify the seller.")
                                 .font(.footnote).foregroundStyle(Theme.secondaryText)
                         }
                         if isShared, let url = BookingService.sharedBookingURL(in: text) {
                             Button {
                                 showBookingShortcut = true
                             } label: {
-                                Label("Save this booking link in My services", systemImage: "calendar.badge.plus")
+                                Label(NotificationLanguage.current == .polish ? "Zapisz usługodawcę w Moich usługach" : "Save this booking link in My services", systemImage: "calendar.badge.plus")
                             }
                             .buttonStyle(SecondaryButtonStyle())
                             .accessibilityIdentifier("capture.saveBookingLink")
                             .sheet(isPresented: $showBookingShortcut) {
                                 MyServicesView(initialBookingURL: url)
                             }
-                            Text("This saves a local shortcut, not a reservation. Book directly with the service.")
+                            Text(NotificationLanguage.current == .polish
+                                 ? "Zapiszesz skrót na iPhonie, nie rezerwację. Wizytę potwierdź u usługodawcy."
+                                 : "This saves a local shortcut, not a reservation. Book directly with the service.")
                                 .font(.footnote).foregroundStyle(Theme.secondaryText)
                         }
                         Text("What would you like to keep?").font(.subheadline)
