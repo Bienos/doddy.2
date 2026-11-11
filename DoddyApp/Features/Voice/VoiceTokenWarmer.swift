@@ -1,6 +1,7 @@
 import AVFAudio
 import DoddyCore
 import Foundation
+import Observation
 import UIKit
 import os
 
@@ -16,10 +17,7 @@ import os
 final class VoiceTokenWarmer {
     static let shared = VoiceTokenWarmer()
 
-    private var shelf = VoiceTokenShelf()
-    /// Bumped by every `clear()`, so a fetch that was running when the shelf was cleared keeps nothing.
-    private var epoch = 0
-    private var warming: Task<Void, Never>?
+    private let supply = VoiceTokenSupply()
     private var observers: [NSObjectProtocol] = []
     private static let log = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
 
@@ -33,8 +31,28 @@ final class VoiceTokenWarmer {
             Task { @MainActor in VoiceTokenWarmer.shared.warmIfDue() }
         })
         observers.append(center.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
-            Task { @MainActor in if Self.paused { VoiceTokenWarmer.shared.clear() } }
+            Task { @MainActor in
+                if Self.paused { VoiceTokenWarmer.shared.clear() }
+                else { VoiceTokenWarmer.shared.warmIfDue() }
+            }
         })
+        observeSignIn()
+        warmIfDue()
+    }
+
+    /// Foreground can arrive before the account restore or first sign-in finishes. Reconsider
+    /// readiness then, instead of waiting for a trip to the background and back.
+    private func observeSignIn() {
+        withObservationTracking {
+            _ = DoddyAccountModel.shared.session
+            _ = VoiceAuthSession.shared.isSignedIn
+            _ = VoiceAuthSession.shared.isLoading
+        } onChange: {
+            Task { @MainActor in
+                VoiceTokenWarmer.shared.observeSignIn()
+                VoiceTokenWarmer.shared.warmIfDue()
+            }
+        }
     }
 
     private static var paused: Bool { UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) }
@@ -46,40 +64,41 @@ final class VoiceTokenWarmer {
     }
 
     /// Asks for a token now if the rules allow it.
-    func warmIfDue(now: Date = .now) {
-        guard warming == nil, !Self.paused, VoiceProviderConsent.isGranted(),
+    func warmIfDue() {
+        guard UIApplication.shared.applicationState == .active,
+              !Self.paused, VoiceProviderConsent.isGranted(),
               AVAudioApplication.shared.recordPermission == .granted,
               VoiceSessionController.runningConversation == nil,
               case .tokenServer(let endpoint) = VoiceConfig.connectionMode,
-              VoiceAuthSession.shared.hasVoiceAccess(), let owner = Self.owner,
-              shelf.shouldWarm(endpoint: endpoint, owner: owner, now: now) else { return }
-        shelf.warmStarted(now: now)
-        let started = epoch
-        warming = Task { @MainActor in
-            defer { warming = nil }
-            let token = try? await VoiceTokenClient(endpoint: endpoint).fetchToken()
-            // Cleared (sign-out, Pause all, consent withdrawn) or another account while it was fetched.
-            guard started == epoch, owner == Self.owner, let token else {
-                Self.log.notice("token shelf: nothing kept")
-                return
-            }
-            shelf.store(token, endpoint: endpoint, owner: owner, fetchedAt: .now)
-            Self.log.notice("token shelf: one kept")
+              VoiceAuthSession.shared.hasVoiceAccess(), let owner = Self.owner else { return }
+        if supply.warm(endpoint: endpoint, owner: owner, fetch: Self.fetch) {
+            Self.log.notice("token shelf: preparing one")
         }
     }
 
     /// The token for this start, if one is held and still good; gone from the shelf either way. A start
     /// whose token fails to connect asks again and gets a fresh one: nothing here is handed out twice.
-    func take(endpoint: URL, now: Date = .now) -> String? {
-        guard !Self.paused, VoiceProviderConsent.isGranted() else { clear(); return nil }
-        return shelf.take(endpoint: endpoint, owner: Self.owner, now: now)
+    func token(endpoint: URL) async throws(VoiceTokenError) -> VoiceTokenSupply.Token {
+        guard !Self.paused, VoiceProviderConsent.isGranted() else { clear(); throw .cancelled }
+        guard let owner = Self.owner else { throw .sessionExpired }
+        let token = try await supply.token(endpoint: endpoint, owner: owner, fetch: Self.fetch)
+        guard !Self.paused, VoiceProviderConsent.isGranted(), owner == Self.owner else {
+            clear()
+            throw .cancelled
+        }
+        return token
+    }
+
+    private static func fetch(_ endpoint: URL) async -> Result<String, VoiceTokenError> {
+        do throws(VoiceTokenError) {
+            return .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+        } catch {
+            return .failure(error)
+        }
     }
 
     /// Sign-out, account change, Pause all, consent withdrawn: nothing held survives.
     func clear() {
-        epoch += 1
-        shelf.clear()
-        warming?.cancel()
-        warming = nil
+        supply.clear()
     }
 }

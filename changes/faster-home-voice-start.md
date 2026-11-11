@@ -1,0 +1,4 @@
+Voice startup: a tap joins the token preparation already running instead of fetching twice; preparation also follows foreground sign-in/consent and a conversation ended by the user. No room or microphone opens before the user's start.
+Home's tap through the first SDK speaking event is logged as seconds and token source only; this is not a measurement of audible playback or a promise of instant audio.
+Constitution evidence: DOD-01 (remove duplicate startup work), DOD-08/11 (real SDK events, single-use account/server-bound tokens, late results rejected after clear); enforced by VoiceTokenSupply, VoiceTokenWarmer and VoiceSessionController. Tests: VoiceTokenSupplyTests, VoiceTokenShelfTests, VoiceStartTimelineTests; results recorded in the PR.
+No server deployment or live agent change required. iOS/device verification and measured tap-to-audible-speech latency remain to be recorded.

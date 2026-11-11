@@ -88,13 +88,14 @@ final class HomeConversation {
     /// conversation. Otherwise it starts here when the account and voice-data gate is already
     /// passed; when it isn't, the transcript opens on that gate, which starts the conversation.
     func talk(store: MemoryStore, profile: ApprovedProfile) {
+        let requestedAt = ProcessInfo.processInfo.systemUptime
         if let live {
             Task { await live.stop() }
             return
         }
         Task {
             if await Self.canStartInPlace() {
-                await start(store: store, profile: profile)
+                await start(store: store, profile: profile, requestedAt: requestedAt)
             } else {
                 ShortcutRouter.shared.isVoicePresented = true
             }
@@ -122,7 +123,7 @@ final class HomeConversation {
         return true
     }
 
-    private func start(store: MemoryStore, profile: ApprovedProfile, wakeGreeting: String? = nil) async {
+    private func start(store: MemoryStore, profile: ApprovedProfile, wakeGreeting: String? = nil, requestedAt: Double? = nil) async {
         // One conversation at a time (ADR-496): one starting or live elsewhere is the one Home shows.
         if let running = VoiceSessionController.runningConversation {
             controller = running
@@ -130,6 +131,6 @@ final class HomeConversation {
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
-        await controller.start(VoiceConfig.connectionMode, profile: profile, wakeGreeting: wakeGreeting)
+        await controller.start(VoiceConfig.connectionMode, profile: profile, wakeGreeting: wakeGreeting, requestedAt: requestedAt)
     }
 }

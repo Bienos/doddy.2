@@ -24,6 +24,8 @@ public enum VoiceStartStage: String, CaseIterable, Sendable {
 public enum VoiceTokenSource: String, Sendable {
     /// Fetched ahead of time (`VoiceTokenShelf`).
     case shelf = "token shelf"
+    /// A press joined the fetch ahead that was still running, without a second request.
+    case warming = "token warming"
     /// Fetched at the press.
     case fetched = "token fetched"
 }

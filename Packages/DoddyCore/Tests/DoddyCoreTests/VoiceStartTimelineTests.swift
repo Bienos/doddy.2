@@ -47,6 +47,7 @@ final class VoiceStartTimelineTests: XCTestCase {
         timeline.mark(.connect, at: 1)
         XCTAssertEqual(timeline.line(at: 1, token: .shelf), "connect 1.00 s · total 1.00 s · token shelf")
         XCTAssertEqual(timeline.line(at: 1, token: .fetched), "connect 1.00 s · total 1.00 s · token fetched")
+        XCTAssertEqual(timeline.line(at: 1, token: .warming), "connect 1.00 s · total 1.00 s · token warming")
         XCTAssertEqual(timeline.line(at: 1), "connect 1.00 s · total 1.00 s")
     }
 }
