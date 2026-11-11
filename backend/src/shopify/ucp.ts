@@ -168,7 +168,7 @@ export class ShopifyUcpService {
   private readonly send: ShopFetch;
   constructor(fetcher: ShopFetch = fetch) { this.send = fetcher; }
 
-  private async call(name: "search_catalog" | "get_product" | "create_cart" | "create_checkout", args: JsonObj): Promise<JsonObj> {
+  private async call(name: "search_catalog" | "lookup_catalog" | "create_cart" | "create_checkout", args: JsonObj): Promise<JsonObj> {
     let response: Response;
     try {
       response = await this.send(SHOP_MCP, {
@@ -239,15 +239,16 @@ export class ShopifyUcpService {
     const { variantId, shop, quantity } = parsed.data;
 
     // Read the selected offer again, rather than trusting the client-supplied shop/price.
-    const found = await this.call("get_product", {
-      catalog: { id: variantId, context: { address_country: SHOP_COUNTRY, currency: SHOP_CURRENCY },
+    // Shopify's get_product expects a *product* ID (gid://shopify/p/...), not a
+    // variant ID. lookup_catalog explicitly supports variant IDs and reports exact matches.
+    const found = await this.call("lookup_catalog", {
+      catalog: { ids: [variantId], context: { address_country: SHOP_COUNTRY, currency: SHOP_CURRENCY },
         filters: { ships_to: { country: SHOP_COUNTRY }, available: true } },
     });
-    const rootProduct = obj(found.product);
-    const product = rootProduct ? parseProduct(rootProduct) : null;
-    const alternatives = Array.isArray(found.products) ? found.products.map(parseProduct).filter((p): p is ShopProduct => !!p) : [];
-    const offer = [ ...(product ? [product] : []), ...alternatives]
-      .flatMap(p => p.variants).find(v => v.variantId === variantId && v.shop === shop && v.available);
+    const verifiedProducts = Array.isArray(found.products)
+      ? found.products.map(parseProduct).filter((p): p is ShopProduct => !!p) : [];
+    const offer = verifiedProducts.flatMap(p => p.variants)
+      .find(v => v.variantId === variantId && v.shop === shop && v.available);
     if (!offer) throw new AppError("refused", { message: "This product or merchant is no longer available. Search again." });
 
     // Shop MCP is the only egress endpoint, independent of the merchant domain.
