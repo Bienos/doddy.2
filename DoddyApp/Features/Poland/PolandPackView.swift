@@ -272,10 +272,10 @@ private enum PolandPackFetcher {
         return bytes
     }
     static func weather(_ city: PolandCity) async throws -> PolandWeather {
-        try JSONDecoder().decode(PolandWeather.self, from: data(PolandOpenData.weatherURL(city: city)))
+        try JSONDecoder().decode(PolandWeather.self, from: await data(PolandOpenData.weatherURL(city: city)))
     }
     static func warnings(_ city: PolandCity) async throws -> PolandWarnings {
-        try PolandWarnings.parse(data(PolandOpenData.warningsURL), city: city)
+        try PolandWarnings.parse(await data(PolandOpenData.warningsURL), city: city)
     }
     static func exchangeRates() async -> [PolandExchangeRate] {
         async let eur = exchangeRate("EUR")
