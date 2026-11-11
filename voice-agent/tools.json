@@ -3984,7 +3984,7 @@
     {
       "type": "function",
       "name": "shopify_search",
-      "description": "Search real Shopify merchant offers using Doddy's live Shop MCP backend. Use when the user asks to find a real product to buy or shop at a Shopify merchant, especially in Poland. Pass only the user's product search words; do not invent prices, shops, availability or items. The tool returns up to five numbered, provider-verified offers with a catalog price excluding unquoted shipping/tax; the iPhone displays those offers. Respond briefly with the best available items and the source (Shopify), and ask which NUMBER the user wants. Prices may change at merchant checkout. If no results or failed, say so: never fill in fictitious offers. For a deep multi-store comparison or Polish leaflet bargains use hand_over_errand/find_deals instead. Search does not create a cart, buy anything or access payment data.",
+      "description": "Search real Shopify merchant offers using Doddy's live Shop MCP backend. Use when the user asks to find a real product to buy or shop at a Shopify merchant, especially in Poland. Pass only the user's product search words; do not invent prices, shops, availability or items. The tool returns up to five numbered, provider-verified offers with a catalog price excluding unquoted shipping/tax; the iPhone displays those offers. Respond briefly with the best available items and the source (Shopify), and ask which NUMBER the user wants. Prices may change at merchant checkout. If no results or failed, say so: never fill in fictitious offers. For a deep multi-store comparison or Polish leaflet bargains use hand_over_errand/find_deals instead. Before contacting Shopify, the iPhone shows exactly the search words that will leave Doddy and requires the user's yes or tap (ASK-01). A spoken yes is allowed for this read, not for checkout. Search does not create a cart, buy anything or access payment data.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -4000,8 +4000,8 @@
       "x_doddy": {
         "runs_on": "phone",
         "confirm_on_screen": false,
-        "ask": "runs_now",
-        "speak_before": "auto",
+        "ask": "yes_or_tap",
+        "speak_before": "force",
         "timeout_secs": 45,
         "elevenlabs_tool_id": "not_synced"
       }
