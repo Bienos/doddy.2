@@ -184,6 +184,9 @@ const schema = z.object({
   SHOPPING_MAX_OFFER_SEARCHES: z.coerce.number().int().min(1).max(20).default(8),
   SHOPPING_MAX_PAGE_CHECKS: z.coerce.number().int().min(1).max(40).default(15),
   SERPER_API_KEY: z.string().min(8).optional(),
+  // eBay Browse API: read-only used-item results (credentials stay on the server).
+  EBAY_CLIENT_ID: z.string().min(5).optional(),
+  EBAY_CLIENT_SECRET: z.string().min(5).optional(),
   // Affiliate links (ADR-612): {"shop host": "https template with one {url}"}. Empty by default, so no link is
   // tracked until the owner has a programme with a shop. See docs/implementation/SHOPPING.md.
   AFFILIATE_LINKS: z.string().default("").transform((v, ctx) => {
@@ -325,6 +328,7 @@ export interface ErrandSettings {
 export interface ShoppingSettings {
   model: string; premiumModel: string; premiumAccountIds: string[];
   effort: ErrandEffort; maxOfferSearches: number; maxPageChecks: number; serperApiKey?: string;
+  ebayClientId?: string; ebayClientSecret?: string;
   affiliateRules: AffiliateRule[];
 }
 
@@ -501,6 +505,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       maxOfferSearches: e.SHOPPING_MAX_OFFER_SEARCHES,
       maxPageChecks: e.SHOPPING_MAX_PAGE_CHECKS,
       serperApiKey: e.SERPER_API_KEY,
+      ebayClientId: e.EBAY_CLIENT_ID,
+      ebayClientSecret: e.EBAY_CLIENT_SECRET,
       affiliateRules: e.AFFILIATE_LINKS,
     },
     dealsSettings: {
