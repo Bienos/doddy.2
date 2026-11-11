@@ -61,6 +61,8 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
+    /// Real delivery-provider handoff and Apple Maps lookup; no in-Doddy purchases.
+    @State private var showFoodDelivery = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -126,6 +128,7 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showFoodDelivery) { FoodDeliveryView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
@@ -289,6 +292,10 @@ struct HomeView: View {
                     Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                         .accessibilityIdentifier("home.deals")
                 }
+                // Real external ordering pages (Uber Eats, Glovo, Wolt, Pyszne.pl, Bolt Food).
+                // Checkout stays with each provider; opening a page never counts as an order.
+                Button { showFoodDelivery = true } label: { Label("Order food", systemImage: "fork.knife") }
+                    .accessibilityIdentifier("home.foodDelivery")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
                 // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
                 if scope.shows(.following) {
