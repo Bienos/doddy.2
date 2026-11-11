@@ -71,7 +71,7 @@ final class ShopifyVoiceToolTests: XCTestCase {
     func testShopifyIsInTheVoiceCatalogAndOwnedByShoppingFeature() {
         let byName = Dictionary(uniqueKeysWithValues: ToolCatalog.all.map { ($0.name, $0) })
         XCTAssertEqual(byName[VoiceToolName.shopifySearch]?.effect, .lookup)
-        XCTAssertEqual(byName[VoiceToolName.shopifySearch]?.approval, .runsNow)
+        XCTAssertEqual(byName[VoiceToolName.shopifySearch]?.approval, .askFirst)
         XCTAssertEqual(byName[VoiceToolName.shopifyPrepareCheckout]?.effect, .handoff)
         XCTAssertEqual(byName[VoiceToolName.shopifyPrepareCheckout]?.approval, .card)
         XCTAssertEqual(Feature.shopifyShopping.tools, [VoiceToolName.shopifySearch, VoiceToolName.shopifyPrepareCheckout])
