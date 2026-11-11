@@ -127,7 +127,7 @@ public struct SharedVintedListing: Equatable, Sendable {
         let asking = askingPrice.trimmingCharacters(in: .whitespacesAndNewlines)
         guard (3...120).contains(name.count), !name.contains("://"),
               !name.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains),
-              (asking.isEmpty || (asking.count <= 9 && asking.allSatisfy({ $0.isNumber || $0 == "," || $0 == "." }))) else { return nil }
+              (asking.isEmpty || asking.range(of: #"^[0-9]{1,6}(?:[,.][0-9]{1,2})?$"#, options: .regularExpression) != nil) else { return nil }
         let price = asking.isEmpty ? "" : (polish ? " Cena podana przeze mnie: \(asking) zł." : " My stated asking price: PLN \(asking).")
         return polish
             ? "Porównaj ceny używanego produktu \(name) z cenami nowych i używanych odpowiedników w Polsce. Podaj tylko ceny, które można zweryfikować w źródłach. To nie jest weryfikacja autentyczności przedmiotu z Vinted.\(price)"
