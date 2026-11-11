@@ -74,7 +74,7 @@ public enum AskFirst {
     /// per search (ADR-489); the weather and Wikipedia ones run on ElevenLabs (`ToolCatalog.webLookups`).
     public static let publicLookups: Set<String> = Set([
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
-        CloudToolName.webSearch, "news_search", "find_places", VoiceToolName.shopifySearch,
+        CloudToolName.webSearch, "news_search", "find_places",
     ]).union(ToolCatalog.webLookups)
 
     /// Every request has an answer here; the switch has no default, so a new tool doesn't compile
