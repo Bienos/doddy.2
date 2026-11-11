@@ -116,6 +116,11 @@ struct ShareView: View {
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+            if let service = item.connectedService {
+                Text(service.shareHint)
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("share.serviceHint")
+            }
             Text("Doddy opens this on the capture screen next time you open the app. Nothing is saved until you tap Save there.")
                 .font(.footnote).foregroundStyle(.secondary)
             if model.replacesWaiting {
