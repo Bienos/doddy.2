@@ -186,6 +186,10 @@ public enum ToolCatalog {
         // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
         // changes; it asks first until the owner decides whether it joins the public look-ups.
         .init(VoiceToolName.findDeals, .lookup, .askFirst),
+        // Live Shopify catalog from Shop MCP (no user secrets), then an external merchant cart
+        // created ONLY after the user's tap; never a completed order or payment.
+        .init(VoiceToolName.shopifySearch, .lookup, .runsNow),
+        .init(VoiceToolName.shopifyPrepareCheckout, .handoff, .card),
         // Paying for one web page (ADR-734 to 736; off by default, not on the live agent). The agent only
         // names the page; Doddy's server's own terms are on the payment card, and only a tap (plus the typed
         // amount from the threshold) and a fresh Face ID start it. Counted as a handoff because it hands one
