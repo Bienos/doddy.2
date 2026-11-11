@@ -50,7 +50,7 @@ last, because it translates the English pages that `build_blog.py` and `build_da
 (in the `checks` group) checks that.
 
 Voice startup regression tests (no provider calls or microphone):
-`swift test --package-path Packages/DoddyCore --filter 'VoiceTokenSupplyTests|VoiceTokenShelfTests|VoiceStartTimelineTests'`
+`swift test --package-path Packages/DoddyCore --filter 'VoiceTokenSupplyTests|VoiceTokenShelfTests|VoiceStartTimelineTests|VoiceNetworkPreparationTests'`
 (on Linux add the same flags as `make test-core`). These cover an unfinished warm-up joined by a press,
 single use under concurrent presses, late answers after clear/sign-out, different servers, refusal without
 duplicate retries, and the existing expiry/cool-down rules. On an iPhone, test a tap just after opening,
@@ -58,6 +58,14 @@ after sign-in/consent and after ending a conversation; end while connecting and 
 pending. Check `voice-audio`: one request when the tap joins a warm-up (`token warming`), then
 `voice first speaking event after start`. Measure audible playback separately; an SDK speaking event can
 arrive before audio. No device latency has been measured for this fix.
+
+Provider network preparation: `VoiceNetworkPreparationTests` covers every permission/readiness gate,
+the two-minute request budget and its independence from token use, plus content-free SDK timing formatting.
+The native `DoddyTests/VoiceNetworkHostTests` checks our prewarm host against the pinned ElevenLabs
+SDK using its offline provided-token path. On a device, compare cold/warm room and agent-ready timings
+(`voice transport timing`) and separately measure audible speech; no room or microphone should start
+before a tap. The prewarm log says requested, because LiveKit's internal HEAD runs asynchronously and
+swallows network failures; it cannot establish that a connection was prepared or the HEAD succeeded.
 
 ### Gateway (Node, no network, no keys)
 

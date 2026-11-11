@@ -1,0 +1,4 @@
+Voice readiness now requests LiveKit network preparation in parallel with the token, at most once per two minutes, so Talk never waits for it. No room join, microphone, credential or personal context before the user's start.
+Decision `2026-11-11-prepare-voice-network` records the pinned SDK's HEAD-only behavior, separate live Room, permissions and limits; no device latency saving is claimed.
+Actual SDK room/microphone, agent-ready, init and total timings are logged as fixed words and durations. Rules DOD-01/08/11: VoicePreparationConditions + VoiceNetworkPreparationPolicy + VoiceTokenWarmer, with VoiceNetworkPreparationTests and native VoiceNetworkHostTests; results recorded in the PR.
+No live agent change, dependency update or server deploy required. Native and device verification are recorded separately in the PR.
