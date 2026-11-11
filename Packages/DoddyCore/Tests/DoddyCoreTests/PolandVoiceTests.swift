@@ -7,6 +7,11 @@ final class PolandVoiceTests: XCTestCase {
 
     func testPolishAliasesResolveOnlySupportedCities() {
         XCTAssertEqual(PolishContext.city("Wawa"), .warszawa)
+        XCTAssertEqual(PolishContext.city("w Warszawie"), .warszawa)
+        XCTAssertEqual(PolishContext.city("w Krakowie"), .krakow)
+        XCTAssertEqual(PolishContext.city("we Wrocławiu"), .wroclaw)
+        XCTAssertEqual(PolishContext.city("w Gdańsku"), .gdansk)
+        XCTAssertEqual(PolishContext.city("w Poznaniu"), .poznan)
         XCTAssertEqual(PolishContext.city("Kraków"), .krakow)
         XCTAssertEqual(PolishContext.city("Gdansk"), .gdansk)
         XCTAssertEqual(PolishContext.city("Wrocław"), .wroclaw)
