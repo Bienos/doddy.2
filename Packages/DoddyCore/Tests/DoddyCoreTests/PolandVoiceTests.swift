@@ -61,7 +61,7 @@ final class PolandVoiceTests: XCTestCase {
                                        pauseAll: false, isOn: { _ in true }), .run)
         let activity = ActivityRequest.describe(request, calendar: .current)
         XCTAssertEqual(activity?.title, "Checked Polish public data")
-        XCTAssertTrue(activity?.detail.contains("Warszawa") == true)
+        XCTAssertTrue(activity?.detail?.contains("Warszawa") == true)
     }
 
     func testVoiceRatesDoNotRequireLocation() {
