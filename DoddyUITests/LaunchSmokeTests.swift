@@ -26,6 +26,23 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testFoodDeliveryOpensVerifiedProviderHandoffScreen() {
+        let app = launch(onboardingDone: true)
+        let more = app.buttons["home.more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        more.tap()
+        let food = app.buttons["home.foodDelivery"]
+        XCTAssertTrue(food.waitForExistence(timeout: 5))
+        food.tap()
+        let uber = app.descendants(matching: .any).matching(identifier: "food.provider.uberEats").firstMatch
+        let glovo = app.descendants(matching: .any).matching(identifier: "food.provider.glovo").firstMatch
+        XCTAssertTrue(uber.waitForExistence(timeout: 5))
+        XCTAssertTrue(glovo.exists)
+        XCTAssertTrue(app.textFields["food.search.city"].exists)
+        // Never tap an external provider link in a smoke test: this tests a real handoff, not an order.
+    }
+
+    @MainActor
     func testFirstLaunchLandsOnHomeAndOptionalConversationCanBeSkipped() {
         let app = launch(onboardingDone: false, firstVisit: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
