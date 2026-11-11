@@ -2986,7 +2986,21 @@ final class VoiceSessionController {
         case .followNews(let ask):
             // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). Said from the list as it is
             // kept on this iPhone after the write, never assumed (ADR-657).
-            await reply(call.toolCallId, VoiceToolReply.newsFollow(FollowingModel.shared.follow(ask)))
+            let outcome = FollowingModel.shared.follow(ask.base)
+            var alertResult: NewsFollowAlertResult?
+            if let alertAsk = ask.alertAsk {
+                // The alert applies to a follow that was just added or that the person already had; the radar's own
+                // sync says whether Doddy's server kept it.
+                switch outcome {
+                case .added(let follow), .alreadyFollowing(let follow):
+                    let kept = await FollowingModel.shared.apply(alertAsk.alert(followID: follow.id), to: follow)
+                    alertResult = kept
+                        ? .kept(FollowingModel.shared.alert(for: follow))
+                        : .hereOnly(reason: FollowingModel.shared.radarProblem ?? "")
+                case .full, .notKept: break
+                }
+            }
+            await reply(call.toolCallId, VoiceToolReply.newsFollow(outcome, alert: alertResult))
         case .startStopwatch(let label):
             // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). One stopwatch at a time: a
             // second start reports the one running and changes nothing (ADR-652).
