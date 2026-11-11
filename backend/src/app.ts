@@ -25,6 +25,7 @@ import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./provi
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
 import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
+import { UsageLimiter } from "./policy.js";
 import { ShopifyUcpService } from "./shopify/ucp.js";
 import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
@@ -225,6 +226,7 @@ export async function buildApp(
     tools,
     payments,
     shopify,
+    shopifyLimiter: shopify ? new UsageLimiter(store, config.limits) : undefined,
     verifier,
     deviceSessions,
     web,
