@@ -42,6 +42,20 @@ RUNS_NOW_MODES = {"start_translator", "stop_translator"}
 # A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
 # decision docs/decisions/2026-11-09-restaurant-calls-one-tap.md). Only on the phone; never to anyone else.
 RUNS_NOW_OWN_TEXT = {"text_me"}
+# Since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once): what the user asks for is the yes. Looks at
+# their own things, and Doddy's own small actions that are undone in one step, run at once. The same two lists
+# are `AskFirst.ownLooks` and `AskFirst.ownSmallActions` in DoddyCore; `ToolCatalogTests` keeps tools.json in step.
+RUNS_NOW_OWN_LOOKS = {"search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
+                      "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
+                      "check_focus", "check_errands", "find_deals"}
+RUNS_NOW_SMALL_ACTIONS = {"start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
+                          "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap"}
+# Reads through Doddy's server (an inbox, a calendar, a page, Claude writing something): the server still makes
+# a single-use approval for exactly the call, and the app uses it straight away.
+RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search_notion", "read_notion_page", "check_outlook_email",
+                         "read_outlook_email", "read_outlook_calendar", "read_google_calendar", "list_todoist_tasks",
+                         "ask_claude", "make_document"}
+RUNS_NOW = PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT | RUNS_NOW_OWN_LOOKS | RUNS_NOW_SMALL_ACTIONS | RUNS_NOW_SERVER_READS
 APP_INSTRUCTIONS = SPEC / "instructions.md"
 
 
@@ -222,9 +236,10 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: x_doddy.elevenlabs_tool_id must be the live tool id, or 'not_synced' until it is synced")
         if x.get("runs_on") == "phone" and f'"{name}"' not in swift:
             errors.append(f"tool {name}: runs on the phone but no Swift source names it, so the app would answer it as unsupported")
-        # ASK-01 (ADR-483): every tool asks first, except public lookups that run at once (ADR-575).
-        # The app can only ask for a tool it runs itself, a change needs a tap on a card, and the
-        # agent always says what it is about to do before an ask.
+        # ASK-01 (ADR-483) as it stands since 11 Nov 2026: a tool that changes, sends, deletes, calls or pays asks
+        # first with a card; public lookups (ADR-575) and what the user asks to see or start of their own run at
+        # once (decision 2026-11-11-asked-for-runs-at-once). The app can only ask for a tool it runs itself, a
+        # change needs a tap on a card, and the agent always says what it is about to do before an ask.
         runs_now = x.get("ask") == "runs_now"
         if x.get("runs_on") != "phone" and not runs_now:
             errors.append(f"tool {name}: ASK-01 needs every tool that asks to run on the phone, where the app asks first; only a runs_now lookup may run on the web")
@@ -232,8 +247,10 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: x_doddy.ask must be one of {sorted(ASK)} (ASK-01)")
         if (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
             errors.append(f"tool {name}: x_doddy.ask 'tap' and confirm_on_screen go together (ASK-01)")
-        if runs_now and name not in PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT:
-            errors.append(f"tool {name}: only the public lookups {sorted(PUBLIC_LOOKUPS)}, translator start/stop and text_me may run without asking (ADR-575, ADR-619, decision 2026-11-09-restaurant-calls-one-tap)")
+        if runs_now and name not in RUNS_NOW:
+            errors.append(f"tool {name}: only the public lookups, translator start/stop, text_me, looks at the user's own things and Doddy's own small actions may run without asking (ADR-575, ADR-619, decisions 2026-11-09-restaurant-calls-one-tap and 2026-11-11-asked-for-runs-at-once); a tool that changes, sends, deletes, calls or pays keeps its card")
+        if not runs_now and name in RUNS_NOW:
+            errors.append(f"tool {name}: runs at once in the app (decision 2026-11-11-asked-for-runs-at-once), so x_doddy.ask must be 'runs_now'")
         if runs_now and name in RUNS_NOW_OWN_TEXT and x.get("runs_on") != "phone":
             errors.append(f"tool {name}: a text without a card runs only on the phone, after the app checks Texts from Doddy")
         if not runs_now and x.get("speak_before") != "force":

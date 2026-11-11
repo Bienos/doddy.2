@@ -197,14 +197,16 @@ struct HomeView: View {
                 if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
                 }
-                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
-                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
-                if conversation.live != nil, scope.shows(Feature.messages) {
-                    showScreenButton
-                }
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
                 Spacer()
+                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
+                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
+                // On the trailing side, beside the menu (owner, 11 Nov 2026: "ta kropka w złym miejscu, bo
+                // zasłania"): next to the transcript capsule iOS's round record glyph sat on the wordmark.
+                if conversation.live != nil, scope.shows(Feature.messages) {
+                    showScreenButton
+                }
                 moreMenu
             }
         }

@@ -52,17 +52,20 @@ final class DealsFurtherTests: XCTestCase {
         XCTAssertNil(DealsFurther(leaflets: [], searches: [DealsItemSearch(item: "a", links: [DealsSearchLink(shop: "X", url: "ftp://x")])]).openable)
     }
 
-    func testTheAskCardIsInPolishWhenTheAppIs() {
+    func testTheLeafletCardIsInPolishWhenTheAppIsAndTheSearchRunsAtOnce() {
         let deals = DealsRequest(items: ["masło", "kawa mielona"], chains: [.lidl, .kaufland])
-        XCTAssertEqual(AskFirst.need(for: .findDeals(deals), polish: true), .yesFirst(AskCard(
+        // Decision 2026-11-11-asked-for-runs-at-once: in either language the search runs at once, no card.
+        XCTAssertEqual(AskFirst.need(for: .findDeals(deals), polish: true), .runsNow)
+        XCTAssertEqual(AskFirst.need(for: .findDeals(deals)), .runsNow)
+        // The card builder still says it in the app's language.
+        XCTAssertEqual(DealsAsk.card(deals, polish: true), AskCard(
             title: "Sprawdzić tegotygodniowe gazetki?",
             lines: [
                 "Produkty: masło, kawa mielona",
                 "Sklepy: Lidl, Kaufland (tylko link do gazetki)",
                 "Doddy czyta gazetki na swoim serwerze. Do sklepów nie trafia nic, co cię identyfikuje; Rossmann dostaje nazwy produktów jako wyszukiwanie.",
             ],
-            confirmLabel: "Tak, sprawdź")))
-        XCTAssertEqual(AskFirst.need(for: .findDeals(deals)), .yesFirst(DealsAsk.card(deals)), "other languages: the English card, as before")
+            confirmLabel: "Tak, sprawdź"))
         XCTAssertEqual(DealsAsk.card(deals).title, "Check this week's leaflets?")
         XCTAssertEqual(DealsAsk.card(DealsRequest(items: ["masło"]), polish: true).lines[1], "Sklepy: Biedronka, Lidl, Dino, Rossmann, Aldi, Żabka, Delikatesy Centrum, Lewiatan, Natura, Action, sklepy zoologiczne, obuwnicze i dla domu, gdy produkt pasuje")
     }

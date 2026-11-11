@@ -2953,13 +2953,11 @@
   "The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.": "Plik powstaje na tym iPhonie i leży w plikach tymczasowych Doddy'ego, dopóki iOS ich nie wyczyści; żeby go zachować, zapisz go w Keynote lub Plikach. Doddy nie widzi, co z nim robisz, i nigdy go nie wysyła.",
   "How many steps today?": "Ile mam dziś kroków?",
   "How far did I walk yesterday?": "Jaki był wczoraj mój dystans?",
-  "Read one day's steps, walking distance and floors climbed, after you say yes or tap": "Odczytać kroki, przebyty dystans i pokonane piętra z jednego dnia, gdy powiesz tak albo stukniesz",
   "Today and the six days before it, which is what your iPhone keeps": "Dziś i sześć poprzednich dni, bo tyle przechowuje twój iPhone",
   "That day's numbers, when Doddy uses them in a conversation.": "Liczby z tego dnia, gdy Doddy używa ich w rozmowie.",
   "Doddy keeps none of it. Steps come from Motion & Fitness, not from the Health app. iPhone asks once for Motion & Fitness.": "Doddy niczego z tego nie zachowuje. Kroki pochodzą z Ruchu i fitness, nie z aplikacji Zdrowie. iPhone raz pyta o zgodę na Ruch i fitness.",
   "How many photos did I take on Saturday?": "Ile mam zdjęć z soboty?",
   "Show me my photos from last week": "Pokaż mi moje zdjęcia z zeszłego tygodnia",
-  "Count the photos and videos you took on a day or over up to a month, after you say yes or tap": "Policzyć zdjęcia i filmy zrobione jednego dnia albo w okresie do miesiąca, gdy powiesz tak albo stukniesz",
   "Show the newest of them on your screen, with a button to open Photos": "Pokazać najnowsze z nich na twoim ekranie, z przyciskiem otwierającym Zdjęcia",
   "Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.": "Tylko ile ich jest i kiedy zrobiono pierwsze i ostatnie, gdy Doddy używa tego w rozmowie. Nigdy same zdjęcia ani miejsca, w których je zrobiono.",
   "The pictures are shown on this screen only. Doddy never changes, deletes or adds anything in your photo library. If you let Doddy see only some photos, it says so.": "Zdjęcia są pokazywane tylko na tym ekranie. Doddy nigdy niczego nie zmienia, nie usuwa ani nie dodaje w twojej bibliotece zdjęć. Jeśli pozwolisz Doddy'emu widzieć tylko niektóre zdjęcia, powie o tym.",
@@ -3347,5 +3345,7 @@
   "Shops": "Sklepy",
   "Leaflets to check": "Gazetki do sprawdzenia",
   "Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.": "Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje. Nic, co Cię identyfikuje, nie trafia do sklepów; Rossmann dostaje nazwy rzeczy jako wyszukiwanie.",
-  "Every feature is shown in every build (docs/implementation/RELEASE_SCOPE.md). A feature whose server or permission isn't set up says so itself.": "Każda funkcja jest widoczna w każdej wersji (docs/implementation/RELEASE_SCOPE.md). Funkcja, której serwer lub zgoda nie są ustawione, sama to mówi."
+  "Every feature is shown in every build (docs/implementation/RELEASE_SCOPE.md). A feature whose server or permission isn't set up says so itself.": "Każda funkcja jest widoczna w każdej wersji (docs/implementation/RELEASE_SCOPE.md). Funkcja, której serwer lub zgoda nie są ustawione, sama to mówi.",
+  "Read one day's steps, walking distance and floors climbed, when you ask": "Odczytać kroki, przebyty dystans i pokonane piętra z jednego dnia, gdy o to poprosisz",
+  "Count the photos and videos you took on a day or over up to a month, when you ask": "Policzyć zdjęcia i filmy zrobione jednego dnia albo w okresie do miesiąca, gdy o to poprosisz"
 }

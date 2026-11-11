@@ -193,7 +193,7 @@ final class ScreenLookTests: XCTestCase {
 
     // MARK: The voice tool
 
-    func testTheToolIsParsedAsksFirstAndIsLoggedWithoutTheQuestion() {
+    func testTheToolIsParsedRunsAtOnceAndIsLoggedWithoutTheQuestion() {
         XCTAssertEqual(VoiceToolName.lookAtScreen, "look_at_screen")
         let request = VoiceToolRequest.parse(name: "look_at_screen", parametersJSON: Data(#"{"question":"Co mam jej odpisać?"}"#.utf8))
         XCTAssertEqual(request, .lookAtScreen(question: "Co mam jej odpisać?"))
@@ -201,9 +201,10 @@ final class ScreenLookTests: XCTestCase {
         let long = String(repeating: "a", count: ScreenLookRequest.maxQuestionScalars + 1)
         if case .invalid = VoiceToolRequest.parse(name: "look_at_screen", parametersJSON: Data(#"{"question":"\#(long)"}"#.utf8)) {} else { XCTFail("too long") }
 
-        // ASK-01: a read of the person's own screen waits for a spoken yes or a tap, never runs at once.
-        guard case .yesFirst(let card) = AskFirst.need(for: request, polish: true) else { return XCTFail("asks first") }
-        XCTAssertEqual(card, ScreenLookSpeech.askCard(polish: true))
+        // Decision 2026-11-11-asked-for-runs-at-once: the person started screen sharing in iOS's own sheet,
+        // and iOS shows it is on the whole time; that is the yes for Doddy to look while it stays on.
+        XCTAssertEqual(AskFirst.need(for: request, polish: true), .runsNow)
+        XCTAssertEqual(AskFirst.need(for: request), .runsNow)
         XCTAssertFalse(AskFirst.needsTap(AskFirst.need(for: request)))
 
         let logged = ActivityRequest.describe(request, calendar: .current)
@@ -213,7 +214,7 @@ final class ScreenLookTests: XCTestCase {
 
         XCTAssertTrue(ConnectionPause.applies(to: request), "Pause all stops it: the picture goes to a server")
         XCTAssertEqual(CarProfile.decision(for: request), .run, "a look changes nothing")
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.lookAtScreen)?.approval, .askFirst)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.lookAtScreen)?.approval, .runsNow)
         XCTAssertTrue(Feature.messages.tools.contains(VoiceToolName.lookAtScreen), "it comes and goes with Messages")
     }
 

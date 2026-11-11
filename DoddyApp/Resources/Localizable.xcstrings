@@ -16507,13 +16507,13 @@
         }
       }
     },
-    "Count the photos and videos you took on a day or over up to a month, after you say yes or tap": {
+    "Count the photos and videos you took on a day or over up to a month, when you ask": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Policzyć zdjęcia i filmy zrobione jednego dnia albo w okresie do miesiąca, gdy powiesz tak albo stukniesz"
+            "value": "Policzyć zdjęcia i filmy zrobione jednego dnia albo w okresie do miesiąca, gdy o to poprosisz"
           }
         }
       }
@@ -62164,13 +62164,13 @@
         }
       }
     },
-    "Read one day's steps, walking distance and floors climbed, after you say yes or tap": {
+    "Read one day's steps, walking distance and floors climbed, when you ask": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odczytać kroki, przebyty dystans i pokonane piętra z jednego dnia, gdy powiesz tak albo stukniesz"
+            "value": "Odczytać kroki, przebyty dystans i pokonane piętra z jednego dnia, gdy o to poprosisz"
           }
         }
       }
