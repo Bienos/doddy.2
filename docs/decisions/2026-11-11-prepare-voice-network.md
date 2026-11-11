@@ -13,6 +13,8 @@ A signed-in owner is required separately from voice access: the Debug developer 
 
 This does not call `Room.connect`, start an ElevenLabs conversation, publish an audio track, record, or send notes/profile/conversation content. The SDK's live Room is created separately by ElevenLabs. Keep that integration and the pinned packages unchanged.
 
+Remove the Home button's explicit 0.35-second wait before `HomeConversation.talk` as well. Start in the tap's turn and run its hop alongside the connection, preserving its 1.15-second visual cleanup lifetime. This removes a known artificial delay in that button path; the persistent stage's direct tap already calls `HomeConversation.talk` without that delay. Do not claim every tap previously paid it or that it explains all three seconds.
+
 ## What the pinned SDK actually does
 
 - ElevenLabs Swift 3.3.1 (`5bb21c2cdb54bf465f6bb09ce52fc59b0e22aae5`) uses `wss://livekit.rtc.elevenlabs.io` (`Internal/Authorization/ConnectionConstants.swift`). `VoiceNetworkHostTests` compares our constant against `TokenService.fetchConnectionDetails` with a provided dummy token, an offline code path.
