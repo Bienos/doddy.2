@@ -642,8 +642,8 @@ struct HomeView: View {
     /// Which features this build shows (decision 2026-11-07-release-scope). Read each time, so the Debug toggle shows on the next draw.
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 
-    /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under
-    /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.
+    /// Start in the tap's turn (ADR-595), with the hop alongside it. Only animation cleanup waits:
+    /// a decorative hop must never add latency before account, token or provider setup.
     private func talk() {
         guard canTalk else { return }
         guard !reduceMotion, !hideCharacterArt, conversation.live == nil else {
@@ -652,10 +652,10 @@ struct HomeView: View {
         }
         tapHops &+= 1
         perking = true
+        conversation.talk(store: store, profile: profiles.profile)
         Task {
-            try? await Task.sleep(for: .seconds(0.35))
-            conversation.talk(store: store, profile: profiles.profile)
-            try? await Task.sleep(for: .seconds(0.8))
+            // Keep the previous visual lifetime (0.35 + 0.8 s), outside the start path.
+            try? await Task.sleep(for: .seconds(1.15))
             perking = false
         }
     }

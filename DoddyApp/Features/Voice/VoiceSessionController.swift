@@ -866,6 +866,19 @@ final class VoiceSessionController {
                 firstConversation: isFirstConversation),
         ]
         var config = ConversationConfig(dynamicVariables: variables, userId: Self.userID())
+        config.onStartupStateChange = { state in
+            let metrics: ConversationStartupMetrics
+            switch state {
+            case .active(_, let value), .failed(_, let value): metrics = value
+            default: return
+            }
+            let timing = VoiceTransportTiming(room: metrics.roomConnect, agent: metrics.agentReady,
+                                               initialization: metrics.conversationInit, total: metrics.total)
+            Task { @MainActor in
+                guard ref.value != nil else { return }
+                Self.audioLog.notice("voice transport timing: \(timing.line, privacy: .public)")
+            }
+        }
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
         // are sent; the agent must allow these TTS overrides (ADR-105).
         if let tts = VoiceStyle.stored().override {
