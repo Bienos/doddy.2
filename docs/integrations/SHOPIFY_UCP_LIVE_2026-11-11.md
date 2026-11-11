@@ -6,7 +6,7 @@ Date: 2026-11-11. **Implementation PR #332, unmerged.** No fake products or stor
 
 - Shopify turned off Global Catalog **REST** on 2026-11-02. Calls to `discover.shopifyapps.com/global/v2` will fail.
 - Shop MCP at `https://mcp.shop.com/` uses MCP JSON-RPC and Shopify's UCP catalog/cart/checkout tools.
-- It explicitly supports anonymous `search_catalog`, `get_product`, `create_cart`, `create_checkout`; no Shop OAuth token is needed for these. **Distributed account sign-in to Shop would need a separate registered OAuth client.**
+- It explicitly supports anonymous `search_catalog`, `lookup_catalog`, `create_cart`, `create_checkout`; no Shop OAuth token is needed for these. **Distributed account sign-in to Shop would need a separate registered OAuth client.**
 - We are NOT invoking `complete_checkout`, payment instruments, buyer-linked Shop OAuth, card/wallet, bank transfers, or order queries.
 
 Official docs:
@@ -24,7 +24,7 @@ Official docs:
 4. Doddy's live backend sends `search_catalog` to Shop MCP with `context.address_country=PL`, `currency=PLN`, and `filters.ships_to.country=PL`. This is a filter, **not** proof of delivery availability or of final costs.
 5. Real Shopify results show item, merchant, catalog price and displayed variant; product URL opens the merchant.
 6. The person explicitly taps `Prepare checkout` on a selected available variant.
-7. `POST /v1/shopify/checkout {variantId, shop, quantity}` refreshes the selected variant via `get_product`, validates the merchant and availability, invokes `create_cart`, and invokes `create_checkout` for that cart.
+7. `POST /v1/shopify/checkout {variantId, shop, quantity}` refreshes the selected exact variant ID via `lookup_catalog`, validates the merchant and availability, invokes `create_cart`, and invokes `create_checkout` for that cart.
 8. The checkout's *merchant-returned* `continue_url` is offered directly to the shopper. The shopper reviews tax, shipping, payment and terms and **pays at the merchant**.
 9. If any real provider call is unavailable/malformed or a selected offer changed, Doddy says it could not prepare checkout. Never claims the order was completed.
 
@@ -33,6 +33,7 @@ No orders, payments or order-tracking exist in this PR. A merchant cart and chec
 ## Data / security
 
 - One fixed outbound host, `mcp.shop.com`; no arbitrary URL proxy, no scraping, no credentials, no direct merchant connection from Doddy backend.
+- Durable per-user and service provider-call quotas and in-process concurrency are enforced by the existing `UsageLimiter` in live production.
 - Every API route requires the existing full Doddy session; guest sessions are rejected by existing `requireFullAccess`.
 - No Shop accounts, credit cards, delivery addresses or bank details are collected or persisted in this integration.
 - Search terms are forwarded to Shopify only on an explicit search action; no server logging of request bodies.
