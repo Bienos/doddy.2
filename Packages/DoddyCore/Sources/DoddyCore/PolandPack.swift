@@ -209,9 +209,11 @@ public enum PolandOpenData {
 /// A tiny, offline vocabulary, not a knowledge dump. Normalisation never chooses a city by GPS.
 public enum PolishContext {
     public static func normalised(_ text: String) -> String {
+        // Foundation diacritic folding does not reliably transliterate Polish Ł/ł.
         text.trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pl_PL"))
             .lowercased()
+            .replacingOccurrences(of: "ł", with: "l")
     }
 
     public static func city(_ text: String) -> PolandCity? {
