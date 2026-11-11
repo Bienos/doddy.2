@@ -12,6 +12,10 @@ struct MyServicesView: View {
     private var items: SavedBookingServices { SavedBookingServices(stored: stored) }
     private let polish = NotificationLanguage.current == .polish
 
+    init(initialBookingURL: URL? = nil) {
+        _link = State(initialValue: initialBookingURL?.absoluteString ?? "")
+    }
+
     var body: some View {
         NavigationStack {
             Form {
