@@ -293,10 +293,12 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.deals")
                 }
                 // Shop MCP (UCP): real offers, cart + merchant checkout, no in-Doddy payment.
-                Button { showShopifyShopping = true } label: {
-                    Label(NotificationLanguage.current == .polish ? "Zakupy online" : "Shop online", systemImage: "bag")
+                if scope.shows(.shopifyShopping) {
+                    Button { showShopifyShopping = true } label: {
+                        Label(NotificationLanguage.current == .polish ? "Zakupy online" : "Shop online", systemImage: "bag")
+                    }
+                    .accessibilityIdentifier("home.shopifyShopping")
                 }
-                .accessibilityIdentifier("home.shopifyShopping")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
                 // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
                 if scope.shows(.following) {
