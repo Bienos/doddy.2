@@ -25,6 +25,7 @@ import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./provi
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
 import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
+import { ShopifyUcpService } from "./shopify/ucp.js";
 import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
@@ -55,6 +56,7 @@ export async function buildApp(
     supabaseFetchJson?: FetchJson;
     paymentWallet?: PaymentWallet | null;
     sellerHttp?: SellerHttp;
+    shopify?: ShopifyUcpService | null;
   } = {},
 ) {
   const store =
@@ -213,12 +215,16 @@ export async function buildApp(
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;
+  // Real Shopify/Shop MCP only. Offline/mock mode never invents products or carts.
+  // Anonymous Shop MCP calls create carts and checkouts but cannot charge or place orders.
+  const shopify = config.mode === "live" ? (overrides.shopify === undefined ? new ShopifyUcpService() : overrides.shopify) : null;
   // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
   const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
     payments,
+    shopify,
     verifier,
     deviceSessions,
     web,
@@ -269,7 +275,7 @@ export async function buildApp(
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, payments, provider, assist };
+  return { server, store, service, tools, payments, shopify, provider, assist };
 }
 
 /** Which sign-ins this server accepts (ADR-526). */
