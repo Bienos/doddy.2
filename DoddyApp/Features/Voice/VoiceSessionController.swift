@@ -3425,7 +3425,7 @@ final class VoiceSessionController {
                         let variant = offer.variant
                         // Currency and price are merchant catalog data, not a final checkout total.
                         return "\(offer.index). \(offer.productTitle) (\(variant.title)); shop: \(variant.merchant); " +
-                            "catalog price: \(variant.priceMinor) minor units \(variant.currency); available now per Shopify."
+                            "catalog price: \(ShopifyVoiceMoney.format(variant.priceMinor, currency: variant.currency)); availability per Shopify."
                     }
                     await reply(call.toolCallId,
                                 "Live Shopify catalog offers for Poland (price excludes unquoted delivery or tax):\n" +
