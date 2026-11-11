@@ -33,6 +33,9 @@ public enum CarProfile {
             // Reading what a task found, and this week's leaflets (SHOPPING.md), change nothing: the
             // ask is answered by voice like any other look-up.
             return .run
+        case .shopifyPrepareCheckout:
+            // Real remote cart and checkout creation needs an exact screen tap; not while driving.
+            return .refuse(reason: "Preparing a Shopify checkout needs a tap on the iPhone, so wait until you are parked.")
         case .handOverErrand, .makeSomething:
             // Web research on Doddy's server changes nothing (ADR-570), but starting it takes a tap on
             // its card, not a spoken yes (ADR-716; a Studio job too, ADR-742), so it waits until the user isn't driving.
