@@ -52,6 +52,8 @@ interface MerchantCheckout {
   totalMinor: number | null;
   /** Warnings and legally significant disclosures returned by the merchant. */
   messages: string[];
+  totals: Array<{ type: string; displayText: string; amount: number }>;
+  links: Array<{ type: string; title: string; url: string }>;
   /** Never claim an order exists or that a payment happened. */
   status: "awaiting_buyer";
 }
@@ -81,10 +83,11 @@ function safeHttps(value: unknown): string | null {
 }
 function textList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, 10).flatMap(v => {
+  if (value.length > 80) throw new AppError("malformed_provider_result");
+  return value.flatMap(v => {
     const m = obj(v);
-    const text = m && asString(m.content, 350);
-    return text ? [text] : [];
+    const line = m && asString(m.content, 2_000);
+    return line ? [line] : [];
   });
 }
 function parseVariant(value: unknown): ShopVariant | null {
@@ -102,7 +105,7 @@ function parseVariant(value: unknown): ShopVariant | null {
       || !shop.match(/^[a-z0-9][a-z0-9.-]+\.[a-z]{2,}$/)
       || amount === null || !currency?.match(/^[A-Z]{3}$/)) return null;
   // Do not represent externally indexed listings as native Shopify checkout candidates.
-  if (v.source === "external" || v.id?.toString().startsWith("gid://catalog/")) return null;
+  if (v.source === "external" || (typeof v.id === "string" && v.id.startsWith("gid://catalog/"))) return null;
   const availability = obj(v.availability);
   return {
     variantId, title: asString(v.title, 160) ?? "",
@@ -120,7 +123,7 @@ function parseProduct(value: unknown): ShopProduct | null {
   if (!variants.length) return null;
   return { productId, title, variants };
 }
-function readCheckoutResult(value: unknown, shop: string, merchant: string): MerchantCheckout {
+function readCheckoutResult(value: unknown, shop: string, merchant: string, merchantWebHost: string | null): MerchantCheckout {
   const root = obj(value);
   const d = obj(root?.checkout) ?? root;
   if (!d) throw new AppError("malformed_provider_result");
@@ -128,17 +131,35 @@ function readCheckoutResult(value: unknown, shop: string, merchant: string): Mer
   if (!url) throw new AppError("malformed_provider_result");
   const host = new URL(url).hostname.toLowerCase();
   // The checkout's bearer URL must belong to the merchant (or Shopify's own Shop service).
-  if (host !== shop && host !== "shop.app" && !host.endsWith(".shop.app")
-      && host !== "checkout.shopify.com" && !host.endsWith(".myshopify.com")) {
+  if (host !== shop && host !== merchantWebHost && host !== "shop.app" && !host.endsWith(".shop.app")
+      && host !== "checkout.shopify.com") {
     throw new AppError("malformed_provider_result");
   }
-  const totals = Array.isArray(d.totals) ? d.totals : [];
-  const sum = totals.map(obj).find(t => t?.type === "total");
-  const totalMinor = positiveMinor(sum?.amount);
+  if (!Array.isArray(d.totals) || d.totals.length > 60) throw new AppError("malformed_provider_result");
+  const totals = d.totals.map(value => {
+    const t = obj(value);
+    const type = t && asString(t.type, 100);
+    const amount = t && typeof t.amount === "number" && Number.isSafeInteger(t.amount) ? t.amount : null;
+    if (!type || amount === null) throw new AppError("malformed_provider_result");
+    return { type, displayText: asString(t?.display_text, 200) ?? type, amount };
+  });
+  const sum = totals.find(t => t.type === "total");
+  const totalMinor = sum && sum.amount >= 0 ? sum.amount : null;
+  if (!sum || totalMinor === null) throw new AppError("malformed_provider_result");
+  if (d.links !== undefined && (!Array.isArray(d.links) || d.links.length > 60)) {
+    throw new AppError("malformed_provider_result");
+  }
+  const links = (Array.isArray(d.links) ? d.links : []).map(value => {
+    const link = obj(value);
+    const href = safeHttps(link?.url);
+    const type = asString(link?.type, 100);
+    if (!href || !type) throw new AppError("malformed_provider_result");
+    return { type, title: asString(link?.title, 200) ?? type.replace(/_/g, " "), url: href };
+  });
   return {
     checkoutURL: url, shop, seller: merchant,
     currency: asString(d.currency, 3), totalMinor,
-    messages: textList(d.messages),
+    messages: textList(d.messages), totals, links,
     status: "awaiting_buyer",
   };
 }
@@ -250,7 +271,8 @@ export class ShopifyUcpService {
       checkout: { cart_id: cartId, line_items: [] },
       meta: { "idempotency-key": randomUUID() },
     });
-    const result = readCheckoutResult(checkout, shop, offer.merchant);
+    const merchantWebHost = offer.productURL ? new URL(offer.productURL).hostname.toLowerCase() : null;
+    const result = readCheckoutResult(checkout, shop, offer.merchant, merchantWebHost);
     if (result.currency && result.currency !== offer.currency) {
       // Merchant chooses final currency. The result must be shown as quoted, not the search price.
       return result;
