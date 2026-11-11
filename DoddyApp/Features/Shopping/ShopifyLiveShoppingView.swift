@@ -1,0 +1,279 @@
+import DoddyCore
+import Foundation
+import SwiftUI
+
+// Live Shopify commerce via Doddy's authenticated backend and Shop MCP (UCP).
+// NO locally invented products, cached prices, payment tokens or order placement.
+private struct ShopifyResult: Decodable, Sendable {
+    let products: [ShopifyProduct]
+    let messages: [String]
+    let source: String
+    let market: String
+}
+private struct ShopifyProduct: Decodable, Identifiable, Sendable {
+    let productId: String
+    let title: String
+    let variants: [ShopifyVariant]
+    var id: String { productId }
+}
+private struct ShopifyVariant: Decodable, Identifiable, Sendable {
+    let variantId: String
+    let title: String
+    let merchant: String
+    let shop: String
+    let priceMinor: Int
+    let currency: String
+    let available: Bool
+    let productURL: String?
+    var id: String { variantId }
+}
+private struct ShopifyCheckout: Decodable, Identifiable, Sendable {
+    let checkoutURL: String
+    let shop: String
+    let seller: String
+    let currency: String?
+    let totalMinor: Int?
+    let messages: [String]
+    let status: String
+    var id: String { checkoutURL }
+}
+
+private enum ShopifyLiveClient {
+    struct Search: Encodable { let query: String }
+    struct Prepare: Encodable {
+        let variantId: String
+        let shop: String
+        let quantity: Int
+    }
+    enum Problem: Error { case unavailable, signIn, invalidReply, server }
+
+    @MainActor
+    static func call<Body: Encodable, Result: Decodable>(path: String, body: Body) async throws -> Result {
+        guard let server = DeviceSession.serverURL() else { throw Problem.unavailable }
+        await DeviceSession.ensure(server: server)
+        guard let token = KeychainSessionStore.read()?.token(for: server), !token.isEmpty else { throw Problem.signIn }
+        let data = try JSONEncoder().encode(body)
+        let request = HTTPRequest(
+            method: "POST",
+            url: server.appendingPathComponent(path),
+            headers: ["authorization": "Bearer \(token)", "accept": "application/json", "content-type": "application/json"],
+            body: data
+        )
+        let result = try await URLSessionTransport.shared.send(request)
+        guard result.status == 200 else { throw Problem.server }
+        guard let decoded = try? JSONDecoder().decode(Result.self, from: result.body) else { throw Problem.invalidReply }
+        return decoded
+    }
+
+    @MainActor
+    static func search(_ query: String) async throws -> ShopifyResult {
+        try await call(path: "v1/shopify/search", body: Search(query: query))
+    }
+
+    @MainActor
+    static func prepare(_ variant: ShopifyVariant) async throws -> ShopifyCheckout {
+        try await call(path: "v1/shopify/checkout", body: Prepare(variantId: variant.variantId, shop: variant.shop, quantity: 1))
+    }
+}
+
+/// User-triggered genuine catalog discovery; merchant checkout remains external.
+/// Making a cart/checkout is not a purchase and does not save a card on Doddy.
+struct ShopifyLiveShoppingView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+    @State private var products: [ShopifyProduct] = []
+    @State private var messages: [String] = []
+    @State private var checkout: ShopifyCheckout?
+    @State private var fetching = false
+    @State private var preparingVariant: String?
+    @State private var error: String?
+    @State private var searched = false
+    private var polish: Bool { NotificationLanguage.current == .polish }
+    private func tr(_ pl: String, _ en: String) -> String { polish ? pl : en }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text(tr(
+                        "Prawdziwe produkty sklepów Shopify, dostępne według danych dostawcy. Cenę końcową i dostawę potwierdzisz u sprzedawcy. Doddy nie pobiera płatności.",
+                        "Real Shopify merchant listings. Price and delivery are confirmed by the merchant at checkout. Doddy never takes payment."
+                    ))
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+
+                    HStack(spacing: 10) {
+                        TextField(tr("Czego szukasz?", "What are you shopping for?"), text: $query)
+                            .submitLabel(.search)
+                            .onSubmit { Task { await search() } }
+                            .accessibilityIdentifier("shopify.search.query")
+                        Button {
+                            Task { await search() }
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                                .font(.body.weight(.semibold))
+                        }
+                        .disabled(fetching || query.trimmingCharacters(in: .whitespacesAndNewlines).count < 2)
+                        .accessibilityIdentifier("shopify.search.submit")
+                    }
+                }
+
+                if fetching {
+                    ProgressView(tr("Szukam ofert sklepów…", "Searching live merchant offers…"))
+                }
+                if let error {
+                    Section { Text(error).foregroundStyle(Theme.error) }
+                }
+                if searched && !fetching && products.isEmpty && error == nil {
+                    Section {
+                        Text(tr("Brak potwierdzonych ofert z dostawą do Polski.", "No verified offers shipping to Poland."))
+                    }
+                }
+
+                if !messages.isEmpty {
+                    Section(tr("Uwagi Shopify", "Shopify notices")) {
+                        ForEach(messages, id: \.self) { message in
+                            Text(message).font(.footnote)
+                        }
+                    }
+                }
+
+                ForEach(products) { product in
+                    Section(product.title) {
+                        ForEach(product.variants) { variant in
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(alignment: .firstTextBaseline) {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(variant.merchant).font(.subheadline.weight(.semibold))
+                                        if !variant.title.isEmpty {
+                                            Text(variant.title).font(.caption).foregroundStyle(Theme.secondaryText)
+                                        }
+                                    }
+                                    Spacer(minLength: 8)
+                                    Text(price(variant.priceMinor, currency: variant.currency))
+                                        .font(.subheadline.weight(.semibold))
+                                }
+                                Text(tr("Cena katalogowa. Ostateczną kwotę wylicza sprzedawca.",
+                                        "Catalog price. The merchant calculates the final amount."))
+                                    .font(.caption2)
+                                    .foregroundStyle(Theme.secondaryText)
+                                HStack(spacing: 12) {
+                                    if variant.available {
+                                        Button {
+                                            Task { await prepare(variant) }
+                                        } label: {
+                                            Label(tr("Przygotuj koszyk", "Prepare checkout"), systemImage: "cart.badge.plus")
+                                        }
+                                        .disabled(preparingVariant != nil || fetching)
+                                        .accessibilityIdentifier("shopify.checkout.\(variant.id)")
+                                    }
+                                    if let raw = variant.productURL, let url = URL(string: raw), url.scheme == "https" {
+                                        Link(destination: url) {
+                                            Label(tr("Zobacz w sklepie", "View at merchant"), systemImage: "arrow.up.right")
+                                        }
+                                    }
+                                }
+                                .font(.footnote.weight(.medium))
+                                if preparingVariant == variant.variantId {
+                                    ProgressView()
+                                }
+                            }
+                            .padding(.vertical, 5)
+                        }
+                    }
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Theme.canvas)
+            .navigationTitle(tr("Zakupy", "Shopping"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(tr("Zamknij", "Close")) { dismiss() }
+                }
+            }
+            .sheet(item: $checkout) { details in
+                NavigationStack {
+                    List {
+                        Section(tr("Sprzedawca", "Merchant")) {
+                            Text(details.seller)
+                            Text(details.shop).font(.caption).foregroundStyle(Theme.secondaryText)
+                        }
+                        if let total = details.totalMinor, let currency = details.currency {
+                            Section(tr("Kwota według checkoutu", "Checkout total")) {
+                                Text(price(total, currency: currency))
+                                Text(tr("Podatki, dostawa i dostępność mogą się zmienić u sprzedawcy.",
+                                        "Taxes, shipping and availability may change at the merchant."))
+                                    .font(.footnote)
+                            }
+                        }
+                        if !details.messages.isEmpty {
+                            Section(tr("Ważne informacje", "Important information")) {
+                                ForEach(details.messages, id: \.self) { Text($0).font(.footnote) }
+                            }
+                        }
+                        Section {
+                            if let url = URL(string: details.checkoutURL), url.scheme == "https" {
+                                Link(destination: url) {
+                                    Label(tr("Dokończ zakup u sprzedawcy", "Continue at merchant checkout"),
+                                          systemImage: "arrow.up.right.square")
+                                }
+                            }
+                            Text(tr("Koszyk przygotowany. Nie złożono zamówienia ani nie pobrano pieniędzy.",
+                                    "Checkout prepared. No order was placed and no payment was made."))
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                        }
+                    }
+                    .navigationTitle(tr("Twój koszyk", "Your checkout"))
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(tr("Zamknij", "Close")) { checkout = nil }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func search() async {
+        let words = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (2...160).contains(words.count), !fetching, preparingVariant == nil else { return }
+        fetching = true
+        searched = false
+        error = nil
+        products = []
+        messages = []
+        defer { fetching = false; searched = true }
+        do {
+            let found = try await ShopifyLiveClient.search(words)
+            products = found.products
+            messages = found.messages
+        } catch {
+            self.error = tr("Nie mogę pobrać ofert Shopify. Sprawdź połączenie lub konto Doddy i spróbuj ponownie.",
+                            "Couldn't load Shopify offers. Check your connection and Doddy account, then try again.")
+        }
+    }
+
+    @MainActor
+    private func prepare(_ variant: ShopifyVariant) async {
+        guard preparingVariant == nil, !fetching else { return }
+        preparingVariant = variant.variantId
+        error = nil
+        defer { preparingVariant = nil }
+        do {
+            checkout = try await ShopifyLiveClient.prepare(variant)
+        } catch {
+            self.error = tr(
+                "Nie udało się utworzyć koszyka u sprzedawcy. Nic nie zostało kupione. Wróć do wyników lub spróbuj wyszukać produkt ponownie.",
+                "The merchant couldn't create a checkout. Nothing was purchased. Search again or view the merchant's store."
+            )
+        }
+    }
+
+    private func price(_ minor: Int, currency: String) -> String {
+        let value = Double(minor) / 100
+        return value.formatted(.currency(code: currency))
+    }
+}
