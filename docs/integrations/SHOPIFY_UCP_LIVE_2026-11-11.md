@@ -43,6 +43,31 @@ No orders, payments or order-tracking exist in this PR. A merchant cart and chec
 - Catalog price may change between search and checkout. The merchant is authoritative for totals; **never** promise savings, free shipping, product safety, stock certainty or final price from the first search.
 - `filters.ships_to.country=PL` and the shopper's delivery country do not guarantee every selected offer delivers to the exact Polish address.
 
+## ElevenLabs voice agent integration (11 Nov 2026, owner request)
+
+**Implemented in repo, NOT synced to live agent or deployed.** This PR now has two local phone tools in `voice-agent/tools.json` (both `elevenlabs_tool_id=not_synced`). The live agent still does NOT know them.
+
+- `shopify_search(query)`: a public read performed through `ShopifyLiveClient.search` and the live Doddy backend. It returns only genuine Shopify offers, numbers 1–5, and a catalog price from the provider; the iPhone shows the same items using `ShopifyVoiceResultsCard`. No invented fallback.
+- `shopify_prepare_checkout(index, quantity?)`: the number MUST match an available offer that the same conversation fetched from Shopify. The controller pins its exact product/variant/seller before displaying a named consent card. `AskFirst.tapFirst` + the `AskLedger` require an on-screen tap; a spoken `yes` cannot create a cart.
+- After tap, the phone requests the existing authenticated `POST /v1/shopify/checkout`. The backend rechecks exact selected variant and merchant through `lookup_catalog`, creates a real cart and checkout via Shop MCP; the app displays the actual seller, totals/disclosures/policy links and the Shopify checkout `continue_url`. The link stays ON DEVICE; it is never included in the voice agent's tool reply. The user pays externally at the merchant.
+- `ConnectionPause`, driving policy, release scope, exact typed arguments, and activity-log redaction apply. No wallet, payments, order submission, auto purchase, saved payment method or agent-held checkout token.
+- **Unknown outcome** after a remote cart/checkout write is not retried automatically; nothing has been charged or purchased.
+
+### Release order required before actual voice use
+
+1. CI must pass native iOS (including the new cards and controller), Swift core policy tests, TypeScript backend tests and tool catalog/spec validation.
+2. Fix any security/test failures. Verify with a real Shop MCP merchant listing that ships to Poland and produces `continue_url`.
+3. Deploy matching real backend, build matching iPhone TestFlight version. Test the complete spoken `search → select # → tap → merchant checkout` with **no payment**.
+4. **Only after** the matching TestFlight/app is available should the two tools be added to/published on the live ElevenLabs agent. Otherwise older installed apps reply `unsupported`.
+5. Merchant payments, delegated payment tokens and `complete_checkout` remain **not in this milestone** and require separate approval, legal review, and durable server-side authorization. The current cart-creation endpoint does not mint an explicit server-side purchase authorization, so do not extend it to placing orders.
+
+### Files extended
+- `voice-agent/tools.json`, `voice-agent/instructions.md`, `voice-agent/README.md`
+- `Packages/DoddyCore/Sources/DoddyCore/{VoiceTools.swift,AskFirst.swift,ConnectionPause.swift,CarProfile.swift,ToolCatalog.swift,ActivityLog.swift,ReleaseScope.swift}`
+- `DoddyApp/Features/Voice/{VoiceSessionController.swift,VoiceView.swift,ShopifyVoiceCards.swift}`
+- `DoddyApp/Features/Shopping/ShopifyLiveShoppingView.swift` (shared typed models and checkout client)
+- `Packages/DoddyCore/Tests/DoddyCoreTests/ShopifyVoiceToolTests.swift`
+
 ## Test plan and release gates
 
 **Added** `backend/test/shopifyUcp.test.ts` with fake injected HTTP to exercise the real UCP contract, including no fake data on errors and no payment tools. These injected fakes are internal tests only, not user-visible demos.
