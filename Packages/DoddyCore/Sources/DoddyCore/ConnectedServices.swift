@@ -25,6 +25,17 @@ public enum BookingService: String, Codable, CaseIterable, Sendable {
         return nil
     }
 
+    /// Only user-shared links. No network call and no inference from a site name without a real URL.
+    public static func sharedBookingURL(in text: String) -> URL? {
+        for word in text.split(whereSeparator: \.isWhitespace) {
+            let token = String(word).trimmingCharacters(in: CharacterSet(charactersIn: "<>()[]{}\"',;"))
+            guard token.count <= 1500, let url = URL(string: token),
+                  identify(url) != nil, url.path != "" && url.path != "/" else { continue }
+            return url
+        }
+        return nil
+    }
+
     private static func allowed(_ host: String, domain: String) -> Bool {
         host == domain || host.hasSuffix("." + domain)
     }
