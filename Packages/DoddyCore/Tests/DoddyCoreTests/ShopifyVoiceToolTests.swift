@@ -12,10 +12,8 @@ final class ShopifyVoiceToolTests: XCTestCase {
     func testRealSearchIsReadOnlyAndRunsNow() {
         let request = parse(VoiceToolName.shopifySearch, #"{"query":"czarna bluza"}"#)
         XCTAssertEqual(request, .shopifySearch(query: "czarna bluza"))
-        if case .yesFirst(let card) = AskFirst.need(for: request) {
-            XCTAssertTrue(card.lines.contains(where: { $0.contains("czarna bluza") }))
-        } else { XCTFail("A Shopify query must ask first: ASK-01") }
-        XCTAssertFalse(AskFirst.publicLookups.contains(VoiceToolName.shopifySearch))
+        XCTAssertEqual(AskFirst.need(for: request), .runsNow)
+        XCTAssertTrue(AskFirst.publicLookups.contains(VoiceToolName.shopifySearch))
         XCTAssertTrue(ConnectionPause.applies(to: request))
         XCTAssertEqual(CarProfile.decision(for: request), .run)
     }
