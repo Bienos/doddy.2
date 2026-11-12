@@ -1,0 +1,3 @@
+Docs: result of a live test of whether Doddy's server can read prices from Polish shop pages (80 product pages, 40 shops, the server's own reader and honest user agent, no workarounds): 42% of pages and 18 of 40 shops give a price; x-kom, Media Expert, Euro RTV AGD, Allegro and Decathlon block it. Added to `docs/strategy/SKLEP_PROPOZYCJA_2026-11.md` (sections 11 and 12). No code change.
+Ran: the probe over 80 pages from one US datacenter address (not Render's); scripts/ci.sh --only checks. Not run: the test from Render, a larger sample, any check that the prices read are right.
+Owner steps: choose the publisher and apply to the affiliate networks (section 12); the feed adapter waits for real access.
