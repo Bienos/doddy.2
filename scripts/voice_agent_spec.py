@@ -19,6 +19,9 @@ ADR-500): no function tools at all, only the end_call and voicemail_detection sy
 message is the server-built variable, Polish, phone audio, no recording, and the expected values the
 server embeds (server/messaging/src/taskCalls/agentSpec.ts, payload.ts) match this folder.
 
+`--agent task-call-order` checks the food-order agent (voice-agent/task-call-order/, decision
+2026-11-12-food-by-phone) the same way, against TASK_ORDER_AGENT_SPEC and ORDER_AGENT_VARIABLE_NAMES: it may
+say one server-built confirmation line for the approved order, and never pay, open a link or accept anything else.
 `--agent task-call-book` checks the booking agent (voice-agent/task-call-book/, decision
 2026-11-12-book-agent) the same way, against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES: it may say
 one server-built confirmation line for the approved booking, and never pay or accept anything else.
@@ -31,7 +34,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "voice-agent"
-AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call", "task-call-book": SPEC / "task-call-book"}
+AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call", "task-call-book": SPEC / "task-call-book",
+          "task-call-order": SPEC / "task-call-order"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
@@ -166,10 +170,11 @@ TASK_FORBIDDEN = {"transfer_to_number", "transfer_to_agent", "play_keypad_touch_
 SERVER_TASK = ROOT / "server" / "messaging" / "src" / "taskCalls"
 
 
-def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False):
+def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False, order=False):
     """The task-call agent can only talk: no tools that act, fixed first message, and the server's
     embedded expectations (agentSpec.ts, payload.ts) must equal this folder. book=True checks the
-    booking agent against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES."""
+    booking agent against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES; order=True the food-order agent
+    (decision 2026-11-12-food-by-phone) against TASK_ORDER_AGENT_SPEC and ORDER_AGENT_VARIABLE_NAMES."""
     errors = []
     if tools.get("tools"):
         errors.append("tools.json: the task-call agent must have no function tools (it may not act)")
@@ -201,7 +206,10 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     if not isinstance(el.get("max_duration_seconds"), int) or el["max_duration_seconds"] < 320:
         errors.append("session.json: max_duration_seconds must be at least 320 (our server decides when the call ends)")
     low = instructions.lower()
-    phrases = (("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_booking}}", "{{doddy_booking_confirm_line}}",
+    phrases = (("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_order}}", "{{doddy_order_confirm_line}}",
+                "never pay and never give payment details", "never open, read out or follow a link",
+                "at most one short clarifying question") if order else
+               ("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_booking}}", "{{doddy_booking_confirm_line}}",
                 "never pay and never give payment details", "at most one short clarifying question") if book else
                ("jestem asystentem ai", "{{doddy_callback_line}}", "never agree to anything", "at most one short clarifying question"))
     for phrase in phrases:
@@ -211,7 +219,7 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     # The server's embedded copy of these expectations.
     spec_ts = (server / "agentSpec.ts").read_text(encoding="utf-8")
     want_hash = hashlib.sha256(instructions.strip().encode("utf-8")).hexdigest()
-    const = "TASK_BOOK_AGENT_SPEC" if book else "TASK_AGENT_SPEC"
+    const = "TASK_ORDER_AGENT_SPEC" if order else "TASK_BOOK_AGENT_SPEC" if book else "TASK_AGENT_SPEC"
     block = re.search(r"export const " + const + r" = \{(.*?)\n\} as const;", spec_ts, re.S)
     m = re.search(r'promptSha256:\s*"([0-9a-f]{64})"', block.group(1) if block else "")
     if not m or m.group(1) != want_hash:
@@ -223,11 +231,14 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     if not tools_ts or sorted(re.findall(r'"([a-z_]+)"', tools_ts.group(1))) != sorted(TASK_SYSTEM_TOOLS):
         errors.append(f"agentSpec.ts: systemTools must be {sorted(TASK_SYSTEM_TOOLS)}")
     payload_ts = (server / "payload.ts").read_text(encoding="utf-8")
-    names_ts = re.search(r"(?<!BOOK_)AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
+    names_ts = re.search(r"(?<!BOOK_)(?<!ORDER_)AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
     server_vars = set(re.findall(r'"([a-z_]+)"', names_ts.group(1))) if names_ts else set()
     if book:
         book_ts = re.search(r"BOOK_AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
         server_vars |= set(re.findall(r'"([a-z_]+)"', book_ts.group(1))) if book_ts else set()
+    if order:
+        order_ts = re.search(r"ORDER_AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
+        server_vars |= set(re.findall(r'"([a-z_]+)"', order_ts.group(1))) if order_ts else set()
     declared = set(session.get("variables", {})) - {"doddy_attempt"}
     if server_vars != declared:
         errors.append(f"payload.ts: AGENT_VARIABLE_NAMES {sorted(server_vars)} must equal session.json variables {sorted(declared)}")
@@ -413,15 +424,15 @@ def main(argv):
     errors = check(tools, session, instructions)
     if agent == "app":
         errors += check_app(tools)
-    if agent in ("task-call", "task-call-book"):
-        errors += check_task_call(tools, session, instructions, book=agent == "task-call-book")
+    if agent in ("task-call", "task-call-book", "task-call-order"):
+        errors += check_task_call(tools, session, instructions, book=agent == "task-call-book", order=agent == "task-call-order")
     if errors:
         print(f"FAIL voice agent spec ({where})")
         for e in errors:
             print(f"  - {e}")
         return 1
     cmd = argv[1]
-    if cmd == "check" and agent in ("task-call", "task-call-book"):
+    if cmd == "check" and agent in ("task-call", "task-call-book", "task-call-order"):
         print(f"PASS voice agent spec ({where}): no function tools; system tools {', '.join(t['name'] for t in tools['system_tools'])}; matches the server's agentSpec.ts")
     elif cmd == "check":
         phone = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "phone"]

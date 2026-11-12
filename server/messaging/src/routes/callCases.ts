@@ -45,6 +45,9 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
     // The booking agent (decision 2026-11-12-book-agent): set up, and which of its settings differ from its spec.
     const bookingAgentConfigured = !!ctx?.agentIdFor("book");
     const bookingAgentProblems = ctx && bookingAgentConfigured ? await ctx.driftFor("book").problems() : [];
+    // The order agent (decision 2026-11-12-food-by-phone), the same way.
+    const orderAgentConfigured = !!ctx?.agentIdFor("order");
+    const orderAgentProblems = ctx && orderAgentConfigured ? await ctx.driftFor("order").problems() : [];
     return {
       available: !!ctx && !ctx.settings.killSwitch && agentProblems.length === 0,
       configured: !!ctx,
@@ -61,6 +64,10 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
       bookingAgentConfigured,
       // Names of the booking agent's settings that differ from its spec (no values), like `agentProblems`.
       bookingAgentProblems,
+      // Calls that order food: the order agent is set up and matches its spec.
+      order: !!ctx && !ctx.settings.killSwitch && orderAgentConfigured && orderAgentProblems.length === 0,
+      orderAgentConfigured,
+      orderAgentProblems,
     };
   });
 

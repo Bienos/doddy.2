@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-12
 - **Decided by:** owner, 12 Nov 2026: "Both and merge" (the restaurant's page and ordering by phone), then, on the two open questions: **pay on delivery only**, and the **address typed on the card each time**.
-- **Status:** proposed design; no code yet. Built in the steps below, each its own pull request, after `2026-11-12-food-by-voice` (#355, merged 12 Nov 2026).
+- **Status:** design merged (#371). Step 1 (server and agent folder) is in the pull request that adds this line; the app's card and voice tool are step 3. Built in the steps below, each its own pull request, after `2026-11-12-food-by-voice` (#355, merged 12 Nov 2026).
 - **Replaces:** nothing. Extends `2026-11-12-book-agent` (same pattern, a third agent) and sits beside `2026-11-12-food-by-voice` (the person's own app, no phone call).
 
 ## Why
@@ -27,6 +27,14 @@ No delivery company lets another app order on a person's own account in Poland (
 - An order by phone is a purchase in the person's name and shares a home address and phone number with a third party. The card is the only place they come from, the confirmation sentence is fixed, and the address is erased with the task.
 - Doddy can't check that food arrives; the push says what the seller said, not that it was delivered.
 - Before anyone but the owner uses it, the open questions of `calls.md` (a legal basis for transcribing the other side, a never-call-me list) still apply, and now also: what a restaurant may do with a number it was given by an AI caller.
+
+## What step 1 changed from the design above
+- **The courier's phone** is a Polish number kept as nine digits ("600 000 000"; a typed "+48" is dropped), so the call audit never reads it as a PESEL.
+- **Number audit:** a postcode or phone number that is on the card (`doddy_order`) is no longer "a number Doddy wasn't given"; without that every delivery order would have ended "unclear". A number that isn't on the card still warns.
+- **Erased with the task:** the brief (address, phone) is deleted the moment the task ends, not when the phone acknowledges the result.
+- **Agent and spec:** `voice-agent/task-call-order/` (prompt, session, no tools beyond `end_call` and voicemail), `TASK_ORDER_AGENT_SPEC`, `scripts/voice_agent_spec.py check --agent task-call-order` in `scripts/ci.sh`, `setup-task-call-agent.mjs --agent order`. Migration `030_order_calls.sql` only widens two CHECKs.
+- **Off until set up** (owner queue 49): without `ELEVENLABS_TASK_ORDER_AGENT_ID`, 503 `order_not_configured`; `/v1/call-cases/availability` gains `order`, `orderAgentConfigured`, `orderAgentProblems`.
+- An order is meant to go through a task (one place). A single call case of kind `order` is accepted by the server like a booking one, but its brief is then deleted only when the phone acknowledges the result.
 
 ## Not decided here
 - A cap default and whether to allow pickup in the first release (proposed: both).

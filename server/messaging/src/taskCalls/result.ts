@@ -59,6 +59,8 @@ export interface WriterInput {
   question: string; goal: string; transcript: Line[];
   /** Booking calls only: the approved booking, one detail per line. "yes" then means booked exactly this. */
   booking?: string;
+  /** Order calls only: the approved order, one detail per line. "yes" then means ordered exactly this. */
+  order?: string;
 }
 export interface WriterOutput {
   answerLine: number | null;
@@ -208,7 +210,11 @@ export function findSpan(text: string, quote: string): string | undefined {
 
 /** Doddy's own lines after the opening: commitment words, numbers it wasn't given, PESEL-like numbers. */
 export function audit(transcript: Line[], allowedTexts: string[], bookingConfirmLine?: string): Warning[] {
-  const allowedDigits = new Set(allowedTexts.flatMap((t) => (t.match(/\d+/g) ?? [])));
+  // A listed number is allowed as written in pieces ("00", "001") and as the lines below read it, joined across single
+  // spaces and hyphens ("00001"): a postcode or phone number Doddy was given is not "a number it wasn't given".
+  const allowedDigits = new Set(allowedTexts.flatMap((t) => [
+    ...(t.match(/\d+/g) ?? []), ...(t.match(/\d(?:[ \-]?\d)*/g)?.map((d) => d.replace(/\D/g, "")) ?? []),
+  ]));
   const warnings: Warning[] = [];
   let first = true;
   transcript.forEach((l, i) => {

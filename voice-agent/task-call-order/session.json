@@ -1,0 +1,68 @@
+{
+  "format": "doddy-voice-session/1",
+  "note": "Order agent (decision docs/decisions/2026-11-12-food-by-phone.md). Same server path as the ask agent (voice-agent/task-call/): our server places the Twilio call and connects it with register-call, passing the variables compiled from the approved order card (server/messaging/src/taskCalls/payload.ts). Created by server/messaging/scripts/setup-task-call-agent.mjs --agent order; the server's drift check compares the live agent with TASK_ORDER_AGENT_SPEC in server/messaging/src/taskCalls/agentSpec.ts, which voice_agent_spec.py keeps in step with this folder.",
+  "first_message": {
+    "pl": "{{doddy_opening_line}}"
+  },
+  "languages": [
+    "pl"
+  ],
+  "variables": {
+    "doddy_opening_line": "AI disclosure + the order question, spoken word for word (server-built)",
+    "doddy_question": "the order question (server-built from the order)",
+    "doddy_principal": "the user's first name in the genitive",
+    "doddy_callee": "who is being called",
+    "doddy_goal": "the goal in one sentence",
+    "doddy_order": "the approved order: dishes, delivery address or pickup, courier phone, payment on delivery, highest total, name (server-built)",
+    "doddy_order_confirm_line": "the one sentence that accepts exactly that order (server-built)",
+    "doddy_facts": "only the facts the user ticked, one per line",
+    "doddy_callback_line": "Sprawdzę to u <imię> i oddzwonię.",
+    "doddy_max_minutes": "approved maximum, in minutes",
+    "doddy_attempt": "attempt id for matching the post-call webhook; not used in the prompt"
+  },
+  "elevenlabs": {
+    "agent_name": "Doddy (orders for you)",
+    "tags": [
+      "doddy",
+      "task-call",
+      "order"
+    ],
+    "llm": "gpt-6-luna",
+    "temperature": 0.2,
+    "timezone": "Europe/Warsaw",
+    "tts_model": "eleven_flash_v2_5",
+    "tts_voice_id": "SET_A_POLISH_VOICE_ID",
+    "audio_format": "ulaw_8000",
+    "max_duration_seconds": 330,
+    "silence_end_call_timeout": 20,
+    "disable_first_message_interruptions": true,
+    "placeholders": {
+      "doddy_opening_line": "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy mogą Państwo przyjąć zamówienie z dostawą?",
+      "doddy_question": "Czy mogą Państwo przyjąć zamówienie z dostawą?",
+      "doddy_principal": "Anny",
+      "doddy_callee": "Trattoria Demo",
+      "doddy_goal": "Zamówić jedzenie z dostawą.",
+      "doddy_order": "- Zamówienie: 2 × pizza margherita, 1 × cola\n- Dostawa na adres: ul. Długa 5 m. 12, 00-001 Warszawa\n- Telefon dla kuriera: 600 000 000\n- Płatność: gotówką lub kartą przy odbiorze\n- Najwyższa łączna kwota: 150 zł\n- Na nazwisko: Anna Kowalska",
+      "doddy_order_confirm_line": "Dobrze, proszę o zamówienie: 2 × pizza margherita, 1 × cola, dostawa na ul. Długa 5 m. 12, 00-001 Warszawa, płatność gotówką lub kartą przy odbiorze, na nazwisko Anna Kowalska.",
+      "doddy_facts": "(brak: nie podawaj żadnych informacji o osobie, w imieniu której dzwonisz)",
+      "doddy_callback_line": "Sprawdzę to u Anny i oddzwonię.",
+      "doddy_max_minutes": "4",
+      "doddy_attempt": "test"
+    },
+    "overrides": {
+      "enable_conversation_initiation_client_data_from_webhook": false
+    },
+    "privacy": {
+      "record_voice": false,
+      "retention_days": 1,
+      "note": "Transcripts are deleted by our server right after processing; one day is the backstop."
+    },
+    "auth": {
+      "enable_auth": true
+    },
+    "post_call_webhook": "/webhooks/elevenlabs/post-call",
+    "not_in_prompt": [
+      "doddy_attempt"
+    ]
+  }
+}

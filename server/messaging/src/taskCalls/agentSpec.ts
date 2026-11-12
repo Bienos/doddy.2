@@ -24,4 +24,15 @@ export const TASK_BOOK_AGENT_SPEC = {
   promptSha256: "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4",
 } as const;
 
+/**
+ * The order agent (decision docs/decisions/2026-11-12-food-by-phone.md), from voice-agent/task-call-order/,
+ * kept in step by `python3 -I scripts/voice_agent_spec.py check --agent task-call-order`. Same rules as the
+ * ask agent; only its prompt differs, so the same safety check reads it with this hash.
+ */
+export const TASK_ORDER_AGENT_SPEC = {
+  ...TASK_AGENT_SPEC,
+  /** sha256 of voice-agent/task-call-order/instructions.md, trimmed, as the setup script sends it. */
+  promptSha256: "668d2378f9ce24dfd508e9984d58352f00b6d11462adc58f21990b2c5974c1b2",
+} as const;
+
 export type TaskAgentSpec = { readonly promptSha256: string } & Omit<typeof TASK_AGENT_SPEC, "promptSha256">;
