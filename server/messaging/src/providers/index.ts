@@ -182,6 +182,8 @@ export function providersFrom(config: Config) {
     news: {
       cipher,
       smsCaps: { perAccount: config.limits.smsPerAccountDay, perServer: config.limits.smsPerServerDay },
+      // Daily caps on the writer, for web (send-now) and worker (scheduled digests, radar summaries) alike.
+      writerCaps: config.newsWriterCaps,
       feeds: new HttpFeedSource(),
       search: config.gnewsApiKey ? new GNewsSearch(config.gnewsApiKey) : undefined,
       // Anthropic first when both keys are set; OpenAI otherwise (ADR-197).

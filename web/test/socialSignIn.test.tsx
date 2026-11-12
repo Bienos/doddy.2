@@ -1,7 +1,7 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { App } from "../src/App.js";
 import { socialStartUrl } from "../src/api/client.js";
 import { SessionProvider } from "../src/auth/session.js";
@@ -160,7 +160,9 @@ describe("a new account on the web (owner, 3 Nov 2026)", () => {
   test("with sign-up open, Google and Apple come first, and the code is the other way in", async () => {
     fakeServer({ "GET /v1/web/session": signedOut, "GET /v1/web/sign-in-options": { body: { providers: ["google", "apple"], signup: true } } });
     renderApp();
-    expect(await screen.findByText("Sign in, or make an account, with Google or Apple. Already use Doddy on your iPhone? A code from it works too.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Sign in, or make an account, with Google or Apple. Already use Doddy on your iPhone? A code from it works too."),
+    ).toBeInTheDocument();
     const google = screen.getByRole("link", { name: "Continue with Google" });
     const code = screen.getByLabelText("Sign-in code");
     expect(google.compareDocumentPosition(code) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -209,7 +211,16 @@ describe("Settings › Delete account", () => {
       "GET /v1/web/account": { body: { madeOnWeb: true } },
       "POST /v1/web/account/delete": () => {
         signedIn = false;
-        return { body: { complete: true, deleted: {}, remaining: 0, onlineAccounts: { removed: ["supabase_auth"], pending: [] }, kept: [], erasedAt: "2026-11-03T10:00:00.000Z" } };
+        return {
+          body: {
+            complete: true,
+            deleted: {},
+            remaining: 0,
+            onlineAccounts: { removed: ["supabase_auth"], pending: [] },
+            kept: [],
+            erasedAt: "2026-11-03T10:00:00.000Z",
+          },
+        };
       },
     });
     renderApp("/settings");
@@ -271,3 +282,92 @@ describe("Settings › Delete account", () => {
   });
 });
 
+describe("Apple or Google in a small window (auth/popup.ts)", () => {
+  // jsdom's own window.close() would tear the test window down: it is never called for real here.
+  let close: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    window.name = "";
+    close = vi.spyOn(window, "close").mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    cleanup(); // unmount first, so nothing runs against a restored window
+    vi.restoreAllMocks();
+    window.name = "";
+  });
+  const fakePopup = () => ({ close: vi.fn(), focus: vi.fn(), closed: false });
+  const offered = { "GET /v1/web/sign-in-options": { body: { providers: ["google", "apple"], signup: true } } };
+
+  test("a click opens the small window, this page waits, and Home opens by itself once the server says signed in", async () => {
+    let signedIn = false;
+    fakeServer({
+      ...signedInRoutes,
+      ...offered,
+      "GET /v1/web/session": () => (signedIn ? { body: fixture("web/session-current") } : signedOut),
+    });
+    const popup = fakePopup();
+    const open = vi.spyOn(window, "open").mockReturnValue(popup as unknown as Window);
+    renderApp();
+    const apple = await screen.findByRole("link", { name: "Continue with Apple" });
+    expect(fireEvent.click(apple)).toBe(false); // the page stays: the link's own navigation is cancelled
+    expect(open).toHaveBeenCalledWith("/v1/web/oauth/start?provider=apple", "doddy-signin", expect.stringContaining("popup=yes"));
+    expect(await screen.findByText(/Finish signing in with Apple in the window that just opened/)).toBeInTheDocument();
+    // The window finished: only the server's answer counts.
+    signedIn = true;
+    window.dispatchEvent(new Event("focus"));
+    expect(await screen.findByRole("heading", { name: "I'm here." })).toBeInTheDocument();
+    expect(popup.close).toHaveBeenCalled();
+  });
+
+  test("a blocked window falls back to the whole-page redirect", async () => {
+    fakeServer({ "GET /v1/web/session": signedOut, ...offered });
+    vi.spyOn(window, "open").mockReturnValue(null);
+    renderApp();
+    const google = await screen.findByRole("link", { name: "Continue with Google" });
+    expect(fireEvent.click(google)).toBe(true); // not cancelled: the browser follows the link
+    expect(google).toHaveAttribute("href", "/v1/web/oauth/start?provider=google");
+    expect(screen.queryByText(/Finish signing in with/)).toBeNull();
+  });
+
+  test("a new-tab click keeps its meaning, and Cancel closes the window and stops waiting", async () => {
+    fakeServer({ "GET /v1/web/session": signedOut, ...offered });
+    const popup = fakePopup();
+    const open = vi.spyOn(window, "open").mockReturnValue(popup as unknown as Window);
+    renderApp();
+    const apple = await screen.findByRole("link", { name: "Continue with Apple" });
+    fireEvent.click(apple, { ctrlKey: true });
+    expect(open).not.toHaveBeenCalled();
+    fireEvent.click(apple);
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    expect(popup.close).toHaveBeenCalled();
+    expect(screen.queryByText(/Finish signing in with/)).toBeNull();
+  });
+
+  test("a phone-sized screen keeps the redirect", async () => {
+    fakeServer({ "GET /v1/web/session": signedOut, ...offered });
+    const open = vi.spyOn(window, "open");
+    const width = vi.spyOn(window, "innerWidth", "get").mockReturnValue(390);
+    renderApp();
+    expect(fireEvent.click(await screen.findByRole("link", { name: "Continue with Apple" }))).toBe(true);
+    expect(open).not.toHaveBeenCalled();
+    width.mockRestore();
+  });
+
+  test("inside the window: signed in shows 'You're signed in' and closes itself; the page behind never shows Home", async () => {
+    window.name = "doddy-signin";
+    fakeServer({ ...signedInRoutes });
+    renderApp();
+    expect(await screen.findByRole("heading", { name: "You're signed in." })).toBeInTheDocument();
+    expect(close).toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "I'm here." })).toBeNull();
+  });
+
+  test("inside the window: the server's answer is handed over and the window closes (nothing is made here)", async () => {
+    window.name = "doddy-signin";
+    const { seen } = fakeServer({ "GET /v1/web/session": signedOut, ...offered });
+    renderApp("/sign-in?signin=new_account&provider=apple", "pl");
+    expect(await screen.findByText(/Możesz zamknąć to okno\. Odpowiedź czeka/)).toBeInTheDocument();
+    expect(close).toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Załóż moje konto Doddy" })).toBeNull();
+    expect(seen.some((s) => s.path === "/v1/web/signup")).toBe(false);
+  });
+});
