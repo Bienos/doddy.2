@@ -154,7 +154,9 @@ test("a full day with every tool in use fits: bigger than the usual body limit, 
   rig = await startWeb();
   await turnOn(rig);
   const tools = Object.fromEntries(LOGBOOK_TOOL_IDS.map((id) => [id, { done: 1234, declined: 12, unsure: 3, failed: 5, undone: 7 }]));
-  const body = JSON.stringify(day(TODAY, { tools }), null, 2);
+  // Tool-count grows as voice tools ship. Compact one-space pretty JSON remains readable
+  // while preserving the 16 KiB privacy-first body cap rather than weakening it.
+  const body = JSON.stringify(day(TODAY, { tools }), null, 1);
   assert.ok(body.length > 8 * 1024 && body.length < 16 * 1024, `the body is ${body.length} bytes`);
   const res = await fetch(`${rig.base}/v1/web/logbook/days/${TODAY}`, { method: "PUT", headers: { authorization: `Bearer ${USER_A}`, "content-type": "application/json" }, body });
   assert.equal(res.status, 200, await res.text());
