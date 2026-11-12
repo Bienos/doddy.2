@@ -341,6 +341,18 @@ public enum DataFlow {
                     : state.pauseAll
                         ? "Connections are paused, so no new price is watched. Prices you already watch keep being checked by Doddy's server until you stop or delete them."
                         : "The server keeps the words encrypted only while the watch runs and for 30 days after it ends; Delete removes it at once. It keeps no page content, only the prices it read and when."),
+            // SHOPPING.md "Shopify": a search or a cart for a Shopify shop's product. Doddy's server asks Shopify's Shop
+            // service (mcp.shop.com); the app never talks to Shopify or a shop itself. Read from backend/src/shopify/ucp.ts.
+            DataFlowRow(
+                id: "shopify", destination: "Your Doddy server and Shopify's Shop service (products of Shopify shops)",
+                what: "The words you search for. When you tap Prepare checkout on an offer: that offer's variant ID, the shop's domain and the quantity, so the shop can make a cart and a checkout. Doddy's server sends Shopify a fixed country (Poland) and currency (zloty), and no name, account, address or payment detail of yours.",
+                when: "Only when you tap search in Shopify shops, and when you tap Prepare checkout on one offer. A prepared checkout is a cart at that shop; it places no order and takes no payment.",
+                isActive: state.doddyServerSet && !state.pauseAll,
+                note: !state.doddyServerSet
+                    ? "Nothing has been sent to Doddy's server yet."
+                    : state.pauseAll
+                        ? "Connections are paused, so Shopify shops aren't searched."
+                        : "Doddy's server doesn't log the words you search for. Shopify sees the request coming from Doddy's server, not from you. You finish and pay on the shop's own page."),
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
                 what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
@@ -438,6 +450,7 @@ public enum DataFlow {
         "updates": "Apple and Twilio (notifications and texts from Doddy, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",
         "watches": "the shops' pages, read by your messaging server (prices you watch)",
+        "shopify": "Shopify's Shop service, asked by your Doddy server (Shopify shops' products you search)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "Anthropic (Ask Doddy, through your messaging server)",
         "recaps": "Anthropic (recaps of conversations and recordings, through your messaging server)",

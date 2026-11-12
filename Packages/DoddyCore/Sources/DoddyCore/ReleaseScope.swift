@@ -78,6 +78,9 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case errands
     /// "Pilnuj ceny" (ADR-614).
     case priceWatch
+    /// Shopify shops: product search and a merchant-owned checkout, through Doddy's server and Shopify's Shop service
+    /// (docs/implementation/SHOPPING.md "Shopify"). Nothing is paid or ordered in Doddy. No voice tool yet.
+    case shopifyShopping
     /// The feed of what the person follows (ADR-656).
     case following
     /// The daily digest by push or text (ADR-174).
@@ -148,7 +151,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .lostWallet: [VoiceToolName.lostWallet]
         case .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
              .recordings, .sharedLists, .shoppingModeLockScreen, .placeReminders, .eveningWrapUp, .weeklyLookBack,
-             .weeklyPlan, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .parcels:
+             .weeklyPlan, .files, .doddyWeb, .cloudMemory, .priceWatch, .shopifyShopping, .dailyNews, .parcels:
             []
         // "What's on my screen?" asks the Messages route's Claude, with its key, switch and daily caps
         // (decision 2026-11-09-doddy-looks-at-the-screen), so it comes and goes with Messages.
