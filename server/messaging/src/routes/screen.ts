@@ -5,17 +5,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { FastifyPluginAsync } from "fastify";
 import type { Deps } from "../app.js";
-import { principal, requireDevice } from "../auth.js";
+import { principal, requireDeviceBeforeBody } from "../auth.js";
 import { WIRE_MESSAGE, WIRE_STATUS, type WireCode } from "../assistant/request.js";
 import { addTokens, reserve } from "../assistant/usage.js";
 import { SCREEN_LIMITS, ScreenLookRequest } from "../screen/look.js";
 
 export const screenRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
-  const auth = requireDevice(deps.db);
+  // The frame makes the body large: the token is checked before the body is read.
+  const auth = requireDeviceBeforeBody(deps.db);
   const assistant = deps.assistant;
 
   app.post("/v1/screen/look", {
-    preHandler: auth,
+    preParsing: auth,
     bodyLimit: SCREEN_LIMITS.bodyBytes,
     config: { rateLimit: { max: 120, timeWindow: "1 hour" } },
   }, async (req, reply) => {
