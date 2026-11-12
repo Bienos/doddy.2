@@ -123,8 +123,9 @@ export class AccountLinker {
     const device = await devices.verify(deviceHeader, now);
     if (!device) throw new AppError("unauthenticated", { message: "This iPhone's earlier sign-in isn't valid any more, so there is nothing to link." });
 
+    // An hour's count, under a `day:` period like the server's other hourly counts, so `prune` drops it.
     const allowed = await store.reserveUsage(
-      [{ counter: `account_link:${account.userId}`, period: `hour:${now.toISOString().slice(0, 13)}`, limit: LINK_TRIES_PER_HOUR }],
+      [{ counter: `account_link:${account.userId}`, period: `day:${now.toISOString().slice(0, 13)}`, limit: LINK_TRIES_PER_HOUR }],
       1,
     );
     if (!allowed) throw new AppError("rate_limited", { message: "Too many tries to link this iPhone. Try again in an hour.", retryAfterSeconds: 3_600 });
