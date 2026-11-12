@@ -21,7 +21,7 @@ S0 is one kind: **a research brief and an infographic.** The owner says "researc
 | `details` | string, optional | up to 1,000 characters: the owner's own words about what they want, kept exactly. Data in every prompt, never instructions |
 | `sources` | array, optional | up to 5 `{ "url": "https://…", "title": "…" }` the owner picked (title up to 200, URL up to 2,048, `http(s)` only) |
 
-Optional fields are left out, never `null`. Strings must not be blank.
+Optional fields are left out, never `null`. Strings must not be blank. `topic`, `audience` and `details` must not hold a link (the errands rule, ADR-703, `textLinkFields` in `errands/links.ts`): the research step has a web fetch, so an address in the brief's text is refused with `400 { error: "invalid_request", fields: [<field names>] }`, never echoing the text. A bare site name ("gov.pl") is fine; addresses go in `sources`.
 
 **The digest** the owner approves: SHA-256 (hex, lowercase) over the canonical JSON of the job: keys sorted at every level, no spaces, strings as `JSON.stringify` writes them, optional fields absent when not given, `sources` in the order given. Same canonical JSON as Errands (`canonicalJson` on the server, `CanonicalJSON` in DoddyCore). The app recomputes it and refuses to approve if it differs.
 

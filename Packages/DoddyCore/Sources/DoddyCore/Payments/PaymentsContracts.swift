@@ -69,6 +69,25 @@ public struct PaymentPreview: Codable, Equatable, Sendable {
     public let confirmLabel: String
 }
 
+/// The site and the page, exactly as Doddy would open them (the path, and a query only on sites the server lists for one).
+public struct PaymentPage: Codable, Equatable, Sendable {
+    public let host: String
+    public let path: String
+}
+
+/// The first card: "check the price on this page?". Nothing has been read from the page yet; the approval lets
+/// the server read that one address once, and the app sends it only after the person's tap.
+public struct PaymentPageCard: Codable, Equatable, Sendable {
+    public let mode: ConnectedAppsMode
+    public let page: PaymentPage
+    public let preview: PaymentPreview
+    public let approvalId: UUID
+    public let expiresAt: String
+
+    /// When the approval to read stops working. Nil if the server's time can't be read (the server decides anyway).
+    public var expiryDate: Date? { PaymentTime.parse(expiresAt) }
+}
+
 public struct PaymentPrepared: Codable, Equatable, Sendable {
     public let mode: ConnectedAppsMode
     public let preview: PaymentPreview

@@ -93,6 +93,26 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
     assert.ok(list[0].costUsd > 0);
   });
 
+  test("a link in the topic, audience or details is refused with the field's name and never the text; nothing is stored", async () => {
+    const w = await world();
+    const cases: Array<[object, string[]]> = [
+      [{ topic: "Pompy ciepła https://collector.example/c?d=pompy" }, ["topic"]],
+      [{ audience: "Właściciele domów, zob. www.collector.example" }, ["audience"]],
+      [{ details: "Ceny z collector.example/ceny?kto=jan" }, ["details"]],
+      [{ topic: "Pompy ciepła hxxps[:]//collector[.]example/x", details: "[tu](https://collector.example/y)" }, ["topic", "details"]],
+    ];
+    for (const [over, fields] of cases) {
+      const r = await w.call("POST", "/v1/studio", { ...job, ...over });
+      assert.equal(r.statusCode, 400, JSON.stringify(over));
+      assert.deepEqual(r.json(), { error: "invalid_request", fields });
+      assert.doesNotMatch(r.body, /collector/);
+    }
+    assert.equal((await db.query("SELECT count(*)::int AS n FROM studio_items")).rows[0].n, 0);
+    // A bare site name names a place and carries nothing; sources are where addresses go.
+    const fine = await w.call("POST", "/v1/studio", { ...job, details: "Dane z gov.pl i URE.", sources: [{ url: "https://www.ure.gov.pl/raport", title: "Raport URE" }] });
+    assert.equal(fine.statusCode, 201, fine.body);
+  });
+
   test("another account can't see, download, cancel or delete it", async () => {
     const w = await world();
     const draft = await approveJob(w);

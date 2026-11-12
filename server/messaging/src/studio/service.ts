@@ -15,6 +15,7 @@ import { randomUUID } from "node:crypto";
 import type pg from "pg";
 import { sameBytes } from "../crypto.js";
 import { inTransaction } from "../db.js";
+import { textLinkFields } from "../errands/links.js";
 import { takeServerSlots } from "../serverUsage.js";
 import { fileAad, jobAad, resultAad, RESERVE_PER_OPEN_JOB_USD, type StudioContext } from "./context.js";
 import { appState, jobBody, jobDigest, jobJson, type ItemState, type Stage, type StudioJob, type StudioResult } from "./schema.js";
@@ -68,6 +69,10 @@ export async function createItem(ctx: StudioContext, accountId: string, body: un
   const parsed = jobBody.safeParse(body);
   if (!parsed.success) return refuse({ status: 400, error: "invalid_request", fields: parsed.error.issues.map((i) => i.path.join(".")) });
   const job = parsed.data;
+  // No link in the brief's text (ADR-703's rule for errands): the research step can fetch any address that appears
+  // in what it was given. Sources are the place for addresses. The field names are answered, never the text.
+  const links = textLinkFields({ topic: job.topic, audience: job.audience, details: job.details });
+  if (links.length) return refuse({ status: 400, error: "invalid_request", fields: links });
   const now = ctx.now();
   const id = randomUUID();
   const digest = jobDigest(job);

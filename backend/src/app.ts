@@ -216,6 +216,7 @@ export async function buildApp(
       userDaily: config.payments.userDaily,
       serviceDaily: config.payments.serviceDaily,
       allowedHosts: config.payments.allowedHosts,
+      queryHosts: config.payments.queryHosts,
     },
     limits: config.limits,
   });

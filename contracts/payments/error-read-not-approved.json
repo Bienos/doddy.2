@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "Doddy opens a payment page only after you say yes to its address. Nothing was read or paid.",
+    "correlationId": "83e0e78b-d07d-43c0-9966-f04b77ca1de3",
+    "receipt": {
+      "operationId": "71e1265c-acfb-43fe-a701-3e5bda553ed6",
+      "operation": "prepare",
+      "timestamp": "2026-10-12T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: Doddy opens a payment page only after you say yes to its address. Nothing was read or paid.",
+      "errorCode": "confirmation_required",
+      "host": "demo-shop.example",
+      "amount": null,
+      "transaction": null
+    }
+  }
+}
