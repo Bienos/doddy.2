@@ -30,6 +30,22 @@ final class VoiceSessionController {
         var text: String
     }
 
+    /// Real Shopify offers obtained from one live voice search. The model can reference an
+    /// index only; it cannot choose a merchant URL or fabricate a variant for checkout.
+    struct ShopifyVoiceOffer: Identifiable {
+        let index: Int
+        let productTitle: String
+        let variant: ShopifyVariant
+        var id: Int { index }
+    }
+
+    /// Merchant-generated checkout URL, displayed ONLY on the iPhone; never spoken to ElevenLabs.
+    struct ShopifyVoiceCheckout {
+        let offer: ShopifyVoiceOffer
+        let quantity: Int
+        let merchant: ShopifyCheckout
+    }
+
     /// Something the agent proposed that waits for the user's tap on the card.
     enum PendingAction: Equatable {
         case memory(toolCallID: String, text: String)
@@ -278,6 +294,13 @@ final class VoiceSessionController {
     }
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
+
+    /// Live catalog results for this conversation. Empty until Shopify returned real offers.
+    private(set) var shopifyVoiceOffers: [ShopifyVoiceOffer] = []
+    private(set) var shopifyVoiceCheckout: ShopifyVoiceCheckout?
+    /// Pinned at the moment a checkout card is shown; a later search cannot silently change
+    /// which product the same tap authorizes. The server rechecks the exact variant before creating a cart.
+    private var shopifyCheckoutSelections: [String: ShopifyVoiceOffer] = [:]
     /// The payment card the voice agent asked for (ADR-736). Only a page address came from the agent; the card
     /// shows Doddy's server's own terms. Kept after the outcome until the person closes the card.
     private(set) var paymentApproval: PaymentApprovalModel?
@@ -638,6 +661,9 @@ final class VoiceSessionController {
         startAttempt += 1
         let attempt = startAttempt
         callOwners.forget(before: attempt)
+        shopifyVoiceOffers = []
+        shopifyVoiceCheckout = nil
+        shopifyCheckoutSelections = [:]
         // "Dzwonię w imieniu …" for call_places: the first word of the approved name in About you, as
         // Settings, Phone calls, Calls for you starts from (decision 2026-11-09-restaurant-calls-one-tap).
         callerFirstName = profile.value(.name)?.split(separator: " ").first.map(String.init) ?? ""
@@ -1267,6 +1293,7 @@ final class VoiceSessionController {
         conversation = nil
         pendingAction = nil
         askLedger.clear()
+        shopifyCheckoutSelections = [:]
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
@@ -2829,6 +2856,18 @@ final class VoiceSessionController {
                 return
             }
         }
+        // Shopify create_cart/create_checkout are real writes. Only a variant from the last
+        // live provider result may be selected, and the user sees the exact verified offer.
+        // The offer is pinned by toolCallID BEFORE the ask card, not looked up by index again
+        // after a second search (which could otherwise silently change the item).
+        if case .shopifyPrepareCheckout(let index, _) = request,
+           shopifyCheckoutSelections[call.toolCallId] == nil {
+            guard let selected = shopifyVoiceOffers.first(where: { $0.index == index && $0.variant.available }) else {
+                await reply(call.toolCallId, "failed: choose a number from the last live Shopify results. No cart or order was created.", isError: true)
+                return
+            }
+            shopifyCheckoutSelections[call.toolCallId] = selected
+        }
         // ASK-01 (ADR-483) as it stands since 11 Nov 2026: a change with no card of its own waits here for the
         // user's tap for exactly this call. Tools with a payload card of their own (and the server's writes)
         // ask through that card. What the user asked to see or start of their own runs at once (`.runsNow`).
@@ -2836,8 +2875,28 @@ final class VoiceSessionController {
         case .yesFirst(let card), .tapFirst(let card):
             guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
                 let needsTap = AskFirst.needsTap(AskFirst.need(for: request))
+                let shownCard: AskCard
+                if case .shopifyPrepareCheckout(_, let quantity) = request,
+                   let selected = shopifyCheckoutSelections[call.toolCallId] {
+                    let polish = Self.cardsInPolish
+                    let variant = selected.variant
+                    shownCard = AskCard(
+                        title: polish ? "Przygotować koszyk w sklepie?" : "Prepare merchant checkout?",
+                        lines: [
+                            "\(selected.productTitle) — \(variant.title)",
+                            "\(variant.merchant) (\(variant.shop))",
+                            polish ? "Sztuki: \(quantity)" : "Quantity: \(quantity)",
+                            polish ? "Cena katalogowa za sztukę: \(ShopifyVoiceMoney.format(variant.priceMinor, currency: variant.currency)) (bez dostawy)" :
+                                     "Catalog unit price: \(ShopifyVoiceMoney.format(variant.priceMinor, currency: variant.currency)) (before shipping)",
+                            polish ? "Stworzymy prawdziwy koszyk. Nie zapłacimy ani nie złożymy zamówienia." :
+                                     "Creates a real cart. No payment or order is submitted.",
+                        ],
+                        confirmLabel: polish ? "Przygotuj koszyk" : "Prepare checkout")
+                } else {
+                    shownCard = card
+                }
                 askLedger.asked(call.toolCallId, request: request, needsTap: needsTap, at: Date())
-                propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
+                propose(.ask(toolCallID: call.toolCallId, card: shownCard, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
                         toolCallID: call.toolCallId)
                 return
             }
@@ -3363,6 +3422,71 @@ final class VoiceSessionController {
             // SHOPPING.md 2: at once since 11 Nov 2026, one request to Doddy's server, which reads the
             // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.
             await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
+        case .shopifySearch(let query):
+            // Public catalog via Doddy's authenticated live backend, no app-account, cart or wallet access.
+            do {
+                let result = try await ShopifyLiveClient.search(query)
+                guard result.source == "shop_mcp", result.market == "PL" else {
+                    await reply(call.toolCallId, "failed: Shopify returned an unexpected market or source. No offers shown.", isError: true)
+                    return
+                }
+                let choices = result.products.flatMap { product in
+                    product.variants.filter(\.available).map { (product.title, $0) }
+                }
+                let selected = Array(choices.prefix(5).enumerated()).map {
+                    ShopifyVoiceOffer(index: $0.offset + 1, productTitle: $0.element.0, variant: $0.element.1)
+                }
+                guard isLive, isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
+                shopifyVoiceOffers = selected
+                shopifyVoiceCheckout = nil
+                if selected.isEmpty {
+                    await reply(call.toolCallId, "No verified Shopify catalog offers found for that search in Poland. Do not invent products or prices.")
+                } else {
+                    let lines = selected.map { offer in
+                        let variant = offer.variant
+                        // Currency and price are merchant catalog data, not a final checkout total.
+                        return "\(offer.index). \(offer.productTitle) (\(variant.title)); shop: \(variant.merchant); " +
+                            "catalog price: \(ShopifyVoiceMoney.format(variant.priceMinor, currency: variant.currency)); availability per Shopify."
+                    }
+                    await reply(call.toolCallId,
+                                "Live Shopify catalog offers for Poland (price excludes unquoted delivery or tax):\n" +
+                                lines.joined(separator: "\n") +
+                                "\nThe choices are on the iPhone. Ask which number. " +
+                                "If the user requests checkout, call shopify_prepare_checkout with index and quantity. " +
+                                "Never read out merchant URLs or claim that an order was placed.")
+                }
+            } catch {
+                await reply(call.toolCallId, "failed: real Shopify product search is unavailable right now. No demo offers shown.", isError: true)
+            }
+        case .shopifyPrepareCheckout(_, let quantity):
+            guard let selected = shopifyCheckoutSelections.removeValue(forKey: call.toolCallId) else {
+                await reply(call.toolCallId, "failed: the chosen Shopify offer was not verified. No cart was created.", isError: true)
+                return
+            }
+            do {
+                // The user already tapped the exact item/merchant/quantity card. Shopify may
+                // create a REAL cart and checkout; it cannot charge any wallet on this API path.
+                let merchant = try await ShopifyLiveClient.prepare(selected.variant, quantity: quantity)
+                guard isLive, isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
+                guard merchant.status == "awaiting_buyer", merchant.shop == selected.variant.shop else {
+                    await reply(call.toolCallId, "failed: the merchant checkout could not be verified. No purchase was submitted.", isError: true)
+                    return
+                }
+                shopifyVoiceCheckout = ShopifyVoiceCheckout(offer: selected, quantity: quantity, merchant: merchant)
+                await reply(call.toolCallId,
+                    "checkout prepared: \(selected.productTitle) from \(merchant.seller), quantity \(quantity). " +
+                    "The merchant's own checkout and price details are on the user's iPhone. " +
+                    "Tell them to tap Continue at merchant to check delivery and pay there. " +
+                    "No order was placed, no payment was taken. Do not say bought or paid.")
+            } catch {
+                // A dropped response after create_cart may leave an UNKNOWN remote cart/checkout.
+                // Never silently send a second create request for the same action.
+                await reply(call.toolCallId,
+                    "unknown: Shopify did not confirm that the cart/checkout was prepared. " +
+                    "No payment was attempted. Do not retry the same selection automatically; " +
+                    "the user can check their merchant account or start a new search.",
+                    isError: true)
+            }
         case .lostWallet(let situation):
             // ADR-692: the checklist is its own card and changes nothing. Its steps and links come
             // from DoddyCore's table; a page opens or a number is dialled only on the person's tap.
@@ -4963,6 +5087,7 @@ final class VoiceSessionController {
     /// receipt, attempt and undo through `writeResults` instead (ADR-319).
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false, undo: ActivityUndo? = nil) async {
         callsAsReceived[toolCallID] = nil
+        shopifyCheckoutSelections.removeValue(forKey: toolCallID)
         let write = writeResults.removeValue(forKey: toolCallID)
         retryChecks[toolCallID] = nil
         let undo = undo ?? write?.undo
