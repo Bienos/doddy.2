@@ -40,7 +40,7 @@ export const LOGBOOK_TOOL_IDS = [
   "delete_outlook_event", "accept_outlook_invite", "decline_outlook_invite", "send_outlook_email",
   "reply_outlook_email", "forward_outlook_email", "move_outlook_email", "mark_outlook_email", "list_todoist_tasks",
   "add_todoist_task", "complete_todoist_task", "move_todoist_task", "rename_todoist_task", "web_search",
-  "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places",
+  "geocode_place", "get_weather", "get_poland_info", "wikipedia_search", "wikipedia_summary", "news_search", "find_places",
   "start_translator", "stop_translator", "add_to_list", "add_ingredients", "read_list", "check_off",
   "remove_from_list", "create_list", "hand_over_errand", "check_errands", "make_something", "find_deals", "pay_for_page", "note_capability_gap", "ask_claude",
   "make_document",
