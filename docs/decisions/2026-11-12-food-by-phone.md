@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-12
 - **Decided by:** owner, 12 Nov 2026: "Both and merge" (the restaurant's page and ordering by phone), then, on the two open questions: **pay on delivery only**, and the **address typed on the card each time**.
-- **Status:** proposed design; no code yet. Built in the steps below, each its own pull request, after `2026-11-12-food-by-voice` (#355) is merged.
+- **Status:** proposed design; no code yet. Built in the steps below, each its own pull request, after `2026-11-12-food-by-voice` (#355, merged 12 Nov 2026).
 - **Replaces:** nothing. Extends `2026-11-12-book-agent` (same pattern, a third agent) and sits beside `2026-11-12-food-by-voice` (the person's own app, no phone call).
 
 ## Why
