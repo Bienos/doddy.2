@@ -153,6 +153,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.convertCurrency, .lookup, .runsNow),
         // Another app opens with it filled in; nothing is sent by Doddy.
         .init(VoiceToolName.openMap, .handoff, .card),
+        // A food delivery app opens on the card's tap; the person orders there (decision 2026-11-12-food-by-voice).
+        .init(VoiceToolName.openFoodApp, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).

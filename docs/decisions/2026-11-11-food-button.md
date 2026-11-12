@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-11
 - **Decided by:** owner: "maybe other button like food as i add other ones as well there" (11 Nov 2026), in answer to an "Open in Uber Eats" button offered as a stopgap until Uber approves ordering access.
-- **Status:** applied in the pull request that adds this file.
+- **Status:** applied in the pull request that adds this file. Bolt Food and a voice tool added by `2026-11-12-food-by-voice`, which replaces the "No voice tool" line below.
 
 ## Why
 Uber's consumer APIs (account linking, ordering) are early access and need Uber's written approval; Wolt, Glovo and Pyszne.pl have no public consumer ordering API either. Until then the owner wants one entry that holds the delivery apps, not one button per provider.

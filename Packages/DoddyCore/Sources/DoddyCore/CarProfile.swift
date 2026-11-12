@@ -79,7 +79,7 @@ public enum CarProfile {
              .openTrainingPlan, .checkOff:
             return .refuse(reason: "This shows on the iPhone's screen, so it waits until the user isn't driving.")
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .addIngredients, .undoLast,
-             .setTimer, .setAlarm, .cancelAlarm, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .startTranslator,
+             .setTimer, .setAlarm, .cancelAlarm, .openMap, .openFoodApp, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .startTranslator,
              .stopTranslator, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")

@@ -3,12 +3,13 @@ import XCTest
 @testable import DoddyCore
 
 final class FoodAppsTests: XCTestCase {
-    func testTheFourFirstAppsAreListedInOrderWithTheirOwnHosts() {
+    func testTheAppsAreListedInOrderWithTheirOwnHosts() {
         let hosts = Dictionary(uniqueKeysWithValues: FoodApps.all.map { ($0.id, $0.url.host ?? "") })
-        XCTAssertEqual(FoodApps.all.map(\.id), ["ubereats", "wolt", "glovo", "pyszne"])
+        XCTAssertEqual(FoodApps.all.map(\.id), ["ubereats", "wolt", "glovo", "bolt", "pyszne"])
         XCTAssertEqual(hosts["ubereats"], "www.ubereats.com")
         XCTAssertEqual(hosts["wolt"], "wolt.com")
         XCTAssertEqual(hosts["glovo"], "glovoapp.com")
+        XCTAssertEqual(hosts["bolt"], "food.bolt.eu")
         XCTAssertEqual(hosts["pyszne"], "www.pyszne.pl")
     }
 
