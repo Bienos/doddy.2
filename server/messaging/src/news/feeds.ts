@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { capHtml, stripTags } from "../htmlScan.js";
 
 export interface NewsItem {
   title: string;
@@ -21,10 +22,13 @@ const parser = new XMLParser({
 
 const NAMED: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", hellip: "…", ndash: "–", mdash: "—", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“" };
 
+/** A feed field is read up to this many characters: a title or a 300-character summary comes from its start. */
+export const FEED_TEXT_MAX_CHARS = 256 * 1024;
+
 /** Plain text from feed HTML/entities: tags dropped, entities decoded, whitespace collapsed. */
 export function plainText(value: unknown, max = 400): string {
   let s = typeof value === "string" ? value : typeof value === "object" && value && "#text" in value ? String((value as { "#text": unknown })["#text"]) : "";
-  s = s.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]*>/g, " ");
+  s = stripTags(capHtml(s, FEED_TEXT_MAX_CHARS).replace(/<!\[CDATA\[|\]\]>/g, ""));
   s = s.replace(/&#x([0-9a-f]+);/gi, (_, h) => safeChar(parseInt(h, 16)))
     .replace(/&#(\d+);/g, (_, d) => safeChar(Number(d)))
     .replace(/&([a-z]+);/gi, (m, n: string) => NAMED[n.toLowerCase()] ?? m);
@@ -63,13 +67,44 @@ export function itemImage(it: Record<string, any>, html: unknown): string | unde
     if (typeof medium === "string" && medium !== "image") continue;
     candidates.push(attr(node, "@url") ?? attr(node, "@href")); // Atom enclosures say href
   }
-  const img = typeof html === "string" ? /<img[^>]+src=["']([^"']+)["']/i.exec(html) : null;
-  if (img) candidates.push(img[1]);
+  const img = typeof html === "string" ? firstImgSrc(html.slice(0, FEED_TEXT_MAX_CHARS)) : undefined;
+  if (img) candidates.push(img);
   for (const c of candidates) {
     const u = imageUrl(c);
     if (u) return u;
   }
   return undefined;
+}
+
+/**
+ * The address of the first `<img … src="…">`: what `/<img[^>]+src=["']([^"']+)["']/i` finds, in linear time. As in
+ * that regex, the last `src=` before the tag's first ">" that has a value and a closing quote wins, and the value
+ * runs to the next quote of either kind.
+ */
+export function firstImgSrc(html: string): string | undefined {
+  const img = /<img/gi;
+  const src = /src=["']/gi;
+  const quote = /["']/g;
+  for (let from = 0; ;) {
+    img.lastIndex = from;
+    const m = img.exec(html);
+    if (!m) return undefined;
+    const gt = html.indexOf(">", m.index + 4);
+    const tag = html.slice(m.index, gt < 0 ? html.length : gt);
+    const starts: number[] = [];
+    // `[^>]+` takes at least one character, so a src= right after "<img" doesn't count.
+    src.lastIndex = 5;
+    for (let s = src.exec(tag); s; s = src.exec(tag)) starts.push(m.index + s.index + s[0].length);
+    for (let i = starts.length - 1; i >= 0; i--) {
+      const value = starts[i]!;
+      quote.lastIndex = value;
+      const q = quote.exec(html);
+      if (q && q.index > value) return html.slice(value, q.index);
+    }
+    // No "<img" before this tag's ">" can do better: its src= choices are a subset of these.
+    if (gt < 0) return undefined;
+    from = gt + 1;
+  }
 }
 
 export function httpUrl(value: string): string | null {

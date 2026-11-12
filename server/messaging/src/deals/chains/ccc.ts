@@ -13,6 +13,7 @@
 // (the "Promocje" menu of 30 Oct; the top-level /wyprzedaz answers 404). A page lists 25 products, or 100 with
 // CCC's own `pageSize=100` (1.8 MB, under the fetcher's 3 MB cap); at most four pages are read per search.
 import { decodeEntities, fetchOfficial, mapLimit, officialUrl } from "./common.js";
+import { findFrom, nextStartTag, spanAt, spans, stripTags } from "../../htmlScan.js";
 import { normalize } from "../match.js";
 import type { ChainAdapter, ChainRead, Condition, DataProduct, Money } from "../types.js";
 
@@ -88,7 +89,35 @@ export function cccCategories(queries: readonly string[]): CccCategory[] {
 const pageUrl = (c: CccCategory, page: number) => `${c.url}?pageSize=${PAGE_SIZE}${page > 1 ? `&page=${page}` : ""}`;
 
 /** Text of an HTML fragment: tags out, entities decoded, spaces collapsed. */
-const textOf = (html: string) => decodeEntities(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+const textOf = (html: string) => decodeEntities(stripTags(html)).replace(/\s+/g, " ").trim();
+
+/** The text from the tag holding the first `attr` to `close`: what /ATTR[^>]*>([\s\S]*?)CLOSE/ finds, in linear time
+ * (when the first ATTR has no ">" or no `close` after it, no later one has either). */
+function contentAfter(html: string, attr: RegExp, close: string): string | undefined {
+  const a = findFrom(html, attr, 0);
+  const gt = a ? html.indexOf(">", a.end) : -1;
+  const c = gt < 0 ? -1 : html.indexOf(close, gt + 1);
+  return c < 0 ? undefined : html.slice(gt + 1, c);
+}
+
+/** The text of a whole element found by its opening and closing strings (/<x\b[\s\S]*?<\/x>/), or undefined. */
+function block(html: string, open: RegExp, close: string): string | undefined {
+  const s = spanAt(html, open, close);
+  return s ? html.slice(s.index, s.end) : undefined;
+}
+
+/** A price block's spans, attributes and text: what /<span([^>]*)>([^<]*)<\/span>/g finds, in linear time. */
+function priceSpans(html: string): { attrs: string; text: string }[] {
+  const out: { attrs: string; text: string }[] = [];
+  for (let tag = nextStartTag(html, /<span/g); tag; ) {
+    const textEnd = html.indexOf("<", tag.end);
+    if (textEnd < 0) break;
+    const closed = html.startsWith("</span>", textEnd);
+    if (closed) out.push({ attrs: tag.text.slice("<span".length, -1), text: html.slice(tag.end, textEnd) });
+    tag = nextStartTag(html, /<span/g, closed ? textEnd + "</span>".length : tag.end);
+  }
+  return out;
+}
 
 /** "149,99 zł", "1 299,99 zł" (a space, no-break or narrow space between thousands). */
 export function zloty(text: string | undefined): Money | undefined {
@@ -129,25 +158,25 @@ function productUrl(href: string | undefined): string | undefined {
 /** One product tile as a data product, or undefined when it can't be read or shows no promotion. */
 function tileProduct(tile: string, label: string): DataProduct | undefined {
   const url = productUrl(/href="(\/pl\/pl\/p\/[^"]+)"/.exec(tile)?.[1]);
-  const brand = textOf(/id="trademark-\d+"[^>]*>([\s\S]*?)<\/strong>/.exec(tile)?.[1] ?? "");
-  const model = textOf(/id="model-\d+"[^>]*>([\s\S]*?)<\/span>/.exec(tile)?.[1] ?? "");
-  const pricing = /<shared-atoms-pricing\b[\s\S]*?<\/shared-atoms-pricing>/.exec(tile)?.[0];
+  const brand = textOf(contentAfter(tile, /id="trademark-\d+"/g, "</strong>") ?? "");
+  const model = textOf(contentAfter(tile, /id="model-\d+"/g, "</span>") ?? "");
+  const pricing = block(tile, /<shared-atoms-pricing\b/g, "</shared-atoms-pricing>");
   if (!url || !(brand || model) || !pricing) return undefined;
   // Every price printed in the price block: one shelf price, and a struck one if CCC ever shows it.
-  const prices = [...pricing.matchAll(/<span([^>]*)>([^<]*)<\/span>/g)]
-    .map((m) => ({ struck: /line-through/.test(m[1]!), money: zloty(m[2]) }))
+  const prices = priceSpans(pricing)
+    .map((s) => ({ struck: /line-through/.test(s.attrs), money: zloty(s.text) }))
     .filter((p): p is { struck: boolean; money: Money } => !!p.money);
   const shelf = prices.filter((p) => !p.struck);
   if (shelf.length !== 1) return undefined; // two unstruck prices: which is paid isn't said, so nothing is guessed
   const price = shelf[0]!.money;
   const struck = prices.filter((p) => p.struck).map((p) => p.money);
-  const omnibus = textOf(/<shared-atoms-omnibus-pricing\b[\s\S]*?<\/shared-atoms-omnibus-pricing>/.exec(tile)?.[0] ?? "");
+  const omnibus = textOf(block(tile, /<shared-atoms-omnibus-pricing\b/g, "</shared-atoms-omnibus-pricing>") ?? "");
   const lowest30d = zloty(LOWEST_30D.exec(omnibus)?.[1]);
   const first = zloty(FIRST_PRICE.exec(omnibus)?.[1]);
   const regular = (struck.length === 1 ? struck[0] : undefined) ?? first;
   const conditions: Condition[] = [];
-  for (const m of tile.matchAll(/<shared-molecules-sticker\b[\s\S]*?<\/shared-molecules-sticker>/g)) {
-    const c = stickerCondition(textOf(m[0]));
+  for (const s of spans(tile, /<shared-molecules-sticker\b/g, "</shared-molecules-sticker>")) {
+    const c = stickerCondition(textOf(tile.slice(s.index, s.end)));
     if (c && !conditions.some((x) => x.text === c.text)) conditions.push(c);
   }
   // Only what CCC shows as a promotion: a reduction it announces (the 30-day price "przed obniżką", a struck
@@ -171,7 +200,7 @@ export function parseCccPage(html: string, label: string): { products: DataProdu
     const p = tileProduct(t, label);
     if (p && !byUrl.has(p.url)) byUrl.set(p.url, p);
   }
-  const selector = /<m-pagination-page-selector\b[\s\S]*?<\/m-pagination-page-selector>/.exec(html)?.[0] ?? "";
+  const selector = block(html, /<m-pagination-page-selector\b/g, "</m-pagination-page-selector>") ?? "";
   const total = />\s*z\s*<\/div>\s*<div[^>]*>\s*(\d{1,4})\s*<\/div>/.exec(selector)?.[1];
   const pages = total && Number(total) >= 1 ? Number(total) : undefined;
   return { products: [...byUrl.values()], tiles: tiles.length, ...(pages ? { pages } : {}) };

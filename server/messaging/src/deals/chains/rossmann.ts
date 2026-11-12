@@ -10,6 +10,7 @@
 // Privacy: unlike the other chains, this sends each item's words to rossmann.pl as the search term (no user id,
 // no cookies; from Doddy's server).
 import { currentWeek, decodeEntities, fetchOfficial, isObject, isoDay, mapLimit, moneyOf, str, validEan } from "./common.js";
+import { spanAt } from "../../htmlScan.js";
 import { normalize, terms } from "../match.js";
 import type { ChainAdapter, ChainRead, DataProduct } from "../types.js";
 
@@ -26,10 +27,10 @@ function productPath(v: unknown): string | undefined {
 
 /** Promoted products on one /promocje page (only those whose promotion runs this week). */
 export function parsePromotions(html: string, today: string): DataProduct[] | undefined {
-  const m = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+  const m = spanAt(html, '<script id="__NEXT_DATA__" type="application/json">', "</script>");
   if (!m) return undefined;
   let data: unknown;
-  try { data = JSON.parse(m[1]!); } catch { return undefined; }
+  try { data = JSON.parse(html.slice(m.contentStart, m.contentEnd)); } catch { return undefined; }
   const props = isObject(data) && isObject(data.props) && isObject(data.props.pageProps) ? data.props.pageProps : undefined;
   const inner = props && isObject(props.pageProps) ? props.pageProps : undefined;
   const filters = inner && isObject(inner.dehydratedFilters) ? inner.dehydratedFilters : undefined;
