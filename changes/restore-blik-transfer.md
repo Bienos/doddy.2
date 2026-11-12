@@ -1,2 +1,0 @@
-BLIK phone-transfer draft is back (owner, 7 Nov 2026: "keep blik"): the `draft_blik_transfer` voice tool, its card, the Connections › Money switch (on by default, ADR-813), island word, Polish strings, Logbook entry; back in the voice spec. ADR-810 is superseded; ADR-510 and ADR-541 are in force (decision `docs/decisions/2026-11-07-restore-blik-transfer-draft.md`). The live ElevenLabs agent was not touched and already has the tool.
-Ran: guard, voice spec, strings catalog check, backend npm test (see the PR). Not run: any Swift (no compiler here); hosted CI is the check.

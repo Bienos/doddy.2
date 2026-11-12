@@ -1,2 +1,0 @@
-Voice: "śledź CPK i powiadom mnie, gdy napiszą o lotnisku" sets the radar alert too (`alert_words`, `tell_me`, `daily_time` on `follow_news`; decision 2026-11-11-radar-alerts-by-voice). Refusals and the "kept / here only" answer come from the radar's own rules.
-Ran: scripts/ci.sh --only swift (new tests in NewsFollowVoiceTests). Not run: app compile of VoiceSessionController (hosted Mac job first), device. Live agent tool updated separately.

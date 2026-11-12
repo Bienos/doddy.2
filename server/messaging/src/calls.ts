@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { sha256 } from "./crypto.js";
 import type { Db } from "./db.js";
+import type { TaskVoice } from "./providers/taskCalls.js";
 import type pg from "pg";
 
 export const SESSION_HOURS = 2;
@@ -117,4 +118,61 @@ export async function queuePhoneAgentDeletions(db: Db | pg.PoolClient, accountId
      ON CONFLICT (location, item, provider_ref) WHERE location <> 'doddy_server' DO NOTHING`,
     [accountId, now]);
   return r.rowCount ?? 0;
+}
+
+/** The phone agent's conversations are swept once they are this old: the post-call webhook has long been and gone. */
+export const PHONE_SWEEP_MIN_AGE_HOURS = 24;
+/** Pages of 100 conversations read per sweep, newest first (ElevenLabs keeps the phone agent's for 30 days). */
+export const PHONE_SWEEP_MAX_PAGES = 10;
+
+type SweepContext = { db: Db; voice: Pick<TaskVoice, "listConversations" | "getConversation">; now: () => Date; log: (msg: string, extra?: object) => void };
+
+/**
+ * The phone agent's conversations at ElevenLabs that no live `calls` row owns are queued for deletion (reason
+ * `orphan`), like the task agents' (`sweepOrphans`): a call whose account was deleted before its post-call webhook
+ * came, a webhook that never came for a deleted account, or a conversation started anywhere but through this server.
+ * A conversation whose webhook never arrived but whose Twilio call is still a `calls` row gets its id stored there
+ * instead, and goes with that account. The worker deletes the queued ones and counts one gone only once a read says
+ * so (`runDeletions`). Only conversations started a day ago or earlier are looked at. Logs counts only.
+ */
+export async function sweepPhoneAgentOrphans(ctx: SweepContext, agentId: string): Promise<number> {
+  const now = ctx.now();
+  let before = Math.floor(now.getTime() / 1000) - PHONE_SWEEP_MIN_AGE_HOURS * 3600;
+  const seen = new Set<string>();
+  let queued = 0;
+  let linked = 0;
+  for (let page = 0; page < PHONE_SWEEP_MAX_PAGES; page++) {
+    const list = await ctx.voice.listConversations(agentId, before);
+    if (list === "error") break;
+    const fresh = list.filter((c) => !seen.has(c.id));
+    for (const conv of fresh) {
+      seen.add(conv.id);
+      if (conv.id.length > 128) continue;
+      const { rows: owned } = await ctx.db.query(
+        `SELECT 1 FROM calls WHERE conversation_id = $1
+         UNION ALL SELECT 1 FROM server_data_deletions
+           WHERE location = 'elevenlabs' AND item = 'elevenlabs_conversation' AND provider_ref = $1 LIMIT 1`, [conv.id]);
+      if (owned.length) continue;
+      const got = await ctx.voice.getConversation(conv.id);
+      if (got.kind === "not_found") continue;
+      if (got.kind === "error") continue; // looked at again next time
+      const sid = (got.conversation.metadata as { phone_call?: { call_sid?: unknown } | null }).phone_call?.call_sid;
+      if (typeof sid === "string" && sid) {
+        const { rowCount } = await ctx.db.query(
+          "UPDATE calls SET conversation_id = $2 WHERE call_sid = $1 AND (conversation_id IS NULL OR conversation_id = $2)", [sid, conv.id]);
+        if (rowCount) { linked++; continue; }
+      }
+      const r = await ctx.db.query(
+        `INSERT INTO server_data_deletions (id, account_id, item, location, reason, result, provider_ref, next_try_at, requested_at)
+         VALUES (gen_random_uuid(), NULL, 'elevenlabs_conversation', 'elevenlabs', 'orphan', 'pending', $1, $2, $2)
+         ON CONFLICT (location, item, provider_ref) WHERE location <> 'doddy_server' DO NOTHING`, [conv.id, now]);
+      queued += r.rowCount ?? 0;
+    }
+    // One page of 100 at most comes back; the next one starts at the oldest start time seen (same-second ones are
+    // read again and skipped).
+    if (list.length < 100 || fresh.length === 0) break;
+    before = Math.min(...list.map((c) => c.startUnix)) + 1;
+  }
+  if (queued || linked) ctx.log("phone agent conversations swept", { queued, linked });
+  return queued;
 }
