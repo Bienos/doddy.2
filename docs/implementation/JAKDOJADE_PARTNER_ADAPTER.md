@@ -21,7 +21,7 @@ It is intentionally impossible to produce "live routes" without an injected lice
 
 `server/messaging/src/integrations/jakdojade.ts`:
 - A credential-injected, fixed-host, **read-only** HTTP adapter. No credentials
-  in source, mobile client, logs or tests. No public route exposed yet.
+  in source, mobile client, logs or tests. Authenticated /v1/journeys endpoints are registered and return 503 until explicitly configured.
 - `locations(agg, search)`: returns up to 10 station/street/POI candidates
   with source coordinates; caller must pick any ambiguous place.
 - `routes({from,to,day,hour,arriving,mode,avoidBuses,avoidTransfers})`:
@@ -41,12 +41,8 @@ responses and error cases. No production secrets, remote provider calls or purch
 
 1. Owner obtains Jakdojade's written permission for a consumer voice assistant
    to display routes and stops commercially, and receives licensed key + secret.
-2. Put key/secret into the existing server secret-manager mechanism, add a
-   configuration gate and inject a non-null `CredentialSource` into the adapter.
-   No anonymous request, `test=true` or fake result in live mode.
-3. Wire a strictly typed authenticated backend route to DODDY, with rate limits,
-   per-request user approval for location, geographic validation, and provider
-   costs measured. Never expose partner credentials to Swift or ElevenLabs.
+2. Put key/secret into the server secret manager as `JAKDOJADE_LICENSE_KEY` and `JAKDOJADE_SECRET`, and set `JAKDOJADE_ENABLED=1`. The config injects the client only with all three settings. Never place secrets in the app or GitHub. No anonymous request, `test=true` or fake result in live mode.
+3. The backend has `GET /v1/journeys/provider`, `POST /v1/journeys/places` and `POST /v1/journeys/routes`, all requiring a DODDY device token, strict Zod payloads and hourly rate limiting. **Before enabling**: complete provider-wide daily cost caps, per-request user approval for location, geography checks, billing and a live-credential smoke test.
 4. Bind this typed result to the `JourneyRouteProvider` and journey card created
    in the separate official-link handoff PR. Check true route freshness and
    timezone, reconcile ambiguous place names with the person, and test in Poland.
@@ -57,3 +53,13 @@ responses and error cases. No production secrets, remote provider calls or purch
 
 The browser link handoff is independent of this adapter and works without API credentials.
 This PR is not ready for use in TestFlight until it is fully integrated and validated.
+
+## Implemented server endpoints (off by default)
+
+- `GET /v1/journeys/provider` -> `{ provider: "jakdojade", available: false, capabilities: [], realtime: false, tickets: false }` without credentials.
+- `POST /v1/journeys/places` -> `{ city: "WARSZAWA", query: "Świętokrzyska" }`, returns attributed candidate locations. Does not guess a POI or save the query.
+- `POST /v1/journeys/routes` -> `{ from: { latitude, longitude }, to: {...}, day, hour, arriving, mode, avoidBuses, avoidTransfers }`, returns up to three attributed source routes.
+- Requires the iPhone account's 43-character Bearer token and rejects all unauthenticated calls before contacting the provider. Strict parsing, hourly rate limits, and safe source-error codes apply.
+- Required env: `JAKDOJADE_ENABLED=1`, `JAKDOJADE_LICENSE_KEY`, `JAKDOJADE_SECRET`. Unconfigured returns HTTP 503; no `test=true` fallback.
+
+Routes and credentials are **not deployed**. Interface wiring and source validation require a partner contract and real credential-based testing.
