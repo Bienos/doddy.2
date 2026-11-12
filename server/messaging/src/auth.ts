@@ -32,6 +32,16 @@ export function requireDevice(db: Db) {
   };
 }
 
+/**
+ * True when the account belongs to a Doddy account (signed in with Apple, Google or a code by email, `accounts.auth_subject`,
+ * decision 2026-11-08-required-account); false for an anonymous account from before, or one that is gone.
+ */
+export async function hasDoddyAccount(db: Pick<Db, "query">, accountId: string): Promise<boolean> {
+  const { rows } = await db.query<{ signed_in: boolean }>(
+    "SELECT auth_subject IS NOT NULL AS signed_in FROM accounts WHERE id = $1", [accountId]);
+  return rows[0]?.signed_in ?? false;
+}
+
 export function principal(req: FastifyRequest): Principal {
   if (!req.principal) throw new Error("route is missing requireDevice");
   return req.principal;

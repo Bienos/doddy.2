@@ -67,6 +67,8 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     if (opts.pin) assert.equal((await call("PUT", "/v1/calls/pin", h, { pin: opts.pin })).statusCode, 204);
     if (opts.inbound) assert.equal((await call("PUT", "/v1/calls/settings", h, { inboundEnabled: true })).statusCode, 204);
     if (opts.memories) {
+      // Memory on calls needs a Doddy account (test/accountQuotas.test.ts): linked as POST /v1/accounts/sign-in does.
+      await db.query("UPDATE accounts SET auth_subject = $2 WHERE id = $1", [accountId, randomUUID()]);
       assert.equal((await call("PUT", "/v1/memory-copy", h, { enabled: true })).statusCode, 204);
       // Uppercase ids, as iOS's UUID.uuidString sends them.
       const items = opts.memories.map((text) => ({ id: randomUUID().toUpperCase(), text, capturedAt: "2026-09-01T10:00:00Z" }));
@@ -302,6 +304,7 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     const own = await testApp(db);
     const r = await own.app.inject({ method: "POST", url: "/v1/accounts" });
     const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    await db.query("UPDATE accounts SET auth_subject = $2 WHERE id = $1", [accountId, randomUUID()]);
     const snapshot = (payload: object) => own.app.inject({
       method: "PUT", url: "/v1/memory-copy/snapshot", headers: { authorization: `Bearer ${deviceToken}` }, payload,
     });

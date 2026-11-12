@@ -9,6 +9,7 @@ import type { NewsItem } from "./feeds.js";
 import { shortlist, type TopicItems } from "./rank.js";
 import { localDate, nextRunAt } from "./schedule.js";
 import { cached, searchQuery, type FeedSource, type NewsSearch } from "./sources.js";
+import { reserveWriter, type NewsWriterCaps } from "./usage.js";
 import { shorten, validateLines, type DigestWriter } from "./writer.js";
 
 export interface NewsDeps {
@@ -19,6 +20,8 @@ export interface NewsDeps {
   cipher?: TextCipher;
   /** Texts queued per UTC day, per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
   smsCaps?: { perAccount: number; perServer: number };
+  /** Digests the writer may write per UTC day: per account, for the server, for new accounts. Default DEFAULT_NEWS_WRITER_CAPS. */
+  writerCaps?: NewsWriterCaps;
 }
 
 export const MAX_TOPICS = 10;
@@ -70,7 +73,10 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
 
     let picks: { candidate: (typeof candidates)[number]; line: string }[] = [];
     let aiWritten = false;
-    if (news.writer) {
+    // Counted before the writer is asked (src/news/usage.ts). Past a daily cap: plain headlines, as when it is down.
+    const reserved = news.writer ? await reserveWriter(db, accountId, news.writerCaps, now) : undefined;
+    if (reserved && reserved !== "ok") log("news writer skipped, daily limit", { scope: reserved });
+    if (news.writer && reserved === "ok") {
       try {
         picks = validateLines(await news.writer.write({
           language: settings.language, topics: topics.map((t) => t.label), candidates,
@@ -114,11 +120,13 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
         }
       }
     });
+    // writer_daily_limit: plain headlines because a daily cap on the writer was reached (the app says "headlines only").
+    const capped = reserved && reserved !== "ok" ? "writer_daily_limit" : undefined;
     if (queued.length === 0) {
-      // Kept for the app. no_channel only when the user chose a channel that can't be used now.
-      return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : undefined });
+      // Kept for the app. no_channel only when the user chose a channel that can't be used now; it wins, as the app reads it.
+      return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : capped });
     }
-    return finish({ status: "queued", aiWritten });
+    return finish({ status: "queued", aiWritten, errorCode: capped });
   } catch {
     return finish({ status: "failed", errorCode: "build_error" });
   }
