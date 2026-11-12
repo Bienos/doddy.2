@@ -995,7 +995,7 @@ public enum VoiceToolReply {
             + (requiresOriginSelection
                 ? "The user must choose a starting location in Jakdojade. "
                 : "Jakdojade will identify the named places before showing a route. ")
-            + "Doddy cannot see which route Jakdojade selected, so never invent departure times, vehicles, tickets or delays.\\n"
+            + "Doddy cannot see which route Jakdojade selected, so never invent departure times, vehicles, tickets or delays.\n"
             + ToolData.block(details)
     }
 
