@@ -59,6 +59,15 @@ pending. Check `voice-audio`: one request when the tap joins a warm-up (`token w
 `voice first speaking event after start`. Measure audible playback separately; an SDK speaking event can
 arrive before audio. No device latency has been measured for this fix.
 
+Action Button readiness: `TalkStartRulesTests` covers the pre-deadline wait, successful handoff,
+actual failure and four-second timeout, including readiness/failure arriving at the deadline.
+On an unlocked iPhone with voice already configured, press the **Talk to Doddy control** from
+another app: check for a connecting popup before the greeting, then ask a question, request an
+action and check that its approval card still requires approval. Test cold/warm starts, denied
+microphone/Live Activities, an interrupted start and a second press to end. An unready timeout
+must offer to open Doddy and must never start a delayed microphone afterward. Expansion and
+background microphone behaviour require a device; simulator compilation alone cannot verify them.
+
 Provider network preparation: `VoiceNetworkPreparationTests` covers every permission/readiness gate,
 the two-minute request budget and its independence from token use, plus content-free SDK timing formatting.
 The native `DoddyTests/VoiceNetworkHostTests` checks our prewarm host against the pinned ElevenLabs
