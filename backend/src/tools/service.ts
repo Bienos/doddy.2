@@ -5,7 +5,7 @@ import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
 import { AccessRequestSchema, type AppAccess, isAppsTool, toolsForAccess, translateAppsCall } from "./apps.js";
 import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
-import { type ApprovalRun, CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
+import { type ApprovalRun, CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store, stuckCleanupLine } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
 import {
   bindsTimeZone,
@@ -500,8 +500,14 @@ export class CloudToolsService {
     const now = this.now();
     const toolkits = Object.keys(TOOLKITS);
     const ended = await this.store.expireAttempts(now, toolkits);
-    const retry = await this.store.cleanupsToRetry(toolkits, now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    const retry = await this.store.cleanupsToRetry(toolkits, now, CLEANUP_RETRY.perSweep);
     await this.removeQueued([...ended, ...retry]);
+  }
+
+  /** Kept queued for the sweep, put off a little longer each time; reported once when it is stuck. */
+  private async failedCleanup(connectionId: string): Promise<void> {
+    const failure = await this.store.failCleanup(connectionId, "remote_cleanup_failed", this.now());
+    if (failure?.stuckNow) this.deps.log?.(stuckCleanupLine(failure));
   }
 
   /** Removes connections a failed completion left at the provider; a failure stays queued and visible. */
@@ -524,7 +530,7 @@ export class CloudToolsService {
         result = "failed";
       }
       if (result === "removed") await this.store.finishCleanup(connectionId);
-      else await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+      else await this.failedCleanup(connectionId);
     }
   }
 
@@ -540,7 +546,7 @@ export class CloudToolsService {
       result = "failed";
     }
     if (result === "removed") await this.store.finishCleanup(connectionId);
-    else await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+    else await this.failedCleanup(connectionId);
     return result;
   }
 

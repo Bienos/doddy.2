@@ -3,6 +3,7 @@
 // worked around) and reads the schema.org Product/Offer data the shop publishes for search engines
 // (JSON-LD first, then microdata and Open Graph price tags). No structured price means no price: the
 // page's prose is never parsed for a number.
+import { elements, startTags } from "../htmlScan.js";
 import { amountFromData, type Money } from "./money.js";
 
 /** The fetcher both shopping parts use (the deals module's polite fetcher has this shape). */
@@ -89,12 +90,23 @@ function offerCandidate(offer: Record<string, Json>): Candidate | undefined {
   return { price: { minor, currency }, availability: availabilityOf(offer.availability), seller: sellerOf(offer), gtin: gtinOf(offer) };
 }
 
+/** A page is read up to the fetcher's own cap (3 MB); a longer string is cut there. */
+export const MAX_PAGE_CHARS = 3 * 1024 * 1024;
+/** A JSON-LD block longer than this is skipped unread: a product's own block is a few KB. */
+export const MAX_JSON_LD_CHARS = 256 * 1024;
+
+const capped = (html: string) => (html.length > MAX_PAGE_CHARS ? html.slice(0, MAX_PAGE_CHARS) : html);
+
+const LD_JSON_TYPE = /type\s*=\s*["']application\/ld\+json["']/iu;
+
 /** The product's offer from JSON-LD blocks, or undefined when there isn't exactly one price. */
 export function fromJsonLd(html: string): Omit<PageOffer, "finalUrl"> | undefined {
-  const blocks = [...html.matchAll(/<script[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/giu)];
+  // The blocks /<script[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/giu finds, in linear time.
+  const blocks = elements(capped(html), /<script/giu, /<\/script>/giu, (tag) => LD_JSON_TYPE.test(tag.text));
   const nodes: Record<string, Json>[] = [];
   for (const b of blocks) {
-    const raw = (b[1] ?? "").trim().replace(/^<!--|-->$/gu, "");
+    if (b.content.length > MAX_JSON_LD_CHARS) continue;
+    const raw = b.content.trim().replace(/^<!--|-->$/gu, "");
     try { walk(JSON.parse(raw) as Json, nodes); } catch { /* a broken block is skipped */ }
   }
   const products = nodes.filter((n) => types(n).some((t) => t === "product" || t === "productgroup" || t === "individualproduct"));
@@ -112,10 +124,18 @@ export function fromJsonLd(html: string): Omit<PageOffer, "finalUrl"> | undefine
 
 const attr = (tag: string, name: string) => new RegExp(String.raw`${name}\s*=\s*["']([^"']*)["']`, "iu").exec(tag)?.[1];
 
+const PRICE_PROP = /itemprop\s*=\s*["']price["']/iu;
+const CURRENCY_PROP = /itemprop\s*=\s*["']priceCurrency["']/iu;
+
 /** Microdata `itemprop="price"` with `itemprop="priceCurrency"`, when each appears exactly once. */
 export function fromMicrodata(html: string): Omit<PageOffer, "finalUrl"> | undefined {
-  const priceTags = [...html.matchAll(/<[^>]*itemprop\s*=\s*["']price["'][^>]*>/giu)].map((m) => m[0]);
-  const curTags = [...html.matchAll(/<[^>]*itemprop\s*=\s*["']priceCurrency["'][^>]*>/giu)].map((m) => m[0]);
+  // The tags /<[^>]*itemprop\s*=\s*["']price["'][^>]*>/giu (and its priceCurrency twin) finds, in linear time.
+  const priceTags: string[] = [];
+  const curTags: string[] = [];
+  for (const tag of startTags(capped(html), /</gu)) {
+    if (PRICE_PROP.test(tag.text)) priceTags.push(tag.text);
+    if (CURRENCY_PROP.test(tag.text)) curTags.push(tag.text);
+  }
   if (priceTags.length !== 1 || curTags.length !== 1 || !priceTags[0] || !curTags[0]) return undefined;
   const minor = amountFromData(attr(priceTags[0], "content"));
   const currency = attr(curTags[0], "content")?.toUpperCase();
@@ -125,8 +145,11 @@ export function fromMicrodata(html: string): Omit<PageOffer, "finalUrl"> | undef
 
 /** `product:price:amount` / `og:price:amount` with their currency tag. */
 export function fromOpenGraph(html: string): Omit<PageOffer, "finalUrl"> | undefined {
+  const metaTags = [...startTags(capped(html), /<meta/giu)].map((t) => t.text);
   const meta = (prop: string) => {
-    const tags = [...html.matchAll(new RegExp(String.raw`<meta[^>]*property\s*=\s*["']${prop}["'][^>]*>`, "giu"))].map((m) => m[0]);
+    // The tags /<meta[^>]*property\s*=\s*["']PROP["'][^>]*>/giu finds.
+    const has = new RegExp(String.raw`property\s*=\s*["']${prop}["']`, "iu");
+    const tags = metaTags.filter((t) => has.test(t));
     return tags.length === 1 && tags[0] ? attr(tags[0], "content") : undefined;
   };
   const amount = meta("product:price:amount") ?? meta("og:price:amount");

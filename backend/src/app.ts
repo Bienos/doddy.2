@@ -100,6 +100,7 @@ export async function buildApp(
     publicBaseUrl: config.publicBaseUrl,
     appReturnUrl: config.appReturnUrl,
     completionMode: provider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
+    log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
   // Online accounts. Live: only toolkits with their own settings are connectable; the rest say so.
   let toolsProvider: ToolsProvider;
