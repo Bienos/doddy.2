@@ -1,0 +1,2 @@
+Calls that book: a "book" call task, talked by the new booking agent (`voice-agent/task-call-book/`, live as `agent_9401m76my4d4fwbvvjf7b3b6tgrd`), may accept exactly the booking on the card by one server-built sentence; migration 028; off until `ELEVENLABS_TASK_BOOK_AGENT_ID` is set (owner queue 43). App card not built yet (decision `2026-11-12-book-agent`).
+Ran: messaging build and full suite against Postgres 16 (948 of 949, the one failure fixed and re-run); voice_agent_spec.py check for both task-call agents. Not run: a real call; Swift (no app change).
