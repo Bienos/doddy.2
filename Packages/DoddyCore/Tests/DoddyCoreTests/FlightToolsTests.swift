@@ -53,8 +53,8 @@ final class FlightToolsTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.cloudResult(booked).hasPrefix("booked: "))
         let notBooked = try decodeRun(text: "failed: The offer expired. Search again. Duffel said nothing was booked.")
         XCTAssertTrue(VoiceToolReply.cloudResult(notBooked).hasPrefix("failed: "))
-        XCTAssertEqual(ActivityLog.outcome(of: VoiceToolReply.cloudResult(booked), isLookup: false).0, .done)
-        XCTAssertEqual(ActivityLog.outcome(of: VoiceToolReply.cloudResult(notBooked), isLookup: false).0, .notDone)
+        XCTAssertEqual(ActivityEntry.outcome(of: VoiceToolReply.cloudResult(booked), isLookup: false).0, .done)
+        XCTAssertEqual(ActivityEntry.outcome(of: VoiceToolReply.cloudResult(notBooked), isLookup: false).0, .notDone)
     }
 
     func testOnlyKiwiPagesBecomeButtons() throws {
