@@ -19,6 +19,8 @@ struct VoiceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
+    /// Only enabled after the signed-in backend says the licensed API is configured.
+    @State private var licensedJourneysAvailable = false
     @State private var authSession = VoiceAuthSession.shared
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
@@ -661,6 +663,16 @@ struct VoiceView: View {
                     }
                     .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("voice.jakdojade")
+                    if licensedJourneysAvailable {
+                        Button {
+                            Task { await controller.confirmPendingJourneyRoute(city: city) }
+                        } label: {
+                            Label(NotificationLanguage.current == .polish ? "Sprawdź trasy w DODDY" : "Find routes in DODDY",
+                                  systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .accessibilityIdentifier("voice.journey.find")
+                    }
                 } else {
                     Menu {
                         ForEach(JourneyCity.allCases, id: \.self) { city in
@@ -673,6 +685,19 @@ struct VoiceView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .accessibilityIdentifier("voice.jakdojade.chooseCity")
+                    if licensedJourneysAvailable {
+                        Menu {
+                            ForEach(JourneyCity.allCases, id: \.self) { city in
+                                Button(city.label) {
+                                    Task { await controller.confirmPendingJourneyRoute(city: city) }
+                                }
+                            }
+                        } label: {
+                            Label(NotificationLanguage.current == .polish ? "Sprawdź w DODDY · wybierz miasto" : "Find in DODDY · choose city",
+                                  systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                        }
+                        .accessibilityIdentifier("voice.journey.chooseCity")
+                    }
                     Text("Choose the city before opening Jakdojade. Your location is not shared with Doddy.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -691,6 +716,14 @@ struct VoiceView: View {
         .sheet(item: $editingPlanStep) { step in
             PlanStepEditor(step: step) { changed in
                 controller.replacePlanStep(changed)
+            }
+        }
+        .task(id: pending.toolCallID) {
+            // Query the configured DODDY backend only while a transit map card is visible.
+            // Never fetch location, partner routes or extra knowledge during voice startup.
+            licensedJourneysAvailable = false
+            if case .map(_, let trip) = pending, trip.mode == .transit {
+                licensedJourneysAvailable = await controller.journeyPartnerReady()
             }
         }
     }
