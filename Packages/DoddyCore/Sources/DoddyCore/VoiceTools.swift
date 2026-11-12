@@ -29,6 +29,10 @@ public enum VoiceToolName {
     public static let makeSomething = "make_something"
     /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
     public static let findDeals = "find_deals"
+    /// Real Shopify catalog search through Doddy’s authenticated backend (no fake products).
+    public static let shopifySearch = "shopify_search"
+    /// A selected verified result, prepared as a merchant checkout ONLY after a screen tap.
+    public static let shopifyPrepareCheckout = "shopify_prepare_checkout"
 }
 
 /// The functions a user turns on or off in Settings, Connections. The ones that need no iOS permission
@@ -334,6 +338,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
+    /// Search the live Shopify catalog and display exact merchant results on the iPhone.
+    case shopifySearch(query: String)
+    /// One of the current voice search results, 1–5. Never selects an arbitrary store or URL.
+    case shopifyPrepareCheckout(index: Int, quantity: Int)
     /// Builds or changes the invoice draft on screen (ADR-677, InvoiceVoice.swift). Nothing is sent.
     case draftInvoice(InvoiceVoiceUpdate)
     /// "I lost my wallet" (ADR-692): a checklist of official steps on a card. Doddy does none of them;
@@ -490,6 +498,25 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseMakeSomething(args, name: name)
         case VoiceToolName.findDeals:
             return parseFindDeals(args, name: name)
+        case VoiceToolName.shopifySearch:
+            guard let query = args.text("query")?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  (2...160).contains(query.count) else {
+                return .invalid(name: name, reason: "query must be between 2 and 160 characters")
+            }
+            return .shopifySearch(query: query)
+        case VoiceToolName.shopifyPrepareCheckout:
+            guard let position = args.number("index"), position.isFinite,
+                  (1...5).contains(position), position.rounded(.towardZero) == position else {
+                return .invalid(name: name, reason: "select one of the five results shown (index 1–5)")
+            }
+            guard !args.has("quantity") || args.number("quantity") != nil else {
+                return .invalid(name: name, reason: "quantity must be a number, not text")
+            }
+            let quantity = args.number("quantity") ?? 1
+            guard quantity.isFinite, (1...10).contains(quantity), quantity.rounded(.towardZero) == quantity else {
+                return .invalid(name: name, reason: "quantity must be a whole number from 1 to 10")
+            }
+            return .shopifyPrepareCheckout(index: Int(position), quantity: Int(quantity))
         case VoiceToolName.draftInvoice:
             return parseDraftInvoice(args, name: name)
         case VoiceToolName.lostWallet:
