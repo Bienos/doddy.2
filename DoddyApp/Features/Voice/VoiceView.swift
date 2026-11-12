@@ -365,6 +365,11 @@ struct VoiceView: View {
                                 .id("document-\(document.url.absoluteString)")
                         }
 
+                        if !controller.flightLinks.isEmpty {
+                            flightsCard(controller.flightLinks)
+                                .id("flights")
+                        }
+
                         if let card = controller.contactCard {
                             contactCard(card, controller: controller)
                                 .id("contactCard")
@@ -1725,6 +1730,29 @@ struct VoiceView: View {
             .accessibilityIdentifier("voice.openDocument")
             MadeFileShareButton(link: document.url)
                 .buttonStyle(SecondaryButtonStyle())
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// find_flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): each flight opens on Kiwi.com,
+    /// where the user books and pays. Doddy books nothing here.
+    private func flightsCard(_ links: [RunLink]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Flights on Kiwi.com", systemImage: "airplane")
+                .font(.headline)
+            Text("Prices from Kiwi.com just now; they can change. You book and pay on Kiwi.com.")
+                .font(.callout)
+                .foregroundStyle(Theme.secondaryText)
+            ForEach(links, id: \.url) { link in
+                Button {
+                    UIApplication.shared.open(link.url)
+                } label: {
+                    Label(link.title, systemImage: "arrow.up.forward.app")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("voice.openFlight")
+            }
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))

@@ -443,6 +443,10 @@ public struct ActivityRequest: Equatable, Sendable {
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
         case CloudToolName.addTodoistTask: ActivityRequest(app: .todoist, title: "Add a task", detail: nil, isLookup: false)
         case CloudToolName.webSearch: ActivityRequest(app: .web, title: "Searched the web", detail: nil, isLookup: true)
+        // Never the route or the names: they say where and with whom the user travels.
+        case CloudToolName.findFlights, CloudToolName.findBookableFlights: ActivityRequest(app: .web, title: "Searched flights", detail: nil, isLookup: true)
+        case CloudToolName.checkFlightBooking: ActivityRequest(app: .web, title: "Checked a flight booking", detail: nil, isLookup: true)
+        case CloudToolName.bookFlight: ActivityRequest(app: .web, title: "Book a flight", detail: nil, isLookup: false)
         // Never the address: it can say what the user was researching.
         case PaymentToolName.payForPage: ActivityRequest(app: .web, title: "Paid for a page", detail: nil, isLookup: false)
         case CloudToolName.checkOutlookEmail: ActivityRequest(app: .outlook, title: "Checked email", detail: nil, isLookup: true)

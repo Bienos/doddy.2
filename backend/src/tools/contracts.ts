@@ -12,7 +12,9 @@ import { WEB_SECTION_ID } from "./websearch.js";
 export const ToolkitIdSchema = z.enum(TOOLKIT_IDS as [string, ...string[]]);
 
 /** A Settings section: a Composio account, web search (Monid) or Claude (ADR-564); the last two need no account. */
-export const SectionIdSchema = z.enum([WEB_SECTION_ID, CLAUDE_SECTION_ID, ...TOOLKIT_IDS] as [string, ...string[]]);
+/** Flights: Kiwi.com search and Duffel booking, no account (decision 2026-11-11-flights-kiwi-search-duffel-booking). */
+export const FLIGHTS_SECTION_ID = "flights";
+export const SectionIdSchema = z.enum([WEB_SECTION_ID, CLAUDE_SECTION_ID, FLIGHTS_SECTION_ID, ...TOOLKIT_IDS] as [string, ...string[]]);
 export const ToolStatus = z.enum(["unavailable", "disconnected", "connecting", "connected", "permission_insufficient", "expired", "error"]);
 
 export const ToolViewSchema = z
@@ -142,6 +144,11 @@ export const RunResultSchema = z
       .object({ url: z.string().url(), name: z.string(), kind: z.string(), status: z.enum(["working", "ready", "failed"]) })
       .strict()
       .optional(),
+    /**
+     * find_flights: Kiwi.com's page for each flight shown, for buttons in the app. Never for the voice
+     * agent, which is told the flights without their links.
+     */
+    links: z.array(z.object({ title: z.string().max(160), url: z.string().url() }).strict()).max(5).optional(),
     receipt: ToolReceiptSchema,
   })
   .strict();

@@ -296,6 +296,12 @@ Without the backend you can drive the same flow with curl, e.g.
 6. **Disconnect** in the app. It blocks reads immediately and asks Composio to revoke and delete the connection; if that
    can't be confirmed the app says so — disconnect again or remove access in your Google Account.
 
+### Flights (decision `2026-11-11-flights-kiwi-search-duffel-booking`)
+Live mode only, each part off by default: `FLIGHT_SEARCH_ENABLED=1` (Kiwi.com's public MCP server, no key),
+`DUFFEL_ACCESS_TOKEN=duffel_test_…` (Duffel search), and `FLIGHT_BOOKING_ENABLED=1` (Duffel test bookings; the server
+refuses to book with a live key). Offline tests: `cd backend && npm run build && node --test dist/test/flights.test.js`
+(fake Kiwi and Duffel clients; no network, no key).
+
 ### Troubleshooting
 | Symptom | Likely cause |
 |---|---|
