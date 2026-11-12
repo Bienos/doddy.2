@@ -1,0 +1,3 @@
+Studio spend counts cancelled work: a job whose request was cut off (Cancel, time limit, provider failure) keeps its whole reservation on the server's day and month, and spending past a reservation is added, never given back. Every web fetch (errands, shopping, Studio) caps a page at 20,000 tokens. Studio writes Anthropic file ids on the item as soon as they come back, so a delete, reap or crash mid-run hands them to the orphan sweep.
+Backend Files API clean-up is left to open PR #279, which already deletes in `finally` and records ids for a sweep.
+Ran: messaging tests on Postgres; `scripts/ci.sh --only checks`. No migration; deploys with the messaging server.
