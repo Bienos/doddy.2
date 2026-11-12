@@ -152,6 +152,8 @@ files=(
   DoddyApp/Infrastructure/SiriNoteLookup.swift
   # The thread with Doddy (ADR-585): the Messages screen's state, without the views.
   DoddyApp/Features/Messages/MessagesModel.swift
+  # Which made files Messages and Files still offer (decision 2026-11-12-deleted-files-stay-gone); MessagesModel calls it.
+  DoddyApp/Features/Messages/FilesShownSinceStore.swift
   DoddyApp/Features/NoteReminders/NoteReminderStore.swift
   DoddyApp/Features/Opening/OpeningModel.swift
   DoddyApp/Features/Photos/PhotoFiles.swift

@@ -399,8 +399,10 @@ struct MemoriesSettingsView: View {
             // Studio (ADR-740): the topics and the opened copies kept here. The items stay on
             // Doddy's server until they are deleted in Studio (said below).
             StudioModel.shared.forgetLocal()
-            // The typed conversation with Doddy (ADR-585): messages kept on this iPhone.
+            // The typed conversation with Doddy (ADR-585): messages kept on this iPhone. The files Doddy made until
+            // now are not offered again (decision 2026-11-12-deleted-files-stay-gone).
             try await environment.messageThreadRepository.deleteAll()
+            FilesShownSinceStore.conversationDeleted()
             // Recordings (ADR-588): their audio and words, on this iPhone only. One being made is
             // stopped and saved first, then goes with the rest.
             await RecordingCoordinator.shared.stop()

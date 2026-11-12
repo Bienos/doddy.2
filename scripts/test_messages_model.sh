@@ -10,7 +10,9 @@ tmp=Packages/DoddyCore/Tests/DoddyCoreTests/_MessagesModel
 rm -rf "$tmp"
 mkdir -p "$tmp"
 trap 'rm -rf "$tmp"' EXIT
-cp DoddyApp/Features/Messages/MessagesModel.swift DoddyTests/MessagesModelTests.swift "$tmp/"
+# FilesShownSinceStore: what a deleted conversation hides (decision 2026-11-12-deleted-files-stay-gone).
+cp DoddyApp/Features/Messages/MessagesModel.swift DoddyApp/Features/Messages/FilesShownSinceStore.swift \
+  DoddyTests/MessagesModelTests.swift "$tmp/"
 flags=()
 [ "$(uname)" = "Linux" ] && flags=(-Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined)
 swift test --package-path Packages/DoddyCore ${flags[@]+"${flags[@]}"} --filter MessagesModelTests

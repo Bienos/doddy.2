@@ -194,8 +194,11 @@ final class MadeDocumentsModel {
     }
 
     /// Only a list that changed is set (12 Nov 2026): Messages reads this every 6 or 30 seconds, and setting an
-    /// unchanged list redrew the whole conversation each time ("to się trochę zacina").
+    /// unchanged list redrew the whole conversation each time ("to się trochę zacina"). Files made before this
+    /// install or before the conversation was deleted are left out (decision 2026-11-12-deleted-files-stay-gone).
     private func set(_ fresh: Load) {
+        var fresh = fresh
+        if case .ready(let list) = fresh { fresh = .ready(FilesShownSince.visible(list, since: FilesShownSinceStore.since)) }
         if fresh != load { load = fresh }
     }
 
