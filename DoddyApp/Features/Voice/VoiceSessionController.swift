@@ -4185,6 +4185,11 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.callTaskNotReady(availability))
             return
         }
+        // Booking needs the booking agent on the server (decision 2026-11-12-book-agent); asking works without it.
+        if draft.booking != nil, availability.booking != true {
+            await reply(toolCallID, VoiceToolReply.callTaskBookingOff)
+            return
+        }
         guard !callerFirstName.isEmpty else {
             await reply(toolCallID, VoiceToolReply.callTaskNoName)
             return
@@ -4211,7 +4216,8 @@ final class VoiceSessionController {
         }
         guard approval.state != "unknown" else { return (VoiceToolReply.callTaskUnknown, true) }
         let first = preview.places.first?.callee.name ?? ""
-        return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult), true)
+        return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult,
+                                               booking: preview.isBooking), true)
     }
 
     // MARK: Calls from Doddy's number later (ADR-754)
