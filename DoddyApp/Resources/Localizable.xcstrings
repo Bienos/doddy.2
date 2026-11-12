@@ -89554,6 +89554,17 @@
         }
       }
     },
+    "This iPhone holds Doddy data from another account, so nothing from it is sent to yours. Nothing was sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tym iPhonie są dane Doddy’ego z innego konta, więc nic z nich nie trafia na twoje. Nic nie zostało wysłane."
+          }
+        }
+      }
+    },
     "This iPhone uses its own account again.": {
       "extractionState": "manual",
       "localizations": {

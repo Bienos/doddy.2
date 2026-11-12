@@ -17,10 +17,16 @@ extension DoddyAccountModel {
         let model = DoddyAccountModel(
             config: DoddyAccountSetup.config(), transport: URLSessionTransport.shared,
             store: DoddyAccountKeychain(), authenticator: SystemWebAuthenticator())
-        model.afterSignIn = { session in await DoddyAccountServers.bringEarlierData(session) }
+        model.afterSignIn = { session in
+            // Whose data this iPhone holds is recorded first; nothing goes to an account that doesn't own it
+            // (decision 2026-11-12-local-data-owner, `LocalDataOwnership.swift`).
+            await DoddyAccountServers.claimLocalData()
+            await DoddyAccountServers.bringEarlierData(session)
+        }
         model.afterSignOut = {
             DoddyAccountServers.forgetAccountTokens()
             VoiceTokenWarmer.shared.clear()
+            DoddyAccountServers.stopUploadsAfterSignOut()
         }
         return model
     }()
