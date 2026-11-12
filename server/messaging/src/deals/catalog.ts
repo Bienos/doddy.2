@@ -311,6 +311,7 @@ export async function runCatalogPass(ctx: CatalogContext, shouldStop: () => bool
     const { rows: [lock] } = await client.query<{ ok: boolean }>("SELECT pg_try_advisory_lock($1) AS ok", [SCAN_LOCK]);
     if (!lock?.ok) return counts;
     try {
+      // attempted_at is written with ctx.now() below, so "due" compares one clock with itself.
       const { rows } = await ctx.db.query<{ chain: string; attempted_at: Date }>("SELECT chain, attempted_at FROM leaflet_catalog");
       const last = new Map(rows.map((r) => [r.chain, r.attempted_at.getTime()]));
       const due = CATALOG_CHAINS.filter((c) => {
@@ -337,10 +338,10 @@ export async function runCatalogPass(ctx: CatalogContext, shouldStop: () => bool
         if (outcome.kind === "ok") {
           const s = outcome.snapshot;
           await ctx.db.query(
-            `INSERT INTO leaflet_catalog (chain, snapshot, scanned_at, attempted_at, last_result) VALUES ($1, $2, $3, now(), $4)
+            `INSERT INTO leaflet_catalog (chain, snapshot, scanned_at, attempted_at, last_result) VALUES ($1, $2, $3, $5, $4)
              ON CONFLICT (chain) DO UPDATE SET snapshot = EXCLUDED.snapshot, scanned_at = EXCLUDED.scanned_at,
                attempted_at = EXCLUDED.attempted_at, last_result = EXCLUDED.last_result`,
-            [chain, JSON.stringify(s), s.scannedAt, s.complete ? "complete" : "partial"]);
+            [chain, JSON.stringify(s), s.scannedAt, s.complete ? "complete" : "partial", ctx.now()]);
           counts[s.complete ? "complete" : "partial"] = (counts[s.complete ? "complete" : "partial"] ?? 0) + 1;
           ctx.log("leaflet catalog scanned", {
             chain, complete: s.complete, reasons: s.reasons.join(",") || undefined, leaflets: s.leaflets.length, ...outcome.stats.usage,
@@ -349,8 +350,9 @@ export async function runCatalogPass(ctx: CatalogContext, shouldStop: () => bool
           });
         } else {
           await ctx.db.query(
-            `INSERT INTO leaflet_catalog (chain, attempted_at, last_result) VALUES ($1, now(), $2)
-             ON CONFLICT (chain) DO UPDATE SET attempted_at = now(), last_result = EXCLUDED.last_result`, [chain, `failed:${outcome.reason}`.slice(0, 80)]);
+            `INSERT INTO leaflet_catalog (chain, attempted_at, last_result) VALUES ($1, $3, $2)
+             ON CONFLICT (chain) DO UPDATE SET attempted_at = EXCLUDED.attempted_at, last_result = EXCLUDED.last_result`,
+            [chain, `failed:${outcome.reason}`.slice(0, 80), ctx.now()]);
           counts.failed = (counts.failed ?? 0) + 1;
           ctx.log("leaflet catalog scan failed", { chain, reason: outcome.reason, ms: Date.now() - started });
         }

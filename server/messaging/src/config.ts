@@ -1,6 +1,7 @@
 import type { DealsSettings } from "./deals/types.js";
 import { DEFAULT_RESEARCH_BUDGET, type ResearchBudget } from "./errands/budget.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES, parseCountryCodes } from "./phoneCountries.js";
+import { DEFAULT_NEWS_WRITER_CAPS, type NewsWriterCaps } from "./news/usage.js";
 import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "./serverUsage.js";
 import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
 import { parseSearchShops, type SearchShop } from "./deals/further.js";
@@ -40,6 +41,10 @@ const schema = z.object({
   // Doddy accounts (decision 2026-11-08-required-account): the Supabase project whose signed-in users
   // may sign in here (`POST /v1/accounts/sign-in`). Not a secret. Unset: only anonymous accounts, as before.
   SUPABASE_URL: z.string().url().refine((u) => u.startsWith("https://"), "SUPABASE_URL must be https").optional(),
+  // Anonymous accounts (`POST /v1/accounts`, no sign-in). "0" (the default): refused with 403 sign_in_required, so every
+  // new account here belongs to a Doddy account (decision 2026-11-08-required-account). "1": made as before, within the
+  // daily caps below. Accounts and device tokens that already exist keep working either way.
+  ANONYMOUS_ACCOUNTS: z.enum(["0", "1"]).default("0"),
 
   // S2 phone calls
   MEMORY_ENCRYPTION_KEY: optional, // base64 of 32 random bytes
@@ -50,8 +55,8 @@ const schema = z.object({
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   // Verify codes the whole server may start per UTC day (SMS cost cap).
   VERIFY_DAILY_CAP: z.coerce.number().int().positive().default(200),
-  // Abuse limits (security review 4 Nov 2026, ADR-702 to ADR-705). Accounts are free and anonymous, so what they can
-  // spend is capped per client address, per account and for the server. Every one has a safe default and none is
+  // Abuse limits (security review 4 Nov 2026, ADR-702 to ADR-705). Accounts are free (and anonymous ones can be turned
+  // on, ANONYMOUS_ACCOUNTS), so what they can spend is capped per client address, per account and for the server. Every one has a safe default and none is
   // needed at startup. Many phones share one carrier address, so the per-address numbers are generous.
   // Accounts made per UTC day: per client address (IPv6: per /64) and in all, on top of 10 an hour per address.
   ACCOUNTS_DAILY_PER_IP: z.coerce.number().int().min(1).max(100000).default(50),
@@ -72,6 +77,11 @@ const schema = z.object({
   SMS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   SMS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(300),
   OUTBOUND_CALLS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(10000).default(20),
+  // Memory on calls: the encrypted copy one account may keep, and all accounts together, in MB (1,048,576 bytes) of
+  // stored ciphertext. One snapshot replaces an account's copy, so the account's number is also the largest snapshot
+  // (the request body is capped at 8 MB). Over either: 413 memory_copy_too_large or 507 memory_copy_server_full.
+  MEMORY_COPY_MB_PER_ACCOUNT: z.coerce.number().int().min(1).max(8).default(4),
+  MEMORY_COPY_MB_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(400),
   // "1": run the worker loop inside the web process (one service; e.g. Render free/starter).
   RUN_WORKER_IN_WEB: z.enum(["0", "1"]).default("0"),
   ELEVENLABS_PHONE_AGENT_ID: optional,
@@ -80,6 +90,11 @@ const schema = z.object({
   OPENAI_API_KEY: optional, // or OpenAI, when there is no Anthropic key (ADR-197)
   OPENAI_MODEL: optional, // default gpt-5-mini
   GNEWS_API_KEY: optional, // keyword search across news sources (paid plan for commercial use)
+  // Digests the AI writer writes per UTC day (manual, scheduled, and On my radar's daily summaries): per account, for
+  // the whole server, and what accounts still new may use together inside that. Past a cap a digest is plain headlines.
+  NEWS_WRITER_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(DEFAULT_NEWS_WRITER_CAPS.perAccount),
+  NEWS_WRITER_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(DEFAULT_NEWS_WRITER_CAPS.perServer),
+  NEWS_WRITER_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(100000).default(DEFAULT_NEW_ACCOUNT_POOL.news),
   // Replies to the user's texts (ADR-753) use ANTHROPIC_API_KEY, with this model (owner decision 7).
   TEXT_REPLY_MODEL: optional, // default claude-opus-5-5
   // Hours after a message or call is final before its record is deleted at Twilio (ADR-753).
@@ -383,7 +398,11 @@ export interface AbuseLimits {
   outboundCallsPerServerDay: number;
   /** Calling codes without "+", see phoneCountries.ts. */
   allowedCountryCodes: readonly string[];
+  /** Memory on calls: stored ciphertext one account may keep, and all accounts together, in bytes. */
+  memoryCopyBytesPerAccount: number; memoryCopyBytesPerServer: number;
 }
+
+const MB = 1024 * 1024;
 
 export const DEFAULT_ABUSE_LIMITS: AbuseLimits = {
   accountsPerIpDay: 50, accountsPerServerDay: 1000,
@@ -391,6 +410,7 @@ export const DEFAULT_ABUSE_LIMITS: AbuseLimits = {
   smsPerAccountDay: 30, smsPerServerDay: 300,
   outboundCallsPerServerDay: 20,
   allowedCountryCodes: DEFAULT_ALLOWED_COUNTRY_CODES,
+  memoryCopyBytesPerAccount: 4 * MB, memoryCopyBytesPerServer: 400 * MB,
 };
 
 /** The defaults with whatever a deployment (or a test) sets over them. */
@@ -400,6 +420,8 @@ export interface Config {
   databaseUrl: string;
   /** The Doddy accounts project's origin, or undefined (decision 2026-11-08-required-account). */
   supabaseUrl?: string;
+  /** ANONYMOUS_ACCOUNTS: whether `POST /v1/accounts` still makes accounts without a sign-in. Default false. */
+  anonymousAccounts: boolean;
   port: number;
   trustProxyHops: number;
   verifyDailyCap: number;
@@ -416,6 +438,8 @@ export interface Config {
   openaiApiKey?: string;
   openaiModel?: string;
   gnewsApiKey?: string;
+  /** Daily caps on digests by the AI writer (NEWS_WRITER_DAILY_*). */
+  newsWriterCaps: Required<NewsWriterCaps>;
   textReplyModel?: string;
   twilioRecordDeleteAfterHours: number;
   quietHours: QuietHours;
@@ -454,6 +478,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     databaseUrl: e.DATABASE_URL,
     supabaseUrl: e.SUPABASE_URL ? new URL(e.SUPABASE_URL).origin : undefined,
+    anonymousAccounts: e.ANONYMOUS_ACCOUNTS === "1",
     port: e.PORT,
     trustProxyHops: e.TRUST_PROXY_HOPS,
     verifyDailyCap: e.VERIFY_DAILY_CAP,
@@ -463,6 +488,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       smsPerAccountDay: e.SMS_DAILY_PER_ACCOUNT, smsPerServerDay: e.SMS_DAILY_PER_SERVER,
       outboundCallsPerServerDay: e.OUTBOUND_CALLS_DAILY_PER_SERVER,
       allowedCountryCodes: e.PHONE_ALLOWED_COUNTRY_CODES,
+      memoryCopyBytesPerAccount: e.MEMORY_COPY_MB_PER_ACCOUNT * MB, memoryCopyBytesPerServer: e.MEMORY_COPY_MB_PER_SERVER * MB,
     },
     runWorkerInWeb: e.RUN_WORKER_IN_WEB === "1",
     publicBaseUrl: e.PUBLIC_BASE_URL?.replace(/\/$/, ""),
@@ -485,6 +511,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     openaiApiKey: e.OPENAI_API_KEY,
     openaiModel: e.OPENAI_MODEL,
     gnewsApiKey: e.GNEWS_API_KEY,
+    newsWriterCaps: {
+      perAccount: e.NEWS_WRITER_DAILY_PER_ACCOUNT, perServer: e.NEWS_WRITER_DAILY_PER_SERVER,
+      newAccountPool: e.NEWS_WRITER_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
+    },
     textReplyModel: e.TEXT_REPLY_MODEL,
     twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,
     quietHours: {

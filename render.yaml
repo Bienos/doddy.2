@@ -217,6 +217,8 @@ services:
       # budget per errand, the countries that may get codes, texts and calls (PHONE_ALLOWED_COUNTRY_CODES), daily
       # text/call/verification caps and TASK_CALL_BLOCKED_NUMBERS. Names, defaults and meaning: server/messaging/.env.example.
       # Web and worker read the same values: with a separate worker, set a changed one on both services (the live setup is one service).
+      - key: ANONYMOUS_ACCOUNTS # "0" (the default): POST /v1/accounts answers 403 sign_in_required, new accounts come from a Doddy account sign-in (needs SUPABASE_URL); "1" makes anonymous accounts as before
+        value: "0"
       - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
         value: "0"
       - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis

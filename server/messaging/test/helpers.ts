@@ -297,6 +297,10 @@ export async function testApp(db: Db, extra: Partial<Deps> = {}) {
     // daily account cap per address (50 in production, ADR-702) would be a hidden limit on how many tests a file may
     // have. The tests of that cap pass their own `limits`.
     limits: { accountsPerIpDay: 100_000 },
+    // Anonymous accounts are off by default (ANONYMOUS_ACCOUNTS, decision 2026-11-08-required-account). The tests of other
+    // features make their accounts with `POST /v1/accounts`, so they keep the switch on; the tests of the switch itself
+    // pass `anonymousAccounts: false` (test/accountQuotas.test.ts).
+    anonymousAccounts: true,
     ...extra,
   });
   return { app, push, sms, verifier, outbound, registrar };

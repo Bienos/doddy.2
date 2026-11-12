@@ -17,6 +17,7 @@ import {
 } from "../src/news/radar.js";
 import { shortlist } from "../src/news/rank.js";
 import type { FeedSource } from "../src/news/sources.js";
+import { reserveWriter } from "../src/news/usage.js";
 import type { DigestLine, DigestWriter, WriterInput } from "../src/news/writer.js";
 import { dbSkip, FakePush, freshDb, testApp, testCipher } from "./helpers.js";
 
@@ -319,6 +320,26 @@ describe("radar against real Postgres", { skip: dbSkip }, () => {
     const late = await runRadarPass(ctx({ news: withWriter }));
     assert.equal(late.daily_too_late, 1, JSON.stringify(late));
     assert.equal(await radarPushes(accountId), 1);
+  });
+
+  test("the daily summary's writer counts against the digests' daily caps; past one, the headlines", async () => {
+    const { accountId } = await user();
+    feeds.feeds.set(COINDESK, [story("Bitcoin falls", "https://coindesk.example/c1", "x", 0.5)]);
+    const caps = { perAccount: 1, perServer: 1000, newAccountPool: 1000 };
+    const capped: NewsDeps = { feeds, writer, writerCaps: caps };
+    // The account's one digest by the writer today has gone (its scheduled digest, say).
+    assert.equal(await reserveWriter(db, accountId, caps, T0), "ok");
+    await saveAlerts(db, accountId, body([{ followKey: "topic:crypto", label: "Crypto", catalogId: "crypto", keywords: [], alertWords: [], mode: "daily", dailyTime: "08:00" }]),
+      new Date(T0.getTime() - 3_600_000));
+    await db.query("UPDATE radar_alerts SET next_check_at = $1, next_tell_at = $1 WHERE account_id = $2", [new Date(T0.getTime() - 60_000), accountId]);
+    const asked = writer.inputs.length;
+    const told = await runRadarPass(ctx({ news: capped }));
+    assert.equal(told.summarised, 1, JSON.stringify(told));
+    assert.equal(writer.inputs.length, asked, "the writer wasn't asked");
+    assert.ok(logs.some((l) => l.msg === "radar summary writer skipped, daily limit"));
+    const q = await db.query("SELECT body_ciphertext, id FROM outbound_messages WHERE account_id = $1 AND idempotency_key LIKE 'radar:%'", [accountId]);
+    const text = testCipher.decrypt(q.rows[0].body_ciphertext, `${accountId}:outbound:${q.rows[0].id}`);
+    assert.equal(text, "On your radar · Crypto, today: 1 story\n• Bitcoin falls (CoinDesk)");
   });
 
   test("turning an alert off deletes it and its stories; so does deleting the account", async () => {
