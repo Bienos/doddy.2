@@ -51,11 +51,11 @@ export interface HttpDeps {
   /** An account taking over an iPhone's earlier data (decision 2026-11-08-required-account). Absent: not found. */
   accountLinker?: AccountLinker | null;
   /**
-   * What `GET /v1/health` checks and reports (engineering audit, 7 Nov 2026): a database round trip,
-   * so a server whose database is gone answers 503 instead of a static "ok", and the commit that is
-   * running (Render's RENDER_GIT_COMMIT), so "what is live" is one request. Absent: health is static.
+   * What `GET /v1/health` checks (engineering audit, 7 Nov 2026): a database round trip, so a server whose
+   * database is gone answers 503 instead of a static "ok". It answers with its status only (12 Nov 2026);
+   * the running commit is in the start log (startLine.ts). Absent: health is static.
    */
-  health?: { ping(): Promise<void>; commit?: string | null } | null;
+  health?: { ping(): Promise<void> } | null;
   appReturnUrl: string;
   maxBodyBytes: number;
   /** Behind one proxy that appends the client to X-Forwarded-For (Render). For per-client limits. */
@@ -99,6 +99,9 @@ export function createHandler(deps: HttpDeps) {
   const { service } = deps;
 
   const routes: Record<string, Handler> = {
+    // Whether this server runs on demo data (mock) or for real (live); Doddy Web's "Demo server" banner
+    // reads it with the browser's session (COOKIE_READABLE). Signed in only: GET /v1/health tells nobody.
+    "GET /v1/server": async () => ({ mode: service.mode }),
     "GET /v1/connected-apps": async ({ userId }) => ({
       mode: service.mode,
       apps: [await service.view(userId)],
@@ -174,18 +177,13 @@ export function createHandler(deps: HttpDeps) {
       }
       const key = `${req.method ?? "GET"} ${url.pathname}`;
 
+      // Open to anyone (Render's health check, the iPhone's wake-up ping), so it says nothing but its status:
+      // no mode, version, commit or configuration. A signed-in caller reads the mode at GET /v1/server.
       if (key === "GET /v1/health") {
         route = key;
         const database = deps.health ? await databaseAnswers(deps.health.ping) : undefined;
         status = database === "unavailable" ? 503 : 200;
-        return send(res, status, {
-          status: database === "unavailable" ? "unavailable" : "ok",
-          mode: service.mode,
-          api: "v1",
-          capabilities: ["calendar.listEvents"],
-          ...(database ? { database } : {}),
-          ...(deps.health?.commit ? { commit: deps.health.commit } : {}),
-        });
+        return send(res, status, { status: database === "unavailable" ? "unavailable" : "ok" });
       }
       if (key === "GET /v1/oauth/return" || key === "GET /v1/oauth/verify") {
         route = key;

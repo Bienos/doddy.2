@@ -214,6 +214,8 @@ export const ErrorResponseSchema = z
   .strict();
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
-export const HealthSchema = z
-  .object({ status: z.literal("ok"), mode: Mode, api: z.literal("v1"), capabilities: z.array(z.string()) })
-  .strict();
+/** `GET /v1/health`, open to anyone: its status and nothing else (12 Nov 2026). 503 with "unavailable". */
+export const HealthSchema = z.object({ status: z.enum(["ok", "unavailable"]) }).strict();
+
+/** `GET /v1/server`, signed in (an iPhone token, or a browser session for Doddy Web): demo data or real. */
+export const ServerInfoSchema = z.object({ mode: Mode }).strict();
