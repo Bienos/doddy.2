@@ -3442,5 +3442,12 @@
   "Check the price": "Sprawdź cenę",
   "Ready to check in Doddy": "Gotowe do sprawdzenia w Doddym",
   "Open Doddy: the Shopping screen has this link ready. Nothing is read or sent until you tap the buttons there.": "Otwórz Doddy'ego: ekran Zakupy ma ten link gotowy. Nic nie jest czytane ani wysyłane, dopóki nie dotkniesz tam przycisków.",
+  "Book at this place for you?": "Zarezerwować w tym miejscu w Twoim imieniu?",
+  "Book at one of these places for you?": "Zarezerwować w jednym z tych miejsc w Twoim imieniu?",
+  "Booking": "Rezerwacja",
+  "People: %d": "Liczba osób: %d",
+  "Under the name %@": "Na nazwisko: %@",
+  "Doddy accepts only with:": "Doddy przyjmie rezerwację tylko tymi słowami:",
+  "One at a time, in this order. Doddy stops at the first booking.": "Po kolei, w tej kolejności. Doddy kończy na pierwszej rezerwacji.",
   "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Działa od następnej rozmowy głosowej. „Zaczyna w” ustawia język, w którym Doddy Cię wita; przy ustawieniu Automatycznie zaczyna po angielsku. Tak czy inaczej podąża za europejskim językiem, którym mówisz, i zmienia go razem z Tobą."
 }

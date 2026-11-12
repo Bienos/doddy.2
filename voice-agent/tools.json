@@ -755,7 +755,7 @@
     {
       "type": "function",
       "name": "call_places",
-      "description": "Have Doddy phone up to three places (restaurants, shops, offices) for the user and ask them one question, for example 'find an Italian restaurant in the centre and check if they have a table for two at 7', 'zadzwoń do trzech fryzjerów i zapytaj o wolny termin jutro'. First find the places and their phone numbers with find_places (never guess a number); pass the best ones, at most three, in the order to call them: place_names and place_phones, the same number of each, matched by position. Polish numbers only. Give question as one short yes-or-no question in Polish, exactly as Doddy should ask it, and goal as one sentence saying what the user wants. Doddy says it's an AI calling for the user, asks the question, and never books, pays or agrees to anything. The card shows every place, its number, the question and whether the result comes back by text; nothing is dialled until the user taps. After the tap Doddy calls the places one at a time and stops at the first clear yes. Before this tool runs, say only one short line, for example 'Check the places on screen.' The result starts with 'started' (the first call is being dialled; the answer comes later as a notification, and a text if chosen, never to you), 'declined', 'failed' (nobody was called; the reason follows) or 'unknown'. Never say anyone answered or that anything is booked. After 'unknown', never call this tool again unless the user asks.",
+      "description": "Have Doddy phone up to three places (restaurants, shops, offices) for the user and ask them one question, for example 'find an Italian restaurant in the centre and check if they have a table for two at 7', 'zadzwoń do trzech fryzjerów i zapytaj o wolny termin jutro'. First find the places and their phone numbers with find_places (never guess a number); pass the best ones, at most three, in the order to call them: place_names and place_phones, the same number of each, matched by position. Polish numbers only. Give question as one short yes-or-no question in Polish, exactly as Doddy should ask it, and goal as one sentence saying what the user wants. Doddy says it's an AI calling for the user and asks the question. To BOOK (a table, a haircut, an appointment: 'zarezerwuj mi stolik', 'umów mnie do fryzjera'), leave out question and pass the booking instead: booking_name (whose name it's under: ask the user, never guess), booking_date (YYYY-MM-DD), booking_time (HH:MM), and booking_service (e.g. 'strzyżenie męskie') or booking_party_size (for a table). Doddy's server then writes the question and the one sentence Doddy may say to accept exactly that booking; Doddy never accepts another day, time or service, a deposit or any other condition, and never pays. Without the booking fields Doddy only asks and never books, pays or agrees to anything. The card shows every place, its number, the question and whether the result comes back by text; nothing is dialled until the user taps. After the tap Doddy calls the places one at a time and stops at the first clear yes. Before this tool runs, say only one short line, for example 'Check the places on screen.' The result starts with 'started' (the first call is being dialled; the answer comes later as a notification, and a text if chosen, never to you), 'declined', 'failed' (nobody was called; the reason follows) or 'unknown'. Never say anyone answered or that anything is booked; a booking is confirmed only by the result Doddy's server sends later. After 'unknown', never call this tool again unless the user asks.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -786,12 +786,31 @@
           "text_result": {
             "type": "boolean",
             "description": "true (the default) to text the result to the user's own number as well as the notification; false if they said not to."
+          },
+          "booking_name": {
+            "type": "string",
+            "description": "Booking only: the name the booking is under, as the user said it, e.g. 'Anna Kowalska'. Ask the user if they didn't say; never guess. At most 60 characters."
+          },
+          "booking_date": {
+            "type": "string",
+            "description": "Booking only: the day, as YYYY-MM-DD in Warsaw time, from today up to 60 days ahead, e.g. '2026-11-14'."
+          },
+          "booking_time": {
+            "type": "string",
+            "description": "Booking only: the start time, HH:MM in 24-hour time, e.g. '19:00'."
+          },
+          "booking_service": {
+            "type": "string",
+            "description": "Booking only: what to book, in Polish, e.g. 'strzyżenie męskie' or 'manicure hybrydowy'. Leave out for a table; then give booking_party_size."
+          },
+          "booking_party_size": {
+            "type": "number",
+            "description": "Booking only: how many people, 1 to 20, e.g. 2 for a table for two."
           }
         },
         "required": [
           "place_names",
           "place_phones",
-          "question",
           "goal"
         ]
       },

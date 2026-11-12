@@ -1305,9 +1305,15 @@ struct VoiceView: View {
     /// comes back. The one tap approves exactly this.
     @ViewBuilder
     private func callTaskContent(_ preview: CallTaskPreview) -> some View {
-        Text(preview.places.count == 1 ? NSLocalizedString("Call this place for you?", comment: "")
-                                       : NSLocalizedString("Call these places for you?", comment: ""))
-            .font(.headline)
+        if preview.isBooking {
+            Text(preview.places.count == 1 ? NSLocalizedString("Book at this place for you?", comment: "")
+                                           : NSLocalizedString("Book at one of these places for you?", comment: ""))
+                .font(.headline)
+        } else {
+            Text(preview.places.count == 1 ? NSLocalizedString("Call this place for you?", comment: "")
+                                           : NSLocalizedString("Call these places for you?", comment: ""))
+                .font(.headline)
+        }
         ForEach(Array(preview.places.enumerated()), id: \.offset) { index, place in
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: "\(index + 1). \(place.callee.name)")
@@ -1322,6 +1328,34 @@ struct VoiceView: View {
         Text("Numbers from Doddy's place search.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
+        // A booking (decision 2026-11-12-book-agent): exactly what may be booked, and the one sentence that accepts it.
+        if let first = preview.places.first, let booking = first.booking {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Booking")
+                    .font(.footnote.weight(.semibold))
+                if let service = booking.service { Text(verbatim: service) }
+                if let size = booking.partySize {
+                    Text(String(format: NSLocalizedString("People: %d", comment: "booking party size"), size))
+                }
+                Text(verbatim: "\(booking.date), \(booking.time)")
+                    .monospacedDigit()
+                Text(String(format: NSLocalizedString("Under the name %@", comment: "booking name"), booking.name))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voice.callTask.booking")
+            if let confirm = first.confirmLine {
+                Text("Doddy accepts only with:")
+                    .font(.footnote.weight(.semibold))
+                Text(verbatim: confirm)
+                    .font(.body)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+                    .accessibilityIdentifier("voice.callTask.confirmLine")
+            }
+        }
         if let first = preview.places.first {
             Text("Doddy says:")
                 .font(.footnote.weight(.semibold))
@@ -1339,7 +1373,8 @@ struct VoiceView: View {
             }
         }
         if preview.places.count > 1 {
-            Text("One at a time, in this order. Doddy stops at the first yes.")
+            Text(preview.isBooking ? NSLocalizedString("One at a time, in this order. Doddy stops at the first booking.", comment: "")
+                                   : NSLocalizedString("One at a time, in this order. Doddy stops at the first yes.", comment: ""))
                 .font(.footnote)
         }
         Text(preview.textResult ? NSLocalizedString("You get a notification and a text with the answer.", comment: "")

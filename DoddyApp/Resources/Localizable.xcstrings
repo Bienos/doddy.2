@@ -10010,6 +10010,28 @@
         }
       }
     },
+    "Book at one of these places for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarezerwować w jednym z tych miejsc w Twoim imieniu?"
+          }
+        }
+      }
+    },
+    "Book at this place for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarezerwować w tym miejscu w Twoim imieniu?"
+          }
+        }
+      }
+    },
     "Book call": {
       "extractionState": "manual",
       "localizations": {
@@ -10028,6 +10050,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zarezerwuj na Kiwi.com"
+          }
+        }
+      }
+    },
+    "Booking": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezerwacja"
           }
         }
       }
@@ -20043,6 +20076,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy"
+          }
+        }
+      }
+    },
+    "Doddy accepts only with:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przyjmie rezerwację tylko tymi słowami:"
           }
         }
       }
@@ -54098,6 +54142,17 @@
         }
       }
     },
+    "One at a time, in this order. Doddy stops at the first booking.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po kolei, w tej kolejności. Doddy kończy na pierwszej rezerwacji."
+          }
+        }
+      }
+    },
     "One at a time, in this order. Doddy stops at the first yes.": {
       "extractionState": "manual",
       "localizations": {
@@ -59196,6 +59251,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "人"
+          }
+        }
+      }
+    },
+    "People: %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczba osób: %d"
           }
         }
       }
@@ -95481,6 +95547,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "W sekcji Skróty wybierz „Porozmawiaj z Doddym”."
+          }
+        }
+      }
+    },
+    "Under the name %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na nazwisko: %@"
           }
         }
       }
