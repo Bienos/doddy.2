@@ -331,8 +331,9 @@ describe("the catalog in the database", { skip: dbSkip }, () => {
     // Six hours later a failed scan keeps the last good snapshot.
     (adapters.biedronka as FakeAdapter).answer = { kind: "blocked", reason: "403" };
     const later = { ...ctx, now: () => new Date(NOW.getTime() + 6 * 3600_000 + 1000) };
-    // The rows say attempted_at = now() of the database, so the test moves the clock past it.
-    await db.query("UPDATE leaflet_catalog SET attempted_at = now() - interval '7 hours'");
+    // The rows say attempted_at = now() of the database, which is the real clock; the test runs on its own clock (NOW), so it
+    // puts the last attempt on that clock too. (Against the real clock this passed only before 13:00 UTC on 12 Nov 2026.)
+    await db.query("UPDATE leaflet_catalog SET attempted_at = $1", [NOW]);
     const failed = await runCatalogPass(later);
     assert.equal(failed.failed, 1);
     const kept = await new DbCatalogStore(db).snapshots(["biedronka"]);
