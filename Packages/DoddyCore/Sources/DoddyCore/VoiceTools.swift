@@ -987,6 +987,18 @@ public enum VoiceToolReply {
             + "don't state travel times or lines as if Maps gave them.\n" + ToolData.block(lines)
     }
 
+    /// The user opened Jakdojade's public route search. This is a handoff, not a retrieved itinerary.
+    public static func jakdojadeOpened(_ trip: MapTrip, requiresOriginSelection: Bool) -> String {
+        var details = [quoted("To", trip.place)]
+        if let from = trip.from { details.append(quoted("From", from)) }
+        return "opened: Jakdojade opened with the transit search for the place below. "
+            + (requiresOriginSelection
+                ? "The user must choose a starting location in Jakdojade. "
+                : "Jakdojade will identify the named places before showing a route. ")
+            + "Doddy cannot see which route Jakdojade selected, so never invent departure times, vehicles, tickets or delays.\\n"
+            + ToolData.block(details)
+    }
+
     /// Shortcuts is asked to run; Doddy cannot see whether the shortcut finished.
     public static func shortcutRequested(_ name: String) -> String {
         "opened: asked Shortcuts to run the shortcut below. Doddy can't see whether it finished.\n"
