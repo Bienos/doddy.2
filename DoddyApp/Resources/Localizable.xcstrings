@@ -8968,6 +8968,17 @@
         }
       }
     },
+    "Asking Claude…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytam Claude'a…"
+          }
+        }
+      }
+    },
     "Asking…": {
       "extractionState": "manual",
       "localizations": {
@@ -12657,6 +12668,17 @@
         }
       }
     },
+    "Checking the news…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam wiadomości…"
+          }
+        }
+      }
+    },
     "Checking the price…": {
       "extractionState": "manual",
       "localizations": {
@@ -12664,6 +12686,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdzam cenę…"
+          }
+        }
+      }
+    },
+    "Checking the weather…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam pogodę…"
           }
         }
       }
@@ -12723,6 +12756,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在查看明天…"
+          }
+        }
+      }
+    },
+    "Checking your calendar…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam Twój kalendarz…"
+          }
+        }
+      }
+    },
+    "Checking your email…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam Twoją pocztę…"
           }
         }
       }
@@ -41783,6 +41838,17 @@
         }
       }
     },
+    "Looking at your screen…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patrzę na Twój ekran…"
+          }
+        }
+      }
+    },
     "Looking for": {
       "extractionState": "manual",
       "localizations": {
@@ -41842,6 +41908,17 @@
         }
       }
     },
+    "Looking for places…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam miejsc…"
+          }
+        }
+      }
+    },
     "Looking in Apple Maps…": {
       "extractionState": "manual",
       "localizations": {
@@ -41849,6 +41926,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szukam w Mapach Apple…"
+          }
+        }
+      }
+    },
+    "Looking it up…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam…"
+          }
+        }
+      }
+    },
+    "Looking through your notes…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądam Twoje notatki…"
           }
         }
       }
@@ -42827,6 +42926,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Robię to…"
+          }
+        }
+      }
+    },
+    "Making the document…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotowuję dokument…"
           }
         }
       }
@@ -70803,6 +70913,17 @@
         }
       }
     },
+    "Searching the web…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam w internecie…"
+          }
+        }
+      }
+    },
     "Seated cable row": {
       "extractionState": "manual",
       "localizations": {
@@ -77656,6 +77777,17 @@
         }
       }
     },
+    "Still on it, this one takes a moment…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze chwilka, to trwa dłużej…"
+          }
+        }
+      }
+    },
     "Still open from today or earlier. Tick the ones to move; each keeps its time.": {
       "extractionState": "manual",
       "localizations": {
@@ -77770,6 +77902,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "还是这样吗？"
+          }
+        }
+      }
+    },
+    "Still working on it…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wciąż nad tym pracuję…"
           }
         }
       }

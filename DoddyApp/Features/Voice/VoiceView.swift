@@ -2115,7 +2115,8 @@ struct VoiceView: View {
         switch controller.phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")
-        case .thinking: NSLocalizedString("Working on it…", comment: "")
+        // Named after the tool that runs, "still" after a while (decision 2026-11-12-voice-turn-feedback).
+        case .thinking: controller.turnFeedback.statusText
         case .speaking: NSLocalizedString("Speaking", comment: "")
         case .ended: NSLocalizedString("Conversation ended", comment: "")
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")
