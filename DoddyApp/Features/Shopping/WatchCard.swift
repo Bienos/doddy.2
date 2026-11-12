@@ -24,17 +24,74 @@ struct WatchPriceButton: View {
     }
 }
 
+/// What a watch card is about: a pick's offer, whose price Doddy read, or a page the person pasted
+/// ("Sprawdź to", SHOPPING.md "Check this"), whose price nobody has read yet. The card's second step shows
+/// what the server read either way.
+enum WatchSubject {
+    case offer(ShoppingOffer)
+    case page(SharedShopPage)
+
+    var title: String {
+        switch self {
+        case .offer(let offer): offer.title
+        case .page(let page): page.title
+        }
+    }
+
+    var shop: String {
+        switch self {
+        case .offer(let offer): offer.shop
+        case .page(let page): page.shop
+        }
+    }
+
+    var url: String {
+        switch self {
+        case .offer(let offer): offer.url
+        case .page(let page): page.url
+        }
+    }
+
+    var currency: String {
+        switch self {
+        case .offer(let offer): offer.price.currency
+        case .page: "PLN"
+        }
+    }
+
+    /// The price Doddy read when it found the offer. Nil for a pasted page.
+    var knownPrice: Money? {
+        switch self {
+        case .offer(let offer): offer.price
+        case .page: nil
+        }
+    }
+
+    func draft(thresholdMinor: Int, language: String) -> PriceWatchDraft {
+        switch self {
+        case .offer(let offer): PriceWatchDraft(watching: offer, thresholdMinor: thresholdMinor, language: language)
+        case .page(let page): page.watchDraft(thresholdMinor: thresholdMinor, language: language)
+        }
+    }
+}
+
 struct WatchCard: View {
-    let offer: ShoppingOffer
+    let subject: WatchSubject
     @Environment(\.dismiss) private var dismiss
     private let model = WatchModel.shared
     private let language = NotificationLanguage.current
     @State private var priceText: String
 
     init(offer: ShoppingOffer) {
-        self.offer = offer
+        self.subject = .offer(offer)
         let suggested = PriceWatchDraft.suggestedThresholdMinor(forPriceMinor: offer.price.minor)
         _priceText = State(initialValue: suggested.map { PriceWatchDraft.typedText(forMinor: $0, NotificationLanguage.current) } ?? "")
+    }
+
+    /// A page the person pasted: no price is known, so nothing is suggested.
+    init(page: SharedShopPage) {
+        self.subject = .page(page)
+        _priceText = State(initialValue: "")
     }
 
     var body: some View {
@@ -77,8 +134,10 @@ struct WatchCard: View {
     @ViewBuilder
     private var entry: some View {
         Section {
-            productLines(title: offer.title, shop: offer.shop, url: offer.url)
-            LabeledContent("Price when Doddy found it", value: offer.price.text(language))
+            productLines(title: subject.title, shop: subject.shop, url: subject.url)
+            if let known = subject.knownPrice {
+                LabeledContent("Price when Doddy found it", value: known.text(language))
+            }
         } header: {
             Text("What will be watched")
         }
@@ -87,12 +146,12 @@ struct WatchCard: View {
                 TextField("Your price", text: $priceText)
                     .keyboardType(.decimalPad)
                     .accessibilityIdentifier("watch.price")
-                Text(verbatim: offer.price.currency).foregroundStyle(Theme.secondaryText)
+                Text(verbatim: subject.currency).foregroundStyle(Theme.secondaryText)
             }
             if let typed = typedMinor {
-                if typed >= offer.price.minor {
+                if let known = subject.knownPrice, typed >= known.minor {
                     Text(String(format: NSLocalizedString("The price in the result is %@. Type something lower.", comment: ""),
-                                offer.price.text(language)))
+                                known.text(language)))
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                 }
             } else if !priceText.isEmpty {
@@ -101,7 +160,11 @@ struct WatchCard: View {
         } header: {
             Text("Your price")
         } footer: {
-            Text("I'll tell you when the price I read is at or below this. Suggested: 5 percent below the price, rounded down to whole złoty. Type another if you like.")
+            if subject.knownPrice != nil {
+                Text("I'll tell you when the price I read is at or below this. Suggested: 5 percent below the price, rounded down to whole złoty. Type another if you like.")
+            } else {
+                Text("I'll tell you when the price I read is at or below this. Not sure what to type? Type a price you'd be happy to pay: the next step shows what the page costs now, and you can still say no.")
+            }
         }
         Section {
             promise
@@ -199,11 +262,11 @@ struct WatchCard: View {
 
     /// The price the user typed, in minor units; nil when it isn't a price.
     private var typedMinor: Int? {
-        PriceWatchDraft.parseThresholdMinor(priceText, currency: offer.price.currency)
+        PriceWatchDraft.parseThresholdMinor(priceText, currency: subject.currency)
     }
 
     private func check() async {
         guard let minor = typedMinor else { return }
-        await model.start(PriceWatchDraft(watching: offer, thresholdMinor: minor, language: language == .polish ? "pl" : "en"))
+        await model.start(subject.draft(thresholdMinor: minor, language: language == .polish ? "pl" : "en"))
     }
 }
