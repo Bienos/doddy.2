@@ -10010,6 +10010,28 @@
         }
       }
     },
+    "Book at one of these places for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarezerwować w jednym z tych miejsc w Twoim imieniu?"
+          }
+        }
+      }
+    },
+    "Book at this place for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarezerwować w tym miejscu w Twoim imieniu?"
+          }
+        }
+      }
+    },
     "Book call": {
       "extractionState": "manual",
       "localizations": {
@@ -10028,6 +10050,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zarezerwuj na Kiwi.com"
+          }
+        }
+      }
+    },
+    "Booking": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezerwacja"
           }
         }
       }
@@ -10665,6 +10698,17 @@
         }
       }
     },
+    "Call Doddy when you need him, let him call you, or have him call someone for you after you approve a card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń do Doddy’ego, gdy go potrzebujesz, pozwól mu dzwonić do Ciebie albo poproś go, żeby po zatwierdzeniu karty zadzwonił do kogoś za Ciebie."
+          }
+        }
+      }
+    },
     "Call again at %@": {
       "extractionState": "manual",
       "localizations": {
@@ -10896,65 +10940,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zadzwonić, napisać SMS-a lub e-maila z tej karty, gdy stukniesz"
-          }
-        }
-      }
-    },
-    "Calling Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rufe Doddy an"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Llamando a Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appel de Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zovem Doddyja"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chiamo Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyに発信中"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dzwonię do Doddy’ego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ligando para o Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在呼叫 Doddy"
           }
         }
       }
@@ -15354,65 +15339,6 @@
         }
       }
     },
-    "Copied to the server": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auf den Server kopiert"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copiado al servidor"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copié sur le serveur"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kopirano na poslužitelj"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copiato sul server"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サーバーにコピー済み"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skopiowano na serwer"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copiado para o servidor"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已拷贝到服务器"
-          }
-        }
-      }
-    },
     "Copy": {
       "extractionState": "manual",
       "localizations": {
@@ -15766,6 +15692,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się potwierdzić, że połączenie ruszyło. Doddy nie zadzwoni ponownie sam; linia jest teraz sprawdzana."
+          }
+        }
+      }
+    },
+    "Couldn't confirm the call was placed. Doddy won't redial on its own. Wait a minute before trying again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić, że połączenie zostało wykonane. Doddy nie zadzwoni ponownie sam. Odczekaj minutę, zanim spróbujesz jeszcze raz."
           }
         }
       }
@@ -20047,6 +19984,17 @@
         }
       }
     },
+    "Doddy accepts only with:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przyjmie rezerwację tylko tymi słowami:"
+          }
+        }
+      }
+    },
     "Doddy announces that the call is recorded or transcribed.": {
       "extractionState": "manual",
       "localizations": {
@@ -20235,17 +20183,6 @@
         }
       }
     },
-    "Doddy calls a business in Polish to ask one question for you, after you approve a card.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Po zatwierdzeniu karty Doddy dzwoni do firmy po polsku, aby zadać za Ciebie jedno pytanie."
-          }
-        }
-      }
-    },
     "Doddy calls a business or a person for you in Polish, says it's an AI calling on your behalf, asks one question and brings the answer back as a card. Nothing is dialled until you approve the card, and Doddy never agrees to anything, pays or gives your PESEL or address unless you tick it.": {
       "extractionState": "manual",
       "localizations": {
@@ -20253,17 +20190,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy dzwoni w Twoim imieniu do firmy albo osoby, po polsku, mówi, że jest asystentem AI, zadaje jedno pytanie i przynosi odpowiedź jako kartę. Nic nie jest wybierane, dopóki nie zatwierdzisz karty, a Doddy nigdy na nic się nie zgadza, nie płaci i nie podaje Twojego numeru PESEL ani adresu, chyba że to zaznaczysz."
-          }
-        }
-      }
-    },
-    "Doddy calls for you": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy dzwoni za Ciebie"
           }
         }
       }
@@ -22639,6 +22565,17 @@
         }
       }
     },
+    "Doddy is calling you now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni do Ciebie."
+          }
+        }
+      }
+    },
     "Doddy is calling…": {
       "extractionState": "manual",
       "localizations": {
@@ -23988,6 +23925,17 @@
         }
       }
     },
+    "Doddy only calls a number you have verified.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni tylko pod zweryfikowany numer."
+          }
+        }
+      }
+    },
     "Doddy only calls between 8:00 and 23:00 Polish time, and the whole call must fit. Nothing was dialled.": {
       "extractionState": "manual",
       "localizations": {
@@ -24460,13 +24408,13 @@
         }
       }
     },
-    "Doddy says the opening line on the card first, asks the question and ends the call. You can take over or end it from this screen or the Lock Screen.": {
+    "Doddy says the opening line on the card first, asks the question and ends the call. You can take over or end it from this screen; while it runs, a small phone mark on Home brings you back to it.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy najpierw powie zdanie otwierające z karty, zada pytanie i zakończy rozmowę. Możesz ją przejąć albo zakończyć z tego ekranu lub z ekranu blokady."
+            "value": "Doddy najpierw powie zdanie otwierające z karty, zada pytanie i zakończy rozmowę. Możesz ją przejąć albo zakończyć z tego ekranu; gdy trwa, mała ikona telefonu na ekranie głównym przeniesie Cię z powrotem tutaj."
           }
         }
       }
@@ -42012,6 +41960,17 @@
         }
       }
     },
+    "Locked for a few minutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zablokowany na kilka minut"
+          }
+        }
+      }
+    },
     "Locker 4471": {
       "extractionState": "manual",
       "localizations": {
@@ -43697,6 +43656,17 @@
         }
       }
     },
+    "Memories kept for calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wspomnienia dostępne w rozmowach"
+          }
+        }
+      }
+    },
     "Memories: export or delete": {
       "extractionState": "manual",
       "localizations": {
@@ -43774,6 +43744,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pamięć w rozmowach telefonicznych jest włączona, ale Twoje notatki nie są jeszcze skopiowane: %@ Doddy spróbuje ponownie, gdy następnym razem go otworzysz; możesz też to wyłączyć, żeby usunąć kopię."
+          }
+        }
+      }
+    },
+    "Memory, texts and history": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamięć, SMS-y i historia"
           }
         }
       }
@@ -45848,6 +45829,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wymaga iOS 18 lub nowszego. Doddy nie doda go za Ciebie i nie widzi, czy już tam jest."
+          }
+        }
+      }
+    },
+    "Needs setup": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wymaga konfiguracji"
           }
         }
       }
@@ -49676,6 +49668,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "尚未使用"
+          }
+        }
+      }
+    },
+    "Not verified": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niezweryfikowany"
           }
         }
       }
@@ -54094,6 +54097,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Raz w tygodniu przez cztery tygodnie, tylko dopóki z któregoś nie skorzystasz. Tylko jeśli powiadomienia są już włączone."
+          }
+        }
+      }
+    },
+    "One at a time, in this order. Doddy stops at the first booking.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po kolei, w tej kolejności. Doddy kończy na pierwszej rezerwacji."
           }
         }
       }
@@ -59200,6 +59214,17 @@
         }
       }
     },
+    "People: %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczba osób: %d"
+          }
+        }
+      }
+    },
     "Per answered call": {
       "extractionState": "manual",
       "localizations": {
@@ -59281,61 +59306,13 @@
         }
       }
     },
-    "Phone calls need a Doddy messaging server, and none is connected in this build yet.": {
+    "Phone calls aren't available in this version of Doddy yet.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Telefonanrufe brauchen einen Doddy-Nachrichtenserver, und in dieser Version ist noch keiner verbunden."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las llamadas necesitan un servidor de mensajes de Doddy, y en esta versión aún no hay ninguno conectado."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les appels téléphoniques ont besoin d’un serveur de messagerie Doddy, et aucun n’est encore connecté dans cette version."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Telefonski pozivi trebaju Doddyjev poslužitelj za poruke, a u ovoj verziji još nijedan nije povezan."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le telefonate richiedono un server di messaggistica di Doddy, e in questa versione non ne è ancora collegato nessuno."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電話にはDoddyのメッセージサーバーが必要ですが、このビルドではまだ接続されていません。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rozmowy telefoniczne wymagają serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chamadas telefônicas precisam de um servidor de mensagens do Doddy, e nenhum está conectado nesta versão ainda."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "电话需要一台 Doddy 消息服务器，而此版本尚未连接任何服务器。"
+            "value": "Rozmowy telefoniczne nie są jeszcze dostępne w tej wersji Doddy’ego."
           }
         }
       }
@@ -60516,13 +60493,13 @@
         }
       }
     },
-    "Placed: Twilio accepted the call.": {
+    "Placed: the phone service accepted the call.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wykonany: Twilio przyjął połączenie."
+            "value": "Wykonany: usługa telefoniczna przyjęła połączenie."
           }
         }
       }
@@ -75875,6 +75852,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Żeby Doddy mógł odpowiadać, gdy mówisz. Głos Doddy’ego działa przez %@. Nic nie jest wysyłane, dopóki nie zaczniesz rozmowy."
+          }
+        }
+      }
+    },
+    "So Doddy knows it's you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby Doddy wiedział, że to Ty"
           }
         }
       }
@@ -95507,6 +95495,17 @@
         }
       }
     },
+    "Under the name %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na nazwisko: %@"
+          }
+        }
+      }
+    },
     "Undo": {
       "extractionState": "manual",
       "localizations": {
@@ -97384,6 +97383,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "VO₂ max, najnowszy pomiar"
+          }
+        }
+      }
+    },
+    "Verified": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zweryfikowany"
           }
         }
       }
