@@ -29,6 +29,9 @@ public enum ConnectionPause {
         case .handOverErrand, .makeSomething:
             // Doddy's server searches and reads the web for it (ADR-570, ADR-740).
             true
+        case .shopifySearch, .shopifyPrepareCheckout:
+            // Live Shopify catalog and real merchant carts are external provider calls.
+            true
         case .findDeals:
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
             true
