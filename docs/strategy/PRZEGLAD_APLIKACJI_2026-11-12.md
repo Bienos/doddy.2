@@ -11,7 +11,7 @@ Odpowiedź na brief właściciela z 12 lis 2026 („zrób review gazetek typu Li
 | Gazetki | Każde wyszukiwanie czyta gazetki od nowa: ~24 s, 6–9 z 10 sklepów pada, ~115 tys. tokenów na wyszukiwanie | **Katalog gazetek:** serwer czyta gazetki raz dla wszystkich, w tle, co 6 h; wyszukiwanie odpowiada z bazy (decyzja `2026-11-12-leaflet-catalog`). Wyłączony do czasu `DEALS_CATALOG_ENABLED=1` | Włączyć i wdrożyć (OWNER_QUEUE 45); potem ekran listy zakupów i porównania (sekcja 1.5) |
 | „Znajdź mi to" (np. słuchawki Apple) | Zadanie zakupowe padało błędem 400 przy drugim zapytaniu do modelu | **Naprawione:** narzędzia nie zmieniają się w trakcie zadania; błąd zapisuje się w logu z typem i miejscem | Wdrożyć razem z katalogiem; jedno pole wyszukiwania, które samo wybiera gazetki albo sklepy internetowe |
 | Wiadomości | Brak powiadomienia o wyniku; karty chowają się pod transkrypcją; całość przerysowuje się przy każdej zmianie | Nic (aplikacja) | Osobny PR: powiadomienie lokalne, przewijanie do karty, wydzielone wiersze, opis pliku |
-| Ustawienia i głos | Wybór głosu był jeszcze w Ustawieniach (Głos › Głos i osobowość › Głos); „Głos" trzy poziomy w głąb | **Wybór głosu usunięty** (decyzja `2026-11-12-one-voice`): Doddy ma jeden głos, zostają tempo, ekspresja i „Zaczyna w" | Osobny PR: spłaszczyć strony, „Konto" i „Rozmowy" na pierwszą stronę |
+| Ustawienia i głos | Wybór głosu był jeszcze w Ustawieniach (Głos › Głos i osobowość › Głos); „Głos" trzy poziomy w głąb | **Wybór głosu usunięty** (decyzja `2026-11-12-one-voice`): Doddy ma jeden głos, zostają tempo, ekspresja i „Zaczyna w". **Strony spłaszczone** (decyzja `2026-11-12-settings-one-voice-page`): „Głos i osobowość" to jedna strona, „Rozmowy telefoniczne" są na pierwszej stronie, oba konta w „O aplikacji" | Połączenia i długie strony wewnętrzne |
 | Rozmowy telefoniczne | Jedna długa lista: PIN, weryfikacja, przełączniki i historia w trzech miejscach; żargon (Twilio, koszt w USD) | Nic | Hub z trzema kartami: „Zadzwoń do Doddy'ego", „Doddy dzwoni do mnie", „Doddy dzwoni w moim imieniu" |
 | Przycisk ekranu | Systemowa ikona nagrywania bez podpisu, obok •••, nie pokazuje, czy udostępnianie trwa | Nic | Podpisana kapsułka „Pokaż ekran" / „Doddy widzi ekran · Zatrzymaj" |
 | Radar | Alerty obiecują coś, czego serwer nie robi (wyłączone); głos odsyła do starej nazwy; dubel z „Wiadomościami dnia" | Nic | Ukryć „Daj znać…" do włączenia alertów, połączyć z Wiadomościami dnia, karta na Home |
@@ -120,18 +120,16 @@ Dotknięcie produktu otwiera jego kartę: wszystkie oferty, warunki, „ważne d
   - Droga była: Ustawienia › Głos › „Głos i osobowość" › Głos (`VoiceChoiceView`). Sześć głosów z próbkami, wysyłanych do ElevenLabs jako nadpisanie głosu.
   - Teraz: zostają tempo, ekspresja i „Zaczyna w"; głos wybrany wcześniej nie jest już wysyłany, a próbki (~540 KB) są usunięte.
 - „Głos" jest trzy poziomy w głąb, a każdy z tych ekranów nazywa się Głos. Języki są dwa i w dwóch miejscach. Konto jest rozbite między „O aplikacji" i „Głos › Konto". „Rozmowy telefoniczne" siedzą w Powiadomieniach.
-- **Propozycja pierwszej strony:**
-  - Konto
-  - Głos (jedna strona)
+- **Propozycja pierwszej strony** (zrobiona w PR-ze „Ustawienia”, decyzja `2026-11-12-settings-one-voice-page`):
+  - Głos i osobowość (jedna strona)
   - Pamięć Doddy'ego
   - Połączenia z aplikacjami
   - Rozmowy telefoniczne
   - Powiadomienia
-  - Wygląd i język
-  - Prywatność
-  - O aplikacji
+  - Język, Wygląd, Prywatność
+  - O aplikacji (tu też konto)
 
-  Nagłówek o pamięci zastąpić neutralnym. Kafelki z symbolami także na stronach wewnętrznych.
+  Konto **nie** dostało wiersza na pierwszej stronie, wbrew pierwotnej propozycji: 11 lis właściciel kazał schować je głębiej („schowaj bardziej to usunięcie konta i to, że jesteś zalogowany”). Zamiast tego konto głosowe jest teraz obok konta Doddy w „O aplikacji”. Nagłówek o pamięci jest neutralny; kafelki są też na stronach Powiadomienia i Pamięć Doddy'ego.
 
 ## 4. Rozmowy telefoniczne
 
@@ -182,7 +180,7 @@ Dotknięcie produktu otwiera jego kartę: wszystkie oferty, warunki, „ważne d
 1. **Ta gałąź** (serwer): katalog gazetek i naprawa „Znajdź mi to". Gotowa do PR-a.
 2. Wiadomości: powiadomienie o wyniku i przewijanie do kart. Najbardziej odczuwalne; aplikacja, Mac do kompilacji.
 3. Zakupy w aplikacji: jedno pole, trzy zakładki, karta produktu.
-4. Ustawienia: spłaszczenie stron (wybór głosu już usunięty w tej gałęzi).
+4. Ustawienia: **zrobione** (usunięcie wyboru głosu w #352, spłaszczenie stron w osobnym PR-ze).
 5. Rozmowy: hub z trzema kartami.
 6. Przycisk ekranu i radar.
 7. Wiadomości: wydajność (wiersze, linki) i opis do plików (z narzędziem głosowym, za zgodą właściciela).

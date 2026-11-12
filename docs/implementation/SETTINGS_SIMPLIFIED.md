@@ -6,6 +6,20 @@ Before: one Form of about 25 sections and 70 rows, with 17 explanatory paragraph
 
 Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScreens.swift` (the pages), `SettingsSupport.swift` (the profile editor, exports, voice pickers, moved unchanged).
 
+## One page for the voice, Phone calls on the first page (12 Nov 2026, decision `2026-11-12-settings-one-voice-page`)
+
+Owner, 12 Nov 2026: "ustawienia wyglądają tak średnio […] zrobić to trochę lepiej wszystkim". Again **no preference was removed, renamed or re-keyed** (the voice choice is the exception: decision `2026-11-12-one-voice`). The first page is nine rows in four groups: **Doddy** (Voice and personality, Doddy's memory), then Connections, **Phone calls**, Notifications, then **This iPhone** (Language, Appearance, Privacy), then About. What moved:
+
+| Was | Is now |
+|---|---|
+| Voice › "Voice and personality" › (the page itself) | One page, **Voice and personality** (`settings.voice`): Auto-start voice; Speed, Expressiveness and "Starts in"; what Doddy calls you; "Opening Doddy" (Expand when Doddy speaks, Siri and Back Tap); then how he comes across (quick picks, Fine-tune, "Always the same"). The row `settings.personality` is gone; the controls keep their identifiers (`settings.voice.language`, `settings.nickname`, `settings.personality.dials`, `settings.listenOnOpen`, `settings.ways`). The row shows "Default", "Focused", "Playful" or "Custom". |
+| Voice › Account (voice account, Connection) | **About › Your Doddy account** as its "Voice" section (`settings.voiceAccount`, `settings.voiceConnection`), so both accounts are in one place. A build without Doddy accounts shows that section on About itself. Account stays one page down: owner, 11 Nov 2026, "schowaj bardziej […] to, że jesteś zalogowany". |
+| Notifications › Phone calls (`settings.calls`) | A row on the first page, between Connections and Notifications. Home's ••• › Phone calls opens the same screen. |
+| Header: "You choose each saved memory. See the original, edit it or remove it." | Header: "Set how Doddy sounds, what he remembers and what he can use." The old sentence is the footer of Doddy's memory. |
+| Plain text rows on Notifications and Doddy's memory | The first page's orange symbol tiles (`SettingsRow`). Connections and the other pages are unchanged. |
+
+Code: `VoiceSettingsView` in `SettingsScreens.swift`, `VoiceStyleSections` and `PersonalitySections` in `PersonalityView.swift` (it was one page, `PersonalityView`, opened by `PersonalityLinkRow`), `VoiceAccountSection` in `SettingsSupport.swift`, `DoddyAccountSettingsSection` and `DoddyAccountView` in `Features/Account/DoddyAccountSettings.swift`. UI tests: `settings.voice` is still the first page's anchor; the screen atlas lost its "voice-and-personality" second page and reaches Phone calls from the first page. **Not compiled here; not seen on a device.**
+
 ## Shorter again: nine rows (ADR-727, 5 Nov 2026)
 
 Owner, 5 Nov 2026: fewer options, easy to understand. The About group (Help, Terms & Conditions, Privacy Policy, TikTok, Instagram, Version, Advanced) is now one row, **About**, that opens a page with those rows; the "Less magic. More control." heading is gone (Doddy's picture and its one line stay, because his Settings ledge is part of the motion checks). First page: Voice, Doddy's memory | Connections, Notifications | Language, Appearance, Privacy | About. No preference was removed, renamed or re-keyed; the About rows keep their accessibility identifiers (`settings.terms`, `settings.privacyPolicy`, `settings.advanced`, ...) one page down, so UI tests open `settings.about` first.
