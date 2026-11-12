@@ -323,7 +323,7 @@
             <li><strong>Hosting:</strong> strona działa w Vercel, który prowadzi własne logi serwera. <span class="ph" data-ph="R5">[WŁAŚCICIEL: jak długo Vercel przechowuje logi]</span></li>
             <li><strong>Lista oczekujących:</strong> jeśli się zapiszesz, przechowujemy Twój e-mail, stronę, z której się zapisałeś, wersję tekstu zgody, który widziałeś, czas zapisu i Twoje odpowiedzi na pytania dodatkowe (jaki masz telefon, skąd wiesz o Doddym, co Doddy miałby dla Ciebie robić). Dane są w prywatnym magazynie Vercel we Frankfurcie, jeden plik na e-mail, nazwany skrótem (hashem). Odczytać je może tylko właściciel. Używamy ich tylko po to, żeby dać Ci znać, gdy ruszy wczesny dostęp, i usuwamy je na Twoją prośbę. <span class="ph" data-ph="R4">[WŁAŚCICIEL: jak długo przechowujemy e-maile z listy oczekujących]</span></li>
             <li><strong>Vercel Web Analytics</strong> liczy odsłony bez plików cookie. Vercel rozpoznaje wizytę po skrócie zapytania, który usuwa po 24 godzinach, i zachowuje stronę, źródło odesłania, kraj, rodzaj urządzenia i przeglądarki.</li>
-            <li><strong>Google Analytics</strong> mierzy wizyty na każdej stronie, także na tej, i ustawia pliki cookie (<code>_ga</code>, <code>_ga_*</code>). Działa bez wcześniejszego pytania. <span class="ph" data-ph="B2">[WŁAŚCICIEL/PRAWNIK: zgoda na analityczne pliki cookie dla odwiedzających z UE]</span></li>
+            <li><strong>Google Analytics</strong> mierzy wizyty i ustawia pliki cookie (<code>_ga</code>, <code>_ga_*</code>), ale dopiero wtedy, gdy w okienku o analityce wybierzesz „Zezwól”. Zanim wybierzesz albo gdy wybierzesz „Nie, dziękuję”, nic z Google Analytics się nie ładuje. Twój wybór jest zapisany w przeglądarce na tym urządzeniu, nie w pliku cookie, a zmienisz go przyciskiem „Ustawienia analityki” na dole każdej strony. <span class="ph" data-ph="B2">[WŁAŚCICIEL/PRAWNIK: zgoda na analityczne pliki cookie dla odwiedzających z UE]</span></li>
             <li><strong>Google Fonts:</strong> dwie czcionki strony ładują się z Google, co przy otwarciu strony przekazuje Google Twój adres IP.</li>
             <li><strong>Linki</strong> do Telegrama, TikToka i Instagrama otwierają te serwisy; niczego im nie wysyłamy.</li>
           </ul>
@@ -447,7 +447,7 @@
       </div>
       <p>Doddy to asystent AI, nie osoba. Twoje notatki są zapisane na iPhonie; głos, rozmowy telefoniczne, wspólne listy i połączone konta wysyłają dane poza telefon tylko wtedy, gdy je włączysz.</p>
       <p>Ta strona liczy wizyty za pomocą Vercel Web Analytics, która nie ustawia plików cookie. Jej czcionki ładowane są z Google Fonts.</p>
-      <p>Google Analytics również mierzy wizyty i ustawia pliki cookie.</p>
+      <p data-ga-note hidden>Jeśli na to pozwolisz, Google Analytics dodatkowo mierzy wizyty i ustawia pliki cookie. <button type="button" class="foot-choice" data-analytics-choices>Ustawienia analityki</button></p>
       <p>© 2026 Doddy</p>
     </div>
   </footer>
