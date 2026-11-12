@@ -207,12 +207,27 @@ export const safeHttpsFetch: FetchFn = (url, init) => new Promise<Response>((res
 
 // ---------- the fetcher ----------
 
-const CHALLENGE_MARKERS = [
+const BLOCKED_TITLE_WORDS = /captcha|access denied|dost[eę]p zablokowany/i;
+
+/** A title naming a captcha or a block: what `/<title>[^<]*(captcha|access denied|dost[eę]p zablokowany)[^<]*<\/title>/i`
+ * finds, in linear time (each title's text is read once, up to the next "<"). */
+export function hasBlockedTitle(html: string): boolean {
+  const open = /<title>/gi;
+  for (let m = open.exec(html); m; m = open.exec(html)) {
+    const textEnd = html.indexOf("<", open.lastIndex);
+    if (textEnd < 0) return false;
+    if (/^<\/title>/i.test(html.slice(textEnd, textEnd + 8)) && BLOCKED_TITLE_WORDS.test(html.slice(open.lastIndex, textEnd))) return true;
+    open.lastIndex = textEnd;
+  }
+  return false;
+}
+
+const CHALLENGE_MARKERS: { test(html: string): boolean }[] = [
   /<title>\s*just a moment\.\.\.\s*<\/title>/i, // Cloudflare interstitial
   /_cf_chl_opt|cf-chl-bypass|cf_chl_prog/i,
   /<title>\s*attention required!?\s*\|\s*cloudflare/i,
   /px-captcha|captcha-delivery\.com|\/_incapsula_resource/i,
-  /<title>[^<]*(captcha|access denied|dost[eę]p zablokowany)[^<]*<\/title>/i,
+  { test: hasBlockedTitle },
 ];
 
 /** True for a challenge, captcha or bot-wall page. Only strong markers: the ordinary Cloudflare beacon is not one. */

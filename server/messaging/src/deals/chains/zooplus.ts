@@ -25,7 +25,8 @@
 // Only the FIRST page of each listing is read (48 products, the shop's default "Popularność" order) and at most three
 // pages per search; when a listing has more pages, or an animal's page wasn't read, the read says `incomplete`.
 // A page decodes to about 2.7 MB (the fetcher's cap is 3 MB). Nothing of the person's words reaches zooplus.
-import { decodeEntities, fetchOfficial, isObject, mapLimit, officialUrl, str } from "./common.js";
+import { decodeEntities, fetchOfficial, isObject, mapLimit, nextFlightPushes, officialUrl, str } from "./common.js";
+import { stripTags } from "../../htmlScan.js";
 import { zloty } from "./ccc.js";
 import { MAXIZOO_PAGES, type MaxiZooAnimal } from "./maxizoo.js";
 import { normalize, parsePrintedUnitPrice, parseSize, unitPrice, unitPricesAgree } from "../match.js";
@@ -75,9 +76,9 @@ export function animalPages(queries: readonly string[]): string[] {
 export function flightRows(html: string): unknown[] {
   let flight = "";
   // Next escapes "<" inside the pushed strings, so a script ends at the first "])</script>".
-  for (const m of html.matchAll(/<script[^>]*>\s*self\.__next_f\.push\((\[[\s\S]*?\])\)\s*;?\s*<\/script>/g)) {
+  for (const push of nextFlightPushes(html)) {
     try {
-      const v: unknown = JSON.parse(m[1]!);
+      const v: unknown = JSON.parse(push);
       if (Array.isArray(v) && v[0] === 1 && typeof v[1] === "string") flight += v[1];
     } catch { /* not a data push */ }
   }
@@ -118,7 +119,7 @@ function productUrl(v: unknown): string | undefined {
 }
 
 /** Text from the shop's data: no tags, entities decoded, spaces collapsed. */
-const clean = (s: string) => decodeEntities(s.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+const clean = (s: string) => decodeEntities(stripTags(s)).replace(/\s+/g, " ").trim();
 /** A price as the tile prints it ("13,96 zł"); only złoty. */
 const shownPrice = (v: unknown): Money | undefined => {
   const s = str(v);
