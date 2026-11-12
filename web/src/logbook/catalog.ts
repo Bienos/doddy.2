@@ -53,6 +53,7 @@ export const TOOLS = {
   read_list: { app: "lists", job: "lists", ask: false, weight: 3 },
   check_off: { app: "lists", job: "lists", ask: false, weight: 3 },
   get_weather: { app: "weather", job: "find", ask: false, weight: 8 },
+  get_poland_info: { app: "weather", job: "find", ask: true, weight: 0 },
   web_search: { app: "web", job: "find", ask: false, weight: 6 },
   wikipedia_summary: { app: "web", job: "find", ask: false, weight: 2 },
   news_search: { app: "web", job: "find", ask: false, weight: 2 },
