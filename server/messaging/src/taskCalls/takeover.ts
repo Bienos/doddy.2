@@ -4,6 +4,7 @@
 // transcription stops at the handover: Doddy doesn't listen to the user's own conversation.
 import { randomBytes, randomUUID } from "node:crypto";
 import { inTransaction } from "../db.js";
+import { scheduleDeletion } from "../providerRecords.js";
 import type { TaskCallContext } from "./context.js";
 import { handoverLine, TAKEOVER_NOT_TAKEN, TAKEOVER_TOO_LATE, takeoverPrompt } from "./opening.js";
 import { classifyDestination } from "./phone.js";
@@ -187,11 +188,18 @@ export async function onConference(ctx: TaskCallContext, takeoverId: string, f: 
 
 /** The user's leg ended or never connected. */
 export async function onTakeoverStatus(ctx: TaskCallContext, takeoverId: string, f: Form): Promise<void> {
+  if (field(f, "AccountSid") !== ctx.telephony.accountSid) return;
   const t = await takeover(ctx, takeoverId);
-  if (!t || field(f, "AccountSid") !== ctx.telephony.accountSid) return;
-  if (t.twilio_call_sid && field(f, "CallSid") !== t.twilio_call_sid) return;
   const status = field(f, "CallStatus");
-  if (!["completed", "busy", "no-answer", "failed", "canceled"].includes(status)) return;
+  const final = ["completed", "busy", "no-answer", "failed", "canceled"].includes(status);
+  // The user's leg is a call on the task account: its record there goes once it is over (ADR-753), also when the
+  // takeover is gone with its account.
+  if (final && (!t || !t.twilio_call_sid || field(f, "CallSid") === t.twilio_call_sid)) {
+    await scheduleDeletion(ctx.db, "call", field(f, "CallSid"), "task");
+  }
+  if (!t) return;
+  if (t.twilio_call_sid && field(f, "CallSid") !== t.twilio_call_sid) return;
+  if (!final) return;
   const now = ctx.now();
   await ctx.db.query(
     `UPDATE call_takeovers SET state = CASE WHEN state = 'joined' THEN 'ended' WHEN state = 'prompted' THEN 'declined' ELSE 'failed' END,

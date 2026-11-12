@@ -437,6 +437,12 @@ export interface Config {
   newsWriterCaps: Required<NewsWriterCaps>;
   textReplyModel?: string;
   twilioRecordDeleteAfterHours: number;
+  /**
+   * The account the task calls are placed on, whose records are deleted there with its own pair: TWILIO_TASK_ACCOUNT_SID
+   * and TWILIO_TASK_AUTH_TOKEN, falling back to the main pair as the task-call client does. Set whenever a pair is,
+   * also while task calls are off, so records queued earlier still go.
+   */
+  twilioTaskRecords?: { accountSid: string; authToken: string };
   quietHours: QuietHours;
   taskCalls?: TaskCallConfig;
   /** The workspace post-call webhook's HMAC secret, also when task calls are off (phone-line recaps use it). */
@@ -512,6 +518,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     },
     textReplyModel: e.TEXT_REPLY_MODEL,
     twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,
+    twilioTaskRecords: all<{ accountSid: string; authToken: string }>({
+      accountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
+      authToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
+    }),
     quietHours: {
       start: e.QUIET_HOURS_START ? parseClock(e.QUIET_HOURS_START)! : QUIET_HOURS_DEFAULT.start,
       end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,
