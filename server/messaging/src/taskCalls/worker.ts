@@ -43,6 +43,8 @@ export async function runTaskCallPasses(ctx: TaskCallContext, state: { lastSweep
     state.lastSweep = Date.now();
     await run("orphans", () => sweepOrphans(ctx));
     await run("drift", async () => (await ctx.drift.refresh()).length);
+    // The booking agent too, once it is set up (decision 2026-11-12-book-agent); not set up is not a problem here.
+    if (ctx.agentIdFor("book")) await run("driftBook", async () => (await ctx.driftFor("book").refresh()).length);
   }
   return counts;
 }

@@ -93,6 +93,9 @@ export class DriftCache {
   constructor(private readonly voice: TaskVoice, private readonly agentId: string | undefined, private readonly now: () => Date,
     private readonly log: (msg: string, extra?: object) => void, private readonly spec: TaskAgentSpec = TASK_AGENT_SPEC) {}
 
+  /** Which agent this cache reads, for the log: the ask agent or the booking agent. */
+  private get agent(): "ask" | "book" { return this.spec === TASK_AGENT_SPEC ? "ask" : "book"; }
+
   /** For an agent that isn't set up: always a problem, never a network call. */
   static notConfigured(voice: TaskVoice, now: () => Date, log: (msg: string, extra?: object) => void): DriftCache {
     return new DriftCache(voice, undefined, now, log);
@@ -117,8 +120,11 @@ export class DriftCache {
     }
     const agent = await this.voice.getAgent(this.agentId);
     const problems = agent === "error" ? ["unreadable" as const] : checkAgentSafety(agent, this.spec);
-    if (problems.length && (!this.last || this.last.problems.join() !== problems.join())) {
-      this.log("task-call agent differs from its spec; calls refused", { problems, booking: this.spec !== TASK_AGENT_SPEC });
+    // Logged when the first check is made and whenever the answer changes: names only, never values. The
+    // first line after a deploy is how the live agent is confirmed (or refused) without reading its settings.
+    if (!this.last || this.last.problems.join() !== problems.join()) {
+      if (problems.length) this.log("task-call agent differs from its spec; calls refused", { agent: this.agent, problems });
+      else this.log("task-call agent matches its spec", { agent: this.agent });
     }
     this.last = { problems, at: this.now().getTime() };
     return problems;

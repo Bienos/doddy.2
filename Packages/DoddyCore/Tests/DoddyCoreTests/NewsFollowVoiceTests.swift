@@ -85,4 +85,40 @@ final class NewsFollowVoiceTests: XCTestCase {
         XCTAssertEqual(ActivityText.title("Follow in Following", .polish), "Śledź w Śledzonych")
         XCTAssertEqual(ActivityApp.news.title, "On my radar")
     }
+
+    func testAlertsAskedByVoice() throws {
+        // Words alone mean "as it happens".
+        let ask = try XCTUnwrap(NewsFollowAsk.parse(topic: nil, name: "CPK", words: nil, alertWords: ["lotnisko"]).get())
+        XCTAssertEqual(ask.base, .words(name: "CPK", keywords: ["CPK"]))
+        XCTAssertEqual(ask.alertAsk?.how, .instant)
+        XCTAssertEqual(ask.alertAsk?.words, ["lotnisko"])
+        // A time alone means one summary a day.
+        let daily = try XCTUnwrap(NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, tellMe: "daily", dailyTime: "08:30").get())
+        XCTAssertEqual(daily.alertAsk?.how, .daily)
+        XCTAssertEqual(daily.alertAsk?.dailyTime, "08:30")
+        // No alert arguments: the follow is as before.
+        XCTAssertEqual(try NewsFollowAsk.parse(topic: "sport", name: nil, words: nil).get(), .topic(id: "sport"))
+        // The sheet's own refusals: a whole topic as it happens needs words; bad time; bad mode; bad words.
+        let refused: [Result<NewsFollowAsk, NewsFollowRefusal>] = [
+            NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, tellMe: "instant"),
+            NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, alertWords: ["x"]),
+            NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, alertWords: ["ok words"], tellMe: "weekly"),
+            NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, tellMe: "daily", dailyTime: "25:99"),
+        ]
+        for result in refused {
+            guard case .failure = result else { return XCTFail("should be refused") }
+        }
+        XCTAssertEqual(NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, tellMe: "app"), .success(.alerting(.topic(id: "sport"), NewsFollowAlertAsk(words: [], how: .app, dailyTime: "18:00"))))
+        XCTAssertEqual(ask.name, "CPK")
+        XCTAssertEqual(ask.cardLines.count, 4, "the card also says how the alert works")
+    }
+
+    func testTheReplySaysWhatTheAlertEndedAs() {
+        let follow = NewsFollow.words(label: "CPK", keywords: ["CPK"])
+        let kept = RadarAlert(followID: follow.id, words: ["lotnisko"], how: .instant)
+        XCTAssertTrue(VoiceToolReply.newsFollow(.added(follow), alert: .kept(kept)).contains("alert kept"))
+        XCTAssertTrue(VoiceToolReply.newsFollow(.added(follow), alert: .hereOnly(reason: "no server")).contains("alert not on the server"))
+        XCTAssertEqual(VoiceToolReply.newsFollow(.full, alert: .kept(kept)), VoiceToolReply.newsFollow(.full), "nothing added: no alert claim")
+        XCTAssertEqual(VoiceToolReply.newsFollow(.added(follow), alert: nil), VoiceToolReply.newsFollow(.added(follow)))
+    }
 }

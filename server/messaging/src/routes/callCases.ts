@@ -42,6 +42,9 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
   app.get("/v1/call-cases/availability", { preHandler: auth }, async (req) => {
     const { rows } = await deps.db.query("SELECT 1 FROM phone_numbers WHERE account_id = $1", [principal(req).accountId]);
     const agentProblems = ctx ? await ctx.drift.problems() : [];
+    // The booking agent (decision 2026-11-12-book-agent): set up, and which of its settings differ from its spec.
+    const bookingAgentConfigured = !!ctx?.agentIdFor("book");
+    const bookingAgentProblems = ctx && bookingAgentConfigured ? await ctx.driftFor("book").problems() : [];
     return {
       available: !!ctx && !ctx.settings.killSwitch && agentProblems.length === 0,
       configured: !!ctx,
@@ -53,8 +56,11 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
       hours: { zone: CALL_ZONE, from: clockText(DAY_START_MINUTES), to: clockText(DAY_END_MINUTES) },
       // Names of agent settings that differ from the spec (no values); calls are refused while any are listed.
       agentProblems,
-      // Calls that book (decision 2026-11-12-book-agent): the booking agent is set up and matches its spec.
-      booking: !!ctx && !ctx.settings.killSwitch && !!ctx.agentIdFor("book") && (await ctx.driftFor("book").problems()).length === 0,
+      // Calls that book: the booking agent is set up and matches its spec. Unlike `available`, asking calls don't depend on it.
+      booking: !!ctx && !ctx.settings.killSwitch && bookingAgentConfigured && bookingAgentProblems.length === 0,
+      bookingAgentConfigured,
+      // Names of the booking agent's settings that differ from its spec (no values), like `agentProblems`.
+      bookingAgentProblems,
     };
   });
 

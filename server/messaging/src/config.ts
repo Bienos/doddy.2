@@ -32,6 +32,10 @@ const schema = z.object({
   TWILIO_VERIFY_SERVICE_SID: optional,
 
   ELEVENLABS_API_KEY: optional,
+  // Commercial read-only routes: disabled unless explicitly enabled AND both partner secrets exist.
+  JAKDOJADE_ENABLED: z.enum(["0", "1"]).default("0"),
+  JAKDOJADE_LICENSE_KEY: optional,
+  JAKDOJADE_SECRET: optional,
 
   // Doddy accounts (decision 2026-11-08-required-account): the Supabase project whose signed-in users
   // may sign in here (`POST /v1/accounts/sign-in`). Not a secret. Unset: only anonymous accounts, as before.
@@ -419,6 +423,8 @@ export interface Config {
   dealsSettings: DealsSettings;
   /** "Search further" under a leaflet answer (ADR-666). */
   dealsSearchShops: SearchShop[];
+  /** Licensed Jakdojade API; missing or disabled means no provider requests. */
+  jakdojade?: { licenseKey: string; secret: string };
   /** CEIDG (ADR-685): only with a token; the base is checked to be CEIDG's own host when the client is made. */
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
@@ -543,6 +549,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     },
     dealsSearchShops: e.DEALS_SEARCH_SHOPS,
     ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,
+    jakdojade: e.JAKDOJADE_ENABLED === "1" && e.JAKDOJADE_LICENSE_KEY && e.JAKDOJADE_SECRET
+      ? { licenseKey: e.JAKDOJADE_LICENSE_KEY, secret: e.JAKDOJADE_SECRET } : undefined,
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
     radarAlertsEnabled: e.RADAR_ALERTS_ENABLED === "1",
     uberDirect: e.UBER_DIRECT_ENABLED === "1" && e.UBER_DIRECT_CLIENT_ID && e.UBER_DIRECT_CLIENT_SECRET && e.UBER_DIRECT_CUSTOMER_ID
