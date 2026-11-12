@@ -243,6 +243,8 @@ services:
         sync: false
       - key: DEALS_ENABLED # Leaflets (ADR-609): "0" (the default) answers 503 deals_disabled; "1" reads the four chains' leaflets on request
         value: "0"
+      - key: DEALS_CATALOG_ENABLED # Leaflet catalog (decision 2026-11-12-leaflet-catalog): "1" scans each chain's leaflets in the background every DEALS_CATALOG_EVERY_HOURS [6] and answers searches from them; "0" (the default) reads every chain on each search
+        value: "0"
       # Studio (ADR-740): "1" also needs STUDIO_SKILLS (ids from scripts/studio_skills.sh upload). Limits
       # and caps have defaults (server/messaging/.env.example).
       - key: STUDIO_ENABLED

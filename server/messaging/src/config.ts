@@ -220,6 +220,14 @@ const schema = z.object({
   CEIDG_API_BASE: z.string().url().default("https://dane.biznes.gov.pl/api/ceidg/v3"),
   DEALS_VISION_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-haiku-5-5"),
   DEALS_MAX_PAGES: z.coerce.number().int().min(0).max(100).default(40),
+  // The leaflet catalog (owner, 12 Nov 2026; decision 2026-11-12-leaflet-catalog): "1" lets the worker read each chain's
+  // current leaflets in the background, once for everyone, and answers searches from what it kept; "0" (the default)
+  // reads every chain live on each search, as before. A scan reads only pages it hasn't read before.
+  DEALS_CATALOG_ENABLED: z.enum(["0", "1"]).default("0"),
+  // How often each chain's leaflets are looked at again (new leaflets appear on most chains on Monday and Thursday).
+  DEALS_CATALOG_EVERY_HOURS: z.coerce.number().int().min(1).max(48).default(6),
+  // Pages sent to the reader per chain per scan; the rest wait for the next scan. 0: only the chains' own data.
+  DEALS_CATALOG_MAX_PAGES: z.coerce.number().int().min(0).max(400).default(160),
   DEALS_SCREEN_PAGES: z.coerce.number().int().min(0).max(200).default(120),
   DEALS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   DEALS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
@@ -537,6 +545,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES, screenPages: e.DEALS_SCREEN_PAGES,
       dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
       dailyForNewAccounts: e.DEALS_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
+      catalog: { enabled: e.DEALS_CATALOG_ENABLED === "1", everyHours: e.DEALS_CATALOG_EVERY_HOURS, maxPagesPerChain: e.DEALS_CATALOG_MAX_PAGES },
     },
     dealsSearchShops: e.DEALS_SEARCH_SHOPS,
     ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,

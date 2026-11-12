@@ -11,7 +11,7 @@ import { studioContext } from "./studio/context.js";
 import { modelLabel } from "./studio/models.js";
 import { watchContext } from "./watches/context.js";
 import { fileWatchContext } from "./fileWatches.js";
-import { log, radarContext, runWorkerLoop } from "./workerLoop.js";
+import { catalogContext, log, radarContext, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
@@ -41,6 +41,7 @@ app.log.info({
   watches: config.watchSettings.enabled && !!providers.cipher,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   radarAlerts: config.radarAlertsEnabled,
+  leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,
   deliveries: config.uberDirect ? config.uberDirect.mode : false,
   ceidg: !!providers.ceidg,
   jakdojade: !!config.jakdojade,
@@ -59,8 +60,10 @@ if (config.runWorkerInWeb) {
   const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
   const fileWatchCtx = fileWatchContext(db, { origin: config.documentsOrigin }, providers.cipher, providers.push, log);
   const radarCtx = radarContext(db, config.radarAlertsEnabled, providers.news, providers.push, providers.cipher, config.quietHours);
+  const catalogCtx = catalogContext(db, providers.deals);
   workerDone = runWorkerLoop(db, {
     ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, radar: radarCtx,
+    catalog: catalogCtx,
     scheduledCalls: scheduledCallsFrom(config, providers),
   }, () => stopping);
 }

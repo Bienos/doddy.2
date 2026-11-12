@@ -119,6 +119,9 @@ export async function buildApp(
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
   // Document links are signed with the session key; without one, make_document says "not set up".
   const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
+  // Booking emails are read by the small chat model (DODDY_CHAT_MODEL) when the server has one.
+  const travelClaude =
+    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : claude) : claude;
   // Flights: live only, each part only when the owner set it (decision 2026-11-11-flights-kiwi-search-duffel-booking).
   const flights =
     overrides.flights !== undefined
@@ -135,6 +138,7 @@ export async function buildApp(
     provider: toolsProvider,
     flights,
     claude,
+    travelClaude,
     documentLinks,
     webSearch,
     limits: config.limits,

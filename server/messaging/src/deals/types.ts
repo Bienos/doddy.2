@@ -168,6 +168,9 @@ export interface LeafletPage { number: number; imageUrl: string; url: string; te
  * text matches an item, pages holding a matched data product (to confirm its conditions), or none. */
 export type PageStrategy = "all" | "text" | "confirm" | "none";
 
+/** The key of one page's read: "leaflet index:page number". */
+export const pageKey = (li: number, page: number) => `${li}:${page}`;
+
 export interface LeafletRead {
   leaflet: LeafletInfo;
   products: DataProduct[];
@@ -215,6 +218,9 @@ export interface DealsModelApi {
   readPage(req: { image: PageImage; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<PageOutput>>;
   /** Says which candidates are each item, by id only. Throws on API errors. */
   pick(req: { queries: readonly string[]; candidates: PickCandidate[][] }, signal: AbortSignal): Promise<ModelReply<PickOutput>>;
+  /** Reads every product and promotion on one page, for the leaflet catalog (decision 2026-11-12-leaflet-catalog).
+   * Throws on API errors. A model without it can't fill the catalog's image pages. */
+  readCatalogPage?(req: { image: PageImage; chain: ReadChain }, signal: AbortSignal): Promise<ModelReply<PageOutput>>;
   /** Says which of several page images could hold each item (ADR-662), without reading them. Throws on API
    * errors. A model without it reads image-only leaflets page by page, as before. */
   screenPages?(req: { images: readonly PageImage[]; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<ScreenOutput>>;
@@ -235,6 +241,8 @@ export interface DealsSettings {
   dailyForNewAccounts?: number;
   /** Hours after which an account without a verified phone number counts as established. Absent: 24. */
   newAccountHours?: number;
+  /** The leaflet catalog (decision 2026-11-12-leaflet-catalog). Absent or off: every search reads live, as before. */
+  catalog?: { enabled: boolean; everyHours: number; maxPagesPerChain: number };
 }
 
 /** Settings for an injected DealsDeps without its own (tests). The environment's DEALS_ENABLED defaults to "0". */
