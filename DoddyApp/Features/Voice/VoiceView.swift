@@ -247,6 +247,22 @@ struct VoiceView: View {
                                 .id("pendingAction")
                         }
 
+                        if controller.journeyChecking {
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                Text(NotificationLanguage.current == .polish ? "Sprawdzam trasy..." : "Checking routes...")
+                                    .font(.headline)
+                            }
+                            .padding(16)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                            .id("journeyChecking")
+                        }
+
+                        if let result = controller.journeyResult {
+                            journeyResultCard(result, controller: controller)
+                                .id("journeyResult")
+                        }
+
                         if controller.textSending {
                             HStack(spacing: 8) {
                                 ProgressView()
@@ -490,6 +506,7 @@ struct VoiceView: View {
     private func cardIsEmpty(_ controller: VoiceSessionController) -> Bool {
         !HomeConversation.shared.needsYou && HomeConversation.shared.resultsToShow.isEmpty
             && controller.pendingAction == nil && controller.accessRequest == nil && controller.accountNeeded == nil
+            && !controller.journeyChecking && controller.journeyResult == nil
     }
 
     private func planBinding(_ controller: VoiceSessionController) -> Binding<PlanAskRequest?> {
@@ -627,6 +644,54 @@ struct VoiceView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("voice.cardHeader")
+    }
+
+    /// Real schedules returned by the licensed backend, not predictions by the language model.
+    private func journeyResultCard(_ result: JourneyPartnerRoutes, controller: VoiceSessionController) -> some View {
+        let routes = Array(result.routes.compactMap { $0.normalized() }.prefix(3))
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Jakdojade", systemImage: "tram.fill").font(.headline)
+                Spacer()
+                Text(NotificationLanguage.current == .polish ? "Rozkład jazdy" : "Scheduled routes")
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if let checked = ServerDates.parse(result.fetchedAt) {
+                Text(checked.formatted(date: .abbreviated, time: .shortened))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            ForEach(routes.indices, id: \.self) { index in
+                let route = routes[index]
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(route.departs.formatted(date: .omitted, time: .shortened)
+                         + " → " + route.arrives.formatted(date: .omitted, time: .shortened))
+                        .font(.headline)
+                    ForEach(route.segments.indices, id: \.self) { leg in
+                        let part = route.segments[leg]
+                        Text(verbatim: "\(part.line): \(part.from) → \(part.to)")
+                            .font(.subheadline)
+                    }
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
+            }
+            Text(NotificationLanguage.current == .polish
+                 ? "Dane rozkładowe, nie pozycje na żywo. Przed wyjściem sprawdź możliwe zmiany. Bilet nie został kupiony."
+                 : "Scheduled data, not live positions. Check for changes before leaving. No ticket was purchased.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            Button(NotificationLanguage.current == .polish ? "Zamknij" : "Close") {
+                controller.dismissJourneyResult()
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .accessibilityIdentifier("voice.journey.dismiss")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.journey.results")
     }
 
     /// Card for anything that changes data or opens another app. Nothing happens until the user taps.
