@@ -17,7 +17,7 @@ Opening Wolt's or Glovo's front page leaves the person to find the restaurant th
 - Still a handoff: the person chooses, pays and orders in the app; Doddy can't see whether they did.
 - It works only when a search result carries the restaurant's page on a delivery app; otherwise the app's front page opens, as before.
 - Place listings' link fields aren't confirmed against Monid's live answers; web results carry the same pages. The field names read are in `listingFoodPage`.
-- The backend change reaches the voice agent only after the next `doddy` deploy; the app change after the next app build; the live agent's tool needs the `page` argument added with the tool (OWNER_QUEUE 45).
+- The backend change reaches the voice agent only after the next `doddy` deploy; the app change after the next app build; the live agent's tool needs the `page` argument added with the tool (OWNER_QUEUE 46).
 
 ## Evidence
 `backend/test/food-pages.test.ts` (5: each platform, lookalike hosts and credentials refused, listing fields, web results, the tool's app list equals the platforms); `FoodHandoffTests` (3 more: page rules and cleaning, card and opening, another app's page refused); `voice_agent_spec.py check`. Not compiled: `VoiceSessionController.swift` (one changed line). Not tried by voice, and not against Monid's live results.

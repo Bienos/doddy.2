@@ -110,7 +110,6 @@ rights review of the pack is still an open owner decision (see `DECISIONS.md`).
 
 ## Voice samples
 
-`DoddyApp/Resources/VoicePreviews/voice-preview-*.mp3` (six clips, ~540 KB) are speech generated on 2026-10-10 with
-ElevenLabs `eleven_v4` on the owner's ElevenLabs account, one per voice offered in Settings (ADR-122). They are
-**development candidates**: check ElevenLabs' output terms for the owner's plan and the Voice Library terms of the
-library voices (Josh, Wiktor) before any release.
+Removed on 12 Nov 2026 with the choice of voice (decision `docs/decisions/2026-11-12-one-voice.md`): the six
+`DoddyApp/Resources/VoicePreviews/voice-preview-*.mp3` clips (speech generated on 2026-10-10 with ElevenLabs
+`eleven_v4`, ADR-122) are no longer in the app.

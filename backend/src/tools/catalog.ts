@@ -941,6 +941,41 @@ export function emailText(value: unknown, max: number): string | null {
 
 export const EMAIL_TEXT_MAX = 1500;
 
+/**
+ * Travel, stage 1 (decision 2026-11-11-travel-agent-plan; docs/implementation/TRAVEL_EMAILS.md): the one
+ * Gmail read behind "find my trips". Not a voice tool and not in CLOUD_TOOLS: it runs only from the trip
+ * screen's own button, after its own ask-first card, under the user's read_email switch
+ * (CloudToolsService.prepareTravelScan / runTravelScan). Kept here so the Composio slug stays in the
+ * catalog. Bodies come with verbose: true; they are cleaned and stripped of secrets in travel/emailText.ts
+ * before anything reads them, and nothing from them is stored.
+ */
+export const TRAVEL_GMAIL_FETCH = {
+  toolkit: "gmail" as ToolkitId,
+  slug: "GMAIL_FETCH_EMAILS",
+  maxRetries: 1,
+  toArguments: (query: string, max: number) => ({
+    user_id: "me", query, max_results: max, verbose: true, include_payload: true, include_spam_trash: false,
+  }),
+  /** The emails, newest first, with what the travel reader needs. Malformed output throws. */
+  emails(raw: unknown): { messageId: string; receivedAt: string; sender: string; subject: string; body: string }[] {
+    const out = listOf(dataOf(raw), "messages").map(record).flatMap((m) => {
+      const messageId = typeof m.messageId === "string" ? m.messageId : null;
+      const at = typeof m.messageTimestamp === "string" ? Date.parse(m.messageTimestamp) : NaN;
+      if (!messageId || !Number.isFinite(at)) return [];
+      const preview = typeof m.preview === "object" && m.preview !== null ? (m.preview as Record<string, unknown>).body : undefined;
+      const body = typeof m.messageText === "string" ? m.messageText : typeof preview === "string" ? preview : "";
+      return [{
+        messageId,
+        receivedAt: new Date(at).toISOString(),
+        sender: typeof m.sender === "string" ? m.sender.replace(INVISIBLE, "").slice(0, 200) : "",
+        subject: typeof m.subject === "string" ? m.subject.replace(INVISIBLE, "").slice(0, 300) : "",
+        body,
+      }];
+    });
+    return out.sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
+  },
+};
+
 export const READ_EMAIL: CloudToolDefinition = {
   name: "read_email",
   toolkit: "gmail",

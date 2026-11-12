@@ -1,3 +1,3 @@
 Voice: when a search result shows a restaurant's own page on Wolt, Glovo, Bolt Food, Pyszne.pl or Uber Eats, `open_food_app` opens that page (after the card's tap, which says "Opens this page: …") instead of the app's front page. Pages are recognised by exact host in the search backend and checked again on the iPhone; a page of another app is refused (decision `2026-11-12-food-restaurant-pages`).
 Ran: DoddyCore tests, backend tests, `voice_agent_spec.py check`. Not compiled here: `VoiceSessionController.swift` (one line). Not tried by voice or against live Monid results.
-Needs: a `doddy` deploy for the backend side; the live agent's `open_food_app` gets `page` with the tool (OWNER_QUEUE 45).
+Needs: a `doddy` deploy for the backend side; the live agent's `open_food_app` gets `page` with the tool (OWNER_QUEUE 46).

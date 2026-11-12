@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ProviderError } from "../errors.js";
 import { clip, type ToolOutcome } from "../tools/catalog.js";
+import { type FlightQuery, FlightSearchError, type FlightSearch, SearchAnswer } from "../travel/kiwi.js";
 
 /**
  * Flight search through Kiwi.com's public MCP server (decision 2026-11-11-flights-kiwi-search-duffel-booking).
@@ -266,4 +267,62 @@ export function findFlightsCard(args: FindFlightsArgs): { title: string; lines: 
     ],
     confirmLabel: "Yes, search",
   };
+}
+
+// ---------------------------------------------------------------- the trip planner's search
+
+/** The planner's tool arguments for a query (dates YYYY-MM-DD -> Kiwi's dd/mm/yyyy). Exported for tests. */
+export function plannerKiwiArguments(q: FlightQuery): Record<string, unknown> {
+  const args: Record<string, unknown> = {
+    flyFrom: q.from,
+    flyTo: q.to,
+    departureDate: kiwiDate(q.departFrom),
+    adults: q.adults,
+    currency: q.currency,
+    locale: "pl",
+    sort: "price",
+  };
+  if (q.departTo !== q.departFrom) args.departureDateTo = kiwiDate(q.departTo);
+  if (q.nightsMin !== null && q.nightsMax !== null) {
+    args.nights_in_dst_from = q.nightsMin;
+    args.nights_in_dst_to = q.nightsMax;
+  }
+  if (q.children > 0) args.children = q.children;
+  if (q.adultBags.some((b) => b > 0)) args.adults_hold_bags = q.adultBags;
+  if (q.directOnly) args.max_sector_stopovers = 0;
+  return args;
+}
+
+/**
+ * The trip planner's flights (decision 2026-11-11-travel-agent-plan, stage 2): the same one fixed Kiwi tool
+ * as above, asked for a flexible date range with the bags counted. Only links to kiwi.com are passed on.
+ */
+export class KiwiTripSearch implements FlightSearch {
+  constructor(private readonly baseUrl: string = KIWI_DEFAULT_URL, private readonly fetchImpl: Fetch = fetch) {}
+
+  async search(query: FlightQuery, signal: AbortSignal) {
+    let response: Response;
+    try {
+      response = await this.fetchImpl(this.baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "search-flight", arguments: plannerKiwiArguments(query) } }),
+        signal,
+        redirect: "error",
+      });
+    } catch {
+      throw new FlightSearchError("unavailable");
+    }
+    if (!response.ok) throw new FlightSearchError(response.status === 429 || response.status === 403 ? "refused" : "unavailable");
+    let answer: unknown;
+    try {
+      answer = parseMcpToolAnswer((await response.text()).slice(0, 2_000_000));
+    } catch (error) {
+      throw new FlightSearchError(error instanceof ProviderError && error.code === "provider_unavailable" ? "refused" : "malformed");
+    }
+    const parsed = SearchAnswer.safeParse(answer);
+    if (!parsed.success) throw new FlightSearchError("malformed");
+    const itineraries = parsed.data.itineraries.filter((i) => /^https:\/\/(www\.)?kiwi\.com\//.test(i.bookingUrl));
+    return { currency: parsed.data.currency, itineraries };
+  }
 }
