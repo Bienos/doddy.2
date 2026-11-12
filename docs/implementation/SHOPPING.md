@@ -103,7 +103,7 @@ The owner chose "More shops in Doddy" after two research rounds (`docs/research/
 
 **Left out:** Lidl's `/c/promocje` (its product data held only six one-day online-shop deals, no food; the food offers are text inside banner images), and Tania Książka (its robots.txt has `User-Agent: .*bot/1.0.*` / `Disallow: /`; not an RFC 9309 product token, but its intent covers "DoddyBot/1.0", so it isn't read; its sale lists also rarely matched book requests). The finished readers stay on the helpers' branches.
 
-**robots.txt, to be exact:** the fetcher treats a 4xx robots.txt (except 429) as no file, as RFC 9309 says; a 429 or a challenge page counts as blocked. Delikatesy Centrum's image host answers 403 to robots.txt (S3's answer for any missing file), so it is read.
+**robots.txt, to be exact:** the fetcher treats a 4xx robots.txt (except 429) as no file, as RFC 9309 says; a 429 or a challenge page counts as blocked. Delikatesy Centrum's image host answers 403 to robots.txt (S3's answer for any missing file), so it is read. Each file is cached for an hour with DoddyBot's own rules only (or `*`'s), at most 2,000 of them: a file with more rules for DoddyBot disallows every fetch from that host (`robots_too_large`), so a rule past the cap is never missed. The cache holds at most 256 hosts and about 8 MB in all, oldest out.
 
 ### Five more shops (ADR-669, 30 Oct to 1 Nov 2026)
 

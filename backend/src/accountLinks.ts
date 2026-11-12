@@ -166,9 +166,10 @@ export class AccountLinker {
       throw new AppError("invalid_request", { message: "Linking this iPhone's earlier data needs a code from this iPhone. Update Doddy and try again." });
     }
 
-    // Counted before the code is looked at, right or wrong.
+    // Counted before the code is looked at, right or wrong. An hour's count, under a `day:` period like the
+    // server's other hourly counts, so `prune` drops it.
     const allowed = await store.reserveUsage(
-      [{ counter: `account_link:${account.userId}`, period: `hour:${now.toISOString().slice(0, 13)}`, limit: LINK_TRIES_PER_HOUR }],
+      [{ counter: `account_link:${account.userId}`, period: `day:${now.toISOString().slice(0, 13)}`, limit: LINK_TRIES_PER_HOUR }],
       1,
     );
     if (!allowed) throw new AppError("rate_limited", { message: "Too many tries to link this iPhone. Try again in an hour.", retryAfterSeconds: 3_600 });

@@ -3,11 +3,12 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { AccountEraser } from "./account.js";
 import { type AccountLinker, accountSubjectOf } from "./accountLinks.js";
 import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
-import { requireFullAccess, type SessionVerifier } from "./auth.js";
+import { type AuthenticatedUser, requireFullAccess, type SessionVerifier } from "./auth.js";
 import { clientAddress } from "./clientAddress.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
 import type { DeviceSessionIssuer } from "./deviceSession.js";
 import { type DocumentLinks, serveDocument } from "./documents.js";
+import { issuedAtOf, requestCredential } from "./requestCredential.js";
 import type { Store } from "./store.js";
 import { AppError } from "./errors.js";
 import { PAYMENT_SCENARIOS, type PaymentScenario, type PaymentsService } from "./payments/service.js";
@@ -282,67 +283,79 @@ export function createHandler(deps: HttpDeps) {
 
       const authorization = header(req, "authorization");
       let user = await deps.verifier.verify(authorization, now());
+      // When this sign-in dates from (requestCredential.ts): the token's own date, or when the browser signed in.
+      let issuedAt = user ? issuedAtOf(authorization) : undefined;
       // A browser session may read a few lists (COOKIE_READABLE); every other route needs the
       // iPhone's own session in the Authorization header.
       if (!user && authorization === undefined && web && COOKIE_READABLE.has(key)) {
         const session = await web.auth.fromCookie(req, now());
-        if (session) user = { userId: session.userId };
+        if (session) {
+          user = { userId: session.userId };
+          issuedAt = Math.floor(session.createdAt / 1000);
+        }
       }
       if (!user) throw new AppError("unauthenticated");
       // A guest iPhone (ADR-587) has Ask Doddy only.
       requireFullAccess(user);
 
-      const rawScenario = header(req, "x-doddy-demo-scenario");
-      const scenario = rawScenario === undefined ? undefined : MockScenario.safeParse(rawScenario);
-      if (scenario && !scenario.success) throw new AppError("invalid_request");
+      const serve = async (signedIn: AuthenticatedUser): Promise<void> => {
+        const rawScenario = header(req, "x-doddy-demo-scenario");
+        const scenario = rawScenario === undefined ? undefined : MockScenario.safeParse(rawScenario);
+        if (scenario && !scenario.success) throw new AppError("invalid_request");
 
-      const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
-      if (shopifyHandler) {
-        // Only the iPhone’s full authenticated session reaches the live storefront.
-        // A merchant cart or checkout is never a payment or a placed order.
-        const result = deps.shopifyLimiter
-          ? await (async () => {
-              await deps.shopifyLimiter!.reserveToolRun(user.userId, now().getTime());
-              return deps.shopifyLimiter!.withSlot(user.userId, () => shopifyHandler(body));
-            })()
-          : await shopifyHandler(body); // Legacy harness injects a one-call fake; production always supplies limiter.
-        status = 200;
-        return send(res, 200, result);
-      }
-      if (payments && paymentsHandler) {
-        const rawPayments = header(req, "x-doddy-payments-scenario");
-        if (rawPayments !== undefined) {
-          if (!PAYMENT_SCENARIOS.has(rawPayments)) throw new AppError("invalid_request");
-          payments.applyMockScenario(rawPayments as PaymentScenario);
+        const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
+        if (shopifyHandler) {
+          // Only the iPhone’s full authenticated session reaches the live storefront.
+          // A merchant cart or checkout is never a payment or a placed order.
+          const result = deps.shopifyLimiter
+            ? await (async () => {
+                await deps.shopifyLimiter!.reserveToolRun(signedIn.userId, now().getTime());
+                return deps.shopifyLimiter!.withSlot(signedIn.userId, () => shopifyHandler(body));
+              })()
+            : await shopifyHandler(body); // Legacy harness injects a one-call fake; production always supplies limiter.
+          status = 200;
+          return send(res, 200, result);
         }
-        const paymentsResult = await paymentsHandler(user.userId, body);
-        status = 200;
-        return send(res, 200, paymentsResult);
-      }
-      if (tools && (toolsHandler || toolkitRoute)) {
-        const rawTools = header(req, "x-doddy-tools-scenario");
-        if (rawTools !== undefined) {
-          if (!TOOLS_SCENARIOS.has(rawTools as ToolsMockScenario)) throw new AppError("invalid_request");
-          await tools.applyMockScenario(user.userId, rawTools as ToolsMockScenario);
+        if (payments && paymentsHandler) {
+          const rawPayments = header(req, "x-doddy-payments-scenario");
+          if (rawPayments !== undefined) {
+            if (!PAYMENT_SCENARIOS.has(rawPayments)) throw new AppError("invalid_request");
+            payments.applyMockScenario(rawPayments as PaymentScenario);
+          }
+          const paymentsResult = await paymentsHandler(signedIn.userId, body);
+          status = 200;
+          return send(res, 200, paymentsResult);
         }
-        let toolsResult: unknown;
-        if (toolsHandler) toolsResult = await toolsHandler(user.userId, body);
-        else if (toolkitRoute) {
-          const [, toolkitId, action] = toolkitRoute;
-          toolsResult =
-            action === "connect"
-              ? await tools.connect(user.userId, toolkitId!, body)
-              : action === "complete"
-                ? await tools.complete(user.userId, toolkitId!, body)
-                : await tools.disconnect(user.userId, toolkitId!, body);
+        if (tools && (toolsHandler || toolkitRoute)) {
+          const rawTools = header(req, "x-doddy-tools-scenario");
+          if (rawTools !== undefined) {
+            if (!TOOLS_SCENARIOS.has(rawTools as ToolsMockScenario)) throw new AppError("invalid_request");
+            await tools.applyMockScenario(signedIn.userId, rawTools as ToolsMockScenario);
+          }
+          let toolsResult: unknown;
+          if (toolsHandler) toolsResult = await toolsHandler(signedIn.userId, body);
+          else if (toolkitRoute) {
+            const [, toolkitId, action] = toolkitRoute;
+            toolsResult =
+              action === "connect"
+                ? await tools.connect(signedIn.userId, toolkitId!, body)
+                : action === "complete"
+                  ? await tools.complete(signedIn.userId, toolkitId!, body)
+                  : await tools.disconnect(signedIn.userId, toolkitId!, body);
+          }
+          status = 200;
+          return send(res, 200, toolsResult);
         }
+        if (!handler) throw new AppError("not_found");
+        const result = await handler({ userId: signedIn.userId, body, scenario: scenario?.data });
         status = 200;
-        return send(res, 200, toolsResult);
-      }
-      if (!handler) throw new AppError("not_found");
-      const result = await handler({ userId: user.userId, body, scenario: scenario?.data });
-      status = 200;
-      send(res, 200, result);
+        send(res, 200, result);
+      };
+      // Everything this request writes for the person is refused if their account is deleted while it
+      // runs (Store.refuseIfCutOff). A sign-in with no date (mock mode's test identities) isn't checked.
+      const signedIn = user;
+      if (issuedAt === undefined) return await serve(signedIn);
+      return await requestCredential.run({ userId: signedIn.userId, issuedAt }, () => serve(signedIn));
     } catch (error) {
       const appError = error instanceof AppError ? error : new AppError("internal");
       status = appError.status;

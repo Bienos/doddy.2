@@ -14,6 +14,7 @@
     "start": "node dist/src/server.js",
     "session:mint": "node dist/src/mintSession.js",
     "account:unlink": "node dist/src/unlinkAccount.js",
+    "cleanups:stuck": "node dist/src/stuckCleanups.js",
     "live-check": "node dist/src/liveCheck.js",
     "fixtures": "npm run build && node dist/test/fixtures.generate.js",
     "fixtures:web": "npm run build && node dist/test/fixtures.web.generate.js",
