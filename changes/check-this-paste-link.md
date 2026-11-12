@@ -1,0 +1,3 @@
+Shopping: a "Check this" (Sprawdź to) card on the Shopping screen. Paste the link to a product you're looking at in a shop; Doddy's server reads the page and the price watch card shows its price, then you can ask it to watch that price. Same two steps and yes as a watch from a pick; nothing is sent before "Check the page". No server change; sharing from Safari and a read-only price check come later.
+Ran: scripts/ci.sh --only checks,swift (results in the pull request); DoddyCore SharedShopPageTests. Not run: the SwiftUI is not compiled here, no live shop link was tried (Allegro and Ceneo are expected to block the reader), nothing seen on a device.
+Owner steps: price watches answer "off" until `WATCHES_ENABLED=1` on `doddy-messaging`.

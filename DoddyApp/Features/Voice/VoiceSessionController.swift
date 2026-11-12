@@ -222,6 +222,7 @@ final class VoiceSessionController {
             // The same phase again (the SDK repeats states) changes nothing; skip the work (ADR-604).
             guard phase != oldValue else { return }
             Self.conversationInProgress = isLive
+            if !isLive { turnFeedback.reset() }
             if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
             ListeningIndicatorModel.shared.refresh()
             switch phase {
@@ -500,6 +501,11 @@ final class VoiceSessionController {
     /// Monotonic, from Home's tap (including its access check), or start() for other entry points.
     /// Cleared at the first real SDK speaking event; no transcript or credential enters the log.
     @ObservationIgnored private var firstSpeechRequestedAt: Double?
+    /// The words under Doddy while he works, the tap when the person's words arrive and the time of
+    /// each turn in the log (decision `2026-11-12-voice-turn-feedback`).
+    let turnFeedback = VoiceTurnFeedback()
+    /// The last state the provider reported, which a held "Working on it…" can differ from.
+    @ObservationIgnored private var providerState: ElevenLabs.AgentState?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
     var isPrivate = false {
@@ -908,7 +914,26 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.apply(state) }
         }
         config.onUserTranscript = { text, _ in
-            Task { @MainActor in ref.value?.append(text, fromUser: true) }
+            Task { @MainActor in
+                // The person's words arrived: the turn starts here (decision 2026-11-12-voice-turn-feedback).
+                if let controller = ref.value, controller.isLive {
+                    controller.turnFeedback.userFinished(tap: controller.phase != .speaking && controller.translator == nil)
+                }
+                ref.value?.append(text, fromUser: true)
+            }
+        }
+        // Tools the agent runs itself (web tools) reach the app only as these two events; the app's
+        // own tools are also counted in `handle` and `reply`, once per call id.
+        config.onAgentToolRequest = { event in
+            let id = event.toolCallId, name = event.toolName
+            Task { @MainActor in ref.value?.turnFeedback.toolStarted(id: id, name: name) }
+        }
+        config.onAgentToolResponse = { event in
+            let id = event.toolCallId
+            Task { @MainActor in ref.value?.turnFeedback.toolAnswered(id: id) }
+        }
+        config.onInterruption = { _ in
+            Task { @MainActor in ref.value?.turnInterrupted() }
         }
         config.onAgentResponse = { text, _ in
             Task { @MainActor in ref.value?.append(text, fromUser: false) }
@@ -2554,11 +2579,28 @@ final class VoiceSessionController {
 
     // MARK: Events
 
+    /// The person spoke over Doddy: nothing is waited on, and a held "Working on it…" goes back to
+    /// what the provider said (it may have said listening before this ran).
+    private func turnInterrupted() {
+        turnFeedback.reset()
+        if isLive, phase == .thinking, providerState == .listening { phase = .listening }
+    }
+
     private func apply(_ state: ElevenLabs.AgentState) {
         guard isLive else { return }
+        providerState = state
         switch state {
-        case .listening: phase = .listening
+        case .listening:
+            // The SDK says listening as soon as a tool answers, while the model is still writing the
+            // answer to it: keep "Working on it…" for a few seconds unless Doddy speaks first
+            // (decision 2026-11-12-voice-turn-feedback).
+            let held = turnFeedback.holdsThinking { [weak self] in
+                guard let self, self.isLive, self.phase == .thinking, self.providerState == .listening else { return }
+                self.phase = .listening
+            }
+            phase = held ? .thinking : .listening
         case .speaking:
+            turnFeedback.agentStartedSpeaking()
             phase = .speaking
             if !readsAloud { applyReadAloud() }
         case .thinking: phase = .thinking
@@ -2815,6 +2857,7 @@ final class VoiceSessionController {
         guard isLive, attempt == startAttempt else { return }
         callOwners.record(call.toolCallId, attempt: attempt)
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
+        turnFeedback.toolStarted(id: call.toolCallId, name: call.toolName)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         // The release scope (decision 2026-11-07-release-scope), translator (ADR-215), plan, Pause all, then the tool's switch,
         // in that order (ToolGate).
@@ -3017,7 +3060,21 @@ final class VoiceSessionController {
         case .followNews(let ask):
             // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). Said from the list as it is
             // kept on this iPhone after the write, never assumed (ADR-657).
-            await reply(call.toolCallId, VoiceToolReply.newsFollow(FollowingModel.shared.follow(ask)))
+            let outcome = FollowingModel.shared.follow(ask.base)
+            var alertResult: NewsFollowAlertResult?
+            if let alertAsk = ask.alertAsk {
+                // The alert applies to a follow that was just added or that the person already had; the radar's own
+                // sync says whether Doddy's server kept it.
+                switch outcome {
+                case .added(let follow), .alreadyFollowing(let follow):
+                    let kept = await FollowingModel.shared.apply(alertAsk.alert(followID: follow.id), to: follow)
+                    alertResult = kept
+                        ? .kept(FollowingModel.shared.alert(for: follow))
+                        : .hereOnly(reason: FollowingModel.shared.radarProblem ?? "")
+                case .full, .notKept: break
+                }
+            }
+            await reply(call.toolCallId, VoiceToolReply.newsFollow(outcome, alert: alertResult))
         case .startStopwatch(let label):
             // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). One stopwatch at a time: a
             // second start reports the one running and changes nothing (ADR-652).
@@ -4994,6 +5051,7 @@ final class VoiceSessionController {
     /// receipt, attempt and undo through `writeResults` instead (ADR-319).
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false, undo: ActivityUndo? = nil) async {
         callsAsReceived[toolCallID] = nil
+        turnFeedback.toolAnswered(id: toolCallID)
         let write = writeResults.removeValue(forKey: toolCallID)
         retryChecks[toolCallID] = nil
         let undo = undo ?? write?.undo

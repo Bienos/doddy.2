@@ -35,12 +35,16 @@ import { assistantRoutes } from "./routes/assistant.js";
 import { screenRoutes } from "./routes/screen.js";
 import { dealsRoutes } from "./routes/deals.js";
 import { registryRoutes } from "./routes/registry.js";
+import { jakdojadeRoutes } from "./routes/jakdojade.js";
+import type { JakdojadePartnerClient } from "./integrations/jakdojade.js";
 import type { CeidgClient } from "./registry/ceidg.js";
 import type { DealsDeps } from "./deals/service.js";
 import type { AssistantDeps } from "./assistant/deps.js";
 import type { PhoneRecapDeps } from "./phoneRecaps.js";
 import { phoneRecapRoutes } from "./routes/phoneRecaps.js";
 import { watchRoutes } from "./routes/watches.js";
+import { deliveryRoutes } from "./routes/deliveries.js";
+import type { DeliveryDeps } from "./delivery/deliveries.js";
 import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
 
 declare module "fastify" {
@@ -99,6 +103,8 @@ export interface Deps {
   deals?: DealsDeps;
   /** Company registers (ADR-685): CEIDG with the owner's token; absent answers 503 registry_disabled. */
   ceidg?: CeidgClient;
+  /** Opt-in, licensed, read-only transport API. Never configured without a partner secret. */
+  jakdojade?: JakdojadePartnerClient;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
   /** Studio (ADR-740): settings and the model API (needs an Anthropic key and Doddy's skills). Needs `cipher` too. */
@@ -113,6 +119,8 @@ export interface Deps {
   phoneRecaps?: PhoneRecapDeps;
   /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
   watches?: WatchDeps;
+  /** Deliveries through Uber Direct (decision 2026-11-12-uber-direct-deliveries): off unless configured and enabled. Needs `cipher` too. */
+  deliveries?: DeliveryDeps;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
   watchLog?: (msg: string, extra?: object) => void;
   /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
@@ -218,7 +226,9 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(phoneRecapRoutes(deps));
   await app.register(dealsRoutes(deps));
   await app.register(registryRoutes(deps));
+  await app.register(jakdojadeRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));
+  await app.register(deliveryRoutes(deps));
   return app;
 }
 

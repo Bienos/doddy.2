@@ -406,7 +406,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.cancelAlarm:
             return parseCancelAlarm(args, name: name)
         case VoiceToolName.followNews:
-            switch NewsFollowAsk.parse(topic: args.text("topic"), name: args.text("name"), words: args.texts("words")) {
+            switch NewsFollowAsk.parse(
+                topic: args.text("topic"), name: args.text("name"), words: args.texts("words"),
+                alertWords: args.texts("alert_words"), tellMe: args.text("tell_me"), dailyTime: args.text("daily_time")) {
             case .success(let ask): return .followNews(ask)
             case .failure(let refusal): return .invalid(name: name, reason: refusal.reason)
             }
