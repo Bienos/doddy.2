@@ -19,6 +19,8 @@ struct VoiceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
+    /// Only enabled after the signed-in backend says the licensed API is configured.
+    @State private var licensedJourneysAvailable = false
     @State private var authSession = VoiceAuthSession.shared
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
@@ -243,6 +245,22 @@ struct VoiceView: View {
                         if let pending = controller.pendingAction {
                             actionCard(pending, controller: controller)
                                 .id("pendingAction")
+                        }
+
+                        if controller.journeyChecking {
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                Text(NotificationLanguage.current == .polish ? "Sprawdzam trasy..." : "Checking routes...")
+                                    .font(.headline)
+                            }
+                            .padding(16)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                            .id("journeyChecking")
+                        }
+
+                        if let result = controller.journeyResult {
+                            journeyResultCard(result, controller: controller)
+                                .id("journeyResult")
                         }
 
                         if controller.textSending {
@@ -493,6 +511,7 @@ struct VoiceView: View {
     private func cardIsEmpty(_ controller: VoiceSessionController) -> Bool {
         !HomeConversation.shared.needsYou && HomeConversation.shared.resultsToShow.isEmpty
             && controller.pendingAction == nil && controller.accessRequest == nil && controller.accountNeeded == nil
+            && !controller.journeyChecking && controller.journeyResult == nil
     }
 
     private func planBinding(_ controller: VoiceSessionController) -> Binding<PlanAskRequest?> {
@@ -632,6 +651,54 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.cardHeader")
     }
 
+    /// Real schedules returned by the licensed backend, not predictions by the language model.
+    private func journeyResultCard(_ result: JourneyPartnerRoutes, controller: VoiceSessionController) -> some View {
+        let routes = Array(result.routes.compactMap { $0.normalized() }.prefix(3))
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Jakdojade", systemImage: "tram.fill").font(.headline)
+                Spacer()
+                Text(NotificationLanguage.current == .polish ? "Rozkład jazdy" : "Scheduled routes")
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if let checked = ServerDates.parse(result.fetchedAt) {
+                Text(checked.formatted(date: .abbreviated, time: .shortened))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            ForEach(routes.indices, id: \.self) { index in
+                let route = routes[index]
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(route.departs.formatted(date: .omitted, time: .shortened)
+                         + " → " + route.arrives.formatted(date: .omitted, time: .shortened))
+                        .font(.headline)
+                    ForEach(route.segments.indices, id: \.self) { leg in
+                        let part = route.segments[leg]
+                        Text(verbatim: "\(part.line): \(part.from) → \(part.to)")
+                            .font(.subheadline)
+                    }
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
+            }
+            Text(NotificationLanguage.current == .polish
+                 ? "Dane rozkładowe, nie pozycje na żywo. Przed wyjściem sprawdź możliwe zmiany. Bilet nie został kupiony."
+                 : "Scheduled data, not live positions. Check for changes before leaving. No ticket was purchased.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            Button(NotificationLanguage.current == .polish ? "Zamknij" : "Close") {
+                controller.dismissJourneyResult()
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .accessibilityIdentifier("voice.journey.dismiss")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.journey.results")
+    }
+
     /// Card for anything that changes data or opens another app. Nothing happens until the user taps.
     private func actionCard(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
         let labels = actionLabels(pending, controller: controller)
@@ -646,6 +713,66 @@ struct VoiceView: View {
             // A plan with every step unticked has nothing to confirm; "Not now" declines it.
             .disabled(isEmptyPlan(pending, controller: controller))
             .accessibilityIdentifier("voice.confirm")
+            // The existing primary button still opens Apple Maps. For transit trips offer
+            // an explicit, separate Jakdojade handoff: never silently switch providers.
+            if case .map(_, let trip) = pending, trip.mode == .transit {
+                if let first = trip.from.flatMap({ JourneyCity.named(in: $0) }),
+                   let last = JourneyCity.named(in: trip.place), first != last {
+                    Text("Jakdojade city links do not cover journeys between cities. Use Maps for this route.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                } else if let city = JourneyCity.recognised(from: trip.from, destination: trip.place) {
+                    Button {
+                        Task { await controller.confirmPendingJakdojade(city: city) }
+                    } label: {
+                        HStack {
+                            Text("Open in Jakdojade")
+                            Spacer()
+                            Image(systemName: "tram.fill")
+                        }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.jakdojade")
+                    if licensedJourneysAvailable {
+                        Button {
+                            Task { await controller.confirmPendingJourneyRoute(city: city) }
+                        } label: {
+                            Label(NotificationLanguage.current == .polish ? "Sprawdź trasy w DODDY" : "Find routes in DODDY",
+                                  systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .accessibilityIdentifier("voice.journey.find")
+                    }
+                } else {
+                    Menu {
+                        ForEach(JourneyCity.allCases, id: \.self) { city in
+                            Button(city.label) {
+                                Task { await controller.confirmPendingJakdojade(city: city) }
+                            }
+                        }
+                    } label: {
+                        Label("Jakdojade · choose city", systemImage: "tram.fill")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .accessibilityIdentifier("voice.jakdojade.chooseCity")
+                    if licensedJourneysAvailable {
+                        Menu {
+                            ForEach(JourneyCity.allCases, id: \.self) { city in
+                                Button(city.label) {
+                                    Task { await controller.confirmPendingJourneyRoute(city: city) }
+                                }
+                            }
+                        } label: {
+                            Label(NotificationLanguage.current == .polish ? "Sprawdź w DODDY · wybierz miasto" : "Find in DODDY · choose city",
+                                  systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                        }
+                        .accessibilityIdentifier("voice.journey.chooseCity")
+                    }
+                    Text("Choose the city before opening Jakdojade. Your location is not shared with Doddy.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
             Button {
                 Task { await controller.declinePendingAction() }
             } label: {
@@ -659,6 +786,14 @@ struct VoiceView: View {
         .sheet(item: $editingPlanStep) { step in
             PlanStepEditor(step: step) { changed in
                 controller.replacePlanStep(changed)
+            }
+        }
+        .task(id: pending.toolCallID) {
+            // Query the configured DODDY backend only while a transit map card is visible.
+            // Never fetch location, partner routes or extra knowledge during voice startup.
+            licensedJourneysAvailable = false
+            if case .map(_, let trip) = pending, trip.mode == .transit {
+                licensedJourneysAvailable = await controller.journeyPartnerReady()
             }
         }
     }
@@ -787,6 +922,11 @@ struct VoiceView: View {
                     .font(.body)
                 if let mode = trip.mode {
                     Label(Self.travelModeText(mode), systemImage: Self.travelModeSymbol(mode))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                if trip.mode == .transit {
+                    Text("Jakdojade opens a transit search, not a route already checked by Doddy. If you did not name a starting point, choose it there.")
+                        .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
             } else {
