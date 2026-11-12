@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Terminal harness for calls Doddy makes for you (ADR-500): live test #1 without the iPhone app.
-// It uses the same API as the app, with its own anonymous account and your verified phone.
+// It uses the same API as the app, with its own anonymous account and your verified phone. `init` makes that account
+// only on a server with ANONYMOUS_ACCOUNTS=1 (off by default: 403 sign_in_required); a token saved earlier keeps working.
 //
 //   export DODDY_SERVER=https://<doddy-messaging host>
 //   node scripts/task-call.mjs init --phone "+48 600 100 200"     # account + SMS code to your phone

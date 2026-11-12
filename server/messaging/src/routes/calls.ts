@@ -3,7 +3,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
-import { principal, requireDevice, requireDeviceBeforeBody } from "../auth.js";
+import { hasDoddyAccount, principal, requireDevice, requireDeviceBeforeBody } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
@@ -224,28 +224,38 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   });
 
   // Opt-in copy of memories so calls can answer from them. Off deletes every copy at once.
+  // Turning it on needs a Doddy account (signed in with Apple, Google or email); turning it off never does, so an
+  // anonymous account from before can always delete what it stored.
   app.put("/v1/memory-copy", { preHandler: auth }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
     const body = parse(z.object({ enabled: z.boolean() }), req.body, reply);
     if (!body) return;
     const { accountId } = principal(req);
+    if (body.enabled && !(await hasDoddyAccount(db, accountId))) return reply.code(403).send({ error: "sign_in_required" });
     await ensureRow(accountId);
     await inTransaction(db, async (c) => {
-      if (!body.enabled) await c.query("DELETE FROM memory_copies WHERE account_id = $1", [accountId]);
+      // The settings row first, as the snapshot below locks it, so the two never wait on each other in turn.
       await c.query(
         `UPDATE call_settings SET updated_at = now(),
-           memory_copy_enabled_at = CASE WHEN $2 THEN coalesce(memory_copy_enabled_at, now()) END
+           memory_copy_enabled_at = CASE WHEN $2 THEN coalesce(memory_copy_enabled_at, now()) END,
+           memory_copy_bytes = CASE WHEN $2 THEN memory_copy_bytes ELSE 0 END
          WHERE account_id = $1`, [accountId, body.enabled]);
+      if (!body.enabled) await c.query("DELETE FROM memory_copies WHERE account_id = $1", [accountId]);
     });
     return reply.code(204).send();
   });
 
   // Replaces the whole copy with what the phone holds now (deletions included).
   // The app sends one snapshot per burst of edits; 60 an hour is plenty and caps the encrypt work.
+  // Only for a Doddy account, and within two quotas on the stored ciphertext (migration 030): the account's
+  // (MEMORY_COPY_MB_PER_ACCOUNT, 413 memory_copy_too_large) and all accounts' together (MEMORY_COPY_MB_PER_SERVER,
+  // 507 memory_copy_server_full). Both are counted by the database in the transaction that writes the copy.
   app.put("/v1/memory-copy/snapshot", {
     preParsing: authBeforeBody, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
   }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
+    const { accountId } = principal(req);
+    if (!(await hasDoddyAccount(db, accountId))) return reply.code(403).send({ error: "sign_in_required" });
     // Checked before parsing, so an over-long list is refused without validating each element.
     const rawItems = (req.body as { items?: unknown } | null)?.items;
     if (!Array.isArray(rawItems) || rawItems.length > MAX_SNAPSHOT_ITEMS) {
@@ -253,26 +263,60 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     }
     const body = parse(snapshotBody, req.body, reply);
     if (!body) return;
-    const { accountId } = principal(req);
+    const tooLarge = () => reply.code(413).send({ error: "memory_copy_too_large", limitBytes: limits.memoryCopyBytesPerAccount });
+    // Encrypted text is never shorter than the text itself: a copy over the quota already is refused unencrypted.
+    if (body.items.reduce((n, i) => n + Buffer.byteLength(i.text, "utf8"), 0) > limits.memoryCopyBytesPerAccount) return tooLarge();
     const cipher = deps.cipher;
-    const done = await inTransaction(db, async (c) => {
-      const { rows } = await c.query<{ on: boolean }>(
-        "SELECT memory_copy_enabled_at IS NOT NULL AS on FROM call_settings WHERE account_id = $1 FOR UPDATE", [accountId]);
-      if (!rows[0]?.on) return false;
-      await c.query("DELETE FROM memory_copies WHERE account_id = $1", [accountId]);
-      if (body.items.length) {
-        await c.query(
-          `INSERT INTO memory_copies (account_id, memory_id, key_version, ciphertext, captured_at)
-           SELECT $1, * FROM unnest($2::uuid[], $3::smallint[], $4::bytea[], $5::timestamptz[])`,
-          [accountId,
-            body.items.map((i) => i.id),
-            body.items.map(() => cipher.keyVersion),
-            body.items.map((i) => cipher.encrypt(i.text, `${accountId}:memory:${i.id}`)),
-            body.items.map((i) => i.capturedAt ?? null)]);
-      }
-      return true;
-    });
-    if (!done) return reply.code(409).send({ error: "memory_copy_off" });
+    // Encrypted before the transaction, so the server-wide lock below is held only for the database work.
+    const sealed = body.items.map((i) => cipher.encrypt(i.text, `${accountId}:memory:${i.id}`));
+    let outcome: "stored" | "off";
+    try {
+      outcome = await inTransaction(db, async (c) => {
+        const { rows } = await c.query<{ on: boolean; bytes: string }>(
+          "SELECT memory_copy_enabled_at IS NOT NULL AS on, memory_copy_bytes AS bytes FROM call_settings WHERE account_id = $1 FOR UPDATE",
+          [accountId]);
+        if (!rows[0]?.on) return "off";
+        const before = Number(rows[0].bytes);
+        // One snapshot at a time across the server, so two can't both fit under the server's quota.
+        await c.query("SELECT pg_advisory_xact_lock(hashtext('memory_copy_quota'))");
+        await c.query("DELETE FROM memory_copies WHERE account_id = $1", [accountId]);
+        if (body.items.length) {
+          await c.query(
+            `INSERT INTO memory_copies (account_id, memory_id, key_version, ciphertext, captured_at)
+             SELECT $1, * FROM unnest($2::uuid[], $3::smallint[], $4::bytea[], $5::timestamptz[])`,
+            [accountId,
+              body.items.map((i) => i.id),
+              body.items.map(() => cipher.keyVersion),
+              sealed,
+              body.items.map((i) => i.capturedAt ?? null)]);
+        }
+        // What the account stores now, as the database counts it, kept beside its settings for the server's sum.
+        const { rows: [mine] } = await c.query<{ bytes: string }>(
+          `UPDATE call_settings SET memory_copy_bytes =
+             (SELECT coalesce(sum(octet_length(ciphertext)), 0) FROM memory_copies WHERE account_id = $1)
+           WHERE account_id = $1 RETURNING memory_copy_bytes AS bytes`, [accountId]);
+        const bytes = Number(mine!.bytes);
+        if (bytes > limits.memoryCopyBytesPerAccount) throw new MemoryCopyQuota("account");
+        // A copy that doesn't grow is always kept, so a smaller one still goes through on a full server.
+        if (bytes > before) {
+          const { rows: [all] } = await c.query<{ bytes: string }>(
+            "SELECT coalesce(sum(memory_copy_bytes), 0) AS bytes FROM call_settings");
+          if (Number(all!.bytes) > limits.memoryCopyBytesPerServer) throw new MemoryCopyQuota("server");
+        }
+        return "stored";
+      });
+    } catch (err) {
+      // Thrown inside the transaction, so nothing of this snapshot was kept: the earlier copy stays as it was.
+      if (!(err instanceof MemoryCopyQuota)) throw err;
+      log("memory copy refused, quota", { scope: err.scope });
+      return err.scope === "account" ? tooLarge() : reply.code(507).send({ error: "memory_copy_server_full" });
+    }
+    if (outcome === "off") return reply.code(409).send({ error: "memory_copy_off" });
     return { count: body.items.length };
   });
 };
+
+/** A snapshot over a memory-copy quota; thrown inside its transaction so the write is rolled back. */
+class MemoryCopyQuota extends Error {
+  constructor(readonly scope: "account" | "server") { super(`memory_copy_quota_${scope}`); }
+}

@@ -29,10 +29,13 @@ describe("the device token before the body, and limits by address", { skip: dbSk
     const { app } = await testApp(db);
     try { return await fn(app); } finally { await app.close(); }
   }
+  /** A device whose account is linked to a Doddy account, as `POST /v1/accounts/sign-in` does (memory on calls needs one). */
   async function account(app: FastifyInstance) {
     const r = await app.inject({ method: "POST", url: "/v1/accounts", remoteAddress: nextIp() });
     assert.equal(r.statusCode, 201, r.body);
-    return { authorization: `Bearer ${(r.json() as { deviceToken: string }).deviceToken}` };
+    const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    await db.query("UPDATE accounts SET auth_subject = $2 WHERE id = $1", [accountId, randomUUID()]);
+    return { authorization: `Bearer ${deviceToken}` };
   }
 
   const largeRoutes = [

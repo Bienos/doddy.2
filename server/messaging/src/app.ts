@@ -66,6 +66,8 @@ export interface Deps {
   db: Db;
   /** Checks a Doddy account's token for `POST /v1/accounts/sign-in` (decision 2026-11-08-required-account). Absent: that route says "not set up". */
   accounts?: AccountVerifier | null;
+  /** ANONYMOUS_ACCOUNTS: `POST /v1/accounts` makes an account without a sign-in. Absent or false: 403 sign_in_required. */
+  anonymousAccounts?: boolean;
   push?: PushSender;
   sms?: SmsSender;
   verifier?: PhoneVerifier;
