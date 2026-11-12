@@ -7,7 +7,7 @@ You're with someone who doesn't speak your language: a taxi driver, a pharmacist
 ## Flow (canvas screens)
 1. **Start:**
    - "You speak" defaults to the iPhone's language.
-   - "They speak" offers a short list, "Detect when they talk", and "All 37 languages…".
+   - "They speak" offers a short list, "Detect when they talk", and "All 37 languages…" (89 since 12 Nov 2026, decision `2026-11-12-translator-more-languages`).
    - Two plain notes: put the phone between you; both voices go to ElevenLabs.
 2. **Or ask Doddy:** "Doddy, pomóż mi pogadać z taksówkarzem, on mówi po hiszpańsku." Doddy proposes the pair on a card ("Polski ⇄ Español"). The translator opens only after Start; it is proposed with a new tool, `start_translator`.
 3. **Disclosure, first and always, in their language:** "Hola, soy Doddy, un traductor de IA en este teléfono…" Your half shows what was said. If they object, you end.
@@ -65,7 +65,7 @@ You're with someone who doesn't speak your language: a taxi driver, a pharmacist
   - tools refused in translator mode;
   - the exact-fact extractor (numbers, times, prices, addresses);
   - nothing written to the conversation log;
-  - the disclosure line exists for all 37 languages.
+  - the disclosure line exists for all 37 languages (89 since 12 Nov 2026).
 
 ## Decisions
 | ID | Question | Owner's answer |
