@@ -370,6 +370,11 @@ final class VoiceSessionController {
     private(set) var listReceipt: ListReceipt?
     /// True from the tap on Send text until its result (ADR-750 U2): the card is gone by then.
     private(set) var textSending = false
+    /// Only a user-approved active lookup; never a background or startup journey search.
+    private(set) var journeyChecking = false
+    /// Source results kept in memory until dismissed, never persisted or used to follow the person.
+    private(set) var journeyResult: JourneyPartnerRoutes?
+    func dismissJourneyResult() { journeyResult = nil }
     /// The user's first name for this conversation's call_places cards; empty when About you has none.
     private var callerFirstName = ""
     /// The "Call even in quiet hours" switch on a call-later card (ADR-754); off for each new card.
@@ -1511,6 +1516,9 @@ final class VoiceSessionController {
         guard case .map(let id, let trip) = pendingAction, trip.mode == .transit,
               trip.jakdojadeHandoff(city: city) != nil else { return }
         pendingAction = nil
+        journeyResult = nil
+        journeyChecking = true
+        defer { journeyChecking = false }
 
         guard let client = ServerConfig.client(), await journeyPartnerReady() else {
             await reply(id, "not found: Jakdojade's licensed route service is not available right now. Nothing was searched.")
@@ -1551,6 +1559,7 @@ final class VoiceSessionController {
                 mode: "optimal"
             ))
             guard isCurrent(id) else { dropStale(id); return }
+            if result.routes.contains(where: { $0.normalized() != nil }) { journeyResult = result }
             await reply(id, VoiceToolReply.licensedJourneys(result))
         } catch {
             guard isCurrent(id) else { dropStale(id); return }
