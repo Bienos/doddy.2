@@ -52,6 +52,6 @@ Doddy never books or pays.
 - **Kiwi.com:** its terms for this use are unknown; it can refuse at any time (the screen then says it couldn't be reached). The searched flights include self-transfer connections Kiwi returns; the warnings say when a connection is between different airlines, but Doddy does not say whether the tickets are separate.
 - **Prices:** Kiwi's total is for the party with the bags asked for. Seat fees, airport transfers and the stay are not in it; the screen says what the price covers.
 - **Stays have no prices of their own** until the person has Doddy research them (a task) or opens Booking.com or Airbnb. Doddy reads no Booking.com or Airbnb prices.
-- **Packages:** a link only. TravelLead prices need the partner account (owner queue 43).
+- **Packages:** a link only. TravelLead prices need the partner account (owner queue 45).
 - **Watching a plan's price** is stage 3; none of it exists yet.
 - Only a flight to a place Kiwi.com can resolve from a city, airport or country name works; "anywhere warm" is not understood yet (it asks where to).

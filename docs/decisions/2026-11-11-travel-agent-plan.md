@@ -82,7 +82,7 @@ The portals the owner named give a company of Doddy's size no search API, and sc
   - where it is read;
   - what is kept.
 - **Weekly ideas are an unprompted push.** Watch opt-out rates; the owner may want them off by default.
-- **Partner accounts and Kiwi's answer** gate stage 2 (owner queue 43).
+- **Kiwi.com's answer** is wanted but no longer gates the planner (the owner chose to go ahead for everyone, 12 Nov 2026); **partner accounts** (TravelLead, Stay22, Travelpayouts) gate package and stay prices (owner queue 45)
 - **Standby needs** an always-on worker and working APNs (owner queue 8).
 - **Automatic flight-delay detection** needs a flight-status source that hasn't been researched yet.
 - **Planning together** needs a decision on whether companions need a Doddy account.
