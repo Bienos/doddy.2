@@ -11,7 +11,7 @@ Większość silnika istnieje. Brakuje jednego miejsca, szybkiej odpowiedzi, ekr
 | Część | Stan | Gdzie |
 |---|---|---|
 | „Znajdź mi to": zadanie zakupowe, trzy propozycje (najlepsza, najtańsza, premium), tylko ceny potwierdzone na stronie sklepu | Zbudowane i przetestowane na serwerze; działa jako zadanie w tle (minuty, nie sekundy); nie widziane na telefonie | `docs/implementation/SHOPPING.md`, `server/messaging/src/shopping/` |
-| Pilnowanie ceny: jedno powiadomienie, gdy potwierdzona cena spadnie do Twojej kwoty; 4 odczyty dziennie przez 30 dni | Zbudowane, **wyłączone na serwerze** (`WATCHES_ENABLED=0`); nie ma narzędzia głosowego | `docs/implementation/SHOPPING_WATCH.md` |
+| Pilnowanie ceny: jedno powiadomienie, gdy potwierdzona cena spadnie do Twojej kwoty; 4 odczyty dziennie przez 30 dni | Zbudowane, **włączone na serwerze od 12 XI 2026** (`WATCHES_ENABLED=1` na `doddy-messaging`); nie ma narzędzia głosowego | `docs/implementation/SHOPPING_WATCH.md` |
 | Linki partnerskie: dopisywane po wyborze propozycji, więc prowizja nie zmienia kolejności (test to sprawdza) | Mechanizm jest; **żaden program nie jest podpisany**, więc nic nie zarabia | `shopping/affiliate.ts`, `docs/strategy/AFFILIATE_NETWORKS_PROPOSAL_2026-11.md` |
 | Gazetki: „Najtaniej w tym tygodniu", koszyk | Włączone 10 lis 2026 | `SHOPPING.md` 2 |
 | Kupowanie przez Doddy'ego | Zaprojektowane, reguły bezpieczeństwa w kodzie; **nic nie jest podłączone, nic nie da się kupić** | `docs/implementation/SHOPPING_CHECKOUT.md` |
