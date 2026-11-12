@@ -3,7 +3,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
-import { principal, requireDevice } from "../auth.js";
+import { principal, requireDevice, requireDeviceBeforeBody } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
@@ -44,6 +44,7 @@ const forgetPinOnCalls = (c: pg.PoolClient, accountId: string) =>
 export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
+  const authBeforeBody = requireDeviceBeforeBody(db);
   const limits = abuseLimits(deps.limits);
   const ensureRow = (accountId: string) =>
     db.query("INSERT INTO call_settings (account_id) VALUES ($1) ON CONFLICT DO NOTHING", [accountId]);
@@ -242,7 +243,7 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   // Replaces the whole copy with what the phone holds now (deletions included).
   // The app sends one snapshot per burst of edits; 60 an hour is plenty and caps the encrypt work.
   app.put("/v1/memory-copy/snapshot", {
-    preHandler: auth, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
+    preParsing: authBeforeBody, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
   }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
     // Checked before parsing, so an over-long list is refused without validating each element.
