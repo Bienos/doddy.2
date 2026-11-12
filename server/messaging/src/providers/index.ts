@@ -1,6 +1,6 @@
 import type { Config } from "../config.js";
 import { ApnsPushSender } from "./apns.js";
-import { TextCipher } from "../crypto.js";
+import { cipherFrom } from "../crypto.js";
 import { ElevenLabsCallRegistrar } from "./elevenlabs.js";
 import { deleteAfterMinutes } from "../providerRecords.js";
 import { TwilioClient, TwilioVoiceCaller } from "./twilio.js";
@@ -58,7 +58,8 @@ export function providersFrom(config: Config) {
   const twilio = config.twilio
     ? new TwilioClient(config.twilio, config.publicBaseUrl && `${config.publicBaseUrl}/webhooks/twilio/status`)
     : undefined;
-  const cipher = config.memoryEncryptionKey ? TextCipher.fromBase64(config.memoryEncryptionKey) : undefined;
+  // The current key and, during a rotation, the previous one (MEMORY_ENCRYPTION_KEY_VERSION, _PREVIOUS, _PREVIOUS_VERSION).
+  const cipher = cipherFrom(config);
   const push = pushSenderFrom(config.apns);
   const t = config.taskCalls;
   const taskCalls: TaskCallDeps | undefined = t ? {
