@@ -1,3 +1,0 @@
-Home › ••• gets **Food**: a list of delivery apps (Uber Eats, Wolt, Glovo, Pyszne.pl). A row opens the provider's own front page, in its app when installed, in the browser otherwise. Add an app with one line in `FoodApps.all` (DoddyCore) and its host in `FoodAppsTests`. No search is passed in (the providers don't publish search addresses), nothing is read or placed, no account or key. Decision `2026-11-11-food-button`.
-- Ran: `swift test --filter FoodAppsTests` (4 pass), the string catalog check (two new strings, nine languages as drafts).
-- Not run: the app build and UI tests, and a device (does a row open the installed app?). The largest-text Home menu test (`MemoryJourneyTests`) could be affected by the longer menu: `ios-build` is the first run.
