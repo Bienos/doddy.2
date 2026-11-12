@@ -543,6 +543,7 @@ export const logbookPl: Record<keyof typeof logbookEn, string> = {
   "logbook.tool.read_list": "Przeczytaj listę",
   "logbook.tool.check_off": "Odhacz",
   "logbook.tool.get_weather": "Pogoda",
+  "logbook.tool.get_poland_info": "Polskie dane urzędowe",
   "logbook.tool.web_search": "Szukaj w sieci",
   "logbook.tool.wikipedia_summary": "Wikipedia",
   "logbook.tool.news_search": "Wiadomości",
