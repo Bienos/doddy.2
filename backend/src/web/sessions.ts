@@ -33,10 +33,16 @@ const TOUCH_EVERY_MS = 60 * 60_000;
 export const MAX_SESSIONS_PER_USER = 10;
 
 /**
- * Sign-in tries (right or wrong): per client per quarter hour, and for the whole server per hour.
- * Each try is reserved before the code is read, so parallel requests can't slip past. With 30^8
- * codes, 2,000 tries an hour against even a thousand live codes find one with odds of about 3 in a
- * million; a lower server cap would mostly let one person lock everyone else out.
+ * Sign-in tries:
+ * - per client per quarter hour, right or wrong (`perClientPerQuarter`). Each try is reserved before the
+ *   code is read, so parallel requests can't slip past;
+ * - for the whole server, WRONG codes per hour (`servicePerHour`). Right codes don't count, and the
+ *   budget being spent never turns a right code away by itself: while it is spent, a client's first try
+ *   of the quarter hour is still checked, and only a client that already had a wrong code this quarter
+ *   hour waits until the end of it. So wrong codes from many places can't lock everyone out; while
+ *   they keep coming, each place gets one guess a quarter hour instead of ten. Codes are 8 of 30
+ *   letters and digits (30^8) and last five minutes: a million guesses against a thousand live codes
+ *   find one with odds of about 1 in 650.
  */
 export const REDEEM_LIMITS = { perClientPerQuarter: 10, servicePerHour: 2_000 } as const;
 export type RedeemLimits = { perClientPerQuarter: number; servicePerHour: number };
@@ -146,28 +152,27 @@ export class WebAuth {
   // ---------------------------------------------------------------- browser side
 
   /**
-   * Signs a browser in with a code. Returns the session and the Set-Cookie value. Wrong codes count
-   * against the client's address and the whole server, checked before the code is looked at.
+   * Signs a browser in with a code. Returns the session and the Set-Cookie value. Every try counts
+   * against the client's address before the code is looked at; wrong codes also count for the whole
+   * server (REDEEM_LIMITS).
    */
   async redeem(req: IncomingMessage, body: unknown, now: Date): Promise<{ view: WebSessionView; setCookie: string }> {
     const parsed = RedeemRequestSchema.safeParse(body);
     if (!parsed.success) throw new AppError("invalid_request");
     const quarter = `day:${now.toISOString().slice(0, 14)}${String(Math.floor(now.getUTCMinutes() / 15) * 15).padStart(2, "0")}`;
     const hour = `day:${now.toISOString().slice(0, 13)}`;
-    const client = `web_redeem:${sha256(`client:${clientKey(this.clientAddress(req))}`)}`;
-    const service = "web_redeem:service";
+    const clientId = sha256(`client:${clientKey(this.clientAddress(req))}`);
+    const client = `web_redeem:${clientId}`;
+    const clientWrong = `web_redeem_wrong:${clientId}`;
+    const serviceWrong = "web_redeem_wrong:service";
+    const tooMany = () =>
+      new AppError("rate_limited", { message: "Too many tries. Wait a few minutes, then get a new code on your iPhone.", retryAfterSeconds: 15 * 60 });
     // Reserved before the code is looked at, atomically, so a burst of parallel tries can't get
-    // past either limit; successful sign-ins count too.
-    const allowed = await this.store.reserveUsage(
-      [
-        { counter: client, period: quarter, limit: this.limits.perClientPerQuarter },
-        { counter: service, period: hour, limit: this.limits.servicePerHour },
-      ],
-      1,
-    );
-    if (!allowed) {
-      throw new AppError("rate_limited", { message: "Too many tries. Wait a few minutes, then get a new code on your iPhone.", retryAfterSeconds: 15 * 60 });
-    }
+    // past the limit; successful sign-ins count too.
+    if (!(await this.store.reserveUsage([{ counter: client, period: quarter, limit: this.limits.perClientPerQuarter }], 1))) throw tooMany();
+    // The server's hour of wrong codes is spent: a client that already had a wrong code this quarter
+    // hour waits; any other client's try is still checked, so a right code still gets in.
+    if ((await this.store.usage(serviceWrong, hour)) >= this.limits.servicePerHour && (await this.store.usage(clientWrong, quarter)) > 0) throw tooMany();
     const code = normalizeCode(parsed.data.code);
     const token = randomBytes(32).toString("base64url");
     const agent = describeAgent(header(req, "user-agent"));
@@ -183,6 +188,14 @@ export class WebAuth {
         })
       : null;
     if (!userId) {
+      // Counted only now: a wrong code, for this client's quarter hour and the server's hour.
+      await this.store.reserveUsage(
+        [
+          { counter: clientWrong, period: quarter, limit: Number.MAX_SAFE_INTEGER },
+          { counter: serviceWrong, period: hour, limit: Number.MAX_SAFE_INTEGER },
+        ],
+        1,
+      );
       throw new AppError("unauthenticated", { message: "That code didn't work. Codes last five minutes and work once: get a new one on your iPhone." });
     }
     const row: WebSessionRow = { session_id: sessionId, user_id: userId, browser: agent.browser, os: agent.os, created_at: now.getTime(), last_seen_at: now.getTime(), expires_at: expiresAt };

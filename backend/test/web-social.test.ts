@@ -808,7 +808,7 @@ test("a Supabase removal that failed at the deletion is retried by the hourly sw
     now += 6 * 60_000;
     await eraser.sweep(["supabase_auth"]);
     assert.equal(calls.length, 2);
-    assert.deepEqual(await store.cleanupsToRetry(["supabase_auth"], now, 99, 10), [], "done, dequeued");
+    assert.deepEqual(await store.cleanupsToRetry(["supabase_auth"], now, 10), [], "done, dequeued");
   } finally {
     await store.close();
   }
