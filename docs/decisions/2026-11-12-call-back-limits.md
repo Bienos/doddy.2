@@ -1,14 +1,14 @@
 # Call-backs are put through only to one user, for 7 days, a few times a day; calls to Doddy's number have daily caps
 
 - **Date:** 2026-11-12
-- **Decided by:** proposal, owner approval pending. Hardening asked for on 12 Nov 2026 in the session that made this change. It narrows two of the owner's 9 Nov answers ("always", and the newest dial wins), so the owner confirms or changes the numbers (`docs/OWNER_QUEUE.md` 53).
-- **Status:** proposed; applied in the pull request that adds this file
+- **Decided by:** owner, 12 Nov 2026 ("fix everything from the 12 Nov review": call-back routes per account, with an expiry and caps). It narrows two of the 9 Nov answers ("always", and the newest dial wins). The numbers are the owner's to change (`docs/OWNER_QUEUE.md` 53).
+- **Status:** applied in the pull request that adds this file
 - **Replaces:** in `2026-11-09-call-backs-and-contact-calls`, "How long: the row lasts as long as the account" and "Two users called the same number: the newest dial wins"
 
 ## Why
 - A route was one row per called number, overwritten by whichever user Doddy dialled it for last. When two users call the same place (a clinic, a restaurant), the place's call-back reached the second user, who may be the wrong one.
 - A route lasted as long as the account, and a call-back rang the user's phone with no daily limit, no time limit on the forwarded call, and even when the user had calls to Doddy turned off.
-- Caller ID can be faked, so a number Doddy once dialled could be used to ring the user without end.
+- Caller ID is not proof of who is calling, so call-backs should be limited in time and number, and go only to someone who chose to receive them.
 - Calls to Doddy's number from a user's verified number had no daily cap per account or for the server, although each one runs the phone agent.
 
 ## Decision
