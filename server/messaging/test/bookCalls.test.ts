@@ -199,7 +199,8 @@ describe("booking calls", { skip: dbSkip }, () => {
     const r = await s.api("POST", "/v1/call-tasks", bookTask([{ name: "Trattoria Demo", phone: dest() }]));
     assert.equal(r.statusCode, 503, r.body);
     assert.equal(r.json().error, "booking_not_configured");
-    assert.equal((await s.api("GET", "/v1/call-cases/availability")).json().booking, false);
+    const off = (await s.api("GET", "/v1/call-cases/availability")).json();
+    assert.deepEqual([off.booking, off.bookingAgentConfigured, off.bookingAgentProblems], [false, false, []], "not set up is not a drift problem");
     const { rows } = await db.query("SELECT 1 FROM call_tasks WHERE account_id = $1", [s.accountId]);
     assert.equal(rows.length, 0);
     await s.app.close();
@@ -208,7 +209,8 @@ describe("booking calls", { skip: dbSkip }, () => {
   test("one tap books: the booking agent talks, Doddy says the approved sentence, the text says it's booked", async () => {
     seen.length = 0;
     const s = await setup({ bookAgentPrompt: BOOK_PROMPT });
-    assert.equal((await s.api("GET", "/v1/call-cases/availability")).json().booking, true);
+    const ready = (await s.api("GET", "/v1/call-cases/availability")).json();
+    assert.deepEqual([ready.booking, ready.bookingAgentConfigured, ready.bookingAgentProblems], [true, true, []]);
     const places = [{ name: "Trattoria Uno", phone: dest() }, { name: "Osteria Due", phone: dest() }];
     const created = await s.api("POST", "/v1/call-tasks", bookTask(places));
     assert.equal(created.statusCode, 201, created.body);
@@ -262,8 +264,11 @@ describe("booking calls", { skip: dbSkip }, () => {
     const s = await setup({ bookAgentPrompt: BOOK_PROMPT });
     s.voice.agentsById.set(TASK_BOOK_AGENT_ID, compliantAgent("changed in the dashboard", TASK_BOOK_AGENT_ID));
     await s.ctx.driftFor("book").refresh();
-    assert.equal((await s.api("GET", "/v1/call-cases/availability")).json().booking, false);
-    assert.equal((await s.api("GET", "/v1/call-cases/availability")).json().available, true, "ask calls still work");
+    const drifted = (await s.api("GET", "/v1/call-cases/availability")).json();
+    assert.deepEqual([drifted.booking, drifted.bookingAgentConfigured, drifted.bookingAgentProblems], [false, true, ["prompt_changed"]],
+      "names the setting that differs, never its value");
+    assert.deepEqual(drifted.agentProblems, [], "the ask agent is unaffected");
+    assert.equal(drifted.available, true, "ask calls still work");
     const p = (await s.api("POST", "/v1/call-tasks", bookTask([{ name: "Trattoria Demo", phone: dest() }]))).json();
     const tap = await s.api("POST", `/v1/call-tasks/${p.taskId}/approve`, { digest: p.digest });
     assert.equal(tap.statusCode, 409, tap.body);
@@ -275,6 +280,35 @@ describe("booking calls", { skip: dbSkip }, () => {
     assert.deepEqual([past.json().field, past.json().reason], ["places.0.booking.date", "booking_date"]);
     // The ask agent's id never accepts a booking's post-call webhook as its own, and the reverse: matched by attempt only.
     assert.notEqual(TASK_AGENT_ID, TASK_BOOK_AGENT_ID);
+    await s.app.close();
+  });
+
+  test("the worker checks the booking agent too, and the log says whether the live agent matches its spec", async () => {
+    const { runTaskCallPasses } = await import("../src/taskCalls/worker.js");
+    const s = await setup({ bookAgentPrompt: BOOK_PROMPT });
+    assert.deepEqual(s.ctx.driftFor("book").cached(), ["unreadable"], "unknown until read: fails closed");
+    await runTaskCallPasses(s.ctx, { lastSweep: 0 }); // the first pass after a deploy
+    assert.deepEqual(s.ctx.driftFor("book").cached(), []);
+    const agents = (msg: string) => s.logs.filter((l) => l.msg === msg).map((l) => (l.extra as { agent: string }).agent).sort();
+    assert.deepEqual(agents("task-call agent matches its spec"), ["ask", "book"]);
+    assert.deepEqual(agents("task-call agent differs from its spec; calls refused"), []);
+    // Someone edits the booking agent in the dashboard: the next check names the setting, in the log too.
+    s.voice.agentsById.set(TASK_BOOK_AGENT_ID, compliantAgent("changed in the dashboard", TASK_BOOK_AGENT_ID));
+    await runTaskCallPasses(s.ctx, { lastSweep: 0 });
+    const differs = s.logs.filter((l) => l.msg === "task-call agent differs from its spec; calls refused");
+    assert.deepEqual(differs.map((l) => l.extra), [{ agent: "book", problems: ["prompt_changed"] }]);
+    // The same answer again is not logged again.
+    await runTaskCallPasses(s.ctx, { lastSweep: 0 });
+    assert.equal(s.logs.filter((l) => l.msg === "task-call agent differs from its spec; calls refused").length, 1);
+    await s.app.close();
+  });
+
+  test("without a booking agent the worker doesn't read one, and says nothing about it", async () => {
+    const { runTaskCallPasses } = await import("../src/taskCalls/worker.js");
+    const s = await setup();
+    await runTaskCallPasses(s.ctx, { lastSweep: 0 });
+    assert.deepEqual(s.logs.filter((l) => (l.extra as { agent?: string } | undefined)?.agent === "book"), []);
+    assert.equal(s.voice.agentReads, 1, "only the ask agent was read");
     await s.app.close();
   });
 });
