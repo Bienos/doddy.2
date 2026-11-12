@@ -96,7 +96,7 @@ export function normalizeWykop(kind: WykopKind, payload: unknown, at: Date): Wyk
   const unique = new Map<string, WykopItem>();
   for (const raw of rows(payload)) {
     const item = decode(raw);
-    if (item) unique.set(item.id, item);
+    if (item && !unique.has(item.id)) unique.set(item.id, item);
     if (unique.size === MAX_RESULTS) break;
   }
   return { source: "Wykop", kind, fetchedAt: at.toISOString(), items: [...unique.values()] };
