@@ -9,7 +9,6 @@
 // A missing recap is never shown as anything else: a call that wasn't matched, belongs to an account with
 // recaps off, said too little, hit a cap or failed in the model just has none.
 import type { Db } from "./db.js";
-import { inTransaction } from "./db.js";
 import type { TextCipher } from "./crypto.js";
 import { reserve, addTokens } from "./assistant/usage.js";
 import { RECAP_LIMITS, type RecapWriter } from "./assistant/recap.js";
@@ -35,7 +34,8 @@ export interface PhoneRecapDeps {
 
 export interface PhoneRecapContext {
   db: Db;
-  cipher: TextCipher;
+  /** Without MEMORY_ENCRYPTION_KEY there are no recaps; the conversation id is still stored on the call. */
+  cipher?: TextCipher;
   deps: PhoneRecapDeps;
   log: (msg: string, extra?: object) => void;
 }
@@ -103,14 +103,15 @@ function fitted(turns: Turn[]): Turn[] {
 /**
  * The post-call payload of a phone-agent call. Awaited by tests; the route doesn't wait for it, so ElevenLabs
  * gets its answer at once (it switches a webhook off after repeated failures).
+ *
+ * Every matched call keeps the conversation's id first, recaps on or off, so deleting the account deletes the
+ * conversation at ElevenLabs too (`queuePhoneAgentDeletions`). A call that already holds another id keeps it.
  */
 export async function onPhonePostCall(ctx: PhoneRecapContext, json: unknown): Promise<PhoneRecapOutcome> {
   const { db, cipher, deps } = ctx;
   const payload = readPayload(json);
   if (!payload) return "unreadable";
   if (!deps.phoneAgentId || payload.agentId !== deps.phoneAgentId) return "ignored";
-  const writer = deps.writer;
-  if (!writer) return "off";
   const now = (deps.now ?? (() => new Date()))();
 
   const { rows } = await db.query<{ id: string; account_id: string; direction: "inbound" | "outbound"; enabled: boolean }>(
@@ -121,6 +122,9 @@ export async function onPhonePostCall(ctx: PhoneRecapContext, json: unknown): Pr
       ORDER BY c.created_at DESC LIMIT 1`, [payload.conversationId, payload.callSid, now]);
   const call = rows[0];
   if (!call) return "unmatched";
+  await db.query("UPDATE calls SET conversation_id = $2 WHERE id = $1 AND conversation_id IS NULL", [call.id, payload.conversationId]);
+  const writer = deps.writer;
+  if (!writer || !cipher) return "off";
   if (!call.enabled) return "off";
   const { rows: existing } = await db.query("SELECT 1 FROM phone_recaps WHERE call_id = $1", [call.id]);
   if (existing.length > 0) return "duplicate";
@@ -150,14 +154,11 @@ export async function onPhonePostCall(ctx: PhoneRecapContext, json: unknown): Pr
       discussed: outcome.recap.discussed, agreed: outcome.recap.agreed, to_do: outcome.recap.to_do,
       endedAt: now.toISOString(), durationSecs: payload.durationSecs, direction: call.direction,
     };
-    const inserted = await inTransaction(db, async (c) => {
-      await c.query("UPDATE calls SET conversation_id = coalesce(conversation_id, $2) WHERE id = $1", [call.id, payload.conversationId]);
-      const r = await c.query(
-        `INSERT INTO phone_recaps (call_id, account_id, key_version, ciphertext, created_at)
-         VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
-        [call.id, call.account_id, cipher.keyVersion, cipher.encrypt(JSON.stringify(stored), recapAad(call.account_id, call.id)), now]);
-      return (r.rowCount ?? 0) > 0;
-    });
+    const r = await db.query(
+      `INSERT INTO phone_recaps (call_id, account_id, key_version, ciphertext, created_at)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
+      [call.id, call.account_id, cipher.keyVersion, cipher.encrypt(JSON.stringify(stored), recapAad(call.account_id, call.id)), now]);
+    const inserted = (r.rowCount ?? 0) > 0;
     ctx.log("phone recap stored", {
       callId: call.id, turns: payload.turns.length,
       points: stored.discussed.length + stored.agreed.length + stored.to_do.length, duplicate: !inserted,

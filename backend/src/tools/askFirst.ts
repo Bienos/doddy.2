@@ -64,6 +64,32 @@ export class AskGate {
   }
 
   /**
+   * A write's run takes its approval before anything else, its lookup included, so only one run can have
+   * it: a repeat that arrives meanwhile finds it taken and is answered from the first try instead of
+   * racing it. Taken only when `prepare` issued it to this user for this tool and account, unexpired,
+   * unused and not taken, and (when `argsDigest` isn't null: a write without a lookup) for exactly these
+   * arguments. `requestDigest` is what this run asks for, kept so a repeat is held to the same request.
+   * Null when it wasn't taken; otherwise the time it was taken, which `giveBack` needs.
+   */
+  async take(
+    binding: Pick<AskBinding, "userId" | "tool" | "accountId"> & { argsDigest: string | null },
+    approvalId: string | undefined,
+    requestDigest: string,
+  ): Promise<{ startedAt: number } | null> {
+    if (approvalId === undefined) return null;
+    const startedAt = this.now();
+    const took = await this.store.startApproval({
+      approvalId, userId: binding.userId, capability: binding.tool, accountId: binding.accountId, argsDigest: binding.argsDigest, requestDigest, now: startedAt,
+    });
+    return took ? { startedAt } : null;
+  }
+
+  /** A taken approval whose write was never sent (a limit, busy, the lookup): the user's yes works again. */
+  giveBack(approvalId: string, startedAt: number): Promise<void> {
+    return this.store.releaseApproval(approvalId, startedAt);
+  }
+
+  /**
    * True only for an approval issued for exactly this binding, unexpired and unused. "check"
    * leaves it unused (a refusal before the provider call shouldn't cost the user their yes);
    * "use" uses it up atomically, so two runs with one approval can't both pass.

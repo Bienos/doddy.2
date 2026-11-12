@@ -267,6 +267,10 @@ export const SCHEMA_SQL = `
     finished_at BIGINT
   );
   CREATE INDEX IF NOT EXISTS approvals_writes ON approvals(user_id, capability, args_digest, finished_at);
+  ALTER TABLE approvals ADD COLUMN IF NOT EXISTS started_at BIGINT;
+  ALTER TABLE approvals ADD COLUMN IF NOT EXISTS request_digest TEXT;
+  ALTER TABLE approvals ADD COLUMN IF NOT EXISTS result_word TEXT;
+  ALTER TABLE approvals ADD COLUMN IF NOT EXISTS result_summary TEXT;
   CREATE TABLE IF NOT EXISTS tool_switches (
     user_id TEXT NOT NULL,
     tool TEXT NOT NULL,
@@ -2002,12 +2006,74 @@ export class Store {
     return row !== null;
   }
 
-  /** Records what happened after a used approval ran (ADR-322). Only the first record counts. */
-  async finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number): Promise<void> {
-    await this.db.query(
-      "UPDATE approvals SET outcome = $1, external_id = $2, finished_at = $3 WHERE approval_id = $4 AND consumed_at IS NOT NULL AND outcome IS NULL",
-      [outcome, externalId, now, approvalId],
+  /**
+   * A write's run takes its approval before anything else, its lookup included: one atomic step that
+   * only one run can win, so a repeat that arrives meanwhile finds it taken and is told the first try
+   * is still running, instead of racing it. Same checks as `approvalIssuedFor`, plus the arguments
+   * when `argsDigest` is given (a write without a lookup). `requestDigest` is what this run asked
+   * for, kept so a repeat can be held to the same request.
+   */
+  async startApproval(input: {
+    approvalId: string; userId: string; capability: string; accountId: string; argsDigest: string | null; requestDigest: string; now: number;
+  }): Promise<boolean> {
+    const changed = await this.db.query(
+      `UPDATE approvals SET started_at = $7, request_digest = $6
+       WHERE approval_id = $1 AND user_id = $2 AND capability = $3 AND account_id = $4 AND ($5::text IS NULL OR args_digest = $5)
+         AND started_at IS NULL AND consumed_at IS NULL AND expires_at > $7`,
+      [input.approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.requestDigest, input.now],
     );
+    return changed.rowCount === 1;
+  }
+
+  /**
+   * Gives back an approval a run took but never used: the write wasn't sent (a limit, busy, the lookup
+   * found nothing or something else), so the user's yes still works. Never once it was used.
+   */
+  async releaseApproval(approvalId: string, startedAt: number): Promise<void> {
+    await this.db.query(
+      "UPDATE approvals SET started_at = NULL, request_digest = NULL WHERE approval_id = $1 AND started_at = $2 AND consumed_at IS NULL",
+      [approvalId, startedAt],
+    );
+  }
+
+  /**
+   * Records what happened after a used approval ran (ADR-322). Only the first record counts. For a
+   * write that went through, `result` is its fixed result word and receipt summary (no names, no
+   * text), which a repeat answers with.
+   */
+  async finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number, result: { word: string | null; summary: string } | null = null): Promise<void> {
+    await this.db.query(
+      `UPDATE approvals SET outcome = $1, external_id = $2, finished_at = $3, result_word = $5, result_summary = $6
+       WHERE approval_id = $4 AND consumed_at IS NOT NULL AND outcome IS NULL`,
+      [outcome, externalId, now, approvalId, result?.word ?? null, result?.summary ?? null],
+    );
+  }
+
+  /**
+   * A write's approval that a run took or used, for the same user, tool and account: what that first
+   * run asked for and, once it finished, how it ended. Null when no run has it (never started, given
+   * back, or not this user's). `outcome` null: still running, or the server stopped mid-run.
+   */
+  async approvalRun(input: { approvalId: string; userId: string; capability: string; accountId: string }): Promise<ApprovalRun | null> {
+    const row = await this.one<{
+      args_digest: string; request_digest: string | null; consumed_at: number | null; outcome: WriteOutcome | null;
+      external_id: string | null; result_word: string | null; result_summary: string | null;
+    }>(
+      this.db,
+      `SELECT args_digest, request_digest, consumed_at, outcome, external_id, result_word, result_summary FROM approvals
+       WHERE approval_id = $1 AND user_id = $2 AND capability = $3 AND account_id = $4 AND (started_at IS NOT NULL OR consumed_at IS NOT NULL)`,
+      [input.approvalId, input.userId, input.capability, input.accountId],
+    );
+    if (!row) return null;
+    return {
+      argsDigest: row.args_digest,
+      requestDigest: row.request_digest,
+      used: row.consumed_at !== null,
+      outcome: row.outcome,
+      externalId: row.external_id,
+      resultWord: row.result_word,
+      resultSummary: row.result_summary,
+    };
   }
 
   /**
@@ -2050,18 +2116,38 @@ export class Store {
     return result.rows.map((r) => ({ outcome: r.outcome, externalId: r.external_id, consumedAt: Number(r.consumed_at) }));
   }
 
-  /** The newest run of the same write (user, tool, arguments) since `since` that did or may have gone through. */
+  /**
+   * The newest run of the same write (user, tool, arguments) since `since` that did or may have gone
+   * through. A run that started and hasn't finished (still running, or the server stopped mid-run) may
+   * still go through, so it counts as `outcome_unknown` from the time it started.
+   */
   async latestWrite(input: { userId: string; capability: string; argsDigest: string; since: number }): Promise<{ outcome: WriteOutcome; finishedAt: number } | null> {
-    const row = await this.one<{ outcome: WriteOutcome; finished_at: number }>(
+    const row = await this.one<{ outcome: WriteOutcome; at: number }>(
       this.db,
-      `SELECT outcome, finished_at FROM approvals
-       WHERE user_id = $1 AND capability = $2 AND args_digest = $3 AND finished_at >= $4 AND outcome IN ('succeeded', 'outcome_unknown')
-       ORDER BY finished_at DESC LIMIT 1`,
+      `SELECT COALESCE(outcome, 'outcome_unknown') AS outcome, COALESCE(finished_at, started_at) AS at FROM approvals
+       WHERE user_id = $1 AND capability = $2 AND args_digest = $3
+         AND ((finished_at >= $4 AND outcome IN ('succeeded', 'outcome_unknown')) OR (outcome IS NULL AND started_at >= $4))
+       ORDER BY at DESC LIMIT 1`,
       [input.userId, input.capability, input.argsDigest, input.since],
     );
-    return row ? { outcome: row.outcome, finishedAt: row.finished_at } : null;
+    return row ? { outcome: row.outcome, finishedAt: Number(row.at) } : null;
   }
 }
 
 /** How a used approval's run ended (ADR-322). */
 export type WriteOutcome = "succeeded" | "outcome_unknown" | "failed";
+
+/** A write's approval as its first run left it (`Store.approvalRun`). */
+export interface ApprovalRun {
+  /** What the approval was issued for (for a write with a lookup, that includes the target the card showed). */
+  argsDigest: string;
+  /** What the first run asked for: its arguments (and time zone), without any looked-up target. Null for runs before this was kept. */
+  requestDigest: string | null;
+  /** Used: the write was (or was about to be) sent. */
+  used: boolean;
+  outcome: WriteOutcome | null;
+  externalId: string | null;
+  /** The first run's result word ("sent", "changed", …) and receipt summary, when it went through. */
+  resultWord: string | null;
+  resultSummary: string | null;
+}

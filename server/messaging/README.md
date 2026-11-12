@@ -30,7 +30,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Price watches | `/v1/watches…` (below) |
 | Studio (ADR-740) | `POST /v1/studio` · `POST /v1/studio/:id/{approve,cancel}` · `GET /v1/studio` · `GET/DELETE /v1/studio/:id` · `GET /v1/studio/:id/files/:name` (below) |
 | News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` · `POST /v1/news/feed` (the stories behind the follows sent with the request, as cards, nothing stored; ADR-656) · `GET/PUT /v1/news/radar`, `POST /v1/news/radar/seen` (alerts the person opted into; `RADAR_ALERTS_ENABLED`) |
-| Health | `GET /healthz` |
+| Health | `GET /healthz`: `{ok: true}` after a `SELECT 1` on the database, `503 {ok: false}` when that fails |
 
 All `/v1` routes except account creation and sign-in need `Authorization: Bearer <deviceToken>`.
 
@@ -45,10 +45,30 @@ All `/v1` routes except account creation and sign-in need `Authorization: Bearer
 - Delivery receipts only move a status forward (queued, sending, sent, then delivered, undelivered or failed).
 - Texts to Doddy (U3, ADR-753, off by default): only the verified number with the "Texts to Doddy" switch on; anyone else gets empty TwiML and nothing is stored. A Twilio message id is handled once; 30 texts an hour. A text becomes an encrypted inbox note, and gets **no reply** (answers by text are "Text with Doddy", ADR-656, `src/smsChat.ts`, which handles a text only when this switch is off for that sender: one handler per text, never both). Nothing from memory is ever put in a text.
 - Calls booked for later (U4, ADR-754): the worker takes one due call at a time and checks it again: more than 15 minutes late means missed; the number and consent; the approval hash against the number now; quiet hours (`QUIET_HOURS_START`/`QUIET_HOURS_END`, default 21:00–08:00) in the zone the iPhone last sent, unless the card allowed them; and the hourly and daily caps under the same lock as "call me now". A call whose outcome is unknown is never placed again. Each call that doesn't happen sends one notification (if the user has push on) with the time only. The reason is encrypted and erased when the call ends (Twilio's final status), 2 hours after a placed call whose end was never reported, or at once when the call won't happen or its outcome is unknown; the phone agent gets it as `doddy_call_reason` and its first sentence as `doddy_call_opening`. A new or removed number, or consent turned off, cancels waiting calls.
-- Records at Twilio (messages both ways, calls) are deleted `TWILIO_RECORD_DELETE_AFTER_HOURS` after they are final (default 24; 0 = about 2 minutes). Only Twilio's id is queued for that.
+- Records at Twilio (messages both ways, calls, forwarded call-backs, task calls and their takeover legs) are deleted `TWILIO_RECORD_DELETE_AFTER_HOURS` after they are final (default 24; 0 = about 2 minutes), each on its own account with that account's credentials (task calls on `TWILIO_TASK_*`). Only Twilio's id is queued for that. Retention of everything else: "What is kept, and for how long" below.
 - Message text is erased from the database as soon as a message reaches a final state. While queued it is encrypted with `MEMORY_ENCRYPTION_KEY`. Outside production it is plain text when the key is not set; **in production nothing is queued without the key** (ADR-706).
 - Logs carry ids and counts only. No message text, no phone numbers, no tokens.
 - A missing provider configuration returns `503 not_configured`. It never fakes success.
+
+## What is kept, and for how long
+Calls, texts and the providers behind them. Deleting the account (`DELETE /v1/account`) removes every row here that names it; what it left at a provider is queued first and deleted by jobs that outlive it. Errands, price watches, Studio and digests: their own sections.
+
+| What | Where | Kept |
+|---|---|---|
+| A queued text's body | here, encrypted | until the message is final, then erased |
+| Records of texts (both ways), calls to and from Doddy's number, a forwarded call-back's leg | Twilio, main account | deleted `TWILIO_RECORD_DELETE_AFTER_HOURS` (24) after final; Twilio may keep a deleted text's body in backups for up to 30 days |
+| Records of task calls and their takeover legs | Twilio, task account (`TWILIO_TASK_*`) | the same wait, and not before the call's price has been read (a day at most); deleted with that account's own credentials |
+| The Twilio ids waiting for that (`provider_deletions`) | here, ids only | until deleted, then 30 days |
+| Phone-agent conversations (calls to Doddy, "Call me now", booked calls) | ElevenLabs | the agent's retention (30 days, `voice-agent/phone/session.json`) while the account exists; deleting the account deletes them, checked gone. Their id is stored on the call from the post-call webhook, recaps on or off. One no call here owns (its account already deleted, or not a call through this server) is deleted by the sweep, every 3 hours, once a day old |
+| Task-agent conversations | ElevenLabs | deleted once the answer card is built (a day at most), checked gone; strays by the same sweep |
+| A task call's live transcript lines | here, encrypted | until the answer card is built, 24 hours at most |
+| A task call's answer card | here, encrypted | until the app saves it, 7 days at most |
+| Phone-line recaps | here, encrypted | until the app saves them, 30 days at most |
+| Call session keys | here, hashed | until the call ends, 2 hours at most |
+| A booked call's reason | here, encrypted | until the call ends (2 hours after it was placed at most) |
+| Task calls' dial log (keyed hashes, for the limits) | here | 2 days (the limits read one), pruned by the hourly tidy |
+| Call-back routes (keyed hash of a number Doddy dialled) | here | as long as the account |
+| Deletion receipts (`server_data_deletions`, no content) | here | kept; the account id is cleared when it is deleted |
 
 ## Abuse limits (ADR-702 to 706)
 

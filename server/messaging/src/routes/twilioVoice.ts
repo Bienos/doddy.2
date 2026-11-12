@@ -88,6 +88,10 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
   app.post("/webhooks/twilio/callback-done", async (req, reply) => {
     const form = verified(req, reply);
     if (!form) return;
+    // The dial is over, so its child leg (the user's phone ringing) is final: its record goes like the caller's own
+    // leg (ADR-753). Signed with the main account's token, so it lives on the main account.
+    await scheduleDeletion(db, "call", formValue(form.DialCallSid))
+      .catch((err) => req.log.error({ err: { message: (err as Error).message } }, "queueing a call-back leg's deletion failed"));
     return reply.type("text/xml").send(forwardDoneTwiml(formValue(form.DialCallStatus)));
   });
 

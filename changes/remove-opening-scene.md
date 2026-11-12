@@ -1,3 +1,0 @@
-The first-launch basketball opening (ADR-225) is removed with its four v1.3 SVGs, the last old art in the app (decision `2026-11-09-remove-old-design-leftovers`, D3). The welcome is the first launch; Home no longer has the opening's ready pose or bar slide-in. "Start listening when I open Doddy" is unchanged (`OpeningPolicy`, `OpeningModel`).
-Ran on Linux: strings catalog check, `scripts/ci.sh --only checks`. Not run here: DoddyCore tests and every Swift compile (no toolchain); the hosted `core` and `ios-build` jobs are the first run of `OpeningPolicyTests` and the new `testFirstLaunchGoesStraightHomeAndNeverStartsVoice`.
-No deploy or owner step.
