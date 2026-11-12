@@ -56,7 +56,9 @@ struct DoddyVoiceLiveActivity: Widget {
                 IslandCompactLeadingView(scene: scene)
                     .environment(\.islandLanguage, language)
             } compactTrailing: {
-                IslandCompactTrailingView(scene: scene, startedAt: startedAt)
+                // One size for every state of a conversation, so the island doesn't shrink and grow
+                // with each turn (12 Nov 2026).
+                IslandVoiceCompactTrailingView(scene: scene, startedAt: startedAt)
                     .environment(\.islandLanguage, language)
             } minimal: {
                 IslandMinimalView(scene: scene, startedAt: startedAt)
