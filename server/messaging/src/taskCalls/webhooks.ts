@@ -73,15 +73,17 @@ export async function onAnswer(ctx: TaskCallContext, attemptId: string, f: Form)
   };
   if (ctx.settings.killSwitch) return refuse("kill_switch", "kill_switch");
   if (!callFits(now, a.max_duration_secs, 0)) return refuse("gate_refused", "outside_hours");
-  if (ctx.drift.cached().length) return refuse("gate_refused", "agent_drift");
   if (!a.payload_ciphertext) return refuse("gate_refused", "case_closed");
   const payload = decryptPayload(ctx, a.account_id, a.case_id, a.payload_ciphertext);
   if (!payloadDigest(ctx.keys, payload).equals(a.approved_digest)) return refuse("gate_refused", "payload_mismatch");
+  // The agent that talks is chosen by the approved payload's kind; a booking never goes to the ask agent or the reverse.
+  const agentId = ctx.agentIdFor(payload.kind);
+  if (!agentId || ctx.driftFor(payload.kind).cached().length) return refuse("gate_refused", "agent_drift");
   if (field(f, "To") !== payload.twilio.to || field(f, "From") !== payload.twilio.from) return refuse("gate_refused", "number_mismatch");
 
   const registerStarted = Date.now();
   const reg = await ctx.voice.registerCall({
-    agentId: ctx.config.agentId, from: payload.twilio.from, to: payload.twilio.to,
+    agentId, from: payload.twilio.from, to: payload.twilio.to,
     variables: { ...payload.agent.variables, [ATTEMPT_VARIABLE]: a.id },
   });
   const registerMs = Date.now() - registerStarted;
@@ -233,7 +235,7 @@ const envelope = z.object({ type: z.string(), data: z.object({ agent_id: z.strin
  */
 export async function onPostCall(ctx: TaskCallContext, json: unknown): Promise<void> {
   const env = envelope.safeParse(json);
-  if (!env.success || env.data.data.agent_id !== ctx.config.agentId) return;
+  if (!env.success || ![ctx.agentIdFor("ask"), ctx.agentIdFor("book")].includes(env.data.data.agent_id)) return;
   if (env.data.type !== "post_call_transcription") return;
   const parsed = conversationSchema.safeParse(env.data.data);
   if (!parsed.success) { ctx.log("post-call payload unreadable", {}); return; }

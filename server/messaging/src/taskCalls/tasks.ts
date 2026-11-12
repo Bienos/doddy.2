@@ -40,11 +40,14 @@ const plus = (d: Date, millis: number) => new Date(d.getTime() + millis);
 
 /** Strict. The shared parts are checked again per place by the brief schema (compileCase). */
 export const taskSchema = z.strictObject({
-  kind: z.literal("ask"),
+  /** "book": each place may accept exactly the booking on the card (decision 2026-11-12-book-agent). */
+  kind: z.enum(["ask", "book"]),
   places: z.array(z.unknown()).min(1).max(MAX_PLACES),
   principal: z.unknown(),
   goal: z.unknown(),
-  question: z.unknown(),
+  /** "ask" only; a booking's question is built from `booking`. */
+  question: z.unknown().optional(),
+  booking: z.unknown().optional(),
   facts: z.array(z.unknown()).max(5).optional(),
   maxDurationSecs: z.number().int().optional(),
   /** "Text me the result": a text to the person's own verified number when the task ends. */
@@ -55,10 +58,11 @@ export type TaskOutcome = "yes" | "none" | "unclear" | "stopped";
 type Answer = "yes" | "no" | "unclear" | "none";
 
 /** HMAC (derived key) of what the one tap approves: the case digests in order and the text choice. */
-export function taskDigest(ctx: TaskCallContext, textResult: boolean, caseDigests: Buffer[]): Buffer {
+export function taskDigest(ctx: TaskCallContext, kind: TaskKind, textResult: boolean, caseDigests: Buffer[]): Buffer {
   return hmacSha256(ctx.cipher.derivedKey("call-task-digest"),
-    canonicalJson({ format: 1, kind: "ask", textResult, cases: caseDigests.map((d) => d.toString("hex")) }));
+    canonicalJson({ format: 1, kind, textResult, cases: caseDigests.map((d) => d.toString("hex")) }));
 }
+export type TaskKind = "ask" | "book";
 
 function refuse(status: Refusal["status"], error: string): { refusal: Refusal } {
   return { refusal: { status, error } as Refusal };
@@ -73,7 +77,8 @@ export async function createTask(ctx: TaskCallContext, accountId: string, body: 
   const t = parsed.data;
   const compiled: CompiledCase[] = [];
   for (const [i, callee] of t.places.entries()) {
-    const brief = { kind: t.kind, callee, principal: t.principal, goal: t.goal, question: t.question, facts: t.facts ?? [],
+    const brief = { kind: t.kind, callee, principal: t.principal, goal: t.goal, facts: t.facts ?? [],
+      ...(t.question === undefined ? {} : { question: t.question }), ...(t.booking === undefined ? {} : { booking: t.booking }),
       ...(t.maxDurationSecs === undefined ? {} : { maxDurationSecs: t.maxDurationSecs }) };
     const r = await compileCase(ctx, accountId, brief, `places.${i}.`);
     if ("refusal" in r) return r;
@@ -83,15 +88,15 @@ export async function createTask(ctx: TaskCallContext, accountId: string, body: 
 
   const now = ctx.now();
   const taskId = randomUUID();
-  const digest = taskDigest(ctx, t.textResult, compiled.map((c) => c.digest));
+  const digest = taskDigest(ctx, t.kind, t.textResult, compiled.map((c) => c.digest));
   const approvableUntil = plus(now, ms(TASK_PREVIEW_MINUTES));
   const created = await inTransaction(ctx.db, async (c) => {
     await c.query("SELECT pg_advisory_xact_lock(hashtext('call_cases:' || $1))", [accountId]);
     if (await openCaseCount(c, accountId) + compiled.length > MAX_OPEN_CASES) return false;
     await c.query(
       `INSERT INTO call_tasks (id, account_id, kind, state, places, task_digest, text_result, approvable_until, created_at, updated_at)
-       VALUES ($1, $2, 'ask', 'awaiting_approval', $3, $4, $5, $6, $7, $7)`,
-      [taskId, accountId, compiled.length, digest, t.textResult, approvableUntil, now]);
+       VALUES ($1, $2, $8, 'awaiting_approval', $3, $4, $5, $6, $7, $7)`,
+      [taskId, accountId, compiled.length, digest, t.textResult, approvableUntil, now, t.kind]);
     for (const [i, cc] of compiled.entries()) await insertCase(ctx, c, accountId, cc, approvableUntil, now, { id: taskId, position: i + 1 });
     return true;
   });
@@ -99,7 +104,7 @@ export async function createTask(ctx: TaskCallContext, accountId: string, body: 
   const first = compiled[0]!;
   return {
     preview: {
-      taskId, digest: digest.toString("hex"), approvableUntil: approvableUntil.toISOString(), kind: "ask" as const, textResult: t.textResult,
+      taskId, digest: digest.toString("hex"), approvableUntil: approvableUntil.toISOString(), kind: t.kind, textResult: t.textResult,
       places: compiled.map((cc) => previewOf(cc.payload, cc.digest, approvableUntil)),
       callableNow: callFits(now, first.brief.maxDurationSecs),
     },
@@ -109,7 +114,7 @@ export async function createTask(ctx: TaskCallContext, accountId: string, body: 
 // ---------- approve ----------
 
 interface TaskRow {
-  id: string; account_id: string; state: string; places: number; task_digest: Buffer; text_result: boolean; approvable_until: Date;
+  id: string; account_id: string; kind: TaskKind; state: string; places: number; task_digest: Buffer; text_result: boolean; approvable_until: Date;
   approved_device_id: string | null; chain_until: Date | null; created_at: Date;
 }
 interface TaskCaseRow { id: string; task_position: number; payload_digest: Buffer; max_duration_secs: number; state: string; created_at: Date }
@@ -134,7 +139,7 @@ export async function approveTask(ctx: TaskCallContext, accountId: string, devic
     if (!sameBytes(task.task_digest, given)) return refuse(409, "digest_mismatch");
     const cases = await taskCases(c, taskId);
     // The stored cases must still be exactly what the digest covers.
-    if (cases.length !== task.places || !sameBytes(taskDigest(ctx, task.text_result, cases.map((k) => k.payload_digest)), given)) {
+    if (cases.length !== task.places || !sameBytes(taskDigest(ctx, task.kind, task.text_result, cases.map((k) => k.payload_digest)), given)) {
       return refuse(409, "digest_mismatch");
     }
     const first = cases[0]!;
@@ -176,12 +181,18 @@ const NOT_REACHED = new Set(["no_answer", "busy", "failed", "voicemail", "ivr", 
  */
 const STOPS = new Set(["taken_over", "stopped", "not_placed", "voice_unavailable", "unknown"]);
 
-/** What the place's call means for the task. A yes needs the model's yes and a quote from the transcript. */
-export function answerOf(result: CallResult, writer: WriterOutput | undefined): Answer | "stop" {
+/**
+ * What the place's call means for the task. A yes needs the model's yes and a quote from the transcript.
+ * A booking's yes also needs Doddy to have said the approved confirmation sentence (decision 2026-11-12-book-agent).
+ */
+export function answerOf(result: CallResult, writer: WriterOutput | undefined, kind: TaskKind = "ask"): Answer | "stop" {
   if (STOPS.has(result.outcome)) return "stop";
   if (NOT_REACHED.has(result.outcome)) return "none";
   if (result.outcome !== "answered") return "unclear";
-  if (writer?.answer === "yes" && result.quote && result.confidence !== "low" && result.warnings.length === 0) return "yes";
+  const confirmed = kind === "ask" || result.bookingConfirmed === true;
+  if (writer?.answer === "yes" && result.quote && result.confidence !== "low" && result.warnings.length === 0 && confirmed) return "yes";
+  // Doddy said yes to a booking the model can't confirm: the person must read it, never "no" and never the next place.
+  if (kind === "book" && result.bookingConfirmed) return "unclear";
   if (writer?.answer === "no") return "no";
   return "unclear";
 }
@@ -200,7 +211,8 @@ export async function advanceTask(c: Q, ctx: TaskCallContext, x: {
   const position = caseRows[0]?.task_position;
   if (!taskId || !position) return false;
   const now = ctx.now();
-  const answer = answerOf(x.result, x.writer);
+  const { rows: kindRows } = await c.query<{ kind: TaskKind }>("SELECT kind FROM call_tasks WHERE id = $1", [taskId]);
+  const answer = answerOf(x.result, x.writer, kindRows[0]?.kind ?? "ask");
   await c.query("UPDATE call_cases SET task_answer = $2, state = 'finished', updated_at = $3 WHERE id = $1 AND state = 'active'",
     [x.caseId, answer === "stop" ? "none" : answer, now]);
   const { rows } = await c.query<TaskRow>("SELECT * FROM call_tasks WHERE id = $1 FOR UPDATE", [taskId]);
@@ -254,15 +266,22 @@ async function resultText(c: Q, ctx: TaskCallContext, task: TaskRow, outcome: Ta
   let text: string;
   switch (outcome) {
     case "yes":
-      text = `Doddy: ${placeName} odpowiada: „${clip(x.result.quote?.text ?? "", 300)}”. Szczegóły w aplikacji Doddy.`;
+      text = task.kind === "book"
+        ? `Doddy: ${placeName} potwierdza rezerwację: „${clip(x.result.quote?.text ?? "", 300)}”. Szczegóły w aplikacji Doddy.`
+        : `Doddy: ${placeName} odpowiada: „${clip(x.result.quote?.text ?? "", 300)}”. Szczegóły w aplikacji Doddy.`;
       break;
     case "unclear":
-      text = `Doddy: rozmowa z ${placeName} się odbyła, ale odpowiedź nie jest jasna. Sprawdź ją w aplikacji Doddy.`;
+      text = task.kind === "book"
+        ? `Doddy: rozmowa z ${placeName} się odbyła, ale nie wiem na pewno, czy rezerwacja jest przyjęta. Sprawdź zapis w aplikacji Doddy.`
+        : `Doddy: rozmowa z ${placeName} się odbyła, ale odpowiedź nie jest jasna. Sprawdź ją w aplikacji Doddy.`;
       break;
     case "none":
-      text = task.places === 1
-        ? `Doddy: ${placeName}: brak potwierdzenia. Szczegóły w aplikacji Doddy.`
-        : `Doddy: żadne z ${task.places} miejsc nie potwierdziło. Szczegóły w aplikacji Doddy.`;
+      text = task.kind === "book"
+        ? (task.places === 1 ? `Doddy: ${placeName}: nie udało się zarezerwować. Szczegóły w aplikacji Doddy.`
+          : `Doddy: w żadnym z ${task.places} miejsc nie udało się zarezerwować. Szczegóły w aplikacji Doddy.`)
+        : task.places === 1
+          ? `Doddy: ${placeName}: brak potwierdzenia. Szczegóły w aplikacji Doddy.`
+          : `Doddy: żadne z ${task.places} miejsc nie potwierdziło. Szczegóły w aplikacji Doddy.`;
       break;
     case "stopped":
       text = "Doddy: zatrzymałem dzwonienie przed końcem listy. Szczegóły w aplikacji Doddy.";
@@ -291,7 +310,7 @@ export async function getTask(ctx: TaskCallContext, accountId: string, taskId: s
     `SELECT id, task_position, state, task_answer, payload_ciphertext, payload_digest, approvable_until FROM call_cases
      WHERE task_id = $1 ORDER BY task_position`, [taskId]);
   return {
-    taskId: task.id, kind: "ask", state: task.state, textResult: task.text_result,
+    taskId: task.id, kind: task.kind, state: task.state, textResult: task.text_result,
     digest: task.state === "awaiting_approval" ? task.task_digest.toString("hex") : null,
     approvableUntil: task.approvable_until, approvedAt: task.approved_at, chainUntil: task.chain_until,
     outcome: task.outcome, outcomePosition: task.outcome_position, finishedAt: task.finished_at,

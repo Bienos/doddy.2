@@ -30,11 +30,16 @@ struct ShoppingHubView: View {
     @State private var watchPage: SharedShopPage?
     @FocusState private var typing: Bool
 
+    /// Set when a link arrives from the Share Sheet, so the screen scrolls to the "Check this" card.
+    @State private var scrollToCheckThis = false
+
+    private var router: ShortcutRouter { .shared }
     private var scope: ReleaseScope { ReleaseScopeStore.current }
     private var shoppingTasks: [StoredErrand] { model.errands.filter { $0.draft.kind == .shopping } }
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     hero
@@ -48,7 +53,7 @@ struct ShoppingHubView: View {
                         if !shoppingTasks.isEmpty { searches }
                     }
                     if scope.shows(.priceWatch) {
-                        checkThisCard
+                        checkThisCard.id(Self.checkThisCardID)
                         WatchesSection()
                         if watches.watches.isEmpty && watches.loadProblem == nil && watches.message == nil { watchHint }
                     }
@@ -78,9 +83,25 @@ struct ShoppingHubView: View {
                 await model.load()
                 await reload()
             }
+            // A product link shared from Safari or a shop app with "Check the price": it fills the "Check this" card and
+            // the screen scrolls there. The card still asks for a tap before anything is read or sent.
+            .onChange(of: router.priceCheckLink, initial: true) { _, shared in
+                guard shared != nil, let taken = router.takePriceCheckLink() else { return }
+                link = taken
+                linkName = ""
+                scrollToCheckThis = true
+            }
+            .onChange(of: scrollToCheckThis) { _, go in
+                guard go else { return }
+                scrollToCheckThis = false
+                withAnimation { proxy.scrollTo(Self.checkThisCardID, anchor: .top) }
+            }
+            }
         }
         .accessibilityIdentifier("shopping.hub")
     }
+
+    private static let checkThisCardID = "shopping.checkThisCard"
 
     private func reload() async {
         await model.refresh()

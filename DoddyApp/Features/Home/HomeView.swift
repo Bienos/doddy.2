@@ -157,6 +157,12 @@ struct HomeView: View {
                 case .windDown: CountdownView(purpose: .windDown)
                 }
             }
+            // A product link shared from Safari or a shop app with "Check the price": the Shopping screen opens, and its
+            // "Check this" card takes the link (ShoppingHubView). Nothing is read from the shop until the person taps.
+            .onChange(of: router.priceCheckLink, initial: true) { _, link in
+                guard link != nil, scope.shows(.priceWatch), !showShopping else { return }
+                showShopping = true
+            }
             // A finished task's or file's push, tapped: Messages, where Doddy's message about it is.
             .onChange(of: router.isMessagesRequested, initial: true) { _, requested in
                 guard requested else { return }
