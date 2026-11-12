@@ -169,8 +169,8 @@ final class CallsModel {
                 return
             }
             self.message = request.status == "requested"
-                ? "Doddy is calling you now."
-                : "Couldn't confirm the call was placed. Doddy won't redial on its own. Wait a minute before trying again."
+                ? NSLocalizedString("Doddy is calling you now.", comment: "")
+                : NSLocalizedString("Couldn't confirm the call was placed. Doddy won't redial on its own. Wait a minute before trying again.", comment: "")
             self.recent = (try? await client.recentCalls()) ?? self.recent
         }
     }
