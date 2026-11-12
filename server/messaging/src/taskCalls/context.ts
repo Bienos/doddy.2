@@ -7,6 +7,7 @@ import type { Db } from "../db.js";
 import type { TaskTelephony, TaskVoice } from "../providers/taskCalls.js";
 import type { PushSender } from "../providers/types.js";
 import { checkAgentSafety, type AgentProblem } from "./agentSafety.js";
+import { TASK_AGENT_SPEC, TASK_BOOK_AGENT_SPEC, type TaskAgentSpec } from "./agentSpec.js";
 import { caseKeys, type CaseKeys } from "./payload.js";
 import type { SayVoice } from "./twiml.js";
 
@@ -50,7 +51,12 @@ export interface TaskCallContext {
   smsCaps?: { perAccount: number; perServer: number };
   now: () => Date;
   say: SayVoice;
+  /** The ask agent's safety check. */
   drift: DriftCache;
+  /** The safety check of the agent for a call's kind; the booking agent's fails closed while it isn't configured. */
+  driftFor(kind: "ask" | "book"): DriftCache;
+  /** The ElevenLabs agent that talks on a call of this kind; undefined for "book" while it isn't configured. */
+  agentIdFor(kind: "ask" | "book"): string | undefined;
   log: (msg: string, extra?: object) => void;
 }
 
@@ -60,11 +66,16 @@ export function taskCallContext(
 ): TaskCallContext | undefined {
   if (!deps || !cipher || !publicBaseUrl) return undefined;
   const now = deps.now ?? (() => new Date());
+  const drift = new DriftCache(deps.voice, deps.config.agentId, now, log);
+  const bookAgentId = deps.config.bookAgentId;
+  const bookDrift = bookAgentId ? new DriftCache(deps.voice, bookAgentId, now, log, TASK_BOOK_AGENT_SPEC) : DriftCache.notConfigured(deps.voice, now, log);
   return {
     db, cipher, keys: caseKeys(cipher), telephony: deps.telephony, voice: deps.voice, config: deps.config,
     settings: deps.settings, publicBaseUrl, push, writer: deps.writer, liveActivity: deps.liveActivity, smsCaps: deps.smsCaps, now,
     say: { voice: deps.settings.sayVoice, language: "pl-PL" },
-    drift: new DriftCache(deps.voice, deps.config.agentId, now, log),
+    drift,
+    driftFor: (kind) => (kind === "book" ? bookDrift : drift),
+    agentIdFor: (kind) => (kind === "book" ? bookAgentId : deps.config.agentId),
     log,
   };
 }
@@ -79,8 +90,16 @@ export class DriftCache {
   private last?: { problems: AgentProblem[]; at: number };
   private inFlight?: Promise<AgentProblem[]>;
 
-  constructor(private readonly voice: TaskVoice, private readonly agentId: string, private readonly now: () => Date,
-    private readonly log: (msg: string, extra?: object) => void) {}
+  constructor(private readonly voice: TaskVoice, private readonly agentId: string | undefined, private readonly now: () => Date,
+    private readonly log: (msg: string, extra?: object) => void, private readonly spec: TaskAgentSpec = TASK_AGENT_SPEC) {}
+
+  /** Which agent this cache reads, for the log: the ask agent or the booking agent. */
+  private get agent(): "ask" | "book" { return this.spec === TASK_AGENT_SPEC ? "ask" : "book"; }
+
+  /** For an agent that isn't set up: always a problem, never a network call. */
+  static notConfigured(voice: TaskVoice, now: () => Date, log: (msg: string, extra?: object) => void): DriftCache {
+    return new DriftCache(voice, undefined, now, log);
+  }
 
   /** Problems right now, reading the agent if the last check is older than the TTL. */
   async problems(): Promise<AgentProblem[]> {
@@ -95,10 +114,17 @@ export class DriftCache {
   }
 
   async refresh(): Promise<AgentProblem[]> {
+    if (!this.agentId) {
+      this.last = { problems: ["unreadable"], at: this.now().getTime() };
+      return this.last.problems;
+    }
     const agent = await this.voice.getAgent(this.agentId);
-    const problems = agent === "error" ? ["unreadable" as const] : checkAgentSafety(agent);
-    if (problems.length && (!this.last || this.last.problems.join() !== problems.join())) {
-      this.log("task-call agent differs from its spec; calls refused", { problems });
+    const problems = agent === "error" ? ["unreadable" as const] : checkAgentSafety(agent, this.spec);
+    // Logged when the first check is made and whenever the answer changes: names only, never values. The
+    // first line after a deploy is how the live agent is confirmed (or refused) without reading its settings.
+    if (!this.last || this.last.problems.join() !== problems.join()) {
+      if (problems.length) this.log("task-call agent differs from its spec; calls refused", { agent: this.agent, problems });
+      else this.log("task-call agent matches its spec", { agent: this.agent });
     }
     this.last = { problems, at: this.now().getTime() };
     return problems;

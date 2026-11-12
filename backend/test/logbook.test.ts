@@ -155,7 +155,7 @@ test("a full day with every tool in use fits: bigger than the usual body limit, 
   await turnOn(rig);
   const tools = Object.fromEntries(LOGBOOK_TOOL_IDS.map((id) => [id, { done: 1234, declined: 12, unsure: 3, failed: 5, undone: 7 }]));
   const body = JSON.stringify(day(TODAY, { tools }), null, 2);
-  assert.ok(body.length > 8 * 1024 && body.length < 16 * 1024, `the body is ${body.length} bytes`);
+  assert.ok(body.length > 8 * 1024 && body.length < 32 * 1024, `the body is ${body.length} bytes`);
   const res = await fetch(`${rig.base}/v1/web/logbook/days/${TODAY}`, { method: "PUT", headers: { authorization: `Bearer ${USER_A}`, "content-type": "application/json" }, body });
   assert.equal(res.status, 200, await res.text());
   const view = LogbookViewSchema.parse((await rig.call("GET", "/v1/web/logbook", { token: USER_A })).body);
@@ -168,7 +168,7 @@ test("a body larger than Logbook's limit is refused as too large, and the usual 
   const res = await fetch(`${rig.base}/v1/web/logbook/days/${TODAY}`, {
     method: "PUT",
     headers: { authorization: `Bearer ${USER_A}`, "content-type": "application/json" },
-    body: JSON.stringify(day(TODAY), null, 1) + " ".repeat(17 * 1024),
+    body: JSON.stringify(day(TODAY), null, 1) + " ".repeat(33 * 1024),
   });
   assert.equal(res.status, 413);
   const other = await fetch(`${rig.base}/v1/web/logbook/state`, {

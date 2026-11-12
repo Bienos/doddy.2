@@ -332,6 +332,10 @@ public struct CallPreview: Codable, Equatable, Sendable {
     public let recordsAudio: Bool
     /// Only on create: whether the call would fit inside the hours right now.
     public let callableNow: Bool?
+    /// A call that books (decision 2026-11-12-book-agent): exactly what may be booked, and the one
+    /// sentence Doddy says to accept it. Nil for a call that only asks, and from older servers.
+    public let booking: CallTaskBooking?
+    public let confirmLine: String?
 }
 
 public struct CallCaseAvailability: Decodable, Equatable, Sendable {
@@ -343,6 +347,8 @@ public struct CallCaseAvailability: Decodable, Equatable, Sendable {
     public let recordsAudio: Bool
     public let maxDurationSecs: Int
     public let agentProblems: [String]
+    /// Whether calls that book can be made (the booking agent is set up and matches its spec). Nil from older servers.
+    public let booking: Bool?
 }
 
 public struct CallApproval: Equatable, Sendable {

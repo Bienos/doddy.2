@@ -5883,6 +5883,17 @@
         }
       }
     },
+    "Airbnb": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Airbnb"
+          }
+        }
+      }
+    },
     "Alarms": {
       "extractionState": "manual",
       "localizations": {
@@ -8390,61 +8401,61 @@
         }
       }
     },
-    "Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.": {
+    "Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gilt ab deinem nächsten Sprachgespräch. „Beginnt auf“ legt die Sprache fest, in der Doddy dich begrüßt; bei Automatisch beginnt er auf Englisch. So oder so folgt er der europäischen Sprache, die du sprichst, und wechselt, wenn du wechselst. Die Hörprobe ist das Hallo von Doddy auf Englisch und Polnisch in deinem Tempo; die Ausdrucksstärke hört man nur im Gespräch. Alle Stimmen sprechen jede Sprache, die Doddy spricht, jede mit eigenem Akzent; Wiktor ist polnischer Muttersprachler. Die Stimmen sind Kandidaten, bis die endgültige Stimme von Doddy gewählt ist."
+            "value": "Gilt ab deinem nächsten Sprachgespräch. „Beginnt auf“ legt die Sprache fest, in der Doddy dich begrüßt; bei Automatisch beginnt er auf Englisch. So oder so folgt er der europäischen Sprache, die du sprichst, und wechselt, wenn du wechselst."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se aplica desde tu próxima conversación de voz. “Empieza en” fija el idioma en el que Doddy te saluda; en Automático empieza en inglés. En cualquier caso, sigue el idioma europeo que hables y cambia cuando tú cambias. La muestra es el saludo de Doddy en inglés y polaco a tu velocidad; la expresividad solo se oye en una conversación. Todas las voces hablan todos los idiomas que habla Doddy, cada una con su acento; Wiktor es hablante nativo de polaco. Las voces son candidatas mientras se elige la voz definitiva de Doddy."
+            "value": "Se aplica desde tu próxima conversación de voz. “Empieza en” fija el idioma en el que Doddy te saluda; en Automático empieza en inglés. En cualquier caso, sigue el idioma europeo que hables y cambia cuando tú cambias."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "S’applique à partir de ta prochaine conversation vocale. « Commence en » règle la langue dans laquelle Doddy te salue ; sur Automatique, il commence en anglais. Dans tous les cas, il suit la langue européenne que tu parles et change quand tu changes. L’extrait est le bonjour de Doddy en anglais et en polonais à ta vitesse ; l’expressivité ne s’entend qu’en conversation. Toutes les voix parlent toutes les langues de Doddy, chacune avec son accent ; Wiktor est un locuteur natif du polonais. Les voix sont des candidates tant que la voix définitive de Doddy n’est pas choisie."
+            "value": "S’applique à partir de ta prochaine conversation vocale. « Commence en » règle la langue dans laquelle Doddy te salue ; sur Automatique, il commence en anglais. Dans tous les cas, il suit la langue européenne que tu parles et change quand tu changes."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. „Počinje na“ postavlja jezik na kojem te Doddy pozdravlja; na Automatski počinje na engleskom. U svakom slučaju prati europski jezik kojim govoriš i prebacuje se kad se ti prebaciš. Uzorak je Doddyjev pozdrav na engleskom i poljskom pri tvojoj brzini; izražajnost se čuje samo u razgovoru. Svi glasovi govore sve jezike koje govori Doddy, svaki sa svojim naglaskom; Wiktor je izvorni govornik poljskog. Glasovi su kandidati dok se ne odabere Doddyjev konačni glas."
+            "value": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. „Počinje na“ postavlja jezik na kojem te Doddy pozdravlja; na Automatski počinje na engleskom. U svakom slučaju prati europski jezik kojim govoriš i prebacuje se kad se ti prebaciš."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vale dalla tua prossima conversazione vocale. “Inizia in” imposta la lingua in cui Doddy ti saluta; su Automatico inizia in inglese. In ogni caso segue la lingua europea in cui parli e cambia quando cambi tu. L'anteprima è il saluto di Doddy in inglese e in polacco alla tua velocità; l'espressività si sente solo in una conversazione. Tutte le voci parlano ogni lingua di Doddy, ciascuna con il proprio accento; Wiktor è madrelingua polacco. Le voci sono candidate finché non viene scelta la voce definitiva di Doddy."
+            "value": "Vale dalla tua prossima conversazione vocale. “Inizia in” imposta la lingua in cui Doddy ti saluta; su Automatico inizia in inglese. In ogni caso segue la lingua europea in cui parli e cambia quando cambi tu."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。サンプルは、英語とポーランド語でのDoddyのあいさつをあなたの速さで再生したものです。表現の豊かさは会話の中でしか聞けません。すべての声がDoddyの話せる全言語を話し、それぞれに独自のなまりがあります。Wiktorはポーランド語のネイティブです。Doddyの最終的な声が決まるまで、これらの声は候補です。"
+            "value": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Działa od następnej rozmowy głosowej. „Zaczyna w” ustawia język, w którym Doddy Cię wita; przy ustawieniu Automatycznie zaczyna po angielsku. Tak czy inaczej podąża za europejskim językiem, którym mówisz, i zmienia go razem z Tobą. Próbka to powitanie Doddy’ego po angielsku i po polsku w Twoim tempie; ekspresję słychać tylko w rozmowie. Wszystkie głosy mówią każdym językiem Doddy’ego, każdy z własnym akcentem; Wiktor jest rodzimym użytkownikiem polskiego. Głosy są kandydatami, dopóki nie zostanie wybrany ostateczny głos Doddy’ego."
+            "value": "Działa od następnej rozmowy głosowej. „Zaczyna w” ustawia język, w którym Doddy Cię wita; przy ustawieniu Automatycznie zaczyna po angielsku. Tak czy inaczej podąża za europejskim językiem, którym mówisz, i zmienia go razem z Tobą."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vale a partir da sua próxima conversa por voz. “Começa em” define o idioma em que o Doddy cumprimenta você; em Automático, ele começa em inglês. De qualquer forma, ele acompanha o idioma europeu que você falar e troca quando você troca. A amostra é o oi do Doddy em inglês e polonês na sua velocidade; a expressividade só se ouve em uma conversa. Todas as vozes falam todos os idiomas que o Doddy fala, cada uma com seu próprio sotaque; Wiktor é falante nativo de polonês. As vozes são candidatas enquanto a voz final do Doddy é escolhida."
+            "value": "Vale a partir da sua próxima conversa por voz. “Começa em” define o idioma em que o Doddy cumprimenta você; em Automático, ele começa em inglês. De qualquer forma, ele acompanha o idioma europeu que você falar e troca quando você troca."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。试听内容是 Doddy 按你设定的语速用英语和波兰语打招呼；表现力只有在对话中才能听到。所有语音都能说 Doddy 会的每一种语言，各有自己的口音；Wiktor 的母语是波兰语。在 Doddy 的最终语音确定之前，这些语音都是候选。"
+            "value": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。"
           }
         }
       }
@@ -8964,6 +8975,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapytaj lekarza lub położną"
+          }
+        }
+      }
+    },
+    "Asking Claude…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytam Claude'a…"
           }
         }
       }
@@ -9999,6 +10021,17 @@
         }
       }
     },
+    "Book on Kiwi.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarezerwuj na Kiwi.com"
+          }
+        }
+      }
+    },
     "Booking your call…": {
       "extractionState": "manual",
       "localizations": {
@@ -10006,6 +10039,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Umawiam Twój telefon…"
+          }
+        }
+      }
+    },
+    "Bookings": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezerwacje"
           }
         }
       }
@@ -10139,65 +10183,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "简短"
-          }
-        }
-      }
-    },
-    "Bright and warm": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hell und warm"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luminoso y cálido"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clair et chaleureux"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vedar i topao"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vivace e calda"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "明るくあたたかい"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jasny i ciepły"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alegre e caloroso"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "明亮而温暖"
           }
         }
       }
@@ -11412,6 +11397,17 @@
         }
       }
     },
+    "Cancelled or failed, as the seller's email says. Open the email to check.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anulowane albo nieudane, tak jak pisze sprzedawca w mailu. Otwórz maila, żeby sprawdzić."
+          }
+        }
+      }
+    },
     "Cancelled. Doddy won't call.": {
       "extractionState": "manual",
       "localizations": {
@@ -12186,6 +12182,17 @@
         }
       }
     },
+    "Changed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmieniona"
+          }
+        }
+      }
+    },
     "Changed “%@”: now %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -12322,6 +12329,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najtaniej w tym tygodniu"
+          }
+        }
+      }
+    },
+    "Check Gmail again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź Gmaila jeszcze raz"
           }
         }
       }
@@ -12488,6 +12506,17 @@
         }
       }
     },
+    "Check the price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź cenę"
+          }
+        }
+      }
+    },
     "Check the words, then Save.": {
       "extractionState": "manual",
       "localizations": {
@@ -12547,6 +12576,17 @@
         }
       }
     },
+    "Check this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź to"
+          }
+        }
+      }
+    },
     "Check this feed": {
       "extractionState": "manual",
       "localizations": {
@@ -12565,6 +12605,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź tę wypowiedź."
+          }
+        }
+      }
+    },
+    "Check this page": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź tę stronę"
           }
         }
       }
@@ -12624,6 +12675,58 @@
         }
       }
     },
+    "Checked %@. Saved on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Checked %@. Saved on this iPad only."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Checked %@. Saved on this iPhone only."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sprawdzone %@. Zapisane tylko na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sprawdzone %@. Zapisane tylko na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Checking the news…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam wiadomości…"
+          }
+        }
+      }
+    },
     "Checking the price…": {
       "extractionState": "manual",
       "localizations": {
@@ -12631,6 +12734,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdzam cenę…"
+          }
+        }
+      }
+    },
+    "Checking the weather…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam pogodę…"
           }
         }
       }
@@ -12690,6 +12804,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在查看明天…"
+          }
+        }
+      }
+    },
+    "Checking your calendar…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam Twój kalendarz…"
+          }
+        }
+      }
+    },
+    "Checking your email…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam Twoją pocztę…"
           }
         }
       }
@@ -14706,6 +14842,17 @@
         }
       }
     },
+    "Connections are paused, so nothing was sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc nic nie wysłano."
+          }
+        }
+      }
+    },
     "Connections are paused, so parcels aren't checked.": {
       "extractionState": "manual",
       "localizations": {
@@ -16076,65 +16223,6 @@
         }
       }
     },
-    "Couldn't play the sample.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Hörprobe konnte nicht abgespielt werden."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se ha podido reproducir la muestra."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossible de lire l’extrait."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uzorak nije bilo moguće reproducirati."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Non è stato possibile riprodurre l'anteprima."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルを再生できませんでした。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie udało się odtworzyć próbki."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível tocar a amostra."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法播放试听样音。"
-          }
-        }
-      }
-    },
     "Couldn't reach Doddy's server. Try again in a moment.": {
       "extractionState": "manual",
       "localizations": {
@@ -16201,6 +16289,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法连接到 Doddy 消息服务器。请检查网络连接后重试。"
+          }
+        }
+      }
+    },
+    "Couldn't read %lld of them; they are left out, not guessed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieodczytane: %lld. Są pominięte, nie zgadywane."
           }
         }
       }
@@ -19329,6 +19428,17 @@
         }
       }
     },
+    "Didn't go through": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie doszła do skutku"
+          }
+        }
+      }
+    },
     "Directions in Maps?": {
       "extractionState": "manual",
       "localizations": {
@@ -22100,6 +22210,47 @@
         }
       }
     },
+    "Doddy found bookings but couldn't save them on this iPhone. Nothing was saved; try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy found bookings but couldn't save them on this iPad. Nothing was saved; try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy found bookings but couldn't save them on this iPhone. Nothing was saved; try again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy znalazł rezerwacje, ale nie udało się ich zapisać na tym iPadzie. Nic nie zostało zapisane; spróbuj jeszcze raz."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy znalazł rezerwacje, ale nie udało się ich zapisać na tym iPhonie. Nic nie zostało zapisane; spróbuj jeszcze raz."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy has called this number enough for now. Nothing was dialled. Try again later.": {
       "extractionState": "manual",
       "localizations": {
@@ -22602,6 +22753,17 @@
         }
       }
     },
+    "Doddy is on it. The result will wait in Tasks and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy się tym zajmuje. Wynik będzie czekał w Sprawach i w Wiadomościach."
+          }
+        }
+      }
+    },
     "Doddy is on the call. You get the answer when it ends.": {
       "extractionState": "manual",
       "localizations": {
@@ -23088,6 +23250,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 最后听到你说"
+          }
+        }
+      }
+    },
+    "Doddy looks for flight, stay, holiday and train bookings, then lists what each trip needs: online check-in, documents, free cancellation and what's paid there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka rezerwacji lotów, noclegów, wycieczek i pociągów, a potem wypisuje, czego wymaga każdy wyjazd: odprawy online, dokumentów, darmowego anulowania i tego, co płaci się na miejscu."
           }
         }
       }
@@ -24140,6 +24313,17 @@
         }
       }
     },
+    "Doddy researches this in the background and the result waits in Tasks and in Messages. Nothing is booked. The words go to Doddy's server and to Anthropic.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy robi to w tle, a wynik czeka w Sprawach i w Wiadomościach. Nic nie jest rezerwowane. Słowa trafiają na serwer Doddy'ego i do Anthropic."
+          }
+        }
+      }
+    },
     "Doddy rings your phone. Answer and press 1 to join the call.": {
       "extractionState": "manual",
       "localizations": {
@@ -24294,6 +24478,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy mówi:"
+          }
+        }
+      }
+    },
+    "Doddy searches Gmail for booking emails from the last 400 days (airlines, Booking.com, Airbnb, travel agents, trains) and reads up to 25 of them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka w Gmailu maili z rezerwacjami z ostatnich 400 dni (linie lotnicze, Booking.com, Airbnb, biura podróży, pociągi) i czyta do 25 z nich."
           }
         }
       }
@@ -29917,6 +30112,17 @@
         }
       }
     },
+    "Find my trips in Gmail": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź moje wyjazdy w Gmailu"
+          }
+        }
+      }
+    },
     "Find shops near me": {
       "extractionState": "manual",
       "localizations": {
@@ -30595,6 +30801,17 @@
         }
       }
     },
+    "Flights on Kiwi.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loty na Kiwi.com"
+          }
+        }
+      }
+    },
     "Focus": {
       "extractionState": "manual",
       "localizations": {
@@ -31015,6 +31232,17 @@
         }
       }
     },
+    "For example: “Lisbon around 12 February, 4 nights, the two of us, no more than 2000 zł”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: „Lizbona koło 12 lutego, 4 noce, we dwoje, nie więcej niż 2000 zł”."
+          }
+        }
+      }
+    },
     "For reminders at a place, when you tap “Use where I am”. Never in the background.": {
       "extractionState": "manual",
       "localizations": {
@@ -31177,6 +31405,17 @@
         }
       }
     },
+    "Forget my trips": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapomnij moje wyjazdy"
+          }
+        }
+      }
+    },
     "Forget remembered conversations": {
       "extractionState": "manual",
       "localizations": {
@@ -31232,6 +31471,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "忘记已记住的对话"
+          }
+        }
+      }
+    },
+    "Forget the trips saved on this iPhone?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forget the trips saved on this iPad?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forget the trips saved on this iPhone?"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapomnieć wyjazdy zapisane na tym iPadzie?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapomnieć wyjazdy zapisane na tym iPhonie?"
+                }
+              }
+            }
           }
         }
       }
@@ -31708,6 +31988,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Z notatki"
+          }
+        }
+      }
+    },
+    "From an email by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z maila od %@"
           }
         }
       }
@@ -32477,6 +32768,28 @@
         }
       }
     },
+    "Have Doddy look at stays": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niech Doddy sprawdzi noclegi"
+          }
+        }
+      }
+    },
+    "Have Doddy look at stays?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niech Doddy sprawdzi noclegi?"
+          }
+        }
+      }
+    },
     "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.": {
       "extractionState": "manual",
       "localizations": {
@@ -32993,6 +33306,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przytrzymaj przycisk, żeby mówić"
+          }
+        }
+      }
+    },
+    "Holidays on wakacje.pl": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycieczki na wakacje.pl"
           }
         }
       }
@@ -33674,6 +33998,17 @@
         }
       }
     },
+    "I'll tell you when the price I read is at or below this. Not sure what to type? Type a price you'd be happy to pay: the next step shows what the page costs now, and you can still say no.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiem Ci, gdy odczytana cena będzie równa tej albo niższa. Nie wiesz, co wpisać? Wpisz cenę, którą chętnie zapłacisz: następny krok pokaże, ile strona kosztuje teraz, i nadal możesz odmówić."
+          }
+        }
+      }
+    },
     "I'll tell you when the price I read is at or below this. Suggested: 5 percent below the price, rounded down to whole złoty. Type another if you like.": {
       "extractionState": "manual",
       "localizations": {
@@ -33681,6 +34016,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dam Ci znać, gdy odczytana cena będzie równa tej albo niższa. Podpowiedź: 5 procent poniżej ceny, w dół do pełnych złotych. Możesz wpisać inną."
+          }
+        }
+      }
+    },
+    "I'm assuming": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakładam"
           }
         }
       }
@@ -38582,6 +38928,17 @@
         }
       }
     },
+    "Kiwi.com found no flights for these days. Try other days or a nearby airport.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi.com nie znalazł lotów na te dni. Spróbuj innych dni albo pobliskiego lotniska."
+          }
+        }
+      }
+    },
     "Knee push-up": {
       "extractionState": "manual",
       "localizations": {
@@ -38729,65 +39086,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "标签"
-          }
-        }
-      }
-    },
-    "Laid-back and easy-going": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entspannt und locker"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Relajado y tranquilo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Détendu et facile à vivre"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opušten i ležeran"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rilassata e alla mano"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "のんびりおおらか"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wyluzowany i swobodny"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tranquilo e descontraído"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "悠闲随和"
           }
         }
       }
@@ -40087,6 +40385,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Linki otwierają się poza Doddym; nic z aplikacji nie jest udostępniane."
+          }
+        }
+      }
+    },
+    "Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, and nothing is kept on Doddy's server. Your trips are saved on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, and nothing is kept on Doddy's server. Your trips are saved on this iPad only."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, and nothing is kept on Doddy's server. Your trips are saved on this iPhone only."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Najpierw usuwane są linki, PIN-y i numery kart. Reszta każdego maila trafia do Anthropic do odczytania, a na serwerze Doddy'ego nic nie zostaje. Twoje wyjazdy zapisują się tylko na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Najpierw usuwane są linki, PIN-y i numery kart. Reszta każdego maila trafia do Anthropic do odczytania, a na serwerze Doddy'ego nic nie zostaje. Twoje wyjazdy zapisują się tylko na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -41761,6 +42100,17 @@
         }
       }
     },
+    "Looking at your screen…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patrzę na Twój ekran…"
+          }
+        }
+      }
+    },
     "Looking for": {
       "extractionState": "manual",
       "localizations": {
@@ -41820,6 +42170,28 @@
         }
       }
     },
+    "Looking for flights on Kiwi.com…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam lotów na Kiwi.com…"
+          }
+        }
+      }
+    },
+    "Looking for places…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam miejsc…"
+          }
+        }
+      }
+    },
     "Looking in Apple Maps…": {
       "extractionState": "manual",
       "localizations": {
@@ -41827,6 +42199,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szukam w Mapach Apple…"
+          }
+        }
+      }
+    },
+    "Looking it up…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam…"
+          }
+        }
+      }
+    },
+    "Looking through your notes…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądam Twoje notatki…"
           }
         }
       }
@@ -42805,6 +43199,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Robię to…"
+          }
+        }
+      }
+    },
+    "Making the document…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotowuję dokument…"
           }
         }
       }
@@ -48568,6 +48973,17 @@
         }
       }
     },
+    "Not going ahead": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie dojdą do skutku"
+          }
+        }
+      }
+    },
     "Not imported: %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -50241,6 +50657,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic nie wyjdzie, dopóki nie stukniesz Tak"
+          }
+        }
+      }
+    },
+    "Nothing is sent until you tap “Check the page” on the next card. Some shops don't let Doddy's server read their pages; then Doddy tells you it couldn't read a price.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie jest wysyłane, dopóki nie dotkniesz „Sprawdź stronę” na następnej karcie. Niektóre sklepy nie pozwalają serwerowi Doddy'ego czytać swoich stron; wtedy Doddy powie, że nie mógł odczytać ceny."
           }
         }
       }
@@ -55810,6 +56237,17 @@
         }
       }
     },
+    "Open Doddy: the Shopping screen has this link ready. Nothing is read or sent until you tap the buttons there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy'ego: ekran Zakupy ma ten link gotowy. Nic nie jest czytane ani wysyłane, dopóki nie dotkniesz tam przycisków."
+          }
+        }
+      }
+    },
     "Open Food Facts couldn't be reached, so nothing was added. You can type the item instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -57662,6 +58100,17 @@
         }
       }
     },
+    "Over your budget": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponad Twój budżet"
+          }
+        }
+      }
+    },
     "Overdue": {
       "extractionState": "manual",
       "localizations": {
@@ -57853,6 +58302,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adres strony"
+          }
+        }
+      }
+    },
+    "Page at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strona w %@"
           }
         }
       }
@@ -58276,6 +58736,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wklej klucz ze schowka"
+          }
+        }
+      }
+    },
+    "Paste the link to a product you're looking at in a shop. Doddy's server reads the page and shows its price; then you can ask Doddy to watch it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej link do produktu, który oglądasz w sklepie. Serwer Doddy'ego przeczyta stronę i pokaże jej cenę; potem możesz poprosić Doddy'ego, żeby jej pilnował."
           }
         }
       }
@@ -60093,6 +60564,17 @@
         }
       }
     },
+    "Plan a trip": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplanuj wyjazd"
+          }
+        }
+      }
+    },
     "Plan at least %lld days a week for this goal.": {
       "extractionState": "manual",
       "localizations": {
@@ -60343,65 +60825,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tylko polskie numery komórkowe, stacjonarne i 800. Nigdy alarmowe, o podwyższonej opłacie ani zagraniczne. Karta pokazuje, skąd jest numer."
-          }
-        }
-      }
-    },
-    "Polish native": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muttersprache Polnisch"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nativo polaco"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Polonais natif"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Izvorni poljski"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Madrelingua polacco"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ポーランド語ネイティブ"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rodzimy polski"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Polonês nativo"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "波兰语母语"
           }
         }
       }
@@ -60904,6 +61327,17 @@
         }
       }
     },
+    "Prices and times are Kiwi.com's, read %@. They can change before you book; the price shown is for the whole party with the bags counted above.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny i godziny są z Kiwi.com, odczytane o %@. Mogą się zmienić przed rezerwacją; cena dotyczy całej grupy, z bagażem podanym wyżej."
+          }
+        }
+      }
+    },
     "Prices can change after the time they were checked. Buying happens on the shop's page: you pay the shop with Apple Pay, BLIK or a card, and Doddy doesn't see the payment.": {
       "extractionState": "manual",
       "localizations": {
@@ -60911,6 +61345,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ceny mogą się zmienić po godzinie sprawdzenia. Kupujesz na stronie sklepu: płacisz sklepowi Apple Pay, BLIK-iem albo kartą, a Doddy nie widzi płatności."
+          }
+        }
+      }
+    },
+    "Prices from Kiwi.com just now; they can change. You book and pay on Kiwi.com.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny z Kiwi.com sprzed chwili; mogą się zmienić. Rezerwujesz i płacisz na Kiwi.com."
           }
         }
       }
@@ -61325,6 +61770,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Product link": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link do produktu"
           }
         }
       }
@@ -61745,6 +62201,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odczytane %@. Ceny z gazetek; w sklepie mogą być inne."
+          }
+        }
+      }
+    },
+    "Read %lld emails, found %lld bookings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytane maile: %lld, znalezione rezerwacje: %lld."
           }
         }
       }
@@ -62376,6 +62843,17 @@
         }
       }
     },
+    "Reading your booking emails…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytam Twoje maile z rezerwacjami…"
+          }
+        }
+      }
+    },
     "Ready": {
       "extractionState": "manual",
       "localizations": {
@@ -62453,6 +62931,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已在 Doddy 中就绪"
+          }
+        }
+      }
+    },
+    "Ready to check in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe do sprawdzenia w Doddym"
           }
         }
       }
@@ -63201,65 +63690,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cena regularna %@"
-          }
-        }
-      }
-    },
-    "Relaxed and neutral": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entspannt und neutral"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Relajado y neutro"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Détendu et neutre"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opušten i neutralan"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rilassata e neutra"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "リラックスしてニュートラル"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spokojny i neutralny"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Relaxado e neutro"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "放松而中性"
           }
         }
       }
@@ -67536,76 +67966,6 @@
         }
       }
     },
-    "Samples don't play while Doddy is recording.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Próbki nie odtwarzają się, gdy Doddy nagrywa."
-          }
-        }
-      }
-    },
-    "Samples don't play while you're talking to Doddy.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hörproben spielen nicht, während du mit Doddy redest."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las muestras no se reproducen mientras hablas con Doddy."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les extraits ne se jouent pas pendant que tu parles à Doddy."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uzorci se ne reproduciraju dok razgovaraš s Doddyjem."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le anteprime non vengono riprodotte mentre parli con Doddy."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyと話している間は、サンプルを再生できません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Próbki nie grają, gdy rozmawiasz z Doddym."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As amostras não tocam enquanto você está falando com o Doddy."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "和 Doddy 聊天时不会播放试听样音。"
-          }
-        }
-      }
-    },
     "Saturday and Sunday": {
       "extractionState": "manual",
       "localizations": {
@@ -70137,6 +70497,28 @@
         }
       }
     },
+    "Say where you want to go…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisz, dokąd chcesz polecieć…"
+          }
+        }
+      }
+    },
+    "Say where, when and with whom; Doddy asks what's missing and shows up to three flights with the real total. You book on Kiwi.com yourself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz, dokąd, kiedy i z kim; Doddy dopyta o to, czego brakuje, i pokaże do trzech lotów z prawdziwą ceną całości. Rezerwujesz sam na Kiwi.com."
+          }
+        }
+      }
+    },
     "Say who Doddy is calling.": {
       "extractionState": "manual",
       "localizations": {
@@ -70711,6 +71093,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索已保存的笔记，并朗读匹配的笔记。仅在设备解锁时有效。"
+          }
+        }
+      }
+    },
+    "Searching the web…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam w internecie…"
           }
         }
       }
@@ -76617,6 +77010,17 @@
         }
       }
     },
+    "Start over": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij od nowa"
+          }
+        }
+      }
+    },
     "Start shopping mode": {
       "extractionState": "manual",
       "localizations": {
@@ -77291,6 +77695,17 @@
         }
       }
     },
+    "Stays on Booking.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noclegi na Booking.com"
+          }
+        }
+      }
+    },
     "Stays on this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -77568,6 +77983,17 @@
         }
       }
     },
+    "Still on it, this one takes a moment…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze chwilka, to trwa dłużej…"
+          }
+        }
+      }
+    },
     "Still open from today or earlier. Tick the ones to move; each keeps its time.": {
       "extractionState": "manual",
       "localizations": {
@@ -77682,6 +78108,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "还是这样吗？"
+          }
+        }
+      }
+    },
+    "Still working on it…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wciąż nad tym pracuję…"
           }
         }
       }
@@ -78032,17 +78469,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "停止重复"
-          }
-        }
-      }
-    },
-    "Stop sample": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zatrzymaj próbkę"
           }
         }
       }
@@ -79449,65 +79875,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "轻点 Doddy 开始聊天"
-          }
-        }
-      }
-    },
-    "Tap a face to hear Doddy's hello in that voice, in English and Polish. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Your choice applies from the next conversation.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippe auf ein Gesicht, um das Hallo von Doddy in dieser Stimme zu hören, auf Englisch und Polnisch. Alle Stimmen sprechen jede Sprache, die Doddy spricht, jede mit eigenem Akzent; Wiktor ist polnischer Muttersprachler. Deine Wahl gilt ab dem nächsten Gespräch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toca una cara para oír el saludo de Doddy con esa voz, en inglés y polaco. Todas las voces hablan todos los idiomas que habla Doddy, cada una con su acento; Wiktor es hablante nativo de polaco. Tu elección se aplica desde la próxima conversación."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touche un visage pour entendre le bonjour de Doddy avec cette voix, en anglais et en polonais. Toutes les voix parlent toutes les langues de Doddy, chacune avec son accent ; Wiktor est un locuteur natif du polonais. Ton choix s’applique à partir de la prochaine conversation."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dodirni lice da čuješ Doddyjev pozdrav tim glasom, na engleskom i poljskom. Svi glasovi govore sve jezike koje govori Doddy, svaki sa svojim naglaskom; Wiktor je izvorni govornik poljskog. Tvoj odabir vrijedi od sljedećeg razgovora."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tocca un volto per sentire il saluto di Doddy con quella voce, in inglese e in polacco. Tutte le voci parlano ogni lingua di Doddy, ciascuna con il proprio accento; Wiktor è madrelingua polacco. La tua scelta vale dalla prossima conversazione."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顔をタップすると、その声でのDoddyのあいさつを英語とポーランド語で聞けます。すべての声がDoddyの話せる全言語を話し、それぞれに独自のなまりがあります。Wiktorはポーランド語のネイティブです。選択は次の会話から適用されます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stuknij twarz, aby usłyszeć powitanie Doddy’ego tym głosem, po angielsku i po polsku. Każdy głos mówi we wszystkich językach Doddy’ego, każdy z własnym akcentem; Wiktor jest rodzimym użytkownikiem polskiego. Wybór działa od następnej rozmowy."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toque em um rosto para ouvir o oi do Doddy naquela voz, em inglês e polonês. Todas as vozes falam todos os idiomas que o Doddy fala, cada uma com seu próprio sotaque; Wiktor é falante nativo de polonês. Sua escolha vale a partir da próxima conversa."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轻点一张脸，听 Doddy 用那个声音打招呼，有英语和波兰语。所有语音都能说 Doddy 会的每一种语言，各有自己的口音；Wiktor 的母语是波兰语。你的选择从下一次对话开始生效。"
           }
         }
       }
@@ -81296,6 +81663,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这不是 Doddy 的记忆导出文件（设置 › 导出为 JSON）。没有添加任何内容。"
+          }
+        }
+      }
+    },
+    "That isn't a web address Doddy can read. It must start with https://.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nie jest adres strony, który Doddy może odczytać. Musi zaczynać się od https://."
           }
         }
       }
@@ -86604,6 +86982,17 @@
         }
       }
     },
+    "The task couldn't be handed over. Nothing was started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się przekazać sprawy. Nic nie zostało uruchomione."
+          }
+        }
+      }
+    },
     "The tasks kept on this iPhone couldn't be read.": {
       "extractionState": "manual",
       "localizations": {
@@ -86855,6 +87244,88 @@
         }
       }
     },
+    "The trips couldn't be deleted from this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The trips couldn't be deleted from this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The trips couldn't be deleted from this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć wyjazdów z tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć wyjazdów z tego iPhone'a."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The trips saved on this iPhone couldn't be read. Search again to replace them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The trips saved on this iPad couldn't be read. Search again to replace them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The trips saved on this iPhone couldn't be read. Search again to replace them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać wyjazdów zapisanych na tym iPadzie. Wyszukaj jeszcze raz, żeby je zastąpić."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać wyjazdów zapisanych na tym iPhonie. Wyszukaj jeszcze raz, żeby je zastąpić."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "The two passphrases don't match.": {
       "extractionState": "manual",
       "localizations": {
@@ -86910,65 +87381,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "两次输入的密码不一致。"
-          }
-        }
-      }
-    },
-    "The voice Doddy was given": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Stimme, die Doddy bekommen hat"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La voz que le dieron a Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La voix qu’on a donnée à Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Glas koji je Doddy dobio"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La voce data a Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyに与えられた声"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Głos, który dostał Doddy"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A voz que deram ao Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 被赋予的声音"
           }
         }
       }
@@ -87967,6 +88379,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Thinking…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Myślę…"
           }
         }
       }
@@ -91155,65 +91578,6 @@
         }
       }
     },
-    "This sample is missing from the app.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Hörprobe fehlt in der App."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esta muestra falta en la app."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cet extrait manque dans l’app."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ovaj uzorak nedostaje u aplikaciji."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questa anteprima manca nell'app."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このサンプルがアプリに含まれていません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brakuje tej próbki w aplikacji."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esta amostra está faltando no app."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "应用中缺少这段试听样音。"
-          }
-        }
-      }
-    },
     "This takes up to half a minute.": {
       "extractionState": "manual",
       "localizations": {
@@ -93577,6 +93941,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "翻译已结束"
+          }
+        }
+      }
+    },
+    "Trips": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyjazdy"
           }
         }
       }
@@ -96467,65 +96842,6 @@
         }
       }
     },
-    "Use Doddy's own voice": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die eigene Stimme von Doddy verwenden"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usar la voz propia de Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utiliser la propre voix de Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koristi Doddyjev vlastiti glas"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usa la voce propria di Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy自身の声を使う"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Użyj własnego głosu Doddy’ego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usar a voz do próprio Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 Doddy 自己的声音"
-          }
-        }
-      }
-    },
     "Use a different number": {
       "extractionState": "manual",
       "localizations": {
@@ -97978,124 +98294,6 @@
         }
       }
     },
-    "Warm and engaging": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Warm und zugewandt"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cálido y cercano"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chaleureux et engageant"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Topao i srdačan"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calda e coinvolgente"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "あたたかく親しみやすい"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ciepły i angażujący"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Caloroso e envolvente"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "温暖而有亲和力"
-          }
-        }
-      }
-    },
-    "Warm, smooth and steady": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Warm, weich und gleichmäßig"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cálido, suave y firme"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chaleureux, doux et stable"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Topao, mekan i ujednačen"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calda, morbida e costante"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "あたたかく、なめらかで安定した"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ciepły, gładki i stabilny"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Caloroso, suave e firme"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "温暖、流畅而平稳"
-          }
-        }
-      }
-    },
     "Warranty": {
       "extractionState": "manual",
       "localizations": {
@@ -99023,6 +99221,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To, co się dzieje po użyciu któregoś z nich (rozmowa albo samo otwarcie Doddy’ego), ustawisz w Ustawienia › Stuknięcie w tył i Siri."
+          }
+        }
+      }
+    },
+    "What is it? (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co to jest? (opcjonalnie)"
           }
         }
       }
@@ -101014,6 +101223,17 @@
         }
       }
     },
+    "Where this rule comes from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skąd ta zasada"
+          }
+        }
+      }
+    },
     "Where you are now": {
       "extractionState": "manual",
       "localizations": {
@@ -101080,6 +101300,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "根据你当前的设置，你的信息会去向哪里。不会出售任何内容，也没有广告或分析。"
+          }
+        }
+      }
+    },
+    "Where, when, with whom and what you'd pay: write it, or dictate it with the microphone on your keyboard.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokąd, kiedy, z kim i za ile: napisz albo podyktuj mikrofonem na klawiaturze."
           }
         }
       }
@@ -104578,6 +104809,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój adres e-mail"
+          }
+        }
+      }
+    },
+    "Your emails stay as they are in Gmail.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje maile zostają w Gmailu bez zmian."
           }
         }
       }

@@ -24,13 +24,22 @@ struct ShoppingHubView: View {
     @State private var note: HandOverNote?
     @State private var opened: UUID?
     @State private var showDeals = false
+    /// "Check this": the link being pasted, the person's own name for the product, and the page whose card is open.
+    @State private var link = ""
+    @State private var linkName = ""
+    @State private var watchPage: SharedShopPage?
     @FocusState private var typing: Bool
 
+    /// Set when a link arrives from the Share Sheet, so the screen scrolls to the "Check this" card.
+    @State private var scrollToCheckThis = false
+
+    private var router: ShortcutRouter { .shared }
     private var scope: ReleaseScope { ReleaseScopeStore.current }
     private var shoppingTasks: [StoredErrand] { model.errands.filter { $0.draft.kind == .shopping } }
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     hero
@@ -44,6 +53,7 @@ struct ShoppingHubView: View {
                         if !shoppingTasks.isEmpty { searches }
                     }
                     if scope.shows(.priceWatch) {
+                        checkThisCard.id(Self.checkThisCardID)
                         WatchesSection()
                         if watches.watches.isEmpty && watches.loadProblem == nil && watches.message == nil { watchHint }
                     }
@@ -67,14 +77,31 @@ struct ShoppingHubView: View {
                 TypedHandOverSheet(draft: ask.draft) { outcome in finished(outcome) }
             }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(item: $watchPage) { WatchCard(page: $0) }
             .refreshable { await reload() }
             .task {
                 await model.load()
                 await reload()
             }
+            // A product link shared from Safari or a shop app with "Check the price": it fills the "Check this" card and
+            // the screen scrolls there. The card still asks for a tap before anything is read or sent.
+            .onChange(of: router.priceCheckLink, initial: true) { _, shared in
+                guard shared != nil, let taken = router.takePriceCheckLink() else { return }
+                link = taken
+                linkName = ""
+                scrollToCheckThis = true
+            }
+            .onChange(of: scrollToCheckThis) { _, go in
+                guard go else { return }
+                scrollToCheckThis = false
+                withAnimation { proxy.scrollTo(Self.checkThisCardID, anchor: .top) }
+            }
+            }
         }
         .accessibilityIdentifier("shopping.hub")
     }
+
+    private static let checkThisCardID = "shopping.checkThisCard"
 
     private func reload() async {
         await model.refresh()
@@ -272,6 +299,61 @@ struct ShoppingHubView: View {
             .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
             .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
         }
+    }
+
+    // MARK: Check this
+
+    /// The page in the pasted text, with the person's own name for it. Nothing has been sent: reading the text is
+    /// done here, and Doddy's server gets the page only when the card's own button says "Check the page".
+    private var pastedPage: SharedShopPage? {
+        SharedShopPage.parse(link)?.titled(linkName)
+    }
+
+    private var checkThisCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Check this").font(.headline).accessibilityAddTraits(.isHeader)
+            Text("Paste the link to a product you're looking at in a shop. Doddy's server reads the page and shows its price; then you can ask Doddy to watch it.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            TextField("Product link", text: $link, prompt: Text(verbatim: "https://…"), axis: .vertical)
+                .lineLimit(1...3)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.canvas))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
+                .accessibilityIdentifier("shopping.link")
+            if let page = pastedPage {
+                Label(String(format: NSLocalizedString("Page at %@", comment: "the shop a pasted link points to"), page.shop),
+                      systemImage: "link")
+                    .font(.subheadline)
+                TextField("What is it? (optional)", text: $linkName)
+                    .font(.subheadline)
+                    .padding(.horizontal, 12).padding(.vertical, 9)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
+                    .accessibilityIdentifier("shopping.linkName")
+            } else if !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Label("That isn't a web address Doddy can read. It must start with https://.", systemImage: "exclamationmark.triangle")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.error)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Button {
+                watchPage = pastedPage
+            } label: {
+                Label("Check this page", systemImage: "magnifyingglass")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(pastedPage == nil || !model.isServerConfigured)
+            .accessibilityIdentifier("shopping.checkThis")
+            Text("Nothing is sent until you tap “Check the page” on the next card. Some shops don't let Doddy's server read their pages; then Doddy tells you it couldn't read a price.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .tasksCard()
     }
 
     // MARK: Watching a price

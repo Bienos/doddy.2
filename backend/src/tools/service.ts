@@ -21,8 +21,11 @@ import {
   TOOLKITS,
   type ToolkitId,
   toolHasGrant,
+  READ_EMAIL,
+  TRAVEL_GMAIL_FETCH,
 } from "./catalog.js";
 import {
+  FLIGHTS_SECTION_ID,
   PrepareRequestSchema,
   type PrepareResult,
   RunRequestSchema,
@@ -56,6 +59,19 @@ import { MockWikimedia } from "../decks/demo.js";
 import { DeckMaker } from "../decks/maker.js";
 import { type Wikimedia, WikimediaClient } from "../decks/research.js";
 import { MockToolsProvider, type ToolsMockScenario } from "./mock.js";
+import { z } from "zod";
+import { ClaudeTravelReader } from "../travel/claudeReader.js";
+import { mergeBookings, type ReadEmail } from "../travel/merge.js";
+import { MAX_TRAVEL_EMAILS, readTravelEmail, senderDomain, TRAVEL_GMAIL_QUERY, type TravelReader } from "../travel/reader.js";
+import type { TravelBooking } from "../travel/schema.js";
+import { FlightSearchError, type FlightSearch, MockFlightSearch } from "../travel/kiwi.js";
+import {
+  assumptions, BRIEF_JSON_SCHEMA, cleanBrief, EMPTY_BRIEF, missing, pickOptions, stayLinks, toQuery, TripBrief,
+  UNDERSTAND_STEP, UNDERSTAND_SYSTEM, type Assumption, type Needed, type PlanLinks, type PlanOption,
+} from "../travel/plan.js";
+import type { DuffelClient } from "../flights/duffel.js";
+import { type KiwiClient, KiwiTripSearch, KIWI_TIMEOUT_MS } from "../flights/kiwi.js";
+import { FlightsService, isFlightTool } from "../flights/service.js";
 import type { ToolsProvider } from "./provider.js";
 import {
   normalizeWebSearch,
@@ -86,7 +102,7 @@ const isWebTool = (name: string): name is WebTool => name === WEB_SEARCH_TOOL ||
 const WEB_TOOLS_ON_BY_DEFAULT: ReadonlySet<WebTool> = new Set<WebTool>([WEB_SEARCH_TOOL, ...MONID_TOOL_NAMES]);
 const webTitle = (tool: WebTool) => (tool === WEB_SEARCH_TOOL ? WEB_SEARCH_COPY.title : MONID_TOOLS[tool].title);
 
-type SectionId = ToolkitId | typeof WEB_SECTION_ID | typeof CLAUDE_SECTION_ID;
+type SectionId = ToolkitId | typeof WEB_SECTION_ID | typeof CLAUDE_SECTION_ID | typeof FLIGHTS_SECTION_ID;
 /** Claude runs have no account either; the approval is bound to this fixed account name. */
 const CLAUDE_ACCOUNT = "claude";
 
@@ -100,8 +116,16 @@ export interface ToolsServiceDeps {
   webSearch?: WebSearchProvider | null;
   /** Claude (ADR-564). Null or absent: ask_claude and make_document say "not set up". */
   claude?: ClaudeProvider | null;
+  /** The small model that reads booking emails for the trip screen. Absent: `claude`; null: "not set up". */
+  travelClaude?: ClaudeProvider | null;
+  /** Tests only: a reader instead of the model. */
+  travelReader?: TravelReader;
+  /** The trip planner's flights. Absent: Kiwi.com in live mode, the mock in mock mode. */
+  flightSearch?: FlightSearch;
   /** Signed links for documents (ADR-564). Null: make_document says "not set up". */
   documentLinks?: DocumentLinks | null;
+  /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Absent: every flight tool says "not set up". */
+  flights?: { kiwi: KiwiClient | null; duffel: DuffelClient | null; bookingEnabled: boolean; bookingWaitMs?: number } | null;
   /** Wikipedia and Commons for a deck's research (decision 2026-11-10-better-presentations). Absent: live in live mode, offline demo in mock mode. */
   wikimedia?: Wikimedia;
   limits: Limits;
@@ -139,6 +163,8 @@ export class CloudToolsService {
   private documentJobsTotal = 0;
   /** Wikipedia and Commons for decks: live in live mode, offline in mock mode. */
   private readonly wikimedia: Wikimedia;
+  /** Kiwi.com search and Duffel booking, on the same ASK-01 gate (flights/service.ts). */
+  private readonly flights: FlightsService;
 
   constructor(private readonly deps: ToolsServiceDeps) {
     this.mode = deps.provider.mode;
@@ -156,6 +182,18 @@ export class CloudToolsService {
     this.now = deps.now ?? Date.now;
     this.ask = new AskGate(deps.store, this.now);
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+    this.flights = new FlightsService({
+      store: deps.store, ask: this.ask, limiter: this.limiter, mode: this.mode, now: this.now,
+      kiwi: deps.flights?.kiwi ?? null, duffel: deps.flights?.duffel ?? null, bookingEnabled: deps.flights?.bookingEnabled ?? false,
+      background: this.background, ...(deps.log ? { log: deps.log } : {}),
+      ...(deps.flights?.bookingWaitMs !== undefined ? { bookingWaitMs: deps.flights.bookingWaitMs } : {}),
+    });
+  }
+
+  /** A flight tool's receipts go under the "flights" section. */
+  private flightReceipt(userId: string) {
+    return (operation: "read" | "write", tool: string, status: ReceiptStatus, summary: string, errorCode: string | null, providerReference: string | null) =>
+      this.receipt(userId, FLIGHTS_SECTION_ID, operation, tool, status, summary, errorCode, providerReference);
   }
 
   /** Demo scenarios exist only with the mock provider. */
@@ -592,6 +630,7 @@ export class CloudToolsService {
       return { ...(await this.prepare(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
     if (isWebTool(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
+    if (isFlightTool(request.tool)) return this.flights.prepare(userId, request.tool, request.arguments, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.prepareClaude(userId, request.tool, request.arguments);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
@@ -637,6 +676,163 @@ export class CloudToolsService {
       return { ...result, earlier: { status: "found", at }, preview: withLine(`An earlier try went through: it is already in ${title}.`) };
     }
     return { ...result, earlier: { status: "outcome_unknown", at }, preview: withLine(`An earlier try in the last day may have gone through. Check ${title} before doing it again.`) };
+  }
+
+  // ---------------------------------------------------------------- travel: trips from booking emails
+
+  /**
+   * The trip screen's "find my trips" (decision 2026-11-11-travel-agent-plan; TRAVEL_EMAILS.md). Owner:
+   * Gmail is read only on request ("Tylko na żądanie"). Same gates as read_email, whose switch it uses:
+   * Gmail connected, grants fine, the switch on; then its own ask-first card, bound to this search.
+   */
+  async prepareTravelScan(userId: string, body: unknown): Promise<PrepareResult> {
+    parse(TravelScanPrepare, body);
+    const tool = this.requireTool(READ_EMAIL.name);
+    await this.limiter.reserveRequest(userId, this.now());
+    const row = await this.checkUsable(userId, tool, "read");
+    this.travelReaderOrRefuse();
+    const { approvalId, expiresAt } = await this.ask.issue({ userId, tool: TRAVEL_SCAN, accountId: row.connection_id, argsDigest: TRAVEL_SCAN_DIGEST });
+    return {
+      mode: this.mode,
+      tool: TRAVEL_SCAN,
+      preview: {
+        title: "Find your trips in Gmail?",
+        lines: [
+          `Doddy searches Gmail for booking emails from the last 400 days (airlines, Booking.com, Airbnb, travel agents, trains) and reads up to ${MAX_TRAVEL_EMAILS}.`,
+          "Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, then nothing is kept on Doddy's server.",
+        ],
+        confirmLabel: "Search Gmail",
+      },
+      approvalId,
+      expiresAt: new Date(expiresAt).toISOString(),
+    };
+  }
+
+  async runTravelScan(userId: string, body: unknown): Promise<TravelScanResult> {
+    const request = parse(TravelScanRun, body);
+    const tool = this.requireTool(READ_EMAIL.name);
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    const row = await this.checkUsable(userId, tool, "read");
+    const reader = this.travelReaderOrRefuse();
+    const binding: AskBinding = { userId, tool: TRAVEL_SCAN, accountId: row.connection_id, argsDigest: TRAVEL_SCAN_DIGEST };
+    const unasked = async () =>
+      askFirstRefusal(await this.receipt(userId, tool.toolkit, "read", TRAVEL_SCAN, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
+    if (!(await this.ask.allows(binding, request.approvalId, "check"))) throw await unasked();
+    await this.reserveRuns(userId, tool, now, 1);
+    const composioUserId = await this.store.composioUserId(userId, now);
+    try {
+      return await this.limiter.withSlot(userId, async () => {
+        if (!(await this.ask.allows(binding, request.approvalId, "use"))) throw await unasked();
+        const result = await this.withRetry(TRAVEL_GMAIL_FETCH.maxRetries, (signal) =>
+          this.provider.execute({
+            toolkit: TRAVEL_GMAIL_FETCH.toolkit, slug: TRAVEL_GMAIL_FETCH.slug, composioUserId, connectionId: row.connection_id,
+            arguments: TRAVEL_GMAIL_FETCH.toArguments(TRAVEL_GMAIL_QUERY, MAX_TRAVEL_EMAILS), signal,
+          }),
+        );
+        const emails = TRAVEL_GMAIL_FETCH.emails(result.raw).slice(0, MAX_TRAVEL_EMAILS);
+        // One Claude unit per five emails read, against the same daily Claude limit as ask_claude.
+        if (emails.length > 0) await this.limiter.reserveClaude(userId, this.now(), Math.ceil(emails.length / 5));
+        const read: ReadEmail[] = [];
+        let unreadable = 0, notTravel = 0, removedSecrets = 0;
+        for (let i = 0; i < emails.length; i += TRAVEL_READ_PARALLEL) {
+          const batch = emails.slice(i, i + TRAVEL_READ_PARALLEL);
+          const outcomes = await Promise.all(batch.map((email) => readTravelEmail(email, reader)));
+          outcomes.forEach((outcome, j) => {
+            if (outcome.kind !== "read") { unreadable++; return; }
+            removedSecrets += outcome.removedSecrets;
+            if (outcome.reading.kind === "not_travel") notTravel++;
+            const email = batch[j]!;
+            read.push({ messageId: email.messageId, receivedAt: email.receivedAt, senderDomain: senderDomain(email.sender), reading: outcome.reading });
+          });
+        }
+        const bookings = mergeBookings(read);
+        if (row.status === "error") await this.store.updateConnectionStatus(userId, tool.toolkit, "connected", null, this.now());
+        const summary = `Read ${emails.length} email${emails.length === 1 ? "" : "s"}; found ${bookings.length} booking${bookings.length === 1 ? "" : "s"}.`;
+        const receipt = await this.receipt(userId, tool.toolkit, "read", TRAVEL_SCAN, "succeeded", summary, null, result.providerReference);
+        // Counts only: no subject, sender, place or reference reaches the log.
+        this.deps.log?.({ event: "travel_scan", emails: emails.length, unreadable, notTravel, bookings: bookings.length, removedSecrets,
+          ...(reader instanceof ClaudeTravelReader ? { inputTokens: reader.usage.inputTokens, outputTokens: reader.usage.outputTokens } : {}) });
+        return { mode: this.mode, emailsFound: emails.length, emailsUnreadable: unreadable, emailsNotTravel: notTravel, bookings, receipt };
+      });
+    } catch (error) {
+      throw await this.failure(userId, tool, error, false);
+    }
+  }
+
+  // ---------------------------------------------------------------- travel: the trip planner
+
+  /**
+   * The planner's first step (decision 2026-11-11-travel-agent-plan, stage 2): the person's words, and the
+   * brief so far, become a brief. The model only fills fields; code drops what can't be right, then says
+   * what is still needed (the app asks for the first) and what it assumes. One Claude unit.
+   */
+  async understandTrip(userId: string, body: unknown): Promise<PlanUnderstood> {
+    const request = parse(PlanUnderstandRequest, body);
+    const claude = this.deps.travelClaude !== undefined ? this.deps.travelClaude : (this.deps.claude ?? null);
+    if (!claude || !claude.isConfigured()) throw new AppError("live_not_configured", { message: "The trip planner isn't set up on this server." });
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    await this.limiter.reserveClaude(userId, now, 1);
+    const before = request.brief ?? EMPTY_BRIEF;
+    let proposed: unknown;
+    try {
+      const result = await claude.structured(
+        {
+          system: UNDERSTAND_SYSTEM,
+          user: JSON.stringify({ today: request.today, briefSoFar: before, newWords: request.words }),
+          schema: BRIEF_JSON_SCHEMA,
+          maxTokens: 800,
+          effort: "low",
+          name: UNDERSTAND_STEP,
+        },
+        AbortSignal.timeout(15_000),
+      );
+      proposed = result.value;
+    } catch (error) {
+      throw toAppError(error, "Claude");
+    }
+    const parsed = TripBrief.safeParse(proposed);
+    // An answer of the wrong shape changes nothing: the brief stays as it was.
+    const brief = cleanBrief(parsed.success ? parsed.data : before, request.today);
+    return { brief, missing: missing(brief), assumptions: assumptions(brief) };
+  }
+
+  /** The planner's search: Kiwi.com's flights for a complete brief, three options chosen by code, links out. */
+  async searchTrip(userId: string, body: unknown): Promise<PlanResult> {
+    const request = parse(PlanSearchRequest, body);
+    const brief = cleanBrief(request.brief, request.today);
+    const query = toQuery(brief);
+    if (!query) throw new AppError("invalid_request", { message: `The trip isn't complete yet: ${missing(brief).join(", ")}.` });
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    await this.limiter.reserveToolRun(userId, now);
+    const flights = this.deps.flightSearch ?? (this.mode === "live" ? new KiwiTripSearch() : new MockFlightSearch());
+    let answer: Awaited<ReturnType<FlightSearch["search"]>>;
+    try {
+      answer = await flights.search(query, AbortSignal.timeout(KIWI_TIMEOUT_MS));
+    } catch (error) {
+      const reason = error instanceof FlightSearchError ? error.reason : "unavailable";
+      throw new AppError("provider_unavailable", { message: reason === "refused" ? "Kiwi.com didn't answer this search." : "Kiwi.com couldn't be reached. Try again in a moment." });
+    }
+    const options = pickOptions(answer.itineraries, answer.currency, brief.budget);
+    this.deps.log?.({ event: "trip_search", results: answer.itineraries.length, options: options.length });
+    return {
+      brief,
+      options: options.map((option) => ({ ...option, links: stayLinks(option, brief) })),
+      source: "Kiwi.com",
+      checkedAt: new Date(this.now()).toISOString(),
+    };
+  }
+
+  private travelReaderOrRefuse(): TravelReader {
+    if (this.deps.travelReader) return this.deps.travelReader;
+    const claude = this.deps.travelClaude !== undefined ? this.deps.travelClaude : (this.deps.claude ?? null);
+    if (!claude || !claude.isConfigured()) {
+      throw new AppError("live_not_configured", { message: "Reading booking emails isn't set up on this server." });
+    }
+    // A new reader per run, so its token count is this run's.
+    return new ClaudeTravelReader(claude);
   }
 
   /**
@@ -801,6 +997,7 @@ export class CloudToolsService {
       return { ...(await this.run(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
     if (isWebTool(request.tool)) return this.runWebSearch(userId, request.tool, request);
+    if (isFlightTool(request.tool)) return this.flights.run(userId, request.tool, request, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.runClaude(userId, request.tool, request);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
@@ -1366,4 +1563,42 @@ function providerLog(error: unknown): Record<string, unknown> {
   return error instanceof ProviderError && error.detail
     ? { providerStatus: error.detail.status, providerError: error.detail.type, providerHint: error.detail.hint }
     : {};
+}
+
+// ---------------------------------------------------------------- travel
+
+/** The ask-first and receipt name of the trip screen's Gmail search. Not a voice tool. */
+export const TRAVEL_SCAN = "find_trips_in_gmail";
+/** The search is fixed, so the approval is bound to its query and size. */
+const TRAVEL_SCAN_DIGEST = argumentDigest({ query: TRAVEL_GMAIL_QUERY, max: MAX_TRAVEL_EMAILS });
+/**
+ * Emails read at once: all of them, so the whole search fits in the app's 20-second request
+ * (Gmail's answer, then one round of reads, each cut at TRAVEL_READ_TIMEOUT_MS). Each is one small,
+ * low-effort model call.
+ */
+const TRAVEL_READ_PARALLEL = MAX_TRAVEL_EMAILS;
+const TravelScanPrepare = z.object({ timeZone: z.string().max(64).optional() }).strict();
+const TravelScanRun = z.object({ approvalId: z.string().uuid(), timeZone: z.string().max(64).optional() }).strict();
+
+export interface TravelScanResult {
+  mode: "mock" | "live";
+  emailsFound: number;
+  emailsUnreadable: number;
+  emailsNotTravel: number;
+  bookings: TravelBooking[];
+  receipt: ToolReceipt;
+}
+
+// ---------------------------------------------------------------- trip planner
+
+const PlanDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const PlanUnderstandRequest = z.object({ words: z.string().trim().min(1).max(600), brief: TripBrief.optional(), today: PlanDay }).strict();
+const PlanSearchRequest = z.object({ brief: TripBrief, today: PlanDay }).strict();
+
+export interface PlanUnderstood { brief: TripBrief; missing: Needed[]; assumptions: Assumption[] }
+export interface PlanResult {
+  brief: TripBrief;
+  options: (PlanOption & { links: PlanLinks })[];
+  source: "Kiwi.com";
+  checkedAt: string;
 }

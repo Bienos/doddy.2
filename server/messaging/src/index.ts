@@ -1,4 +1,5 @@
 import { buildApp } from "./app.js";
+import { JakdojadePartnerClient } from "./integrations/jakdojade.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
 import { createAccountVerifier } from "./doddyAccount.js";
@@ -10,7 +11,7 @@ import { studioContext } from "./studio/context.js";
 import { modelLabel } from "./studio/models.js";
 import { watchContext } from "./watches/context.js";
 import { fileWatchContext } from "./fileWatches.js";
-import { log, radarContext, runWorkerLoop } from "./workerLoop.js";
+import { catalogContext, log, radarContext, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
@@ -20,6 +21,7 @@ const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   accounts: config.supabaseUrl ? createAccountVerifier({ projectUrl: config.supabaseUrl }) : null,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
+  jakdojade: config.jakdojade ? new JakdojadePartnerClient(async () => config.jakdojade ?? null) : undefined,
   fileWatches: { origin: config.documentsOrigin }, radar: { enabled: config.radarAlertsEnabled },
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
@@ -39,7 +41,10 @@ app.log.info({
   watches: config.watchSettings.enabled && !!providers.cipher,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   radarAlerts: config.radarAlertsEnabled,
+  leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,
+  deliveries: config.uberDirect ? config.uberDirect.mode : false,
   ceidg: !!providers.ceidg,
+  jakdojade: !!config.jakdojade,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
@@ -55,8 +60,10 @@ if (config.runWorkerInWeb) {
   const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
   const fileWatchCtx = fileWatchContext(db, { origin: config.documentsOrigin }, providers.cipher, providers.push, log);
   const radarCtx = radarContext(db, config.radarAlertsEnabled, providers.news, providers.push, providers.cipher, config.quietHours);
+  const catalogCtx = catalogContext(db, providers.deals);
   workerDone = runWorkerLoop(db, {
     ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, radar: radarCtx,
+    catalog: catalogCtx,
     scheduledCalls: scheduledCallsFrom(config, providers),
   }, () => stopping);
 }

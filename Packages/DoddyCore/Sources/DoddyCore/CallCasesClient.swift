@@ -16,6 +16,8 @@ public enum CallCaseError: Error, Equatable, Sendable {
     /// The approval doesn't match (`digest_mismatch`), the time is outside the hours, an attempt is open...
     case notApprovable(String)
     case callsDisabled
+    /// The booking agent isn't set up on the server (decision 2026-11-12-book-agent).
+    case bookingNotConfigured
 }
 
 extension DoddyServerClient {
@@ -157,6 +159,7 @@ extension DoddyServerClient {
                                     "call_live", "no_more_tries", "phone_not_supported", "too_many_open_cases", "part_of_task"].contains(code):
             return .notApprovable(code)
         case (503, "calls_disabled"): return .callsDisabled
+        case (503, "booking_not_configured"): return .bookingNotConfigured
         default: return .server(error(from: response))
         }
     }

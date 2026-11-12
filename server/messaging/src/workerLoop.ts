@@ -11,6 +11,7 @@ import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
 import { DELETE_AFTER_HOURS_DEFAULT, deleteAfterMinutes, pruneDeletions, runDueDeletions } from "./providerRecords.js";
 import type { PushSender, RecordDeleter, SmsSender } from "./providers/types.js";
 import { placeDueCall, pruneCallReasons, type ScheduledCallDeps } from "./scheduledCalls.js";
+import { pruneDeliveries } from "./delivery/deliveries.js";
 import type { TaskVoice } from "./providers/taskCalls.js";
 import type { TaskCallContext } from "./taskCalls/context.js";
 import { runDeletions, runTaskCallPasses } from "./taskCalls/worker.js";
@@ -21,6 +22,10 @@ import { newStudioLoopState, runStudioPasses, stopStudioRuns } from "./studio/wo
 import type { WatchContext } from "./watches/context.js";
 import { CHECK_EVERY_MS, runFileWatchPass, type FileWatchContext } from "./fileWatches.js";
 import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
+import { runCatalogPass, type CatalogContext } from "./deals/catalog.js";
+import { PoliteFetcher } from "./deals/fetcher.js";
+import { warsawDay } from "./deals/chains/common.js";
+import { ADAPTERS, type DealsDeps } from "./deals/service.js";
 
 import { log } from "./log.js";
 
@@ -46,6 +51,8 @@ export interface WorkerDeps {
   fileWatches?: FileWatchContext;
   /** On my radar alerts (decision 2026-11-10-radar-alerts); only with RADAR_ALERTS_ENABLED=1. */
   radar?: RadarContext;
+  /** The leaflet catalog's scans (decision 2026-11-12-leaflet-catalog); only with DEALS_CATALOG_ENABLED=1. */
+  catalog?: CatalogContext;
   /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
   limits?: Pick<AbuseLimits, "allowedCountryCodes">;
   /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753). */
@@ -74,7 +81,35 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
   if (deps.fileWatches) loops.push(fileWatchLoop(deps.fileWatches, shouldStop));
   if (deps.radar) loops.push(radarLoop(deps.radar, shouldStop));
+  if (deps.catalog) loops.push(catalogLoop(deps.catalog, shouldStop));
   await Promise.all(loops);
+}
+
+/**
+ * The leaflet catalog (decision 2026-11-12-leaflet-catalog): every few minutes, scans the chains whose last scan is
+ * older than DEALS_CATALOG_EVERY_HOURS, one at a time; a scan reads only pages it hasn't read before. Its own loop, so
+ * minutes of page reads never hold back pushes. Logs codes and counts only.
+ */
+async function catalogLoop(ctx: CatalogContext, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    try {
+      const counts = await runCatalogPass(ctx, shouldStop);
+      if (Object.keys(counts).length) log("leaflet catalog passes", counts);
+    } catch (err) {
+      log("leaflet catalog pass failed", { error: (err as Error).message });
+    }
+    await pause(5 * 60_000, shouldStop);
+  }
+}
+
+/** The catalog worker's context, or undefined while leaflets or the catalog are off. */
+export function catalogContext(db: Db, deals: DealsDeps | undefined): CatalogContext | undefined {
+  const c = deals?.settings.catalog;
+  if (!deals || !deals.settings.enabled || !c?.enabled) return undefined;
+  return {
+    db, adapters: ADAPTERS, fetcher: deals.fetcher ?? new PoliteFetcher(), model: deals.scanModel, everyHours: c.everyHours,
+    maxPagesPerChain: c.maxPagesPerChain, now: () => new Date(), today: () => warsawDay(new Date()), log,
+  };
 }
 
 /**
@@ -233,8 +268,9 @@ async function dispatchLoop(
         const pruned = await pruneNewsCache(db);
         const deletions = await pruneDeletions(db);
         const reasons = await pruneCallReasons(db);
-        if (sessions || pruned || deletions || reasons) {
-          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons });
+        const deliveries = await pruneDeliveries(db); // lapsed quotes and finished deliveries' details
+        if (sessions || pruned || deletions || reasons || deliveries) {
+          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons, deliveryRows: deliveries });
         }
       }
       if (r.processed || r.reaped) log("dispatch pass", r);

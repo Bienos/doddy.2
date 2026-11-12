@@ -150,6 +150,16 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
       const query = String(args.query ?? "");
       // "nomatch" finds nothing; "newsletter" finds only a demo email whose sender has no address.
       if (/nomatch/i.test(query)) return ok({ messages: [], nextPageToken: "", resultSizeEstimate: 0 });
+      // The trip screen's search (travel/reader.ts) finds one demo booking email.
+      if (/from:\(ryanair/i.test(query) && !empty) {
+        return ok({
+          messages: [{ messageId: "18f0t1", threadId: "tt1", sender: "Itinerary@ryanair.com", subject: "Potwierdzenie rezerwacji Ryanair", messageTimestamp: "2026-10-01T08:00:00Z", preview: { body: "Nr rezerwacji: DEMO12" },
+            ...text("myRyanair\nNr rezerwacji: DEMO12\nDo Lizbona FR1234 Gdańsk - Lizbona 12/05/2027\nCzas wylotu - 06:10 Czas przylotu - 09:35 (GDN) - (LIS)\nDo Gdańsk FR1235 Lizbona - Gdańsk 16/05/2027\nCzas wylotu - 10:20 Czas przylotu - 15:55 (LIS) - (GDN)") },
+            { messageId: "18f0t2", threadId: "tt2", sender: "Demo Bank <noreply@demo.example>", subject: "Your statement is ready", messageTimestamp: "2026-10-08T07:00:00Z", preview: { body: "Demo statement." }, ...text("Demo: your statement.") }],
+          nextPageToken: "",
+          resultSizeEstimate: 2,
+        });
+      }
       if (/newsletter/i.test(query) && !empty) {
         return ok({
           messages: [{ messageId: "18f0a3", threadId: "t3", sender: "Demo Newsletter", subject: "Demo: weekly digest", messageTimestamp: "2026-10-10T06:00:00Z", preview: { body: "This week in demo news." }, ...text("Demo: this week in demo news.") }],

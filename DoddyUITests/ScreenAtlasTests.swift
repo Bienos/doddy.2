@@ -212,7 +212,6 @@ final class ScreenAtlasTests: XCTestCase {
             ("4-settings-01-settings", []),
             ("4-settings-02-voice", ["settings.voice"]),
             ("4-settings-03-voice-and-personality", ["settings.voice", "settings.personality"]),
-            ("4-settings-04-voice-list", ["settings.voice", "settings.personality", "settings.voice.choice"]),
             ("4-settings-05-siri-and-back-tap", ["settings.voice", "settings.ways"]),
             ("4-settings-06-ways-to-open-doddy", ["settings.voice", "settings.ways", "settings.backTap"]),
             ("4-settings-07-doddys-memory", ["settings.memory"]),
