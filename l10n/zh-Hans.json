@@ -1219,5 +1219,7 @@
   "What's in this photo?": "这张照片里有什么？",
   "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "将从这部 iPhone 以及 Doddy 服务器上供 Doddy Web 使用的副本中删除。你保存的笔记不受影响。",
   "Couldn't delete the copy on the web": "无法删除网页上的副本",
-  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "这段对话已从这部 iPhone 中删除，但 Doddy 的服务器尚未确认其 Doddy Web 副本已删除。在确认之前，它可能仍会显示在网页上。"
+  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "这段对话已从这部 iPhone 中删除，但 Doddy 的服务器尚未确认其 Doddy Web 副本已删除。在确认之前，它可能仍会显示在网页上。",
+  "Food": "美食",
+  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "如果你装了应用就打开应用，否则打开网站。Doddy 不会查看或下单。"
 }
