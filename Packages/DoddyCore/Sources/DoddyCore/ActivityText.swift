@@ -31,6 +31,7 @@ extension ActivityApp {
         case .training: return "Plan treningowy"
         case .news: return "Na radarze"
         case .screen: return "Twój ekran"
+        case .food: return "Aplikacje z jedzeniem"
         }
     }
 }
@@ -75,6 +76,7 @@ public enum ActivityText {
         "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
         "Looked through photos": "Przejrzano zdjęcia",
         "Open the camera": "Otwórz aparat",
+        "Open a food app": "Otwórz aplikację z jedzeniem",
         "Looked at your screen": "Zerknięto na ekran",
         "Control the home": "Steruj domem",
         "Open the training plan": "Otwórz plan treningowy",

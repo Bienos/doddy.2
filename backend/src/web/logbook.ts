@@ -15,12 +15,16 @@ import type { Store } from "../store.js";
 
 /** How long days are kept, counted back from today. The sweep deletes older ones. */
 export const LOGBOOK_KEPT_DAYS = 365;
-/** A day with every tool in use is about 7 KB; a body above this is not a summary. */
-export const LOGBOOK_MAX_BODY_BYTES = 16 * 1024;
+/**
+ * A day with every tool in use is about 7 KB as the iPhone sends it (compact JSON); a body above this is not a
+ * summary. 24 KB since 12 Nov 2026 (was 16): pretty-printed with every one of 117 tools at four-digit counts, the
+ * worst case reached 16 KB (decision 2026-11-12-food-by-voice).
+ */
+export const LOGBOOK_MAX_BODY_BYTES = 24 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";
 
 /**
- * The voice agent's tool ids (voice-agent/tools.json, 116 today). A test reads that file and fails
+ * The voice agent's tool ids (voice-agent/tools.json, 117 today). A test reads that file and fails
  * if this list and the file disagree, so a new tool can't be counted before it is listed here.
  */
 export const LOGBOOK_TOOL_IDS = [
@@ -30,7 +34,7 @@ export const LOGBOOK_TOOL_IDS = [
   "calculate", "convert_units", "convert_currency", "set_timer", "set_alarm", "start_stopwatch", "stop_stopwatch",
   "check_stopwatch", "start_focus", "stop_focus", "check_focus", "start_wind_down", "stop_wind_down",
   "follow_news", "list_alarms", "cancel_alarm",
-  "propose_plan", "open_map", "parking_spot", "remind_when_to_leave", "run_shortcut", "draft_message",
+  "propose_plan", "open_map", "open_food_app", "parking_spot", "remind_when_to_leave", "run_shortcut", "draft_message",
   "draft_blik_transfer", "draft_invoice", "text_me", "call_me_later", "call_me_now", "call_places", "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "look_at_screen", "control_home", "open_camera", "lost_wallet", "check_email",
   "read_email", "draft_email", "draft_email_reply", "send_email", "reply_to_email", "forward_email", "change_email",
   "trash_email", "find_drive_file", "create_drive_doc", "search_notion", "read_notion_page", "create_notion_page",

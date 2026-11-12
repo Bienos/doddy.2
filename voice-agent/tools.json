@@ -473,6 +473,20 @@
     },
     {
       "type": "function",
+      "name": "open_food_app",
+      "description": "Propose opening a food delivery app so the user can order there: Uber Eats, Wolt, Glovo, Bolt Food or Pyszne.pl. Use it when the user wants food delivered ('find me sushi and open Wolt', 'zamów mi pizzę'). First, if they want a suggestion, find a place with find_places or web_search and say it in one short line; then call this with the app the user named (ask which app, in a few words, only if they named none) and, in search, the restaurant or dish they should look for there. The app shows a card and the app opens only after the user taps it. Nothing is ordered by you: the user searches, chooses, pays and orders in the app. Never say you ordered, booked or paid. Never state a price, menu or delivery time unless a tool result gave it. The result starts with 'opened' (the app opened) or 'declined'. Before this tool runs, say only one short line, for example 'Tap the card and I'll open Wolt.' (Polish: 'Stuknij kartę, otworzę Wolta.').",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app": {"type": "string", "enum": ["Uber Eats", "Wolt", "Glovo", "Bolt Food", "Pyszne.pl"], "description": "The delivery app the user named."},
+          "search": {"type": "string", "description": "What to search for in the app: the restaurant or dish, one short line (at most 80 characters), for example 'Sushi Kushi' or 'pizza margherita'. Leave out if there is nothing specific."}
+        },
+        "required": ["app"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "parking_spot",
       "description": "The user's parking spot, kept on their iPhone. action save: when the user asks you to remember where they parked; the app reads where the iPhone is now and the user taps Save. action find: when they ask where they parked or where their car is; you get when it was saved, their note and roughly how far it is, never the place itself, and the screen offers Open in Maps. action clear: when they say they've got the car or to forget the spot. The result starts with 'saved', 'found', 'cleared', 'declined', 'not found', 'not changed' or 'failed'. Before it runs, say only one short line: for save, for example 'Confirm on screen if I should save this spot.' (Polish: 'Potwierdź na ekranie, jeśli mam zapisać to miejsce.'); for find, ask, for example 'Shall I look up your parking spot?' (Polish: 'Mam sprawdzić, gdzie zaparkowałeś?'), and the user says yes or taps; for clear, ask the user to confirm on screen. Never describe directions yourself.",
       "parameters": {

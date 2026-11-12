@@ -277,6 +277,8 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.lookupContact, VoiceToolName.draftMessage,
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
         VoiceToolName.openMap, VoiceToolName.runShortcut,
+        // Home's Food button is in every scope, so opening a food app by voice is too (decision 2026-11-12-food-by-voice).
+        VoiceToolName.openFoodApp,
         VoiceToolName.noteCapabilityGap,
     ]).union(ToolCatalog.webLookups)
 }

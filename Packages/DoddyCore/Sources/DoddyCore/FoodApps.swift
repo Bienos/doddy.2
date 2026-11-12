@@ -27,8 +27,24 @@ public enum FoodApps {
         app("ubereats", "Uber Eats", "https://www.ubereats.com"),
         app("wolt", "Wolt", "https://wolt.com"),
         app("glovo", "Glovo", "https://glovoapp.com"),
+        app("bolt", "Bolt Food", "https://food.bolt.eu"),
         app("pyszne", "Pyszne.pl", "https://www.pyszne.pl"),
     ].filter(\.isOpenable)
+
+    /// The app a person named, by voice or typed: its id or name, in any case, with spaces, dots and dashes
+    /// ignored ("Uber Eats", "ubereats", "Bolt", "pyszne.pl"). Nil for anything else; Doddy never guesses
+    /// between apps (decision `2026-11-12-food-by-voice`).
+    public static func named(_ text: String) -> FoodApp? {
+        let key = normalised(text)
+        guard !key.isEmpty else { return nil }
+        let aliases = ["uber": "ubereats", "boltfood": "bolt", "pysznepl": "pyszne"]
+        let id = aliases[key] ?? key
+        return all.first { $0.id == id || normalised($0.name) == key }
+    }
+
+    private static func normalised(_ text: String) -> String {
+        text.lowercased().filter { $0.isLetter || $0.isNumber }
+    }
 
     private static func app(_ id: String, _ name: String, _ address: String) -> FoodApp {
         // The addresses are literals above; a typo fails `FoodAppsTests` instead of crashing a build.

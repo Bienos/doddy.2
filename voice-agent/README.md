@@ -70,6 +70,8 @@ The app's routing is `VoiceToolRequest.parse` and `CloudToolName` in DoddyCore. 
 
 ## Changes to the live main agent, 20 Oct to 10 Nov 2026 (newest first)
 
+**Not yet applied to the live agent (12 Nov 2026, decision `2026-11-12-food-by-voice`):** a new client tool `open_food_app` (`ask: tap`, `not_synced`) and one "Food delivery" line in `instructions.md`. Create the tool exactly as `voice_agent_spec.py elevenlabs` renders it, attach it, and merge one line in the live prompt's own style into its tools section; only on the owner's instruction (OWNER_QUEUE). Not tested by voice.
+
 **Applied to the live agent 10 Nov 2026, about 07:15 UTC (`call_me_now`, decision `2026-11-10-call-me-now-by-voice`, #305; owner on 10 Nov: "daj to już żeby działało", after the 9 Nov go-ahead for the call tools).**
 - **Read right before saving:** `agtvrsn_0801m71zgg3wfj29agemmp6cx39b`, 105 tools, model `gpt-6-luna`. **Rollback:** that version.
 - **Created:** `call_me_now` `tool_1301m724k8bfegwr7kaextr677tv`, exactly as `voice_agent_spec.py elevenlabs` renders it from `main` after #305 (client tool, no parameters, 90 s, speak first forced). A listing first showed no tool of that name.
