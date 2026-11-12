@@ -11,11 +11,18 @@ struct TripsView: View {
     @State private var model = TripsModel.shared
     @State private var confirmForget = false
     @State private var forgetFailed = false
+    @State private var showPlanner = false
     private let polish = TripsModel.polish
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Button { showPlanner = true } label: { Label("Plan a trip", systemImage: "map") }
+                        .accessibilityIdentifier("trips.plan")
+                } footer: {
+                    Text("Say where, when and with whom; Doddy asks what's missing and shows up to three flights with the real total. You book on Kiwi.com yourself.")
+                }
                 searchSection
                 if model.storeUnreadable {
                     Section { Text("The trips saved on this iPhone couldn't be read. Search again to replace them.") }
@@ -48,6 +55,7 @@ struct TripsView: View {
                 }
             }
             .navigationTitle("Trips")
+            .sheet(isPresented: $showPlanner) { TripPlannerView() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }

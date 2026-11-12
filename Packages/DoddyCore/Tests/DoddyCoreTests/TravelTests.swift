@@ -233,3 +233,84 @@ final class TravelClientTests: XCTestCase {
         XCTAssertEqual(TripHomeCard.nextTrip(trips, today: TripDay(year: 2027, month: 4, day: 1))?.title, "Porto · Lizbona")
     }
 }
+
+final class TripPlannerTests: XCTestCase {
+    private func plan() throws -> PlanResult {
+        try JSONDecoder().decode(PlanResult.self, from: Fixtures.data("travel_plan_v1.json"))
+    }
+
+    func testTheServersPlanDecodes() throws {
+        let p = try plan()
+        XCTAssertEqual(p.source, "Kiwi.com")
+        XCTAssertEqual(p.options.map(\.pick), [.cheapest, .fastest, .easiest])
+        XCTAssertEqual(p.options[0].price, 742)
+        XCTAssertEqual(Set(p.options[0].traps), [.airportChange, .differentAirlines, .lateArrival])
+        XCTAssertEqual(p.options[1].traps, [.earlyDeparture])
+        XCTAssertNotNil(p.options[0].links.packages, "the brief asked for a package: a wakacje.pl link")
+        XCTAssertTrue(p.options[0].bookingUrl.hasPrefix("https://kiwi.com/"))
+        XCTAssertEqual(p.brief.checkedBagPerAdult, true)
+    }
+
+    func testTheBriefIsSentWithEveryKeyNullIncluded() throws {
+        var b = TripBrief()
+        b.to = "Lisbon"
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(b)) as? [String: Any])
+        XCTAssertEqual(json.count, 12)
+        XCTAssertTrue(json["from"] is NSNull)
+        XCTAssertEqual(json["to"] as? String, "Lisbon")
+    }
+
+    func testWordsAreShownAsTheServerHasThem() throws {
+        let o = try plan().options[0]
+        XCTAssertEqual(TripPlanText.price(o, adults: 2, polish: true), "742 zł za 2 osoby, bez walizki")
+        XCTAssertEqual(TripPlanText.price(o, adults: 1, polish: false), "742 PLN for 1 person, no checked bag")
+        XCTAssertEqual(TripPlanText.leg(o.outbound, polish: true), "Gdańsk → Lisbon · 12 lutego, 14:15 → 23:05 · 1 przesiadka · Ryanair, easyJet")
+        XCTAssertEqual(TripPlanText.pick(.easiest, polish: true), "Najwygodniej")
+        XCTAssertEqual(TripPlanText.time("2027-02-12T06:10:00"), "06:10")
+        XCTAssertTrue(TripPlanText.trap(.differentAirlines, polish: true).contains("osobne bilety"))
+    }
+
+    func testEachMissingThingHasOneQuestionAndTheStayTaskHasNoLinks() throws {
+        for need in [PlanNeed.to, .from, .when, .nights, .who] {
+            XCTAssertTrue(TripPlanText.question(need, polish: true).hasSuffix("?") || TripPlanText.question(need, polish: true).hasSuffix("”."))
+        }
+        let words = TripPlanText.stayResearchWords(try plan().options[0], adults: 2, children: 1)
+        XCTAssertTrue(words.contains("Lisbon"))
+        XCTAssertTrue(words.contains("2 dorosłych i 1 dzieci") || words.contains("dorosłych"))
+        XCTAssertFalse(words.contains("http"), "a task's words carry no links (ADR-703)")
+    }
+
+    func testTheClientSendsTheRightRequests() async throws {
+        let server = URL(string: "https://api.doddy.example")!
+        let bound = try XCTUnwrap(BoundSessionToken(token: "secret", issuedBy: server))
+        let understood = #"{"brief":{"from":null,"to":"Lisbon","departFrom":null,"departTo":null,"nightsMin":null,"nightsMax":null,"adults":2,"children":null,"checkedBagPerAdult":null,"directOnly":null,"package":null,"budget":null},"missing":["from","when","nights"],"assumptions":["no_checked_bag"]}"#
+        let transport = PlannerTransport([(200, Data(understood.utf8)), (200, try Fixtures.data("travel_plan_v1.json"))])
+        let client = try XCTUnwrap(BackendTripPlannerClient(baseURL: server, boundToken: { bound }, transport: transport))
+        let today = TripDay(year: 2026, month: 11, day: 12)
+
+        let first = try await client.understand(words: "Lizbona we dwoje", brief: nil, today: today)
+        XCTAssertEqual(first.missing, [.from, .when, .nights])
+        XCTAssertEqual(first.assumptions, [.noCheckedBag])
+        let result = try await client.search(first.brief, today: today)
+        XCTAssertEqual(result.options.count, 3)
+
+        XCTAssertEqual(transport.requests.map(\.url.path), ["/v1/travel/plan/understand", "/v1/travel/plan/search"])
+        let sent = try JSONSerialization.jsonObject(with: XCTUnwrap(transport.requests[0].body)) as! [String: Any]
+        XCTAssertEqual(sent["today"] as? String, "2026-11-12")
+        XCTAssertNil(sent["brief"], "no brief on the first turn")
+    }
+}
+
+private final class PlannerTransport: HTTPTransport, @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [HTTPRequest] = []
+    private var replies: [(Int, Data)]
+    init(_ replies: [(Int, Data)]) { self.replies = replies }
+    var requests: [HTTPRequest] { lock.withLock { recorded } }
+    func send(_ request: HTTPRequest) async throws -> (status: Int, body: Data) {
+        lock.withLock {
+            recorded.append(request)
+            return replies.isEmpty ? (500, Data()) : replies.removeFirst()
+        }
+    }
+}

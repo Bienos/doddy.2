@@ -120,6 +120,9 @@ export function createHandler(deps: HttpDeps) {
         // Travel, stage 1: the trip screen's own Gmail search, with its own ask-first card (TRAVEL_EMAILS.md).
         "POST /v1/travel/prepare": (userId, body) => tools.prepareTravelScan(userId, body),
         "POST /v1/travel/scan": (userId, body) => tools.runTravelScan(userId, body),
+        // The trip planner (TRAVEL_PLANNER.md): words to a brief, then Kiwi.com's flights for it.
+        "POST /v1/travel/plan/understand": (userId, body) => tools.understandTrip(userId, body),
+        "POST /v1/travel/plan/search": (userId, body) => tools.searchTrip(userId, body),
       }
     : {};
 

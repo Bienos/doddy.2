@@ -5883,6 +5883,17 @@
         }
       }
     },
+    "Airbnb": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Airbnb"
+          }
+        }
+      }
+    },
     "Alarms": {
       "extractionState": "manual",
       "localizations": {
@@ -9995,6 +10006,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Umów telefon"
+          }
+        }
+      }
+    },
+    "Book on Kiwi.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarezerwuj na Kiwi.com"
           }
         }
       }
@@ -14809,6 +14831,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Połączenia są wstrzymane, więc nic nie trafia na serwer Doddy’ego. Włącz je ponownie w Ustawieniach, Połączenia."
+          }
+        }
+      }
+    },
+    "Connections are paused, so nothing was sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc nic nie wysłano."
           }
         }
       }
@@ -22761,6 +22794,17 @@
         }
       }
     },
+    "Doddy is on it. The result will wait in Tasks and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy się tym zajmuje. Wynik będzie czekał w Sprawach i w Wiadomościach."
+          }
+        }
+      }
+    },
     "Doddy is on the call. You get the answer when it ends.": {
       "extractionState": "manual",
       "localizations": {
@@ -24306,6 +24350,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Raport Doddy’ego – %@"
+          }
+        }
+      }
+    },
+    "Doddy researches this in the background and the result waits in Tasks and in Messages. Nothing is booked. The words go to Doddy's server and to Anthropic.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy robi to w tle, a wynik czeka w Sprawach i w Wiadomościach. Nic nie jest rezerwowane. Słowa trafiają na serwer Doddy'ego i do Anthropic."
           }
         }
       }
@@ -31196,6 +31251,17 @@
         }
       }
     },
+    "For example: “Lisbon around 12 February, 4 nights, the two of us, no more than 2000 zł”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: „Lizbona koło 12 lutego, 4 noce, we dwoje, nie więcej niż 2000 zł”."
+          }
+        }
+      }
+    },
     "For reminders at a place, when you tap “Use where I am”. Never in the background.": {
       "extractionState": "manual",
       "localizations": {
@@ -32721,6 +32787,28 @@
         }
       }
     },
+    "Have Doddy look at stays": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niech Doddy sprawdzi noclegi"
+          }
+        }
+      }
+    },
+    "Have Doddy look at stays?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niech Doddy sprawdzi noclegi?"
+          }
+        }
+      }
+    },
     "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.": {
       "extractionState": "manual",
       "localizations": {
@@ -33237,6 +33325,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przytrzymaj przycisk, żeby mówić"
+          }
+        }
+      }
+    },
+    "Holidays on wakacje.pl": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycieczki na wakacje.pl"
           }
         }
       }
@@ -33936,6 +34035,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dam Ci znać, gdy odczytana cena będzie równa tej albo niższa. Podpowiedź: 5 procent poniżej ceny, w dół do pełnych złotych. Możesz wpisać inną."
+          }
+        }
+      }
+    },
+    "I'm assuming": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakładam"
           }
         }
       }
@@ -38837,6 +38947,17 @@
         }
       }
     },
+    "Kiwi.com found no flights for these days. Try other days or a nearby airport.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi.com nie znalazł lotów na te dni. Spróbuj innych dni albo pobliskiego lotniska."
+          }
+        }
+      }
+    },
     "Knee push-up": {
       "extractionState": "manual",
       "localizations": {
@@ -42112,6 +42233,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在查找"
+          }
+        }
+      }
+    },
+    "Looking for flights on Kiwi.com…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam lotów na Kiwi.com…"
           }
         }
       }
@@ -57980,6 +58112,17 @@
         }
       }
     },
+    "Over your budget": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponad Twój budżet"
+          }
+        }
+      }
+    },
     "Overdue": {
       "extractionState": "manual",
       "localizations": {
@@ -60433,6 +60576,17 @@
         }
       }
     },
+    "Plan a trip": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplanuj wyjazd"
+          }
+        }
+      }
+    },
     "Plan at least %lld days a week for this goal.": {
       "extractionState": "manual",
       "localizations": {
@@ -61240,6 +61394,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz."
+          }
+        }
+      }
+    },
+    "Prices and times are Kiwi.com's, read %@. They can change before you book; the price shown is for the whole party with the bags counted above.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny i godziny są z Kiwi.com, odczytane o %@. Mogą się zmienić przed rezerwacją; cena dotyczy całej grupy, z bagażem podanym wyżej."
           }
         }
       }
@@ -70510,6 +70675,28 @@
         }
       }
     },
+    "Say where you want to go…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisz, dokąd chcesz polecieć…"
+          }
+        }
+      }
+    },
+    "Say where, when and with whom; Doddy asks what's missing and shows up to three flights with the real total. You book on Kiwi.com yourself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz, dokąd, kiedy i z kim; Doddy dopyta o to, czego brakuje, i pokaże do trzech lotów z prawdziwą ceną całości. Rezerwujesz sam na Kiwi.com."
+          }
+        }
+      }
+    },
     "Say who Doddy is calling.": {
       "extractionState": "manual",
       "localizations": {
@@ -76990,6 +77177,17 @@
         }
       }
     },
+    "Start over": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij od nowa"
+          }
+        }
+      }
+    },
     "Start shopping mode": {
       "extractionState": "manual",
       "localizations": {
@@ -77660,6 +77858,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "状态"
+          }
+        }
+      }
+    },
+    "Stays on Booking.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noclegi na Booking.com"
           }
         }
       }
@@ -86988,6 +87197,17 @@
         }
       }
     },
+    "The task couldn't be handed over. Nothing was started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się przekazać sprawy. Nic nie zostało uruchomione."
+          }
+        }
+      }
+    },
     "The tasks kept on this iPhone couldn't be read.": {
       "extractionState": "manual",
       "localizations": {
@@ -88433,6 +88653,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Thinking…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Myślę…"
           }
         }
       }
@@ -101579,6 +101810,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "根据你当前的设置，你的信息会去向哪里。不会出售任何内容，也没有广告或分析。"
+          }
+        }
+      }
+    },
+    "Where, when, with whom and what you'd pay: write it, or dictate it with the microphone on your keyboard.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokąd, kiedy, z kim i za ile: napisz albo podyktuj mikrofonem na klawiaturze."
           }
         }
       }

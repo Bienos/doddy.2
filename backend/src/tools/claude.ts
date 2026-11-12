@@ -3,6 +3,7 @@ import type { ClaudeSettings } from "../config.js";
 import { DECK_PLAN_STEP, DECK_WRITE_STEP, demoDeck, demoDeckPlan } from "../decks/demo.js";
 import { ProviderError, type ProviderDetail } from "../errors.js";
 import { demoTravelReading, TRAVEL_READING_STEP } from "../travel/claudeReader.js";
+import { demoBrief, UNDERSTAND_STEP } from "../travel/plan.js";
 
 /**
  * Claude for Doddy (ADR-564): quick writing and summaries, and documents made with Claude's own
@@ -510,6 +511,7 @@ export class MockClaudeProvider implements ClaudeProvider {
     if (input.name === DECK_PLAN_STEP) return { value: demoDeckPlan(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
     if (input.name === DECK_WRITE_STEP) return { value: demoDeck(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
     if (input.name === TRAVEL_READING_STEP) return { value: demoTravelReading(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
+    if (input.name === UNDERSTAND_STEP) return { value: demoBrief(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
     const props = (input.schema.properties ?? {}) as { sources?: { items?: { enum?: string[] } } };
     const first = props.sources?.items?.enum?.[0];
     // Notes are n1…, conversations c1…, the chat's account parts their own names (ADR-604).

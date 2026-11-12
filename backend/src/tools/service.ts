@@ -63,6 +63,11 @@ import { ClaudeTravelReader } from "../travel/claudeReader.js";
 import { mergeBookings, type ReadEmail } from "../travel/merge.js";
 import { MAX_TRAVEL_EMAILS, readTravelEmail, senderDomain, TRAVEL_GMAIL_QUERY, type TravelReader } from "../travel/reader.js";
 import type { TravelBooking } from "../travel/schema.js";
+import { FlightSearchError, type FlightSearch, KiwiFlightSearch, KIWI_TIMEOUT_MS, MockFlightSearch } from "../travel/kiwi.js";
+import {
+  assumptions, BRIEF_JSON_SCHEMA, cleanBrief, EMPTY_BRIEF, missing, pickOptions, stayLinks, toQuery, TripBrief,
+  UNDERSTAND_STEP, UNDERSTAND_SYSTEM, type Assumption, type Needed, type PlanLinks, type PlanOption,
+} from "../travel/plan.js";
 import type { ToolsProvider } from "./provider.js";
 import {
   normalizeWebSearch,
@@ -111,6 +116,8 @@ export interface ToolsServiceDeps {
   travelClaude?: ClaudeProvider | null;
   /** Tests only: a reader instead of the model. */
   travelReader?: TravelReader;
+  /** The trip planner's flights. Absent: Kiwi.com in live mode, the mock in mock mode. */
+  flightSearch?: FlightSearch;
   /** Signed links for documents (ADR-564). Null: make_document says "not set up". */
   documentLinks?: DocumentLinks | null;
   /** Wikipedia and Commons for a deck's research (decision 2026-11-10-better-presentations). Absent: live in live mode, offline demo in mock mode. */
@@ -730,6 +737,71 @@ export class CloudToolsService {
     } catch (error) {
       throw await this.failure(userId, tool, error, false);
     }
+  }
+
+  // ---------------------------------------------------------------- travel: the trip planner
+
+  /**
+   * The planner's first step (decision 2026-11-11-travel-agent-plan, stage 2): the person's words, and the
+   * brief so far, become a brief. The model only fills fields; code drops what can't be right, then says
+   * what is still needed (the app asks for the first) and what it assumes. One Claude unit.
+   */
+  async understandTrip(userId: string, body: unknown): Promise<PlanUnderstood> {
+    const request = parse(PlanUnderstandRequest, body);
+    const claude = this.deps.travelClaude !== undefined ? this.deps.travelClaude : (this.deps.claude ?? null);
+    if (!claude || !claude.isConfigured()) throw new AppError("live_not_configured", { message: "The trip planner isn't set up on this server." });
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    await this.limiter.reserveClaude(userId, now, 1);
+    const before = request.brief ?? EMPTY_BRIEF;
+    let proposed: unknown;
+    try {
+      const result = await claude.structured(
+        {
+          system: UNDERSTAND_SYSTEM,
+          user: JSON.stringify({ today: request.today, briefSoFar: before, newWords: request.words }),
+          schema: BRIEF_JSON_SCHEMA,
+          maxTokens: 800,
+          effort: "low",
+          name: UNDERSTAND_STEP,
+        },
+        AbortSignal.timeout(15_000),
+      );
+      proposed = result.value;
+    } catch (error) {
+      throw toAppError(error, "Claude");
+    }
+    const parsed = TripBrief.safeParse(proposed);
+    // An answer of the wrong shape changes nothing: the brief stays as it was.
+    const brief = cleanBrief(parsed.success ? parsed.data : before, request.today);
+    return { brief, missing: missing(brief), assumptions: assumptions(brief) };
+  }
+
+  /** The planner's search: Kiwi.com's flights for a complete brief, three options chosen by code, links out. */
+  async searchTrip(userId: string, body: unknown): Promise<PlanResult> {
+    const request = parse(PlanSearchRequest, body);
+    const brief = cleanBrief(request.brief, request.today);
+    const query = toQuery(brief);
+    if (!query) throw new AppError("invalid_request", { message: `The trip isn't complete yet: ${missing(brief).join(", ")}.` });
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    await this.limiter.reserveToolRun(userId, now);
+    const flights = this.deps.flightSearch ?? (this.mode === "live" ? new KiwiFlightSearch() : new MockFlightSearch());
+    let answer: Awaited<ReturnType<FlightSearch["search"]>>;
+    try {
+      answer = await flights.search(query, AbortSignal.timeout(KIWI_TIMEOUT_MS));
+    } catch (error) {
+      const reason = error instanceof FlightSearchError ? error.reason : "unavailable";
+      throw new AppError("provider_unavailable", { message: reason === "refused" ? "Kiwi.com didn't answer this search." : "Kiwi.com couldn't be reached. Try again in a moment." });
+    }
+    const options = pickOptions(answer.itineraries, answer.currency, brief.budget);
+    this.deps.log?.({ event: "trip_search", results: answer.itineraries.length, options: options.length });
+    return {
+      brief,
+      options: options.map((option) => ({ ...option, links: stayLinks(option, brief) })),
+      source: "Kiwi.com",
+      checkedAt: new Date(this.now()).toISOString(),
+    };
   }
 
   private travelReaderOrRefuse(): TravelReader {
@@ -1493,4 +1565,18 @@ export interface TravelScanResult {
   emailsNotTravel: number;
   bookings: TravelBooking[];
   receipt: ToolReceipt;
+}
+
+// ---------------------------------------------------------------- trip planner
+
+const PlanDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const PlanUnderstandRequest = z.object({ words: z.string().trim().min(1).max(600), brief: TripBrief.optional(), today: PlanDay }).strict();
+const PlanSearchRequest = z.object({ brief: TripBrief, today: PlanDay }).strict();
+
+export interface PlanUnderstood { brief: TripBrief; missing: Needed[]; assumptions: Assumption[] }
+export interface PlanResult {
+  brief: TripBrief;
+  options: (PlanOption & { links: PlanLinks })[];
+  source: "Kiwi.com";
+  checkedAt: string;
 }

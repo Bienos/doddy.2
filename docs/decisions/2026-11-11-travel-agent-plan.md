@@ -14,6 +14,14 @@
   - where trips show: "Karta na Home, gdy jest wyjazd".
 
   So in point 8 below, the mailbox is read only when the person asks.
+
+  Then, for stage 2 (12 Nov 2026, after "podoba mi się planner"):
+  - Kiwi.com: "Od razu dla wszystkich" (on for everyone; its terms for this use are still unknown);
+  - where it starts: "Ekran, potem głos";
+  - stays: "Rozeznanie + linki";
+  - package holidays: "Link do wakacje.pl".
+
+  Built: `docs/implementation/TRAVEL_PLANNER.md`.
   The design and the order of stages are this pull request's proposal; **owner approval of the plan as a whole is pending**.
 - **Status:** proposed (the four answers above are the owner's)
 - **Replaces:** version 1 of this decision (same day, a source-by-source plan). Builds on ADR-570 (errands), ADR-607 (shopping runner), `2026-11-10-radar-alerts`, `2026-11-09-restaurant-calls-one-tap`.
