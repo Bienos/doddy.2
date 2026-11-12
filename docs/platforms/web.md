@@ -50,18 +50,22 @@ Linking from the iPhone takes effect only when that iPhone confirms it with its 
 ## Doddy accounts on the server (decision `2026-11-08-required-account`)
 Every user is getting a Doddy account: a Supabase user made with Apple, Google or a code sent by email. The iPhone talks to Supabase itself; this server only checks the token (ADR-526, `DODDY_AUTH_MODE=supabase`).
 - **Email counts now.** The token check accepts `apple`, `google` and `email`. It refuses any session whose `amr` names a password (`madeWithPassword`, `src/auth.ts`), even if password sign-in were left on in the project.
-- **Linking an iPhone's earlier data:** `POST /v1/account/link-device`. The account goes in the Authorization header, and `{ "deviceToken": "<the iPhone's ds1 token>" }` in the body, as proof.
-  - It writes one row of `account_links`, mapping the account to the device's user id. From then on the account works on that data, and the device token is refused, so `POST /v1/session/device` for that iPhone answers 409 `account_conflict`.
-  - A repeat answers the same way, so the iPhone can safely try again after a lost answer.
-  - Accounts are never merged, so the route refuses with 409 `account_conflict` when the account already has data of its own, when it already took over another iPhone's data, or when another account took over this iPhone's data.
-  - Limit: 10 tries per account per hour. Without a Supabase project the route answers 503 `live_not_configured`.
-  - Code: `src/accountLinks.ts`, `Store.linkAccount`.
+- **Linking an iPhone's earlier data** takes two steps, so the iPhone itself takes part each time (a device token alone links nothing):
+  1. `POST /v1/account/link-device/start`, with the iPhone's own device token (`ds1`) in the Authorization header and no body. Answers `{ "linkCode", "expiresAt" }`: a one-time code that works for five minutes and is kept only as a hash (`account_link_codes`). A newer code replaces an older one. A guest's token (`scp: "ask"`) gets 403 `permission_insufficient`: it keeps no data. An invalid, expired or cut-off token gets 401.
+  2. `POST /v1/account/link-device`, with the account in the Authorization header and `{ "linkCode": "…" }` in the body. Answers `{ "linked": true }`. A used, expired or unknown code: 400 `attempt_invalid` (the iPhone asks for a new one). The one-step body `{ "deviceToken" }` of the first version is refused with 400 `invalid_request`; an app from before this answer reads it as "try later" and keeps its device session.
+  - The link writes one row of `account_links`, mapping the account to the device's user id. From then on the account works on that data, and the device token is refused, so `POST /v1/session/device` for that iPhone answers 409 `account_conflict`.
+  - A repeat (both steps again, a new code) answers the same way, so the iPhone can safely try again after a lost answer.
+  - Accounts are never merged, so the route refuses with 409 `account_conflict` when the account already has data of its own, when it already took over another iPhone's data, or when another account took over this iPhone's data. The code is used up either way.
+  - **Undo, for a day:** `POST /v1/account/link-device/undo` with the iPhone's device token (still accepted here after the link) and no body. Within 24 hours of the link it removes the link, revokes browser sessions opened for that data since the link, and removes Apple or Google sign-ins linked to it, iPhones that joined it and unused sign-in codes or tickets made since then. Answers `{ "linked": false }` (also when nothing was linked). Later: 409 `account_conflict`. Data written meanwhile stays with the iPhone's data. DoddyCore has the call (`undoBackendLink`); no screen offers it yet.
+  - **Operator unlink**, any time: `DATABASE_URL=… npm run account:unlink -- <account-or-data-user-id>` in `backend/` (`src/unlinkAccount.ts`, `Store.unlinkAccount`), the same clean-up as the undo.
+  - Limits: 10 link tries per account per hour, and 10 codes or undo tries per iPhone per hour. Without a Supabase project all three routes answer 503 `live_not_configured`.
+  - Code: `src/accountLinks.ts`, `Store.linkAccountWithCode`, `Store.undoAccountLink`.
 - **Deleting the account** (`DELETE /v1/account` with the account's token):
   - erases the linked data;
   - queues the Supabase user for removal (`supabase_auth` cleanup; it needs `SUPABASE_SECRET_KEY`, as for ADR-818);
   - ends that account's earlier tokens at once, through its cut-off second.
 - **Tests:** `backend/test/account-links.test.ts` builds the real app from its config (supabase mode, device sign-in on, a local ES256 key in place of the project's). `auth-supabase.test.ts` covers email and passwords.
-- **To turn it on, live:** `DODDY_AUTH_MODE=supabase` and `SUPABASE_URL` on Render `doddy`. Keep `DODDY_SESSION_SIGNING_KEY` while phones move over: old device tokens and the link proof need it. Render runs `DODDY_ENV=development`, where that is allowed.
+- **To turn it on, live:** `DODDY_AUTH_MODE=supabase` and `SUPABASE_URL` on Render `doddy`. Keep `DODDY_SESSION_SIGNING_KEY` while phones move over: old device tokens, the link's first step and the undo need it. Deploy the server before an app build with the two-step link: an app with it gets 404 from an older server and tries again later. Render runs `DODDY_ENV=development`, where that is allowed.
 
 ## Folders
 | Folder | What |

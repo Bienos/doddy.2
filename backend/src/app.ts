@@ -86,7 +86,7 @@ export async function buildApp(
   const accountLinker = new AccountLinker({
     store,
     accounts: supabase,
-    // Proof of the iPhone's earlier data: its own device token, valid and not cut off (ADR-709).
+    // The iPhone's own device session (valid and not cut off, ADR-709) starts a link and can undo it.
     devices: config.sessionSigningKey ? new RevocableSessionVerifier(new SignedSessionVerifier(config.sessionSigningKey), floors) : null,
     floors,
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
@@ -280,6 +280,7 @@ export async function buildApp(
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => store.pruneTokenFloors(Date.now()))
+      .then(() => store.pruneAccountLinkCodes(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
     // Kept memory (ADR-603) is swept on its own, so a failure in the steps above can't skip it, and its
