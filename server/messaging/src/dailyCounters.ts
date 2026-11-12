@@ -6,7 +6,8 @@ import { keyedDigest } from "./crypto.js";
 
 type Q = Pick<pg.PoolClient, "query"> | pg.Pool;
 
-export type CounterScope = "signup_ip" | "sms_account";
+/** `news_account`: digests the AI writer is asked to write per account (migration 030). */
+export type CounterScope = "signup_ip" | "sms_account" | "news_account";
 
 /** The day in parameter `n` (YYYY-MM-DD, for a fixed clock) or today in UTC as the database counts it. */
 const day = (n: number) => `COALESCE($${n}::date, (now() AT TIME ZONE 'utc')::date)`;
