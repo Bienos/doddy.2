@@ -72,6 +72,8 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case claudeDocuments
     /// This week's leaflets, "Cheapest this week" (ADR-609).
     case deals
+    /// Real Shopify product search and external checkout via Shop MCP; no in-Doddy payments.
+    case shopifyShopping
     /// Tasks handed to the background worker (ADR-570).
     case errands
     /// "Pilnuj ceny" (ADR-614).
@@ -126,6 +128,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .webSearch: [CloudToolName.webSearch, "news_search", "find_places"]
         case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument]
         case .deals: [VoiceToolName.findDeals]
+        case .shopifyShopping: [VoiceToolName.shopifySearch, VoiceToolName.shopifyPrepareCheckout]
         case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands]
         case .following: [VoiceToolName.followNews]
         case .health: [VoiceToolName.readHealthWeek]
