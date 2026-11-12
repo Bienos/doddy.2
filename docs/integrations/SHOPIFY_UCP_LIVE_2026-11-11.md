@@ -45,7 +45,7 @@ No orders, payments or order-tracking exist in this PR. A merchant cart and chec
 
 ## ElevenLabs voice agent integration (11 Nov 2026, owner request)
 
-**Implemented in repo, NOT synced to live agent or deployed.** This PR now has two local phone tools in `voice-agent/tools.json` (both `elevenlabs_tool_id=not_synced`; search asks `yes_or_tap`, merchant checkout asks `tap`). The live agent still does NOT know them.
+**Implemented in repo, NOT synced to live agent or deployed.** This PR now has two local phone tools in `voice-agent/tools.json` (both `elevenlabs_tool_id=not_synced`; public search uses `runs_now`, merchant checkout requires `tap`). The live agent still does NOT know them.
 
 - `shopify_search(query)`: a public read performed through `ShopifyLiveClient.search` and the live Doddy backend **after a user yes or tap under ASK-01**. It returns only genuine Shopify offers, numbers 1–5, and a catalog price from the provider; the iPhone shows the same items using `ShopifyVoiceResultsCard`. No invented fallback.
 - `shopify_prepare_checkout(index, quantity?)`: the number MUST match an available offer that the same conversation fetched from Shopify. The controller pins its exact product/variant/seller before displaying a named consent card. `AskFirst.tapFirst` + the `AskLedger` require an on-screen tap; a spoken `yes` cannot create a cart.
