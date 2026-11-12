@@ -1533,7 +1533,7 @@
         "ask": "runs_now",
         "speak_before": "auto",
         "timeout_secs": 60,
-        "elevenlabs_tool_id": "not_synced"
+        "elevenlabs_tool_id": "tool_4501m76mfz7jf2qa2mh3am5shktt"
       }
     },
     {
@@ -1598,7 +1598,7 @@
         "ask": "runs_now",
         "speak_before": "auto",
         "timeout_secs": 60,
-        "elevenlabs_tool_id": "not_synced"
+        "elevenlabs_tool_id": "tool_8901m76mfzr6fe486avrm7ecn9b6"
       }
     },
     {
@@ -1678,7 +1678,7 @@
         "ask": "tap",
         "speak_before": "force",
         "timeout_secs": 120,
-        "elevenlabs_tool_id": "not_synced"
+        "elevenlabs_tool_id": "tool_4201m76mg12tey6a0gg3g719mqa0"
       }
     },
     {
@@ -1703,7 +1703,7 @@
         "ask": "runs_now",
         "speak_before": "auto",
         "timeout_secs": 60,
-        "elevenlabs_tool_id": "not_synced"
+        "elevenlabs_tool_id": "tool_2801m76mg1hte8t8s38h9ny3mkeb"
       }
     },
     {
