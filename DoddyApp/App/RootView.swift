@@ -277,8 +277,13 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 Task { await noteReminders.refreshOnForeground() }
-                // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged.
-                Task { await ErrandsModel.shared.refresh() }
+                // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged. While one
+                // still runs, the app asks again every 30 s as long as it stays open (12 Nov 2026), so its result reaches
+                // Messages without waiting for a push.
+                Task {
+                    await ErrandsModel.shared.refresh()
+                    ErrandsModel.shared.watchWhileRunning()
+                }
                 // Studio (ADR-740): asked again only while something is being made.
                 if StudioModel.shared.hasOpenItems { Task { await StudioModel.shared.refresh() } }
                 FocusController.shared.refresh()
@@ -311,6 +316,8 @@ struct RootView: View {
             // The app switcher's picture of Doddy: with the Face ID lock on, an opaque cover while he isn't in front (ADR-723).
             if phase != .active { PrivacyCover.shared.update(sceneIsActive: false) }
             if phase == .background {
+                // Nothing asks Doddy's server about tasks while the app is away; a push or the next return does.
+                ErrandsModel.shared.stopWatching()
                 // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
                 UnfinishedNoteStore.shared.flush()
                 // Logbook (ADR-602): today so far, at most once an hour.

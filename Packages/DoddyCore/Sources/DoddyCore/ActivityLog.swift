@@ -29,6 +29,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case news
     /// The screen the person shares with Doddy (decision 2026-11-09-doddy-looks-at-the-screen).
     case screen
+    /// A food delivery app opened on a card's tap (decision 2026-11-12-food-by-voice).
+    case food
 
     public var title: String {
         switch self {
@@ -57,6 +59,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .training: "Training plan"
         case .news: "On my radar"
         case .screen: "Your screen"
+        case .food: "Food apps"
         }
     }
 }
@@ -279,6 +282,10 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:
             return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
+        case .openFoodApp(let handoff):
+            // The title is fixed so it has a Polish one; the app and the search go in the detail.
+            return ActivityRequest(app: .food, title: "Open a food app",
+                                   detail: [handoff.app.name, handoff.search.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
         case .lookAtScreen:
             // The question can name someone on the screen, so the log keeps only that Doddy looked.
             return ActivityRequest(app: .screen, title: "Looked at your screen", detail: nil, isLookup: true)

@@ -983,12 +983,14 @@ extension VoiceToolReply {
     public static func errandStarted(_ draft: ErrandDraft) -> String {
         let work = switch draft.kind {
         case nil:
-            "It searches the web and reads pages as often as the task needs, and the user gets a notification when it's done. Nothing is booked, bought or sent."
+            "It searches the web and reads pages as often as the task needs. Nothing is booked, bought or sent."
         case .shopping?:
-            "It looks for offers in shops in Poland and reads their pages, and the user gets a notification when it's done. Nothing is bought, ordered or sent."
+            "It looks for offers in shops in Poland and reads their pages. Nothing is bought, ordered or sent."
         }
         return "started: Doddy's server has the task below and works on it in the background. \(work) "
-            + "When it's done, the result arrives as your message in Messages in the app. Tell the user in one short line to give you "
+            // 12 Nov 2026: a notification is said to come only if the user allowed Doddy's notifications; the app shows one
+            // itself while it is open (ResultNotice), and Doddy's server sends one when this iPhone has notifications on.
+            + "When it's done, the result arrives as your message in Messages in the app, with a notification if the user allowed Doddy's notifications. Tell the user in one short line to give you "
             + "a moment and that you'll let them know in Messages, e.g. 'Daj mi chwilę, poszukam i dam ci znać w Wiadomościach.' "
             + "They can close the app.\n"
             + ToolData.block([quoted("Title", draft.title)])

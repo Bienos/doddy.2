@@ -180,17 +180,23 @@ final class MadeDocumentsModel {
         }
         if case .ready = load {} else { load = .loading }
         do {
-            load = .ready(try await client.documents())
+            set(.ready(try await client.documents()))
         } catch WebLinkError.unauthenticated {
             // A refused session is renewed once; a second refusal is a failure, not another loop.
             guard let renewed = await MadeDocumentsClientFactory.renewed() else {
                 fail(NSLocalizedString("Couldn't reach Doddy's server. Try again in a moment.", comment: ""), quietly: !clearingDownloads)
                 return
             }
-            do { load = .ready(try await renewed.documents()) } catch { fail(Self.text(for: error), quietly: !clearingDownloads) }
+            do { set(.ready(try await renewed.documents())) } catch { fail(Self.text(for: error), quietly: !clearingDownloads) }
         } catch {
             fail(Self.text(for: error), quietly: !clearingDownloads)
         }
+    }
+
+    /// Only a list that changed is set (12 Nov 2026): Messages reads this every 6 or 30 seconds, and setting an
+    /// unchanged list redrew the whole conversation each time ("to się trochę zacina").
+    private func set(_ fresh: Load) {
+        if fresh != load { load = fresh }
     }
 
     /// A background re-read that fails keeps the list it had (11 Nov 2026): replacing it made Messages' file cards

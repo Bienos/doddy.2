@@ -13,6 +13,8 @@ public enum VoiceToolName {
     public static let lookupContact = "lookup_contact"
     public static let setTimer = "set_timer"
     public static let openMap = "open_map"
+    /// Opens a food delivery app after a card (decision 2026-11-12-food-by-voice).
+    public static let openFoodApp = "open_food_app"
     public static let runShortcut = "run_shortcut"
     public static let draftMessage = "draft_message"
     /// Several changes on one card (`PlanProposal`, ADR-204).
@@ -287,6 +289,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
     case openCamera
+    /// A food delivery app (`FoodApps.all`), after a card with what to search for there (decision
+    /// 2026-11-12-food-by-voice). Nothing is ordered; the person orders in the app.
+    case openFoodApp(FoodHandoff)
     /// One picture of the screen the person shares with Doddy, read by Claude for their question, after a yes
     /// (decision 2026-11-09-doddy-looks-at-the-screen).
     case lookAtScreen(question: String)
@@ -469,6 +474,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:
             return .openCamera
+        case VoiceToolName.openFoodApp:
+            switch FoodHandoff.parse(app: args.text("app"), search: args.text("search"), page: args.text("page")) {
+            case .success(let handoff): return .openFoodApp(handoff)
+            case .failure(let refusal): return .invalid(name: name, reason: refusal.reason)
+            }
         case VoiceToolName.lookAtScreen:
             guard let question = args.text("question") else { return .invalid(name: name, reason: "missing question") }
             return .lookAtScreen(question: question)
