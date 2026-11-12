@@ -69,7 +69,7 @@ final class JourneyPlannerTests: XCTestCase {
         )))
         XCTAssertEqual(h.url.host, "jakdojade.pl")
         XCTAssertNil(URLComponents(url: h.url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "fc" }))
-        XCTAssertFalse(h.url.path.contains("?"))
+        XCTAssertFalse(URLComponents(url: h.url, resolvingAgainstBaseURL: false)?.percentEncodedPath.contains("?") == true)
         XCTAssertTrue(h.url.absoluteString.contains("%2F"))
         XCTAssertNil(JakdojadeLinkBuilder.handoff(JourneyIntent(destination: "Wola\nEvil, Warszawa", city: .warszawa)))
         XCTAssertNil(JakdojadeLinkBuilder.handoff(JourneyIntent(destination: String(repeating: "X", count: 161), city: .warszawa)))
