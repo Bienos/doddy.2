@@ -39,7 +39,7 @@ SPEAK_BEFORE = {"auto", "force"}
 # lookup (the web, the weather, Wikipedia, news, places, sums, conversions) runs at once.
 ASK = {"yes_or_tap", "tap", "runs_now"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
-PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
+PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places", "shopify_search",
                   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
 # Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-619).
 RUNS_NOW_MODES = {"start_translator", "stop_translator"}
