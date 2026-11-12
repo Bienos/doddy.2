@@ -11,6 +11,10 @@ public enum CallTaskLimits {
     public static let nameLength = 80
     public static let goalLength = 160
     public static let questionLength = 200
+    /// The booking name, as the server allows (letters, spaces, apostrophes, dots, hyphens).
+    public static let bookingNameLength = 60
+    public static let serviceLength = 80
+    public static let maxPartySize = 20
 }
 
 /// One place to call: its name as the user or the place search gave it, and its number.
@@ -24,22 +28,49 @@ public struct CallTaskPlace: Equatable, Sendable {
     }
 }
 
+/// A booking Doddy may make on the call (decision docs/decisions/2026-11-12-book-agent.md). The server
+/// builds every sentence from it, including the one sentence that accepts it; the card shows them.
+/// Same shape as the server's `bookingSchema` (server/messaging/src/taskCalls/booking.ts).
+public struct CallTaskBooking: Codable, Equatable, Sendable {
+    /// The name the booking is under, as the user said it ("Anna Kowalska").
+    public let name: String
+    /// The day, `YYYY-MM-DD`, Warsaw time.
+    public let date: String
+    /// The start time, `HH:MM`, 24-hour.
+    public let time: String
+    /// "strzyżenie męskie", "manicure"; nil for a table, which needs `partySize`.
+    public let service: String?
+    public let partySize: Int?
+
+    public init(name: String, date: String, time: String, service: String? = nil, partySize: Int? = nil) {
+        self.name = name
+        self.date = date
+        self.time = time
+        self.service = service
+        self.partySize = partySize
+    }
+}
+
 /// What the voice tool `call_places` asked for. The user's first name is added by the app when it
 /// builds the request (`body`), from the approved name in About you.
 public struct CallTaskDraft: Equatable, Sendable {
     public let places: [CallTaskPlace]
-    /// One question, asked word for word at every place ("Czy mają Państwo wolny stolik…").
+    /// One question, asked word for word at every place ("Czy mają Państwo wolny stolik…"). Empty for
+    /// a booking: the server builds that question from `booking`.
     public let question: String
     /// What the user wants, in one sentence; shown on the card, never said on the call.
     public let goal: String
     /// "Text me the result": a text to the user's own verified number when the task ends.
     public let textResult: Bool
+    /// Set for a call that books (decision 2026-11-12-book-agent); nil for one that only asks.
+    public let booking: CallTaskBooking?
 
-    public init(places: [CallTaskPlace], question: String, goal: String, textResult: Bool) {
+    public init(places: [CallTaskPlace], question: String, goal: String, textResult: Bool, booking: CallTaskBooking? = nil) {
         self.places = places
         self.question = question
         self.goal = goal
         self.textResult = textResult
+        self.booking = booking
     }
 
     /// The body of `POST /v1/call-tasks` (the server's strict schema). Every number is marked as
@@ -47,19 +78,23 @@ public struct CallTaskDraft: Equatable, Sendable {
     public func body(principalName: String, principalGenitive: String? = nil,
                      maxDurationSecs: Int = CallBriefDraft.defaultMaxDuration) -> CallTaskBody {
         CallTaskBody(
+            kind: booking == nil ? "ask" : "book",
             places: places.map { .init(name: $0.name, phone: $0.phone, source: .places, sourceLabel: nil) },
             principal: .init(name: principalName, genitive: principalGenitive ?? PolishGenitive.suggest(principalName)),
-            goal: goal, question: question, facts: [], maxDurationSecs: maxDurationSecs, textResult: textResult)
+            goal: goal, question: booking == nil ? question : nil, booking: booking, facts: [],
+            maxDurationSecs: maxDurationSecs, textResult: textResult)
     }
 }
 
-/// The body of `POST /v1/call-tasks`.
+/// The body of `POST /v1/call-tasks`. An ask carries `question`; a booking carries `booking` and no
+/// question (nil values are left out of the JSON).
 public struct CallTaskBody: Encodable, Equatable, Sendable {
     public var kind = "ask"
     public let places: [CallBriefBody.Callee]
     public let principal: CallBriefBody.Principal
     public let goal: String
-    public let question: String
+    public let question: String?
+    public let booking: CallTaskBooking?
     public let facts: [CallBriefBody.Fact]
     public let maxDurationSecs: Int
     public let textResult: Bool
@@ -69,12 +104,16 @@ public struct CallTaskBody: Encodable, Equatable, Sendable {
 /// send, and the digest the one tap approves.
 public struct CallTaskPreview: Decodable, Equatable, Sendable {
     public let taskId: UUID
+    /// "book" for a call that may book (decision 2026-11-12-book-agent); "ask", or nil from older servers.
+    public let kind: String?
     public let digest: String
     public let approvableUntil: String
     public let textResult: Bool
     public let places: [CallPreview]
     /// Whether the first call would fit inside the calling hours right now.
     public let callableNow: Bool?
+
+    public var isBooking: Bool { kind == "book" }
 }
 
 extension VoiceToolRequest {
@@ -109,19 +148,73 @@ extension VoiceToolRequest {
             }
             places.append(CallTaskPlace(name: placeName, phone: phone))
         }
-        guard let question = args.text("question"), question.count >= 5 else { return .invalid(name: name, reason: "missing question") }
-        guard question.count <= CallTaskLimits.questionLength else {
-            return .invalid(name: name, reason: "the question is longer than \(CallTaskLimits.questionLength) characters")
+        // A booking (decision 2026-11-12-book-agent): Doddy's server writes the question and the one
+        // sentence that accepts the booking, so the agent passes the booking's details instead.
+        let booking: CallTaskBooking?
+        switch parseBooking(args) {
+        case .none: booking = nil
+        case .booking(let b): booking = b
+        case .invalid(let reason): return .invalid(name: name, reason: reason)
+        }
+        let question: String
+        if booking != nil {
+            guard args.text("question") == nil else {
+                return .invalid(name: name, reason: "for a booking, leave out question: Doddy's server asks for exactly the booking")
+            }
+            question = ""
+        } else {
+            guard let q = args.text("question"), q.count >= 5 else { return .invalid(name: name, reason: "missing question") }
+            guard q.count <= CallTaskLimits.questionLength else {
+                return .invalid(name: name, reason: "the question is longer than \(CallTaskLimits.questionLength) characters")
+            }
+            question = q
         }
         guard let goal = args.text("goal"), goal.count >= 3 else { return .invalid(name: name, reason: "missing goal") }
         guard goal.count <= CallTaskLimits.goalLength else {
             return .invalid(name: name, reason: "the goal is longer than \(CallTaskLimits.goalLength) characters")
         }
-        if ([question, goal] + places.map(\.name)).contains(where: { $0.contains("{") || $0.contains("}") }) {
-            return .invalid(name: name, reason: "no curly braces in the question, goal or names")
+        let written = [question, goal] + places.map(\.name) + [booking?.name, booking?.service].compactMap { $0 }
+        if written.contains(where: { $0.contains("{") || $0.contains("}") }) {
+            return .invalid(name: name, reason: "no curly braces in the question, goal, names or booking")
         }
         let textResult = args.has("text_result") ? args.flag("text_result") : true
-        return .callPlaces(CallTaskDraft(places: places, question: question, goal: goal, textResult: textResult))
+        return .callPlaces(CallTaskDraft(places: places, question: question, goal: goal, textResult: textResult, booking: booking))
+    }
+
+    private enum ParsedBooking { case none, booking(CallTaskBooking), invalid(String) }
+
+    /// `booking_name`, `booking_date` (YYYY-MM-DD), `booking_time` (HH:MM), and `booking_service` or
+    /// `booking_party_size`. None of them: a call that only asks. Some but not all: refused.
+    private static func parseBooking(_ args: Arguments) -> ParsedBooking {
+        let keys = ["booking_name", "booking_date", "booking_time", "booking_service", "booking_party_size"]
+        guard keys.contains(where: { args.has($0) }) else { return .none }
+        guard let bookingName = args.text("booking_name"), !bookingName.isEmpty else {
+            return .invalid("missing booking_name: ask the user whose name the booking is under; never guess it")
+        }
+        guard bookingName.count <= CallTaskLimits.bookingNameLength else {
+            return .invalid("booking_name is longer than \(CallTaskLimits.bookingNameLength) characters")
+        }
+        guard let date = args.text("booking_date"), date.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil else {
+            return .invalid("booking_date must be the day as YYYY-MM-DD, e.g. 2026-11-14")
+        }
+        guard let time = args.text("booking_time"), time.range(of: #"^([01]\d|2[0-3]):[0-5]\d$"#, options: .regularExpression) != nil else {
+            return .invalid("booking_time must be HH:MM in 24-hour time, e.g. 19:00")
+        }
+        let service = args.text("booking_service")
+        if let service, service.count > CallTaskLimits.serviceLength {
+            return .invalid("booking_service is longer than \(CallTaskLimits.serviceLength) characters")
+        }
+        var partySize: Int?
+        if args.has("booking_party_size") {
+            guard let n = args.number("booking_party_size"), n == n.rounded(), n >= 1, n <= Double(CallTaskLimits.maxPartySize) else {
+                return .invalid("booking_party_size must be a whole number from 1 to \(CallTaskLimits.maxPartySize)")
+            }
+            partySize = Int(n)
+        }
+        guard service != nil || partySize != nil else {
+            return .invalid("a booking needs booking_service (e.g. 'strzyżenie męskie') or booking_party_size (for a table)")
+        }
+        return .booking(CallTaskBooking(name: bookingName, date: date, time: time, service: service, partySize: partySize))
     }
 }
 
@@ -131,8 +224,11 @@ extension VoiceToolReply {
     // "started" means the first call is being dialled, never that anyone answered: the result comes
     // later by notification (and a text, if chosen), and the agent never hears it.
 
-    public static func callTaskStarted(first: String, count: Int, textResult: Bool) -> String {
-        let rest = count > 1 ? " If they don't say yes, Doddy calls the next place, one at a time, and stops at the first yes." : ""
+    public static func callTaskStarted(first: String, count: Int, textResult: Bool, booking: Bool = false) -> String {
+        let rest = count > 1
+            ? (booking ? " If they can't book exactly that, Doddy calls the next place, one at a time, and stops at the first booking."
+                       : " If they don't say yes, Doddy calls the next place, one at a time, and stops at the first yes.")
+            : ""
         let back = textResult ? "a notification and a text to the user's own number" : "a notification"
         return "started: Doddy is calling \(first) now.\(rest) The answer comes back as \(back) when Doddy is done; it isn't known yet, so don't say anyone answered or that anything is booked."
     }
@@ -141,6 +237,9 @@ extension VoiceToolReply {
         unknown: Doddy couldn't confirm whether the calls started. Don't say they did, and don't call call_places again \
         on your own: the first call may be ringing. The user can check in Settings, Phone calls, Calls for you.
         """
+
+    public static let callTaskBookingOff =
+        "failed: booking by phone isn't switched on on Doddy's server yet. Nobody was called. Offer to call and only ask whether they have a free slot instead."
 
     public static let callTaskDeclined = "declined: the user chose not to have Doddy call these places. Nobody was called."
 
@@ -177,6 +276,8 @@ extension VoiceToolReply {
             return "failed: a limit stopped the first call (\(gate)). Nobody was called."
         case .callsDisabled?:
             return "failed: calls from Doddy are switched off on Doddy's server right now. Nobody was called."
+        case .bookingNotConfigured?:
+            return callTaskBookingOff
         case .server(.offline)?:
             return "failed: Doddy couldn't reach its server. Nobody was called."
         default:
