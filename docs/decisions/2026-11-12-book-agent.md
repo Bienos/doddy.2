@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-12
 - **Decided by:** owner: "create the book agent", after the "book" agent of `2026-11-09-restaurant-calls-one-tap` (step 2, decision 2) was explained to them.
-- **Status:** applied. Server side, spec and the live ElevenLabs agent in #354 (merged 12 Nov 2026 as `02ed49e`); `ELEVENLABS_TASK_BOOK_AGENT_ID` set and `doddy-messaging` deployed at 04:27 UTC the same day (owner queue 43). The app's `call_places` card follows in its own pull request.
+- **Status:** applied. Server side, spec and the live ElevenLabs agent in #354 (merged 12 Nov 2026 as `02ed49e`); `ELEVENLABS_TASK_BOOK_AGENT_ID` set and `doddy-messaging` deployed at 04:27 UTC the same day (owner queue 43). The app's `call_places` card follows in two pull requests: step 1 (the booking model, the voice-tool parser for the booking fields, the server's refusal codes and their tests, all in `Packages/DoddyCore`) and step 2 (the card in `VoiceView.swift`, the availability check in `VoiceSessionController.swift`, the new `call_places` parameters in `voice-agent/tools.json` and the Polish strings), which waits until the voice files are free of other open pull requests. Until step 2 and the owner's sync of the live main agent's `call_places` tool, the live agent can't send a booking.
 - **Replaces:** nothing; carries out decision 2 of `2026-11-09-restaurant-calls-one-tap`. The "ask" agent, its prompt and its hash are unchanged.
 
 ## Why

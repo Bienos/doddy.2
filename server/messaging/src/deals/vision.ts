@@ -215,10 +215,11 @@ function readConditions(raw: PageOutput["products"][number]["conditions"]): Cond
   }).slice(0, 8); // the wire carries at most 4 condition texts; the flags come from all of them
 }
 
-/** Keeps what the code can stand behind: a parseable price and a name. At most 40 products a page. */
-export function readProducts(output: PageOutput): ReadProduct[] {
+/** Keeps what the code can stand behind: a parseable price and a name. At most `max` products a page (40 for a
+ * search's read, which lists only what fits the items; more for the catalog's, which lists the whole page). */
+export function readProducts(output: PageOutput, max = 40): ReadProduct[] {
   const out: ReadProduct[] = [];
-  for (const p of output.products.slice(0, 40)) {
+  for (const p of output.products.slice(0, max)) {
     const name = clean(p.name, 160);
     const price = parsePrice(p.price);
     if (!name || !price) continue;
@@ -270,10 +271,10 @@ export function readMechanic(m: PageOutput["promotions"][number]["mechanic"]): M
   }
 }
 
-/** Keeps promotions with a range and a mechanic the code can state. At most 10 a page. */
-export function readPromotions(output: PageOutput): ReadPromotion[] {
+/** Keeps promotions with a range and a mechanic the code can state. At most `max` a page. */
+export function readPromotions(output: PageOutput, max = 10): ReadPromotion[] {
   const out: ReadPromotion[] = [];
-  for (const p of (output.promotions ?? []).slice(0, 10)) {
+  for (const p of (output.promotions ?? []).slice(0, max)) {
     const range = clean(p.range, 120);
     const mechanic = readMechanic(p.mechanic);
     if (!range || !mechanic || MONEY_IN_TEXT.test(range)) continue;
@@ -339,11 +340,37 @@ export function readScreen(output: ScreenOutput, imageCount: number, itemCount: 
   return flagged;
 }
 
+// ---------- the leaflet catalog: a whole page, read once for everyone (decision 2026-11-12-leaflet-catalog) ----------
+
+/** A catalog read keeps more of a page than a search's read: it lists everything, not only what fits the items. */
+export const CATALOG_MAX_PRODUCTS = 80;
+export const CATALOG_MAX_PROMOTIONS = 20;
+
+/** The same reading rules as VISION_SYSTEM, for every product on the page instead of the person's items: the page is
+ * read once a leaflet and kept, and each search matches its items against what was kept, in code. */
+export const CATALOG_SYSTEM = VISION_SYSTEM
+  .replace(
+    "You get the chain's name and the person's shopping items. List the products on this page that could be one of those items: the same kind of product, any brand unless the item names one. Leave everything else out. If nothing on the page fits, return an empty list.",
+    "You get the chain's name. List every product offered on this page with a price you can read, in the order they appear: food, drinks, household and drugstore goods, clothes, tools, electronics and anything else. Doddy keeps the list and later matches people's shopping items against it, so include each product once, with its full printed name. If the page has no product with a readable price (a cover, a store list, a recipe), return an empty list.",
+  )
+  .replace("Separately, list in promotions the offers on this page that print no price but a mechanic for a whole range that could include one of the items", "Separately, list in promotions every offer on this page that prints no price but a mechanic for a whole range");
+
 /** Reads one page through the model. Throws on API errors (network, HTTP, abort). */
 export async function readPage(api: DealsModelApi, image: PageImage, opts: { chain: ReadChain; queries: readonly string[]; signal: AbortSignal }): Promise<PageReadOutcome> {
   const reply = await api.readPage({ image, chain: opts.chain, queries: opts.queries }, opts.signal);
   if (reply.kind !== "ok") return { kind: reply.kind, usage: reply.usage };
   return { kind: "ok", products: readProducts(reply.output), promotions: readPromotions(reply.output), usage: reply.usage };
+}
+
+/** Reads a whole page for the catalog. Throws on API errors (network, HTTP, abort); a model without the catalog read
+ * answers `unparsed`, so the page stays unread. */
+export async function readCatalogPage(api: DealsModelApi, image: PageImage, opts: { chain: ReadChain; signal: AbortSignal }): Promise<PageReadOutcome> {
+  if (!api.readCatalogPage) return { kind: "unparsed" };
+  const reply = await api.readCatalogPage({ image, chain: opts.chain }, opts.signal);
+  if (reply.kind !== "ok") return { kind: reply.kind, usage: reply.usage };
+  return {
+    kind: "ok", products: readProducts(reply.output, CATALOG_MAX_PRODUCTS), promotions: readPromotions(reply.output, CATALOG_MAX_PROMOTIONS), usage: reply.usage,
+  };
 }
 
 // ---------- the real API ----------
@@ -353,10 +380,18 @@ export class AnthropicDealsModel implements DealsModelApi {
   readonly model: string;
   private readonly client: Anthropic;
 
-  constructor(apiKey: string, options: { model?: string; baseURL?: string } = {}) {
+  /** A search's reader: one retry and 20 s, since the whole search must answer within about 25 s. The catalog's scan
+   * runs in the background and may wait longer (`timeoutMs`, `maxRetries`). */
+  constructor(apiKey: string, options: { model?: string; baseURL?: string; timeoutMs?: number; maxRetries?: number } = {}) {
     this.model = options.model ?? "claude-haiku-5-5";
-    // One retry at most: the whole search must answer within about 25 s.
-    this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 1, timeout: 20_000 });
+    this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: options.maxRetries ?? 1, timeout: options.timeoutMs ?? 20_000 });
+  }
+
+  readCatalogPage(req: { image: PageImage; chain: ReadChain }, signal: AbortSignal): Promise<ModelReply<PageOutput>> {
+    return this.call(PageOutput, CATALOG_SYSTEM, [
+      { type: "image", source: { type: "base64", media_type: req.image.mediaType, data: req.image.data.toString("base64") } },
+      { type: "text", text: JSON.stringify({ chain: CHAIN_NAMES[req.chain] }) },
+    ], 16_000, signal);
   }
 
   readPage(req: { image: PageImage; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<PageOutput>> {

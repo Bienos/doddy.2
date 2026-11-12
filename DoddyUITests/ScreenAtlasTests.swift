@@ -210,9 +210,8 @@ final class ScreenAtlasTests: XCTestCase {
     func test4aSettings() {
         let pages: [(String, [String])] = [
             ("4-settings-01-settings", []),
-            ("4-settings-02-voice", ["settings.voice"]),
-            ("4-settings-03-voice-and-personality", ["settings.voice", "settings.personality"]),
-            ("4-settings-04-voice-list", ["settings.voice", "settings.personality", "settings.voice.choice"]),
+            // One page since 12 Nov 2026 (decision 2026-11-12-settings-one-voice-page): the personality is on it, not behind it.
+            ("4-settings-02-voice-and-personality", ["settings.voice"]),
             ("4-settings-05-siri-and-back-tap", ["settings.voice", "settings.ways"]),
             ("4-settings-06-ways-to-open-doddy", ["settings.voice", "settings.ways", "settings.backTap"]),
             ("4-settings-07-doddys-memory", ["settings.memory"]),
@@ -285,7 +284,8 @@ final class ScreenAtlasTests: XCTestCase {
             ("5-notify-04-alarms", ["settings.notifications", "settings.alarms"]),
             ("5-notify-05-birthdays", ["settings.notifications", "settings.birthdays"]),
             ("5-notify-06-daily-news", ["settings.notifications", "settings.news"]),
-            ("5-notify-07-phone-calls", ["settings.notifications", "settings.calls"]),
+            // On Settings' first page since 12 Nov 2026, no longer under Notifications.
+            ("5-notify-07-phone-calls", ["settings.calls"]),
             ("5-notify-08-morning-check-in", ["settings.notifications", "settings.routines", "settings.checkinOpen"]),
             ("5-notify-09-evening-wrap-up", ["settings.notifications", "settings.routines", "settings.wrapUpOpen"]),
             ("5-notify-10-weekly-plan", ["settings.notifications", "settings.routines", "settings.weeklyPlanOpen"]),

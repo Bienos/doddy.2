@@ -14,6 +14,8 @@ import { cloudTool } from "../src/tools/catalog.js";
 import { CloudToolsService } from "../src/tools/service.js";
 import { MockWebSearchProvider, type WebSearchProvider } from "../src/tools/websearch.js";
 import { type ClaudeProvider, isClaudeTool, MockClaudeProvider } from "../src/tools/claude.js";
+import type { TravelReader } from "../src/travel/reader.js";
+import type { FlightSearch } from "../src/travel/kiwi.js";
 import { DocumentLinks } from "../src/documents.js";
 import type { DuffelClient } from "../src/flights/duffel.js";
 import type { KiwiClient } from "../src/flights/kiwi.js";
@@ -41,6 +43,8 @@ export async function start(
     webSearch?: WebSearchProvider | null;
     claude?: ClaudeProvider | null;
     documentLinks?: boolean;
+    travelReader?: TravelReader;
+    flightSearch?: FlightSearch;
     flights?: { kiwi: KiwiClient | null; duffel: DuffelClient | null; bookingEnabled: boolean; bookingWaitMs?: number } | null;
   } = {},
 ): Promise<Rig> {
@@ -52,7 +56,7 @@ export async function start(
   const webSearch = o.webSearch === undefined ? new MockWebSearchProvider() : o.webSearch;
   const claude = o.claude === undefined ? new MockClaudeProvider() : o.claude;
   const documentLinks = o.documentLinks === false ? null : new DocumentLinks(TEST_LINK_KEY, common.publicBaseUrl);
-  const tools = new CloudToolsService({ ...common, provider, webSearch, claude, documentLinks, flights: o.flights ?? null, completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
+  const tools = new CloudToolsService({ ...common, provider, webSearch, claude, documentLinks, flights: o.flights ?? null, ...(o.travelReader ? { travelReader: o.travelReader } : {}), ...(o.flightSearch ? { flightSearch: o.flightSearch } : {}), completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
   const handler = createHandler({
     service,

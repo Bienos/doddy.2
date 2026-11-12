@@ -68,6 +68,15 @@ microphone/Live Activities, an interrupted start and a second press to end. An u
 must offer to open Doddy and must never start a delayed microphone afterward. Expansion and
 background microphone behaviour require a device; simulator compilation alone cannot verify them.
 
+Action Button audio session (decision `2026-11-12-action-button-audio-and-island`):
+`swift test --package-path Packages/DoddyCore --filter ConversationAudioHoldsTests` covers who sets the session
+up (LiveKit for every start but one without opening Doddy), a stale hold dropped by a newer start, and a late
+release that must not switch off a newer conversation's session. On an iPhone, press the Action Button with
+music playing in another app: the `voice-audio` connect line says `audio session held by Doddy … mixing with
+other apps ON`, Doddy is heard and hears you, the music keeps playing, and after Stop the log says `audio session
+given back to LiveKit`. The island faces come from `python3 -I tools/whole_doddy/cut_faces.py .`; a second run
+must change nothing.
+
 Provider network preparation: `VoiceNetworkPreparationTests` covers every permission/readiness gate,
 the two-minute request budget and its independence from token use, plus content-free SDK timing formatting.
 The native `DoddyTests/VoiceNetworkHostTests` checks our prewarm host against the pinned ElevenLabs

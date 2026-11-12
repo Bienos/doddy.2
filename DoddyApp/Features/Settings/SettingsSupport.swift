@@ -183,6 +183,26 @@ struct JSONExport: Transferable {
     }
 }
 
+/// The voice sign-in and how voice is connected: the "Voice" section of Settings › Account (it was the bottom section of
+/// Settings › Voice until 12 Nov 2026, decision `2026-11-12-settings-one-voice-page`, where "Your Doddy account" showed
+/// twice).
+struct VoiceAccountSection: View {
+    var body: some View {
+        Section("Voice") {
+            VoiceAccountSettings()
+            StatusRow(title: "Connection", value: Self.connectionText)
+                .accessibilityIdentifier("settings.voiceConnection")
+        }
+    }
+
+    static var connectionText: String {
+        if VoiceSessionKeychain.refreshToken() != nil { return NSLocalizedString("Doddy voice account", comment: "") }
+        // Decision 2026-11-08-required-account: the Doddy account also opens voice.
+        if DoddyAccountModel.shared.isSignedIn { return NSLocalizedString("Your Doddy account", comment: "") }
+        return NSLocalizedString("Sign in on first use", comment: "")
+    }
+}
+
 /// Voice identity is optional until the first voice feature is used. The persistent session
 /// restores in the background and sign-out revokes it on DODDY's server.
 struct VoiceAccountSettings: View {

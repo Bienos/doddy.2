@@ -8,7 +8,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { ErrandEffort } from "../config.js";
 import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, withMaxUses, type BudgetLeft, type ResearchBudget } from "../errands/budget.js";
 import {
-  countToolUses, echoable, FALLBACK_BETA, languageName, RESEARCH_TOOLS,
+  apiErrorDetail, countToolUses, echoable, FALLBACK_BETA, languageName, RESEARCH_TOOLS,
   type ErrandResearcher, type ErrandTask, type ResearchControl, type ResearchOutcome, type RunStats, type Usage,
 } from "../errands/researcher.js";
 import type { FailureCode } from "../errands/schema.js";
@@ -225,7 +225,7 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
     const r = await guarded(control.deadline, (signal) => api.research(messages, signal, room.left));
     if ("stop" in r) return stopped(r.stop);
     if ("error" in r) {
-      log("shopping request failed", { errandId: task.id, requests, error: errorCode(r.error) });
+      log("shopping request failed", { errandId: task.id, requests, error: errorCode(r.error), ...apiErrorDetail(r.error) });
       return failed("provider_error");
     }
     requests++;
@@ -276,7 +276,7 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
   const c = await guarded(new Date(Math.max(now().getTime(), control.deadline.getTime()) + 4 * 60_000), (signal) => api.card(input, signal));
   if ("stop" in c) return stopped(c.stop);
   if ("error" in c) {
-    log("shopping card request failed", { errandId: task.id, error: errorCode(c.error) });
+    log("shopping card request failed", { errandId: task.id, error: errorCode(c.error), ...apiErrorDetail(c.error) });
     return failed("provider_error");
   }
   addUsage(usage, c.ok.usage);
@@ -315,9 +315,10 @@ const BASIC_WEB_TOOLS = [
 ] as const;
 
 export const supportsServerFallback = (model: string): boolean => SERVER_FALLBACK_MODELS.has(model);
-/** Haiku 5.5 is not on the documented list of dynamic-filtering models, so it gets the basic tools (ADR-611). */
-export const webToolsFor = (model: string, left?: BudgetLeft, budget: ResearchBudget = DEFAULT_RESEARCH_BUDGET) =>
-  withMaxUses(DYNAMIC_FILTERING_MODELS.has(model) ? RESEARCH_TOOLS : BASIC_WEB_TOOLS, left, budget);
+/** Haiku 5.5 is not on the documented list of dynamic-filtering models, so it gets the basic tools (ADR-611). The
+ * same on every request of one errand: a changed `tools` invalidates the thinking blocks sent back (budget.ts). */
+export const webToolsFor = (model: string, budget: ResearchBudget = DEFAULT_RESEARCH_BUDGET) =>
+  withMaxUses(DYNAMIC_FILTERING_MODELS.has(model) ? RESEARCH_TOOLS : BASIC_WEB_TOOLS, budget);
 
 export class AnthropicShoppingApi implements ShoppingModelApi {
   readonly model: string;
@@ -345,7 +346,7 @@ export class AnthropicShoppingApi implements ShoppingModelApi {
       ...this.fallback,
       cache_control: { type: "ephemeral" },
       system: SHOPPING_SYSTEM,
-      tools: [...SHOPPING_TOOLS, ...webToolsFor(this.model, left, this.budget)] as never,
+      tools: [...SHOPPING_TOOLS, ...webToolsFor(this.model, this.budget)] as never,
       messages: messages as never,
     }, { signal });
     return (await stream.finalMessage()) as unknown as ShoppingMessage;

@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "bookings": [
+    {
+      "id": "2b58fab3aee72568",
+      "kind": "flight",
+      "state": "booked",
+      "provider": "Ryanair",
+      "reference": "Z9FAKE",
+      "facts": {
+        "segments": [
+          {
+            "carrier": null,
+            "number": "FR5500",
+            "from": {
+              "code": "KRK",
+              "name": "Kraków"
+            },
+            "to": {
+              "code": "BRS",
+              "name": "Bristol"
+            },
+            "departDate": "2026-12-08",
+            "departTime": "14:00",
+            "arriveDate": null,
+            "arriveTime": "15:40"
+          },
+          {
+            "carrier": null,
+            "number": "FR1500",
+            "from": {
+              "code": "BRS",
+              "name": "Bristol"
+            },
+            "to": {
+              "code": "WMI",
+              "name": "Warszawa (Modlin)"
+            },
+            "departDate": "2026-12-12",
+            "departTime": "08:05",
+            "arriveDate": null,
+            "arriveTime": "11:45"
+          }
+        ],
+        "stay": null,
+        "destination": {
+          "city": "Bristol",
+          "country": null
+        },
+        "bags": [
+          "Bagaż rejestrowany 10 kg"
+        ],
+        "total": {
+          "amount": "296.50",
+          "currency": "PLN"
+        },
+        "freeCancellationUntil": null,
+        "nonRefundable": null,
+        "payOnSite": [],
+        "deposit": null,
+        "notes": []
+      },
+      "sources": [
+        {
+          "messageId": "m-brs-1",
+          "receivedAt": "2026-11-04T18:48:00Z",
+          "senderDomain": "ryanair.com",
+          "status": "confirmed"
+        }
+      ]
+    },
+    {
+      "id": "6d869029900f6ea0",
+      "kind": "stay",
+      "state": "booked",
+      "provider": "Booking.com",
+      "reference": "7001234567",
+      "facts": {
+        "segments": [],
+        "stay": {
+          "name": "Casa Azul : River view, AC",
+          "address": "Rua Exemplo 10, 4050-000 Porto, Portugal",
+          "city": "Porto",
+          "checkInDate": "2027-05-12",
+          "checkInTime": "15:00",
+          "checkOutDate": "2027-05-16",
+          "checkOutTime": "11:00",
+          "guests": "2 adults"
+        },
+        "destination": {
+          "city": "Porto",
+          "country": "Portugal"
+        },
+        "bags": [],
+        "total": {
+          "amount": "350.00",
+          "currency": "EUR"
+        },
+        "freeCancellationUntil": {
+          "date": "2027-05-05",
+          "time": "23:59"
+        },
+        "nonRefundable": false,
+        "payOnSite": [
+          {
+            "what": "City tax",
+            "amount": "8.00",
+            "currency": "EUR"
+          }
+        ],
+        "deposit": {
+          "amount": "200.00",
+          "currency": "EUR",
+          "when": "The host charges this 7 days before arrival."
+        },
+        "notes": [
+          "Both studios are on the 4th floor without elevator"
+        ]
+      },
+      "sources": [
+        {
+          "messageId": "m-opo-1",
+          "receivedAt": "2027-03-01T10:00:00Z",
+          "senderDomain": "booking.com",
+          "status": "confirmed"
+        },
+        {
+          "messageId": "m-opo-2",
+          "receivedAt": "2027-05-12T09:00:00Z",
+          "senderDomain": "booking.com",
+          "status": "message"
+        }
+      ]
+    },
+    {
+      "id": "98b34bd4241a41a6",
+      "kind": "flight",
+      "state": "booked",
+      "provider": "Ryanair",
+      "reference": "Q7TEST",
+      "facts": {
+        "segments": [
+          {
+            "carrier": null,
+            "number": "FR1234",
+            "from": {
+              "code": "GDN",
+              "name": "Gdańsk"
+            },
+            "to": {
+              "code": "LIS",
+              "name": "Lizbona"
+            },
+            "departDate": "2027-05-13",
+            "departTime": "06:10",
+            "arriveDate": null,
+            "arriveTime": "09:35"
+          },
+          {
+            "carrier": null,
+            "number": "FR1235",
+            "from": {
+              "code": "LIS",
+              "name": "Lizbona"
+            },
+            "to": {
+              "code": "GDN",
+              "name": "Gdańsk"
+            },
+            "departDate": "2027-05-16",
+            "departTime": "10:20",
+            "arriveDate": null,
+            "arriveTime": "15:55"
+          }
+        ],
+        "stay": null,
+        "destination": {
+          "city": "Lizbona",
+          "country": null
+        },
+        "bags": [
+          "Bagaż rejestrowany 10 kg"
+        ],
+        "total": {
+          "amount": "612.40",
+          "currency": "PLN"
+        },
+        "freeCancellationUntil": null,
+        "nonRefundable": null,
+        "payOnSite": [],
+        "deposit": null,
+        "notes": []
+      },
+      "sources": [
+        {
+          "messageId": "m-lis-1",
+          "receivedAt": "2026-08-27T10:00:00Z",
+          "senderDomain": "ryanair.com",
+          "status": "confirmed"
+        },
+        {
+          "messageId": "m-lis-2",
+          "receivedAt": "2026-11-04T18:00:00Z",
+          "senderDomain": "ryanair.com",
+          "status": "confirmed"
+        },
+        {
+          "messageId": "m-lis-3",
+          "receivedAt": "2026-11-05T07:00:00Z",
+          "senderDomain": "ryanairemail.pl",
+          "status": "reminder"
+        }
+      ]
+    },
+    {
+      "id": "9bba48d003609762",
+      "kind": "stay",
+      "state": "cancelled",
+      "provider": "Booking.com",
+      "reference": "7009999999",
+      "facts": {
+        "segments": [],
+        "stay": null,
+        "destination": null,
+        "bags": [],
+        "total": null,
+        "freeCancellationUntil": null,
+        "nonRefundable": null,
+        "payOnSite": [],
+        "deposit": null,
+        "notes": []
+      },
+      "sources": [
+        {
+          "messageId": "m-opo-x",
+          "receivedAt": "2027-02-28T09:00:00Z",
+          "senderDomain": "booking.com",
+          "status": "cancelled"
+        }
+      ]
+    }
+  ]
+}
