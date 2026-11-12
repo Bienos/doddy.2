@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { loadConfig } from "../src/config.js";
 import { test } from "node:test";
 import {
   JakdojadePartnerClient, JakdojadePartnerError,
@@ -144,4 +145,12 @@ test("empty official route list returns zero, never fabricated departures or tic
     async () => new Response("<ROUTE_SEARCH_RESULT cityName=\"Warszawa\"/>"));
   const routes = await client.routes({ from: start, to: end });
   assert.deepEqual(routes, []);
+});
+
+test("partner credentials are off by default and require explicit enabling", () => {
+  const base = { DATABASE_URL: "postgres://fake", JAKDOJADE_LICENSE_KEY: "licence", JAKDOJADE_SECRET: "secret" };
+  assert.equal(loadConfig(base).jakdojade, undefined);
+  assert.equal(loadConfig({ ...base, JAKDOJADE_ENABLED: "1" }).jakdojade?.licenseKey, "licence");
+  assert.equal(loadConfig({ ...base, JAKDOJADE_ENABLED: "1", JAKDOJADE_SECRET: "" }).jakdojade, undefined);
+  assert.throws(() => loadConfig({ ...base, JAKDOJADE_ENABLED: "perhaps" }));
 });
