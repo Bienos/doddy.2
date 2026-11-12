@@ -67,6 +67,8 @@ struct HomeView: View {
     @State private var showPolandPack = false
     /// The food-delivery apps (Uber Eats, Wolt, Glovo, Pyszne.pl), each a tap away (decision 2026-11-11-food-button).
     @State private var showFood = false
+    /// Real Shopify offers and merchant-owned checkout: no payment inside Doddy.
+    @State private var showShopifyShopping = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -137,6 +139,7 @@ struct HomeView: View {
             .sheet(isPresented: $showPolandPack) {
                 PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
             }
+            .sheet(isPresented: $showShopifyShopping) { ShopifyLiveShoppingView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
@@ -324,6 +327,13 @@ struct HomeView: View {
                           systemImage: "mappin.and.ellipse")
                 }
                 .accessibilityIdentifier("home.polandPack")
+                // Shop MCP (UCP): real offers, cart + merchant checkout, no in-Doddy payment.
+                if scope.shows(.shopifyShopping) {
+                    Button { showShopifyShopping = true } label: {
+                        Label(NotificationLanguage.current == .polish ? "Zakupy online" : "Shop online", systemImage: "bag")
+                    }
+                    .accessibilityIdentifier("home.shopifyShopping")
+                }
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
                 // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
                 if scope.shows(.following) {

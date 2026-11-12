@@ -245,6 +245,17 @@ struct VoiceView: View {
                                 .id("pendingAction")
                         }
 
+                        // Real Shopify results and the merchant-owned checkout are cards in the
+                        // conversation. No fake products or automatic payment.
+                        if !controller.shopifyVoiceOffers.isEmpty {
+                            ShopifyVoiceResultsCard(offers: controller.shopifyVoiceOffers)
+                                .id("shopifyVoiceResults")
+                        }
+                        if let checkout = controller.shopifyVoiceCheckout {
+                            ShopifyVoiceCheckoutCard(confirmation: checkout)
+                                .id("shopifyVoiceCheckout")
+                        }
+
                         if controller.textSending {
                             HStack(spacing: 8) {
                                 ProgressView()

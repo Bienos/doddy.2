@@ -395,6 +395,12 @@ public struct ActivityRequest: Equatable, Sendable {
         case .makeSomething(let job):
             // ADR-740: the 30-day log keeps that a Studio job was asked for, not its topic.
             return ActivityRequest(app: .web, title: "Make a research brief", detail: "\u{201C}\(job.topic)\u{201D}", logDetail: nil, isLookup: false)
+        case .shopifySearch:
+            // The query/product names are not written to the 30-day activity log.
+            return ActivityRequest(app: .web, title: "Searched live Shopify offers", detail: nil, logDetail: nil, isLookup: true)
+        case .shopifyPrepareCheckout:
+            // No checkout URL or sensitive merchant session goes into the activity log.
+            return ActivityRequest(app: .web, title: "Prepared merchant checkout", detail: nil, logDetail: nil, isLookup: false)
         case .findDeals(let request):
             // SHOPPING.md: the card shows the items; the 30-day log keeps only how many and where.
             let count = request.items.count

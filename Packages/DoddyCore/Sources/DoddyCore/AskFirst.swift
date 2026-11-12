@@ -90,7 +90,7 @@ public enum AskFirst {
     /// per search (ADR-489); the weather and Wikipedia ones run on ElevenLabs (`ToolCatalog.webLookups`).
     public static let publicLookups: Set<String> = Set([
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
-        CloudToolName.webSearch, "news_search", "find_places",
+        CloudToolName.webSearch, "news_search", "find_places", VoiceToolName.shopifySearch,
     ]).union(ToolCatalog.webLookups)
 
     /// Looks at the user's own things on this iPhone, or at what Doddy's server holds for them, that run at once
@@ -163,6 +163,23 @@ public enum AskFirst {
             // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
             // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
             return .tapFirst(StudioAsk.card(job))
+        case .shopifySearch:
+            // A public merchant search, exactly like web search or this week's leaflets:
+            // the user's explicit request is the permission (owner's 11 Nov 2026 decision).
+            // Only their product words go to Shopify. No cart or payment is created.
+            return .runsNow
+        case .shopifyPrepareCheckout(let index, let quantity):
+            // Real merchant cart creation is an external write. A tap on the card is required.
+            // The voice controller shows the selected exact, provider-verified offer details.
+            return .tapFirst(AskCard(
+                title: say("Prepare this Shopify checkout?", "Przygotować koszyk Shopify?"),
+                lines: [
+                    say("Result number: \(index)", "Oferta numer: \(index)"),
+                    say("Quantity: \(quantity)", "Liczba sztuk: \(quantity)"),
+                    say("Nothing is paid or ordered. The merchant handles checkout.",
+                        "Nic nie jest opłacane ani zamawiane. Zakup kończysz u sprzedawcy."),
+                ],
+                confirmLabel: say("Prepare checkout", "Przygotuj koszyk")))
         // Taking something away keeps its card: a tap on exactly what goes.
         case .removeFromList(let request):
             return .tapFirst(AskCard(
