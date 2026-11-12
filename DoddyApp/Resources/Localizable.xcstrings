@@ -70827,6 +70827,17 @@
         }
       }
     },
+    "Search products in Shopify shops and prepare a cart at the shop. Doddy takes no payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj produktów w sklepach Shopify i przygotuj koszyk w sklepie. Doddy nie pobiera płatności."
+          }
+        }
+      }
+    },
     "Search saved notes": {
       "extractionState": "manual",
       "localizations": {
@@ -73926,6 +73937,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "此版本的应用尚未设置共享到 Doddy。没有保存任何内容。你可以改用“保存到 Doddy”快捷指令。"
+          }
+        }
+      }
+    },
+    "Shopify shops": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sklepy Shopify"
           }
         }
       }

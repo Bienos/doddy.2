@@ -24,6 +24,7 @@ struct ShoppingHubView: View {
     @State private var note: HandOverNote?
     @State private var opened: UUID?
     @State private var showDeals = false
+    @State private var showShopify = false
     /// "Check this": the link being pasted, the person's own name for the product, and the page whose card is open.
     @State private var link = ""
     @State private var linkName = ""
@@ -58,6 +59,7 @@ struct ShoppingHubView: View {
                         if watches.watches.isEmpty && watches.loadProblem == nil && watches.message == nil { watchHint }
                     }
                     if scope.shows(.deals) { leafletsLink }
+                    if scope.shows(.shopifyShopping) { shopifyLink }
                     howItWorks
                 }
                 .padding(.horizontal, 16)
@@ -77,6 +79,7 @@ struct ShoppingHubView: View {
                 TypedHandOverSheet(draft: ask.draft) { outcome in finished(outcome) }
             }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showShopify) { ShopifyLiveShoppingView() }
             .sheet(item: $watchPage) { WatchCard(page: $0) }
             .refreshable { await reload() }
             .task {
@@ -392,6 +395,29 @@ struct ShoppingHubView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("shopping.leaflets")
+    }
+
+    // MARK: Shopify shops
+
+    private var shopifyLink: some View {
+        Button { showShopify = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "bag").font(.title3).foregroundStyle(Theme.accentText).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Shopify shops").font(.subheadline.weight(.semibold))
+                    Text("Search products in Shopify shops and prepare a cart at the shop. Doddy takes no payment.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryText)
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+            .tasksCard()
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("shopping.shopify")
     }
 
     // MARK: How it works
