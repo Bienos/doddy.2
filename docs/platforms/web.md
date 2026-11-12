@@ -99,7 +99,7 @@ curl -s -X POST localhost:8787/v1/web/link-codes -H "authorization: Bearer $TOKE
 |---|---|
 | `npm test` in `backend/` | All backend tests; `test/web.test.ts` is the web part (sign-in, isolation, CSRF, expiry, revocation, documents, pages, logs) |
 | `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 166 tests (9 Nov 2026, with the admin dashboard; the type-check passes too) |
-| `npm run build` in `backend/` and `web/`, then `npm run e2e` in `web/` | Playwright: the real backend (mock providers, in-memory database) serving the built app, Chromium at desktop and phone width (18 passed, 4 skipped on 9 Nov 2026). Not run by GitHub's workflows |
+| `npm run build` in `backend/` and `web/`, then `npm run e2e` in `web/` | Playwright: the real backend (mock providers, in-memory database) serving the built app, Chromium at desktop and phone width (12 Nov 2026: 16 passed, 4 skipped, 2 failed; the 2 failures are "a deck made on the iPhone is downloaded", which still expects the old `DEMO deck: …` text while the backend now returns a real .pptx). Not run by GitHub's workflows |
 | `DODDY_SCREENS=<folder> npx playwright test e2e/screens.spec.ts` in `web/` | Screenshots in light and dark, for a person to look at |
 | `scripts/ci.sh --core-only`, or `--only backend,node` | All of the above (the web steps are in the `node` group). The end-to-end run is SKIPPED (not PASS) where there's no Playwright Chromium (`PLAYWRIGHT_BROWSERS_PATH`), as in the hosted Linux `node` job |
 

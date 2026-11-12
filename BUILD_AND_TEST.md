@@ -85,6 +85,17 @@ SDK using its offline provided-token path. On a device, compare cold/warm room a
 before a tap. The prewarm log says requested, because LiveKit's internal HEAD runs asynchronously and
 swallows network failures; it cannot establish that a connection was prepared or the HEAD succeeded.
 
+Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
+`DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
+SQL files, 001 to 029 on 12 Nov 2026, in the `messaging` group). Renaming, reordering or removing a merged migration,
+or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
+the same commit.
+
+Doddy Web's browser tests (`npm run e2e --prefix web`: the real backend in mock mode and Chromium) run in
+`scripts/ci.sh --only node` only where a Playwright Chromium is installed (`PLAYWRIGHT_BROWSERS_PATH`). The hosted
+`node` job has none, so CI lists them SKIPPED, never passed; run them by hand (`docs/platforms/web.md`, "Test").
+With a Chromium of another build than the pinned Playwright, point `PLAYWRIGHT_CHROMIUM` at its `chrome` binary.
+
 ### Gateway (Node, no network, no keys)
 
 ```sh

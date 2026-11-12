@@ -6,7 +6,7 @@ Doddy is an app for iPhone and iPad that you talk to. You say what you need in a
 
 This repository holds everything: the iPhone app, the servers behind it, Doddy Web (a browser version for the same account), the website [www.doddy.lol](https://www.doddy.lol) and all the documents.
 
-> **Where things stand (9 Nov 2026, checked against `main`).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone and through TestFlight (Doddy Beta), but it is not on the App Store. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
+> **Where things stand (12 Nov 2026, checked against `main`).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone and through TestFlight (Doddy Beta), but it is not on the App Store. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
 
 ## How Doddy works
 
@@ -18,7 +18,7 @@ Three promises shape the whole app. They are written down in [docs/trust/](docs/
 
 ## What Doddy can do today
 
-This is what the code on `main` does (9 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
+This is what the code on `main` does (12 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
 
 - **Talk.** Tap Doddy on Home and talk. He listens only after a tap ("Start listening when I open Doddy" stays off unless you turn it on). The voice runs on ElevenLabs, or on OpenAI if you choose it in Settings › Voice; while you talk, your voice goes to that company.
 - **Remember.** Notes and lists live in a database on the phone. Doddy asks before keeping anything. You can find notes by their words or their meaning, correct them, delete them, export them, and back them up to an encrypted file.
@@ -34,7 +34,7 @@ This is what the code on `main` does (9 Nov 2026). It builds and passes its test
 - Google sign-in fails until the owner registers a return address with Google; today only Sign in with Apple gets you in.
 - Calls and texts are written but not seen end to end: Doddy phoning a restaurant for you, calling you later, call-backs to Doddy's number, and texts to your own number. Calling Doddy's own phone number is merged but off, and Studio is off on the server.
 - Invoices can't be sent to inFakt or KSeF. Doddy can't pay for anything you can use: paying for a web page in USDC is merged but off by default, on a test network only. The BLIK transfer draft (a card you send from your bank app, never a payment by Doddy) is back since 7 Nov.
-- The app isn't on the App Store. Every build shows every feature until the beta; the beta list that hides the rest is kept ready. The Apple Watch and Mac apps are paused.
+- The app isn't on the App Store. Every build shows every feature: the beta list that hid some of them was dropped on 10 Nov (decision `2026-11-10-no-beta-scope`). The Apple Watch and Mac apps are paused.
 
 ## How the parts fit together
 
