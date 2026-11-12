@@ -1,3 +1,0 @@
-`text_me` sends at once, without the "Send this text to you?" card: only to the user's own verified number, only while Texts from Doddy is on; the same text isn't sent twice within 10 minutes; still not while driving. Step 3 of decision `docs/decisions/2026-11-09-restaurant-calls-one-tap.md`; rules file (`own_number_text_runs_at_once`), tool spec, agent instructions and both ASK-01 checks updated.
-Ran: make test-core with Swift 6.1.3 on Linux (2751 tests, 0 failures); scripts/ci.sh --only checks. Not compiled here: the app (VoiceSessionController, VoiceView); the hosted Mac build is the first compile. Not run: a real text.
-The live ElevenLabs agent doesn't have text_me attached; when it is, its tool description needs this version (owner's instruction).

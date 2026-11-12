@@ -30,7 +30,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Price watches | `/v1/watches…` (below) |
 | Studio (ADR-740) | `POST /v1/studio` · `POST /v1/studio/:id/{approve,cancel}` · `GET /v1/studio` · `GET/DELETE /v1/studio/:id` · `GET /v1/studio/:id/files/:name` (below) |
 | News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` · `POST /v1/news/feed` (the stories behind the follows sent with the request, as cards, nothing stored; ADR-656) · `GET/PUT /v1/news/radar`, `POST /v1/news/radar/seen` (alerts the person opted into; `RADAR_ALERTS_ENABLED`) |
-| Health | `GET /healthz` |
+| Health | `GET /healthz`: `{ok: true}` after a `SELECT 1` on the database, `503 {ok: false}` when that fails |
 
 All `/v1` routes except account creation and sign-in need `Authorization: Bearer <deviceToken>`.
 
@@ -62,6 +62,14 @@ Accounts are free, so the server caps what any one address, account or number ca
 - **Phone numbers:** only the calling codes in `PHONE_ALLOWED_COUNTRY_CODES` (Poland, the rest of the EU/EEA, the UK and Switzerland by default) can be verified, get texts or be called by "call me". Verification codes are capped per number, per address (20 a day) and per account (6 a day).
 - **Texts and calls:** 30 texts an account and 300 for the server a UTC day; 10 "call me" calls an account and 20 for the server; task calls count per account as well as per verified number, and `TASK_CALL_BLOCKED_NUMBERS` is an operator-side do-not-call list.
 - **Not covered here (dashboards, owner):** Twilio geo-permissions and Verify Fraud Guard, the ElevenLabs agent's own maximum call length and authentication, and provider spend limits. Premium-rate ranges inside an allowed country are not filtered by this server.
+
+### Request limits (`src/app.ts`, `src/auth.ts`)
+- **Bodies:** 16 KB unless a route sets more: `PUT /v1/memory-copy/snapshot` 8 MB, `POST /v1/assistant/ask` about 4.2 MB, `POST /v1/screen/look` about 1 MB, `POST /v1/recaps` 128 KB, the ElevenLabs post-call webhook 2 MB.
+- **Token before body:** those four device routes check the bearer token in a `preParsing` hook (`requireDeviceBeforeBody`), so a missing or unknown token gets the usual `401 {"error":"unauthorized"}` before the body is read or parsed. The server refuses to start if a route with a larger body checks the token only in `preHandler`.
+- **Who is counted:** a request whose bearer token belongs to a device is counted per token; one with no token, a malformed one or an unknown one is counted by the client's address. The token is looked up once per request, shared by the rate limiter and the route.
+- **Default per route:** a signed-in route without a limit of its own allows 3,600 requests an hour per device (one a second on average; the busiest polling, a live call's view once a second, has its own 3,000). Routes keep the limits listed in their sections.
+- **ElevenLabs post-call webhook:** 120 a minute per address (ElevenLabs sends one per finished conversation). The `ElevenLabs-Signature` header must be well formed and inside the time window before the body is read; the HMAC is then checked on the raw bytes before any JSON parsing.
+- **Timeouts:** a request must arrive, headers and body, within 120 s (`requestTimeout`; Node checks every 30 s, so a slow one ends between 120 and 150 s). An 8 MB snapshot needs about 0.55 Mbit/s for that; webhooks arrive in well under a second. Headers alone: Node's 60 s. There is no idle-socket limit (`connectionTimeout` 0), because handlers may wait on Claude for up to 45 s; idle keep-alive sockets close after 72 s.
 
 ## Phone calls (S2, through this server since ADR-750)
 - **Route:** every call to Doddy's Twilio number reaches this server first (`src/routes/twilioVoice.ts`).
@@ -96,7 +104,7 @@ Doddy calls a business in Polish for the user, says it's an AI calling on their 
 | App | `GET /v1/call-cases/availability` · `POST /v1/call-cases` (brief → preview built from the exact payload) · `GET /v1/call-cases` · `GET /v1/call-cases/:id` · `POST …/:id/approve {digest, at?}` · `GET …/:id/live?after=` · `POST …/:id/end` · `POST …/:id/takeover` · `POST …/:id/cancel` · `POST …/:id/ack {attemptId, resultDigest}` · `PUT/DELETE …/:id/live-activity` |
 | App: call tasks (up to 3 places, one tap) | `POST /v1/call-tasks` (places + shared question → one card with every place's preview and the task digest) · `GET /v1/call-tasks/:id` · `POST …/:id/approve {digest}` (now only) · `POST …/:id/cancel` |
 | Twilio (signed with the task account's token) | `/webhooks/twilio/task-call/{answer,fallback,connect-ended,status,transcription,takeover-answer,takeover-digits,takeover-status,conference}` |
-| ElevenLabs (HMAC on the raw body) | `POST /webhooks/elevenlabs/post-call`: other agents' calls are dropped unread |
+| ElevenLabs (HMAC on the raw body) | `POST /webhooks/elevenlabs/post-call`: other agents' calls are dropped unread; 120 a minute per address, signature header checked before the body ("Request limits") |
 
 - **Call tasks** (decision `docs/decisions/2026-11-09-restaurant-calls-one-tap.md`, migration `022_call_tasks.sql`, `src/taskCalls/tasks.ts`): each place is an ordinary case with its own payload and digest; the task digest covers the case digests in order and the "text me the result" choice. One tap calls the first place; after each result the worker calls the next place, within 3 hours of the tap and inside calling hours, until one says a clear yes (the result step's yes plus a quote cut from the transcript). An unclear answer, a takeover, the end of calling hours or the kill switch stops the task. A place of a task can't be approved on its own. At the end: one content-free push and, if chosen and the person has consented to texts, one text to their own number (within the daily text caps).
 - **Our server places the call; ElevenLabs is only the voice** (register-call). The approved payload is encrypted and bound to its digest by a foreign key; what Twilio and ElevenLabs receive is exactly that payload.

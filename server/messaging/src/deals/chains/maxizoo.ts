@@ -19,7 +19,7 @@
 // Only the FIRST page of each listing is read: 48 products, the biggest discounts first (the shop's default order).
 // When a listing has more pages the read says `incomplete`, so finding nothing there is never "no match".
 // The animal pages read are picked by what the items name (dog and cat for an item naming no animal), at most four.
-import { decodeEntities, fetchOfficial, isObject, mapLimit, moneyOf, officialUrl, str, validEan } from "./common.js";
+import { decodeEntities, fetchOfficial, isObject, mapLimit, moneyOf, officialUrl, scriptText, str, validEan } from "./common.js";
 import { unflatten } from "./dino.js";
 import { parsePrintedUnitPrice, parseSize } from "../match.js";
 import type { ChainAdapter, ChainRead, Condition, DataProduct, SizeUnit, UnitPrice } from "../types.js";
@@ -155,10 +155,10 @@ export interface MaxiZooListing { products: DataProduct[]; totalPages: number }
 
 /** The products on one promotions page and how many pages its listing has, or undefined without the payload. */
 export function parseMaxiZooPage(html: string, animal?: MaxiZooAnimal): MaxiZooListing | undefined {
-  const m = /<script[^>]*\bid="__NUXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i.exec(html);
-  if (!m) return undefined;
+  const payload = scriptText(html, (tag) => /\bid="__NUXT_DATA__"/i.test(tag), true);
+  if (payload === undefined) return undefined;
   let flat: unknown;
-  try { flat = JSON.parse(m[1]!); } catch { return undefined; }
+  try { flat = JSON.parse(payload); } catch { return undefined; }
   const root = unflatten(flat);
   const main = isObject(root) && isObject(root.pinia) && isObject(root.pinia.main) ? root.pinia.main : undefined;
   const data = main && isObject(main.productListingData) ? main.productListingData : undefined;

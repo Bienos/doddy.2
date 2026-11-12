@@ -1,6 +1,8 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { ConnectionReason, ConnectionStatus, Receipt } from "./contracts.js";
 import { type Database, type DatabaseOptions, openDatabase, type Queryable } from "./db.js";
+import { AppError } from "./errors.js";
+import { requestCredential } from "./requestCredential.js";
 
 /**
  * Small durable store (Postgres, ADR-525). Holds only what the backend needs: the internal-user →
@@ -49,6 +51,38 @@ export interface CleanupRow {
   attempts: number;
   last_error: string | null;
   created_at: number;
+  /** When the sweep may try again (ms); null: at the next sweep. */
+  next_try_at: number | null;
+  /** When it was reported stuck (ms; CLEANUP_RETRY.stuckAfter failures, or no way to remove it here); null: not stuck. */
+  stuck_at: number | null;
+}
+
+/** One failed try at a queued removal: what kind it is, how many tries so far, when the next is due, and whether this failure made it stuck. */
+export interface CleanupFailure {
+  provider: string;
+  attempts: number;
+  nextTryAt: number;
+  /** True only on the failure that made it stuck, so it is reported once. */
+  stuckNow: boolean;
+  reason: string;
+}
+
+/**
+ * The warning a stuck removal gets, once: its kind, tries and reason, never an id. The operator lists
+ * stuck removals with `npm run cleanups:stuck` (`Store.stuckCleanups`).
+ */
+export function stuckCleanupLine(failure: CleanupFailure): Record<string, unknown> {
+  return {
+    level: "warn",
+    event: "cleanup_stuck",
+    provider: failure.provider,
+    attempts: failure.attempts,
+    reason: failure.reason,
+    action:
+      failure.reason === "no_remover"
+        ? "This server has no way to remove this kind of account at its provider (for supabase_auth: SUPABASE_SECRET_KEY). Set it; the sweep keeps trying."
+        : "A removal owed at a provider keeps failing. The sweep keeps trying; run `npm run cleanups:stuck` to see which.",
+  };
 }
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -94,7 +128,9 @@ export const ERASED_TABLES = [
  *   (ADR-563); the same iPhone signs in again to the same id and is still the owner.
  * - `token_floor`: one number per person, the second before which their earlier sign-in tokens no
  *   longer work (ADR-709). It is written by the erasure itself; deleting it would bring back the
- *   very tokens the person just cut off. It is dropped once every token it covers has expired.
+ *   very tokens the person just cut off. It is also the erasure's tombstone: a request let in before
+ *   the cut-off can't write the person's rows back (`refuseIfCutOff`). It is dropped once every token
+ *   it covers has expired.
  * Usage counters (`usage`) have no `user_id` column. A person's own counters stay until their day or
  * month is pruned: counts only, and erasing must not reset a daily cap. Server-wide ones are never touched.
  */
@@ -120,11 +156,22 @@ export interface UserErasure {
 }
 
 /**
- * The hourly sweep's retry of queued remote removals: only rows older than five minutes (a request
- * may still be working on a newer one), at most 20 a sweep, and 24 tries (a day) per row. A row
- * past that stays visible as `failed` and is still retried before the user's next Connect.
+ * The hourly sweep's retry of queued remote removals (each one is a live grant at a provider, or a
+ * Supabase user with a name and email, so it is never given up):
+ * - only rows older than five minutes (`afterMs`: a request may still be working on a newer one);
+ * - at most 20 a sweep, the most overdue first;
+ * - after each failure the next try waits longer: 5 minutes, then twice as long each time, at most a
+ *   day (`retryDelayMs`). The sweep runs hourly, so the first few tries are an hour apart, then 3, 5,
+ *   11 and 21 hours, then daily. There is no last try;
+ * - after `stuckAfter` failures (about 15 hours of failing) a row is reported stuck once (`cleanup_stuck`
+ *   in the log, `stuck_at` for `npm run cleanups:stuck`), and keeps being retried.
  */
-export const CLEANUP_RETRY = { afterMs: 5 * 60_000, perSweep: 20, maxTries: 24 } as const;
+export const CLEANUP_RETRY = { afterMs: 5 * 60_000, perSweep: 20, firstDelayMs: 5 * 60_000, maxDelayMs: 24 * 3_600_000, stuckAfter: 8 } as const;
+
+/** How long after its `failures`-th failure a queued removal is tried again. */
+export function retryDelayMs(failures: number): number {
+  return Math.min(CLEANUP_RETRY.maxDelayMs, CLEANUP_RETRY.firstDelayMs * 2 ** Math.max(0, failures - 1));
+}
 
 /**
  * The schema, idempotent. Timestamps are milliseconds since 1970 (BIGINT). `seq` gives receipts a
@@ -170,6 +217,9 @@ export const SCHEMA_SQL = `
     last_error TEXT,
     created_at BIGINT NOT NULL
   );
+  -- Retried without a last try (CLEANUP_RETRY): when the next try is due, and when it was reported stuck.
+  ALTER TABLE cleanups ADD COLUMN IF NOT EXISTS next_try_at BIGINT;
+  ALTER TABLE cleanups ADD COLUMN IF NOT EXISTS stuck_at BIGINT;
   CREATE TABLE IF NOT EXISTS receipts (
     operation_id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -511,6 +561,20 @@ export class Store {
     return ((await q.query<T>(sql, params)).rows[0] as T | undefined) ?? null;
   }
 
+  /**
+   * Refuses a write for `userId` made by a request whose sign-in dates from before the person's cut-off
+   * second, i.e. a request let in just before their account was deleted (`requestCredential.ts`): the
+   * same answer as a token past its cut-off. It runs inside the write's own SERIALIZABLE transaction,
+   * so a deletion committing at the same moment either is seen here or sees the write and deletes it.
+   * A write with no request around it (a sweep, a test) or for someone else isn't checked.
+   */
+  private async refuseIfCutOff(q: Queryable, userId: string): Promise<void> {
+    const credential = requestCredential.getStore();
+    if (!credential || credential.userId !== userId) return;
+    const row = await this.one<{ valid_after: number }>(q, "SELECT valid_after FROM token_floor WHERE user_id = $1", [userId]);
+    if (row && credential.issuedAt < row.valid_after) throw new AppError("unauthenticated");
+  }
+
   // ------------------------------------------------------------ identity
 
   /** Stable, random Composio user ID per internal user. Never an email, never shared. */
@@ -518,6 +582,8 @@ export class Store {
     return this.db.transaction(async (tx) => {
       const row = await this.one<{ composio_user_id: string }>(tx, "SELECT composio_user_id FROM users WHERE user_id = $1", [userId]);
       if (row) return row.composio_user_id;
+      // A deleted person's `users` row is never made again by a request that started before the deletion.
+      await this.refuseIfCutOff(tx, userId);
       const id = `doddy_${randomBytes(16).toString("hex")}`;
       await tx.query("INSERT INTO users (user_id, composio_user_id, created_at) VALUES ($1, $2, $3)", [userId, id, now]);
       return id;
@@ -701,7 +767,7 @@ export class Store {
        VALUES ($1, $2, $3, 'pending', 0, NULL, $4)
        ON CONFLICT (connection_id) DO UPDATE SET
          user_id = EXCLUDED.user_id, provider = EXCLUDED.provider, state = 'pending', attempts = 0,
-         last_error = NULL, created_at = EXCLUDED.created_at`,
+         last_error = NULL, created_at = EXCLUDED.created_at, next_try_at = NULL, stuck_at = NULL`,
       [connectionId, userId, provider, now],
     );
   }
@@ -710,26 +776,53 @@ export class Store {
     await this.db.query("DELETE FROM cleanups WHERE connection_id = $1", [connectionId]);
   }
 
-  async failCleanup(connectionId: string, errorCode: string): Promise<void> {
-    await this.db.query(
-      "UPDATE cleanups SET state = 'failed', attempts = attempts + 1, last_error = $1 WHERE connection_id = $2",
-      [errorCode, connectionId],
-    );
+  /**
+   * One more failed try: counted, the next one put off (`retryDelayMs`), and the row marked stuck on
+   * the `CLEANUP_RETRY.stuckAfter`-th failure, or at once when `errorCode` is `no_remover` (this server
+   * can't remove that kind at all). Null when the row is gone (removed meanwhile).
+   */
+  failCleanup(connectionId: string, errorCode: string, now: number): Promise<CleanupFailure | null> {
+    return this.db.transaction(async (tx) => {
+      const row = await this.one<{ provider: string; attempts: number; stuck_at: number | null }>(
+        tx,
+        "SELECT provider, attempts, stuck_at FROM cleanups WHERE connection_id = $1",
+        [connectionId],
+      );
+      if (!row) return null;
+      const attempts = row.attempts + 1;
+      const nextTryAt = now + retryDelayMs(attempts);
+      const stuckNow = row.stuck_at === null && (attempts >= CLEANUP_RETRY.stuckAfter || errorCode === "no_remover");
+      await tx.query(
+        `UPDATE cleanups SET state = 'failed', attempts = $1, last_error = $2, next_try_at = $3, stuck_at = CASE WHEN $4::boolean THEN $5::bigint ELSE stuck_at END
+         WHERE connection_id = $6`,
+        [attempts, errorCode, nextTryAt, stuckNow, now, connectionId],
+      );
+      return { provider: row.provider, attempts, nextTryAt, stuckNow, reason: errorCode };
+    });
   }
 
   /**
-   * Queued removals of these providers to try again: older than `before` (so a request still
-   * working on one isn't raced), tried fewer than `maxAttempts` times, oldest first.
+   * Queued removals of these providers to try again now: queued more than CLEANUP_RETRY.afterMs ago
+   * (so a request still working on one isn't raced) and due (`next_try_at`), the most overdue first.
+   * However often a row failed, it comes back when due: there is no last try.
    */
-  async cleanupsToRetry(providers: readonly string[], before: number, maxAttempts: number, limit: number): Promise<QueuedCleanup[]> {
+  async cleanupsToRetry(providers: readonly string[], now: number, limit: number): Promise<QueuedCleanup[]> {
     if (providers.length === 0) return [];
     const rows = (await this.db.query<{ connection_id: string; user_id: string; provider: string }>(
       `SELECT connection_id, user_id, provider FROM cleanups
-       WHERE provider = ANY($1::text[]) AND created_at < $2 AND attempts < $3
-       ORDER BY created_at ASC LIMIT $4`,
-      [[...providers], before, maxAttempts, limit],
+       WHERE provider = ANY($1::text[]) AND created_at < $2 AND COALESCE(next_try_at, 0) <= $3
+       ORDER BY COALESCE(next_try_at, 0) ASC, created_at ASC LIMIT $4`,
+      [[...providers], now - CLEANUP_RETRY.afterMs, now, limit],
     )).rows;
     return rows.map((r) => ({ connectionId: r.connection_id, userId: r.user_id, provider: r.provider }));
+  }
+
+  /** Removals reported stuck, oldest first, for the operator (`npm run cleanups:stuck`). */
+  async stuckCleanups(): Promise<Omit<CleanupRow, "user_id">[]> {
+    return (await this.db.query<Omit<CleanupRow, "user_id">>(
+      `SELECT connection_id, provider, state, attempts, last_error, created_at, next_try_at, stuck_at FROM cleanups
+       WHERE stuck_at IS NOT NULL ORDER BY stuck_at ASC, created_at ASC`,
+    )).rows;
   }
 
   cleanupFor(userId: string, provider: string): Promise<CleanupRow | null> {
@@ -743,10 +836,13 @@ export class Store {
   // ------------------------------------------------------------ receipts
 
   async saveReceipt(userId: string, receipt: Receipt, now: number): Promise<void> {
-    await this.db.query(
-      "INSERT INTO receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
-      [receipt.operationId, userId, now, JSON.stringify(receipt)],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await tx.query(
+        "INSERT INTO receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+        [receipt.operationId, userId, now, JSON.stringify(receipt)],
+      );
+    });
   }
 
   async receipts(userId: string, limit: number): Promise<Receipt[]> {
@@ -777,7 +873,10 @@ export class Store {
   }
 
   async setToolEnabled(userId: string, tool: string, enabled: boolean, now: number): Promise<void> {
-    await this.setToolEnabledIn(this.db, userId, tool, enabled, now);
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await this.setToolEnabledIn(tx, userId, tool, enabled, now);
+    });
   }
 
   private async setToolEnabledIn(q: Queryable, userId: string, tool: string, enabled: boolean, now: number): Promise<void> {
@@ -791,15 +890,19 @@ export class Store {
   /** Turns off every tool of the given names at once (used when an account is disconnected). */
   async disableTools(userId: string, tools: readonly string[], now: number): Promise<void> {
     await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
       for (const tool of tools) await this.setToolEnabledIn(tx, userId, tool, false, now);
     });
   }
 
   async saveToolReceipt(userId: string, receipt: { operationId: string }, now: number): Promise<void> {
-    await this.db.query(
-      "INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
-      [receipt.operationId, userId, now, JSON.stringify(receipt)],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await tx.query(
+        "INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+        [receipt.operationId, userId, now, JSON.stringify(receipt)],
+      );
+    });
   }
 
   async toolReceipts(userId: string, limit: number): Promise<unknown[]> {
@@ -813,10 +916,13 @@ export class Store {
   // ------------------------------------------------------------ payments
 
   async savePaymentReceipt(userId: string, receipt: { operationId: string }, now: number): Promise<void> {
-    await this.db.query(
-      "INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
-      [receipt.operationId, userId, now, JSON.stringify(receipt)],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await tx.query(
+        "INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+        [receipt.operationId, userId, now, JSON.stringify(receipt)],
+      );
+    });
   }
 
   async paymentReceipts(userId: string, limit: number): Promise<unknown[]> {
@@ -829,11 +935,14 @@ export class Store {
 
   /** Written before the first byte of a payment is signed or sent. */
   async insertPayment(row: { paymentId: string; userId: string; now: number; host: string; amount: number; network: string; urlHash: string; validBefore: number }): Promise<void> {
-    await this.db.query(
-      `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'signing')`,
-      [row.paymentId, row.userId, row.now, row.now, row.host, row.amount, row.network, row.urlHash, row.validBefore],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, row.userId);
+      await tx.query(
+        `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'signing')`,
+        [row.paymentId, row.userId, row.now, row.now, row.host, row.amount, row.network, row.urlHash, row.validBefore],
+      );
+    });
   }
 
   async setPaymentStatus(paymentId: string, status: "signing" | "sent" | "settled" | "declined" | "unknown" | "not_sent", now: number, transactionHash: string | null = null): Promise<void> {
@@ -911,6 +1020,8 @@ export class Store {
     const DAY = 86_400_000;
     const dayCutoff = `day:${new Date(now - 62 * DAY).toISOString().slice(0, 10)}`;
     const monthCutoff = `month:${new Date(now - 400 * DAY).toISOString().slice(0, 7)}`;
+    // `hour:` periods were written only by the account-link count before it moved to `day:`; none is read after its hour.
+    const hourCutoff = `hour:${new Date(now - DAY).toISOString().slice(0, 13)}`;
     return this.db.transaction(async (tx) => {
       const run = async (sql: string, ...params: (string | number)[]) => (await tx.query(sql, params)).rowCount;
       const receipts = async (table: "receipts" | "tool_receipts" | "payment_receipts") =>
@@ -923,7 +1034,8 @@ export class Store {
         approvals: await run("DELETE FROM approvals WHERE expires_at < $1", now - DAY),
         usage:
           (await run("DELETE FROM usage WHERE period LIKE 'day:%' AND period < $1", dayCutoff)) +
-          (await run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < $1", monthCutoff)),
+          (await run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < $1", monthCutoff)) +
+          (await run("DELETE FROM usage WHERE period LIKE 'hour:%' AND period < $1", hourCutoff)),
         receipts: await receipts("receipts"),
         toolReceipts: await receipts("tool_receipts"),
         paymentReceipts: await receipts("payment_receipts"),
@@ -1048,10 +1160,13 @@ export class Store {
   /** A new document while Claude works on it. Returns its unguessable ID (144 random bits). */
   async startDocument(userId: string, name: string, mime: string, now: number): Promise<string> {
     const id = randomBytes(18).toString("base64url");
-    await this.db.query(
-      "INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'working', $3, $4, NULL, $5)",
-      [id, userId, name, mime, now],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await tx.query(
+        "INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'working', $3, $4, NULL, $5)",
+        [id, userId, name, mime, now],
+      );
+    });
     return id;
   }
 
@@ -1710,11 +1825,14 @@ export class Store {
   }): Promise<{ approvalId: string; expiresAt: number }> {
     const approvalId = randomUUID();
     const expiresAt = input.now + input.ttlSeconds * 1000;
-    await this.db.query(
-      `INSERT INTO approvals (approval_id, user_id, capability, account_id, args_digest, created_at, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.now, expiresAt],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, input.userId);
+      await tx.query(
+        `INSERT INTO approvals (approval_id, user_id, capability, account_id, args_digest, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.now, expiresAt],
+      );
+    });
     return { approvalId, expiresAt };
   }
 

@@ -118,7 +118,7 @@ scopes or change policy: there is no code path from provider output to the regis
 Disconnect deletes the local connection row and queues remote cleanup in one transaction, so reads are blocked
 immediately. Then `revoke` (best effort; may be unsupported) and `delete`. If remote cleanup fails, the receipt is
 `outcome_unknown`, the view shows `remoteCleanup: failed`, and disconnecting again retries. The user can also remove
-access in their Google Account. Deleting a Doddy account on the backend is `DELETE /v1/account` (ADR-674): every row of the person goes in one transaction, read back as gone, and each online account is removed at its provider; a removal that fails or isn't confirmed is reported as pending and retried by the hourly sweep. Backend data export is **not built**.
+access in their Google Account. Deleting a Doddy account on the backend is `DELETE /v1/account` (ADR-674): every row of the person goes in one transaction, read back as gone, and each online account is removed at its provider; a removal that fails or isn't confirmed is reported as pending and retried by the hourly sweep, with a growing wait (at most a day) and no last try; after 8 failures, or when the server has no remover for that kind, it is reported stuck (`cleanup_stuck` in the log, `npm run cleanups:stuck`). A request let in before the deletion can't write the person's rows back after it (`Store.refuseIfCutOff`). Backend data export is **not built**.
 
 ## Rate and cost enforcement
 

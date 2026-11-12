@@ -95,13 +95,51 @@ test("a removal that fails stays queued and visible, and the sweep retries it un
   assert.equal((await h.call("GET", CAL)).body.remoteCleanup, "none");
 });
 
-test("the sweep stops retrying a removal after a day of failures; the row stays visible", async () => {
+test("a removal that keeps failing is never given up: each try waits longer, at most a day, and it is reported stuck once", async () => {
   const store = await Store.memory();
   try {
     (await store.queueCleanup("ca_stuck", "u1", "google_calendar", 0));
-    for (let i = 0; i < CLEANUP_RETRY.maxTries; i++) (await store.failCleanup("ca_stuck", "remote_cleanup_failed"));
-    assert.deepEqual((await store.cleanupsToRetry(["google_calendar"], HOUR, CLEANUP_RETRY.maxTries, 20)), []);
-    assert.equal((await store.cleanupFor("u1", "google_calendar"))?.state, "failed");
+    let now = HOUR;
+    let previousDelay = 0;
+    const stuckAt: number[] = [];
+    for (let failures = 1; failures <= 40; failures++) {
+      assert.deepEqual((await store.cleanupsToRetry(["google_calendar"], now, 20)).map((c) => c.connectionId), ["ca_stuck"], `due before try ${failures}`);
+      const failed = (await store.failCleanup("ca_stuck", "remote_cleanup_failed", now))!;
+      assert.equal(failed.attempts, failures);
+      const delay = failed.nextTryAt - now;
+      assert.ok(delay >= previousDelay && delay <= 24 * HOUR, `try ${failures}: waits ${delay} ms`);
+      previousDelay = delay;
+      if (failed.stuckNow) stuckAt.push(failures);
+      // Not before it is due, and due again once it is.
+      assert.deepEqual((await store.cleanupsToRetry(["google_calendar"], failed.nextTryAt - 1, 20)), [], `not before try ${failures + 1} is due`);
+      now = failed.nextTryAt;
+    }
+    assert.equal(previousDelay, 24 * HOUR, "backs off to a day, never further");
+    assert.deepEqual(stuckAt, [CLEANUP_RETRY.stuckAfter], "reported stuck once");
+    const row = (await store.cleanupFor("u1", "google_calendar"))!;
+    assert.equal(row.state, "failed");
+    assert.equal(row.attempts, 40);
+    const stuck = await store.stuckCleanups();
+    assert.deepEqual(stuck.map((s) => [s.connection_id, s.provider, s.attempts, s.last_error]), [["ca_stuck", "google_calendar", 40, "remote_cleanup_failed"]]);
+    assert.ok(!("user_id" in stuck[0]!), "the operator's list names the removal, not the person");
+    // Queued again (a new disconnect of the same connection): a fresh start, no longer stuck.
+    (await store.queueCleanup("ca_stuck", "u1", "google_calendar", now));
+    assert.deepEqual(await store.stuckCleanups(), []);
+  } finally {
+    (await store.close());
+  }
+});
+
+test("removals that keep failing don't crowd out one that is due: the most overdue go first", async () => {
+  const store = await Store.memory();
+  try {
+    for (let i = 0; i < 25; i++) {
+      (await store.queueCleanup(`ca_old_${i}`, "u1", "gmail", 0));
+      for (let n = 0; n < 12; n++) (await store.failCleanup(`ca_old_${i}`, "remote_cleanup_failed", HOUR));
+    }
+    (await store.queueCleanup("ca_new", "u2", "gmail", HOUR));
+    const due = await store.cleanupsToRetry(["gmail"], 2 * HOUR, 20);
+    assert.deepEqual(due.map((c) => c.connectionId), ["ca_new"]);
   } finally {
     (await store.close());
   }

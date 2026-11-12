@@ -33,7 +33,7 @@ No delivery company lets another app order on a person's own account in Poland (
 - **Number audit:** a postcode or phone number that is on the card (`doddy_order`) is no longer "a number Doddy wasn't given"; without that every delivery order would have ended "unclear". A number that isn't on the card still warns.
 - **Erased with the task:** the brief (address, phone) is deleted the moment the task ends, not when the phone acknowledges the result.
 - **Agent and spec:** `voice-agent/task-call-order/` (prompt, session, no tools beyond `end_call` and voicemail), `TASK_ORDER_AGENT_SPEC`, `scripts/voice_agent_spec.py check --agent task-call-order` in `scripts/ci.sh`, `setup-task-call-agent.mjs --agent order`. Migration `031_order_calls.sql` only widens two CHECKs.
-- **Off until set up** (owner queue 50): without `ELEVENLABS_TASK_ORDER_AGENT_ID`, 503 `order_not_configured`; `/v1/call-cases/availability` gains `order`, `orderAgentConfigured`, `orderAgentProblems`.
+- **Off until set up** (owner queue 51): without `ELEVENLABS_TASK_ORDER_AGENT_ID`, 503 `order_not_configured`; `/v1/call-cases/availability` gains `order`, `orderAgentConfigured`, `orderAgentProblems`.
 - An order is meant to go through a task (one place). A single call case of kind `order` is accepted by the server like a booking one, but its brief is then deleted only when the phone acknowledges the result.
 
 ## Not decided here

@@ -8,6 +8,7 @@
 // items the leaflet links to the shop (non-food on 2026-10-24) with the chain's price.
 // Alcohol catalogues are skipped.
 import { currentWeek, decodeEntities, fetchOfficial, isObject, isoDay, mapLimit, moneyOf, officialUrl, parseJson, str } from "./common.js";
+import { findFrom, forwardFinder } from "../../htmlScan.js";
 import type { ChainAdapter, ChainRead, DataProduct, LeafletPage, LeafletRead } from "../types.js";
 
 export const LIDL_HOSTS = ["www.lidl.pl", "endpoints.leaflets.schwarz", "imgproxy.leaflets.schwarz"] as const;
@@ -18,20 +19,55 @@ const ALCOHOL = /alkohol|\bwin[ao]?\b|\bpiw[ao]?\b/i;
 
 export interface ListedFlyer { slug: string; name: string; title: string; section: string }
 
+const SECTION_HEAD = /<div class="section-head">([^<]*)<\/div>/iy;
+const FLYER_LINK = /<a\s+href="https:\/\/www\.lidl\.pl\/l\/pl\/gazetki\/([a-z0-9-]+)\/ar\/\d+[^"]*"/iy;
+
+/**
+ * The list's section heads and leaflet links in page order: what
+ * /<div class="section-head">([^<]*)<\/div>|<a\s+href="https:\/\/www\.lidl\.pl\/l\/pl\/gazetki\/([a-z0-9-]+)\/ar\/\d+[^"]*"[^>]*class="flyer"[\s\S]*?<\/a>/gi
+ * finds, in linear time: a link counts when class="flyer" comes before the tag's first ">", and its block runs to the
+ * first "</a>" after that.
+ */
+function* overviewParts(html: string): Generator<{ section: string } | { slug: string; block: string }> {
+  const starts = /<div class="section-head">|<a\s+href="https:\/\/www\.lidl\.pl\/l\/pl\/gazetki\//gi;
+  const gtAt = forwardFinder(html, ">");
+  const flyerAt = forwardFinder(html, /class="flyer"/gi);
+  const closeAt = forwardFinder(html, /<\/a>/gi);
+  let links = true; // false once no later link can be closed
+  for (let from = 0; ;) {
+    const s = findFrom(html, starts, from);
+    if (!s) return;
+    SECTION_HEAD.lastIndex = s.index;
+    const head = SECTION_HEAD.exec(html);
+    if (head) { yield { section: head[1]! }; from = SECTION_HEAD.lastIndex; continue; }
+    FLYER_LINK.lastIndex = s.index;
+    const link = links ? FLYER_LINK.exec(html) : null;
+    if (link) {
+      const gt = gtAt(FLYER_LINK.lastIndex);
+      const flyer = gt ? flyerAt(FLYER_LINK.lastIndex) : undefined;
+      if (flyer && flyer.index < gt!.index) {
+        const close = closeAt(flyer.end);
+        if (close) { yield { slug: link[1]!, block: html.slice(s.index, close.end) }; from = close.end; continue; }
+      }
+      if (!gt || (flyer && flyer.index < gt.index)) links = false; // no ">" or no "</a>" left for any later link
+    }
+    from = s.index + 1;
+  }
+}
+
 /** The leaflets on lidl.pl's list, in page order, with the section each sits in. */
 export function parseOverview(html: string): ListedFlyer[] {
   const out: ListedFlyer[] = [];
   const seen = new Set<string>();
   let section = "";
-  const re = /<div class="section-head">([^<]*)<\/div>|<a\s+href="https:\/\/www\.lidl\.pl\/l\/pl\/gazetki\/([a-z0-9-]+)\/ar\/\d+[^"]*"[^>]*class="flyer"[\s\S]*?<\/a>/gi;
-  for (const m of html.matchAll(re)) {
-    if (m[1] !== undefined) { section = decodeEntities(m[1]).trim(); continue; }
-    const slug = m[2]!;
+  for (const part of overviewParts(html)) {
+    if ("section" in part) { section = decodeEntities(part.section).trim(); continue; }
+    const { slug, block } = part;
     if (seen.has(slug)) continue;
     seen.add(slug);
-    const block = m[0];
-    const name = /class="flyer__name">\s*([^<]*?)\s*</.exec(block)?.[1] ?? "";
-    const title = /class="flyer__title">\s*([^<]*?)\s*</.exec(block)?.[1] ?? "";
+    // The text after the marker up to the next "<", trimmed (/class="flyer__name">\s*([^<]*?)\s*</).
+    const name = /class="flyer__name">([^<]*)</.exec(block)?.[1]!.trim() ?? "";
+    const title = /class="flyer__title">([^<]*)</.exec(block)?.[1]!.trim() ?? "";
     out.push({ slug, name: decodeEntities(name), title: decodeEntities(title), section });
   }
   return out;

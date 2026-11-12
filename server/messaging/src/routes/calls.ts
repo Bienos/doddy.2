@@ -3,7 +3,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
-import { hasDoddyAccount, principal, requireDevice } from "../auth.js";
+import { hasDoddyAccount, principal, requireDevice, requireDeviceBeforeBody } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
@@ -44,6 +44,7 @@ const forgetPinOnCalls = (c: pg.PoolClient, accountId: string) =>
 export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
+  const authBeforeBody = requireDeviceBeforeBody(db);
   const limits = abuseLimits(deps.limits);
   const ensureRow = (accountId: string) =>
     db.query("INSERT INTO call_settings (account_id) VALUES ($1) ON CONFLICT DO NOTHING", [accountId]);
@@ -250,7 +251,7 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   // (MEMORY_COPY_MB_PER_ACCOUNT, 413 memory_copy_too_large) and all accounts' together (MEMORY_COPY_MB_PER_SERVER,
   // 507 memory_copy_server_full). Both are counted by the database in the transaction that writes the copy.
   app.put("/v1/memory-copy/snapshot", {
-    preHandler: auth, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
+    preParsing: authBeforeBody, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
   }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
     const { accountId } = principal(req);

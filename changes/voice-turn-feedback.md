@@ -1,2 +1,0 @@
-Voice screen: "Working on it…" now names the running tool ("Searching the web…", "Asking Claude…"), says "Still on it…" after 4 s, and stays on "thinking" for up to 6 s after a tool answers instead of flipping to "Listening". One soft tap when your words arrive. The phone logs the time of each turn (decision `2026-11-12-voice-turn-feedback`).
-Ran: `VoiceTurnWatchTests` on Linux; `tools/build_strings_catalog.py`. Not run: iOS build, a call on a device, haptics.
