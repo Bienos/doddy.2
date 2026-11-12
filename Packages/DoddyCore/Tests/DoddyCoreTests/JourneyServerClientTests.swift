@@ -49,7 +49,8 @@ final class JourneyServerClientTests: XCTestCase {
         XCTAssertEqual(result.routes.first?.segments.first?.line, "M2")
         XCTAssertEqual(result.realtime, false)
         XCTAssertEqual(result.tickets, false)
-        let call = try XCTUnwrap(await transport.recorded().first)
+        let sent = await transport.recorded()
+        let call = try XCTUnwrap(sent.first)
         XCTAssertEqual(call.path, "/v1/journeys/routes")
         XCTAssertEqual(call.method, .post)
         XCTAssertEqual(call.bearerToken, "test-device-token")
@@ -70,7 +71,8 @@ final class JourneyServerClientTests: XCTestCase {
             _ = try await client.journeyRoutes(invalid)
             XCTFail("Invalid journey should never be sent")
         } catch JourneyBackendError.invalid { }
-        XCTAssertEqual(await transport.recorded().count, 0)
+        let sent = await transport.recorded()
+        XCTAssertEqual(sent.count, 0)
     }
 
     func testPartnerDisabledDoesNotReturnDemoRoutes() async throws {
@@ -107,6 +109,7 @@ final class JourneyServerClientTests: XCTestCase {
         let client = DoddyServerClient(transport: transport, credentials: JourneyCredentials())
         let status = try await client.journeyProviderStatus()
         XCTAssertFalse(status.available)
-        XCTAssertEqual((await transport.recorded()).first?.path, "/v1/journeys/provider")
+        let requests = await transport.recorded()
+        XCTAssertEqual(requests.first?.path, "/v1/journeys/provider")
     }
 }
