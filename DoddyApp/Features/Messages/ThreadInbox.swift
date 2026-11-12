@@ -12,13 +12,19 @@ enum ThreadInbox {
 
     private static var repository: any MessageThreadRepository { AppEnvironment.shared.messageThreadRepository }
 
+    /// True while the Messages screen is on screen (set by `MessagesView`): a result then shows there, with no notice.
+    static var isOnScreen = false
+
     /// A task that has just finished. Its message has the task's id, so it is saved once even if this runs twice.
     static func deliver(errand: StoredErrand, now: Date = Date()) async {
         guard let message = ThreadDelivery.errand(errand, now: now) else { return }
         if let recent = try? await repository.recent(limit: ThreadRules.displayLimit), recent.contains(where: { $0.id == message.id }) {
             return
         }
-        await save(message)
+        // Said only once the message is saved (12 Nov 2026): "it's in Messages" is then true.
+        if await save(message) {
+            await ResultNoticePoster.postIfUseful(errandID: errand.id, done: errand.state == .done, now: now)
+        }
     }
 
     /// A file a voice conversation started. Not for a private conversation: nothing of it is kept on this iPhone.
@@ -29,12 +35,15 @@ enum ThreadInbox {
         await save(message)
     }
 
-    private static func save(_ message: ThreadMessage) async {
+    @discardableResult
+    private static func save(_ message: ThreadMessage) async -> Bool {
         do {
             try await repository.append(message)
             NotificationCenter.default.post(name: delivered, object: message)
+            return true
         } catch {
             // Not saved: nothing claims it arrived. A task's result stays under Tasks, a file in Files.
+            return false
         }
     }
 }

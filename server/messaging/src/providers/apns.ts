@@ -48,7 +48,7 @@ export class ApnsPushSender implements PushSender {
   }
 
   async send(target: PushTarget, alert: { title: string; body: string }, messageId: string, data?: PushData): Promise<SendOutcome> {
-    const payload = JSON.stringify({ aps: { alert, sound: "default" }, ...(data ? { doddy: data } : {}) });
+    const payload = JSON.stringify(alertPayload(alert, data));
     return this.post(target, payload, { "apns-topic": this.config.bundleId, "apns-push-type": "alert", "apns-id": messageId });
   }
 
@@ -108,4 +108,16 @@ export class ApnsPushSender implements PushSender {
   close(): void {
     for (const s of this.sessions.values()) s.close();
   }
+}
+
+/**
+ * The payload of an alert push. A finished task's or file's push also asks iOS to wake the app in the background
+ * (`content-available`, owner 12 Nov 2026: "nie dostaję notyfikacji, że to jest w wiadomościach"), so the app saves
+ * Doddy's message in Messages when the push arrives instead of only when someone opens it; the app has the
+ * `remote-notification` background mode already (shared lists, ADR-284). The alert itself is unchanged. iOS decides
+ * whether to wake the app (not after it was swiped away), so the app still asks again when it comes to the front.
+ */
+export function alertPayload(alert: { title: string; body: string }, data?: PushData): Record<string, unknown> {
+  const wakes = data?.kind === "errand-result" || data?.kind === "file-ready";
+  return { aps: { alert, sound: "default", ...(wakes ? { "content-available": 1 } : {}) }, ...(data ? { doddy: data } : {}) };
 }

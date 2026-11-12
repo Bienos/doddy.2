@@ -163,6 +163,7 @@ final class ErrandsModel {
             message = NSLocalizedString("Doddy is working on the task, but this iPhone couldn't keep a copy yet. It will show up in Tasks once Doddy checks again.", comment: "")
         }
         Task { await self.registerForNotifications() }
+        watchWhileRunning()
         return approval.isConfirmed ? .started : .maybeStarted
     }
 
@@ -175,7 +176,9 @@ final class ErrandsModel {
         guard let backend, !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
-        if !hasLoaded { await load() }
+        // A read that failed before (for example in the background, while the iPhone was locked) is tried again,
+        // so one failure never stops results from arriving until Doddy is restarted.
+        if !hasLoaded || loadProblem != nil { await load() }
         guard loadProblem == nil else { return }
         let pending = errands.filter { !$0.state.isFinished || $0.needsAcknowledgement }
         // Nothing here to ask about and no account yet: no request at all, so coming to the front
@@ -252,6 +255,41 @@ final class ErrandsModel {
                 await ThreadInbox.deliver(errand: saved, now: now)
             }
         }
+    }
+
+    // MARK: While a task runs
+
+    /// True while a task handed over isn't finished (running, queued or not known yet).
+    var hasRunning: Bool { errands.contains { !$0.state.isFinished } }
+
+    private var watching: Task<Void, Never>?
+    /// How often the app asks while it is open and a task runs, and for how long at most (a task's time limit on the
+    /// server is 30 minutes).
+    static let watchInterval: Duration = .seconds(30)
+    static let watchLimit: Duration = .seconds(45 * 60)
+
+    /// Asks the server again every 30 seconds while the app is open and a task runs (owner, 12 Nov 2026: "nie dostaję
+    /// notyfikacji, że to jest w wiadomościach"): a result then reaches Messages, and its notice shows, without waiting
+    /// for the app to come to the front again or for a push that may not come. Stops by itself when nothing runs.
+    /// Called after a hand-over and when Doddy comes to the front; `stopWatching` when he goes to the background.
+    func watchWhileRunning() {
+        guard watching == nil, hasRunning, backend != nil else { return }
+        watching = Task { [weak self] in
+            let started = ContinuousClock.now
+            while !Task.isCancelled, ContinuousClock.now - started < Self.watchLimit {
+                try? await Task.sleep(for: Self.watchInterval)
+                guard let self, !Task.isCancelled else { return }
+                await self.refresh()
+                if !self.hasRunning { break }
+            }
+            // A watch stopped by `stopWatching` leaves the reference alone: a newer watch may hold it by now.
+            if !Task.isCancelled { self?.watching = nil }
+        }
+    }
+
+    func stopWatching() {
+        watching?.cancel()
+        watching = nil
     }
 
     // MARK: The user's actions

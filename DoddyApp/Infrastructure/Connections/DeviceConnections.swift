@@ -920,7 +920,16 @@ final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked
     static let shared = TimerBanners()
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+        let request = notification.request
+        // Doddy's server says a task finished while the app is open (owner, 12 Nov 2026): the result is saved in Messages
+        // now, not the next time the app comes to the front. Its banner is left out only when the app's own notice about
+        // a result showed a moment ago (DoddyCore `ResultNotice`), so the person isn't told twice.
+        if let kind = ServerPushKind.parse(request.content.userInfo), kind == .errandResult, !ResultNotice.isLocal(identifier: request.identifier) {
+            Task { @MainActor in await ErrandsModel.shared.refresh() }
+            let delivered = await center.deliveredNotifications().map(ResultNoticePoster.delivered)
+            guard ResultNotice.shouldPresentServerPush(kind: kind, delivered: delivered, now: Date()) else { return [] }
+        }
+        return [.banner, .list, .sound]
     }
 }
 
