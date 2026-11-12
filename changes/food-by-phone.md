@@ -1,0 +1,1 @@
+Design only, no code: ordering food by phone on a separate `order` call agent (decision `2026-11-12-food-by-phone`). Pay on delivery only; the address is typed on the card each time and erased with the task.
