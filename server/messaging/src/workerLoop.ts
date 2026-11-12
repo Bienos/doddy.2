@@ -1,4 +1,4 @@
-import { purgeExpiredSessions } from "./calls.js";
+import { purgeExpiredSessions, sweepPhoneAgentOrphans } from "./calls.js";
 import type { AbuseLimits } from "./config.js";
 import type { TextCipher } from "./crypto.js";
 import { pruneCounters } from "./dailyCounters.js";
@@ -14,6 +14,7 @@ import { placeDueCall, pruneCallReasons, type ScheduledCallDeps } from "./schedu
 import { pruneDeliveries } from "./delivery/deliveries.js";
 import type { TaskVoice } from "./providers/taskCalls.js";
 import type { TaskCallContext } from "./taskCalls/context.js";
+import { pruneDialLog } from "./taskCalls/service.js";
 import { runDeletions, runTaskCallPasses } from "./taskCalls/worker.js";
 import type { ErrandContext } from "./errands/context.js";
 import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
@@ -55,13 +56,17 @@ export interface WorkerDeps {
   catalog?: CatalogContext;
   /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
   limits?: Pick<AbuseLimits, "allowedCountryCodes">;
-  /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753). */
+  /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753): the main account's... */
   deleter?: RecordDeleter;
+  /** ...and the task-call account's, with that account's own credentials. */
+  taskDeleter?: RecordDeleter;
   deleteAfterMinutes?: number;
   /** Places scheduled calls (ADR-754); only when calls are fully set up, else due calls fail with a notice. */
   scheduledCalls?: Omit<ScheduledCallDeps, "db" | "cipher" | "now">;
   /** Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off. */
   phoneAgentVoice?: TaskVoice;
+  /** The phone agent whose conversations no call owns are swept (with phoneAgentVoice). */
+  phoneAgentId?: string;
 }
 
 /**
@@ -76,6 +81,7 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
     callLoop(db, deps, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
   else if (deps.phoneAgentVoice) loops.push(conversationDeletionLoop(db, deps.phoneAgentVoice, shouldStop));
+  if (deps.phoneAgentVoice && deps.phoneAgentId) loops.push(phoneAgentSweepLoop(db, deps.phoneAgentVoice, deps.phoneAgentId, shouldStop));
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
   if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
@@ -237,6 +243,21 @@ async function conversationDeletionLoop(db: Db, voice: TaskVoice, shouldStop: ()
   }
 }
 
+/**
+ * Every 3 hours (and at start), the phone agent's conversations no call owns are queued for deletion; the task-call
+ * loop or, with task calls off, the loop above deletes them. Like the task agents' sweep (`sweepOrphans`).
+ */
+async function phoneAgentSweepLoop(db: Db, voice: TaskVoice, agentId: string, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    try {
+      await sweepPhoneAgentOrphans({ db, voice, now: () => new Date(), log }, agentId);
+    } catch (err) {
+      log("phone agent sweep failed", { error: (err as Error).message });
+    }
+    await pause(3 * 3600_000, shouldStop);
+  }
+}
+
 async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
   const state = { lastSweep: 0 };
   while (!shouldStop()) {
@@ -269,8 +290,9 @@ async function dispatchLoop(
         const deletions = await pruneDeletions(db);
         const reasons = await pruneCallReasons(db);
         const deliveries = await pruneDeliveries(db); // lapsed quotes and finished deliveries' details
-        if (sessions || pruned || deletions || reasons || deliveries) {
-          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons, deliveryRows: deliveries });
+        const dialLog = await pruneDialLog(db); // task calls' dial log past what the limits read
+        if (sessions || pruned || deletions || reasons || deliveries || dialLog) {
+          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons, deliveryRows: deliveries, dialLogRows: dialLog });
         }
       }
       if (r.processed || r.reaped) log("dispatch pass", r);
@@ -282,12 +304,12 @@ async function dispatchLoop(
   }
 }
 
-/** Once a minute, the due deletions of Doddy's records at Twilio. */
+/** Once a minute, the due deletions of Doddy's records at Twilio, each on its own account. */
 async function deletionLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean) {
   const after = deps.deleteAfterMinutes ?? deleteAfterMinutes(DELETE_AFTER_HOURS_DEFAULT);
   while (!shouldStop()) {
     try {
-      await runDueDeletions(db, deps.deleter, after);
+      await runDueDeletions(db, { main: deps.deleter, task: deps.taskDeleter }, after);
     } catch (err) {
       log("twilio deletion pass failed", { error: (err as Error).message });
     }

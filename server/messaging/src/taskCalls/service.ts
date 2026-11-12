@@ -353,6 +353,15 @@ async function limitReached(ctx: TaskCallContext, c: Q, caller: Buffer, account:
   return undefined;
 }
 
+/** The limits above read the last day of the dial log (the longest gap is a day too); a second day is margin. */
+export const DIAL_LOG_KEEP_DAYS = 2;
+
+/** Deletes dial-log rows no limit reads any more; run by the worker's hourly tidy. */
+export async function pruneDialLog(db: Q, now: Date = new Date()): Promise<number> {
+  const r = await db.query("DELETE FROM call_dial_log WHERE dialed_at < $1::timestamptz - make_interval(days => $2)", [now, DIAL_LOG_KEEP_DAYS]);
+  return r.rowCount ?? 0;
+}
+
 // ---------- end ----------
 
 export type EndReason = "user_ended" | "kill_switch" | "time_limit" | "account_deleted";

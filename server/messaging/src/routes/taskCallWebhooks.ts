@@ -102,8 +102,9 @@ export const taskCallWebhookRoutes = (deps: Deps, ctx: TaskCallContext | undefin
     return reply.code(204).send();
   });
 
-  // The same workspace webhook serves the task-call agent and, for recaps (step 5), the phone agent.
-  const webhookSecret = () => ctx?.config.webhookSecret ?? (deps.phoneRecaps && deps.cipher ? deps.phoneRecaps.webhookSecret : undefined);
+  // The same workspace webhook serves the task-call agent and the phone agent: every phone-agent call keeps its
+  // conversation id (so deleting the account deletes the conversation), and gets a recap when they are on (step 5).
+  const webhookSecret = () => ctx?.config.webhookSecret ?? (deps.phoneRecaps?.phoneAgentId ? deps.phoneRecaps.webhookSecret : undefined);
 
   // ElevenLabs post-call: raw bytes for the HMAC, and room for a long transcript.
   await app.register(async (scope) => {
@@ -123,7 +124,7 @@ export const taskCallWebhookRoutes = (deps: Deps, ctx: TaskCallContext | undefin
         return payload;
       },
     }, async (req, reply) => {
-      const phone: PhoneRecapContext | undefined = deps.phoneRecaps && deps.cipher
+      const phone: PhoneRecapContext | undefined = deps.phoneRecaps?.phoneAgentId
         ? { db: deps.db, cipher: deps.cipher, deps: deps.phoneRecaps, log: (msg, extra) => req.log.info(extra ?? {}, msg) }
         : undefined;
       const secret = webhookSecret();
@@ -141,7 +142,8 @@ export const taskCallWebhookRoutes = (deps: Deps, ctx: TaskCallContext | undefin
       }
       const agentId = (json as { data?: { agent_id?: unknown } } | null)?.data?.agent_id;
       if (phone && typeof agentId === "string" && agentId === phone.deps.phoneAgentId) {
-        // Not awaited: the model takes seconds, and ElevenLabs switches a webhook off after repeated failures.
+        // Not awaited: the model takes seconds, and ElevenLabs switches a webhook off after repeated failures. The
+        // conversation id is stored on the call first, before any model is asked.
         void onPhonePostCall(phone, json).catch((err) => req.log.error({ kind: String((err as { name?: unknown }).name) }, "phone recap failed"));
       } else if (ctx) {
         await onPostCall(ctx, json);
