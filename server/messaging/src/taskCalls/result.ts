@@ -47,10 +47,19 @@ export interface CallResult {
   callbackPromised: boolean;
   takenOverAtSecs: number | null;
   durationSecs: number | null;
+  /**
+   * Booking calls only (decision 2026-11-12-book-agent): Doddy said the approved confirmation sentence.
+   * A booking counts as made only with this, a "yes" from the writer and a quote from the transcript.
+   */
+  bookingConfirmed?: boolean;
 }
 
 /** What the optional model step may say. Everything is checked before use. */
-export interface WriterInput { question: string; goal: string; transcript: Line[] }
+export interface WriterInput {
+  question: string; goal: string; transcript: Line[];
+  /** Booking calls only: the approved booking, one detail per line. "yes" then means booked exactly this. */
+  booking?: string;
+}
 export interface WriterOutput {
   answerLine: number | null;
   answerQuote: string | null;
@@ -80,6 +89,8 @@ export interface ResultFacts {
   source: TranscriptSource;
   voicemailToolUsed: boolean;
   writer?: WriterOutput;
+  /** Booking calls only: the one sentence that accepts the booking. Doddy's lines holding it are not commitment warnings. */
+  bookingConfirmLine?: string;
 }
 
 const IVR = ["nacisnij", "wcisnij", "wybierz", "aby polaczyc", "witamy w", "infolinia", "prosimy czekac", "prosze czekac",
@@ -97,7 +108,9 @@ const norm = (s: string) => s.normalize("NFC").replace(/\s+/g, " ").trim();
 export function buildCallResult(f: ResultFacts): CallResult {
   const transcript = f.transcript.map((l) => ({ ...l, text: norm(l.text) })).filter((l) => l.text.length > 0);
   const callee = transcript.map((l, i) => ({ ...l, i })).filter((l) => l.speaker === "callee");
-  const warnings = audit(transcript, f.allowedTexts);
+  const warnings = audit(transcript, f.allowedTexts, f.bookingConfirmLine);
+  const bookingConfirmed = f.bookingConfirmLine === undefined ? undefined
+    : transcript.some((l) => l.speaker === "doddy" && saysLine(l.text, f.bookingConfirmLine!));
   const callbackPromised = transcript.some((l) => l.speaker === "doddy" && fold(l.text).includes(fold(f.callbackLine).slice(0, 24)));
   const reasons: string[] = [];
 
@@ -133,7 +146,15 @@ export function buildCallResult(f: ResultFacts): CallResult {
     format: 1, outcome, source: f.source, confidence, confidenceReasons: reasons, summary, summaryBy, quote, transcript,
     nextStep: nextStepFor(outcome, quote, callbackPromised, f.writer), warnings, callbackPromised,
     takenOverAtSecs: f.takenOverAtSecs, durationSecs: f.durationSecs,
+    ...(bookingConfirmed === undefined ? {} : { bookingConfirmed }),
   };
+}
+
+/** Whether a spoken line holds the given sentence, ignoring case, diacritics, spacing and punctuation. */
+export function saysLine(spoken: string, sentence: string): boolean {
+  const squash = (x: string) => fold(x).replace(/[^a-z0-9]+/g, " ").trim();
+  const want = squash(sentence);
+  return want.length > 0 && ` ${squash(spoken)} `.includes(` ${want} `);
 }
 
 const rank = (c: Confidence) => ({ none: 0, low: 1, medium: 2, high: 3 })[c];
@@ -186,20 +207,27 @@ export function findSpan(text: string, quote: string): string | undefined {
 }
 
 /** Doddy's own lines after the opening: commitment words, numbers it wasn't given, PESEL-like numbers. */
-export function audit(transcript: Line[], allowedTexts: string[]): Warning[] {
+export function audit(transcript: Line[], allowedTexts: string[], bookingConfirmLine?: string): Warning[] {
   const allowedDigits = new Set(allowedTexts.flatMap((t) => (t.match(/\d+/g) ?? [])));
   const warnings: Warning[] = [];
   let first = true;
   transcript.forEach((l, i) => {
     if (l.speaker !== "doddy") return;
     if (first) { first = false; return; } // the first message is ours, spoken word for word
-    const f = fold(l.text);
+    // On a booking call the approved confirmation sentence is the one commitment allowed; any other commitment word still warns.
+    const f = fold(bookingConfirmLine && saysLine(l.text, bookingConfirmLine) ? withoutLine(l.text, bookingConfirmLine) : l.text);
     if (COMMIT_WORDS.some((w) => new RegExp(`\\b${w}\\b`).test(f))) warnings.push({ kind: "possible_commitment", line: i });
     const digits = l.text.match(/\d(?:[ \-]?\d)*/g)?.map((d) => d.replace(/\D/g, "")) ?? [];
     if (digits.some((d) => d.length === 11)) warnings.push({ kind: "pesel_said", line: i });
     else if (digits.some((d) => d.length >= 3 && !allowedDigits.has(d))) warnings.push({ kind: "unlisted_number", line: i });
   });
   return warnings;
+}
+
+/** The spoken line with the given sentence taken out, compared as saysLine does. */
+function withoutLine(spoken: string, sentence: string): string {
+  const squash = (x: string) => fold(x).replace(/[^a-z0-9]+/g, " ").trim();
+  return ` ${squash(spoken)} `.replace(` ${squash(sentence)} `, " ");
 }
 
 export const OUTCOME_SUMMARY: Record<Exclude<Outcome, "answered" | "taken_over">, string> = {
