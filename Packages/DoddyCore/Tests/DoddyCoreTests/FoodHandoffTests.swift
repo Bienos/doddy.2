@@ -80,4 +80,39 @@ final class FoodHandoffTests: XCTestCase {
         XCTAssertEqual(logged?.title, "Open a food app")
         XCTAssertEqual(logged?.detail, "Wolt · “ramen”")
     }
+
+    func testARestaurantPageMustBeOnTheNamedAppsOwnHostAndIsCleanedBeforeItOpens() throws {
+        let wolt = try XCTUnwrap(FoodApps.named("Wolt"))
+        XCTAssertEqual(wolt.page(from: "https://wolt.com/pl/pol/warsaw/restaurant/sushi-kushi?utm_source=a#top")?.absoluteString,
+                       "https://wolt.com/pl/pol/warsaw/restaurant/sushi-kushi", "query and fragment are dropped")
+        XCTAssertNotNil(wolt.page(from: "https://www.wolt.com/pl/x"))
+        XCTAssertNotNil(wolt.page(from: "https://eu.wolt.com/pl/x"), "a subdomain of the app's own host")
+        XCTAssertNotNil(try XCTUnwrap(FoodApps.named("Pyszne.pl")).page(from: "https://www.pyszne.pl/menu/demo"))
+        XCTAssertNotNil(try XCTUnwrap(FoodApps.named("Bolt Food")).page(from: "https://food.bolt.eu/pl-pl/1-warsaw/p/demo"))
+        for bad in [
+            "http://wolt.com/pl/x", "https://wolt.com.evil.example/x", "https://notwolt.com/x", "https://wolt.com@evil.example/x",
+            "https://user:pw@wolt.com/x", "https://wolt.com:8443/x", "https://wolt.com", "https://wolt.com/",
+            "https://glovoapp.com/pl/x", "javascript:alert(1)", "wolt.com/x", "", "https://wolt.com/" + String(repeating: "a", count: 300),
+        ] { XCTAssertNil(wolt.page(from: bad), bad) }
+    }
+
+    func testAPageOpensInsteadOfTheFrontPageAndTheCardSaysWhere() throws {
+        let handoff = try FoodHandoff.parse(app: "Wolt", search: "sushi", page: "https://wolt.com/pl/pol/warsaw/restaurant/sushi-kushi?x=1").get()
+        XCTAssertEqual(handoff.openURL.absoluteString, "https://wolt.com/pl/pol/warsaw/restaurant/sushi-kushi")
+        XCTAssertEqual(try FoodHandoff.parse(app: "Wolt", search: "sushi").get().openURL, FoodApps.named("Wolt")?.url, "no page: the front page")
+        XCTAssertEqual(try FoodHandoff.parse(app: "Wolt", search: nil, page: "  ").get().page, nil, "an empty page is no page")
+        XCTAssertEqual(handoff.card(polish: false).lines.first, "Opens this page: wolt.com/pl/pol/warsaw/restaurant/sushi-kushi")
+        XCTAssertEqual(handoff.card(polish: true).lines.first, "Otworzy się strona: wolt.com/pl/pol/warsaw/restaurant/sushi-kushi")
+        XCTAssertTrue(handoff.openedReply.hasPrefix("opened: Wolt opened on the restaurant's page. Nothing was ordered: the user chooses, pays and orders there themselves."))
+        XCTAssertTrue(handoff.openedReply.contains("say what to look for on its menu"))
+    }
+
+    func testAPageOfAnotherAppIsRefusedNotIgnoredSoTheCardNeverNamesOneAppAndOpensAnother() {
+        guard case .invalid(_, let reason) = request(#"{"app": "Wolt", "page": "https://glovoapp.com/pl/pl/warszawa/stores/pizza"}"#) else { return XCTFail() }
+        XCTAssertTrue(reason.contains("Wolt") && reason.contains("order page"), reason)
+        guard case .invalid = request(#"{"app": "Glovo", "page": "https://evil.example/x"}"#) else { return XCTFail() }
+        guard case .openFoodApp(let ok) = request(#"{"app": "Glovo", "page": "https://glovoapp.com/pl/pl/warszawa/stores/pizza"}"#) else { return XCTFail() }
+        XCTAssertEqual(ok.app.id, "glovo")
+        XCTAssertEqual(ok.page?.host, "glovoapp.com")
+    }
 }

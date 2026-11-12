@@ -473,7 +473,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.openCamera:
             return .openCamera
         case VoiceToolName.openFoodApp:
-            switch FoodHandoff.parse(app: args.text("app"), search: args.text("search")) {
+            switch FoodHandoff.parse(app: args.text("app"), search: args.text("search"), page: args.text("page")) {
             case .success(let handoff): return .openFoodApp(handoff)
             case .failure(let refusal): return .invalid(name: name, reason: refusal.reason)
             }

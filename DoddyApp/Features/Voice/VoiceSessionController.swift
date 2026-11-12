@@ -3247,7 +3247,7 @@ final class VoiceSessionController {
         case .openFoodApp(let handoff):
             // Decision 2026-11-12-food-by-voice: the card's tap (AskFirst.tapFirst, checked above) was the yes.
             // The app's front page opens (its app when installed, else the website); nothing is ordered or sent.
-            let opened = await open(handoff.app.url)
+            let opened = await open(handoff.openURL)
             await reply(call.toolCallId, opened ? handoff.openedReply : handoff.notOpenedReply, isError: !opened)
         case .lookAtScreen(let question):
             // Sharing is on (checked above) and that is the person's yes since 11 Nov 2026 (decision
