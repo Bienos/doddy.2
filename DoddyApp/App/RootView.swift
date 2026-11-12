@@ -434,7 +434,10 @@ struct RootView: View {
     /// screen with it, as the shortcut does. Nothing is saved until Save there.
     private func pickUpSharedItem() {
         // While the Face ID lock is up the shared text stays in the inbox; it is picked up after the unlock (ADR-723).
-        guard !AppLock.shared.isLocked, let item = ShareInboxFile.take() else { return }
+        guard !AppLock.shared.isLocked else { return }
+        // A product link shared with "Check the price": the Shopping screen opens with it ready, and reads nothing yet.
+        if let link = ShareInboxFile.take(slot: .priceCheck) { ShortcutRouter.shared.priceCheckInvoked(text: link.text) }
+        guard let item = ShareInboxFile.take() else { return }
         ShortcutRouter.shared.saveToDoddyInvoked(text: item.text)
     }
 

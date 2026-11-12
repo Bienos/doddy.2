@@ -8,6 +8,7 @@ import { z } from "zod";
 import { parse } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import type { Db } from "../db.js";
+import { DbCatalogStore } from "../deals/catalog.js";
 import { searchDeals, type DealsDeps } from "../deals/service.js";
 import { CHAINS } from "../deals/types.js";
 import { addUsage, reserve } from "../deals/usage.js";
@@ -21,7 +22,9 @@ export const SearchBody = z.strictObject({
 /** Registered with `app.register(dealsRoutes(deps))`; `deps.deals` absent or switched off answers 503. */
 export const dealsRoutes = (deps: { db: Db; deals?: DealsDeps }): FastifyPluginAsync => async (app) => {
   const auth = requireDevice(deps.db);
-  const deals = deps.deals;
+  // The leaflet catalog (decision 2026-11-12-leaflet-catalog), read from this database while DEALS_CATALOG_ENABLED=1.
+  const deals = deps.deals && deps.deals.settings.catalog?.enabled && !deps.deals.catalog
+    ? { ...deps.deals, catalog: new DbCatalogStore(deps.db) } : deps.deals;
 
   app.post("/v1/deals/search", {
     preHandler: auth,
@@ -47,6 +50,7 @@ export const dealsRoutes = (deps: { db: Db; deals?: DealsDeps }): FastifyPluginA
     req.log.info({
       items: body.items.length, chains: stats.chains, statuses: stats.statuses, offers: stats.offers, checks: stats.checks,
       pagesRead: stats.pagesRead, inputTokens: stats.inputTokens, outputTokens: stats.outputTokens, picked: stats.picked, ms: stats.ms,
+      fromCatalog: stats.fromCatalog,
     }, "deals searched");
     if (controller.signal.aborted) return reply;
     return response;

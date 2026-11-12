@@ -5,7 +5,7 @@ import { taskCallContext } from "./taskCalls/context.js";
 import { errandContext } from "./errands/context.js";
 import { studioContext } from "./studio/context.js";
 import { watchContext } from "./watches/context.js";
-import { log, radarContext, runWorkerLoop } from "./workerLoop.js";
+import { catalogContext, log, radarContext, runWorkerLoop } from "./workerLoop.js";
 
 // Stand-alone worker process (render.yaml: doddy-messaging-worker). A single web service can run
 // the same loop in-process instead with RUN_WORKER_IN_WEB=1 (src/index.ts).
@@ -20,9 +20,11 @@ const errandCtx = errandContext(db, errands, cipher, push, log);
 const studioCtx = studioContext(db, studio, cipher, push, log);
 const watchCtx = watchContext(db, watches, cipher, push, log);
 const radarCtx = radarContext(db, config.radarAlertsEnabled, news, push, cipher, config.quietHours);
+const catalogCtx = catalogContext(db, providers.deals);
 log("worker started", {
   push: !!push, sms: !!sms, scheduledCalls: !!scheduledCalls, taskCalls: !!taskCtx, killSwitch: config.taskCallSettings.killSwitch,
   errands: !!errandCtx?.enabled, studio: !!studioCtx?.enabled, watches: !!watchCtx?.enabled, radarAlerts: !!radarCtx,
+  leafletCatalog: !!catalogCtx,
 });
 
 let stopping = false;
@@ -31,7 +33,7 @@ process.on("SIGINT", () => { stopping = true; });
 
 await runWorkerLoop(db, {
   push, sms, phoneAgentVoice, cipher, news, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, limits, deleter, deleteAfterMinutes,
-  scheduledCalls, radar: radarCtx,
+  scheduledCalls, radar: radarCtx, catalog: catalogCtx,
 }, () => stopping);
 push?.close();
 await db.end();

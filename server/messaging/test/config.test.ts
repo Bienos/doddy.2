@@ -198,10 +198,14 @@ test("leaflets (ADR-609, 662): off by default, Haiku 5.5 reads pages, 40 pages p
   assert.deepEqual(c.dealsSettings, {
     enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000,
     dailyForNewAccounts: 200, newAccountHours: 24,
+    // The leaflet catalog (decision 2026-11-12-leaflet-catalog): off by default; a scan every 6 hours, 160 pages a chain.
+    catalog: { enabled: false, everyHours: 6, maxPagesPerChain: 160 },
   });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "1" }).dealsSettings.enabled, true);
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_CATALOG_ENABLED: "1" }).dealsSettings.catalog?.enabled, true);
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SCREEN_PAGES: "0" }).dealsSettings.screenPages, 0, "0 turns screening off");
-  for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_SCREEN_PAGES: "201" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" }]) {
+  for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_SCREEN_PAGES: "201" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" },
+    { DEALS_CATALOG_ENABLED: "yes" }, { DEALS_CATALOG_EVERY_HOURS: "0" }, { DEALS_CATALOG_MAX_PAGES: "401" }]) {
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
   }
 });

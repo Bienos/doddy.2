@@ -222,6 +222,7 @@ final class VoiceSessionController {
             // The same phase again (the SDK repeats states) changes nothing; skip the work (ADR-604).
             guard phase != oldValue else { return }
             Self.conversationInProgress = isLive
+            if !isLive { turnFeedback.reset() }
             if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
             ListeningIndicatorModel.shared.refresh()
             switch phase {
@@ -359,6 +360,8 @@ final class VoiceSessionController {
     private(set) var accountMessage: String?
     /// ADR-564: files Claude is making in this conversation, newest first. Each opens by its link.
     private(set) var documents: [RunDocument] = []
+    /// find_flights: the latest search's flights on Kiwi.com, as buttons (never read out by the agent).
+    private(set) var flightLinks: [RunLink] = []
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -492,11 +495,19 @@ final class VoiceSessionController {
     /// A start without opening Doddy has its Live Activity and audio session up: what the Action
     /// Button's intent waits for before it returns (decision 2026-11-10-action-button-start).
     private(set) var backgroundStartReady = false
+    /// A start without opening Doddy took the audio session itself, so LiveKit leaves it alone until
+    /// this conversation is over (`ConversationAudioSession`, decision 2026-11-12-action-button-audio-and-island).
+    @ObservationIgnored private var audioHold: ConversationAudioHolds.Hold?
     /// Where this start's voice token came from, for the timing line only.
     private(set) var tokenSource: VoiceTokenSource?
     /// Monotonic, from Home's tap (including its access check), or start() for other entry points.
     /// Cleared at the first real SDK speaking event; no transcript or credential enters the log.
     @ObservationIgnored private var firstSpeechRequestedAt: Double?
+    /// The words under Doddy while he works, the tap when the person's words arrive and the time of
+    /// each turn in the log (decision `2026-11-12-voice-turn-feedback`).
+    let turnFeedback = VoiceTurnFeedback()
+    /// The last state the provider reported, which a held "Working on it…" can differ from.
+    @ObservationIgnored private var providerState: ElevenLabs.AgentState?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
     var isPrivate = false {
@@ -705,6 +716,7 @@ final class VoiceSessionController {
             UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool))
         backgroundStartRefused = false
         backgroundStartReady = false
+        ConversationAudioSession.release(takeAudioHold())
         tokenSource = nil
         proposedNoteTexts = []
         saveSuggestions = nil
@@ -758,6 +770,7 @@ final class VoiceSessionController {
                 fail(problem)
                 return
             }
+            audioHold = ConversationAudioSession.takenByDoddy()
             backgroundStartReady = true
         }
 
@@ -894,12 +907,35 @@ final class VoiceSessionController {
         // setupAgentStateManager` returns early) the callback never fires, so the island, Home's
         // waves and his talking pose stayed on "Listening" while he spoke. The defaults use the
         // agent's own events and the room's speaking detection; no `vad_score` events are needed.
-        config.agentStateConfiguration = AgentStateConfiguration()
+        // 1 s instead of the SDK's 0.5 s before a quiet Doddy counts as listening (12 Nov 2026): the room
+        // reports him quiet in the pauses between his sentences, so each answer flipped speaking and
+        // listening several times, and Home's strip and the island grew and shrank with every flip. The
+        // user speaking or interrupting still switches at once (their own SDK signals).
+        config.agentStateConfiguration = AgentStateConfiguration(speakingToListeningDelay: 1.0)
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }
         config.onUserTranscript = { text, _ in
-            Task { @MainActor in ref.value?.append(text, fromUser: true) }
+            Task { @MainActor in
+                // The person's words arrived: the turn starts here (decision 2026-11-12-voice-turn-feedback).
+                if let controller = ref.value, controller.isLive {
+                    controller.turnFeedback.userFinished(tap: controller.phase != .speaking && controller.translator == nil)
+                }
+                ref.value?.append(text, fromUser: true)
+            }
+        }
+        // Tools the agent runs itself (web tools) reach the app only as these two events; the app's
+        // own tools are also counted in `handle` and `reply`, once per call id.
+        config.onAgentToolRequest = { event in
+            let id = event.toolCallId, name = event.toolName
+            Task { @MainActor in ref.value?.turnFeedback.toolStarted(id: id, name: name) }
+        }
+        config.onAgentToolResponse = { event in
+            let id = event.toolCallId
+            Task { @MainActor in ref.value?.turnFeedback.toolAnswered(id: id) }
+        }
+        config.onInterruption = { _ in
+            Task { @MainActor in ref.value?.turnInterrupted() }
         }
         config.onAgentResponse = { text, _ in
             Task { @MainActor in ref.value?.append(text, fromUser: false) }
@@ -993,7 +1029,10 @@ final class VoiceSessionController {
         guard attempt == startAttempt, phase == .connecting else { return }
 
         Self.allowOtherAppsAudio()
-        let connectNote = "connecting to ElevenLabs: attempt \(attempt)"
+        // Before LiveKit's engine starts: it sets the session up itself unless a start without opening holds it.
+        ConversationAudioSession.beforeConnect(audioHold)
+        let sessionNote = audioHold == nil ? "set up by LiveKit" : "held by Doddy: \(Self.describeAudioSession())"
+        let connectNote = "connecting to ElevenLabs: attempt \(attempt), audio session \(sessionNote)"
         Self.audioLog.notice("\(connectNote, privacy: .public)")
         let startConfig = config
         do {
@@ -1097,6 +1136,9 @@ final class VoiceSessionController {
     /// paused that way. Cost: the other app's sound plays along with Doddy's, and the microphone
     /// can hear it (headphones avoid that). Same options as the SDK's own speaker preset plus
     /// `.mixWithOthers`. Not verified on a device.
+    /// LiveKit 2.19 doesn't read `sessionConfiguration` when it sets the session up (and since 2.17 its
+    /// own preset no longer mixes), so this changes nothing today; a start without opening Doddy keeps
+    /// its mixable session through `ConversationAudioSession` (decision 2026-11-12-action-button-audio-and-island).
     private static func allowOtherAppsAudio() {
         AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
             category: .playAndRecord,
@@ -1132,6 +1174,12 @@ final class VoiceSessionController {
             audioLog.notice("\(refused, privacy: .public)")
             return NSLocalizedString("iOS didn't let Doddy start the microphone without opening him. Open Doddy to talk.", comment: "")
         }
+    }
+
+    /// This conversation's hold on the audio session, handed over once (decision 2026-11-12-action-button-audio-and-island).
+    private func takeAudioHold() -> ConversationAudioHolds.Hold? {
+        defer { audioHold = nil }
+        return audioHold
     }
 
     /// Watches iOS audio interruptions (a phone call, an alarm, Siri, another app's audio) and
@@ -1259,6 +1307,8 @@ final class VoiceSessionController {
         // are dropped (review H1).
         startAttempt += 1
         userAskedToEnd = true
+        // Taken now, before the await below: a start during it must keep its own hold.
+        let hold = takeAudioHold()
         if sessionEnd == nil { sessionEnd = reason }
         dropLongTurn()
         endTranslator()
@@ -1288,6 +1338,7 @@ final class VoiceSessionController {
             activity.sessionID = nil
         }
         await active?.endConversation()
+        ConversationAudioSession.release(hold)
         // Prepare the next tap while Home is idle; never open another room or microphone here.
         VoiceTokenWarmer.shared.warmIfDue()
     }
@@ -2530,11 +2581,28 @@ final class VoiceSessionController {
 
     // MARK: Events
 
+    /// The person spoke over Doddy: nothing is waited on, and a held "Working on it…" goes back to
+    /// what the provider said (it may have said listening before this ran).
+    private func turnInterrupted() {
+        turnFeedback.reset()
+        if isLive, phase == .thinking, providerState == .listening { phase = .listening }
+    }
+
     private func apply(_ state: ElevenLabs.AgentState) {
         guard isLive else { return }
+        providerState = state
         switch state {
-        case .listening: phase = .listening
+        case .listening:
+            // The SDK says listening as soon as a tool answers, while the model is still writing the
+            // answer to it: keep "Working on it…" for a few seconds unless Doddy speaks first
+            // (decision 2026-11-12-voice-turn-feedback).
+            let held = turnFeedback.holdsThinking { [weak self] in
+                guard let self, self.isLive, self.phase == .thinking, self.providerState == .listening else { return }
+                self.phase = .listening
+            }
+            phase = held ? .thinking : .listening
         case .speaking:
+            turnFeedback.agentStartedSpeaking()
             phase = .speaking
             if !readsAloud { applyReadAloud() }
         case .thinking: phase = .thinking
@@ -2621,10 +2689,16 @@ final class VoiceSessionController {
         keepLog()
         // After an error the SDK may keep the microphone (review H2), so the conversation is
         // ended here as stop() does, instead of waiting for a disconnect that may not come.
+        let hold = takeAudioHold()
         if let active = conversation {
             conversation = nil
             endTranslator()
-            Task { await active.endConversation() }
+            Task {
+                await active.endConversation()
+                ConversationAudioSession.release(hold)
+            }
+        } else {
+            ConversationAudioSession.release(hold)
         }
         // As after a drop by disconnect: "Worth keeping?" once Doddy had been listening.
         if wasLive { offerSaveSuggestions() }
@@ -2637,6 +2711,7 @@ final class VoiceSessionController {
         endTranslator()
         stopWatchingAudioInterruptions()
         conversation = nil
+        ConversationAudioSession.release(takeAudioHold())
         if wasLive { keepRecoveryDraft() }
         pendingAction = nil
         keepLog()
@@ -2784,6 +2859,7 @@ final class VoiceSessionController {
         guard isLive, attempt == startAttempt else { return }
         callOwners.record(call.toolCallId, attempt: attempt)
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
+        turnFeedback.toolStarted(id: call.toolCallId, name: call.toolName)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         // The release scope (decision 2026-11-07-release-scope), translator (ADR-215), plan, Pause all, then the tool's switch,
         // in that order (ToolGate).
@@ -2986,7 +3062,21 @@ final class VoiceSessionController {
         case .followNews(let ask):
             // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). Said from the list as it is
             // kept on this iPhone after the write, never assumed (ADR-657).
-            await reply(call.toolCallId, VoiceToolReply.newsFollow(FollowingModel.shared.follow(ask)))
+            let outcome = FollowingModel.shared.follow(ask.base)
+            var alertResult: NewsFollowAlertResult?
+            if let alertAsk = ask.alertAsk {
+                // The alert applies to a follow that was just added or that the person already had; the radar's own
+                // sync says whether Doddy's server kept it.
+                switch outcome {
+                case .added(let follow), .alreadyFollowing(let follow):
+                    let kept = await FollowingModel.shared.apply(alertAsk.alert(followID: follow.id), to: follow)
+                    alertResult = kept
+                        ? .kept(FollowingModel.shared.alert(for: follow))
+                        : .hereOnly(reason: FollowingModel.shared.radarProblem ?? "")
+                case .full, .notKept: break
+                }
+            }
+            await reply(call.toolCallId, VoiceToolReply.newsFollow(outcome, alert: alertResult))
         case .startStopwatch(let label):
             // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). One stopwatch at a time: a
             // second start reports the one running and changes nothing (ADR-652).
@@ -3701,6 +3791,7 @@ final class VoiceSessionController {
                 let prepared = try await client.prepare(cloud)
                 let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
                 await keepMadeDocument(result)
+                keepFlightLinks(result)
                 await reply(toolCallID, VoiceToolReply.cloudResult(result))
             } else {
                 // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
@@ -3733,6 +3824,12 @@ final class VoiceSessionController {
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
         }
+    }
+
+    /// find_flights: the flights' Kiwi.com pages become buttons; a new search replaces the old ones.
+    private func keepFlightLinks(_ result: RunResult) {
+        guard result.tool == CloudToolName.findFlights else { return }
+        flightLinks = (result.links ?? []).filter(\.isKiwi)
     }
 
     /// ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
@@ -4963,6 +5060,7 @@ final class VoiceSessionController {
     /// receipt, attempt and undo through `writeResults` instead (ADR-319).
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false, undo: ActivityUndo? = nil) async {
         callsAsReceived[toolCallID] = nil
+        turnFeedback.toolAnswered(id: toolCallID)
         let write = writeResults.removeValue(forKey: toolCallID)
         retryChecks[toolCallID] = nil
         let undo = undo ?? write?.undo
