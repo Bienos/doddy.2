@@ -23,6 +23,7 @@ import type { PhoneRecapDeps } from "../phoneRecaps.js";
 import { CachingFetcher, PoliteFetcher } from "../deals/fetcher.js";
 import type { DealsDeps } from "../deals/service.js";
 import { CeidgClient } from "../registry/ceidg.js";
+import { UberDirectClient } from "../delivery/uberDirect.js";
 import { AnthropicDealsModel } from "../deals/vision.js";
 import { log } from "../log.js";
 import { AffiliateLinks } from "../shopping/affiliate.js";
@@ -165,6 +166,10 @@ export function providersFrom(config: Config) {
     // ADR-685: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.
     ceidg: config.ceidg ? new CeidgClient(config.ceidg) : undefined,
     watches,
+    // Uber Direct (decision 2026-11-12-uber-direct-deliveries): only when enabled and configured.
+    deliveries: config.uberDirect
+      ? { provider: new UberDirectClient(config.uberDirect), mode: config.uberDirect.mode, limits: config.uberDirect.limits }
+      : undefined,
     // Doddy's message and call records at Twilio are deleted this long after they are final (ADR-753).
     deleter: twilio,
     deleteAfterMinutes: deleteAfterMinutes(config.twilioRecordDeleteAfterHours),

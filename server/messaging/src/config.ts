@@ -197,6 +197,17 @@ const schema = z.object({
   // checked, and runs the worker that records new matching stories and queues their pushes. "0" (the default)
   // answers 503 radar_disabled to a new alert, still accepts turning them off, and runs no checks.
   RADAR_ALERTS_ENABLED: z.enum(["0", "1"]).default("0"),
+  // Deliveries through Uber Direct (decision 2026-11-12-uber-direct-deliveries). Off unless UBER_DIRECT_ENABLED=1 and
+  // all three credentials are set. Uber bills the account these credentials belong to, so the caps below hold for every
+  // account and for the whole server. UBER_DIRECT_MODE=test (the default) asks Uber's sandbox for a simulated courier.
+  UBER_DIRECT_ENABLED: z.enum(["0", "1"]).default("0"),
+  UBER_DIRECT_CLIENT_ID: z.string().min(8).optional(),
+  UBER_DIRECT_CLIENT_SECRET: z.string().min(8).optional(),
+  UBER_DIRECT_CUSTOMER_ID: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/).optional(),
+  UBER_DIRECT_MODE: z.enum(["test", "live"]).default("test"),
+  UBER_DIRECT_MAX_FEE: z.coerce.number().int().min(0).max(100_000).default(6000),
+  UBER_DIRECT_DAILY_PER_ACCOUNT: z.coerce.number().int().min(0).max(50).default(2),
+  UBER_DIRECT_DAILY_PER_SERVER: z.coerce.number().int().min(0).max(1000).default(5),
   // Company registers (ADR-685): CEIDG's JWT, which the owner gets free at biznes.gov.pl (e-service 00_9999_00,
   // signing in with mObywatel or a trusted profile). Not set: GET /v1/registry/ceidg answers 503 registry_disabled.
   CEIDG_API_TOKEN: z.string().min(20).optional(),
@@ -397,6 +408,11 @@ export interface Config {
   watchSettings: WatchSettings;
   /** On my radar alerts (RADAR_ALERTS_ENABLED, off by default): routes store alerts and the worker checks them. */
   radarAlertsEnabled: boolean;
+  /** Uber Direct (decision 2026-11-12-uber-direct-deliveries): only when enabled and all three credentials are set. */
+  uberDirect?: {
+    clientId: string; clientSecret: string; customerId: string; mode: "test" | "live";
+    limits: { maxFee: number; perAccountDaily: number; perServerDaily: number };
+  };
   /** Where Doddy's backend serves file links (`DOCUMENTS_ORIGIN`, no trailing slash); null turns file-ready pushes off. */
   documentsOrigin: string | null;
   assistantSettings: AssistantSettings;
@@ -512,6 +528,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
     radarAlertsEnabled: e.RADAR_ALERTS_ENABLED === "1",
+    uberDirect: e.UBER_DIRECT_ENABLED === "1" && e.UBER_DIRECT_CLIENT_ID && e.UBER_DIRECT_CLIENT_SECRET && e.UBER_DIRECT_CUSTOMER_ID
+      ? {
+        clientId: e.UBER_DIRECT_CLIENT_ID, clientSecret: e.UBER_DIRECT_CLIENT_SECRET, customerId: e.UBER_DIRECT_CUSTOMER_ID,
+        mode: e.UBER_DIRECT_MODE,
+        limits: { maxFee: e.UBER_DIRECT_MAX_FEE, perAccountDaily: e.UBER_DIRECT_DAILY_PER_ACCOUNT, perServerDaily: e.UBER_DIRECT_DAILY_PER_SERVER },
+      }
+      : undefined,
     documentsOrigin: e.DOCUMENTS_ORIGIN ? e.DOCUMENTS_ORIGIN.replace(/\/$/, "") : null,
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",
