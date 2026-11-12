@@ -8,7 +8,7 @@ Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScr
 
 ## One page for the voice, Phone calls on the first page (12 Nov 2026, decision `2026-11-12-settings-one-voice-page`)
 
-Owner, 12 Nov 2026: "ustawienia wyglądają tak średnio […] zrobić to trochę lepiej wszystkim". Again **no preference was removed, renamed or re-keyed** (the voice choice is the exception: decision `2026-11-12-one-voice`). The first page is ten rows in four groups: **Doddy** (Voice and personality, Doddy's memory), then Connections, **Phone calls**, Notifications, then **This iPhone** (Language, Appearance, Privacy), then About. What moved:
+Owner, 12 Nov 2026: "ustawienia wyglądają tak średnio […] zrobić to trochę lepiej wszystkim". Again **no preference was removed, renamed or re-keyed** (the voice choice is the exception: decision `2026-11-12-one-voice`). The first page is nine rows in four groups: **Doddy** (Voice and personality, Doddy's memory), then Connections, **Phone calls**, Notifications, then **This iPhone** (Language, Appearance, Privacy), then About. What moved:
 
 | Was | Is now |
 |---|---|

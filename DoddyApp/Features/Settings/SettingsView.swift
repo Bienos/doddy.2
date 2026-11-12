@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 
 /// Settings (ADR-580, shortened by ADR-633 and again on 5 Nov 2026; Phone calls came out of Notifications and the voice and
-/// personality pages became one on 12 Nov 2026, decision `2026-11-12-settings-one-voice-page`): four short groups and ten
+/// personality pages became one on 12 Nov 2026, decision `2026-11-12-settings-one-voice-page`): four short groups and nine
 /// rows. Each row opens a page;
 /// the controls that were rows here (the island, Siri, the connections, the notifications, the memory
 /// pages) are on those pages with the same preference keys and accessibility identifiers, so nothing a
