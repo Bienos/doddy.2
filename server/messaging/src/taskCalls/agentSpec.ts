@@ -12,3 +12,16 @@ export const TASK_AGENT_SPEC = {
   /** The agent's own limit must be above ours, so our server decides when the call ends. */
   minAgentMaxDurationSecs: 320,
 } as const;
+
+/**
+ * The booking agent (decision docs/decisions/2026-11-12-book-agent.md), from voice-agent/task-call-book/,
+ * kept in step by `python3 -I scripts/voice_agent_spec.py check --agent task-call-book`. Same rules as
+ * the ask agent; only its prompt differs, so the same safety check reads it with this hash.
+ */
+export const TASK_BOOK_AGENT_SPEC = {
+  ...TASK_AGENT_SPEC,
+  /** sha256 of voice-agent/task-call-book/instructions.md, trimmed, as the setup script sends it. */
+  promptSha256: "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4",
+} as const;
+
+export type TaskAgentSpec = { readonly promptSha256: string } & Omit<typeof TASK_AGENT_SPEC, "promptSha256">;

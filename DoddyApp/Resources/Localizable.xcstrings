@@ -12488,6 +12488,17 @@
         }
       }
     },
+    "Check the price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź cenę"
+          }
+        }
+      }
+    },
     "Check the words, then Save.": {
       "extractionState": "manual",
       "localizations": {
@@ -55843,6 +55854,17 @@
         }
       }
     },
+    "Open Doddy: the Shopping screen has this link ready. Nothing is read or sent until you tap the buttons there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy'ego: ekran Zakupy ma ten link gotowy. Nic nie jest czytane ani wysyłane, dopóki nie dotkniesz tam przycisków."
+          }
+        }
+      }
+    },
     "Open Food Facts couldn't be reached, so nothing was added. You can type the item instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -62530,6 +62552,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已在 Doddy 中就绪"
+          }
+        }
+      }
+    },
+    "Ready to check in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe do sprawdzenia w Doddym"
           }
         }
       }
