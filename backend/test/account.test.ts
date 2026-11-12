@@ -80,6 +80,8 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
   await q("INSERT INTO device_joins (device_user_id, user_id, provider, created_at) VALUES ($1, $2, 'google', 1)", [uuid(5), userId]);
   // Decision 2026-11-08-required-account: a Doddy account that took over this person's earlier iPhone data.
   await q("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, 1)", [uuid(6), userId]);
+  // A link code this person's iPhone asked for and hasn't used yet.
+  await q("INSERT INTO account_link_codes (code_hash, user_id, created_at, expires_at) VALUES ($1, $2, 1, 9999999999999)", [`lc-${tag}`, userId]);
   await q(
     `INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, 'google', 1, 9999999999999)`,
     [`lp-${tag}`, userId, uuid(4)],
