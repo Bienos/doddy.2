@@ -1,2 +1,0 @@
-Owner queue items 31 and 32: `doddy-messaging` was deployed on Render on 10 Nov 2026 at 08:46 UTC (commit `4257e8d`, #307), which applied migration 025 and put `POST /v1/recaps` and the phone-line recap routes live. Read-only checks: the log shows started and listening with no errors, the new route answers 401 without a token, the post-call webhook 401 without a signature. Not checked: the database itself (its IP allowlist is empty) and a real call.
-Ran: nothing beyond reading (docs only).
