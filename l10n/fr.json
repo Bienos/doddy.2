@@ -1219,5 +1219,7 @@
   "What's in this photo?": "Qu’y a-t-il sur cette photo ?",
   "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "Elle est supprimée de cet iPhone et de sa copie pour Doddy Web sur le serveur de Doddy. Tes notes enregistrées ne sont pas affectées.",
   "Couldn't delete the copy on the web": "Impossible de supprimer la copie sur le web",
-  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "La conversation n’est plus sur cet iPhone, mais le serveur de Doddy n’a pas confirmé que sa copie pour Doddy Web est supprimée. Elle peut encore apparaître sur le web d’ici là."
+  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "La conversation n’est plus sur cet iPhone, mais le serveur de Doddy n’a pas confirmé que sa copie pour Doddy Web est supprimée. Elle peut encore apparaître sur le web d’ici là.",
+  "Food": "Repas",
+  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Ouvre l’appli si tu l’as, sinon le site. Doddy ne voit pas la commande et ne la passe pas."
 }

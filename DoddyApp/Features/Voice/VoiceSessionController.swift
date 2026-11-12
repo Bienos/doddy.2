@@ -3263,6 +3263,10 @@ final class VoiceSessionController {
             let result = ScreenLookSpeech.result(outcome)
             await reply(call.toolCallId, result.text, isError: result.isError)
         case .controlHome(let proposal):
+            guard devices.homeAvailable else {
+                await reply(call.toolCallId, VoiceToolReply.homeUnavailable)
+                return
+            }
             guard devices.access(for: .home) == .granted else {
                 await notConnected(call.toolCallId, .home)
                 return
@@ -4735,6 +4739,10 @@ final class VoiceSessionController {
         guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
         if connection == .steps, !devices.stepCountingAvailable {
             await reply(toolCallID, VoiceToolReply.stepsUnavailable)
+            return
+        }
+        if connection == .home, !devices.homeAvailable {
+            await reply(toolCallID, VoiceToolReply.homeUnavailable)
             return
         }
         if connection == .camera, !devices.cameraAvailable {
