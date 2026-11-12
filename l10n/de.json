@@ -1207,5 +1207,7 @@
   "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "Es wird von diesem iPhone und aus seiner Kopie für Doddy Web auf dem Doddy-Server entfernt. Deine gespeicherten Notizen sind nicht betroffen.",
   "Couldn't delete the copy on the web": "Die Kopie im Web konnte nicht gelöscht werden",
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "Das Gespräch ist von diesem iPhone weg, aber der Doddy-Server hat nicht bestätigt, dass die Kopie für Doddy Web gelöscht ist. Bis dahin kann es im Web noch zu sehen sein.",
+  "Food": "Essen",
+  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Öffnet die App, falls du sie hast, sonst die Website. Doddy sieht die Bestellung nicht und gibt sie nicht auf.",
   "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Gilt ab deinem nächsten Sprachgespräch. „Beginnt auf“ legt die Sprache fest, in der Doddy dich begrüßt; bei Automatisch beginnt er auf Englisch. So oder so folgt er der europäischen Sprache, die du sprichst, und wechselt, wenn du wechselst."
 }

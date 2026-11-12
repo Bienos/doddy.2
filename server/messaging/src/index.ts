@@ -40,6 +40,7 @@ app.log.info({
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   radarAlerts: config.radarAlertsEnabled,
   leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,
+  deliveries: config.uberDirect ? config.uberDirect.mode : false,
   ceidg: !!providers.ceidg,
 }, "configured features");
 

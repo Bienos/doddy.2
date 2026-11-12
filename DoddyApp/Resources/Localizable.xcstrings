@@ -30724,6 +30724,65 @@
         }
       }
     },
+    "Food": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Essen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comida"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repas"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hrana"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cibo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フード"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedzenie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comida"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "美食"
+          }
+        }
+      }
+    },
     "For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -56921,6 +56980,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwiera opcje logowania"
+          }
+        }
+      }
+    },
+    "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die App, falls du sie hast, sonst die Website. Doddy sieht die Bestellung nicht und gibt sie nicht auf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre la app si la tienes, o la web. Doddy no ve ni hace el pedido."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvre l’appli si tu l’as, sinon le site. Doddy ne voit pas la commande et ne la passe pas."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otvara aplikaciju ako je imaš, inače web-stranicu. Doddy ne vidi niti šalje narudžbu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apre l’app se ce l’hai, altrimenti il sito. Doddy non vede né fa l’ordine."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリがあればアプリを、なければウェブサイトを開きます。Doddyは注文を見ることも、注文することもしません。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera aplikację, jeśli ją masz, albo stronę. Doddy nie widzi ani nie składa zamówienia."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre o app, se você tiver, ou o site. O Doddy não vê nem faz o pedido."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如果你装了应用就打开应用，否则打开网站。Doddy 不会查看或下单。"
           }
         }
       }

@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-12
 - **Decided by:** owner: "my powinniśmy robić takie dzienne skany, mi się wydaje, oszczędnie, w sensie jako Dodi, tych wszystkich gazetek i dawać to dostęp tych informacji użytkownikom, a nie za każdym razem skanować użytkownikowi przez te wszystkie te gazetki. […] my powinniśmy mieć bazę właśnie taką, i dawać użytkownikom właśnie dostęp" (12 Nov 2026). The details below (which chains, every 6 hours, the caps) are the implementation's proposal.
-- **Status:** accepted; built on branch `claude/peaceful-allen-1mh9uq`, off on the server until `DEALS_CATALOG_ENABLED=1` (OWNER_QUEUE 39)
+- **Status:** accepted; built on branch `claude/peaceful-allen-1mh9uq`, off on the server until `DEALS_CATALOG_ENABLED=1` (OWNER_QUEUE 43)
 - **Replaces:** nothing. Narrows ADR-609's "every search reads the leaflets on request, nothing is stored" for the catalogued chains.
 
 ## Why
@@ -19,7 +19,7 @@ So each search cost about as much as reading the leaflets, took the whole budget
 
 ## Decision
 
-- **A catalog of the chains' current leaflets** on the messaging server (`src/deals/catalog.ts`, migration `027_leaflet_catalog.sql`). The worker scans each of 11 chains (Biedronka, Lidl, Dino, Aldi, Żabka, Delikatesy Centrum, E.Leclerc, Komfort, Lewiatan, Natura, Action) every `DEALS_CATALOG_EVERY_HOURS` (6). A scan asks the chain's adapter for its leaflets with no items, then sends to the reader every page of image and text leaflets, and the pages that confirm Dino's data, that it hasn't read before, at most `DEALS_CATALOG_MAX_PAGES` (160) a chain a scan.
+- **A catalog of the chains' current leaflets** on the messaging server (`src/deals/catalog.ts`, migration `028_leaflet_catalog.sql`). The worker scans each of 11 chains (Biedronka, Lidl, Dino, Aldi, Żabka, Delikatesy Centrum, E.Leclerc, Komfort, Lewiatan, Natura, Action) every `DEALS_CATALOG_EVERY_HOURS` (6). A scan asks the chain's adapter for its leaflets with no items, then sends to the reader every page of image and text leaflets, and the pages that confirm Dino's data, that it hasn't read before, at most `DEALS_CATALOG_MAX_PAGES` (160) a chain a scan.
 - **The catalog read** (`readCatalogPage`, `CATALOG_SYSTEM`) is the search reader's prompt with its two item sentences replaced: list every product with a readable price (up to 80) and every range promotion (up to 20). The code parses every price as before; nothing it couldn't parse is kept.
 - **Kept:** per chain, the last good snapshot (its leaflets, the chain's own data products and the page reads), and per page its read, keyed by a hash of the leaflet's address and dates and the image's address. A page that fails twice is left until its leaflet changes. A failed or blocked scan keeps the last good snapshot. Page reads unused for 30 days are deleted.
 - **A search** answers a catalogued chain from its snapshot when it is at most 8 days old and has a leaflet still running, through `chainOffers`, the same code that builds offers from a live read (refactored out of `runChain`, no behaviour change: the 271 existing leaflet tests pass). An offer whose last day has passed is left out. Rossmann, CCC, Deichmann, Maxi Zoo and zooplus search by the item, so they are read live as before; so is any chain without a usable snapshot, or every chain when the catalog can't be read.

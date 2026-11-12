@@ -1207,5 +1207,7 @@
   "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "Uklanja se s ovog iPhonea i iz njegove kopije za Doddy Web na Doddyjevu poslužitelju. Tvoje spremljene bilješke nisu zahvaćene.",
   "Couldn't delete the copy on the web": "Kopija na webu nije se mogla izbrisati",
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "Razgovora više nema na ovom iPhoneu, ali Doddyjev poslužitelj nije potvrdio da je njegova kopija za Doddy Web izbrisana. Do tada se još može vidjeti na webu.",
+  "Food": "Hrana",
+  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Otvara aplikaciju ako je imaš, inače web-stranicu. Doddy ne vidi niti šalje narudžbu.",
   "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. „Počinje na“ postavlja jezik na kojem te Doddy pozdravlja; na Automatski počinje na engleskom. U svakom slučaju prati europski jezik kojim govoriš i prebacuje se kad se ti prebaciš."
 }
