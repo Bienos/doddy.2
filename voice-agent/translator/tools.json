@@ -1,0 +1,11 @@
+{
+  "format": "doddy-voice-tools/1",
+  "note": "The translator agent 'Doddy 6 · Tłumacz' (decision docs/decisions/2026-11-12-translator-agent.md) has no function tools on purpose (owner, 12 Nov 2026: \"agent nie powinien włączać żadnych funkcji podczas tłumaczenia\"): it can only talk. It has no start_translator or stop_translator (the app starts it with the mode already on; the user ends it with End on the screen), no end_call and no skip_turn. language_detection stays on as a system tool: it only switches the listening and speaking language to the one being spoken, and the other person's language needs it. voice_agent_spec.py --agent translator fails if a tool or any other system tool is added.",
+  "tools": [],
+  "system_tools": [
+    {
+      "name": "language_detection",
+      "description": "Switch to the language being spoken so the other person is heard and answered in theirs. Never changes what is translated."
+    }
+  ]
+}
