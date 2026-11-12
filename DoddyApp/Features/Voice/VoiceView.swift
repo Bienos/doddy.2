@@ -641,6 +641,43 @@ struct VoiceView: View {
             // A plan with every step unticked has nothing to confirm; "Not now" declines it.
             .disabled(isEmptyPlan(pending, controller: controller))
             .accessibilityIdentifier("voice.confirm")
+            // The existing primary button still opens Apple Maps. For transit trips offer
+            // an explicit, separate Jakdojade handoff: never silently switch providers.
+            if case .map(_, let trip) = pending, trip.mode == .transit {
+                if let first = trip.from.flatMap({ JourneyCity.named(in: $0) }),
+                   let last = JourneyCity.named(in: trip.place), first != last {
+                    Text("Jakdojade city links do not cover journeys between cities. Use Maps for this route.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                } else if let city = JourneyCity.recognised(from: trip.from, destination: trip.place) {
+                    Button {
+                        Task { await controller.confirmPendingJakdojade(city: city) }
+                    } label: {
+                        HStack {
+                            Text("Open in Jakdojade")
+                            Spacer()
+                            Image(systemName: "tram.fill")
+                        }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.jakdojade")
+                } else {
+                    Menu {
+                        ForEach(JourneyCity.allCases, id: \.self) { city in
+                            Button(city.label) {
+                                Task { await controller.confirmPendingJakdojade(city: city) }
+                            }
+                        }
+                    } label: {
+                        Label("Jakdojade · choose city", systemImage: "tram.fill")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .accessibilityIdentifier("voice.jakdojade.chooseCity")
+                    Text("Choose the city before opening Jakdojade. Your location is not shared with Doddy.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
             Button {
                 Task { await controller.declinePendingAction() }
             } label: {
@@ -782,6 +819,11 @@ struct VoiceView: View {
                     .font(.body)
                 if let mode = trip.mode {
                     Label(Self.travelModeText(mode), systemImage: Self.travelModeSymbol(mode))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                if trip.mode == .transit {
+                    Text("Jakdojade opens a transit search, not a route already checked by Doddy. If you did not name a starting point, choose it there.")
+                        .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
             } else {
