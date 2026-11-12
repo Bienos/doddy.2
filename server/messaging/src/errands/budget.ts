@@ -51,13 +51,23 @@ export function budgetLeft(b: ResearchBudget, used: BudgetUsed): { left: BudgetL
 
 export type WebTool = { readonly type: string; readonly name: string };
 
-/** The web tools with `max_uses` set to what is left (or to the whole limit when nothing was counted yet). */
-export function withMaxUses(tools: readonly WebTool[], left: BudgetLeft | undefined, b: ResearchBudget): Array<WebTool & { max_uses?: number }> {
+/**
+ * The most web searches, or web fetches, one request may make. The tools must be byte for byte the same on every
+ * request of one errand (12 Nov 2026): Claude Haiku 5.5 and Claude Opus 5.5 refuse with a 400 a request that sends
+ * back a thinking block after `system`, `tools` or earlier messages changed, and lowering `max_uses` to what was
+ * left changed `tools` on every resumed request (the live shopping errand of 11 Nov failed that way on its second
+ * request). So `max_uses` stays fixed for the errand, and the errand-wide count is the code's: `budgetLeft` stops
+ * the research before a request once a limit is reached, which bounds the whole errand at the limit plus at most
+ * one request's worth.
+ */
+export const WEB_USES_PER_REQUEST = 20;
+
+/** The web tools with a fixed `max_uses`: the errand's limit, at most `WEB_USES_PER_REQUEST`; none when the limit is 0
+ * (no limit). The same for every request of one errand, whatever was used already. */
+export function withMaxUses(tools: readonly WebTool[], b: ResearchBudget): Array<WebTool & { max_uses?: number }> {
   return tools.map((t) => {
-    const cap = t.name === "web_search" ? (left?.searches ?? (b.maxSearches > 0 ? b.maxSearches : undefined))
-      : t.name === "web_fetch" ? (left?.fetches ?? (b.maxFetches > 0 ? b.maxFetches : undefined))
-      : undefined;
-    return cap === undefined ? { ...t } : { ...t, max_uses: cap };
+    const limit = t.name === "web_search" ? b.maxSearches : t.name === "web_fetch" ? b.maxFetches : 0;
+    return limit > 0 ? { ...t, max_uses: Math.min(limit, WEB_USES_PER_REQUEST) } : { ...t };
   });
 }
 

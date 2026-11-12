@@ -102,6 +102,9 @@ export function providersFrom(config: Config) {
     // and price watches still read fresh.
     fetcher: new CachingFetcher(fetcher),
     model: ds.enabled && config.anthropicApiKey ? new AnthropicDealsModel(config.anthropicApiKey, { model: ds.visionModel }) : undefined,
+    // The leaflet catalog's reader (decision 2026-11-12-leaflet-catalog): the same model, with a background job's waits.
+    scanModel: ds.enabled && ds.catalog?.enabled && config.anthropicApiKey
+      ? new AnthropicDealsModel(config.anthropicApiKey, { model: ds.visionModel, timeoutMs: 90_000, maxRetries: 2 }) : undefined,
     log,
     // ADR-666: the same partner rules as shopping errands (ADR-612), added after the picks.
     further: { shops: config.dealsSearchShops, affiliate: new AffiliateLinks(ss.affiliateRules) },

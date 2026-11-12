@@ -267,7 +267,7 @@ export async function runResearch(
     const r = await guarded(control.deadline, (signal) => api.research(messages, signal, room.left));
     if ("stop" in r) return stopped(r.stop);
     if ("error" in r) {
-      log("errand research request failed", { errandId: task.id, requests, error: errorCode(r.error) });
+      log("errand research request failed", { errandId: task.id, requests, error: errorCode(r.error), ...apiErrorDetail(r.error) });
       return failed("provider_error");
     }
     requests++;
@@ -308,7 +308,7 @@ export async function runResearch(
   const c = await guarded(new Date(Math.max(now().getTime(), control.deadline.getTime()) + CARD_GRACE_MS), (signal) => api.card(input, signal));
   if ("stop" in c) return stopped(c.stop);
   if ("error" in c) {
-    log("errand card request failed", { errandId: task.id, error: errorCode(c.error) });
+    log("errand card request failed", { errandId: task.id, error: errorCode(c.error), ...apiErrorDetail(c.error) });
     return failed("provider_error");
   }
   addUsage(usage, c.ok.usage);
@@ -323,6 +323,21 @@ export async function runResearch(
 function errorCode(err: unknown): string {
   if (err instanceof Anthropic.APIError) return `api_${err.status ?? "connection"}`;
   return (err as Error)?.name?.slice(0, 40) ?? "error";
+}
+
+/**
+ * What an API refusal says about the request's shape, never its words (12 Nov 2026: the live shopping errand's
+ * "api_400" said nothing more): the error's type ("invalid_request_error") and the parameter path the message
+ * starts with ("messages.2.content.0"), when it starts with one. The rest of the message is left out, since it
+ * could quote the request.
+ */
+export function apiErrorDetail(err: unknown): { errorType?: string; at?: string } {
+  if (!(err instanceof Anthropic.APIError)) return {};
+  const body = err.error as { error?: { type?: unknown; message?: unknown } } | undefined;
+  const type = typeof body?.error?.type === "string" && /^[a-z_]{1,60}$/.test(body.error.type) ? body.error.type : undefined;
+  const message = typeof body?.error?.message === "string" ? body.error.message : "";
+  const at = /^([a-z_]+(?:\.[a-z0-9_]+){0,8})\s*:/i.exec(message)?.[1]?.slice(0, 80);
+  return { ...(type ? { errorType: type } : {}), ...(at ? { at } : {}) };
 }
 
 // ---------- the real API ----------
@@ -361,7 +376,8 @@ export class AnthropicErrandApi implements ErrandModelApi {
       // Each resumed turn resends the whole history: cache it.
       cache_control: { type: "ephemeral" },
       system: RESEARCH_SYSTEM,
-      tools: withMaxUses(RESEARCH_TOOLS, left, this.budget) as never,
+      // Fixed for the whole errand: a changed `tools` invalidates the thinking blocks sent back (see budget.ts).
+      tools: withMaxUses(RESEARCH_TOOLS, this.budget) as never,
       messages: messages as never,
     }, { signal });
     return (await stream.finalMessage()) as unknown as ResearchMessage;
