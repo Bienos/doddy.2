@@ -163,6 +163,27 @@ public enum AskFirst {
             // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
             // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
             return .tapFirst(StudioAsk.card(job))
+        case .shopifySearch(let query):
+            // Not an exception to ASK-01: these product words go to Shop MCP through Doddy's
+            // server ONLY after a spoken yes or tap on the exact search phrase.
+            return .yesFirst(AskCard(
+                title: say("Search real Shopify offers?", "Przeszukać oferty Shopify?"),
+                lines: [say("Search words: ", "Szukam: ") + query,
+                        say("Your words go to Shopify. No cart or payment is created.",
+                            "Twoje słowa trafią do Shopify. Nie tworzymy koszyka ani płatności.")],
+                confirmLabel: say("Yes, search", "Tak, szukaj")))
+        case .shopifyPrepareCheckout(let index, let quantity):
+            // Real merchant cart creation is an external write. A tap on the card is required.
+            // The voice controller shows the selected exact, provider-verified offer details.
+            return .tapFirst(AskCard(
+                title: say("Prepare this Shopify checkout?", "Przygotować koszyk Shopify?"),
+                lines: [
+                    say("Result number: \(index)", "Oferta numer: \(index)"),
+                    say("Quantity: \(quantity)", "Liczba sztuk: \(quantity)"),
+                    say("Nothing is paid or ordered. The merchant handles checkout.",
+                        "Nic nie jest opłacane ani zamawiane. Zakup kończysz u sprzedawcy."),
+                ],
+                confirmLabel: say("Prepare checkout", "Przygotuj koszyk")))
         // Taking something away keeps its card: a tap on exactly what goes.
         case .removeFromList(let request):
             return .tapFirst(AskCard(
