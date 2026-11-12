@@ -26,6 +26,20 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testLiveShopifyShoppingOpensWithoutFakeResultsOrAutomaticCheckout() {
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.more"].waitForExistence(timeout: 5))
+        app.buttons["home.more"].tap()
+        let shopping = app.buttons["home.shopifyShopping"]
+        XCTAssertTrue(shopping.waitForExistence(timeout: 5))
+        shopping.tap()
+        XCTAssertTrue(app.textFields["shopify.search.query"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["shopify.search.submit"].exists)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "shopify.checkout.")).firstMatch.exists,
+                       "No fabricated products or checkout may appear before a real provider response.")
+    }
+
+    @MainActor
     func testFirstLaunchLandsOnHomeAndOptionalConversationCanBeSkipped() {
         let app = launch(onboardingDone: false, firstVisit: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
