@@ -30,6 +30,8 @@ public enum TalkStartHandoff {
         case handBack
         /// The start already ended (refused, failed or finished): report it as before.
         case report
+        /// No island/audio session within the budget: cancel this start and offer the app.
+        case timedOut
     }
 
     /// The longest the intent waits for the island and the audio session.
@@ -37,7 +39,8 @@ public enum TalkStartHandoff {
 
     public static func decide(islandReady: Bool, startEnded: Bool, waited: TimeInterval) -> Decision {
         if startEnded { return .report }
-        if islandReady || waited >= maxWait { return .handBack }
+        if islandReady { return .handBack }
+        if waited >= maxWait { return .timedOut }
         return .keepWaiting
     }
 }

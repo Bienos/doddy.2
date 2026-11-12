@@ -1,6 +1,8 @@
 // The brief the user approves before Doddy dials (ADR-501). Only ticked facts are ever sent by the
 // app; this module checks them again on the server, because the app is not a security boundary.
 import { z } from "zod";
+import { bookingQuestion, bookingSchema } from "./booking.js";
+import { clean } from "./clean.js";
 
 export const FACT_KINDS = ["general", "reference", "date", "device", "contact", "pesel", "address"] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
@@ -8,9 +10,13 @@ export type FactKind = (typeof FACT_KINDS)[number];
 const NAME = /^[\p{L}][\p{L}\p{M} '’\-]{0,39}$/u;
 const text = (max: number, min = 1) => z.string().min(min).max(max * 2).transform(clean).pipe(z.string().min(min).max(max));
 
-/** Strict: an unknown field is a 400, never silently ignored. */
+/**
+ * Strict: an unknown field is a 400, never silently ignored. "ask" calls only ask (ADR-500); "book"
+ * calls may accept exactly the booking on the card (decision 2026-11-12-book-agent), and their
+ * question is built from it here, never written by the model.
+ */
 export const briefSchema = z.strictObject({
-  kind: z.literal("ask"),
+  kind: z.enum(["ask", "book"]).default("ask"),
   callee: z.strictObject({
     name: text(80),
     phone: z.string().min(3).max(40),
@@ -25,18 +31,22 @@ export const briefSchema = z.strictObject({
     genitive: text(40).pipe(z.string().regex(NAME)),
   }),
   goal: text(160, 3),
-  question: text(200, 5),
+  question: text(200, 5).optional(),
+  booking: bookingSchema.optional(),
   facts: z.array(z.strictObject({ kind: z.enum(FACT_KINDS), text: text(160) })).max(5),
   maxDurationSecs: z.number().int().min(60).max(300).default(240),
-});
+}).superRefine((b, ctx) => {
+  if (b.kind === "ask" && b.question === undefined) ctx.addIssue({ code: "custom", path: ["question"], message: "required" });
+  if (b.kind === "ask" && b.booking !== undefined) ctx.addIssue({ code: "custom", path: ["booking"], message: "ask_has_no_booking" });
+  if (b.kind === "book" && b.booking === undefined) ctx.addIssue({ code: "custom", path: ["booking"], message: "required" });
+  // A booking's question is the server's own sentence; one written elsewhere is refused, not ignored.
+  if (b.kind === "book" && b.question !== undefined) ctx.addIssue({ code: "custom", path: ["question"], message: "built_from_booking" });
+}).transform((b) => ({ ...b, question: b.booking ? bookingQuestion(b.booking) : b.question! }));
 
 export type BriefInput = z.input<typeof briefSchema>;
 export type Brief = z.infer<typeof briefSchema>;
 
-/** Collapses whitespace and removes control and format characters (including bidi overrides). */
-export function clean(value: string): string {
-  return value.normalize("NFC").replace(/[\p{Cc}\p{Cf}]/gu, " ").replace(/\s+/g, " ").trim();
-}
+export { clean } from "./clean.js";
 
 export type ContentRefusal =
   | "braces"             // {{ }} would be read as a template variable
@@ -46,6 +56,7 @@ export type ContentRefusal =
   | "bank_account"       // Doddy never gives bank account numbers
   | "card_number"        // nor card numbers
   | "question_commits"   // an ASK call only asks: no confirming, booking, ordering or paying
+  | "booking_date"       // a booking's day is in the past or too far ahead
   | "duplicate_fact";
 
 export interface ContentProblem { field: string; reason: ContentRefusal }
@@ -57,6 +68,7 @@ function fields(b: Brief): { field: string; value: string; factKind?: FactKind }
     ...(b.callee.sourceLabel ? [{ field: "callee.sourceLabel", value: b.callee.sourceLabel }] : []),
     { field: "goal", value: b.goal },
     { field: "question", value: b.question },
+    ...(b.booking ? [{ field: "booking.name", value: b.booking.name }, ...(b.booking.service ? [{ field: "booking.service", value: b.booking.service }] : [])] : []),
     ...b.facts.map((f, i) => ({ field: `facts.${i}`, value: f.text, factKind: f.kind })),
   ];
 }
@@ -78,7 +90,8 @@ export function checkBriefContent(b: Brief): ContentProblem | undefined {
     }
     if (f.factKind !== "address" && looksLikeAddress(f.value)) return { field: f.field, reason: "address_not_ticked" };
   }
-  if (commits(b.question)) return { field: "question", reason: "question_commits" };
+  // The booking question is built in code and asks to book by design; an ask question may not commit.
+  if (b.kind === "ask" && commits(b.question)) return { field: "question", reason: "question_commits" };
   const seen = new Set<string>();
   for (const [i, f] of b.facts.entries()) {
     const key = fold(f.text);

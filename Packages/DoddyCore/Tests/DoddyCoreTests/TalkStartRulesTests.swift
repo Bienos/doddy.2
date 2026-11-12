@@ -24,6 +24,13 @@ final class TalkStartRulesTests: XCTestCase {
     }
 
     func testItNeverWaitsPastTheLimit() {
-        XCTAssertEqual(TalkStartHandoff.decide(islandReady: false, startEnded: false, waited: TalkStartHandoff.maxWait), .handBack)
+        XCTAssertEqual(TalkStartHandoff.decide(islandReady: false, startEnded: false, waited: TalkStartHandoff.maxWait - 0.01), .keepWaiting)
+        XCTAssertEqual(TalkStartHandoff.decide(islandReady: false, startEnded: false, waited: TalkStartHandoff.maxWait), .timedOut)
+        XCTAssertEqual(TalkStartHandoff.decide(islandReady: false, startEnded: false, waited: TalkStartHandoff.maxWait + 1), .timedOut)
+    }
+
+    func testReadinessOrAnActualFailureWinsAtTheDeadline() {
+        XCTAssertEqual(TalkStartHandoff.decide(islandReady: true, startEnded: false, waited: TalkStartHandoff.maxWait), .handBack)
+        XCTAssertEqual(TalkStartHandoff.decide(islandReady: false, startEnded: true, waited: TalkStartHandoff.maxWait), .report)
     }
 }

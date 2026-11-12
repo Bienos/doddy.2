@@ -53,6 +53,8 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
       hours: { zone: CALL_ZONE, from: clockText(DAY_START_MINUTES), to: clockText(DAY_END_MINUTES) },
       // Names of agent settings that differ from the spec (no values); calls are refused while any are listed.
       agentProblems,
+      // Calls that book (decision 2026-11-12-book-agent): the booking agent is set up and matches its spec.
+      booking: !!ctx && !ctx.settings.killSwitch && !!ctx.agentIdFor("book") && (await ctx.driftFor("book").problems()).length === 0,
     };
   });
 
