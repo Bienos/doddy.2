@@ -273,6 +273,8 @@ export async function taskTestApp(db: Db, opts: TaskTestOptions = {}) {
       },
     },
     taskCallLog: (msg, extra) => logs.push({ msg, extra }),
+    // Call-back routes are dated by the dial's clock, so the call-back that follows reads the same clock.
+    now: () => clock.now,
   });
   return { ...base, telephony, voice, clock, settings, logs };
 }
