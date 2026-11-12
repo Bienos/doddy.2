@@ -495,6 +495,9 @@ final class VoiceSessionController {
     /// A start without opening Doddy has its Live Activity and audio session up: what the Action
     /// Button's intent waits for before it returns (decision 2026-11-10-action-button-start).
     private(set) var backgroundStartReady = false
+    /// A start without opening Doddy took the audio session itself, so LiveKit leaves it alone until
+    /// this conversation is over (`ConversationAudioSession`, decision 2026-11-12-action-button-audio-and-island).
+    @ObservationIgnored private var audioHold: ConversationAudioHolds.Hold?
     /// Where this start's voice token came from, for the timing line only.
     private(set) var tokenSource: VoiceTokenSource?
     /// Monotonic, from Home's tap (including its access check), or start() for other entry points.
@@ -713,6 +716,7 @@ final class VoiceSessionController {
             UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool))
         backgroundStartRefused = false
         backgroundStartReady = false
+        ConversationAudioSession.release(takeAudioHold())
         tokenSource = nil
         proposedNoteTexts = []
         saveSuggestions = nil
@@ -766,6 +770,7 @@ final class VoiceSessionController {
                 fail(problem)
                 return
             }
+            audioHold = ConversationAudioSession.takenByDoddy()
             backgroundStartReady = true
         }
 
@@ -902,7 +907,11 @@ final class VoiceSessionController {
         // setupAgentStateManager` returns early) the callback never fires, so the island, Home's
         // waves and his talking pose stayed on "Listening" while he spoke. The defaults use the
         // agent's own events and the room's speaking detection; no `vad_score` events are needed.
-        config.agentStateConfiguration = AgentStateConfiguration()
+        // 1 s instead of the SDK's 0.5 s before a quiet Doddy counts as listening (12 Nov 2026): the room
+        // reports him quiet in the pauses between his sentences, so each answer flipped speaking and
+        // listening several times, and Home's strip and the island grew and shrank with every flip. The
+        // user speaking or interrupting still switches at once (their own SDK signals).
+        config.agentStateConfiguration = AgentStateConfiguration(speakingToListeningDelay: 1.0)
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }
@@ -1020,7 +1029,10 @@ final class VoiceSessionController {
         guard attempt == startAttempt, phase == .connecting else { return }
 
         Self.allowOtherAppsAudio()
-        let connectNote = "connecting to ElevenLabs: attempt \(attempt)"
+        // Before LiveKit's engine starts: it sets the session up itself unless a start without opening holds it.
+        ConversationAudioSession.beforeConnect(audioHold)
+        let sessionNote = audioHold == nil ? "set up by LiveKit" : "held by Doddy: \(Self.describeAudioSession())"
+        let connectNote = "connecting to ElevenLabs: attempt \(attempt), audio session \(sessionNote)"
         Self.audioLog.notice("\(connectNote, privacy: .public)")
         let startConfig = config
         do {
@@ -1124,6 +1136,9 @@ final class VoiceSessionController {
     /// paused that way. Cost: the other app's sound plays along with Doddy's, and the microphone
     /// can hear it (headphones avoid that). Same options as the SDK's own speaker preset plus
     /// `.mixWithOthers`. Not verified on a device.
+    /// LiveKit 2.19 doesn't read `sessionConfiguration` when it sets the session up (and since 2.17 its
+    /// own preset no longer mixes), so this changes nothing today; a start without opening Doddy keeps
+    /// its mixable session through `ConversationAudioSession` (decision 2026-11-12-action-button-audio-and-island).
     private static func allowOtherAppsAudio() {
         AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
             category: .playAndRecord,
@@ -1159,6 +1174,12 @@ final class VoiceSessionController {
             audioLog.notice("\(refused, privacy: .public)")
             return NSLocalizedString("iOS didn't let Doddy start the microphone without opening him. Open Doddy to talk.", comment: "")
         }
+    }
+
+    /// This conversation's hold on the audio session, handed over once (decision 2026-11-12-action-button-audio-and-island).
+    private func takeAudioHold() -> ConversationAudioHolds.Hold? {
+        defer { audioHold = nil }
+        return audioHold
     }
 
     /// Watches iOS audio interruptions (a phone call, an alarm, Siri, another app's audio) and
@@ -1286,6 +1307,8 @@ final class VoiceSessionController {
         // are dropped (review H1).
         startAttempt += 1
         userAskedToEnd = true
+        // Taken now, before the await below: a start during it must keep its own hold.
+        let hold = takeAudioHold()
         if sessionEnd == nil { sessionEnd = reason }
         dropLongTurn()
         endTranslator()
@@ -1315,6 +1338,7 @@ final class VoiceSessionController {
             activity.sessionID = nil
         }
         await active?.endConversation()
+        ConversationAudioSession.release(hold)
         // Prepare the next tap while Home is idle; never open another room or microphone here.
         VoiceTokenWarmer.shared.warmIfDue()
     }
@@ -2665,10 +2689,16 @@ final class VoiceSessionController {
         keepLog()
         // After an error the SDK may keep the microphone (review H2), so the conversation is
         // ended here as stop() does, instead of waiting for a disconnect that may not come.
+        let hold = takeAudioHold()
         if let active = conversation {
             conversation = nil
             endTranslator()
-            Task { await active.endConversation() }
+            Task {
+                await active.endConversation()
+                ConversationAudioSession.release(hold)
+            }
+        } else {
+            ConversationAudioSession.release(hold)
         }
         // As after a drop by disconnect: "Worth keeping?" once Doddy had been listening.
         if wasLive { offerSaveSuggestions() }
@@ -2681,6 +2711,7 @@ final class VoiceSessionController {
         endTranslator()
         stopWatchingAudioInterruptions()
         conversation = nil
+        ConversationAudioSession.release(takeAudioHold())
         if wasLive { keepRecoveryDraft() }
         pendingAction = nil
         keepLog()
