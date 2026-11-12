@@ -35,6 +35,8 @@ import { assistantRoutes } from "./routes/assistant.js";
 import { screenRoutes } from "./routes/screen.js";
 import { dealsRoutes } from "./routes/deals.js";
 import { registryRoutes } from "./routes/registry.js";
+import { jakdojadeRoutes } from "./routes/jakdojade.js";
+import type { JakdojadePartnerClient } from "./integrations/jakdojade.js";
 import type { CeidgClient } from "./registry/ceidg.js";
 import type { DealsDeps } from "./deals/service.js";
 import type { AssistantDeps } from "./assistant/deps.js";
@@ -101,6 +103,8 @@ export interface Deps {
   deals?: DealsDeps;
   /** Company registers (ADR-685): CEIDG with the owner's token; absent answers 503 registry_disabled. */
   ceidg?: CeidgClient;
+  /** Opt-in, licensed, read-only transport API. Never configured without a partner secret. */
+  jakdojade?: JakdojadePartnerClient;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
   /** Studio (ADR-740): settings and the model API (needs an Anthropic key and Doddy's skills). Needs `cipher` too. */
@@ -222,6 +226,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(phoneRecapRoutes(deps));
   await app.register(dealsRoutes(deps));
   await app.register(registryRoutes(deps));
+  await app.register(jakdojadeRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));
   await app.register(deliveryRoutes(deps));
   return app;
