@@ -34,13 +34,22 @@ export const takeoverPrompt = (calleeName: string) =>
 export const TAKEOVER_NOT_TAKEN = "Nie przejęto rozmowy. Doddy rozmawia dalej.";
 export const TAKEOVER_TOO_LATE = "Ta rozmowa już się zakończyła.";
 
-/** What Doddy will never do on this call; shown on the card. */
-export function forbiddenList(principalGenitive: string, factKinds: readonly FactKind[]): string[] {
-  const list = [
-    "Nie zgadza się na nic i niczego nie potwierdza w Twoim imieniu.",
-    "Nie płaci i nie podaje danych do płatności.",
-    "Nie umawia, nie rezerwuje i nie zamawia.",
-  ];
+/**
+ * What Doddy will never do on this call; shown on the card. A booking call may accept exactly the
+ * booking on the card (decision 2026-11-12-book-agent) and nothing else.
+ */
+export function forbiddenList(principalGenitive: string, factKinds: readonly FactKind[], bookingSummary?: string): string[] {
+  const list = bookingSummary
+    ? [
+      `Rezerwuje tylko dokładnie to: ${bookingSummary}. Na inny dzień, godzinę czy usługę się nie zgadza.`,
+      "Nie płaci, nie wpłaca zaliczki i nie podaje danych karty ani konta.",
+      "Nie zgadza się na żadne inne warunki i niczego innego nie zamawia.",
+    ]
+    : [
+      "Nie zgadza się na nic i niczego nie potwierdza w Twoim imieniu.",
+      "Nie płaci i nie podaje danych do płatności.",
+      "Nie umawia, nie rezerwuje i nie zamawia.",
+    ];
   if (!factKinds.includes("pesel")) list.push("Nie podaje numeru PESEL.");
   if (!factKinds.includes("address")) list.push("Nie podaje adresu.");
   list.push("Nie mówi o Tobie nic poza zaznaczonymi faktami.");

@@ -8968,6 +8968,17 @@
         }
       }
     },
+    "Asking Claude…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytam Claude'a…"
+          }
+        }
+      }
+    },
     "Asking…": {
       "extractionState": "manual",
       "localizations": {
@@ -12429,6 +12440,17 @@
         }
       }
     },
+    "Check the price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź cenę"
+          }
+        }
+      }
+    },
     "Check the words, then Save.": {
       "extractionState": "manual",
       "localizations": {
@@ -12488,6 +12510,17 @@
         }
       }
     },
+    "Check this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź to"
+          }
+        }
+      }
+    },
     "Check this feed": {
       "extractionState": "manual",
       "localizations": {
@@ -12506,6 +12539,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź tę wypowiedź."
+          }
+        }
+      }
+    },
+    "Check this page": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź tę stronę"
           }
         }
       }
@@ -12565,6 +12609,17 @@
         }
       }
     },
+    "Checking the news…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam wiadomości…"
+          }
+        }
+      }
+    },
     "Checking the price…": {
       "extractionState": "manual",
       "localizations": {
@@ -12572,6 +12627,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdzam cenę…"
+          }
+        }
+      }
+    },
+    "Checking the weather…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam pogodę…"
           }
         }
       }
@@ -12631,6 +12697,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在查看明天…"
+          }
+        }
+      }
+    },
+    "Checking your calendar…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam Twój kalendarz…"
+          }
+        }
+      }
+    },
+    "Checking your email…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam Twoją pocztę…"
           }
         }
       }
@@ -30455,6 +30543,17 @@
         }
       }
     },
+    "Flights on Kiwi.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loty na Kiwi.com"
+          }
+        }
+      }
+    },
     "Focus": {
       "extractionState": "manual",
       "localizations": {
@@ -33541,6 +33640,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyślę w aplikacji banku"
+          }
+        }
+      }
+    },
+    "I'll tell you when the price I read is at or below this. Not sure what to type? Type a price you'd be happy to pay: the next step shows what the page costs now, and you can still say no.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiem Ci, gdy odczytana cena będzie równa tej albo niższa. Nie wiesz, co wpisać? Wpisz cenę, którą chętnie zapłacisz: następny krok pokaże, ile strona kosztuje teraz, i nadal możesz odmówić."
           }
         }
       }
@@ -41573,6 +41683,17 @@
         }
       }
     },
+    "Looking at your screen…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patrzę na Twój ekran…"
+          }
+        }
+      }
+    },
     "Looking for": {
       "extractionState": "manual",
       "localizations": {
@@ -41632,6 +41753,17 @@
         }
       }
     },
+    "Looking for places…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam miejsc…"
+          }
+        }
+      }
+    },
     "Looking in Apple Maps…": {
       "extractionState": "manual",
       "localizations": {
@@ -41639,6 +41771,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szukam w Mapach Apple…"
+          }
+        }
+      }
+    },
+    "Looking it up…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam…"
+          }
+        }
+      }
+    },
+    "Looking through your notes…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądam Twoje notatki…"
           }
         }
       }
@@ -42617,6 +42771,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Robię to…"
+          }
+        }
+      }
+    },
+    "Making the document…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotowuję dokument…"
           }
         }
       }
@@ -50057,6 +50222,17 @@
         }
       }
     },
+    "Nothing is sent until you tap “Check the page” on the next card. Some shops don't let Doddy's server read their pages; then Doddy tells you it couldn't read a price.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie jest wysyłane, dopóki nie dotkniesz „Sprawdź stronę” na następnej karcie. Niektóre sklepy nie pozwalają serwerowi Doddy'ego czytać swoich stron; wtedy Doddy powie, że nie mógł odczytać ceny."
+          }
+        }
+      }
+    },
     "Nothing is set until you tap yes": {
       "extractionState": "manual",
       "localizations": {
@@ -55622,6 +55798,17 @@
         }
       }
     },
+    "Open Doddy: the Shopping screen has this link ready. Nothing is read or sent until you tap the buttons there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy'ego: ekran Zakupy ma ten link gotowy. Nic nie jest czytane ani wysyłane, dopóki nie dotkniesz tam przycisków."
+          }
+        }
+      }
+    },
     "Open Food Facts couldn't be reached, so nothing was added. You can type the item instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -57680,6 +57867,17 @@
         }
       }
     },
+    "Page at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strona w %@"
+          }
+        }
+      }
+    },
     "Page read %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -58099,6 +58297,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wklej klucz ze schowka"
+          }
+        }
+      }
+    },
+    "Paste the link to a product you're looking at in a shop. Doddy's server reads the page and shows its price; then you can ask Doddy to watch it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej link do produktu, który oglądasz w sklepie. Serwer Doddy'ego przeczyta stronę i pokaże jej cenę; potem możesz poprosić Doddy'ego, żeby jej pilnował."
           }
         }
       }
@@ -60679,6 +60888,17 @@
         }
       }
     },
+    "Prices from Kiwi.com just now; they can change. You book and pay on Kiwi.com.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny z Kiwi.com sprzed chwili; mogą się zmienić. Rezerwujesz i płacisz na Kiwi.com."
+          }
+        }
+      }
+    },
     "Privacy": {
       "extractionState": "manual",
       "localizations": {
@@ -61089,6 +61309,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Product link": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link do produktu"
           }
         }
       }
@@ -62158,6 +62389,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已在 Doddy 中就绪"
+          }
+        }
+      }
+    },
+    "Ready to check in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe do sprawdzenia w Doddym"
           }
         }
       }
@@ -70291,6 +70533,17 @@
         }
       }
     },
+    "Searching the web…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam w internecie…"
+          }
+        }
+      }
+    },
     "Seated cable row": {
       "extractionState": "manual",
       "localizations": {
@@ -77155,6 +77408,17 @@
         }
       }
     },
+    "Still on it, this one takes a moment…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze chwilka, to trwa dłużej…"
+          }
+        }
+      }
+    },
     "Still open from today or earlier. Tick the ones to move; each keeps its time.": {
       "extractionState": "manual",
       "localizations": {
@@ -77269,6 +77533,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "还是这样吗？"
+          }
+        }
+      }
+    },
+    "Still working on it…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wciąż nad tym pracuję…"
           }
         }
       }
@@ -80813,6 +81088,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这不是 Doddy 的记忆导出文件（设置 › 导出为 JSON）。没有添加任何内容。"
+          }
+        }
+      }
+    },
+    "That isn't a web address Doddy can read. It must start with https://.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nie jest adres strony, który Doddy może odczytać. Musi zaczynać się od https://."
           }
         }
       }
@@ -98245,6 +98531,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To, co się dzieje po użyciu któregoś z nich (rozmowa albo samo otwarcie Doddy’ego), ustawisz w Ustawienia › Stuknięcie w tył i Siri."
+          }
+        }
+      }
+    },
+    "What is it? (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co to jest? (opcjonalnie)"
           }
         }
       }

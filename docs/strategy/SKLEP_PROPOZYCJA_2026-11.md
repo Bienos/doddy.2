@@ -266,3 +266,58 @@ Etap 1 jest najmniejszy, używa tego, co jest zbudowane, nie zależy od żadnej 
 11. Limity pilnowania w planach i czy to funkcja płatna (10.6).
 12. Czy „zerknij na ekran" może służyć do zakupów, także w aplikacji Allegro (10.1; regulamin Allegro niesprawdzony).
 13. Czy Doddy może, na prośbę, szukać potwierdzeń zamówień w podłączonej poczcie (10.4).
+
+## 11. Test: czy serwer odczyta ceny ze stron polskich sklepów (12 lis 2026)
+
+Pytanie, od którego zależą „Sprawdź to" i pilnowanie cen: ile stron sklepów da się odczytać? Do tej pory tego nie sprawdzano na żywo.
+
+**Jak.** Prawdziwy kod serwera, `PoliteFetcher` i `checkOfferPage` (`server/messaging/src/shopping/`): uczciwy identyfikator `DoddyBot/1.0`, robots.txt przestrzegany, jedno żądanie na stronę, 2,5 s przerwy między żądaniami do tego samego sklepu, bez ponawiania, bez zmiany identyfikatora i bez omijania blokad. **80 stron produktów z 40 sklepów**; adresy znalazł agent przez wyszukiwarkę (nie z mojej pamięci). Z kontenera z adresem centrum danych w USA (Cloudflare obsłużył z węzła IAD). Median 0,8 s na stronę.
+
+**Wynik, strony (80):**
+
+| Wynik | Strony | Co to znaczy |
+|---|---|---|
+| Cena odczytana | **30 (37,5%)** | 28 z JSON-LD, 2 z microdata; 18 w magazynie, 7 brak w magazynie, 5 bez informacji |
+| Zablokowane przez sklep | **26 (32,5%)** | 12 „challenge" (Cloudflare i podobne), 12 × HTTP 403, 2 × HTTP 429 |
+| Strona wczytana, ale bez ceny w danych | 10 (12,5%) | patrz niżej |
+| Robots.txt zabrania lub nie da się go przeczytać | 6 (7,5%) | Ceneo; Castorama i Mi-Home (robots nieosiągalny) |
+| Martwy adres (404, 410, przekroczony czas) | 8 (10%) | nie mówi nic o czytaniu; część adresów z wyszukiwarki była stara |
+
+Bez martwych adresów: **30 z 72 stron (42%)**.
+
+**Wynik, sklepy (40, sklep liczony jako czytelny, gdy choć jedna jego strona dała cenę):**
+- **Cena odczytana (18):** Morele, Komputronik, Neonet, Avans, MediaMarkt, Sferis, Samsung, Rossmann, Zalando, eobuwie, Modivo, Reserved, Sportano, IKEA, Smyk, Zooplus, OLX, Amazon.pl.
+- **Zablokowane (13):** **x-kom, Media Expert, Euro RTV AGD, OleOle, Allegro, Decathlon**, Leroy Merlin, Douglas, Hebe, Notino, H&M, Bricomarché, Bonito.
+- **Robots (3):** Ceneo, Castorama, Mi-Home. **Strona bez ceny (4):** Empik, CCC, Apple, 4F. **Same martwe adresy (2):** Merlin, OBI.
+
+**Co to oznacza.** Serwer odczyta cenę mniej więcej co drugiego polskiego sklepu, ale **wśród zablokowanych są najczęściej używane: Allegro, x-kom, Media Expert, Euro RTV AGD i Decathlon.** „Sprawdź to" i pilnowanie cen działają więc dobrze dla wielu sklepów średniej wielkości, mody, kosmetyków i książek, a **nie** dla tego, co większość ludzi kupuje w elektronice i na Allegro. Ceny odczytane ze stron nie wystarczą jako jedyne źródło: to potwierdza potrzebę feedów (sekcja 12).
+
+**Sprawdzone, że to nie błąd parsera.** Trzy strony z sygnałem ceny, których parser nie przyjął: Sferis (cena `0.00` przy braku w magazynie i cenie bazowej 4599, słusznie odrzucona), Empik (pole ceny puste, uzupełnia je skrypt w przeglądarce) i Apple (ceny dynamiczne). Amazon.pl: jedna strona odczytana (999,99 zł), druga odrzucona jako „nie HTML" mimo treści HTML; **przyczyny nie ustaliłem** (Amazon i tak jest tylko linkiem, sekcja 2.1).
+
+**Inne obserwacje.** Numer EAN był w danych tylko na 14 z 30 odczytanych stron (47%), więc łączenie tego samego produktu z różnych sklepów po EAN ze stron byłoby słabe; feedy podają EAN systematycznie [N]. Brak w magazynie bywa podawany jako cena `0.00` (Sferis) albo z ceną regularną (Morele, Avans), więc „cena" bez dostępności bywa mylna.
+
+**Ograniczenia testu.** Jeden adres IP (centrum danych w USA; Render ma inny, wynik może się różnić), jedna pora, po 1–2 strony na sklep, próbka z przewagą elektroniki i mody, adresy z wyszukiwarki (8 martwych). Nie sprawdzałem, czy odczytane ceny są **poprawne** (nie mam wzorca poza prawdopodobieństwem). Blokady mogą się zmieniać z dnia na dzień. Test należy powtórzyć z Rendera przed jakąkolwiek obietnicą w aplikacji lub materiałach.
+
+## 12. Krok „feedy": co musisz zrobić Ty, a co zrobię ja
+
+Test pokazuje, że feedy partnerskie są potrzebne dokładnie tam, gdzie czytanie stron zawodzi. **Nie buduję adaptera na zgadywanym formacie**: żaden program nie dał nam jeszcze dostępu, a konstytucja zabrania udawania (DOD-02). Adapter powstanie po tym, jak sieć da dostęp i prawdziwą odpowiedź do testów.
+
+**Sklepy zablokowane w teście i jak dojść do ich danych** (z badania 11 lis; [N] = niesprawdzone):
+
+| Sklep | Droga | Uwagi |
+|---|---|---|
+| Euro RTV AGD (i OleOle [N]) | Tradedoubler, program 118512 | porównywarki 1,5%; cookie 21 dni; deep linki dozwolone |
+| Decathlon | Convertiser | do 4,5%; zaprasza „porównywarki i agregatory" |
+| x-kom | Admitad (2%) albo własny SalesMasters (link bez feedu) | Admitad zakazuje wtyczek porównujących; wyjątek „doradzanie w odpowiedzi na pytanie" [S], pisemnie |
+| Media Expert | własny program; Admitad, Webgains, inis [S] | stawki w panelu |
+| Allegro | Allegro Affiliate Business | tylko firma z VAT; feed i prawo do cen niepotwierdzone |
+| Douglas | Admitad lub Awin [S, sprzeczne źródła] | do sprawdzenia w panelu |
+| Hebe, Notino, Leroy Merlin, H&M, Bricomarché, Bonito | nie zbadano | do sprawdzenia przy rejestracji |
+
+**Kolejność (wszystko bez kodu, Twoja decyzja i podpis):**
+1. **Wydawca:** Ty jako osoba czy firma z VAT. Allegro wymaga firmy, a konta w sieciach trudno potem przenieść.
+2. **Zgłoszenia:** Convertiser (najlepsze dopasowanie techniczne), Tradedoubler (Euro, Empik, eobuwie), potem Admitad (x-kom, Media Expert), Ceneo (osobno, za kliknięcie) i Allegro. Gotowy tekst jest w `AFFILIATE_NETWORKS_PROPOSAL_2026-11.md` (sekcja 7); **dopisz do niego pytanie o alerty cenowe i o odczyt ofert przez asystenta AI**.
+3. **Od każdego programu pisemne „tak"** dla aplikacji iOS, rozmowy z AI i alertów, zapisane z datą.
+4. **Pierwszy dostęp do API lub feedu:** wtedy ja buduję `OfferSource` na prawdziwej odpowiedzi, z testami i plikiem wzorcowym, i uruchamiam ten sam test 80 stron dla sklepów z feedu.
+
+**Co zrobię od razu, jeśli chcesz:** test powtórzony z Rendera po Twoim wdrożeniu nowego serwera (potrzebny dostęp do konsoli), oraz drugi test na większej próbce i więcej kategorii.

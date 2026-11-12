@@ -8,7 +8,7 @@ Odpowiedź na brief właściciela z 12 lis 2026 („zrób review gazetek typu Li
 
 | Obszar | Główny problem | Co zrobione w tej gałęzi | Co dalej |
 |---|---|---|---|
-| Gazetki | Każde wyszukiwanie czyta gazetki od nowa: ~24 s, 6–9 z 10 sklepów pada, ~115 tys. tokenów na wyszukiwanie | **Katalog gazetek:** serwer czyta gazetki raz dla wszystkich, w tle, co 6 h; wyszukiwanie odpowiada z bazy (decyzja `2026-11-12-leaflet-catalog`). Wyłączony do czasu `DEALS_CATALOG_ENABLED=1` | Włączyć i wdrożyć (OWNER_QUEUE 43); potem ekran listy zakupów i porównania (sekcja 1.5) |
+| Gazetki | Każde wyszukiwanie czyta gazetki od nowa: ~24 s, 6–9 z 10 sklepów pada, ~115 tys. tokenów na wyszukiwanie | **Katalog gazetek:** serwer czyta gazetki raz dla wszystkich, w tle, co 6 h; wyszukiwanie odpowiada z bazy (decyzja `2026-11-12-leaflet-catalog`). Wyłączony do czasu `DEALS_CATALOG_ENABLED=1` | Włączyć i wdrożyć (OWNER_QUEUE 45); potem ekran listy zakupów i porównania (sekcja 1.5) |
 | „Znajdź mi to" (np. słuchawki Apple) | Zadanie zakupowe padało błędem 400 przy drugim zapytaniu do modelu | **Naprawione:** narzędzia nie zmieniają się w trakcie zadania; błąd zapisuje się w logu z typem i miejscem | Wdrożyć razem z katalogiem; jedno pole wyszukiwania, które samo wybiera gazetki albo sklepy internetowe |
 | Wiadomości | Brak powiadomienia o wyniku; karty chowają się pod transkrypcją; całość przerysowuje się przy każdej zmianie | Nic (aplikacja) | Osobny PR: powiadomienie lokalne, przewijanie do karty, wydzielone wiersze, opis pliku |
 | Ustawienia i głos | Wybór głosu był jeszcze w Ustawieniach (Głos › Głos i osobowość › Głos); „Głos" trzy poziomy w głąb | **Wybór głosu usunięty** (decyzja `2026-11-12-one-voice`): Doddy ma jeden głos, zostają tempo, ekspresja i „Zaczyna w". **Strony spłaszczone** (decyzja `2026-11-12-settings-one-voice-page`): „Głos i osobowość" to jedna strona, „Rozmowy telefoniczne" są na pierwszej stronie, oba konta w „O aplikacji" | Połączenia i długie strony wewnętrzne |
@@ -46,7 +46,7 @@ Biedronka sama ma ~97 stron i nie mieści się w czasie (`image_failed,time,page
    - Sieć bez świeżego katalogu też jest czytana na żywo, jak dotąd.
    - Koszt (szacunek, bez pomiaru): około 1,40 $ tygodniowo, niezależnie od liczby wyszukiwań. Dziś to ~0,014 $ za każde wyszukiwanie (116 tys. tokenów wejścia i 4 tys. wyjścia po cenach Haiku 5.5).
    - Prywatność się poprawia: strony idą do modelu tylko z nazwą sieci, a nie z produktami osoby. Katalog nie trzyma niczego o żadnej osobie.
-   - **Włączenie:** `DEALS_CATALOG_ENABLED=1` na `doddy-messaging` i wdrożenie (OWNER_QUEUE 43).
+   - **Włączenie:** `DEALS_CATALOG_ENABLED=1` na `doddy-messaging` i wdrożenie (OWNER_QUEUE 45).
 2. **Naprawa „Znajdź mi to"** (`server/messaging/src/errands/budget.ts`): `max_uses` jest stałe przez całe zadanie, a budżet wyszukiwań liczy kod. Odmowa API trafia teraz do logu z typem i ścieżką parametru (bez treści), więc następny taki błąd będzie widać od razu. Test regresji sprawdza, że dwa zapytania jednego zadania wysyłają identyczne narzędzia.
 
 ### 1.4 Dlaczego „słuchawki Apple" nic nie dawały, i co z tym zrobić
@@ -84,7 +84,7 @@ Dotknięcie produktu otwiera jego kartę: wszystkie oferty, warunki, „ważne d
 
 ### 1.6 Kolejność prac w zakupach
 
-1. Wdrożyć tę gałąź i włączyć katalog (właściciel, OWNER_QUEUE 43). Przeczytać logi pierwszych skanów: tokeny na stronę, ile stron każdej sieci.
+1. Wdrożyć tę gałąź i włączyć katalog (właściciel, OWNER_QUEUE 45). Przeczytać logi pierwszych skanów: tokeny na stronę, ile stron każdej sieci.
 2. Serwer: synonimy marka→rzecz; pole „kiedy przeczytane" w odpowiedzi (opcjonalne, wymaga zmiany kontraktu).
 3. Aplikacja: jedno pole w Zakupach, trzy zakładki odpowiedzi, „Szukaj w sklepach internetowych" przy pustym wyniku. To praca na Macu: tu nie da się skompilować SwiftUI.
 4. Obserwacja ceny z katalogu (serwer + powiadomienie).
@@ -187,7 +187,7 @@ Dotknięcie produktu otwiera jego kartę: wszystkie oferty, warunki, „ważne d
 
 ## 8. Decyzje właściciela
 
-- **Włączenie katalogu** na serwerze (OWNER_QUEUE 43).
+- **Włączenie katalogu** na serwerze (OWNER_QUEUE 45).
 - **Opis do plików:** czy dodać krótki opis do narzędzi `make_document` / `make_presentation` na żywym agencie (zmiana agenta tylko na wyraźne polecenie).
 - **Alerty radaru:** włączyć `RADAR_ALERTS_ENABLED` czy schować funkcję do czasu działających pushy (APNs, OWNER_QUEUE 8).
 

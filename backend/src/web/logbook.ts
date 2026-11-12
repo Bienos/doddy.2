@@ -16,11 +16,11 @@ import type { Store } from "../store.js";
 /** How long days are kept, counted back from today. The sweep deletes older ones. */
 export const LOGBOOK_KEPT_DAYS = 365;
 /** A day with every tool in use is about 7 KB; a body above this is not a summary. */
-export const LOGBOOK_MAX_BODY_BYTES = 16 * 1024;
+export const LOGBOOK_MAX_BODY_BYTES = 32 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";
 
 /**
- * The voice agent's tool ids (voice-agent/tools.json, 116 today). A test reads that file and fails
+ * The voice agent's tool ids (voice-agent/tools.json, 120 today). A test reads that file and fails
  * if this list and the file disagree, so a new tool can't be counted before it is listed here.
  */
 export const LOGBOOK_TOOL_IDS = [
@@ -41,6 +41,7 @@ export const LOGBOOK_TOOL_IDS = [
   "reply_outlook_email", "forward_outlook_email", "move_outlook_email", "mark_outlook_email", "list_todoist_tasks",
   "add_todoist_task", "complete_todoist_task", "move_todoist_task", "rename_todoist_task", "web_search",
   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places",
+  "find_flights", "find_bookable_flights", "book_flight", "check_flight_booking",
   "start_translator", "stop_translator", "add_to_list", "add_ingredients", "read_list", "check_off",
   "remove_from_list", "create_list", "hand_over_errand", "check_errands", "make_something", "find_deals", "pay_for_page", "note_capability_gap", "ask_claude",
   "make_document",

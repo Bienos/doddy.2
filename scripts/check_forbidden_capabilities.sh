@@ -63,6 +63,10 @@
 #    can never pick another paid endpoint),
 #  - the messaging server's background workers declare only their pinned tools: errands Anthropic's web
 #    search and web fetch (ADR-570), Studio those two and code execution (ADR-740),
+#  - flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): Kiwi.com's MCP server only in
+#    backend/src/flights/kiwi.ts (one fixed tool, search-flight), Duffel only in backend/src/flights/duffel.ts,
+#    and a Duffel order (the one booking write) created only from backend/src/flights/service.ts, after an
+#    approval bound to the exact booking,
 #  - payments (x402): Coinbase's API only in backend/src/payments/coinbase.ts, the HTTPS client for sellers
 #    only in backend/src/payments/net.ts, wallet signing called only from the payments service (after an
 #    approval bound to the exact terms), and no wallet, key or payment-signing code anywhere in the app.
@@ -144,7 +148,7 @@ home_never='HMEventTrigger|HMTimerTrigger|HMCameraProfile|HMCameraStream|HMAcces
 camera_and_library_never='AVCaptureSession|AVCapturePhotoOutput|AVCaptureVideoDataOutput|AVCaptureMovieFileOutput|PHAssetChangeRequest|PHAssetCreationRequest|UIImageWriteToSavedPhotosAlbum|NSPhotoLibraryAddUsageDescription|performChanges'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
-secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY|CDP_(API_KEY|WALLET)_SECRET[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9+/=]{20,})'
+secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|duffel_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY|CDP_(API_KEY|WALLET)_SECRET[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9+/=]{20,})'
 allowed_permissions='NSHomeKitUsageDescription|NSHealthShareUsageDescription|NSHealthUpdateUsageDescription|NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
@@ -156,6 +160,10 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# Flights: the only files that may talk to Kiwi.com and Duffel, and the one service that may book.
+flights_kiwi=backend/src/flights/kiwi.ts
+flights_duffel=backend/src/flights/duffel.ts
+flights_service=backend/src/flights/service.ts
 # Payments (x402): the Coinbase wallet adapter, the seller HTTPS client, and the one service that may sign.
 payments_wallet=backend/src/payments/coinbase.ts
 payments_net=backend/src/payments/net.ts
@@ -430,6 +438,20 @@ PY
   fi
   if grep -RInE '/v1/(discover|inspect)|monid_(discover|inspect|run)' --include='*.ts' "$backend_src"; then
     echo "FAIL: Monid endpoint discovery in the backend; web search must stay one fixed endpoint." >&2; status=1
+  fi
+  # Flights. Kiwi.com and Duffel are each reached from one file, Kiwi only through its one fixed tool, and
+  # only the flights service may create a Duffel order (after an approval bound to the exact booking).
+  if grep -RInE 'mcp\.kiwi\.com|search-flight' --include='*.ts' "$backend_src" | code_only | grep -v "^$flights_kiwi:"; then
+    echo "FAIL: Kiwi.com called outside $flights_kiwi." >&2; status=1
+  fi
+  if grep -RInE 'api\.duffel\.com|/air/(orders|offer_requests|offers|payments)' --include='*.ts' "$backend_src" | code_only | grep -v "^$flights_duffel:"; then
+    echo "FAIL: Duffel called outside $flights_duffel." >&2; status=1
+  fi
+  if grep -RInE '\.createOrder\(' --include='*.ts' "$backend_src" | code_only | grep -v "^$flights_service:"; then
+    echo "FAIL: a Duffel order is created outside $flights_service." >&2; status=1
+  fi
+  if [ -f "$flights_service" ] && ! grep -q 'ask.allows(binding, request.approvalId, "use")' "$flights_service"; then
+    echo "FAIL: ASK-01: a flight booking must use up an approval bound to the exact booking ($flights_service)." >&2; status=1
   fi
   # Payments (x402). Coinbase is reached from one file; sellers from one file; and only the payments
   # service may ask a wallet to sign (it does so after a single-use approval bound to the exact terms).

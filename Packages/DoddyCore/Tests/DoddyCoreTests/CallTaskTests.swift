@@ -129,4 +129,72 @@ final class CallTaskTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.callTaskRefused(ServerError.offline).contains("couldn't reach"))
         XCTAssertTrue(VoiceToolReply.callTaskNoPhone.hasPrefix("failed:"))
     }
+
+    // MARK: Booking (decision docs/decisions/2026-11-12-book-agent.md)
+
+    private func booking(_ extra: [String: Any] = [:]) -> [String: Any] {
+        var a = args(extra: ["booking_name": "Anna Kowalska", "booking_date": "2026-11-13", "booking_time": "19:00", "booking_party_size": 2])
+        a["question"] = nil
+        return a.merging(extra) { $1 }
+    }
+
+    func testABookingCarriesItsDetailsAndNoQuestion() throws {
+        guard case .callPlaces(let draft) = try parse(booking()) else { return XCTFail("parsed") }
+        XCTAssertEqual(draft.booking, CallTaskBooking(name: "Anna Kowalska", date: "2026-11-13", time: "19:00", partySize: 2))
+        XCTAssertEqual(draft.question, "")
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(draft.body(principalName: "Anna"))) as? [String: Any])
+        // The server's taskSchema: a booking has `booking` and no `question` (the server writes it).
+        XCTAssertEqual(Set(json.keys), ["kind", "places", "principal", "goal", "booking", "facts", "maxDurationSecs", "textResult"])
+        XCTAssertEqual(json["kind"] as? String, "book")
+        let sent = try XCTUnwrap(json["booking"] as? [String: Any])
+        XCTAssertEqual(sent["name"] as? String, "Anna Kowalska")
+        XCTAssertEqual(sent["partySize"] as? Int, 2)
+        XCTAssertNil(sent["service"], "nil fields are left out, as the strict schema needs")
+        guard case .callPlaces(let haircut) = try parse(booking(["booking_party_size": NSNull(), "booking_service": "strzyżenie męskie"]).filter { !($0.value is NSNull) })
+        else { return XCTFail("parsed") }
+        XCTAssertEqual(haircut.booking?.service, "strzyżenie męskie")
+        XCTAssertNil(haircut.booking?.partySize)
+    }
+
+    func testABookingIsRefusedWhenAnythingIsMissingOrMalformed() throws {
+        var noName = booking(); noName["booking_name"] = nil
+        XCTAssertTrue(try XCTUnwrap(reason(try parse(noName))).contains("never guess"))
+        XCTAssertNotNil(reason(try parse(booking(["booking_date": "13.11.2026"]))))
+        XCTAssertNotNil(reason(try parse(booking(["booking_time": "7pm"]))))
+        XCTAssertNotNil(reason(try parse(booking(["booking_time": "24:00"]))))
+        XCTAssertNotNil(reason(try parse(booking(["booking_party_size": 0]))))
+        XCTAssertNotNil(reason(try parse(booking(["booking_party_size": 2.5]))))
+        XCTAssertNotNil(reason(try parse(booking(["booking_party_size": 21]))))
+        var neither = booking(); neither["booking_party_size"] = nil
+        XCTAssertNotNil(reason(try parse(neither)), "a service or a party size")
+        XCTAssertTrue(try XCTUnwrap(reason(try parse(booking(["question": "Czy mogę zapłacić kartą?"])))).contains("leave out question"))
+        XCTAssertNotNil(reason(try parse(booking(["booking_name": "Anna {{x}}"]))), "no braces")
+        XCTAssertNotNil(reason(try parse(args(extra: ["booking_time": "19:00"]))), "some booking fields but not all")
+    }
+
+    func testBookingRepliesAndErrors() {
+        let started = VoiceToolReply.callTaskStarted(first: "Uno", count: 2, textResult: false, booking: true)
+        XCTAssertTrue(started.contains("first booking"))
+        XCTAssertTrue(started.contains("don't say anyone answered or that anything is booked"))
+        XCTAssertEqual(VoiceToolReply.callTaskRefused(CallCaseError.bookingNotConfigured), VoiceToolReply.callTaskBookingOff)
+        XCTAssertTrue(VoiceToolReply.callTaskBookingOff.hasPrefix("failed:"))
+    }
+
+    func testTheCardDecodesABookingPreview() throws {
+        let json = """
+        {"taskId":"2b0e6c0a-3c1d-4b9a-9d55-0d6f4a1c2b3e","kind":"book","digest":"ab","approvableUntil":"2026-11-12T12:00:00Z",
+         "textResult":true,"callableNow":true,"places":[{"caseId":"8c7f2e4d-1a2b-4c3d-8e9f-0a1b2c3d4e5f","digest":"cd",
+         "approvableUntil":"2026-11-12T12:00:00Z","callee":{"name":"Trattoria Uno","phone":"22 123 45 67","destinationKind":"geographic",
+         "source":"places","sourceLabel":null},"principal":{"name":"Anna","genitive":"Anny"},"goal":"Stolik.","openingLine":"Dzień dobry…",
+         "question":"Czy mogą Państwo zarezerwować…?","facts":[],"kind":"book",
+         "booking":{"name":"Anna Kowalska","date":"2026-11-13","time":"19:00","partySize":2},
+         "confirmLine":"Dobrze, proszę o rezerwację: stolik dla 2 osób, piątek 13 listopada, 19:00, na nazwisko Anna Kowalska.",
+         "forbidden":["Rezerwuje tylko dokładnie to: …"],"callbackLine":"Sprawdzę to u Anny i oddzwonię.","maxDurationSecs":240,
+         "notice":"off","recordsAudio":false}]}
+        """
+        let preview = try JSONDecoder().decode(CallTaskPreview.self, from: Data(json.utf8))
+        XCTAssertTrue(preview.isBooking)
+        XCTAssertEqual(preview.places.first?.booking?.partySize, 2)
+        XCTAssertTrue(preview.places.first?.confirmLine?.hasPrefix("Dobrze, proszę o rezerwację") == true)
+    }
 }

@@ -1117,6 +1117,7 @@
   "You asked: \\u{201C}I'm at Mom's for lunch on Saturday. Remind me to bring the spare key, remember where it is, and start a pasta timer.\\u{201D}": "Tvoj zahtjev: „U subotu sam kod mame na ručku. Podsjeti me da ponesem rezervni ključ, zapamti gdje je i pokreni timer za tjesteninu.“",
   "You can undo for a few seconds afterwards.": "Nekoliko sekundi poslije možeš poništiti.",
   "You check it and send it there yourself. Doddy never sends it.": "Ti to provjeravaš i šalješ onamo. Doddy to nikad ne šalje.",
+  "You choose each saved memory. See the original, edit it or remove it.": "Ti biraš svako spremljeno sjećanje. Pogledaj izvornik, uredi ga ili ukloni.",
   "You did these in this order on three different days. If you save it, you can ask Doddy for it by name. Every step still asks you first, every time.": "Ovo je napravljeno ovim redoslijedom u tri različita dana. Ako to spremiš, možeš to zatražiti od Doddyja po imenu. Svaki korak te i dalje prvo pita, svaki put.",
   "You have %lld templates, the most Doddy keeps. Remove one under New list first.": "Imaš %lld predložaka, najviše što Doddy čuva. Prvo ukloni jedan pod Novi popis.",
   "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": "Poslan je odgovor STOP, pa operater blokira SMS poruke. Pošalji START na Doddyjev broj da ih ponovno dopustiš.",
@@ -1207,6 +1208,5 @@
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "Razgovora više nema na ovom iPhoneu, ali Doddyjev poslužitelj nije potvrdio da je njegova kopija za Doddy Web izbrisana. Do tada se još može vidjeti na webu.",
   "Food": "Hrana",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Otvara aplikaciju ako je imaš, inače web-stranicu. Doddy ne vidi niti šalje narudžbu.",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. „Počinje na“ postavlja jezik na kojem te Doddy pozdravlja; na Automatski počinje na engleskom. U svakom slučaju prati europski jezik kojim govoriš i prebacuje se kad se ti prebaciš.",
-  "You choose each saved memory. See the original, edit it or remove it.": "Ti biraš svako spremljeno sjećanje. Pogledaj izvornik, uredi ga ili ukloni."
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. „Počinje na“ postavlja jezik na kojem te Doddy pozdravlja; na Automatski počinje na engleskom. U svakom slučaju prati europski jezik kojim govoriš i prebacuje se kad se ti prebaciš."
 }

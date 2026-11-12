@@ -1,4 +1,5 @@
 import { buildApp } from "./app.js";
+import { JakdojadePartnerClient } from "./integrations/jakdojade.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
 import { createAccountVerifier } from "./doddyAccount.js";
@@ -20,6 +21,7 @@ const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   accounts: config.supabaseUrl ? createAccountVerifier({ projectUrl: config.supabaseUrl }) : null,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
+  jakdojade: config.jakdojade ? new JakdojadePartnerClient(async () => config.jakdojade ?? null) : undefined,
   fileWatches: { origin: config.documentsOrigin }, radar: { enabled: config.radarAlertsEnabled },
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
@@ -42,6 +44,7 @@ app.log.info({
   leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,
   deliveries: config.uberDirect ? config.uberDirect.mode : false,
   ceidg: !!providers.ceidg,
+  jakdojade: !!config.jakdojade,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the

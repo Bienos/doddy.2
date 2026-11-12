@@ -1117,6 +1117,7 @@
   "You asked: \\u{201C}I'm at Mom's for lunch on Saturday. Remind me to bring the spare key, remember where it is, and start a pasta timer.\\u{201D}": "Hai chiesto: “Sabato sono a pranzo da mia madre. Ricordami di portare la chiave di scorta, ricorda dov'è, e avvia un timer per la pasta.”",
   "You can undo for a few seconds afterwards.": "Puoi annullare per qualche secondo dopo.",
   "You check it and send it there yourself. Doddy never sends it.": "Lo controlli e lo invii tu. Doddy non lo invia mai.",
+  "You choose each saved memory. See the original, edit it or remove it.": "Scegli tu ogni ricordo salvato. Vedi l'originale, modificalo o rimuovilo.",
   "You did these in this order on three different days. If you save it, you can ask Doddy for it by name. Every step still asks you first, every time.": "Hai fatto queste cose in quest'ordine in tre giorni diversi. Se la salvi, puoi chiederla a Doddy per nome. Ogni passaggio ti chiede comunque prima, ogni volta.",
   "You have %lld templates, the most Doddy keeps. Remove one under New list first.": "Hai %lld modelli, il massimo che Doddy conserva. Rimuovine prima uno sotto Nuova lista.",
   "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": "Hai risposto STOP, quindi gli SMS sono bloccati dall'operatore. Invia START al numero di Doddy per riattivarli.",
@@ -1207,6 +1208,5 @@
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "La conversazione non è più su questo iPhone, ma il server di Doddy non ha confermato che la sua copia per Doddy Web sia eliminata. Fino ad allora potrebbe ancora vedersi sul web.",
   "Food": "Cibo",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Apre l’app se ce l’hai, altrimenti il sito. Doddy non vede né fa l’ordine.",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vale dalla tua prossima conversazione vocale. “Inizia in” imposta la lingua in cui Doddy ti saluta; su Automatico inizia in inglese. In ogni caso segue la lingua europea in cui parli e cambia quando cambi tu.",
-  "You choose each saved memory. See the original, edit it or remove it.": "Scegli tu ogni ricordo salvato. Vedi l'originale, modificalo o rimuovilo."
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vale dalla tua prossima conversazione vocale. “Inizia in” imposta la lingua in cui Doddy ti saluta; su Automatico inizia in inglese. In ogni caso segue la lingua europea in cui parli e cambia quando cambi tu."
 }

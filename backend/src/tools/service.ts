@@ -23,6 +23,7 @@ import {
   toolHasGrant,
 } from "./catalog.js";
 import {
+  FLIGHTS_SECTION_ID,
   PrepareRequestSchema,
   type PrepareResult,
   RunRequestSchema,
@@ -56,6 +57,9 @@ import { MockWikimedia } from "../decks/demo.js";
 import { DeckMaker } from "../decks/maker.js";
 import { type Wikimedia, WikimediaClient } from "../decks/research.js";
 import { MockToolsProvider, type ToolsMockScenario } from "./mock.js";
+import type { DuffelClient } from "../flights/duffel.js";
+import type { KiwiClient } from "../flights/kiwi.js";
+import { FlightsService, isFlightTool } from "../flights/service.js";
 import type { ToolsProvider } from "./provider.js";
 import {
   normalizeWebSearch,
@@ -86,7 +90,7 @@ const isWebTool = (name: string): name is WebTool => name === WEB_SEARCH_TOOL ||
 const WEB_TOOLS_ON_BY_DEFAULT: ReadonlySet<WebTool> = new Set<WebTool>([WEB_SEARCH_TOOL, ...MONID_TOOL_NAMES]);
 const webTitle = (tool: WebTool) => (tool === WEB_SEARCH_TOOL ? WEB_SEARCH_COPY.title : MONID_TOOLS[tool].title);
 
-type SectionId = ToolkitId | typeof WEB_SECTION_ID | typeof CLAUDE_SECTION_ID;
+type SectionId = ToolkitId | typeof WEB_SECTION_ID | typeof CLAUDE_SECTION_ID | typeof FLIGHTS_SECTION_ID;
 /** Claude runs have no account either; the approval is bound to this fixed account name. */
 const CLAUDE_ACCOUNT = "claude";
 
@@ -102,6 +106,8 @@ export interface ToolsServiceDeps {
   claude?: ClaudeProvider | null;
   /** Signed links for documents (ADR-564). Null: make_document says "not set up". */
   documentLinks?: DocumentLinks | null;
+  /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Absent: every flight tool says "not set up". */
+  flights?: { kiwi: KiwiClient | null; duffel: DuffelClient | null; bookingEnabled: boolean; bookingWaitMs?: number } | null;
   /** Wikipedia and Commons for a deck's research (decision 2026-11-10-better-presentations). Absent: live in live mode, offline demo in mock mode. */
   wikimedia?: Wikimedia;
   limits: Limits;
@@ -139,6 +145,8 @@ export class CloudToolsService {
   private documentJobsTotal = 0;
   /** Wikipedia and Commons for decks: live in live mode, offline in mock mode. */
   private readonly wikimedia: Wikimedia;
+  /** Kiwi.com search and Duffel booking, on the same ASK-01 gate (flights/service.ts). */
+  private readonly flights: FlightsService;
 
   constructor(private readonly deps: ToolsServiceDeps) {
     this.mode = deps.provider.mode;
@@ -156,6 +164,18 @@ export class CloudToolsService {
     this.now = deps.now ?? Date.now;
     this.ask = new AskGate(deps.store, this.now);
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+    this.flights = new FlightsService({
+      store: deps.store, ask: this.ask, limiter: this.limiter, mode: this.mode, now: this.now,
+      kiwi: deps.flights?.kiwi ?? null, duffel: deps.flights?.duffel ?? null, bookingEnabled: deps.flights?.bookingEnabled ?? false,
+      background: this.background, ...(deps.log ? { log: deps.log } : {}),
+      ...(deps.flights?.bookingWaitMs !== undefined ? { bookingWaitMs: deps.flights.bookingWaitMs } : {}),
+    });
+  }
+
+  /** A flight tool's receipts go under the "flights" section. */
+  private flightReceipt(userId: string) {
+    return (operation: "read" | "write", tool: string, status: ReceiptStatus, summary: string, errorCode: string | null, providerReference: string | null) =>
+      this.receipt(userId, FLIGHTS_SECTION_ID, operation, tool, status, summary, errorCode, providerReference);
   }
 
   /** Demo scenarios exist only with the mock provider. */
@@ -592,6 +612,7 @@ export class CloudToolsService {
       return { ...(await this.prepare(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
     if (isWebTool(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
+    if (isFlightTool(request.tool)) return this.flights.prepare(userId, request.tool, request.arguments, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.prepareClaude(userId, request.tool, request.arguments);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
@@ -801,6 +822,7 @@ export class CloudToolsService {
       return { ...(await this.run(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
     if (isWebTool(request.tool)) return this.runWebSearch(userId, request.tool, request);
+    if (isFlightTool(request.tool)) return this.flights.run(userId, request.tool, request, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.runClaude(userId, request.tool, request);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);

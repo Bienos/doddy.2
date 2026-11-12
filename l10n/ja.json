@@ -1117,6 +1117,7 @@
   "You asked: \\u{201C}I'm at Mom's for lunch on Saturday. Remind me to bring the spare key, remember where it is, and start a pasta timer.\\u{201D}": "あなたの依頼：「土曜日は母のところでお昼を食べる。スペアキーを持っていくようリマインドして、どこにあるか覚えておいて、パスタのタイマーを始めて。」",
   "You can undo for a few seconds afterwards.": "その後、数秒間は取り消せます。",
   "You check it and send it there yourself. Doddy never sends it.": "あなたが確認して、自分で送ります。Doddyが送ることはありません。",
+  "You choose each saved memory. See the original, edit it or remove it.": "保存する記憶はひとつひとつあなたが選びます。元の内容を見たり、編集したり、削除したりできます。",
   "You did these in this order on three different days. If you save it, you can ask Doddy for it by name. Every step still asks you first, every time.": "3日間別々の日に、この順番でこれらを行いました。保存すると、名前を言ってDoddyに頼めます。どの手順も、毎回まず確認します。",
   "You have %lld templates, the most Doddy keeps. Remove one under New list first.": "テンプレートは%lld件あり、Doddyが保持できる上限です。先に「新規リスト」でひとつ削除してください。",
   "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": "STOPと返信したため、通信事業者がSMSをブロックしています。再び受け取るには、Doddyの番号にSTARTと送信してください。",
@@ -1207,6 +1208,5 @@
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "会話はこのiPhoneから削除されましたが、Doddy Web用のコピーが削除されたことをDoddyのサーバーが確認していません。確認されるまでWebにまだ表示されることがあります。",
   "Food": "フード",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "アプリがあればアプリを、なければウェブサイトを開きます。Doddyは注文を見ることも、注文することもしません。",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。",
-  "You choose each saved memory. See the original, edit it or remove it.": "保存する記憶はひとつひとつあなたが選びます。元の内容を見たり、編集したり、削除したりできます。"
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。"
 }
