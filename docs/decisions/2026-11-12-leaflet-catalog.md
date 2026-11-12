@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-12
 - **Decided by:** owner: "my powinniśmy robić takie dzienne skany, mi się wydaje, oszczędnie, w sensie jako Dodi, tych wszystkich gazetek i dawać to dostęp tych informacji użytkownikom, a nie za każdym razem skanować użytkownikowi przez te wszystkie te gazetki. […] my powinniśmy mieć bazę właśnie taką, i dawać użytkownikom właśnie dostęp" (12 Nov 2026). The details below (which chains, every 6 hours, the caps) are the implementation's proposal.
-- **Status:** accepted; built on branch `claude/peaceful-allen-1mh9uq`, off on the server until `DEALS_CATALOG_ENABLED=1` (OWNER_QUEUE 45)
+- **Status:** applied in #352 (merged 12 Nov 2026 as `2b34f396`); on in production since 12 Nov 2026 11:11 UTC (`DEALS_CATALOG_ENABLED=1` on `doddy-messaging`, deploy `371421cf`; OWNER_QUEUE 49)
 - **Replaces:** nothing. Narrows ADR-609's "every search reads the leaflets on request, nothing is stored" for the catalogued chains.
 
 ## Why
