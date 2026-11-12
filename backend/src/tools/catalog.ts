@@ -350,9 +350,11 @@ export interface CloudToolDefinition {
   preview(args: Record<string, unknown>, resolved: ResolvedTarget | null): ConfirmationPreview;
   normalize(raw: unknown, args: Record<string, unknown>, context: Context, resolved: ResolvedTarget | null): ToolOutcome;
   /**
-   * Writes (ADR-322): the answer for a repeated run of an approval that already succeeded. The
-   * server keeps no email or task text, so it is rebuilt from the same arguments (whose digest
-   * matched) or, for a tool with a lookup, says only what is known without them.
+   * Writes WITHOUT a lookup (ADR-322): the answer for a repeated run of an approval that already
+   * succeeded. The server keeps no email or task text, so it is rebuilt from the same arguments, which
+   * the approval's digest binds to the first run's. A write with a lookup has none: a repeat answers
+   * only with what its first run recorded (its result word and receipt summary; service.ts `replayOf`),
+   * never with words from the repeated request.
    */
   replay?(args: Record<string, unknown>, externalId: string | null): ToolOutcome;
   /**
@@ -864,13 +866,6 @@ export const COMPLETE_TODOIST_TASK: CloudToolDefinition = {
       summary: "Todoist task completed.",
     };
   },
-  replay: (_args, externalId) => ({
-    text: "completed: the Todoist task from the first try is done.",
-    count: 1,
-    truncated: false,
-    summary: "Todoist task completed.",
-    ...(externalId ? { externalId } : {}),
-  }),
 };
 
 export const MOVE_TODOIST_TASK: CloudToolDefinition = {
@@ -916,13 +911,6 @@ export const MOVE_TODOIST_TASK: CloudToolDefinition = {
       summary: "Todoist task due date changed.",
     };
   },
-  replay: (_args, externalId) => ({
-    text: "moved: the Todoist task from the first try has its new due date.",
-    count: 1,
-    truncated: false,
-    summary: "Todoist task due date changed.",
-    ...(externalId ? { externalId } : {}),
-  }),
 };
 
 // ------------------------------------------------------------------ Gmail: one email's text
@@ -1173,13 +1161,6 @@ export const DRAFT_EMAIL_REPLY: CloudToolDefinition = {
   },
   // A repeat of a run that succeeded (ADR-322): the email it answered can't be looked up again
   // the same way, so the answer uses none of this request's words.
-  replay: (_args, externalId) => ({
-    text: "drafted: the Gmail reply draft from the first try was created; nothing ran again. It was NOT sent; the user sends it from Gmail.",
-    count: 1,
-    truncated: false,
-    summary: "Gmail reply draft created (not sent).",
-    ...(externalId ? { externalId } : {}),
-  }),
 };
 
 // ------------------------------------------------------------------ Gmail: send, reply, forward, labels, Trash (ADR-485)
@@ -1279,8 +1260,6 @@ export const REPLY_TO_EMAIL: CloudToolDefinition = {
     const email = emailOf(target);
     return sentOutcome(`sent: Gmail sent the reply to ${email.to} (${JSON.stringify(replySubject(email.subject))}).`, "Gmail reply sent.", message.id);
   },
-  replay: (_args, externalId) =>
-    sentOutcome("sent: the reply was sent on the first try; nothing was sent again.", "Gmail reply sent.", externalId ?? undefined),
 };
 
 export const FORWARD_EMAIL: CloudToolDefinition = {
@@ -1318,8 +1297,6 @@ export const FORWARD_EMAIL: CloudToolDefinition = {
     const email = emailOf(target);
     return sentOutcome(`sent: Gmail forwarded ${JSON.stringify(email.subject ?? "(no subject)")} to ${args.to as string}.`, "Gmail email forwarded.", message.id);
   },
-  replay: (args, externalId) =>
-    sentOutcome(`sent: the email was forwarded to ${args.to as string} on the first try; nothing was sent again.`, "Gmail email forwarded.", externalId ?? undefined),
 };
 
 /** The label changes Doddy can make: system labels only, each with what Gmail's answer must show after it. */
@@ -1361,8 +1338,6 @@ export const CHANGE_EMAIL: CloudToolDefinition = {
     if (!confirmed) throw new ProviderError("malformed_provider_result");
     return sentOutcome(`changed: Gmail ${change.done} the email ${subject}.`, `Gmail email ${change.done}.`, message.id);
   },
-  replay: (args, externalId) =>
-    sentOutcome(`changed: the email was ${EMAIL_CHANGES[args.change as EmailChange].done} on the first try; nothing ran again.`, "Gmail email changed.", externalId ?? undefined),
 };
 
 export const TRASH_EMAIL: CloudToolDefinition = {
@@ -1388,8 +1363,6 @@ export const TRASH_EMAIL: CloudToolDefinition = {
     if (!message.labelIds?.includes("TRASH")) throw new ProviderError("malformed_provider_result");
     return sentOutcome(`trashed: Gmail moved the email ${subject} to Trash. It can be restored from Trash for 30 days.`, "Gmail email moved to Trash.", message.id);
   },
-  replay: (_args, externalId) =>
-    sentOutcome("trashed: the email was moved to Trash on the first try; nothing ran again.", "Gmail email moved to Trash.", externalId ?? undefined),
 };
 
 // ------------------------------------------------------------------ Notion: one page's text
@@ -2031,7 +2004,6 @@ export const CHANGE_GOOGLE_EVENT: CloudToolDefinition = {
     if (typeof args.new_title === "string" && event.summary !== args.new_title) throw new ProviderError("malformed_provider_result");
     return { text: `changed: Google Calendar event ${JSON.stringify(event.summary ?? args.title)} now starts ${event.start ?? "as before"}.`, count: 1, truncated: false, summary: "Google Calendar event changed.", externalId: event.id };
   },
-  replay: (_args, externalId) => ({ text: "changed: the Google Calendar event was changed on the first try; nothing ran again.", count: 1, truncated: false, summary: "Google Calendar event changed.", ...(externalId ? { externalId } : {}) }),
 };
 
 export const DELETE_GOOGLE_EVENT: CloudToolDefinition = {
@@ -2062,7 +2034,6 @@ export const DELETE_GOOGLE_EVENT: CloudToolDefinition = {
     const event = eventOf(target);
     return { text: `deleted: Google Calendar event ${JSON.stringify(event.title)} at ${event.start} was deleted. It can be restored from Google Calendar's trash for 30 days.`, count: 1, truncated: false, summary: "Google Calendar event deleted." };
   },
-  replay: () => ({ text: "deleted: the Google Calendar event was deleted on the first try; nothing ran again.", count: 1, truncated: false, summary: "Google Calendar event deleted." }),
 };
 
 const INVITE_ANSWERS = { accepted: "Yes", declined: "No", tentative: "Maybe" } as const;
@@ -2101,7 +2072,6 @@ export const ANSWER_GOOGLE_INVITE: CloudToolDefinition = {
     if (attendees.find((a) => a.self === true)?.responseStatus !== args.answer) throw new ProviderError("malformed_provider_result");
     return { text: `answered: the invitation ${JSON.stringify(event.summary ?? args.title)} was answered "${INVITE_ANSWERS[args.answer as InviteAnswer]}".`, count: 1, truncated: false, summary: "Google Calendar invitation answered.", externalId: event.id };
   },
-  replay: () => ({ text: "answered: the invitation was answered on the first try; nothing ran again.", count: 1, truncated: false, summary: "Google Calendar invitation answered." }),
 };
 
 // ------------------------------------------------------------------ Outlook calendar writes (ADR-486) and mail writes (ADR-487)
@@ -2259,7 +2229,6 @@ export const CHANGE_OUTLOOK_EVENT: CloudToolDefinition = {
     if (typeof args.new_title === "string" && event.subject !== args.new_title) throw new ProviderError("malformed_provider_result");
     return { text: `changed: Outlook event ${JSON.stringify(event.subject ?? args.title)} was changed.`, count: 1, truncated: false, summary: "Outlook calendar event changed.", externalId: event.id };
   },
-  replay: () => ({ text: "changed: the Outlook event was changed on the first try; nothing ran again.", count: 1, truncated: false, summary: "Outlook calendar event changed." }),
 };
 
 export const DELETE_OUTLOOK_EVENT: CloudToolDefinition = {
@@ -2281,7 +2250,6 @@ export const DELETE_OUTLOOK_EVENT: CloudToolDefinition = {
     const event = eventOf(target);
     return { text: `deleted: Outlook event ${JSON.stringify(event.title)} at ${event.start} was deleted (it is in Deleted Items).`, count: 1, truncated: false, summary: "Outlook calendar event deleted." };
   },
-  replay: () => ({ text: "deleted: the Outlook event was deleted on the first try; nothing ran again.", count: 1, truncated: false, summary: "Outlook calendar event deleted." }),
 };
 
 const OUTLOOK_INVITE_LOOKUP: TargetLookup = {
@@ -2321,7 +2289,6 @@ export const ACCEPT_OUTLOOK_INVITE: CloudToolDefinition = {
     inviteAnswered(raw);
     return { text: `answered: the Outlook invitation ${JSON.stringify(eventOf(target).title)} was answered "${args.tentative === true ? "Maybe" : "Yes"}".`, count: 1, truncated: false, summary: "Outlook invitation answered." };
   },
-  replay: () => ({ text: "answered: the invitation was answered on the first try; nothing ran again.", count: 1, truncated: false, summary: "Outlook invitation answered." }),
 };
 
 export const DECLINE_OUTLOOK_INVITE: CloudToolDefinition = {
@@ -2339,7 +2306,6 @@ export const DECLINE_OUTLOOK_INVITE: CloudToolDefinition = {
     inviteAnswered(raw);
     return { text: `answered: the Outlook invitation ${JSON.stringify(eventOf(target).title)} was declined.`, count: 1, truncated: false, summary: "Outlook invitation declined." };
   },
-  replay: () => ({ text: "answered: the invitation was declined on the first try; nothing ran again.", count: 1, truncated: false, summary: "Outlook invitation declined." }),
 };
 
 // ---- Outlook mail writes
@@ -2443,7 +2409,6 @@ export const REPLY_OUTLOOK_EMAIL: CloudToolDefinition = {
     graphAccepted(raw);
     return sent(`sent: Outlook sent the reply to ${outlookEmailOf(target).to}.`, "Outlook reply sent.");
   },
-  replay: () => sent("sent: the Outlook reply was sent on the first try; nothing was sent again.", "Outlook reply sent."),
 };
 
 export const FORWARD_OUTLOOK_EMAIL: CloudToolDefinition = {
@@ -2468,7 +2433,6 @@ export const FORWARD_OUTLOOK_EMAIL: CloudToolDefinition = {
     graphAccepted(raw);
     return sent(`sent: Outlook forwarded the email to ${args.to as string}.`, "Outlook email forwarded.");
   },
-  replay: (args) => sent(`sent: the email was forwarded to ${args.to as string} on the first try; nothing was sent again.`, "Outlook email forwarded."),
 };
 
 const OUTLOOK_FOLDERS = {
@@ -2497,7 +2461,6 @@ export const MOVE_OUTLOOK_EMAIL: CloudToolDefinition = {
     const folder = OUTLOOK_FOLDERS[args.to_folder as OutlookFolder];
     return { text: `changed: Outlook ${folder.done} the email ${JSON.stringify(outlookEmailOf(target).subject ?? "(no subject)")}.`, count: 1, truncated: false, summary: `Outlook email ${folder.done}.`, externalId: moved.id };
   },
-  replay: (args) => sent(`changed: the email was ${OUTLOOK_FOLDERS[args.to_folder as OutlookFolder].done} on the first try; nothing ran again.`, "Outlook email moved."),
 };
 
 const MAIL_MARKS_OUTLOOK = {
@@ -2532,7 +2495,6 @@ export const MARK_OUTLOOK_EMAIL: CloudToolDefinition = {
     if (!ok) throw new ProviderError("malformed_provider_result");
     return sent(`changed: Outlook ${mark.done} the email ${JSON.stringify(outlookEmailOf(target).subject ?? "(no subject)")}.`, `Outlook email ${mark.done}.`);
   },
-  replay: (args) => sent(`changed: the email was ${MAIL_MARKS_OUTLOOK[args.mark as OutlookMark].done} on the first try; nothing ran again.`, "Outlook email changed."),
 };
 
 // ------------------------------------------------------------------ Todoist, Notion and Drive writes (ADR-488)
@@ -2571,7 +2533,6 @@ export const RENAME_TODOIST_TASK: CloudToolDefinition = {
     if (data.content !== args.content) throw new ProviderError("malformed_provider_result");
     return { text: `changed: the Todoist task is now ${JSON.stringify(args.content)}.`, count: 1, truncated: false, summary: "Todoist task renamed.", externalId: String(args.task_id) };
   },
-  replay: (args) => ({ text: `changed: the task was renamed to ${JSON.stringify(args.content)} on the first try; nothing ran again.`, count: 1, truncated: false, summary: "Todoist task renamed." }),
 };
 
 function pageOf(target: ResolvedTarget | null | undefined): PageTarget {
@@ -2623,7 +2584,6 @@ export const CREATE_NOTION_PAGE: CloudToolDefinition = {
     if (page.inTrash) throw new ProviderError("malformed_provider_result");
     return { text: `added: Notion page ${JSON.stringify(args.title)} was created.`, count: 1, truncated: false, summary: "Notion page created.", externalId: page.id };
   },
-  replay: (args, externalId) => ({ text: `added: the Notion page ${JSON.stringify(args.title)} was created on the first try; nothing ran again.`, count: 1, truncated: false, summary: "Notion page created.", ...(externalId ? { externalId } : {}) }),
 };
 
 export const APPEND_NOTION_PAGE: CloudToolDefinition = {
@@ -2647,7 +2607,6 @@ export const APPEND_NOTION_PAGE: CloudToolDefinition = {
     if (listOf(data, "results").length !== notionParagraphs(args.text as string).length) throw new ProviderError("malformed_provider_result");
     return { text: `added: the text was added to the end of the Notion page ${JSON.stringify(pageOf(target).title)}.`, count: 1, truncated: false, summary: "Notion page: text added." };
   },
-  replay: () => ({ text: "added: the text was added on the first try; nothing ran again.", count: 1, truncated: false, summary: "Notion page: text added." }),
 };
 
 export const TRASH_NOTION_PAGE: CloudToolDefinition = {
@@ -2669,7 +2628,6 @@ export const TRASH_NOTION_PAGE: CloudToolDefinition = {
     if (!notionPageResult(raw).inTrash) throw new ProviderError("malformed_provider_result");
     return { text: `trashed: the Notion page ${JSON.stringify(pageOf(target).title)} is in Notion's trash and can be restored there.`, count: 1, truncated: false, summary: "Notion page moved to the trash." };
   },
-  replay: () => ({ text: "trashed: the page was moved to the trash on the first try; nothing ran again.", count: 1, truncated: false, summary: "Notion page moved to the trash." }),
 };
 
 export const CREATE_DRIVE_DOC: CloudToolDefinition = {
