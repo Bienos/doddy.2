@@ -90,7 +90,7 @@ public enum AskFirst {
     /// per search (ADR-489); the weather and Wikipedia ones run on ElevenLabs (`ToolCatalog.webLookups`).
     public static let publicLookups: Set<String> = Set([
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
-        CloudToolName.webSearch, "news_search", "find_places",
+        CloudToolName.webSearch, "news_search", "find_places", VoiceToolName.shopifySearch,
     ]).union(ToolCatalog.webLookups)
 
     /// Looks at the user's own things on this iPhone, or at what Doddy's server holds for them, that run at once
@@ -163,15 +163,11 @@ public enum AskFirst {
             // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
             // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
             return .tapFirst(StudioAsk.card(job))
-        case .shopifySearch(let query):
-            // Not an exception to ASK-01: these product words go to Shop MCP through Doddy's
-            // server ONLY after a spoken yes or tap on the exact search phrase.
-            return .yesFirst(AskCard(
-                title: say("Search real Shopify offers?", "Przeszukać oferty Shopify?"),
-                lines: [say("Search words: ", "Szukam: ") + query,
-                        say("Your words go to Shopify. No cart or payment is created.",
-                            "Twoje słowa trafią do Shopify. Nie tworzymy koszyka ani płatności.")],
-                confirmLabel: say("Yes, search", "Tak, szukaj")))
+        case .shopifySearch:
+            // A public merchant search, exactly like web search or this week's leaflets:
+            // the user's explicit request is the permission (owner's 11 Nov 2026 decision).
+            // Only their product words go to Shopify. No cart or payment is created.
+            return .runsNow
         case .shopifyPrepareCheckout(let index, let quantity):
             // Real merchant cart creation is an external write. A tap on the card is required.
             // The voice controller shows the selected exact, provider-verified offer details.
