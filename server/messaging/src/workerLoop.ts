@@ -11,6 +11,7 @@ import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
 import { DELETE_AFTER_HOURS_DEFAULT, deleteAfterMinutes, pruneDeletions, runDueDeletions } from "./providerRecords.js";
 import type { PushSender, RecordDeleter, SmsSender } from "./providers/types.js";
 import { placeDueCall, pruneCallReasons, type ScheduledCallDeps } from "./scheduledCalls.js";
+import { pruneDeliveries } from "./delivery/deliveries.js";
 import type { TaskVoice } from "./providers/taskCalls.js";
 import type { TaskCallContext } from "./taskCalls/context.js";
 import { runDeletions, runTaskCallPasses } from "./taskCalls/worker.js";
@@ -233,8 +234,9 @@ async function dispatchLoop(
         const pruned = await pruneNewsCache(db);
         const deletions = await pruneDeletions(db);
         const reasons = await pruneCallReasons(db);
-        if (sessions || pruned || deletions || reasons) {
-          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons });
+        const deliveries = await pruneDeliveries(db); // lapsed quotes and finished deliveries' details
+        if (sessions || pruned || deletions || reasons || deliveries) {
+          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons, deliveryRows: deliveries });
         }
       }
       if (r.processed || r.reaped) log("dispatch pass", r);

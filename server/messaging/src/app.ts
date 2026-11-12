@@ -41,6 +41,8 @@ import type { AssistantDeps } from "./assistant/deps.js";
 import type { PhoneRecapDeps } from "./phoneRecaps.js";
 import { phoneRecapRoutes } from "./routes/phoneRecaps.js";
 import { watchRoutes } from "./routes/watches.js";
+import { deliveryRoutes } from "./routes/deliveries.js";
+import type { DeliveryDeps } from "./delivery/deliveries.js";
 import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
 
 declare module "fastify" {
@@ -113,6 +115,8 @@ export interface Deps {
   phoneRecaps?: PhoneRecapDeps;
   /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
   watches?: WatchDeps;
+  /** Deliveries through Uber Direct (decision 2026-11-12-uber-direct-deliveries): off unless configured and enabled. Needs `cipher` too. */
+  deliveries?: DeliveryDeps;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
   watchLog?: (msg: string, extra?: object) => void;
   /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
@@ -219,6 +223,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(dealsRoutes(deps));
   await app.register(registryRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));
+  await app.register(deliveryRoutes(deps));
   return app;
 }
 

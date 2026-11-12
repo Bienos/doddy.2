@@ -28,3 +28,14 @@ export const textApprovalHash = (to: string, body: string) => approvalHash([APPR
  */
 export const callApprovalHash = (to: string, at: string, reason: string, allowQuietHours: boolean) =>
   approvalHash([APPROVAL_VERSION, "call", to, at, reason, allowQuietHours ? "1" : "0"]);
+
+/**
+ * A delivery through Uber Direct (decision 2026-11-12-uber-direct-deliveries): Doddy's id for it, the
+ * price in minor units and its currency as quoted, and the card's lines exactly as the server wrote
+ * them (`DeliveryCard`): who and where it is picked up from, who and where it goes to, the recipient's
+ * number, the items and the note for the courier.
+ */
+export const deliveryApprovalHash = (id: string, fee: number, currency: string, card: {
+  pickup: string; dropoff: string; dropoffPhone: string; items: string; note: string;
+}) => approvalHash([APPROVAL_VERSION, "delivery", id, String(fee), currency, card.pickup, card.dropoff,
+  card.dropoffPhone, card.items, card.note]);
