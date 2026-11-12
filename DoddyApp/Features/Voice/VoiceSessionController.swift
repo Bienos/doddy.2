@@ -1497,6 +1497,67 @@ final class VoiceSessionController {
         if (try? await conversation.setMuted(false)) != nil { isMuted = false }
     }
 
+    /// This is checked only while a public-transport card is visible; no startup work or
+    /// GPS read. Off until our server is licensed and explicitly configured.
+    func journeyPartnerReady() async -> Bool {
+        guard let client = ServerConfig.client() else { return false }
+        return (try? await client.journeyProviderStatus())?.available == true
+    }
+
+    /// The third, explicitly approved transport option: a real in-app source lookup.
+    /// Both coordinates are resolved only after this tap and are sent only to DODDY's
+    /// authenticated backend; none is cached or used for background tracking.
+    func confirmPendingJourneyRoute(city: JourneyCity) async {
+        guard case .map(let id, let trip) = pendingAction, trip.mode == .transit,
+              trip.jakdojadeHandoff(city: city) != nil else { return }
+        pendingAction = nil
+
+        guard let client = ServerConfig.client(), await journeyPartnerReady() else {
+            await reply(id, "not found: Jakdojade's licensed route service is not available right now. Nothing was searched.")
+            return
+        }
+
+        let locations = PlaceLocation.shared
+        let start: PlaceCoordinate
+        if let from = trip.from {
+            // Named places can match multiple locations. Never silently pick one.
+            guard let options = try? await locations.search("\(from), \(city.label)", near: nil), options.count == 1,
+                  let first = options.first else {
+                await reply(id, "needs clarification: Please specify an unambiguous starting address and city.")
+                return
+            }
+            start = first.coordinate
+        } else {
+            var permission = await locations.readiness()
+            if permission == .notDetermined { permission = await locations.requestWhenInUse() }
+            guard permission == .ready || permission == .approximateOnly,
+                  let fix = await locations.currentFix(within: 3_000) else {
+                await reply(id, "not found: I need your permission to use this iPhone's current location once, or a named start.")
+                return
+            }
+            start = fix.coordinate
+        }
+
+        guard let destinations = try? await locations.search("\(trip.place), \(city.label)", near: start),
+              destinations.count == 1, let chosen = destinations.first else {
+            await reply(id, "needs clarification: Please give an exact destination address. Multiple matches were found or the place was not available.")
+            return
+        }
+
+        do {
+            let result = try await client.journeyRoutes(JourneyRouteQuery(
+                from: JourneyCoordinate(latitude: start.latitude, longitude: start.longitude),
+                to: JourneyCoordinate(latitude: chosen.coordinate.latitude, longitude: chosen.coordinate.longitude),
+                mode: "optimal"
+            ))
+            guard isCurrent(id) else { dropStale(id); return }
+            await reply(id, VoiceToolReply.licensedJourneys(result))
+        } catch {
+            guard isCurrent(id) else { dropStale(id); return }
+            await reply(id, "not found: The licensed route check did not complete. No timetable or departure was confirmed.", isError: true)
+        }
+    }
+
     /// Secondary transport handoff on the existing map approval card. The city is explicit
     /// or chosen by the person; no GPS, credentials, scraping or new agent tool is involved.
     func confirmPendingJakdojade(city: JourneyCity) async {
