@@ -116,8 +116,9 @@ public enum JakdojadeLinkBuilder {
         let origin = clean(intent.origin)
         // An explicitly supplied start must not silently disappear if it is malformed.
         if intent.origin != nil && origin == nil { return nil }
-        guard JourneyCity.recognised(from: origin, destination: destination).map({ $0 == intent.city }) ?? true
-        else { return nil }
+        // Reject a conflicting explicitly named city; no misleading intra-city search.
+        if let origin, let named = JourneyCity.named(in: origin), named != intent.city { return nil }
+        if let named = JourneyCity.named(in: destination), named != intent.city { return nil }
 
         var components = URLComponents()
         components.scheme = "https"
