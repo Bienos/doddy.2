@@ -6,6 +6,8 @@ import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "./serverUsa
 import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
 import { parseSearchShops, type SearchShop } from "./deals/further.js";
 import { z } from "zod";
+import { MAX_KEY_VERSION } from "./crypto.js";
+import { deployedBecause } from "./deployment.js";
 import { parseClock, QUIET_HOURS_DEFAULT, type QuietHours } from "./quietHours.js";
 import type { StudioSettings } from "./studio/context.js";
 import { PLAN_TIER_NAMES, stepModelsFrom, type PlanTier } from "./studio/models.js";
@@ -47,7 +49,14 @@ const schema = z.object({
   ANONYMOUS_ACCOUNTS: z.enum(["0", "1"]).default("0"),
 
   // S2 phone calls
-  MEMORY_ENCRYPTION_KEY: optional, // base64 of 32 random bytes
+  // base64 of 32 random bytes. Required on a deployed server (deployment.ts): without it the server refuses to start.
+  MEMORY_ENCRYPTION_KEY: optional,
+  // Key versions for a rotation (README, "Rotating MEMORY_ENCRYPTION_KEY"): the current key's version (default 1, the
+  // version of every row written before versions could be set) and, only while rows are being rewritten by
+  // scripts/reencrypt.mjs, the previous key with its own version.
+  MEMORY_ENCRYPTION_KEY_VERSION: z.coerce.number().int().min(1).max(MAX_KEY_VERSION).default(1),
+  MEMORY_ENCRYPTION_KEY_PREVIOUS: optional,
+  MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION: z.coerce.number().int().min(1).max(MAX_KEY_VERSION).optional(),
   // Shared with ElevenLabs as a workspace secret; at least 32 characters (openssl rand -base64 32).
   ELEVENLABS_TOOL_SECRET: z.string().min(32, "ELEVENLABS_TOOL_SECRET must be at least 32 characters").optional(),
   // Proxies in front of the server that append to X-Forwarded-For (Render: 1). The client IP is
@@ -431,6 +440,10 @@ export interface Config {
   apns?: ApnsConfig;
   twilio?: TwilioConfig;
   memoryEncryptionKey?: string;
+  /** The current key's version, stored with every row it writes (default 1). */
+  memoryEncryptionKeyVersion: number;
+  /** The previous key while a rotation's re-encryption runs (MEMORY_ENCRYPTION_KEY_PREVIOUS and its version). */
+  memoryEncryptionKeyPrevious?: { key: string; version: number };
   toolSecret?: string;
   phoneAgent?: PhoneAgentConfig;
   doddyPhoneNumber?: string;
@@ -442,6 +455,12 @@ export interface Config {
   newsWriterCaps: Required<NewsWriterCaps>;
   textReplyModel?: string;
   twilioRecordDeleteAfterHours: number;
+  /**
+   * The account the task calls are placed on, whose records are deleted there with its own pair: TWILIO_TASK_ACCOUNT_SID
+   * and TWILIO_TASK_AUTH_TOKEN, falling back to the main pair as the task-call client does. Set whenever a pair is,
+   * also while task calls are off, so records queued earlier still go.
+   */
+  twilioTaskRecords?: { accountSid: string; authToken: string };
   quietHours: QuietHours;
   taskCalls?: TaskCallConfig;
   /** The workspace post-call webhook's HMAC secret, also when task calls are off (phone-line recaps use it). */
@@ -475,6 +494,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const e = schema.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== "")));
   const all = <T extends object>(o: { [K in keyof T]: T[K] | undefined }): T | undefined =>
     Object.values(o).every((v) => v !== undefined) ? (o as T) : undefined;
+  // A deployed server never runs without the key (deployment.ts): it would queue texts readable and hash numbers and
+  // addresses without a key. Names only in the message, never a value.
+  const deployed = deployedBecause(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== "")));
+  if (deployed && !e.MEMORY_ENCRYPTION_KEY) {
+    const why = deployed === "NODE_ENV" ? "NODE_ENV is production" : deployed === "RENDER" ? "RENDER is set" : "PUBLIC_BASE_URL is a public address";
+    throw new Error(`MEMORY_ENCRYPTION_KEY is required: this server is deployed (${why}). Without it texts would be queued readable `
+      + "and phone numbers and addresses hashed without a key. Set it (1Password item memory-encryption-key) on every messaging "
+      + "service, web and worker, and start again.");
+  }
+  if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS) {
+    if (!e.MEMORY_ENCRYPTION_KEY) throw new Error("MEMORY_ENCRYPTION_KEY_PREVIOUS is set without MEMORY_ENCRYPTION_KEY");
+    if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION === undefined) {
+      throw new Error("MEMORY_ENCRYPTION_KEY_PREVIOUS needs MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION, the version its rows were written with");
+    }
+    if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION === e.MEMORY_ENCRYPTION_KEY_VERSION) {
+      throw new Error("MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION must differ from MEMORY_ENCRYPTION_KEY_VERSION");
+    }
+  }
   return {
     databaseUrl: e.DATABASE_URL,
     supabaseUrl: e.SUPABASE_URL ? new URL(e.SUPABASE_URL).origin : undefined,
@@ -502,6 +539,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       messagingServiceSid: e.TWILIO_MESSAGING_SERVICE_SID, verifyServiceSid: e.TWILIO_VERIFY_SERVICE_SID,
     }),
     memoryEncryptionKey: e.MEMORY_ENCRYPTION_KEY,
+    memoryEncryptionKeyVersion: e.MEMORY_ENCRYPTION_KEY_VERSION,
+    memoryEncryptionKeyPrevious: e.MEMORY_ENCRYPTION_KEY_PREVIOUS && e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION !== undefined
+      ? { key: e.MEMORY_ENCRYPTION_KEY_PREVIOUS, version: e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION }
+      : undefined,
     toolSecret: e.ELEVENLABS_TOOL_SECRET,
     phoneAgent: all<PhoneAgentConfig>({
       apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_PHONE_AGENT_ID,
@@ -517,6 +558,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     },
     textReplyModel: e.TEXT_REPLY_MODEL,
     twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,
+    twilioTaskRecords: all<{ accountSid: string; authToken: string }>({
+      accountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
+      authToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
+    }),
     quietHours: {
       start: e.QUIET_HOURS_START ? parseClock(e.QUIET_HOURS_START)! : QUIET_HOURS_DEFAULT.start,
       end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,

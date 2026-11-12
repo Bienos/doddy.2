@@ -155,13 +155,18 @@ services:
     region: frankfurt
     plan: starter
     rootDir: server/messaging
-    buildCommand: npm ci && npm run build
+    # --include=dev: with NODE_ENV=production npm ci would leave out TypeScript, which the build needs.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: false
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # A deployed server: it refuses to start without MEMORY_ENCRYPTION_KEY (server/messaging/src/deployment.ts;
+      # RENDER, which Render sets, counts too).
+      - key: NODE_ENV
+        value: production
       - key: DATABASE_URL
         fromDatabase:
           name: doddy-db
@@ -190,8 +195,10 @@ services:
       # Phone calls (S2)
       - key: ELEVENLABS_API_KEY
         sync: false
-      # ADR-706: required in production. Without it texts, pushes and digests are not queued (they would be
-      # stored unencrypted). Set it on BOTH doddy-messaging and the worker before deploying (the live setup is one service with the worker inside it).
+      # ADR-706: required. Without it the server refuses to start (it would store texts unencrypted). Set it on BOTH
+      # doddy-messaging and the worker before deploying (the live setup is one service with the worker inside it).
+      # A rotation adds MEMORY_ENCRYPTION_KEY_VERSION, _PREVIOUS and _PREVIOUS_VERSION by hand for a while
+      # (server/messaging/README.md, "Rotating MEMORY_ENCRYPTION_KEY").
       - key: MEMORY_ENCRYPTION_KEY
         sync: false
       - key: ELEVENLABS_TOOL_SECRET
@@ -266,12 +273,16 @@ services:
     region: frankfurt
     plan: starter
     rootDir: server/messaging
-    buildCommand: npm ci && npm run build
+    # --include=dev: with NODE_ENV=production npm ci would leave out TypeScript, which the build needs.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run worker
     autoDeploy: false
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # As doddy-messaging: refuses to start without MEMORY_ENCRYPTION_KEY.
+      - key: NODE_ENV
+        value: production
       - key: DATABASE_URL
         fromDatabase:
           name: doddy-db

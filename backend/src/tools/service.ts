@@ -5,7 +5,7 @@ import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
 import { AccessRequestSchema, type AppAccess, isAppsTool, toolsForAccess, translateAppsCall } from "./apps.js";
 import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
-import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store, stuckCleanupLine } from "../store.js";
+import { type ApprovalRun, CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store, stuckCleanupLine } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
 import {
   bindsTimeZone,
@@ -17,6 +17,7 @@ import {
   type GrantVerdict,
   type ResolvedTarget,
   TOOL_COPY,
+  type ToolOutcome,
   TOOLKIT_IDS,
   TOOLKITS,
   type ToolkitId,
@@ -875,39 +876,49 @@ export class CloudToolsService {
   }
 
   /**
-   * A repeated run of an approval that was already used (the phone lost the answer): what happened
-   * the first time answers it, and nothing runs again (ADR-322). Null when it was never used.
+   * A repeated run of an approval that a run already took (the phone lost the answer, or asked again
+   * while the first try was still running): what happened the first time answers it, and nothing runs
+   * again (ADR-322). Null when no run has it. A repeat must ask for exactly what the first try asked
+   * for (`requestDigest`: the arguments and the time zone, also for a write with a lookup); otherwise
+   * it is refused before anything about the first try is said.
    */
-  private async repeatOfUsedApproval(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, approvalId: string, accountId: string, boundZone: string | null): Promise<RunResult | null> {
-    // A tool with a lookup bound its approval to the target as it was then, which can't be read
-    // again (a completed task is gone), so it is matched without the digest and its answer uses
-    // no words from this request.
-    const earlier = await this.store.approvalOutcome({
-      approvalId, userId, capability: tool.name, accountId, argsDigest: tool.resolve ? null : approvalDigest(args, null, boundZone),
-    });
-    if (!earlier) return null;
+  private async repeatOfStartedApproval(
+    userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, approvalId: string, accountId: string, requestDigest: string,
+    unconfirmed: () => Promise<AppError>,
+  ): Promise<RunResult | null> {
+    const first = await this.store.approvalRun({ approvalId, userId, capability: tool.name, accountId });
+    if (!first) return null;
+    // Runs from before the request was kept: a write without a lookup is bound to its arguments by the approval itself.
+    const asked = first.requestDigest ?? (tool.resolve ? null : first.argsDigest);
+    if (asked !== null && asked !== requestDigest) throw await unconfirmed();
     const title = TOOLKITS[tool.toolkit].title;
-    if (earlier.outcome === "succeeded" && tool.replay) {
-      const outcome = tool.replay(args, earlier.externalId);
-      const receipt = await this.receipt(userId, tool.toolkit, "write", tool.name, "succeeded", `${outcome.summary} Answer from the first try; nothing ran again.`, null, null);
+    const replay = first.outcome === "succeeded" ? replayOf(tool, args, first) : null;
+    if (replay) {
+      const receipt = await this.receipt(userId, tool.toolkit, "write", tool.name, "succeeded", `${replay.summary} Answer from the first try; nothing ran again.`, null, null);
       return {
-        mode: this.mode, tool: tool.name, text: outcome.text, count: outcome.count, truncated: outcome.truncated,
-        ...(outcome.externalId ? { externalId: outcome.externalId } : {}),
+        mode: this.mode, tool: tool.name, text: replay.text, count: replay.count, truncated: replay.truncated,
+        ...(replay.externalId ? { externalId: replay.externalId } : {}),
         replayed: true,
         receipt,
       };
     }
-    if (earlier.outcome === "failed") {
+    if (first.outcome === "failed") {
+      // The first try provably never ran at the provider. The receipt is `failed` (the first try's own
+      // status), so the app can tell it from a refusal of this request (`blocked`); the code is the
+      // one older apps already read as "nothing was done".
       throw new AppError("capability_disabled", {
-        message: "This action needs a fresh confirmation.",
-        receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
+        message: "The first try with this confirmation didn't go through. It needs a fresh confirmation.",
+        receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "failed", "Not done: the first try with this confirmation didn't go through.", "confirmation_required", null),
       });
     }
-    // Unknown, or used but not finished (still running, or the server stopped mid-run).
+    // Unknown; still running (its lookup, or the write itself); or the server stopped mid-run. Never "busy" or
+    // "needs a confirmation": the first try may still go through.
+    const summary = first.outcome === null
+      ? `The first try at ${title} hasn't finished yet; it may or may not go through. Check there before trying again.`
+      : `${title} didn't confirm the first try; it may or may not have gone through. Check there before trying again.`;
     throw new AppError("capability_disabled", {
       message: "The first try with this confirmation may or may not have gone through.",
-      receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "outcome_unknown",
-        `${title} didn't confirm the first try; it may or may not have gone through. Check there before trying again.`, "earlier_outcome_unknown", null),
+      receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "outcome_unknown", summary, "earlier_outcome_unknown", null),
     });
   }
 
@@ -1015,9 +1026,9 @@ export class CloudToolsService {
     await this.limiter.reserveRequest(userId, now);
     const row = await this.checkUsable(userId, tool, op);
 
-    // A write's approval is checked here but only used up right before the provider call, so a
-    // limit or "busy" refusal in between doesn't cost the user their confirmation. For a tool with
-    // a lookup the approval is bound to the target too, so before the lookup only its presence is checked.
+    // A write's approval is taken here but only used up right before the provider call; a limit or
+    // "busy" refusal in between gives it back, so it doesn't cost the user their confirmation. For a tool
+    // with a lookup the approval is bound to the target too, so it can only be matched in full after the lookup.
     // ASK-01: reads are bound to their arguments only (nothing was looked up before the yes).
     // ADR-710: a write that reads the zone runs only in the zone its approval was made for. The digest
     // below includes the zone this request names, so an approval from another zone doesn't match.
@@ -1033,28 +1044,45 @@ export class CloudToolsService {
             receipt: await this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
           })
         : askFirstRefusal(await this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
-    if (tool.risk === "write" && request.approvalId !== undefined) {
-      const repeat = await this.repeatOfUsedApproval(userId, tool, args, request.approvalId, row.connection_id, boundZone);
-      if (repeat) return repeat;
-    }
-    // A write with a lookup can only match its approval in full after the lookup, so before it the
-    // approval must at least be one `prepare` issued to this user for this tool and account (ADR-708):
-    // a run with no card, or a made-up approval, looks nothing up.
-    if (
-      tool.risk === "write" &&
-      (tool.resolve ? !(await this.ask.issuedFor({ userId, tool: tool.name, accountId: row.connection_id }, request.approvalId)) : !(await approval(null, true)))
-    ) {
-      throw await unconfirmed();
+    // A write takes its approval first, before its lookup (which can take seconds): a repeat that comes
+    // meanwhile (the phone lost the answer and asks again) finds it taken and hears that the first try
+    // may still go through, never "busy" or "needs a confirmation". Taking it checks only that `prepare`
+    // issued it to this user for this tool and account, and, for a write without a lookup, these
+    // arguments: a write with a lookup can only match its approval in full after the lookup (ADR-708),
+    // so a run with no card, or a made-up approval, looks nothing up.
+    let held: { approvalId: string; startedAt: number } | null = null;
+    if (tool.risk === "write") {
+      const requestDigest = approvalDigest(args, null, boundZone);
+      const approvalId = request.approvalId;
+      if (approvalId === undefined) throw await unconfirmed();
+      const took = await this.ask.take({ userId, tool: tool.name, accountId: row.connection_id, argsDigest: tool.resolve ? null : requestDigest }, approvalId, requestDigest);
+      if (!took) {
+        const repeat = await this.repeatOfStartedApproval(userId, tool, args, approvalId, row.connection_id, requestDigest, unconfirmed);
+        if (repeat) return repeat;
+        throw await unconfirmed();
+      }
+      held = { approvalId, startedAt: took.startedAt };
     }
     if (tool.risk === "read" && !(await approval(null, true))) throw await unconfirmed();
 
-    // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
-    await this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
-
-    const composioUserId = await this.store.composioUserId(userId, now);
     let writeSent = false;
     // Set once this run used up its approval, so its outcome is recorded against it (ADR-322).
     let used: string | null = null;
+    // Taken but not used: the write was never sent (a limit, busy, the lookup), so the yes is given back.
+    // If the server stops first, it stays taken: a repeat hears "may or may not", and nothing runs it again (DOD-08).
+    const giveBack = async () => {
+      if (held && !used) await this.ask.giveBack(held.approvalId, held.startedAt).catch(() => {});
+    };
+
+    // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
+    try {
+      await this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
+    } catch (error) {
+      await giveBack();
+      throw error;
+    }
+
+    const composioUserId = await this.store.composioUserId(userId, now);
     try {
       return await this.limiter.withSlot(userId, async () => {
         // A read's yes is used up before anything is read, its lookup included: one yes, one read.
@@ -1086,7 +1114,8 @@ export class CloudToolsService {
         const outcome = tool.normalize(result.raw, args, { timeZone: request.timeZone }, target);
         if (row.status === "error") await this.store.updateConnectionStatus(userId, tool.toolkit, "connected", null, this.now());
         const receipt = await this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", outcome.summary, null, result.providerReference);
-        if (used) await this.store.finishApproval(used, "succeeded", outcome.externalId ?? null, this.now());
+        // What a repeat answers with: the result word and the receipt's summary, never names or text.
+        if (used) await this.store.finishApproval(used, "succeeded", outcome.externalId ?? null, this.now(), { word: resultWord(outcome.text), summary: receipt.summary });
         return {
           mode: this.mode, tool: tool.name, text: outcome.text, count: outcome.count, truncated: outcome.truncated,
           ...(outcome.items ? { items: outcome.items } : {}),
@@ -1101,6 +1130,8 @@ export class CloudToolsService {
       if (used) {
         const code = error instanceof AppError ? error.code : toAppError(error, TOOLKITS[tool.toolkit].title).code;
         await this.store.finishApproval(used, WRITE_NOT_RUN.has(code) ? "failed" : "outcome_unknown", null, this.now());
+      } else {
+        await giveBack();
       }
       throw await this.failure(userId, tool, error, writeSent);
     }
@@ -1481,6 +1512,34 @@ export const LOOKUP_FAILED = "Doddy couldn't find that, so nothing was changed. 
 function approvalDigest(args: Record<string, unknown>, target: ResolvedTarget | null, timeZone: string | null = null): string {
   if (timeZone !== null) return argumentDigest({ arguments: args, ...(target === null ? {} : { target }), timeZone });
   return target === null ? argumentDigest(args) : argumentDigest({ arguments: args, target });
+}
+
+/**
+ * The answer for a repeat of a write that went through (ADR-322), or null when it can't be given. A write
+ * without a lookup is bound to its arguments by its approval (a repeat with other words never gets here),
+ * so its own `replay` may name them. A write with a lookup says only what its first run recorded: the
+ * result word and the receipt summary, never a word of this request. A first run from before that was
+ * recorded gives null, and the repeat hears that it may or may not have gone through.
+ */
+function replayOf(tool: CloudToolDefinition, args: Record<string, unknown>, first: ApprovalRun): ToolOutcome | null {
+  if (!tool.resolve) {
+    if (!tool.replay) return null;
+    const outcome = tool.replay(args, first.externalId);
+    return first.resultSummary === null ? outcome : { ...outcome, summary: first.resultSummary };
+  }
+  if (first.resultSummary === null) return null;
+  return {
+    text: `${first.resultWord === null ? "" : `${first.resultWord}: `}${first.resultSummary} Done on the first try; nothing ran again.`,
+    count: 1,
+    truncated: false,
+    summary: first.resultSummary,
+    ...(first.externalId ? { externalId: first.externalId } : {}),
+  };
+}
+
+/** The fixed word a write's answer starts with ("sent", "changed", …), or null. Nothing else of the answer is kept. */
+function resultWord(text: string): string | null {
+  return /^([a-z]{2,16}):/.exec(text)?.[1] ?? null;
 }
 
 /** ASK-01: a run that came without the user's yes for exactly this. Nothing was looked up or sent. */

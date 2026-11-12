@@ -45,10 +45,30 @@ All `/v1` routes except account creation and sign-in need `Authorization: Bearer
 - Delivery receipts only move a status forward (queued, sending, sent, then delivered, undelivered or failed).
 - Texts to Doddy (U3, ADR-753, off by default): only the verified number with the "Texts to Doddy" switch on; anyone else gets empty TwiML and nothing is stored. A Twilio message id is handled once; 30 texts an hour. A text becomes an encrypted inbox note, and gets **no reply** (answers by text are "Text with Doddy", ADR-656, `src/smsChat.ts`, which handles a text only when this switch is off for that sender: one handler per text, never both). Nothing from memory is ever put in a text.
 - Calls booked for later (U4, ADR-754): the worker takes one due call at a time and checks it again: more than 15 minutes late means missed; the number and consent; the approval hash against the number now; quiet hours (`QUIET_HOURS_START`/`QUIET_HOURS_END`, default 21:00–08:00) in the zone the iPhone last sent, unless the card allowed them; and the hourly and daily caps under the same lock as "call me now". A call whose outcome is unknown is never placed again. Each call that doesn't happen sends one notification (if the user has push on) with the time only. The reason is encrypted and erased when the call ends (Twilio's final status), 2 hours after a placed call whose end was never reported, or at once when the call won't happen or its outcome is unknown; the phone agent gets it as `doddy_call_reason` and its first sentence as `doddy_call_opening`. A new or removed number, or consent turned off, cancels waiting calls.
-- Records at Twilio (messages both ways, calls) are deleted `TWILIO_RECORD_DELETE_AFTER_HOURS` after they are final (default 24; 0 = about 2 minutes). Only Twilio's id is queued for that.
-- Message text is erased from the database as soon as a message reaches a final state. While queued it is encrypted with `MEMORY_ENCRYPTION_KEY`. Outside production it is plain text when the key is not set; **in production nothing is queued without the key** (ADR-706).
+- Records at Twilio (messages both ways, calls, forwarded call-backs, task calls and their takeover legs) are deleted `TWILIO_RECORD_DELETE_AFTER_HOURS` after they are final (default 24; 0 = about 2 minutes), each on its own account with that account's credentials (task calls on `TWILIO_TASK_*`). Only Twilio's id is queued for that. Retention of everything else: "What is kept, and for how long" below.
+- Message text is erased from the database as soon as a message reaches a final state. While queued it is encrypted with `MEMORY_ENCRYPTION_KEY`. **A deployed server refuses to start without the key** (`src/deployment.ts`): deployed means `NODE_ENV=production`, `RENDER` set (Render sets it on every service), or a `PUBLIC_BASE_URL` other servers can reach (any host but `localhost`, a loopback address or a `.localhost`/`.test`/`.example`/`.invalid` name). So only a local run or a test without a key stores a queued text in plain text and hashes numbers and addresses without a key; the outbox refuses as well (ADR-706). Rotating the key: "Rotating MEMORY_ENCRYPTION_KEY" below.
 - Logs carry ids and counts only. No message text, no phone numbers, no tokens.
 - A missing provider configuration returns `503 not_configured`. It never fakes success.
+
+## What is kept, and for how long
+Calls, texts and the providers behind them. Deleting the account (`DELETE /v1/account`) removes every row here that names it; what it left at a provider is queued first and deleted by jobs that outlive it. Errands, price watches, Studio and digests: their own sections.
+
+| What | Where | Kept |
+|---|---|---|
+| A queued text's body | here, encrypted | until the message is final, then erased |
+| Records of texts (both ways), calls to and from Doddy's number, a forwarded call-back's leg | Twilio, main account | deleted `TWILIO_RECORD_DELETE_AFTER_HOURS` (24) after final; Twilio may keep a deleted text's body in backups for up to 30 days |
+| Records of task calls and their takeover legs | Twilio, task account (`TWILIO_TASK_*`) | the same wait, and not before the call's price has been read (a day at most); deleted with that account's own credentials |
+| The Twilio ids waiting for that (`provider_deletions`) | here, ids only | until deleted, then 30 days |
+| Phone-agent conversations (calls to Doddy, "Call me now", booked calls) | ElevenLabs | the agent's retention (30 days, `voice-agent/phone/session.json`) while the account exists; deleting the account deletes them, checked gone. Their id is stored on the call from the post-call webhook, recaps on or off. One no call here owns (its account already deleted, or not a call through this server) is deleted by the sweep, every 3 hours, once a day old |
+| Task-agent conversations | ElevenLabs | deleted once the answer card is built (a day at most), checked gone; strays by the same sweep |
+| A task call's live transcript lines | here, encrypted | until the answer card is built, 24 hours at most |
+| A task call's answer card | here, encrypted | until the app saves it, 7 days at most |
+| Phone-line recaps | here, encrypted | until the app saves them, 30 days at most |
+| Call session keys | here, hashed | until the call ends, 2 hours at most |
+| A booked call's reason | here, encrypted | until the call ends (2 hours after it was placed at most) |
+| Task calls' dial log (keyed hashes, for the limits) | here | 2 days (the limits read one), pruned by the hourly tidy |
+| Call-back routes (keyed hash of a number Doddy dialled) | here | as long as the account |
+| Deletion receipts (`server_data_deletions`, no content) | here | kept; the account id is cleared when it is deleted |
 
 ## Abuse limits (ADR-702 to 706)
 
@@ -228,6 +248,15 @@ DATABASE_URL=... npm run worker # sends due updates every 2 s
 TEST_DATABASE_URL=postgres://…/doddy_test npm test   # WARNING: drops that DB's public schema; refused unless its name ends in _test
 ```
 With 1Password (ADR-493): `npm run start:op` takes the secrets from the `doddy-dev` vault through `.env.op` (references only) and the rest from `.env`. See `docs/security/SECRETS_1PASSWORD.md`.
+
+## Rotating MEMORY_ENCRYPTION_KEY
+Every encrypted row stores the version of the key that wrote it (`key_version` and the like; every row written before versions existed is version 1). The server writes with the current key (`MEMORY_ENCRYPTION_KEY`, version `MEMORY_ENCRYPTION_KEY_VERSION`, default 1) and, while `MEMORY_ENCRYPTION_KEY_PREVIOUS` is set, reads rows of either key (AES-GCM refuses a wrong key, so a row opens only with the key its version names). The ciphertext layout doesn't change.
+1. Make a new key (`openssl rand -base64 32`) and keep it in 1Password next to the old one (`memory-encryption-key-previous` gets the old value).
+2. On every messaging service (web and worker), at once: `MEMORY_ENCRYPTION_KEY` = the new key, `MEMORY_ENCRYPTION_KEY_VERSION` = the old version + 1 (2 the first time), `MEMORY_ENCRYPTION_KEY_PREVIOUS` = the old key, `MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION` = the old version (1 the first time). Deploy. A previous key without its version, or with the same version, stops the start.
+3. In a shell with the same settings (a Render shell has them): `npm run build`, then `node scripts/reencrypt.mjs --dry-run` (rows per version per column), then `node scripts/reencrypt.mjs`. It rewrites each row to the current version, a batch per transaction, reads each one back, and rolls the batch back if a read-back differs. It prints names and counts only. Exit 0: no row is left on another version. It is safe while the server runs and safe to run again.
+4. Only after it exits 0: remove `MEMORY_ENCRYPTION_KEY_PREVIOUS` (and `_PREVIOUS_VERSION`) and deploy. A row it reports as unreadable stays unreadable without the key it was written with.
+
+A rotation also starts the keyed hashes afresh, because their keys are derived from the current key (`TextCipher.derivedKey`): the daily counts per number and address and the task calls' dial log begin again (they last two days); a call card or call task made before the rotation and not yet called no longer matches its digest (make it again); and call-back routes from before the rotation stop matching until Doddy dials that number again. That is the point after a leaked key, and the reason to rotate when no task call is waiting.
 
 ## Before the first deploy (owner)
 For the owner's single-number setup, follow `docs/integrations/PHONE_NUMBER_SETUP.md` instead (one web service with `RUN_WORKER_IN_WEB=1`, no Blueprint). The live service was made that way, by hand, so general steps 1 and 2 have not been done; steps 3 to 5 are provider setup and apply either way.

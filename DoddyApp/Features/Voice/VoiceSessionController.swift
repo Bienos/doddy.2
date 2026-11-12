@@ -785,12 +785,21 @@ final class VoiceSessionController {
         // The voice token is asked for now and used below (ADR-686), so the wait for the notes and
         // the rest of the context below overlaps with the wait for the server instead of adding to
         // it. Only ElevenLabs through the token server, after consent and the microphone check.
+        // Translating talks to its own agent, which has no tools at all (owner, 12 Nov 2026: the agent must not
+        // use any function while translating; decision 2026-11-12-translator-agent).
+        let agentKind = VoiceAgentKind.forTranslatorStart(preset != nil)
         var earlyToken: Task<Result<String, VoiceTokenError>, Never>?
         if case .tokenServer(let endpoint) = mode {
             // One fetched ahead (VoiceTokenWarmer) is used once; it is gone from the shelf either way, so a
-            // start that fails to connect with it fetches a fresh one next time, never the same again.
+            // start that fails to connect with it fetches a fresh one next time, never the same again. A
+            // translator start never uses it: it is for the main agent, so a translator token is fetched now.
             earlyToken = Task { () -> Result<String, VoiceTokenError> in
                 do throws(VoiceTokenError) {
+                    if agentKind == .translator {
+                        let value = try await VoiceTokenWarmer.shared.translatorToken(endpoint: endpoint)
+                        if attempt == startAttempt { tokenSource = .fetched }
+                        return .success(value)
+                    }
                     let token = try await VoiceTokenWarmer.shared.token(endpoint: endpoint)
                     if attempt == startAttempt { tokenSource = token.source }
                     return .success(token.value)
@@ -980,7 +989,7 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.disconnected(kind) }
         }
 
-        await connectElevenLabs(mode, config: config, attempt: attempt, earlyToken: earlyToken)
+        await connectElevenLabs(mode, agent: agentKind, config: config, attempt: attempt, earlyToken: earlyToken)
     }
 
     /// Gets the credential for `mode` and opens the ElevenLabs conversation. When the agent refuses a
@@ -988,7 +997,7 @@ final class VoiceSessionController {
     /// start carries on through the token server if this iPhone has a voice session, and otherwise
     /// asks for sign-in, instead of showing the SDK's English text.
     private func connectElevenLabs(
-        _ mode: VoiceConnectionMode, config: ConversationConfig, attempt: Int,
+        _ mode: VoiceConnectionMode, agent: VoiceAgentKind, config: ConversationConfig, attempt: Int,
         earlyToken: Task<Result<String, VoiceTokenError>, Never>?
     ) async {
         let auth: ElevenLabsConfiguration
@@ -999,9 +1008,13 @@ final class VoiceSessionController {
                 fetched = await earlyToken.value
             } else {
                 do throws(VoiceTokenError) {
-                    let token = try await VoiceTokenWarmer.shared.token(endpoint: endpoint)
-                    if attempt == startAttempt { tokenSource = token.source }
-                    fetched = .success(token.value)
+                    if agent == .translator {
+                        fetched = .success(try await VoiceTokenWarmer.shared.translatorToken(endpoint: endpoint))
+                    } else {
+                        let token = try await VoiceTokenWarmer.shared.token(endpoint: endpoint)
+                        if attempt == startAttempt { tokenSource = token.source }
+                        fetched = .success(token.value)
+                    }
                 } catch {
                     fetched = .failure(error)
                 }
@@ -1018,8 +1031,8 @@ final class VoiceSessionController {
                 return
             }
         case .directAgent(let agentID):
-            // Debug builds only (ADR-551): no token, no DODDY voice account.
-            auth = .publicAgent(id: agentID)
+            // Debug builds only (ADR-551): no token, no DODDY voice account. Translating has its own agent here too.
+            auth = .publicAgent(id: agent == .translator ? VoiceConfig.translatorDirectAgentID : agentID)
         case .notSetUp(let reason):
             fail(reason)
             return
@@ -1076,7 +1089,7 @@ final class VoiceSessionController {
                 return
             }
             if case .directAgent = mode, DeveloperVoiceConnection.isRefusal(error.localizedDescription) {
-                await developerConnectionRefused(config: config, attempt: attempt)
+                await developerConnectionRefused(config: config, attempt: attempt, agent: agent)
                 return
             }
             // Translated before it reaches the card, which shows its text as given.
@@ -1098,7 +1111,7 @@ final class VoiceSessionController {
     /// The agent refused the developer connection (Debug builds, ADR-551): its authentication is on.
     /// The Debug switch goes off so later starts use the token server too, and this start carries on
     /// through it when there is a voice session to ask with.
-    private func developerConnectionRefused(config: ConversationConfig, attempt: Int) async {
+    private func developerConnectionRefused(config: ConversationConfig, attempt: Int, agent: VoiceAgentKind) async {
         Self.audioLog.notice("the agent refused the developer connection: attempt \(attempt, privacy: .public)")
         VoiceConfig.directAgentRefused()
         let auth = VoiceAuthSession.shared
@@ -1109,7 +1122,7 @@ final class VoiceSessionController {
         case .retry(let next):
             // A translator restarted later uses the connection that worked.
             startedMode = next
-            await connectElevenLabs(next, config: config, attempt: attempt, earlyToken: nil)
+            await connectElevenLabs(next, agent: agent, config: config, attempt: attempt, earlyToken: nil)
         case .signInNeeded:
             fail(NSLocalizedString("Doddy's voice now needs you to be signed in. Close this screen and tap Talk to Doddy to sign in.", comment: ""))
         case .notSetUp(let reason):

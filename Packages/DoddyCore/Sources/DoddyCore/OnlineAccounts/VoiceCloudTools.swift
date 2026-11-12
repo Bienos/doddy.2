@@ -93,6 +93,10 @@ extension VoiceToolReply {
                 if receipt?.errorCode == "ask_first_required" {
                     return "declined: Doddy didn't have the user's yes for \"\(CloudToolName.title(tool))\", so nothing was looked at or done. Ask again only if the user wants."
                 }
+                if CloudRun.isFirstTryFailure(error) {
+                    // The server's record of the first try with this confirmation: it never ran (ADR-322).
+                    return "failed: the first try didn't go through, so nothing was done. Offer to try again."
+                }
                 if receipt?.errorCode == "confirmation_required" {
                     return "failed: the confirmation expired before it was used. Nothing was done. Offer to try again."
                 }

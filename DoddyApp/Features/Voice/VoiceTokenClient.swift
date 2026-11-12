@@ -7,8 +7,9 @@ import os
 struct VoiceTokenClient: Sendable {
     let endpoint: URL
     private static let log = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
-    /// ElevenLabs conversation token. Sends no body: ElevenLabs is the only voice (9 Nov 2026).
-    func fetchToken() async throws(VoiceTokenError) -> String {
+    /// ElevenLabs conversation token. Sends no body for the main agent (ElevenLabs is the only voice, 9 Nov 2026);
+    /// translating asks for its own agent, which has no tools (decision 2026-11-12-translator-agent).
+    func fetchToken(agent: VoiceAgentKind = .main) async throws(VoiceTokenError) -> String {
         // How long the token server took, on the "voice-audio" log with the start's other stages
         // (decision 2026-11-10-voice-start-timing): seconds only.
         let began = ProcessInfo.processInfo.systemUptime
@@ -16,15 +17,19 @@ struct VoiceTokenClient: Sendable {
             let took = VoiceStartTimeline.text(ProcessInfo.processInfo.systemUptime - began)
             Self.log.notice("voice token request took \(took, privacy: .public)")
         }
-        let (status, data, retryAfter) = try await post()
+        let (status, data, retryAfter) = try await post(agent: agent)
         return try VoiceTokenServer.token(status: status, body: data, retryAfter: retryAfter).get()
     }
 
     /// The status, the body and the reply's Retry-After header, which says how long a 429 lasts (the
     /// message reads it in minutes, hours or "tomorrow", ADR-712).
-    private func post() async throws(VoiceTokenError) -> (Int, Data, String?) {
+    private func post(agent: VoiceAgentKind) async throws(VoiceTokenError) -> (Int, Data, String?) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"
+        if let body = agent.requestBody {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
         var accessToken: String?
         // Decision 2026-11-08-required-account: the Doddy account's token, unless this iPhone still has its
         // own voice session (that one works whether or not the voice server takes accounts yet).

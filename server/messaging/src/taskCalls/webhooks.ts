@@ -4,6 +4,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { inTransaction } from "../db.js";
+import { scheduleDeletion } from "../providerRecords.js";
 import { conversationSchema } from "../providers/taskCalls.js";
 import type { TaskCallContext } from "./context.js";
 import { callFits } from "./hours.js";
@@ -124,10 +125,11 @@ const FINAL: Record<string, "completed" | "busy" | "no_answer" | "failed" | "can
 export async function onStatus(ctx: TaskCallContext, attemptId: string, f: Form): Promise<void> {
   const a = await attempt(ctx, attemptId);
   if (!a || !ownsCall(ctx, a, f)) {
-    // A call we can't match (or one past its attempt) must not keep running.
-    if (field(f, "AccountSid") === ctx.telephony.accountSid && /^CA[0-9a-f]{32}$/.test(field(f, "CallSid"))
-      && field(f, "CallStatus") === "in-progress") {
-      await ctx.telephony.updateCall(field(f, "CallSid"), { status: "completed" });
+    if (field(f, "AccountSid") === ctx.telephony.accountSid && /^CA[0-9a-f]{32}$/.test(field(f, "CallSid"))) {
+      // A call we can't match (or one past its attempt) must not keep running.
+      if (field(f, "CallStatus") === "in-progress") await ctx.telephony.updateCall(field(f, "CallSid"), { status: "completed" });
+      // Its record goes once it is over, like any task call's (an account deleted mid-call leaves no attempt).
+      if (Object.hasOwn(FINAL, field(f, "CallStatus"))) await scheduleDeletion(ctx.db, "call", field(f, "CallSid"), "task");
     }
     return;
   }
@@ -152,6 +154,9 @@ export async function onStatus(ctx: TaskCallContext, attemptId: string, f: Form)
   }
   const final = FINAL[status];
   if (!final) return;
+  // Twilio's record of the call is deleted on the task account once it has been final for
+  // TWILIO_RECORD_DELETE_AFTER_HOURS (ADR-753), after its price has been read.
+  await scheduleDeletion(ctx.db, "call", field(f, "CallSid"), "task");
   const duration = /^\d+$/.test(field(f, "CallDuration")) ? Number(field(f, "CallDuration")) : null;
   const ended = await inTransaction(ctx.db, async (c) => {
     const answered = a.answered_at !== null || a.voice_connected_at !== null;

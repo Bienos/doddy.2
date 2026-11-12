@@ -1,9 +1,9 @@
 import type { Config } from "../config.js";
 import { ApnsPushSender } from "./apns.js";
-import { TextCipher } from "../crypto.js";
+import { cipherFrom } from "../crypto.js";
 import { ElevenLabsCallRegistrar } from "./elevenlabs.js";
 import { deleteAfterMinutes } from "../providerRecords.js";
-import { TwilioClient, TwilioVoiceCaller } from "./twilio.js";
+import { TwilioClient, TwilioRecordDeleter, TwilioVoiceCaller } from "./twilio.js";
 import { ElevenLabsTaskClient, TwilioCallClient } from "./taskCalls.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { callsAvailable } from "../routes/twilioVoice.js";
@@ -58,7 +58,8 @@ export function providersFrom(config: Config) {
   const twilio = config.twilio
     ? new TwilioClient(config.twilio, config.publicBaseUrl && `${config.publicBaseUrl}/webhooks/twilio/status`)
     : undefined;
-  const cipher = config.memoryEncryptionKey ? TextCipher.fromBase64(config.memoryEncryptionKey) : undefined;
+  // The current key and, during a rotation, the previous one (MEMORY_ENCRYPTION_KEY_VERSION, _PREVIOUS, _PREVIOUS_VERSION).
+  const cipher = cipherFrom(config);
   const push = pushSenderFrom(config.apns);
   const t = config.taskCalls;
   const taskCalls: TaskCallDeps | undefined = t ? {
@@ -153,8 +154,10 @@ export function providersFrom(config: Config) {
   return {
     push,
     sms: twilio,
-    // Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off.
+    // Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off,
+    // and lists the phone agent's conversations for the orphan sweep.
     phoneAgentVoice: config.phoneAgent ? new ElevenLabsTaskClient(config.phoneAgent.apiKey) : undefined,
+    phoneAgentId: config.phoneAgent?.agentId,
     verifier: twilio,
     // Calls (ADR-750): Twilio places Doddy's calls; ElevenLabs connects answered calls to the agent.
     outbound: config.twilio ? new TwilioVoiceCaller(config.twilio) : undefined,
@@ -173,8 +176,12 @@ export function providersFrom(config: Config) {
     deliveries: config.uberDirect
       ? { provider: new UberDirectClient(config.uberDirect), mode: config.uberDirect.mode, limits: config.uberDirect.limits }
       : undefined,
-    // Doddy's message and call records at Twilio are deleted this long after they are final (ADR-753).
+    // Doddy's message and call records at Twilio are deleted this long after they are final (ADR-753): the main
+    // account's with its pair, the task calls' on the task account with that account's own pair.
     deleter: twilio,
+    taskDeleter: config.twilioTaskRecords
+      ? new TwilioRecordDeleter(config.twilioTaskRecords.accountSid, config.twilioTaskRecords.authToken)
+      : undefined,
     deleteAfterMinutes: deleteAfterMinutes(config.twilioRecordDeleteAfterHours),
     // Account, verification, text and call caps and the allowed countries (ADR-702, ADR-704): the web service and the
     // worker read the same settings.

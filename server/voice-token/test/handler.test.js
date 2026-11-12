@@ -184,3 +184,72 @@ test("ElevenLabs without a voice session is refused, even with a leftover OPENAI
   assert.deepEqual(eleven.body, { error: "session_expired" });
   assert.equal(eleven.calls.length, 0);
 });
+
+// Owner, 12 Nov 2026 (decision 2026-11-12-translator-agent): translating talks to its own agent, which has no tools.
+const TRANSLATOR_ID = "agent_8901m787fgppedy9kkvg7memny34";
+
+test("a translator request gets a token for the translator-only agent, by default with no setting on Vercel", async () => {
+  const { response, body, calls, logs } = await run(request({ agent: "translator" }));
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { token: "provider-credential" });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${TRANSLATOR_ID}`);
+  assert.equal(calls[0].init.headers["xi-api-key"], "elevenlabs-server-secret");
+  // The log says which kind, never an id, a token or a credential.
+  assert.equal(logs.at(-1).agent, "translator");
+  const logged = JSON.stringify(logs);
+  for (const secret of ["provider-credential", "doddysession", "elevenlabs-server-secret", USER_ID, TRANSLATOR_ID, "agent_test"]) {
+    assert.ok(!logged.includes(secret), `log leaked ${secret}`);
+  }
+});
+
+test("ELEVENLABS_TRANSLATOR_AGENT_ID overrides the translator agent, and a request without a body still gets the main agent", async () => {
+  const environment = { ...ENV, ELEVENLABS_TRANSLATOR_AGENT_ID: "agent_translator_test" };
+  const translator = await run(request({ agent: "translator", provider: "elevenlabs" }), { environment });
+  assert.equal(translator.calls[0].url, "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=agent_translator_test");
+  for (const body of [null, {}, { agent: "main" }, { provider: "elevenlabs" }]) {
+    const main = await run(request(body), { environment });
+    assert.equal(main.response.status, 200);
+    assert.equal(main.calls[0].url, "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=agent_test");
+    assert.equal(main.logs.at(-1).agent, "main");
+  }
+});
+
+test("an unknown agent is refused before anything is counted or sent", async () => {
+  for (const agent of ["other", "", "Translator", 7, {}, ["translator"], "agent_test", TRANSLATOR_ID]) {
+    const { response, body, calls } = await run(request({ agent }));
+    assert.equal(response.status, 400, JSON.stringify(agent));
+    assert.deepEqual(body, { error: "unknown_agent" });
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("a translator request counts against the same limits as any other, and a missing key still fails closed", async () => {
+  const limited = await run(request({ agent: "translator" }), { limits: { allowed: false, limit: "user_hour" } });
+  assert.equal(limited.response.status, 429);
+  assert.equal(limited.calls.length, 0);
+  const spent = store();
+  await run(request({ agent: "translator" }), { authStore: spent });
+  assert.equal(spent.calls.length, 1);
+  assert.equal(spent.calls[0].userId, USER_ID);
+  const noKey = await run(request({ agent: "translator" }), { environment: { ...ENV, ELEVENLABS_API_KEY: "" } });
+  assert.equal(noKey.response.status, 500);
+  assert.deepEqual(noKey.body, { error: "server_not_configured" });
+  assert.equal(noKey.calls.length, 0);
+});
+
+test("the translator agent works even where the main agent's id is not set, and the main one still fails closed", async () => {
+  const { ELEVENLABS_AGENT_ID, ...withoutMain } = ENV;
+  assert.ok(ELEVENLABS_AGENT_ID);
+  assert.equal((await run(request({ agent: "translator" }), { environment: withoutMain })).response.status, 200);
+  const main = await run(request(null), { environment: withoutMain });
+  assert.equal(main.response.status, 500);
+  assert.equal(main.calls.length, 0);
+});
+
+test("the translator agent also needs a Doddy account session", async () => {
+  const { response, body, calls } = await run(request({ agent: "translator" }, ""), { authenticateSession: async () => null });
+  assert.equal(response.status, 401);
+  assert.deepEqual(body, { error: "session_expired" });
+  assert.equal(calls.length, 0);
+});

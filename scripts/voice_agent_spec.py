@@ -22,6 +22,9 @@ server embeds (server/messaging/src/taskCalls/agentSpec.ts, payload.ts) match th
 `--agent task-call-order` checks the food-order agent (voice-agent/task-call-order/, decision
 2026-11-12-food-by-phone) the same way, against TASK_ORDER_AGENT_SPEC and ORDER_AGENT_VARIABLE_NAMES: it may
 say one server-built confirmation line for the approved order, and never pay, open a link or accept anything else.
+`--agent translator` checks the translator-only agent (voice-agent/translator/, decision 2026-11-12-translator-agent): no
+function tools, only the language_detection system tool, the same languages as the app's agent, and one agent id in step with
+the token server (server/voice-token/src/handler.js) and the app (VoiceConfig.translatorDirectAgentID).
 `--agent task-call-book` checks the booking agent (voice-agent/task-call-book/, decision
 2026-11-12-book-agent) the same way, against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES: it may say
 one server-built confirmation line for the approved booking, and never pay or accept anything else.
@@ -35,7 +38,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "voice-agent"
 AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call", "task-call-book": SPEC / "task-call-book",
-          "task-call-order": SPEC / "task-call-order"}
+          "task-call-order": SPEC / "task-call-order",
+          "translator": SPEC / "translator"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
@@ -161,6 +165,45 @@ def check(tools, session, instructions):
         errors.append("instructions: must tell Doddy to say plainly it is an AI, not a person (DOD-03)")
     if "vague answer" in instructions.lower():
         errors.append("instructions: must not ask for a vague answer about being human or an AI (DOD-03)")
+    return errors
+
+
+TRANSLATOR_AGENT_SOURCES = {
+    "the token server": (ROOT / "server" / "voice-token" / "src" / "handler.js", r'DEFAULT_TRANSLATOR_AGENT_ID = "([^"]+)"'),
+    "the app (VoiceConfig)": (ROOT / "DoddyApp" / "Features" / "Voice" / "VoiceConfig.swift", r'translatorDirectAgentID = "([^"]+)"'),
+}
+
+
+def check_translator(tools, session, instructions):
+    """The translator agent can only talk (owner, 12 Nov 2026: no function while translating), and its one id is the
+    same in the spec, the token server and the app's Debug connection."""
+    errors = []
+    if tools.get("tools"):
+        errors.append(f"tools.json: the translator agent has no function tools, found {[t.get('name') for t in tools['tools']]}")
+    system = [t.get("name") for t in tools.get("system_tools", [])]
+    if system != ["language_detection"]:
+        errors.append(f"tools.json: system_tools must be exactly ['language_detection'] (no end_call, skip_turn, transfer), found {system}")
+    for phrase in ("{{translator_start}}", "you have no tools", "only an interpreter"):
+        if phrase not in instructions.lower():
+            errors.append(f"instructions: must contain {phrase!r}")
+    for banned in ("call stop_translator", "call start_translator", "web_search", "find_places"):
+        if banned in instructions:
+            errors.append(f"instructions: must not mention {banned!r}: the translator agent has no tools")
+    app_languages = json.loads((SPEC / "session.json").read_text(encoding="utf-8")).get("languages", [])
+    if session.get("languages") != app_languages:
+        errors.append("session.json: languages must equal voice-agent/session.json's (the translator offers the same ones)")
+    el = session.get("elevenlabs", {})
+    if el.get("tools") != "none" or el.get("built_in_tools") != ["language_detection"]:
+        errors.append("session.json: elevenlabs.tools must be 'none' and built_in_tools ['language_detection']")
+    agent_id = el.get("agent_id", "")
+    if not re.fullmatch(r"agent_[0-9a-z]{20,}", agent_id):
+        errors.append("session.json: elevenlabs.agent_id must be the translator agent's id")
+    for where, (path, pattern) in TRANSLATOR_AGENT_SOURCES.items():
+        m = re.search(pattern, path.read_text(encoding="utf-8"))
+        if not m:
+            errors.append(f"{where}: the translator agent id is missing ({path.relative_to(ROOT).as_posix()})")
+        elif m.group(1) != agent_id:
+            errors.append(f"{where}: translator agent id {m.group(1)} differs from session.json's {agent_id}")
     return errors
 
 
@@ -426,13 +469,17 @@ def main(argv):
         errors += check_app(tools)
     if agent in ("task-call", "task-call-book", "task-call-order"):
         errors += check_task_call(tools, session, instructions, book=agent == "task-call-book", order=agent == "task-call-order")
+    if agent == "translator":
+        errors += check_translator(tools, session, instructions)
     if errors:
         print(f"FAIL voice agent spec ({where})")
         for e in errors:
             print(f"  - {e}")
         return 1
     cmd = argv[1]
-    if cmd == "check" and agent in ("task-call", "task-call-book", "task-call-order"):
+    if cmd == "check" and agent == "translator":
+        print(f"PASS voice agent spec ({where}): no function tools; system tool language_detection only; same languages as the app's agent; agent id equals the token server's and the app's")
+    elif cmd == "check" and agent in ("task-call", "task-call-book", "task-call-order"):
         print(f"PASS voice agent spec ({where}): no function tools; system tools {', '.join(t['name'] for t in tools['system_tools'])}; matches the server's agentSpec.ts")
     elif cmd == "check":
         phone = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "phone"]

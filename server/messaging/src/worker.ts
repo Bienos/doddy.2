@@ -13,7 +13,9 @@ const config = loadConfig();
 const db = createPool(config.databaseUrl);
 await migrateOrExit(db, log);
 const providers = providersFrom(config);
-const { push, sms, phoneAgentVoice, cipher, news, taskCalls, errands, studio, watches, limits, deleter, deleteAfterMinutes } = providers;
+const {
+  push, sms, phoneAgentVoice, phoneAgentId, cipher, news, taskCalls, errands, studio, watches, limits, deleter, taskDeleter, deleteAfterMinutes,
+} = providers;
 const scheduledCalls = scheduledCallsFrom(config, providers);
 const taskCtx = taskCallContext(db, taskCalls, cipher, config.publicBaseUrl, push, log);
 const errandCtx = errandContext(db, errands, cipher, push, log);
@@ -32,8 +34,8 @@ process.on("SIGTERM", () => { stopping = true; });
 process.on("SIGINT", () => { stopping = true; });
 
 await runWorkerLoop(db, {
-  push, sms, phoneAgentVoice, cipher, news, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, limits, deleter, deleteAfterMinutes,
-  scheduledCalls, radar: radarCtx, catalog: catalogCtx,
+  push, sms, phoneAgentVoice, phoneAgentId, cipher, news, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, limits,
+  deleter, taskDeleter, deleteAfterMinutes, scheduledCalls, radar: radarCtx, catalog: catalogCtx,
 }, () => stopping);
 push?.close();
 await db.end();
