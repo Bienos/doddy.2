@@ -1497,6 +1497,18 @@ final class VoiceSessionController {
         if (try? await conversation.setMuted(false)) != nil { isMuted = false }
     }
 
+    /// Secondary transport handoff on the existing map approval card. The city is explicit
+    /// or chosen by the person; no GPS, credentials, scraping or new agent tool is involved.
+    func confirmPendingJakdojade(city: JourneyCity) async {
+        guard case .map(let id, let trip) = pendingAction,
+              let handoff = trip.jakdojadeHandoff(city: city) else { return }
+        pendingAction = nil
+        let opened = await open(handoff.url)
+        await reply(id, opened
+            ? VoiceToolReply.jakdojadeOpened(trip, requiresOriginSelection: handoff.requiresOriginSelection)
+            : VoiceToolReply.notOpened("Jakdojade didn't open."))
+    }
+
     /// The user tapped the card's confirm button: Save, Add, Start, Open or Run.
     func confirmPendingAction() async {
         guard let action = pendingAction else { return }
