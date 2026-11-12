@@ -3389,5 +3389,18 @@
   "Nothing is sent until you tap “Check the page” on the next card. Some shops don't let Doddy's server read their pages; then Doddy tells you it couldn't read a price.": "Nic nie jest wysyłane, dopóki nie dotkniesz „Sprawdź stronę” na następnej karcie. Niektóre sklepy nie pozwalają serwerowi Doddy'ego czytać swoich stron; wtedy Doddy powie, że nie mógł odczytać ceny.",
   "I'll tell you when the price I read is at or below this. Not sure what to type? Type a price you'd be happy to pay: the next step shows what the page costs now, and you can still say no.": "Powiem Ci, gdy odczytana cena będzie równa tej albo niższa. Nie wiesz, co wpisać? Wpisz cenę, którą chętnie zapłacisz: następny krok pokaże, ile strona kosztuje teraz, i nadal możesz odmówić.",
   "Food": "Jedzenie",
-  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Otwiera aplikację, jeśli ją masz, albo stronę. Doddy nie widzi ani nie składa zamówienia."
+  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Otwiera aplikację, jeśli ją masz, albo stronę. Doddy nie widzi ani nie składa zamówienia.",
+  "Still working on it…": "Wciąż nad tym pracuję…",
+  "Still on it, this one takes a moment…": "Jeszcze chwilka, to trwa dłużej…",
+  "Searching the web…": "Szukam w internecie…",
+  "Checking the news…": "Sprawdzam wiadomości…",
+  "Looking at your screen…": "Patrzę na Twój ekran…",
+  "Looking through your notes…": "Przeglądam Twoje notatki…",
+  "Asking Claude…": "Pytam Claude'a…",
+  "Checking your email…": "Sprawdzam Twoją pocztę…",
+  "Looking for places…": "Szukam miejsc…",
+  "Making the document…": "Przygotowuję dokument…",
+  "Checking the weather…": "Sprawdzam pogodę…",
+  "Looking it up…": "Sprawdzam…",
+  "Checking your calendar…": "Sprawdzam Twój kalendarz…"
 }
