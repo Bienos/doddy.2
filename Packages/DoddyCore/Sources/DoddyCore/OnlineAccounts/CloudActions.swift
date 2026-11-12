@@ -32,13 +32,39 @@ public enum CloudRun {
         } catch {
             guard call.isWrite, lostOnTheWay(error) else { return .failure(error) }
             await pause()
+            let second: Result<RunResult, OnlineAccountsError>
             do {
-                return .success(try await client.run(call, timeZone: timeZone, approvalId: approvalId))
-            } catch let second {
-                // Still lost: Doddy can't tell, so it stays the first answer (unknown).
-                return .failure(lostOnTheWay(second) ? error : second)
+                second = .success(try await client.run(call, timeZone: timeZone, approvalId: approvalId))
+            } catch let again {
+                second = .failure(again)
             }
+            return afterLostAnswer(first: error, second: second)
         }
+    }
+
+    /// Which answer stands once the first answer to a confirmed write was lost and the same
+    /// confirmation was asked again. The first try's fate is unknown, and stays unknown (DOD-08)
+    /// unless the second answer is the first try's own outcome: a result (the server ran it now
+    /// because the first request never arrived, or answered from the first try), or the server's
+    /// record that the first try failed. Anything else on the repeat ("busy", a limit, "needs a
+    /// fresh confirmation", a switched-off tool, the network again) says nothing about the first
+    /// try, so it never turns an unknown into "nothing was done".
+    public static func afterLostAnswer(
+        first: OnlineAccountsError, second: Result<RunResult, OnlineAccountsError>
+    ) -> Result<RunResult, OnlineAccountsError> {
+        switch second {
+        case .success: second
+        case .failure(let error): isFirstTryFailure(error) ? second : .failure(first)
+        }
+    }
+
+    /// The server's answer to a repeat whose first try provably never ran at the provider
+    /// (backend/src/tools/service.ts, `repeatOfStartedApproval`): "needs a fresh confirmation"
+    /// with a `failed` receipt, the first try's own status. A refusal of the repeat itself has a
+    /// `blocked` receipt.
+    static func isFirstTryFailure(_ error: OnlineAccountsError) -> Bool {
+        guard case .server(let code, _, _, let receipt) = error else { return false }
+        return code == "capability_disabled" && receipt?.status == .failed && receipt?.errorCode == "confirmation_required"
     }
 
     /// The request or its answer was lost; the server may have run it.
