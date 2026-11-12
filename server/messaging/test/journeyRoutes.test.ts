@@ -30,8 +30,11 @@ describe("Jakdojade signed-in phone gateway", { skip: dbSkip }, () => {
     assert.equal(account.statusCode, 201);
     const { deviceToken } = account.json() as { deviceToken: string };
     const authorization = { authorization: `Bearer ${deviceToken}` };
-    const post = (path: string, body: unknown, headers = authorization) =>
-      world.app.inject({ method: "POST", url: path, payload: body, headers });
+    const post = async (path: string, body: object, headers = authorization) =>
+      await world.app.inject({
+        method: "POST", url: path, payload: JSON.stringify(body),
+        headers: { ...headers, "content-type": "application/json" },
+      });
     return { ...world, authorization, post, upstreamCalls: () => upstreamCalls };
   }
 
