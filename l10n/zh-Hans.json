@@ -663,7 +663,6 @@
   "Private note": "私密笔记",
   "Put back as it was. Checked.": "已恢复原样。已核对。",
   "Putting it back…": "正在恢复…",
-  "Quick picks": "快速选择",
   "Quit Doddy": "退出 Doddy",
   "Read %lld lines from the photo. Check them before Create.": "从照片中读取了 %lld 行。创建前请检查。",
   "Read %lld lines from the photo; %lld were too long or past the limit. Check them before Create.": "从照片中读取了 %lld 行；有 %lld 行太长或超出上限。创建前请检查。",
@@ -1118,7 +1117,6 @@
   "You asked: \\u{201C}I'm at Mom's for lunch on Saturday. Remind me to bring the spare key, remember where it is, and start a pasta timer.\\u{201D}": "你说：“周六我在妈妈家吃午饭。提醒我带上备用钥匙，记住它在哪里，再启动一个煮意面的计时器。”",
   "You can undo for a few seconds afterwards.": "之后几秒钟内可以撤销。",
   "You check it and send it there yourself. Doddy never sends it.": "由你检查并自己发送。Doddy 绝不会代为发送。",
-  "You choose each saved memory. See the original, edit it or remove it.": "每条保存的记忆都由你决定。查看原文、编辑或移除。",
   "You did these in this order on three different days. If you save it, you can ask Doddy for it by name. Every step still asks you first, every time.": "你在三个不同的日子按这个顺序做了这些事。保存后，你可以按名称向 Doddy 请求。每一步每次都仍会先问你。",
   "You have %lld templates, the most Doddy keeps. Remove one under New list first.": "你已有 %lld 个模板，这是 Doddy 保留的上限。请先在“新建清单”中移除一个。",
   "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": "你回复了 STOP，所以运营商已屏蔽短信。向 Doddy 的号码发送 START 可重新允许。",
@@ -1209,5 +1207,6 @@
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "这段对话已从这部 iPhone 中删除，但 Doddy 的服务器尚未确认其 Doddy Web 副本已删除。在确认之前，它可能仍会显示在网页上。",
   "Food": "美食",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "如果你装了应用就打开应用，否则打开网站。Doddy 不会查看或下单。",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。"
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。",
+  "You choose each saved memory. See the original, edit it or remove it.": "每条保存的记忆都由你决定。查看原文、编辑或移除。"
 }

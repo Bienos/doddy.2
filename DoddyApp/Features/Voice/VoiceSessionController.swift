@@ -1044,7 +1044,9 @@ final class VoiceSessionController {
             var message = NSLocalizedString("Couldn't connect to Doddy's voice. Check your internet connection and try again.", comment: "")
             // An agent that doesn't allow the voice overrides refuses the conversation.
             if config.ttsOverrides != nil || config.agentOverrides != nil {
-                message += " " + NSLocalizedString("If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality.", comment: "")
+                // The choice of voice and its "Use Doddy's own voice" button are gone (decision 2026-11-12-one-voice): what is
+                // still sent is the speed, the expressiveness and the language.
+                message += " " + NSLocalizedString("If it keeps failing, set Speed to Normal, Expressiveness to Natural and Starts in to Automatic in Settings → Voice and personality.", comment: "")
             }
             #if DEBUG
             // The SDK's own words, in English, for the developer; Release builds keep them in the log only.

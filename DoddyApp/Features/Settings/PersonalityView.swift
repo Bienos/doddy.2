@@ -1,40 +1,30 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → Doddy's voice and personality. How he talks in his one voice (speed, expressiveness; decision
-/// 2026-11-12-one-voice removed the choice of voice), four style dials and three quick picks. They apply from the
-/// next voice conversation; the rules stay fixed.
-struct PersonalityView: View {
+// Settings › Voice and personality is one page (12 Nov 2026, decision `2026-11-12-settings-one-voice-page`): before,
+// Settings › Voice opened a second page for these, and both were called "Voice". The page is `VoiceSettingsView`; these
+// two views are the parts of it that are about how Doddy sounds and comes across. They apply from the next voice
+// conversation; the rules stay fixed.
+
+/// How he sounds in his one voice (speed and expressiveness; the voice itself is not a choice, decision
+/// `2026-11-12-one-voice`), the language he starts in, and what he calls you.
+struct VoiceStyleSections: View {
     @AppStorage(PreferenceKey.voiceSpeed) private var speedRaw = VoiceStyle.doddyDefault.speed.rawValue
     @AppStorage(PreferenceKey.voiceExpressiveness) private var expressivenessRaw = VoiceStyle.doddyDefault.expressiveness.rawValue
-    @AppStorage(PreferenceKey.personalityHumour) private var humourRaw = PersonalitySettings.doddyDefault.humour.rawValue
-    @AppStorage(PreferenceKey.personalityLength) private var lengthRaw = PersonalitySettings.doddyDefault.length.rawValue
-    @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
-    @AppStorage(PreferenceKey.personalityMood) private var moodRaw = PersonalitySettings.doddyDefault.mood.rawValue
-
     @AppStorage(PreferenceKey.voiceLanguage) private var languageRaw = ConversationLanguage.default.rawValue
     @AppStorage(PreferenceKey.nickname) private var nickname = ""
 
-    private var current: PersonalitySettings {
-        PersonalitySettings(humour: humourRaw, length: lengthRaw, formality: formalityRaw, mood: moodRaw)
-    }
-
     var body: some View {
-        Form {
-            Section {
-                Text("Doddy is a practical, curious mate who spots small hassles, answers first and admits when he got something wrong. Pick how he comes across.")
-                    .foregroundStyle(Theme.secondaryText)
-            }
-
+        Group {
             Section {
                 Picker("Speed", selection: $speedRaw) {
-                    ForEach(SpeakingSpeed.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
+                    ForEach(SpeakingSpeed.allCases, id: \.self) { Text(PersonalitySections.label($0)).tag($0.rawValue) }
                 }
                 Picker("Expressiveness", selection: $expressivenessRaw) {
-                    ForEach(Expressiveness.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
+                    ForEach(Expressiveness.allCases, id: \.self) { Text(PersonalitySections.label($0)).tag($0.rawValue) }
                 }
                 Picker("Starts in", selection: $languageRaw) {
-                    ForEach(ConversationLanguage.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
+                    ForEach(ConversationLanguage.allCases, id: \.self) { Text(PersonalitySections.label($0)).tag($0.rawValue) }
                 }
                 .accessibilityIdentifier("settings.voice.language")
                 Text("Doddy follows you if you switch language while you talk.")
@@ -61,11 +51,31 @@ struct PersonalityView: View {
             } footer: {
                 Text("Optional. When set, it's sent to ElevenLabs with each voice conversation so Doddy can use it now and then. Leave it empty to send nothing.")
             }
+        }
+    }
+}
 
-            Section("Quick picks") {
+/// How he comes across: three quick picks, four style dials and what never changes.
+struct PersonalitySections: View {
+    @AppStorage(PreferenceKey.personalityHumour) private var humourRaw = PersonalitySettings.doddyDefault.humour.rawValue
+    @AppStorage(PreferenceKey.personalityLength) private var lengthRaw = PersonalitySettings.doddyDefault.length.rawValue
+    @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
+    @AppStorage(PreferenceKey.personalityMood) private var moodRaw = PersonalitySettings.doddyDefault.mood.rawValue
+
+    private var current: PersonalitySettings {
+        PersonalitySettings(humour: humourRaw, length: lengthRaw, formality: formalityRaw, mood: moodRaw)
+    }
+
+    var body: some View {
+        Group {
+            Section {
                 presetButton("Doddy's default", detail: "Subtle humour, brief, casual, grounded", .doddyDefault)
                 presetButton("Focused", detail: "No jokes, brief, neutral, calm", .focused)
                 presetButton("Playful", detail: "Playful, balanced length, casual, lively", .playful)
+            } header: {
+                Text("How he comes across")
+            } footer: {
+                Text("Doddy is a practical, curious mate who spots small hassles, answers first and admits when he got something wrong. Pick how he comes across.")
             }
 
             Section {
@@ -94,10 +104,6 @@ struct PersonalityView: View {
                     .foregroundStyle(Theme.secondaryText)
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Theme.canvas)
-        .navigationTitle("Voice and personality")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func presetButton(_ title: String, detail: String, _ preset: PersonalitySettings) -> some View {
@@ -182,24 +188,5 @@ struct PersonalityView: View {
         case .grounded: NSLocalizedString("Grounded", comment: "")
         case .lively: NSLocalizedString("Lively", comment: "")
         }
-    }
-}
-
-/// The Settings row that opens `PersonalityView`, showing the current style.
-struct PersonalityLinkRow: View {
-    @AppStorage(PreferenceKey.personalityHumour) private var humourRaw = PersonalitySettings.doddyDefault.humour.rawValue
-    @AppStorage(PreferenceKey.personalityLength) private var lengthRaw = PersonalitySettings.doddyDefault.length.rawValue
-    @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
-    @AppStorage(PreferenceKey.personalityMood) private var moodRaw = PersonalitySettings.doddyDefault.mood.rawValue
-
-    var body: some View {
-        NavigationLink {
-            PersonalityView()
-        } label: {
-            StatusRow(
-                title: "Voice and personality",
-                value: PersonalityView.summary(PersonalitySettings(humour: humourRaw, length: lengthRaw, formality: formalityRaw, mood: moodRaw)))
-        }
-        .accessibilityIdentifier("settings.personality")
     }
 }

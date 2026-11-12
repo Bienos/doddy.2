@@ -1,7 +1,9 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings (ADR-580, shortened by ADR-633 and again on 5 Nov 2026): four short groups and nine rows. Each row opens a page;
+/// Settings (ADR-580, shortened by ADR-633 and again on 5 Nov 2026; Phone calls came out of Notifications and the voice and
+/// personality pages became one on 12 Nov 2026, decision `2026-11-12-settings-one-voice-page`): four short groups and ten
+/// rows. Each row opens a page;
 /// the controls that were rows here (the island, Siri, the connections, the notifications, the memory
 /// pages) are on those pages with the same preference keys and accessibility identifiers, so nothing a
 /// user set changes. Explanations live on the screen a row opens, in Help, in "What leaves this
@@ -9,7 +11,13 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
+    @AppStorage(PreferenceKey.personalityHumour) private var humourRaw = PersonalitySettings.doddyDefault.humour.rawValue
+    @AppStorage(PreferenceKey.personalityLength) private var lengthRaw = PersonalitySettings.doddyDefault.length.rawValue
+    @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
+    @AppStorage(PreferenceKey.personalityMood) private var moodRaw = PersonalitySettings.doddyDefault.mood.rawValue
     @State private var connections = ConnectionController()
+    /// A row whose feature the build hides is left out (decision 2026-11-07-release-scope).
+    private var scope: ReleaseScope { ReleaseScopeStore.current }
     /// Opens notes, lists or search (ADR-633). They are their own screen, reached from Doddy's memory.
     var openMemories: (MemoryOpening) -> Void = { _ in }
     /// A new value empties the page stack. Set when notes, lists or search open from Doddy's memory, so
@@ -60,7 +68,8 @@ struct SettingsView: View {
                 } else {
                     UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 110)
                 }
-                Text("You choose each saved memory. See the original, edit it or remove it.")
+                // What this page is for (12 Nov 2026). It said "You choose each saved memory…", which belongs on the memory page.
+                Text("Set how Doddy sounds, what he remembers and what he can use.")
                     .font(.subheadline)
             }
         }
@@ -73,7 +82,7 @@ struct SettingsView: View {
             NavigationLink {
                 VoiceSettingsView()
             } label: {
-                SettingsRow(icon: "waveform", title: NSLocalizedString("Voice", comment: ""))
+                SettingsRow(icon: "waveform", title: NSLocalizedString("Voice and personality", comment: ""), value: personalitySummary)
             }
             .accessibilityIdentifier("settings.voice")
             NavigationLink {
@@ -100,6 +109,16 @@ struct SettingsView: View {
             .accessibilityIdentifier("settings.connectionsHub")
             // Its page uses its own controller; re-read when coming back from it.
             .onAppear { Task { await connections.refresh() } }
+            // Its own row since 12 Nov 2026: it was the last row of Notifications, and verifying the number was one more
+            // page down from there.
+            if scope.shows(.phoneCalls) {
+                NavigationLink {
+                    CallsSettingsView()
+                } label: {
+                    SettingsRow(icon: "phone", title: NSLocalizedString("Phone calls", comment: ""))
+                }
+                .accessibilityIdentifier("settings.calls")
+            }
             NavigationLink {
                 NotificationsSettingsView()
             } label: {
@@ -148,6 +167,11 @@ struct SettingsView: View {
     }
 
     // MARK: Values
+
+    /// "Default", "Focused", "Playful" or "Custom": what the personality dials add up to.
+    private var personalitySummary: String {
+        PersonalitySections.summary(PersonalitySettings(humour: humourRaw, length: lengthRaw, formality: formalityRaw, mood: moodRaw))
+    }
 
     private var connectionSummary: String {
         if pauseAllConnections { return NSLocalizedString("Paused", comment: "") }

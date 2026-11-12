@@ -33089,6 +33089,17 @@
         }
       }
     },
+    "How he comes across": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak się zachowuje"
+          }
+        }
+      }
+    },
     "How it felt": {
       "extractionState": "manual",
       "localizations": {
@@ -33648,13 +33659,13 @@
         }
       }
     },
-    "If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality.": {
+    "If it keeps failing, set Speed to Normal, Expressiveness to Natural and Starts in to Automatic in Settings → Voice and personality.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jeśli dalej się nie udaje, wybierz „Użyj własnego głosu Doddy’ego” i język „Automatycznie” w Ustawieniach → Głos i osobowość."
+            "value": "Jeśli dalej się nie udaje, ustaw Tempo na Normalnie, Ekspresję na Naturalnie, a „Zaczyna w” na Automatycznie w Ustawienia → Głos i osobowość."
           }
         }
       }
@@ -56682,6 +56693,17 @@
         }
       }
     },
+    "Opening Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwieranie Doddy’ego"
+          }
+        }
+      }
+    },
     "Opening the backup was stopped. Nothing was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -61314,65 +61336,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pytanie"
-          }
-        }
-      }
-    },
-    "Quick picks": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schnellauswahl"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opciones rápidas"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choix rapides"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brzi odabir"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scelte rapide"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クイック選択"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Szybki wybór"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escolhas rápidas"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "快速选择"
           }
         }
       }
@@ -71728,6 +71691,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已为 %lld 人设置。已核对。"
+          }
+        }
+      }
+    },
+    "Set how Doddy sounds, what he remembers and what he can use.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustaw, jak Doddy brzmi, co pamięta i z czego może korzystać."
           }
         }
       }

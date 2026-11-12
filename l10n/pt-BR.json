@@ -663,7 +663,6 @@
   "Private note": "Nota privada",
   "Put back as it was. Checked.": "Voltou a ser como era. Verificado.",
   "Putting it back…": "Restaurando…",
-  "Quick picks": "Escolhas rápidas",
   "Quit Doddy": "Encerrar o Doddy",
   "Read %lld lines from the photo. Check them before Create.": "%lld linhas lidas da foto. Confira antes de Criar.",
   "Read %lld lines from the photo; %lld were too long or past the limit. Check them before Create.": "%lld linhas lidas da foto; %lld eram longas demais ou passaram do limite. Confira antes de Criar.",
@@ -1118,7 +1117,6 @@
   "You asked: \\u{201C}I'm at Mom's for lunch on Saturday. Remind me to bring the spare key, remember where it is, and start a pasta timer.\\u{201D}": "Você pediu: “Sábado eu almoço na casa da minha mãe. Me lembre de levar a chave reserva, lembre onde ela está e comece um timer para o macarrão.”",
   "You can undo for a few seconds afterwards.": "Você pode desfazer por alguns segundos depois.",
   "You check it and send it there yourself. Doddy never sends it.": "Você confere e envia para lá você mesmo. O Doddy nunca envia.",
-  "You choose each saved memory. See the original, edit it or remove it.": "Você escolhe cada memória salva. Veja o original, edite ou remova.",
   "You did these in this order on three different days. If you save it, you can ask Doddy for it by name. Every step still asks you first, every time.": "Você fez isto nesta ordem em três dias diferentes. Se salvar, pode pedir ao Doddy pelo nome. Cada passo ainda pergunta antes, toda vez.",
   "You have %lld templates, the most Doddy keeps. Remove one under New list first.": "Você tem %lld modelos, o máximo que o Doddy guarda. Remova um em Nova lista primeiro.",
   "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": "Você respondeu STOP, então os SMS estão bloqueados pela operadora. Envie START por SMS para o número do Doddy para permitir de novo.",
@@ -1209,5 +1207,6 @@
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "A conversa saiu deste iPhone, mas o servidor do Doddy não confirmou que a cópia dela para o Doddy Web foi apagada. Ela ainda pode aparecer na web até que seja.",
   "Food": "Comida",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Abre o app, se você tiver, ou o site. O Doddy não vê nem faz o pedido.",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vale a partir da sua próxima conversa por voz. “Começa em” define o idioma em que o Doddy cumprimenta você; em Automático, ele começa em inglês. De qualquer forma, ele acompanha o idioma europeu que você falar e troca quando você troca."
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vale a partir da sua próxima conversa por voz. “Começa em” define o idioma em que o Doddy cumprimenta você; em Automático, ele começa em inglês. De qualquer forma, ele acompanha o idioma europeu que você falar e troca quando você troca.",
+  "You choose each saved memory. See the original, edit it or remove it.": "Você escolhe cada memória salva. Veja o original, edite ou remova."
 }

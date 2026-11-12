@@ -4,7 +4,9 @@ import SwiftUI
 /// Settings › About › Your Doddy account (decision 2026-11-08-required-account): who is signed in, signing
 /// out, and deleting the account. Since 11 Nov 2026 it is one page down, off Settings' first page (owner: "schowaj
 /// bardziej to usunięcie konta i to, że jesteś zalogowany"); deleting stays inside the app, as App Review requires
-/// (5.1.1(v)). Shown only in a build with Doddy accounts set up; a build without them shows nothing new.
+/// (5.1.1(v)). Shown only in a build with Doddy accounts set up. A build without them shows the voice account's own
+/// section here instead (12 Nov 2026, decision `2026-11-12-settings-one-voice-page`: both accounts are in this one
+/// place, not one on Settings › About and the other on Settings › Voice).
 struct DoddyAccountSettingsSection: View {
     @State private var account = DoddyAccountModel.shared
 
@@ -18,6 +20,8 @@ struct DoddyAccountSettingsSection: View {
                 }
                 .accessibilityIdentifier("settings.doddyAccount")
             }
+        } else {
+            VoiceAccountSection()
         }
     }
 
@@ -60,6 +64,8 @@ struct DoddyAccountView: View {
                     .disabled(deleting || !account.isSignedIn)
                     .accessibilityIdentifier("settings.doddyAccount.signOut")
             }
+            // The older voice sign-in and how voice is connected, with the account (it was on Settings › Voice).
+            VoiceAccountSection()
             Section {
                 if deleting {
                     ProgressView().accessibilityIdentifier("settings.doddyAccount.deleting")

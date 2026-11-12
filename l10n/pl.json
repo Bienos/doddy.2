@@ -894,7 +894,6 @@
   "Put Talk to Doddy one tap away, even from the Lock Screen.": "Miej „Porozmawiaj z Doddym” pod jednym dotknięciem, nawet z ekranu blokady.",
   "Put back as it was. Checked.": "Przywrócono do poprzedniego stanu. Sprawdzone.",
   "Putting it back…": "Przywracam…",
-  "Quick picks": "Szybki wybór",
   "Quit Doddy": "Zakończ Doddy",
   "Quoted word for word from the transcript": "Cytat dosłownie z zapisu rozmowy",
   "Read %lld lines from the photo. Check them before Create.": "Odczytano ze zdjęcia pozycje: %lld. Sprawdź je przed utworzeniem listy.",
@@ -1500,7 +1499,6 @@
   "You can undo for a few seconds afterwards.": "Przez kilka sekund możesz to cofnąć.",
   "You check it and send it there yourself. Doddy never sends it.": "Sprawdzasz i wysyłasz to sam. Doddy nigdy tego nie wysyła.",
   "You choose each one in iPhone Settings or Control Center. Doddy can't change them and can't see what they are set to.": "Każdy wybierasz w Ustawieniach iPhone’a lub Centrum sterowania. Doddy nie może ich zmienić i nie widzi, co jest ustawione.",
-  "You choose each saved memory. See the original, edit it or remove it.": "Każde zapisane wspomnienie wybierasz Ty. Zobacz oryginał, zmień go lub usuń.",
   "You did these in this order on three different days. If you save it, you can ask Doddy for it by name. Every step still asks you first, every time.": "Te rzeczy zrobiono w tej kolejności w trzy różne dni. Po zapisaniu możesz poprosić o nie Doddy’ego po nazwie. Każdy krok nadal pyta Cię o zgodę, za każdym razem.",
   "You have %lld templates, the most Doddy keeps. Remove one under New list first.": "Masz %lld szablonów, tyle ile Doddy przechowuje. Najpierw usuń jeden w Nowa lista.",
   "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": "Odpowiedziałeś STOP, więc operator blokuje SMS-y. Wyślij START na numer Doddy’ego, aby znów je dopuścić.",
@@ -1513,7 +1511,6 @@
   "You're offline": "Jesteś offline",
   "You're offline. Doddy's voice needs the internet.": "Jesteś offline. Głos Doddy’ego potrzebuje internetu.",
   "Couldn't connect to Doddy's voice. Check your internet connection and try again.": "Nie udało się połączyć z głosem Doddy’ego. Sprawdź połączenie z internetem i spróbuj ponownie.",
-  "If it keeps failing, choose \\\"Use Doddy's own voice\\\" and language \\\"Automatic\\\" in Settings → Voice and personality.": "Jeśli dalej się nie udaje, wybierz „Użyj własnego głosu Doddy’ego” i język „Automatycznie” w Ustawieniach → Głos i osobowość.",
   "Doddy's voice now needs you to be signed in. Close this screen and tap Talk to Doddy to sign in.": "Głos Doddy’ego wymaga teraz zalogowania. Zamknij ten ekran i stuknij „Porozmawiaj z Doddym”, żeby się zalogować.",
   "You're on the call": "Teraz Ty rozmawiasz",
   "You're on the call now; hang up on your phone to end it.": "Teraz Ty prowadzisz rozmowę; rozłącz się w telefonie, aby ją zakończyć.",
@@ -3366,5 +3363,10 @@
   "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result.": "Wszystko to trafia na serwer Doddy'ego; słowa, notatka i to, co najważniejsze, trafiają też do Anthropic, którego Claude robi rozeznanie. Hasła wyszukiwania, które Claude z nich układa, trafiają do Google Shopping przez Serper, a serwer Doddy'ego otwiera strony sklepów. Serwer usuwa swoją kopię, gdy ten iPhone zapisze wynik.",
   "Food": "Jedzenie",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Otwiera aplikację, jeśli ją masz, albo stronę. Doddy nie widzi ani nie składa zamówienia.",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Działa od następnej rozmowy głosowej. „Zaczyna w” ustawia język, w którym Doddy Cię wita; przy ustawieniu Automatycznie zaczyna po angielsku. Tak czy inaczej podąża za europejskim językiem, którym mówisz, i zmienia go razem z Tobą."
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Działa od następnej rozmowy głosowej. „Zaczyna w” ustawia język, w którym Doddy Cię wita; przy ustawieniu Automatycznie zaczyna po angielsku. Tak czy inaczej podąża za europejskim językiem, którym mówisz, i zmienia go razem z Tobą.",
+  "If it keeps failing, set Speed to Normal, Expressiveness to Natural and Starts in to Automatic in Settings → Voice and personality.": "Jeśli dalej się nie udaje, ustaw Tempo na Normalnie, Ekspresję na Naturalnie, a „Zaczyna w” na Automatycznie w Ustawienia → Głos i osobowość.",
+  "Set how Doddy sounds, what he remembers and what he can use.": "Ustaw, jak Doddy brzmi, co pamięta i z czego może korzystać.",
+  "How he comes across": "Jak się zachowuje",
+  "Opening Doddy": "Otwieranie Doddy’ego",
+  "You choose each saved memory. See the original, edit it or remove it.": "Każde zapisane wspomnienie wybierasz Ty. Zobacz oryginał, zmień go lub usuń."
 }
