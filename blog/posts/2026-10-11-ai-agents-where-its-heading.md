@@ -17,7 +17,7 @@ tldr:
   - The research says they're getting better fast. The length of task an agent can finish has been doubling roughly every seven months.
   - Big money is lining up behind them. McKinsey thinks agents could steer 3 to 5 trillion dollars of global shopping by 2030.
   - The catch is trust. Only 9% of people would let an agent buy something without checking first, and Gartner expects over 40% of agent projects to be cancelled by 2027.
-  - We think the agents that win will be small, personal and honest, and that's the kind of agent Doddy is built to be.
+  - We think the agents that win will be small, personal and honest, and that's what Doddy is built to be.
 evidence:
   - DECISIONS.md (ADR-204, 229, 247, 253, 254, 258, 268, 270)
   - docs/implementation/ACTIVITY_UNDO_STATUS.md
@@ -74,7 +74,7 @@ Put it all together and the picture is pretty clear. Agents are coming either wa
 
 ## Where Doddy fits
 
-Doddy is a personal AI agent for your iPhone, a hand-drawn mate you can talk to. We started small on purpose, with your notes, your calendar, your reminders and your lists, and we built the trust part in from day one.
+Doddy is a personal companion for your iPhone that gets things done, a hand-drawn mate you can talk to. We started small on purpose, with your notes, your calendar, your reminders and your lists, and we built the trust part in from day one.
 
 ![Four steps in Doddy's notebook style. You ask, "Add the dentist on Friday at 3". Doddy shows an Add to your calendar card and nothing changes yet. You tap Add. Doddy checks the event saved and only then says Added. Underneath, changed your mind? Undo it from What Doddy did.](/assets/blog/agents-flow.webp "Every action Doddy takes goes through the same four steps.")
 
@@ -104,9 +104,9 @@ If that sounds like the kind of AI you'd actually want in your pocket, [join ear
 
 It's AI that can take actions for you, like adding an event, setting a reminder or placing an order, instead of only answering questions.
 
-### Is Doddy an AI agent?
+### Where does Doddy fit in?
 
-Yes, a small and personal one. It works with your notes, lists, calendar and reminders on your iPhone, and it asks before it changes anything.
+Think of Doddy as a small, personal companion that can actually do things. It works with your notes, lists, calendar and reminders on your iPhone, and it asks before it changes anything.
 
 ### Will AI agents replace apps?
 
