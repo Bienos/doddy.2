@@ -5883,6 +5883,17 @@
         }
       }
     },
+    "Airbnb": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Airbnb"
+          }
+        }
+      }
+    },
     "Alarms": {
       "extractionState": "manual",
       "localizations": {
@@ -10010,6 +10021,17 @@
         }
       }
     },
+    "Book on Kiwi.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarezerwuj na Kiwi.com"
+          }
+        }
+      }
+    },
     "Booking your call…": {
       "extractionState": "manual",
       "localizations": {
@@ -10017,6 +10039,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Umawiam Twój telefon…"
+          }
+        }
+      }
+    },
+    "Bookings": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezerwacje"
           }
         }
       }
@@ -11364,6 +11397,17 @@
         }
       }
     },
+    "Cancelled or failed, as the seller's email says. Open the email to check.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anulowane albo nieudane, tak jak pisze sprzedawca w mailu. Otwórz maila, żeby sprawdzić."
+          }
+        }
+      }
+    },
     "Cancelled. Doddy won't call.": {
       "extractionState": "manual",
       "localizations": {
@@ -12138,6 +12182,17 @@
         }
       }
     },
+    "Changed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmieniona"
+          }
+        }
+      }
+    },
     "Changed “%@”: now %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -12274,6 +12329,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najtaniej w tym tygodniu"
+          }
+        }
+      }
+    },
+    "Check Gmail again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź Gmaila jeszcze raz"
           }
         }
       }
@@ -12605,6 +12671,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdzono %@. Ceny i dostępność mogą się zmienić."
+          }
+        }
+      }
+    },
+    "Checked %@. Saved on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Checked %@. Saved on this iPad only."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Checked %@. Saved on this iPhone only."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sprawdzone %@. Zapisane tylko na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sprawdzone %@. Zapisane tylko na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -14735,6 +14842,17 @@
         }
       }
     },
+    "Connections are paused, so nothing was sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc nic nie wysłano."
+          }
+        }
+      }
+    },
     "Connections are paused, so parcels aren't checked.": {
       "extractionState": "manual",
       "localizations": {
@@ -16171,6 +16289,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法连接到 Doddy 消息服务器。请检查网络连接后重试。"
+          }
+        }
+      }
+    },
+    "Couldn't read %lld of them; they are left out, not guessed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieodczytane: %lld. Są pominięte, nie zgadywane."
           }
         }
       }
@@ -19299,6 +19428,17 @@
         }
       }
     },
+    "Didn't go through": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie doszła do skutku"
+          }
+        }
+      }
+    },
     "Directions in Maps?": {
       "extractionState": "manual",
       "localizations": {
@@ -22059,6 +22199,47 @@
         }
       }
     },
+    "Doddy found bookings but couldn't save them on this iPhone. Nothing was saved; try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy found bookings but couldn't save them on this iPad. Nothing was saved; try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy found bookings but couldn't save them on this iPhone. Nothing was saved; try again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy znalazł rezerwacje, ale nie udało się ich zapisać na tym iPadzie. Nic nie zostało zapisane; spróbuj jeszcze raz."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy znalazł rezerwacje, ale nie udało się ich zapisać na tym iPhonie. Nic nie zostało zapisane; spróbuj jeszcze raz."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy has called this number enough for now. Nothing was dialled. Try again later.": {
       "extractionState": "manual",
       "localizations": {
@@ -22561,6 +22742,17 @@
         }
       }
     },
+    "Doddy is on it. The result will wait in Tasks and in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy się tym zajmuje. Wynik będzie czekał w Sprawach i w Wiadomościach."
+          }
+        }
+      }
+    },
     "Doddy is on the call. You get the answer when it ends.": {
       "extractionState": "manual",
       "localizations": {
@@ -23047,6 +23239,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 最后听到你说"
+          }
+        }
+      }
+    },
+    "Doddy looks for flight, stay, holiday and train bookings, then lists what each trip needs: online check-in, documents, free cancellation and what's paid there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka rezerwacji lotów, noclegów, wycieczek i pociągów, a potem wypisuje, czego wymaga każdy wyjazd: odprawy online, dokumentów, darmowego anulowania i tego, co płaci się na miejscu."
           }
         }
       }
@@ -24099,6 +24302,17 @@
         }
       }
     },
+    "Doddy researches this in the background and the result waits in Tasks and in Messages. Nothing is booked. The words go to Doddy's server and to Anthropic.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy robi to w tle, a wynik czeka w Sprawach i w Wiadomościach. Nic nie jest rezerwowane. Słowa trafiają na serwer Doddy'ego i do Anthropic."
+          }
+        }
+      }
+    },
     "Doddy rings your phone. Answer and press 1 to join the call.": {
       "extractionState": "manual",
       "localizations": {
@@ -24253,6 +24467,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy mówi:"
+          }
+        }
+      }
+    },
+    "Doddy searches Gmail for booking emails from the last 400 days (airlines, Booking.com, Airbnb, travel agents, trains) and reads up to 25 of them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka w Gmailu maili z rezerwacjami z ostatnich 400 dni (linie lotnicze, Booking.com, Airbnb, biura podróży, pociągi) i czyta do 25 z nich."
           }
         }
       }
@@ -29865,6 +30090,17 @@
         }
       }
     },
+    "Find my trips in Gmail": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź moje wyjazdy w Gmailu"
+          }
+        }
+      }
+    },
     "Find shops near me": {
       "extractionState": "manual",
       "localizations": {
@@ -30974,6 +31210,17 @@
         }
       }
     },
+    "For example: “Lisbon around 12 February, 4 nights, the two of us, no more than 2000 zł”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: „Lizbona koło 12 lutego, 4 noce, we dwoje, nie więcej niż 2000 zł”."
+          }
+        }
+      }
+    },
     "For reminders at a place, when you tap “Use where I am”. Never in the background.": {
       "extractionState": "manual",
       "localizations": {
@@ -31136,6 +31383,17 @@
         }
       }
     },
+    "Forget my trips": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapomnij moje wyjazdy"
+          }
+        }
+      }
+    },
     "Forget remembered conversations": {
       "extractionState": "manual",
       "localizations": {
@@ -31191,6 +31449,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "忘记已记住的对话"
+          }
+        }
+      }
+    },
+    "Forget the trips saved on this iPhone?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forget the trips saved on this iPad?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forget the trips saved on this iPhone?"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapomnieć wyjazdy zapisane na tym iPadzie?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapomnieć wyjazdy zapisane na tym iPhonie?"
+                }
+              }
+            }
           }
         }
       }
@@ -31667,6 +31966,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Z notatki"
+          }
+        }
+      }
+    },
+    "From an email by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z maila od %@"
           }
         }
       }
@@ -32436,6 +32746,28 @@
         }
       }
     },
+    "Have Doddy look at stays": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niech Doddy sprawdzi noclegi"
+          }
+        }
+      }
+    },
+    "Have Doddy look at stays?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niech Doddy sprawdzi noclegi?"
+          }
+        }
+      }
+    },
     "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.": {
       "extractionState": "manual",
       "localizations": {
@@ -32952,6 +33284,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przytrzymaj przycisk, żeby mówić"
+          }
+        }
+      }
+    },
+    "Holidays on wakacje.pl": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycieczki na wakacje.pl"
           }
         }
       }
@@ -33651,6 +33994,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dam Ci znać, gdy odczytana cena będzie równa tej albo niższa. Podpowiedź: 5 procent poniżej ceny, w dół do pełnych złotych. Możesz wpisać inną."
+          }
+        }
+      }
+    },
+    "I'm assuming": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakładam"
           }
         }
       }
@@ -38552,6 +38906,17 @@
         }
       }
     },
+    "Kiwi.com found no flights for these days. Try other days or a nearby airport.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi.com nie znalazł lotów na te dni. Spróbuj innych dni albo pobliskiego lotniska."
+          }
+        }
+      }
+    },
     "Knee push-up": {
       "extractionState": "manual",
       "localizations": {
@@ -39998,6 +40363,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Linki otwierają się poza Doddym; nic z aplikacji nie jest udostępniane."
+          }
+        }
+      }
+    },
+    "Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, and nothing is kept on Doddy's server. Your trips are saved on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, and nothing is kept on Doddy's server. Your trips are saved on this iPad only."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, and nothing is kept on Doddy's server. Your trips are saved on this iPhone only."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Najpierw usuwane są linki, PIN-y i numery kart. Reszta każdego maila trafia do Anthropic do odczytania, a na serwerze Doddy'ego nic nie zostaje. Twoje wyjazdy zapisują się tylko na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Najpierw usuwane są linki, PIN-y i numery kart. Reszta każdego maila trafia do Anthropic do odczytania, a na serwerze Doddy'ego nic nie zostaje. Twoje wyjazdy zapisują się tylko na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -41738,6 +42144,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在查找"
+          }
+        }
+      }
+    },
+    "Looking for flights on Kiwi.com…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam lotów na Kiwi.com…"
           }
         }
       }
@@ -48530,6 +48947,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "不是来自你的笔记。这是一个一般性回答。"
+          }
+        }
+      }
+    },
+    "Not going ahead": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie dojdą do skutku"
           }
         }
       }
@@ -57650,6 +58078,17 @@
         }
       }
     },
+    "Over your budget": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponad Twój budżet"
+          }
+        }
+      }
+    },
     "Overdue": {
       "extractionState": "manual",
       "localizations": {
@@ -60103,6 +60542,17 @@
         }
       }
     },
+    "Plan a trip": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplanuj wyjazd"
+          }
+        }
+      }
+    },
     "Plan at least %lld days a week for this goal.": {
       "extractionState": "manual",
       "localizations": {
@@ -60851,6 +61301,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz."
+          }
+        }
+      }
+    },
+    "Prices and times are Kiwi.com's, read %@. They can change before you book; the price shown is for the whole party with the bags counted above.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny i godziny są z Kiwi.com, odczytane o %@. Mogą się zmienić przed rezerwacją; cena dotyczy całej grupy, z bagażem podanym wyżej."
           }
         }
       }
@@ -61722,6 +62183,17 @@
         }
       }
     },
+    "Read %lld emails, found %lld bookings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytane maile: %lld, znalezione rezerwacje: %lld."
+          }
+        }
+      }
+    },
     "Read %lld lines from the photo. Check them before Create.": {
       "extractionState": "manual",
       "localizations": {
@@ -62345,6 +62817,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在读取照片…"
+          }
+        }
+      }
+    },
+    "Reading your booking emails…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytam Twoje maile z rezerwacjami…"
           }
         }
       }
@@ -69992,6 +70475,28 @@
         }
       }
     },
+    "Say where you want to go…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisz, dokąd chcesz polecieć…"
+          }
+        }
+      }
+    },
+    "Say where, when and with whom; Doddy asks what's missing and shows up to three flights with the real total. You book on Kiwi.com yourself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz, dokąd, kiedy i z kim; Doddy dopyta o to, czego brakuje, i pokaże do trzech lotów z prawdziwą ceną całości. Rezerwujesz sam na Kiwi.com."
+          }
+        }
+      }
+    },
     "Say who Doddy is calling.": {
       "extractionState": "manual",
       "localizations": {
@@ -76483,6 +76988,17 @@
         }
       }
     },
+    "Start over": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij od nowa"
+          }
+        }
+      }
+    },
     "Start shopping mode": {
       "extractionState": "manual",
       "localizations": {
@@ -77153,6 +77669,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "状态"
+          }
+        }
+      }
+    },
+    "Stays on Booking.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noclegi na Booking.com"
           }
         }
       }
@@ -86433,6 +86960,17 @@
         }
       }
     },
+    "The task couldn't be handed over. Nothing was started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się przekazać sprawy. Nic nie zostało uruchomione."
+          }
+        }
+      }
+    },
     "The tasks kept on this iPhone couldn't be read.": {
       "extractionState": "manual",
       "localizations": {
@@ -86680,6 +87218,88 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się otworzyć dziennika treningowego (%@)."
+          }
+        }
+      }
+    },
+    "The trips couldn't be deleted from this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The trips couldn't be deleted from this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The trips couldn't be deleted from this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć wyjazdów z tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć wyjazdów z tego iPhone'a."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The trips saved on this iPhone couldn't be read. Search again to replace them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The trips saved on this iPad couldn't be read. Search again to replace them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The trips saved on this iPhone couldn't be read. Search again to replace them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać wyjazdów zapisanych na tym iPadzie. Wyszukaj jeszcze raz, żeby je zastąpić."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać wyjazdów zapisanych na tym iPhonie. Wyszukaj jeszcze raz, żeby je zastąpić."
+                }
+              }
+            }
           }
         }
       }
@@ -87737,6 +88357,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Thinking…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Myślę…"
           }
         }
       }
@@ -93288,6 +93919,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "翻译已结束"
+          }
+        }
+      }
+    },
+    "Trips": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyjazdy"
           }
         }
       }
@@ -100559,6 +101201,17 @@
         }
       }
     },
+    "Where this rule comes from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skąd ta zasada"
+          }
+        }
+      }
+    },
     "Where you are now": {
       "extractionState": "manual",
       "localizations": {
@@ -100625,6 +101278,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "根据你当前的设置，你的信息会去向哪里。不会出售任何内容，也没有广告或分析。"
+          }
+        }
+      }
+    },
+    "Where, when, with whom and what you'd pay: write it, or dictate it with the microphone on your keyboard.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokąd, kiedy, z kim i za ile: napisz albo podyktuj mikrofonem na klawiaturze."
           }
         }
       }
@@ -104123,6 +104787,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój adres e-mail"
+          }
+        }
+      }
+    },
+    "Your emails stay as they are in Gmail.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje maile zostają w Gmailu bez zmian."
           }
         }
       }
