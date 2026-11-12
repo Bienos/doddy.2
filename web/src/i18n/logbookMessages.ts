@@ -261,6 +261,7 @@ export const logbookEn = {
   "logbook.tool.read_list": "Read a list",
   "logbook.tool.check_off": "Tick off",
   "logbook.tool.get_weather": "Weather",
+  "logbook.tool.get_poland_info": "Polish public data",
   "logbook.tool.web_search": "Web search",
   "logbook.tool.wikipedia_summary": "Wikipedia",
   "logbook.tool.news_search": "News",
