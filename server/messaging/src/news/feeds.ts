@@ -45,6 +45,10 @@ function isoDate(value: unknown): string | null {
   return Number.isNaN(t) ? null : new Date(t).toISOString();
 }
 
+/** Longest item or picture address kept (`httpUrl`). Longer ones are not links anyone shares; an item whose link is
+ * longer is dropped before it reaches the shared news cache, a picture that long is left out. */
+export const MAX_URL_CHARS = 2048;
+
 /** An https image address from the feed, or undefined. Only https: the app shows pictures over a secure connection only. */
 export function imageUrl(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -110,7 +114,10 @@ export function firstImgSrc(html: string): string | undefined {
 export function httpUrl(value: string): string | null {
   try {
     const u = new URL(value.trim());
-    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : null;
+    if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+    // At most MAX_URL_CHARS, normalised: an item with a longer link is dropped before it is cached.
+    const s = u.toString();
+    return s.length <= MAX_URL_CHARS ? s : null;
   } catch { return null; }
 }
 
