@@ -21296,6 +21296,17 @@
         }
       }
     },
+    "Doddy couldn't finish a task.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się dokończyć sprawy."
+          }
+        }
+      }
+    },
     "Doddy couldn't finish this file. Ask him to make it again.": {
       "extractionState": "manual",
       "localizations": {
@@ -27001,6 +27012,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe. Na kilka rzeczy nie zezwolono. Możesz to zmienić w Ustawieniach iPhone’a › Doddy."
+          }
+        }
+      }
+    },
+    "Done. The result is waiting in Messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe. Wynik czeka w Wiadomościach."
           }
         }
       }

@@ -284,7 +284,8 @@ final class MessagesModel {
     private func finishMaking(_ id: UUID, _ result: Result<ThreadDocument, ThreadDocumentError>) async {
         switch result {
         case .success(let document):
-            let file = ThreadMessage.file(document, now: now())
+            // The bubble says what the file is: the brief the person said yes to (12 Nov 2026).
+            let file = ThreadMessage.file(document, about: proposals[id]?.request, now: now())
             proposals[id] = nil
             messages.append(file)
             await persist { try await $0.append(file) }
