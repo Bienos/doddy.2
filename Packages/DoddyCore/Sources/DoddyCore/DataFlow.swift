@@ -50,6 +50,12 @@ public struct DataFlowState: Equatable, Sendable {
     /// "Remember what we talked about" is on, so the messaging server writes a recap of each call to and from
     /// Doddy's phone line from what ElevenLabs sends it after the call (decision 2026-11-09-conversation-recaps).
     public var phoneRecapsOn: Bool
+    /// Logbook's switch, `LogbookModel.isOn`: on unless the person turned it off in Settings › Doddy on the web
+    /// (decision 2026-11-09-usage-counts-on-by-default). The only analytics the app has.
+    public var logbookOn: Bool
+    /// This build has Doddy accounts set up (decision 2026-11-08-required-account): everyone signs in with Apple or
+    /// Google through Supabase before using Doddy.
+    public var doddyAccountsSet: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -64,8 +70,12 @@ public struct DataFlowState: Equatable, Sendable {
         inFaktKeySaved: Bool = false,
         textsToDoddyOn: Bool = false,
         recapsOnServer: Bool = false,
-        phoneRecapsOn: Bool = false
+        phoneRecapsOn: Bool = false,
+        logbookOn: Bool = true,
+        doddyAccountsSet: Bool = false
     ) {
+        self.logbookOn = logbookOn
+        self.doddyAccountsSet = doddyAccountsSet
         self.recapsOnServer = recapsOnServer
         self.phoneRecapsOn = phoneRecapsOn
         self.textsToDoddyOn = textsToDoddyOn
@@ -227,6 +237,16 @@ public enum DataFlow {
                 what: "A short-lived Doddy session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
                 when: "When you sign in or refresh your session, and when a conversation requests an ElevenLabs connection credential.", isActive: state.tokenServerSet,
                 note: state.tokenServerSet ? "Provider credentials stay on Doddy's server. Your voice and any approved conversation context go directly to ElevenLabs." : "Voice isn't set up yet."),
+            // Decision 2026-11-08-required-account: the app talks to Supabase Auth itself (DoddyAccount.swift); the
+            // account's id is the user id on every Doddy server, and the owner's /admin page shows its email and method.
+            DataFlowRow(
+                id: "doddyAccount", destination: "Doddy accounts (Supabase, which runs Doddy's sign-in)",
+                what: "When you sign in with Apple or Google, their proof of who you are, which gives your account its email address (with Apple, possibly a private relay address Apple forwards) and whatever else they include, such as your name; with a code, the email address you type. Then the account's session, which this iPhone renews and every Doddy server checks.",
+                when: "When you sign in, and when this iPhone renews the session (about every hour while Doddy is used).",
+                isActive: state.doddyAccountsSet,
+                note: state.doddyAccountsSet
+                    ? "Every Doddy user has an account. Doddy's team can see each account's email address, how it signs in and when. Deleting your account (Settings › About › Your Doddy account) deletes it there."
+                    : "This build has no Doddy accounts set up, so nothing goes there."),
             // ADR-563: the phone signs itself in to the built-in server with a random device ID, so there is a
             // Doddy server for every ordinary user once an online feature has been used, with no address typed
             // (ADR-721). Before that nothing has been sent, and the row says so instead of "no server is set".
@@ -258,6 +278,26 @@ public enum DataFlow {
                     : !state.doddyServerSet
                         ? "Keep on Doddy's server is on, but this iPhone hasn't signed in there yet, so nothing has been sent. It is sent once it has."
                         : "Stored encrypted; the server can read it so the web can search it. Never audio, never private notes or private conversations. Conversations are kept 1 year. Turning a switch off, or Delete everything, removes it from Doddy's server."),
+            // Messages on the web (owner, 28 Oct 2026: "sync always on"): ThreadSync, backend/src/messages. Text only.
+            DataFlowRow(
+                id: "messagesCopy", destination: "Your Doddy server (a copy of Messages for Doddy on the web)",
+                what: "The text of your newest 200 messages in Messages and of Doddy's answers, with when each was written and whether it was sent. For a message with a photo, only that it had one; for a file, its name and kind, never the file or its link. Each change replaces the copy.",
+                when: "After every change to Messages, once this iPhone has signed in to Doddy's server.",
+                isActive: state.doddyServerSet,
+                note: state.doddyServerSet
+                    ? "Stored encrypted; Doddy's server can read it so Doddy on the web can show it. Delete conversation in Messages deletes this copy too, and says so only once the server confirms. A copy this iPhone stops sending is deleted after a year."
+                    : "Nothing has been sent to Doddy's server yet. Once this iPhone has signed in there, the text of Messages is copied for Doddy on the web."),
+            // Logbook (ADR-602; decision 2026-11-09-usage-counts-on-by-default): LogbookDay is the whole payload, counts only.
+            DataFlowRow(
+                id: "logbook", destination: "Your Doddy server (Logbook: counts of how you use Doddy)",
+                what: "Counts only, for each day: how many conversations and how long, in which hours, how they started and ended and in which languages; how often each of Doddy's tools was used and how it went; how many notes of each kind and list items were added or ticked; tasks handed over and minutes of translating. Never a word anyone said, a note's text, a name, a place or an address. Private notes and private conversations aren't counted.",
+                when: "While Logbook is on, which it is unless you turn it off in Settings › Doddy on the web: the last 7 days and today the first time, then today at most once an hour, and each day once more after it ends.",
+                isActive: state.logbookOn && state.doddyServerSet,
+                note: !state.logbookOn
+                    ? "Logbook is off, so nothing is counted or sent. Turning it off asks Doddy's server to delete the counts it holds."
+                    : !state.doddyServerSet
+                        ? "Logbook is on, but this iPhone hasn't signed in to Doddy's server yet, so nothing has been sent."
+                        : "You see the counts in Logbook on Doddy on the web, and Doddy's team can see them with your account. When you ask Doddy a question on the web, the counts added up go with it to Anthropic. Kept for a year; turning Logbook off deletes them on the server."),
             DataFlowRow(
                 id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
@@ -370,6 +410,15 @@ public enum DataFlow {
                     : state.messagingServerSet
                         ? "Your messaging server passes it to Anthropic and keeps only counts, not words. The conversation itself stays on this iPhone."
                         : "No messaging server is set, so typed questions can't be sent."),
+            // Decision 2026-11-09-doddy-looks-at-the-screen: POST /v1/screen/look on doddy-messaging, one picture per question.
+            DataFlowRow(
+                id: "screenLook", destination: "Your Doddy messaging server and Anthropic (Doddy looks at your screen)",
+                what: "One picture of your screen as it is at that moment, made smaller, with the question you asked about it and your language. Only while you share your screen with Doddy; iOS shows that it is shared.",
+                when: "Each time you ask Doddy about your screen in a conversation while sharing is on. A picture more than 10 seconds old is never sent.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "Anthropic's Claude reads the picture once, with no tools, to answer. Doddy's server keeps neither the picture nor the question. Stopping sharing deletes the picture on this iPhone."
+                    : "No messaging server is set, so Doddy can't look at your screen."),
             DataFlowRow(
                 id: "recaps", destination: "Your Doddy messaging server and Anthropic (recaps)",
                 what: "The text of a conversation with Doddy, or the words of a recording written out on this iPhone, to write a short recap of what was discussed, when this iPhone can't write it itself.",
@@ -408,6 +457,8 @@ public enum DataFlow {
         var parts: [String] = []
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
+        // Decision 2026-11-09-doddy-looks-at-the-screen: one picture per question, read once.
+        if active.contains("screenLook") { parts.append("Anthropic (your screen, when you share it and ask about it)") }
         // Decision 2026-11-09-conversation-recaps: only when this iPhone can't write a recap itself.
         if active.contains("recaps") { parts.append("Anthropic (recaps of conversations and recordings this iPhone can't write)") }
         if active.contains("phoneRecaps") { parts.append("Anthropic (recaps of calls to Doddy's phone line)") }
@@ -427,6 +478,19 @@ public enum DataFlow {
         return parts.isEmpty ? "None" : parts.joined(separator: "; ")
     }
 
+    /// Settings › Privacy "Analytics": Logbook is the only analytics the app has (decision
+    /// 2026-11-09-usage-counts-on-by-default), so the line follows its switch (`LogbookModel.isOn`) and the
+    /// `logbook` row, never a fixed text.
+    public static func analyticsSummary(_ state: DataFlowState) -> String {
+        guard state.logbookOn else {
+            return "Off: Logbook is off, so nothing about how you use Doddy is counted. No ads or tracking"
+        }
+        let sent = rows(state).first { $0.id == "logbook" }?.isActive ?? false
+        return sent
+            ? "On: Logbook sends counts of how you use Doddy, never words, to Doddy's server, where you and Doddy's team can see them. Turn it off in Settings › Doddy on the web. No ads or tracking"
+            : "On: Logbook counts how you use Doddy, never words; nothing has been sent yet. Turn it off in Settings › Doddy on the web. No ads or tracking"
+    }
+
     /// The short name each row has in the Network summary. Every row id is here or in
     /// `notInNetworkSummary` (DataFlowTests), so a new row can't be left out by accident.
     static let networkNames: [String: String] = [
@@ -441,6 +505,7 @@ public enum DataFlow {
         "inFakt": "inFakt (invoices you confirm, with your own key)",
         "placeSearch": "Apple Maps (place searches)",
         "tokenServer": "your voice token server",
+        "doddyAccount": "Supabase (your Doddy account's sign-in)",
         "doddyServer": "your Doddy server (web search, online accounts and the web)",
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
@@ -456,6 +521,9 @@ public enum DataFlow {
         "recaps": "Anthropic (recaps of conversations and recordings, through your messaging server)",
         "phoneRecaps": "Anthropic (recaps of calls to Doddy's phone line, through your messaging server)",
         "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",
+        "messagesCopy": "your Doddy server (a copy of Messages for the web)",
+        "logbook": "your Doddy server (Logbook: counts of how you use Doddy, never words)",
+        "screenLook": "Anthropic (your screen when you share it and ask, through your messaging server)",
     ]
 
     /// Covered by another name (translator mode goes to ElevenLabs, which is

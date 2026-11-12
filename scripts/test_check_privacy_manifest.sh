@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests for scripts/check_privacy_manifest.sh: an undeclared required-reason API fails, a declared
-# one passes, and the real tree passes.
+# one passes, a missing manifest passes only when nothing is used, and the real tree (the app and
+# each extension) passes.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 tmp=$(mktemp -d)
@@ -47,10 +48,20 @@ source_with 'let x = 1'
 manifest
 expect 0 "no required-reason API, empty manifest"
 
+source_with '/// Times come from `ProcessInfo.systemUptime` in the app.'
+manifest
+expect 0 "an API named only in a comment"
+
+# An extension: no manifest is fine while its code (DoddyCore included) uses none, and fails once it does.
+rm -f "$tmp/PrivacyInfo.xcprivacy"
+expect 0 "no required-reason API, no manifest"
+source_with 'let flag = UserDefaults.standard.bool(forKey: "x")'
+expect 1 "UserDefaults used, no manifest at all"
+
 if scripts/check_privacy_manifest.sh >/dev/null 2>&1; then
-  echo "ok    the real app passes"
+  echo "ok    the real tree passes (the app and each extension)"
 else
-  echo "FAIL  the real app's manifest misses a category:"; scripts/check_privacy_manifest.sh 2>&1 | grep MISSING
+  echo "FAIL  a real manifest misses a category:"; scripts/check_privacy_manifest.sh 2>&1 | grep MISSING
   failures=$((failures + 1))
 fi
 

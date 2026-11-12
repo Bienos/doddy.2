@@ -60,6 +60,9 @@ final class HealthShareTests: XCTestCase {
     func testConsentVersion() {
         XCTAssertFalse(HealthShareConsent.isGranted(storedVersion: 0), "never asked")
         XCTAssertTrue(HealthShareConsent.isGranted(storedVersion: HealthShareConsent.version))
+        // 12 Nov 2026: a yes given before the screen said that a copy of the text stays on Doddy's server no longer counts.
+        XCTAssertEqual(HealthShareConsent.version, 2)
+        XCTAssertFalse(HealthShareConsent.isGranted(storedVersion: 1))
     }
 
     // MARK: The text
