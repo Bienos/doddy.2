@@ -32,7 +32,7 @@ public enum JourneyCity: String, CaseIterable, Equatable, Hashable, Sendable {
         let aliases: [(JourneyCity, Set<String>)] = [
             (.warszawa, ["warszawa", "warszawie"]),
             (.krakow, ["krakow", "krakowie"]),
-            (.wroclaw, ["wroclaw", "wroclawiu"]),
+            (.wroclaw, ["wroclaw", "wroclawiu", "wroclawia"]),
             (.poznan, ["poznan", "poznaniu"]),
             (.gdansk, ["gdansk", "gdansku"]),
             (.lodz, ["lodz", "lodzi"]),
