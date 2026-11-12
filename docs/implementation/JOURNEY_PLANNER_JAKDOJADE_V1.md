@@ -67,3 +67,15 @@ The partner route API is not publicly usable as a live consumer integration. Do 
 - Check legacy Apple Maps route and non-transit cards still work.
 - Verify `remind_when_to_leave` receives `mode: "transit"` when the person explicitly asks to use public transport; without a licensed route response this is an Apple Maps ETA, not a Jakdojade schedule.
 - Do not merge or release on TestFlight before repository CI and physical-device checks.
+
+## Licensed in-DODDY route lookup (code present, feature off until activation)
+
+- `Packages/DoddyCore/Sources/DoddyCore/JourneyServerClient.swift`: typed transport over the existing secured `DoddyServerClient`, including authenticated status, place matcher and routes; local time normalization for Poland; no cached travel location.
+- `VoiceView.swift`: on a transit map confirmation card, `GET /v1/journeys/provider` checks if the backend is actually configured. Only if `available=true`, a third explicit choice appears: **Find routes in DODDY**.
+- `VoiceSessionController.swift`: after a tap, resolve the start/destination on-device using Apple Maps and, only if needed, one-time iOS location permission. Ambiguous place matches yield a clarification request, never a guessed coordinate. The iPhone then calls the secured `POST /v1/journeys/routes` endpoint. The agent receives only verified source routes, source freshness and scheduled (not real-time) times.
+- There is no route fetch, GPS read or additional agent startup work until the user taps. No ticket operations or price claims.
+- `JourneyServerClientTests.swift` verifies body structure and token handling, unavailable-provider failures, date normalization and missing/invalid source data.
+
+**Integration dependency:** the backend endpoints and licence gate live in partner API PR #365. Until its deployment with a signed partner contract, `available` must remain false, so the first production feature stays the official public-link handoff.
+
+**Known functional limit:** `open_map` currently carries only place/start/mode. Arrival deadlines and travel preferences are modeled in `JourneyIntent` and the API contract but are not yet sent from that voice call. A future protected voice-agent tool update is necessary for full arrival-time planning; do not silently infer one. Real-time disruption monitoring, Live Activities and ticket purchasing remain unimplemented pending provider scope.
