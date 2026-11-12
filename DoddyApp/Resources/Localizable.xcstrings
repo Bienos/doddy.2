@@ -12547,6 +12547,17 @@
         }
       }
     },
+    "Check this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź to"
+          }
+        }
+      }
+    },
     "Check this feed": {
       "extractionState": "manual",
       "localizations": {
@@ -12565,6 +12576,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź tę wypowiedź."
+          }
+        }
+      }
+    },
+    "Check this page": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź tę stronę"
           }
         }
       }
@@ -33652,6 +33674,17 @@
         }
       }
     },
+    "I'll tell you when the price I read is at or below this. Not sure what to type? Type a price you'd be happy to pay: the next step shows what the page costs now, and you can still say no.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiem Ci, gdy odczytana cena będzie równa tej albo niższa. Nie wiesz, co wpisać? Wpisz cenę, którą chętnie zapłacisz: następny krok pokaże, ile strona kosztuje teraz, i nadal możesz odmówić."
+          }
+        }
+      }
+    },
     "I'll tell you when the price I read is at or below this. Suggested: 5 percent below the price, rounded down to whole złoty. Type another if you like.": {
       "extractionState": "manual",
       "localizations": {
@@ -50223,6 +50256,17 @@
         }
       }
     },
+    "Nothing is sent until you tap “Check the page” on the next card. Some shops don't let Doddy's server read their pages; then Doddy tells you it couldn't read a price.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie jest wysyłane, dopóki nie dotkniesz „Sprawdź stronę” na następnej karcie. Niektóre sklepy nie pozwalają serwerowi Doddy'ego czytać swoich stron; wtedy Doddy powie, że nie mógł odczytać ceny."
+          }
+        }
+      }
+    },
     "Nothing is set until you tap yes": {
       "extractionState": "manual",
       "localizations": {
@@ -57835,6 +57879,17 @@
         }
       }
     },
+    "Page at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strona w %@"
+          }
+        }
+      }
+    },
     "Page read %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -58254,6 +58309,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wklej klucz ze schowka"
+          }
+        }
+      }
+    },
+    "Paste the link to a product you're looking at in a shop. Doddy's server reads the page and shows its price; then you can ask Doddy to watch it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej link do produktu, który oglądasz w sklepie. Serwer Doddy'ego przeczyta stronę i pokaże jej cenę; potem możesz poprosić Doddy'ego, żeby jej pilnował."
           }
         }
       }
@@ -61303,6 +61369,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Product link": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link do produktu"
           }
         }
       }
@@ -81278,6 +81355,17 @@
         }
       }
     },
+    "That isn't a web address Doddy can read. It must start with https://.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nie jest adres strony, który Doddy może odczytać. Musi zaczynać się od https://."
+          }
+        }
+      }
+    },
     "That list is no longer shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -99001,6 +99089,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To, co się dzieje po użyciu któregoś z nich (rozmowa albo samo otwarcie Doddy’ego), ustawisz w Ustawienia › Stuknięcie w tył i Siri."
+          }
+        }
+      }
+    },
+    "What is it? (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co to jest? (opcjonalnie)"
           }
         }
       }
