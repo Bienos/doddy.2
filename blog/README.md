@@ -8,7 +8,7 @@ Notes from building Doddy, *your mate in your pocket*, in the open. Posts are Ma
 
 | Date | Title | Status |
 |---|---|---|
-| 2026-10-10 | [Meet Doddy: an AI companion that wants to do it all for you](posts/2026-10-10-meet-doddy-ai-agent.md) | Published |
+| 2026-10-10 | [Meet Doddy, the always-online companion that wants to do it all for you](posts/2026-10-10-meet-doddy-ai-agent.md) | Published |
 | 2026-10-10 | [Hello, Doddy. Why our favourite first result was 'I couldn't find it'](posts/2026-10-10-hello-doddy.md) | Draft (unpublished by the owner 2026-10-10; `/blog/hello-doddy/` redirects to `/blog/`) |
 
 Post ideas waiting for a slot: [IDEAS.md](IDEAS.md). New post: copy [_TEMPLATE.md](_TEMPLATE.md).

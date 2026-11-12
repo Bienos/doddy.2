@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-11
 - **Decided by:** owner. Asked whether the `cotletdev/booksy-api-mcp-server` MCP server could be used for Doddy, then "what else i can use for how i can use booksy to book sthings in poland", then "do everything leave email for now also other altrantibes to booksy like fresha ?"
-- **Status:** step 1 applied in the pull request that adds this file; steps 2 to 4 wait on the owner (`docs/OWNER_QUEUE.md` 38).
+- **Status:** step 1 applied in the pull request that adds this file; steps 2 to 4 wait on the owner (`docs/OWNER_QUEUE.md` 39).
 - **Replaces:** nothing. This carries out step 5 of `2026-11-09-restaurant-calls-one-tap` (booking links) for salons, clinics and restaurants alike.
 
 ## Why
@@ -11,11 +11,11 @@ People in Poland book hairdressers, barbers, beauty and some doctors through Boo
 | Option | What it is | Can Doddy use it? |
 |---|---|---|
 | `cotletdev/booksy-api-mcp-server` | Unofficial. Works inside a salon **owner's** Booksy Biz account, using that owner's Chrome session copied from the browser. Elastic License 2.0. | **No.** It manages a salon, it can't book at one. The licence forbids offering it to others as a hosted service. Copying a person's login session breaks the constitution's privacy and scoped-tool rules. |
-| Booksy partner API | Official. Services, staff, appointments and webhooks. Docs need a partner login. | **Only after a partner agreement** (owner queue 38). |
+| Booksy partner API | Official. Services, staff, appointments and webhooks. Docs need a partner login. | **Only after a partner agreement** (owner queue 39). |
 | Booksy's app inside ChatGPT | Booksy's own, for customers. The listing found is Booksy US. | No: it runs inside ChatGPT, not in Doddy. |
 | Booksy's customer API, reverse-engineered | Some voice-agent builders call it. | **No.** It likely breaks Booksy's terms and can stop working without notice. |
 | Google's "Book" button (Reserve with Google) | Booksy has been a partner since 2017; Polish salons on Booksy can be booked from Google Maps. | Link only: Google has no API for an app to book for someone. |
-| Fresha | Official public MCP server (`mcp.fresha.com/mcp`, launched 4 Aug 2026 for ChatGPT and Claude). It shows live availability, prices and reviews; the booking ends on Fresha's own pages. Needs sign-in. | **Maybe later.** It is a new outside service that would receive the user's words and location. It needs the owner's yes, a check of Fresha's terms for an app like Doddy, and a check that it covers Poland (owner queue 38). |
+| Fresha | Official public MCP server (`mcp.fresha.com/mcp`, launched 4 Aug 2026 for ChatGPT and Claude). It shows live availability, prices and reviews; the booking ends on Fresha's own pages. Needs sign-in. | **Maybe later.** It is a new outside service that would receive the user's words and location. It needs the owner's yes, a check of Fresha's terms for an app like Doddy, and a check that it covers Poland (owner queue 39). |
 | Reservio | Public API (v2) for the business's own account. | Business side only; its public booking pages are linked. |
 | Bookero | API key from a salon's own panel. | Business side only; its booking pages are linked. |
 | ZnanyLekarz (Docplanner) | Doctor and clinic booking; integration API is for clinics. | Business side only; profile pages are linked. |
