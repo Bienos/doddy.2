@@ -6,7 +6,7 @@ import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSess
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
 import { DeviceSessionIssuer } from "./deviceSession.js";
-import { DOCUMENT_STALE_AFTER_MS, DocumentLinks } from "./documents.js";
+import { DOCUMENT_STALE_AFTER_MS, DocumentLinks, DocumentSeal } from "./documents.js";
 import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider } from "./tools/claude.js";
 import { createHandler } from "./http.js";
 import { MemoryChat } from "./memory/chat.js";
@@ -123,6 +123,8 @@ export async function buildApp(
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
   // Document links are signed with the session key; without one, make_document says "not set up".
   const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
+  // Files are kept only encrypted, with the memory key (decision 2026-11-12-documents-at-rest); without it, "not set up" too.
+  store.sealDocumentsWith(config.memoryKey ? new DocumentSeal(new MemoryCipher(config.memoryKey)) : null);
   // Booking emails are read by the small chat model (DODDY_CHAT_MODEL) when the server has one.
   const travelClaude =
     overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : claude) : claude;
@@ -293,6 +295,12 @@ export async function buildApp(
     ] as const) {
       sweep().catch(() => log({ level: "warn", event: "memory_sweep_failed", step }));
     }
+    // Documents written in plain text before they were encrypted at rest are encrypted here, once each
+    // (idempotent; decision 2026-11-12-documents-at-rest). The count only, never a name.
+    store
+      .sealPlaintextDocuments()
+      .then((count) => (count > 0 ? log({ level: "info", event: "documents_encrypted", count }) : undefined))
+      .catch(() => log({ level: "warn", event: "documents_encrypt_failed" }));
   };
   housekeeping();
   const pruning = setInterval(housekeeping, 3_600_000);

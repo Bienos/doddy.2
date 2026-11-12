@@ -6,7 +6,7 @@ History: built on `claude/exciting-carson-08x2pk`; the service ran `d03562ae` fr
 
 ## What it is
 A signed-in workspace in the browser for the same account the iPhone uses on Doddy's server (`backend/`). Today it shows:
-- **Documents** Doddy made from the phone: decks, Word, Excel, PDF, text. Their status is real, and they can be downloaded. The server keeps them 7 days.
+- **Documents** Doddy made from the phone: decks, Word, Excel, PDF, text. Their status is real, and they can be downloaded. The server keeps them 7 days, each file and its name encrypted with `DODDY_MEMORY_KEY` (decision `2026-11-12-documents-at-rest`; without the key no files are made). The phone's signed link to a file lasts 24 hours, is checked against the file's own account on every open, and is served sandboxed.
 - **Connected apps**, read-only.
 - **Activity:** the server's receipts.
 - **Signed-in browsers**, each with Sign out.
@@ -116,7 +116,7 @@ The web app is served by the existing Render service `doddy`, so there's no new 
    - Optional: `DODDY_WEB_SIGNIN_TRIES_PER_CLIENT` (default 10 per quarter hour; raise it for an office behind one address).
    - Signing in with a code and the pages add nothing secret (Google and Apple sign-in need `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`, above). `DODDY_SESSION_SIGNING_KEY` and the database are already there.
    - The admin dashboard needs `DODDY_OWNER_ACCOUNTS` (the owner's account ids, comma-separated); `SUPABASE_SECRET_KEY` adds emails, names and join dates (and deletes a person's sign-in, ADR-818). Without the first there is no dashboard.
-   - Memory and Messages need one secret, `DODDY_MEMORY_KEY` (base64 of 32 random bytes); without it they say "not set up". It isn't in `render.yaml` or `secrets/manifest.json` (the 7 Nov audit asks for it).
+   - Memory, Messages and the files Doddy makes need one secret, `DODDY_MEMORY_KEY` (base64 of 32 random bytes); without it they say "not set up" (files: decision `2026-11-12-documents-at-rest`). It isn't in `render.yaml` or `secrets/manifest.json` (the 7 Nov audit asks for it).
 3. **Deploy** the branch or main (autoDeploy is off). Check:
    - `GET /v1/health` answers;
    - `GET /` shows the sign-in page, not "isn't built";

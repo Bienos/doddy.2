@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { once } from "node:events";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -6,7 +7,7 @@ import { afterEach, test } from "node:test";
 import { SignedSessionVerifier } from "../src/auth.js";
 import { ConfigError, loadConfig } from "../src/config.js";
 import { DeviceSessionIssuer, deviceUserId } from "../src/deviceSession.js";
-import { DOCUMENT_STALE_AFTER_MS, DocumentLinks, effectiveStatus, serveDocument } from "../src/documents.js";
+import { DOCUMENT_LINK_TTL_SECONDS, DOCUMENT_STALE_AFTER_MS, DocumentLinks, effectiveStatus, serveDocument } from "../src/documents.js";
 import { AppError, ProviderError } from "../src/errors.js";
 import { AnthropicClaudeProvider, fileIdsOf, fileName, MockClaudeProvider } from "../src/tools/claude.js";
 import { Store } from "../src/store.js";
@@ -410,29 +411,44 @@ test("config: Claude is live-only, checked, and has its own caps", () => {
   assert.equal(limits.serviceDailyClaude, 50);
 });
 
-test("document links: signed, expiring, and bound to one ID", () => {
+test("document links: signed, expiring after a day, and bound to one ID and one account", () => {
   const links = new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test");
   const now = new Date("2026-10-21T00:00:00Z");
-  const url = new URL(links.link("abcdefghijklmnopqrstuvwx", now));
-  assert.equal(links.verify(url, now), "abcdefghijklmnopqrstuvwx");
-  assert.equal(links.verify(url, new Date("2026-10-29T00:00:00Z")), null);
+  assert.equal(DOCUMENT_LINK_TTL_SECONDS, 24 * 60 * 60);
+  const url = new URL(links.link("abcdefghijklmnopqrstuvwx", "u", now));
+  const claim = links.claim(url)!;
+  assert.equal(claim.id, "abcdefghijklmnopqrstuvwx");
+  assert.equal(links.check(claim, "u", now), "ok");
+  assert.equal(links.check(claim, "u", new Date(now.getTime() + DOCUMENT_LINK_TTL_SECONDS * 1000)), "ok", "to the second");
+  assert.equal(links.check(claim, "u", new Date(now.getTime() + (DOCUMENT_LINK_TTL_SECONDS + 1) * 1000)), "expired");
+  assert.equal(links.check(claim, "someone-else", now), "invalid", "a link made for one account opens no other account's file");
   const other = new URL(url);
   other.pathname = "/v1/documents/abcdefghijklmnopqrstuvwy";
-  assert.equal(links.verify(other, now), null);
-  assert.equal(new DocumentLinks(Buffer.alloc(32, 8), "https://api.doddy.test").verify(url, now), null);
+  assert.equal(links.check(links.claim(other)!, "u", now), "invalid");
+  const later = new URL(url);
+  later.searchParams.set("exp", String(claim.exp + 3600));
+  assert.equal(links.check(links.claim(later)!, "u", now), "invalid", "the expiry can't be moved");
+  assert.equal(new DocumentLinks(Buffer.alloc(32, 8), "https://api.doddy.test").check(claim, "u", now), "invalid");
+  for (const bad of ["/v1/documents/short?exp=1&sig=x", "/v1/documents/abcdefghijklmnopqrstuvwx?exp=soon&sig=x", "/v1/documents/abcdefghijklmnopqrstuvwx?exp=1"]) {
+    assert.equal(links.claim(new URL(`https://api.doddy.test${bad}`)), null, bad);
+  }
+  // A link signed the older way (the ID and a 7-day expiry, no account) still within its week: only ever "expired".
+  const exp = Math.floor(now.getTime() / 1000) + 7 * 86_400;
+  const v1 = createHmac("sha256", TEST_LINK_KEY).update(`doddy-document:v1:abcdefghijklmnopqrstuvwx:${exp}`).digest("base64url");
+  assert.equal(links.check({ id: "abcdefghijklmnopqrstuvwx", exp, sig: v1 }, "u", now), "expired");
 });
 
 test("document status: JSON only, no file bytes, same signed link, gone for a bad link", async () => {
   const links = new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test");
   const now = new Date("2026-10-21T00:00:00Z");
-  const rows: Record<string, { status: "working" | "ready" | "failed"; name: string; mime: string; body: Buffer | null }> = {
-    abcdefghijklmnopqrstuvwx: { status: "working", name: "a.pdf", mime: "application/pdf", body: null },
-    abcdefghijklmnopqrstuvwy: { status: "ready", name: "b.pdf", mime: "application/pdf", body: Buffer.from("%PDF-secret") },
-    abcdefghijklmnopqrstuvwz: { status: "failed", name: "c.pdf", mime: "application/pdf", body: null },
+  const rows: Record<string, { id: string; user_id: string; status: "working" | "ready" | "failed"; name: string; mime: string; body: Buffer | null }> = {
+    abcdefghijklmnopqrstuvwx: { id: "abcdefghijklmnopqrstuvwx", user_id: "u", status: "working", name: "a.pdf", mime: "application/pdf", body: null },
+    abcdefghijklmnopqrstuvwy: { id: "abcdefghijklmnopqrstuvwy", user_id: "u", status: "ready", name: "b.pdf", mime: "application/pdf", body: Buffer.from("%PDF-secret") },
+    abcdefghijklmnopqrstuvwz: { id: "abcdefghijklmnopqrstuvwz", user_id: "u", status: "failed", name: "c.pdf", mime: "application/pdf", body: null },
   };
   const store = { getDocument: async (id: string) => rows[id] ?? null } as unknown as Parameters<typeof serveDocument>[4];
   const ask = async (id: string, extra = "&status=1", at = now) => {
-    const url = new URL(links.link(id, now) + extra);
+    const url = new URL(links.link(id, "u", now) + extra);
     const chunks: Buffer[] = [];
     let code = 0;
     let type = "";
@@ -467,7 +483,7 @@ async function serveFake(row: { status: "working" | "ready" | "failed"; created_
     getDocument: async () => ({ id, user_id: "u", name: "a.docx", mime: "application/pdf", body: null, ...row }),
     failDocument: async (x: string) => void failed.push(x),
   } as unknown as Parameters<typeof serveDocument>[4];
-  const url = new URL(new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test").link(id, at) + extra);
+  const url = new URL(new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test").link(id, "u", at) + extra);
   let code = 0;
   let headers: Record<string, string | number> = {};
   const chunks: Buffer[] = [];
@@ -525,7 +541,7 @@ test("the hourly sweep fails lost 'working' files and leaves fresh, ready and fa
     const lost = await rig.store.startDocument("u", "a.docx", "m", now - 30 * 60_000);
     const fresh = await rig.store.startDocument("u", "b.docx", "m", now - 60_000);
     const done = await rig.store.startDocument("u", "c.docx", "m", now - 30 * 60_000);
-    await rig.store.finishDocument(done, "c.docx", "m", Buffer.from("x"));
+    await rig.store.finishDocument("u", done, "c.docx", "m", Buffer.from("x"));
     assert.equal(await rig.store.failStaleDocuments(now, DOCUMENT_STALE_AFTER_MS), 1);
     assert.equal((await rig.store.getDocument(lost))?.status, "failed");
     assert.equal((await rig.store.getDocument(fresh))?.status, "working");

@@ -533,7 +533,7 @@ test("maker: what Claude reads marks sources and material as data and lists the 
 
 // ------------------------------------------------------------------ through the server
 
-const linkId = (url: string) => new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test").verify(new URL(url), new Date("2026-10-10T10:00:00Z"))!;
+const linkId = (url: string) => new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test").claim(new URL(url))!.id;
 
 test("make_document deck: the card says where research goes; the file is a real deck with Doddy's frame", async () => {
   rig = await start();
