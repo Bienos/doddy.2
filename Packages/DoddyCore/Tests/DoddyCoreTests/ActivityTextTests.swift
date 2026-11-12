@@ -71,6 +71,7 @@ final class ActivityTextTests: XCTestCase {
             .openTrainingPlan(PlanAsk(goal: .tenK, daysPerWeek: 3, minutesPerSession: 45)),
             // SHOPPING.md.
             .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),
+            .shopifySearch(query: "czarna bluza"), .shopifyPrepareCheckout(index: 1, quantity: 2),
             .followNews(.words(name: "CPK", keywords: ["CPK"])),
             .lookAtScreen(question: "Co to jest?"),
         ]
@@ -86,7 +87,7 @@ final class ActivityTextTests: XCTestCase {
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
              .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .lookAtScreen, .openCamera, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
-             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
+             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals, .shopifySearch, .shopifyPrepareCheckout,
              .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater, .callMeNow, .callPlaces,
              .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown:
             true
@@ -102,7 +103,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 58, "the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
+        XCTAssertEqual(kinds.count, 60, "the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
