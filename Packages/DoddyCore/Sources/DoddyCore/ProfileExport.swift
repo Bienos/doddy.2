@@ -64,7 +64,6 @@ public enum ProfileExport {
         let replyLength: String
         let tone: String
         let energy: String
-        let voice: String
         let speakingSpeed: String
         let expressiveness: String
         let conversationLanguage: String
@@ -93,7 +92,6 @@ public enum ProfileExport {
                 replyLength: style.personality.length.rawValue,
                 tone: style.personality.formality.rawValue,
                 energy: style.personality.mood.rawValue,
-                voice: style.voice.voice.rawValue,
                 speakingSpeed: style.voice.speed.rawValue,
                 expressiveness: style.voice.expressiveness.rawValue,
                 conversationLanguage: style.language.rawValue,
@@ -117,7 +115,6 @@ public enum ProfileExport {
         lines += [
             "",
             "## Voice and personality",
-            "Voice: \(style.voice.voice.rawValue)",
             "Speed: \(style.voice.speed.rawValue)",
             "Expressiveness: \(style.voice.expressiveness.rawValue)",
             "Starts in: \(style.language.rawValue)",

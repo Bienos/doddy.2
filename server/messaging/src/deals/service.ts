@@ -29,10 +29,11 @@ import {
   pickWithModel, terms, unitPrice, unitPricesAgree, type ItemRules, type Terms,
 } from "./match.js";
 import { categoryOf, relation, type Category } from "./categories.js";
+import { DEFAULT_MAX_AGE_HOURS, isCatalogChain, materialFromSnapshot, type CatalogStore, type ChainSnapshot } from "./catalog.js";
 import { prepareImage, readPage, readScreen, screenBatches, type Mechanic, type ReadDate, type ReadProduct, type ReadPromotion } from "./vision.js";
 import {
-  CHAIN_NAMES, isReadChain, LINK_ONLY_URLS, READ_CHAINS, type Chain, type ChainAdapter, type ChainRow, type ChainStatus,
-  type Condition, type DataProduct, type DealsModelApi, type DealsResponse, type DealsSettings, type LeafletInfo, type LeafletPage, type PageImage,
+  CHAIN_NAMES, isReadChain, LINK_ONLY_URLS, pageKey, READ_CHAINS, type Chain, type ChainAdapter, type ChainRow, type ChainStatus,
+  type Condition, type DataProduct, type DealsModelApi, type DealsResponse, type DealsSettings, type LeafletInfo, type LeafletPage, type LeafletRead, type PageImage,
   type LinkChain, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion, type ReadChain, type UnitPrice,
 } from "./types.js";
 
@@ -58,6 +59,13 @@ export interface DealsDeps {
   further?: FurtherDeps;
   /** Partner links for the offers' own pages (ADR-668): the AFFILIATE_LINKS rules, applied after the picks. */
   affiliate?: { link(pageUrl: string): string | undefined };
+  /** The leaflet catalog (decision 2026-11-12-leaflet-catalog): a catalogued chain with a usable snapshot is answered
+   * from it, with no fetch and no page read; any other chain is read live. Absent: every chain is read live. */
+  catalog?: CatalogStore;
+  /** A snapshot older than this is not used. Default 8 days. */
+  catalogMaxAgeHours?: number;
+  /** The catalog scan's reader: the same model as `model`, with the longer waits a background job can afford. */
+  scanModel?: DealsModelApi;
 }
 
 export interface SearchInput { items: string[]; chains?: Chain[]; language: string }
@@ -72,6 +80,8 @@ export interface SearchStats {
   outputTokens: number;
   picked: "model" | "code";
   ms: number;
+  /** Chains answered from the leaflet catalog. */
+  fromCatalog: number;
 }
 
 export const DEFAULT_BUDGET_MS = 25_000;
@@ -279,10 +289,8 @@ interface ChainResult {
   pages?: PagesRead;
 }
 
-interface Env {
-  fetcher: PageFetcher;
-  model?: DealsModelApi;
-  queries: string[];
+/** What building offers from a chain's reads needs: the items and how to word the offers. */
+export interface QueryEnv {
   queryTerms: Terms[];
   /** Each item's category (ADR-662), when the code knows one. */
   queryCats: (Category | undefined)[];
@@ -290,16 +298,64 @@ interface Env {
   queryRules: ItemRules[];
   today: string;
   language: string;
+  nextId: () => string;
+}
+
+interface Env extends QueryEnv {
+  fetcher: PageFetcher;
+  model?: DealsModelApi;
+  queries: string[];
   maxPages: number;
   screenPages: number;
   readConcurrency: number;
   chainDeadline: number;
   signal: AbortSignal;
-  nextId: () => string;
   log: (msg: string, extra?: object) => void;
 }
 
 const best = (scores: number[]) => scores.reduce((a, b) => Math.max(a, b), 0);
+
+/** Words first, then the categories (ADR-662): another kind of thing altogether is no match ("masło shea" for
+ * "masło"); another kind in the same family is a similar product, kept apart ("masło roślinne"). */
+function makeJudge(env: QueryEnv) {
+  return (text: string) => {
+    const t = terms(text);
+    const cat = categoryOf(text);
+    const rel = env.queryCats.map((q) => relation(q, cat));
+    // The person's own rules hold for similar products too: "tylko Łaciate" wants Łaciate, whatever the kind.
+    const meets = env.queryRules.map((r) => meetsRules(r, text));
+    return {
+      scores: env.queryTerms.map((q, i) => (rel[i] === "other" || !meets[i] ? 0 : matchScore(q, t))),
+      similar: rel.map((r, i) => r === "similar" && meets[i]!),
+    };
+  };
+}
+
+/** A data product that fits an item, or is of the same family as one, even when its words don't match
+ * ("Margaryna" for "masło"); the rest are left out. */
+function fittingData(l: LeafletRead, judge: ReturnType<typeof makeJudge>) {
+  return l.products.map((p) => ({ p, ...judge(p.matchText ? `${p.name} ${p.matchText}` : p.name) }))
+    .filter((x) => best(x.scores) >= MATCH_THRESHOLD || x.similar.some(Boolean));
+}
+
+/**
+ * What was read of one chain, whether live for this request or kept in the leaflet catalog (decision
+ * 2026-11-12-leaflet-catalog): its leaflets as the adapter gave them, and the reader's products and promotions per
+ * page, keyed "leaflet index:page number".
+ */
+export interface ChainMaterial {
+  leaflets: LeafletRead[];
+  reads: ReadonlyMap<string, ReadProduct[]>;
+  promos: ReadonlyMap<string, ReadPromotion[]>;
+  /** Every page and search that should have been read was read. */
+  complete: boolean;
+  reasons: ReadonlySet<string>;
+  /** Fewer pages read than were worth reading. */
+  pages?: PagesRead;
+  /** The catalog's: an offer whose last day is before this day (YYYY-MM-DD) is left out. */
+  endedBefore?: string;
+}
+
 
 async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Promise<ChainResult> {
   const started = Date.now();
@@ -332,26 +388,11 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
 
     let unread = 0;
     const reasons = new Set<string>(read.incomplete ? [read.incomplete] : []);
-    // Words first, then the categories (ADR-662): another kind of thing altogether is no match ("masło shea" for
-    // "masło"); another kind in the same family is a similar product, kept apart ("masło roślinne").
-    const judge = (text: string) => {
-      const t = terms(text);
-      const cat = categoryOf(text);
-      const rel = env.queryCats.map((q) => relation(q, cat));
-      // The person's own rules hold for similar products too: "tylko Łaciate" wants Łaciate, whatever the kind.
-      const meets = env.queryRules.map((r) => meetsRules(r, text));
-      return {
-        scores: env.queryTerms.map((q, i) => (rel[i] === "other" || !meets[i] ? 0 : matchScore(q, t))),
-        similar: rel.map((r, i) => r === "similar" && meets[i]!),
-      };
-    };
-    const score = (text: string) => judge(text).scores;
+    const judge = makeJudge(env);
 
     // The data products that fit an item, and the pages worth reading.
     const leaflets = read.leaflets.map((l, li) => {
-      // A data product of the same family as an item counts too, as a similar one, even when its words don't match
-      // ("Margaryna" for "masło"); the rest are left out.
-      const data = l.products.map((p) => ({ p, ...judge(p.matchText ? `${p.name} ${p.matchText}` : p.name) })).filter((x) => best(x.scores) >= MATCH_THRESHOLD || x.similar.some(Boolean));
+      const data = fittingData(l, judge);
       let jobs: { li: number; page: LeafletPage; score: number }[] = [];
       if (l.strategy === "all") jobs = l.pages.map((page) => ({ li, page, score: 0 }));
       else if (l.strategy === "text") {
@@ -372,7 +413,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
       return { l, data, jobs };
     });
     const allJobs = leaflets.flatMap((x) => x.jobs).sort((a, b) => b.score - a.score || a.li - b.li || a.page.number - b.page.number);
-    const key = (li: number, page: number) => `${li}:${page}`;
+    const key = pageKey;
     type Job = (typeof allJobs)[number];
 
     // Page images: fetched once (the fetcher checks robots.txt and its content signals), held for this request
@@ -486,102 +527,6 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     images.clear();
     pagesRead = sent.size;
 
-    // Offers: data products (confirmed against their page where needed), then what the reader found.
-    const candidates: Candidate[] = [];
-    const seen = new Set<string>();
-    const leafletOf = new Map<string, number>();
-    const add = (input: OfferInput, scores: number[], li: number, similar?: boolean[]) => {
-      const dedupe = `${normalize(input.name)}|${input.price.minor}|${input.validFrom ?? ""}`;
-      if (seen.has(dedupe)) return;
-      seen.add(dedupe);
-      const { offer, doubts } = buildOffer(input, env.language);
-      const id = env.nextId();
-      candidates.push({ id, chain, offer, doubts, scores, ...(similar?.some(Boolean) ? { similar } : {}) });
-      leafletOf.set(id, li);
-    };
-    leaflets.forEach(({ l, data }, li) => {
-      const used = new Set<ReadProduct>();
-      for (const { p, scores, similar } of data) {
-        const doubts: string[] = [];
-        let extra: Partial<DataProduct> & { lowConfidence?: boolean } = {};
-        if (p.confirmOnPage) {
-          const onPage = p.page ? reads.get(key(li, p.page)) : undefined;
-          if (!onPage) doubts.push("conditions_unconfirmed");
-          else {
-            const nameTerms = terms(p.name);
-            const same = onPage.filter((v) => !used.has(v) && matchScore(terms(v.name), nameTerms) >= MATCH_THRESHOLD);
-            const confirmed = same.find((v) => v.price.minor === p.price.minor);
-            if (confirmed) {
-              used.add(confirmed);
-              extra = {
-                conditions: confirmed.conditions,
-                ...(confirmed.regularPrice ? { regularPrice: confirmed.regularPrice } : {}),
-                ...(confirmed.lowest30d ? { lowest30d: confirmed.lowest30d } : {}),
-                ...(confirmed.printedUnitPrice ? { printedUnitPrice: confirmed.printedUnitPrice } : {}),
-                ...(!p.sizeText && confirmed.sizeText ? { sizeText: confirmed.sizeText } : {}),
-                lowConfidence: confirmed.lowConfidence,
-              };
-              if (confirmed.lowConfidence) doubts.push("low_confidence_read");
-            } else {
-              doubts.push(same.length ? "page_price_differs" : "conditions_unconfirmed");
-              for (const v of same) used.add(v);
-            }
-          }
-        }
-        const { lowConfidence: _lc, ...merged } = { ...p, ...extra };
-        add({
-          chain, name: merged.name, price: p.price, sizeText: merged.sizeText, regularPrice: merged.regularPrice, lowest30d: merged.lowest30d,
-          printedUnitPrice: merged.printedUnitPrice, conditions: merged.conditions, validFrom: p.validFrom, validTo: p.validTo,
-          source: { url: p.url, ...(p.page ? { page: p.page } : {}) }, readBy: "leaflet_data", ean: p.ean, doubts,
-        }, scores, li, similar);
-      }
-      for (const page of l.pages) {
-        for (const v of reads.get(key(li, page.number)) ?? []) {
-          if (used.has(v)) continue;
-          const { scores, similar } = judge(v.name);
-          if (best(scores) < MATCH_THRESHOLD && !similar.some(Boolean)) continue;
-          const dates = readDates(v, l.leaflet, env.today);
-          // Komfort prints on every page that its crossed-out prices are the 30-day lowest (ADR-667); the reader
-          // reports a crossed-out price as the regular one, so here it is the 30-day price.
-          const thirty = chain === "komfort" && !v.lowest30d && v.regularPrice ? { regularPrice: undefined, lowest30d: v.regularPrice } : {};
-          add({
-            chain, name: v.name, price: v.price, sizeText: v.sizeText, regularPrice: v.regularPrice, lowest30d: v.lowest30d, ...thirty,
-            printedUnitPrice: v.printedUnitPrice, conditions: v.conditions, validFrom: dates.validFrom, validTo: dates.validTo,
-            source: { url: page.url, page: page.number }, readBy: "page_image",
-            doubts: [...(v.lowConfidence ? ["low_confidence_read"] : []), ...(dates.outside ? ["dates_outside_leaflet"] : [])],
-          }, scores, li, similar);
-        }
-      }
-    });
-
-    // Promotions printed without a price whose range fits an item: said as a mechanic, never as a price.
-    const promotions: PromotionCandidate[] = [];
-    const seenPromo = new Set<string>();
-    leaflets.forEach(({ l }, li) => {
-      for (const page of l.pages) {
-        for (const p of promos.get(key(li, page.number)) ?? []) {
-          // A range often names several kinds ("proszki i kapsułki"): only another family altogether is left out.
-          const scores = score(p.range);
-          if (best(scores) < MATCH_THRESHOLD) continue;
-          const mechanic = mechanicText(p.mechanic, env.language);
-          const dedupe = `${normalize(p.range)}|${mechanic}`;
-          if (seenPromo.has(dedupe)) continue;
-          seenPromo.add(dedupe);
-          const dates = readDates(p, l.leaflet, env.today);
-          const conditions = [...new Set(p.conditions.map((c) => conditionText(c, chain, env.language)).filter((t): t is string => !!t))].slice(0, 4);
-          const flags = flagsOf(p.conditions);
-          promotions.push({
-            scores,
-            promotion: {
-              chain, text: p.range, mechanic, conditions, ...(flags.length ? { flags } : {}),
-              ...(dates.validFrom ? { validFrom: dates.validFrom } : {}), ...(dates.validTo ? { validTo: dates.validTo } : {}),
-              source: { url: page.url, page: page.number },
-            },
-          });
-        }
-      }
-    });
-
     const complete = unread === 0 && !read.incomplete;
     // Pages whose offers only an image read can find (all of Biedronka's, Lidl's that name an item): when some
     // weren't read, the row says how many were (Biedronka's leaflet of 26 Oct had 97 against the cap of 40).
@@ -592,25 +537,144 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
       const k = key(j.li, j.page.number);
       return reads.has(k) || (screened.has(k) && !flagged.has(k));
     }).length;
-    const pages = got < hiding.length ? { pages: { read: got, of: hiding.length } } : {};
-    if (candidates.length === 0 && promotions.length === 0) {
-      // "Nothing matched" only when everything that should have been read was read.
-      return complete
-        ? done({ status: "no_match", candidates }, true)
-        : done({ status: "failed", reason: [...reasons].join(",") || "incomplete", candidates, ...pages });
-    }
-    // The chain's row names the leaflet most of its offers came from.
-    const counts = new Map<number, number>();
-    for (const c of candidates) { const li = leafletOf.get(c.id) ?? 0; counts.set(li, (counts.get(li) ?? 0) + 1); }
-    const main = [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0] ?? 0;
-    return done({
-      status: "checked", leaflet: read.leaflets[main]!.leaflet, candidates, promotions,
-      ...(reasons.size ? { reason: [...reasons].join(",") } : {}), ...pages,
-    }, complete);
+    const built = chainOffers(chain, {
+      leaflets: read.leaflets, reads, promos, complete, reasons, ...(got < hiding.length ? { pages: { read: got, of: hiding.length } } : {}),
+    }, env);
+    return done(built, built.complete);
   } finally {
     clearTimeout(timer);
     env.signal.removeEventListener("abort", onAbort);
   }
+}
+
+/**
+ * The offers and promotions that fit the items, built by the code from what was read of one chain (live or from the
+ * catalog), and the chain's status: "nothing matched" only when everything that should have been read was read.
+ */
+export function chainOffers(chain: ReadChain, m: ChainMaterial, env: QueryEnv):
+  Omit<ChainResult, "chain" | "pagesRead" | "usage"> {
+  const judge = makeJudge(env);
+  const score = (text: string) => judge(text).scores;
+  const key = pageKey;
+  const reads = m.reads;
+  const promos = m.promos;
+  const reasons = m.reasons;
+  const read = { leaflets: m.leaflets };
+  const leaflets = m.leaflets.map((l) => ({ l, data: fittingData(l, judge) }));
+  const ended = (validTo: string | undefined) => !!m.endedBefore && !!validTo && validTo < m.endedBefore;
+  // Offers: data products (confirmed against their page where needed), then what the reader found.
+  const candidates: Candidate[] = [];
+  const seen = new Set<string>();
+  const leafletOf = new Map<string, number>();
+  const add = (input: OfferInput, scores: number[], li: number, similar?: boolean[]) => {
+    if (ended(input.validTo)) return;
+    const dedupe = `${normalize(input.name)}|${input.price.minor}|${input.validFrom ?? ""}`;
+    if (seen.has(dedupe)) return;
+    seen.add(dedupe);
+    const { offer, doubts } = buildOffer(input, env.language);
+    const id = env.nextId();
+    candidates.push({ id, chain, offer, doubts, scores, ...(similar?.some(Boolean) ? { similar } : {}) });
+    leafletOf.set(id, li);
+  };
+  leaflets.forEach(({ l, data }, li) => {
+    const used = new Set<ReadProduct>();
+    for (const { p, scores, similar } of data) {
+      const doubts: string[] = [];
+      let extra: Partial<DataProduct> & { lowConfidence?: boolean } = {};
+      if (p.confirmOnPage) {
+        const onPage = p.page ? reads.get(key(li, p.page)) : undefined;
+        if (!onPage) doubts.push("conditions_unconfirmed");
+        else {
+          const nameTerms = terms(p.name);
+          const same = onPage.filter((v) => !used.has(v) && matchScore(terms(v.name), nameTerms) >= MATCH_THRESHOLD);
+          const confirmed = same.find((v) => v.price.minor === p.price.minor);
+          if (confirmed) {
+            used.add(confirmed);
+            extra = {
+              conditions: confirmed.conditions,
+              ...(confirmed.regularPrice ? { regularPrice: confirmed.regularPrice } : {}),
+              ...(confirmed.lowest30d ? { lowest30d: confirmed.lowest30d } : {}),
+              ...(confirmed.printedUnitPrice ? { printedUnitPrice: confirmed.printedUnitPrice } : {}),
+              ...(!p.sizeText && confirmed.sizeText ? { sizeText: confirmed.sizeText } : {}),
+              lowConfidence: confirmed.lowConfidence,
+            };
+            if (confirmed.lowConfidence) doubts.push("low_confidence_read");
+          } else {
+            doubts.push(same.length ? "page_price_differs" : "conditions_unconfirmed");
+            for (const v of same) used.add(v);
+          }
+        }
+      }
+      const { lowConfidence: _lc, ...merged } = { ...p, ...extra };
+      add({
+        chain, name: merged.name, price: p.price, sizeText: merged.sizeText, regularPrice: merged.regularPrice, lowest30d: merged.lowest30d,
+        printedUnitPrice: merged.printedUnitPrice, conditions: merged.conditions, validFrom: p.validFrom, validTo: p.validTo,
+        source: { url: p.url, ...(p.page ? { page: p.page } : {}) }, readBy: "leaflet_data", ean: p.ean, doubts,
+      }, scores, li, similar);
+    }
+    for (const page of l.pages) {
+      for (const v of reads.get(key(li, page.number)) ?? []) {
+        if (used.has(v)) continue;
+        const { scores, similar } = judge(v.name);
+        if (best(scores) < MATCH_THRESHOLD && !similar.some(Boolean)) continue;
+        const dates = readDates(v, l.leaflet, env.today);
+        // Komfort prints on every page that its crossed-out prices are the 30-day lowest (ADR-667); the reader
+        // reports a crossed-out price as the regular one, so here it is the 30-day price.
+        const thirty = chain === "komfort" && !v.lowest30d && v.regularPrice ? { regularPrice: undefined, lowest30d: v.regularPrice } : {};
+        add({
+          chain, name: v.name, price: v.price, sizeText: v.sizeText, regularPrice: v.regularPrice, lowest30d: v.lowest30d, ...thirty,
+          printedUnitPrice: v.printedUnitPrice, conditions: v.conditions, validFrom: dates.validFrom, validTo: dates.validTo,
+          source: { url: page.url, page: page.number }, readBy: "page_image",
+          doubts: [...(v.lowConfidence ? ["low_confidence_read"] : []), ...(dates.outside ? ["dates_outside_leaflet"] : [])],
+        }, scores, li, similar);
+      }
+    }
+  });
+
+  // Promotions printed without a price whose range fits an item: said as a mechanic, never as a price.
+  const promotions: PromotionCandidate[] = [];
+  const seenPromo = new Set<string>();
+  leaflets.forEach(({ l }, li) => {
+    for (const page of l.pages) {
+      for (const p of promos.get(key(li, page.number)) ?? []) {
+        // A range often names several kinds ("proszki i kapsułki"): only another family altogether is left out.
+        const scores = score(p.range);
+        if (best(scores) < MATCH_THRESHOLD) continue;
+        const mechanic = mechanicText(p.mechanic, env.language);
+        const dedupe = `${normalize(p.range)}|${mechanic}`;
+        if (seenPromo.has(dedupe)) continue;
+        seenPromo.add(dedupe);
+        const dates = readDates(p, l.leaflet, env.today);
+        if (ended(dates.validTo)) continue;
+        const conditions = [...new Set(p.conditions.map((c) => conditionText(c, chain, env.language)).filter((t): t is string => !!t))].slice(0, 4);
+        const flags = flagsOf(p.conditions);
+        promotions.push({
+          scores,
+          promotion: {
+            chain, text: p.range, mechanic, conditions, ...(flags.length ? { flags } : {}),
+            ...(dates.validFrom ? { validFrom: dates.validFrom } : {}), ...(dates.validTo ? { validTo: dates.validTo } : {}),
+            source: { url: page.url, page: page.number },
+          },
+        });
+      }
+    }
+  });
+
+  const pages = m.pages ? { pages: m.pages } : {};
+  if (candidates.length === 0 && promotions.length === 0) {
+    // "Nothing matched" only when everything that should have been read was read.
+    return m.complete
+      ? { status: "no_match", candidates, promotions, complete: true }
+      : { status: "failed", reason: [...reasons].join(",") || "incomplete", candidates, promotions, complete: false, ...pages };
+  }
+  // The chain's row names the leaflet most of its offers came from.
+  const counts = new Map<number, number>();
+  for (const c of candidates) { const li = leafletOf.get(c.id) ?? 0; counts.set(li, (counts.get(li) ?? 0) + 1); }
+  const main = [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0] ?? 0;
+  return {
+    status: "checked", leaflet: read.leaflets[main]!.leaflet, candidates, promotions, complete: m.complete,
+    ...(reasons.size ? { reason: [...reasons].join(",") } : {}), ...pages,
+  };
 }
 
 // ---------- choosing the offers ----------
@@ -693,7 +757,29 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
     chainDeadline: started + budget - (deps.model ? PICK_RESERVE_MS : 500), signal, nextId: () => `c${++n}`, log,
   };
 
+  // The catalog first (decision 2026-11-12-leaflet-catalog): a chain it holds answers at once; a store that can't be
+  // read only means every chain is read live, as before.
+  let snapshots = new Map<ReadChain, ChainSnapshot>();
+  if (deps.catalog) {
+    try {
+      snapshots = await deps.catalog.snapshots(requested.filter(isCatalogChain));
+    } catch {
+      log("deals catalog unreadable; reading live", {});
+    }
+  }
+  let fromCatalog = 0;
   const results = await Promise.all(requested.filter(isReadChain).map((chain) => {
+    const snapshot = snapshots.get(chain);
+    const material = snapshot ? materialFromSnapshot(snapshot, env.today, now(), deps.catalogMaxAgeHours ?? DEFAULT_MAX_AGE_HOURS) : "stale";
+    const zero = { pagesRead: 0, usage: { inputTokens: 0, outputTokens: 0 } };
+    if (material === "no_leaflet") {
+      fromCatalog++;
+      return Promise.resolve<ChainResult>({ chain, status: "no_leaflet", candidates: [], promotions: [], complete: true, ...zero });
+    }
+    if (material !== "stale") {
+      fromCatalog++;
+      return Promise.resolve<ChainResult>({ chain, ...chainOffers(chain, material, env), ...zero });
+    }
     const adapter = deps.adapters?.[chain] ?? ADAPTERS[chain];
     return runChain(chain, adapter, env).catch((): ChainResult => ({
       chain, status: "failed", reason: "error", candidates: [], promotions: [], pagesRead: 0, usage: { inputTokens: 0, outputTokens: 0 }, complete: false,
@@ -771,7 +857,7 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
     response: { checkedAt: now().toISOString(), chains, items, ...(further ? { further } : {}) },
     stats: {
       chains: chains.length, statuses, offers: offers.length, checks: offers.filter((o) => o.check).length,
-      pagesRead: results.reduce((s, r) => s + r.pagesRead, 0), ...usage, picked, ms: Date.now() - started,
+      pagesRead: results.reduce((s, r) => s + r.pagesRead, 0), ...usage, picked, ms: Date.now() - started, fromCatalog,
     },
   };
 }

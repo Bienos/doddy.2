@@ -8390,61 +8390,61 @@
         }
       }
     },
-    "Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.": {
+    "Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gilt ab deinem nächsten Sprachgespräch. „Beginnt auf“ legt die Sprache fest, in der Doddy dich begrüßt; bei Automatisch beginnt er auf Englisch. So oder so folgt er der europäischen Sprache, die du sprichst, und wechselt, wenn du wechselst. Die Hörprobe ist das Hallo von Doddy auf Englisch und Polnisch in deinem Tempo; die Ausdrucksstärke hört man nur im Gespräch. Alle Stimmen sprechen jede Sprache, die Doddy spricht, jede mit eigenem Akzent; Wiktor ist polnischer Muttersprachler. Die Stimmen sind Kandidaten, bis die endgültige Stimme von Doddy gewählt ist."
+            "value": "Gilt ab deinem nächsten Sprachgespräch. „Beginnt auf“ legt die Sprache fest, in der Doddy dich begrüßt; bei Automatisch beginnt er auf Englisch. So oder so folgt er der europäischen Sprache, die du sprichst, und wechselt, wenn du wechselst."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se aplica desde tu próxima conversación de voz. “Empieza en” fija el idioma en el que Doddy te saluda; en Automático empieza en inglés. En cualquier caso, sigue el idioma europeo que hables y cambia cuando tú cambias. La muestra es el saludo de Doddy en inglés y polaco a tu velocidad; la expresividad solo se oye en una conversación. Todas las voces hablan todos los idiomas que habla Doddy, cada una con su acento; Wiktor es hablante nativo de polaco. Las voces son candidatas mientras se elige la voz definitiva de Doddy."
+            "value": "Se aplica desde tu próxima conversación de voz. “Empieza en” fija el idioma en el que Doddy te saluda; en Automático empieza en inglés. En cualquier caso, sigue el idioma europeo que hables y cambia cuando tú cambias."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "S’applique à partir de ta prochaine conversation vocale. « Commence en » règle la langue dans laquelle Doddy te salue ; sur Automatique, il commence en anglais. Dans tous les cas, il suit la langue européenne que tu parles et change quand tu changes. L’extrait est le bonjour de Doddy en anglais et en polonais à ta vitesse ; l’expressivité ne s’entend qu’en conversation. Toutes les voix parlent toutes les langues de Doddy, chacune avec son accent ; Wiktor est un locuteur natif du polonais. Les voix sont des candidates tant que la voix définitive de Doddy n’est pas choisie."
+            "value": "S’applique à partir de ta prochaine conversation vocale. « Commence en » règle la langue dans laquelle Doddy te salue ; sur Automatique, il commence en anglais. Dans tous les cas, il suit la langue européenne que tu parles et change quand tu changes."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. „Počinje na“ postavlja jezik na kojem te Doddy pozdravlja; na Automatski počinje na engleskom. U svakom slučaju prati europski jezik kojim govoriš i prebacuje se kad se ti prebaciš. Uzorak je Doddyjev pozdrav na engleskom i poljskom pri tvojoj brzini; izražajnost se čuje samo u razgovoru. Svi glasovi govore sve jezike koje govori Doddy, svaki sa svojim naglaskom; Wiktor je izvorni govornik poljskog. Glasovi su kandidati dok se ne odabere Doddyjev konačni glas."
+            "value": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. „Počinje na“ postavlja jezik na kojem te Doddy pozdravlja; na Automatski počinje na engleskom. U svakom slučaju prati europski jezik kojim govoriš i prebacuje se kad se ti prebaciš."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vale dalla tua prossima conversazione vocale. “Inizia in” imposta la lingua in cui Doddy ti saluta; su Automatico inizia in inglese. In ogni caso segue la lingua europea in cui parli e cambia quando cambi tu. L'anteprima è il saluto di Doddy in inglese e in polacco alla tua velocità; l'espressività si sente solo in una conversazione. Tutte le voci parlano ogni lingua di Doddy, ciascuna con il proprio accento; Wiktor è madrelingua polacco. Le voci sono candidate finché non viene scelta la voce definitiva di Doddy."
+            "value": "Vale dalla tua prossima conversazione vocale. “Inizia in” imposta la lingua in cui Doddy ti saluta; su Automatico inizia in inglese. In ogni caso segue la lingua europea in cui parli e cambia quando cambi tu."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。サンプルは、英語とポーランド語でのDoddyのあいさつをあなたの速さで再生したものです。表現の豊かさは会話の中でしか聞けません。すべての声がDoddyの話せる全言語を話し、それぞれに独自のなまりがあります。Wiktorはポーランド語のネイティブです。Doddyの最終的な声が決まるまで、これらの声は候補です。"
+            "value": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Działa od następnej rozmowy głosowej. „Zaczyna w” ustawia język, w którym Doddy Cię wita; przy ustawieniu Automatycznie zaczyna po angielsku. Tak czy inaczej podąża za europejskim językiem, którym mówisz, i zmienia go razem z Tobą. Próbka to powitanie Doddy’ego po angielsku i po polsku w Twoim tempie; ekspresję słychać tylko w rozmowie. Wszystkie głosy mówią każdym językiem Doddy’ego, każdy z własnym akcentem; Wiktor jest rodzimym użytkownikiem polskiego. Głosy są kandydatami, dopóki nie zostanie wybrany ostateczny głos Doddy’ego."
+            "value": "Działa od następnej rozmowy głosowej. „Zaczyna w” ustawia język, w którym Doddy Cię wita; przy ustawieniu Automatycznie zaczyna po angielsku. Tak czy inaczej podąża za europejskim językiem, którym mówisz, i zmienia go razem z Tobą."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vale a partir da sua próxima conversa por voz. “Começa em” define o idioma em que o Doddy cumprimenta você; em Automático, ele começa em inglês. De qualquer forma, ele acompanha o idioma europeu que você falar e troca quando você troca. A amostra é o oi do Doddy em inglês e polonês na sua velocidade; a expressividade só se ouve em uma conversa. Todas as vozes falam todos os idiomas que o Doddy fala, cada uma com seu próprio sotaque; Wiktor é falante nativo de polonês. As vozes são candidatas enquanto a voz final do Doddy é escolhida."
+            "value": "Vale a partir da sua próxima conversa por voz. “Começa em” define o idioma em que o Doddy cumprimenta você; em Automático, ele começa em inglês. De qualquer forma, ele acompanha o idioma europeu que você falar e troca quando você troca."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。试听内容是 Doddy 按你设定的语速用英语和波兰语打招呼；表现力只有在对话中才能听到。所有语音都能说 Doddy 会的每一种语言，各有自己的口音；Wiktor 的母语是波兰语。在 Doddy 的最终语音确定之前，这些语音都是候选。"
+            "value": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。"
           }
         }
       }
@@ -10150,65 +10150,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "简短"
-          }
-        }
-      }
-    },
-    "Bright and warm": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hell und warm"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luminoso y cálido"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clair et chaleureux"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vedar i topao"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vivace e calda"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "明るくあたたかい"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jasny i ciepły"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alegre e caloroso"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "明亮而温暖"
           }
         }
       }
@@ -16160,65 +16101,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się oznaczyć jako zrobione. Twoje przypomnienie się nie zmieniło."
-          }
-        }
-      }
-    },
-    "Couldn't play the sample.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Hörprobe konnte nicht abgespielt werden."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se ha podido reproducir la muestra."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossible de lire l’extrait."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uzorak nije bilo moguće reproducirati."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Non è stato possibile riprodurre l'anteprima."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルを再生できませんでした。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie udało się odtworzyć próbki."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível tocar a amostra."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法播放试听样音。"
           }
         }
       }
@@ -38821,65 +38703,6 @@
         }
       }
     },
-    "Laid-back and easy-going": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entspannt und locker"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Relajado y tranquilo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Détendu et facile à vivre"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opušten i ležeran"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rilassata e alla mano"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "のんびりおおらか"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wyluzowany i swobodny"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tranquilo e descontraído"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "悠闲随和"
-          }
-        }
-      }
-    },
     "Language": {
       "extractionState": "manual",
       "localizations": {
@@ -60534,65 +60357,6 @@
         }
       }
     },
-    "Polish native": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muttersprache Polnisch"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nativo polaco"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Polonais natif"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Izvorni poljski"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Madrelingua polacco"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ポーランド語ネイティブ"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rodzimy polski"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Polonês nativo"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "波兰语母语"
-          }
-        }
-      }
-    },
     "Polski": {
       "extractionState": "manual",
       "localizations": {
@@ -63421,65 +63185,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cena regularna %@"
-          }
-        }
-      }
-    },
-    "Relaxed and neutral": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entspannt und neutral"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Relajado y neutro"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Détendu et neutre"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opušten i neutralan"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rilassata e neutra"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "リラックスしてニュートラル"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spokojny i neutralny"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Relaxado e neutro"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "放松而中性"
           }
         }
       }
@@ -67752,76 +67457,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "试听"
-          }
-        }
-      }
-    },
-    "Samples don't play while Doddy is recording.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Próbki nie odtwarzają się, gdy Doddy nagrywa."
-          }
-        }
-      }
-    },
-    "Samples don't play while you're talking to Doddy.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hörproben spielen nicht, während du mit Doddy redest."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las muestras no se reproducen mientras hablas con Doddy."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les extraits ne se jouent pas pendant que tu parles à Doddy."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uzorci se ne reproduciraju dok razgovaraš s Doddyjem."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le anteprime non vengono riprodotte mentre parli con Doddy."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyと話している間は、サンプルを再生できません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Próbki nie grają, gdy rozmawiasz z Doddym."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As amostras não tocam enquanto você está falando com o Doddy."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "和 Doddy 聊天时不会播放试听样音。"
           }
         }
       }
@@ -78289,17 +77924,6 @@
         }
       }
     },
-    "Stop sample": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zatrzymaj próbkę"
-          }
-        }
-      }
-    },
     "Stop sending Health summaries": {
       "extractionState": "manual",
       "localizations": {
@@ -79702,65 +79326,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "轻点 Doddy 开始聊天"
-          }
-        }
-      }
-    },
-    "Tap a face to hear Doddy's hello in that voice, in English and Polish. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Your choice applies from the next conversation.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippe auf ein Gesicht, um das Hallo von Doddy in dieser Stimme zu hören, auf Englisch und Polnisch. Alle Stimmen sprechen jede Sprache, die Doddy spricht, jede mit eigenem Akzent; Wiktor ist polnischer Muttersprachler. Deine Wahl gilt ab dem nächsten Gespräch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toca una cara para oír el saludo de Doddy con esa voz, en inglés y polaco. Todas las voces hablan todos los idiomas que habla Doddy, cada una con su acento; Wiktor es hablante nativo de polaco. Tu elección se aplica desde la próxima conversación."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touche un visage pour entendre le bonjour de Doddy avec cette voix, en anglais et en polonais. Toutes les voix parlent toutes les langues de Doddy, chacune avec son accent ; Wiktor est un locuteur natif du polonais. Ton choix s’applique à partir de la prochaine conversation."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dodirni lice da čuješ Doddyjev pozdrav tim glasom, na engleskom i poljskom. Svi glasovi govore sve jezike koje govori Doddy, svaki sa svojim naglaskom; Wiktor je izvorni govornik poljskog. Tvoj odabir vrijedi od sljedećeg razgovora."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tocca un volto per sentire il saluto di Doddy con quella voce, in inglese e in polacco. Tutte le voci parlano ogni lingua di Doddy, ciascuna con il proprio accento; Wiktor è madrelingua polacco. La tua scelta vale dalla prossima conversazione."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顔をタップすると、その声でのDoddyのあいさつを英語とポーランド語で聞けます。すべての声がDoddyの話せる全言語を話し、それぞれに独自のなまりがあります。Wiktorはポーランド語のネイティブです。選択は次の会話から適用されます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stuknij twarz, aby usłyszeć powitanie Doddy’ego tym głosem, po angielsku i po polsku. Każdy głos mówi we wszystkich językach Doddy’ego, każdy z własnym akcentem; Wiktor jest rodzimym użytkownikiem polskiego. Wybór działa od następnej rozmowy."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toque em um rosto para ouvir o oi do Doddy naquela voz, em inglês e polonês. Todas as vozes falam todos os idiomas que o Doddy fala, cada uma com seu próprio sotaque; Wiktor é falante nativo de polonês. Sua escolha vale a partir da próxima conversa."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轻点一张脸，听 Doddy 用那个声音打招呼，有英语和波兰语。所有语音都能说 Doddy 会的每一种语言，各有自己的口音；Wiktor 的母语是波兰语。你的选择从下一次对话开始生效。"
           }
         }
       }
@@ -87178,65 +86743,6 @@
         }
       }
     },
-    "The voice Doddy was given": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Stimme, die Doddy bekommen hat"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La voz que le dieron a Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La voix qu’on a donnée à Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Glas koji je Doddy dobio"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La voce data a Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyに与えられた声"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Głos, który dostał Doddy"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A voz que deram ao Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 被赋予的声音"
-          }
-        }
-      }
-    },
     "The watch shows nothing from your notes or lists.": {
       "extractionState": "manual",
       "localizations": {
@@ -91415,65 +90921,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "To unieważnia wszystkie sesje głosowe Doddy’ego na Twoich urządzeniach. Żeby usunąć Doddy’ego z logowania przez Apple, unieważnij to też w ustawieniach Apple ID."
-          }
-        }
-      }
-    },
-    "This sample is missing from the app.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Hörprobe fehlt in der App."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esta muestra falta en la app."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cet extrait manque dans l’app."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ovaj uzorak nedostaje u aplikaciji."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questa anteprima manca nell'app."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このサンプルがアプリに含まれていません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brakuje tej próbki w aplikacji."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esta amostra está faltando no app."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "应用中缺少这段试听样音。"
           }
         }
       }
@@ -96731,65 +96178,6 @@
         }
       }
     },
-    "Use Doddy's own voice": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die eigene Stimme von Doddy verwenden"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usar la voz propia de Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utiliser la propre voix de Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koristi Doddyjev vlastiti glas"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usa la voce propria di Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy自身の声を使う"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Użyj własnego głosu Doddy’ego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usar a voz do próprio Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 Doddy 自己的声音"
-          }
-        }
-      }
-    },
     "Use a different number": {
       "extractionState": "manual",
       "localizations": {
@@ -98238,124 +97626,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wolisz poczekać? Poproś Doddy’ego, żeby później poszukał jeszcze raz: ceny się zmieniają."
-          }
-        }
-      }
-    },
-    "Warm and engaging": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Warm und zugewandt"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cálido y cercano"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chaleureux et engageant"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Topao i srdačan"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calda e coinvolgente"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "あたたかく親しみやすい"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ciepły i angażujący"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Caloroso e envolvente"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "温暖而有亲和力"
-          }
-        }
-      }
-    },
-    "Warm, smooth and steady": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Warm, weich und gleichmäßig"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cálido, suave y firme"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chaleureux, doux et stable"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Topao, mekan i ujednačen"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calda, morbida e costante"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "あたたかく、なめらかで安定した"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ciepły, gładki i stabilny"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Caloroso, suave e firme"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "温暖、流畅而平稳"
           }
         }
       }
