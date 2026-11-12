@@ -37,6 +37,8 @@ Doddy Web follows the website's design (owner, 22 Oct): the cream canvas, a stic
 
 The phone can list and sign out every browser. A browser can sign itself or others out.
 
+Limits on typing codes (`REDEEM_LIMITS`, `src/web/sessions.ts`): 10 tries per client address (an IPv6 /64) per quarter hour, right or wrong, counted before the code is read. For the whole server only **wrong** codes count, 2,000 an hour. While that hour's budget is spent, a client's first try of the quarter hour is still checked, so a right code still signs in; only a client that already had a wrong code this quarter hour gets 429 until the quarter hour ends. Wrong codes from many places can't lock everyone out.
+
 ## Google and Apple (ADR-818, `2026-11-09-web-sign-in-same-account`)
 The code still works. Next to it, the sign-in page shows "Continue with Google" and "Continue with Apple" once the server has `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`; `DODDY_WEB_SIGNIN_PROVIDERS` (default `google,apple`) picks which buttons. They open the Doddy account the iPhone uses for that same Apple or Google sign-in (decision `2026-11-09-web-sign-in-same-account`: the Supabase user's own id, or the id of the iPhone's earlier data it took over), with nothing to link. A *different* Apple or Google user (say Google on the site, Apple on the iPhone) opens an account only after it is linked to it once:
 - **On the iPhone:** Settings › Doddy on the web › Link Google (or Apple). The phone opens the system sign-in sheet with a one-time ticket from the server.
@@ -59,7 +61,9 @@ Every user is getting a Doddy account: a Supabase user made with Apple, Google o
 - **Deleting the account** (`DELETE /v1/account` with the account's token):
   - erases the linked data;
   - queues the Supabase user for removal (`supabase_auth` cleanup; it needs `SUPABASE_SECRET_KEY`, as for ADR-818);
-  - ends that account's earlier tokens at once, through its cut-off second.
+  - ends that account's earlier tokens at once, through its cut-off second;
+  - refuses, with 401 like a cut-off token, a write by a request that was let in before the deletion and was still running when it committed (the `users` row, receipts, switches, documents, payments, approvals). The cut-off row in `token_floor` is the deletion's tombstone, kept 31 days; the check runs in each write's own transaction (`Store.refuseIfCutOff`, `src/requestCredential.ts`). A sign-in made after the deletion writes as usual.
+- **Removals still owed after a deletion** (an online account's connection, a Supabase user) are never given up: the hourly sweeps retry each one, waiting longer after each failure (5 minutes, doubling, at most a day; `CLEANUP_RETRY`, `src/store.ts`). After 8 failures, or at once when the server has no way to remove that kind (`supabase_auth` without `SUPABASE_SECRET_KEY`), it is reported stuck: one `cleanup_stuck` warning in the log (kind, tries, reason; never an id) and `stuck_at` on the row. `DATABASE_URL=… npm run cleanups:stuck` in `backend/` lists them, with the provider's id to remove by hand.
 - **Tests:** `backend/test/account-links.test.ts` builds the real app from its config (supabase mode, device sign-in on, a local ES256 key in place of the project's). `auth-supabase.test.ts` covers email and passwords.
 - **To turn it on, live:** `DODDY_AUTH_MODE=supabase` and `SUPABASE_URL` on Render `doddy`. Keep `DODDY_SESSION_SIGNING_KEY` while phones move over: old device tokens and the link proof need it. Render runs `DODDY_ENV=development`, where that is allowed.
 

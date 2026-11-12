@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
+import { isDeviceHook, rateLimitKey } from "./auth.js";
 import type { AccountVerifier } from "./doddyAccount.js";
 import type { AbuseLimits } from "./config.js";
 import type { Db } from "./db.js";
@@ -66,6 +66,8 @@ export interface Deps {
   db: Db;
   /** Checks a Doddy account's token for `POST /v1/accounts/sign-in` (decision 2026-11-08-required-account). Absent: that route says "not set up". */
   accounts?: AccountVerifier | null;
+  /** ANONYMOUS_ACCOUNTS: `POST /v1/accounts` makes an account without a sign-in. Absent or false: 403 sign_in_required. */
+  anonymousAccounts?: boolean;
   push?: PushSender;
   sms?: SmsSender;
   verifier?: PhoneVerifier;
@@ -144,12 +146,32 @@ export function requestLogFields(request: { method: string; url: string; id?: st
   };
 }
 
+/** The body limit of every route that doesn't set its own. Routes above it check the device token before the body. */
+export const BODY_LIMIT = 16 * 1024;
+
+/**
+ * How long a request may take to arrive, headers and body (Node checks every 30 s, so a slow one is cut between
+ * 120 and 150 s). Webhooks from Twilio and ElevenLabs arrive in well under a second; the largest upload, an 8 MB
+ * memory snapshot, needs about 0.55 Mbit/s to make it, which a phone on a weak mobile connection still has.
+ */
+export const REQUEST_TIMEOUT_MS = 120_000;
+
+/** The limit of a signed-in route that sets none: one request a second on average, per device and route. */
+export const DEVICE_ROUTE_LIMIT = { max: 3600, timeWindow: "1 hour" } as const;
+
+const hookList = (hooks: unknown): unknown[] => (Array.isArray(hooks) ? hooks : hooks ? [hooks] : []);
+
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
     // Render terminates TLS and appends to X-Forwarded-For. Trusting a fixed number of hops reads
     // the client IP from the right, so a client-supplied X-Forwarded-For can't change it (ADR-175).
     trustProxy: (_address: string, hop: number) => hop < (deps.trustProxyHops ?? 1),
-    bodyLimit: 16 * 1024,
+    bodyLimit: BODY_LIMIT,
+    requestTimeout: REQUEST_TIMEOUT_MS,
+    // No idle-socket limit (Fastify's default, said here on purpose): it would also cut a request while its
+    // handler waits, and Messages waits on Claude for up to 45 s. Slow bodies are bounded by requestTimeout,
+    // slow headers by Node's headersTimeout (60 s), idle keep-alive sockets by Fastify's keepAliveTimeout (72 s).
+    connectionTimeout: 0,
     logger: deps.logger === false ? false : {
       level: "info",
       // Never log bearer tokens or signatures. Request bodies are not logged at all.
@@ -158,16 +180,23 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
       serializers: { req: requestLogFields },
     },
   });
+  // Added before the rate limiter, whose own onRoute hook then sees the limit set here.
+  app.addHook("onRoute", (route) => {
+    const signedIn = [route.onRequest, route.preParsing, route.preHandler].some((hooks) => hookList(hooks).some(isDeviceHook));
+    if (!signedIn) return;
+    // A route that reads a large body must refuse an unknown token first (requireDeviceBeforeBody), not after.
+    if ((route.bodyLimit ?? BODY_LIMIT) > BODY_LIMIT && hookList(route.preHandler).some(isDeviceHook)) {
+      throw new Error(`${route.method} ${route.url}: a route with a bodyLimit above ${BODY_LIMIT} bytes checks the device token before the body (preParsing: requireDeviceBeforeBody)`);
+    }
+    if (route.config?.rateLimit === undefined) route.config = { ...route.config, rateLimit: { ...DEVICE_ROUTE_LIMIT } };
+  });
   await app.register(formbody);
   await app.register(rateLimit, {
     global: false,
-    // Signed-in routes count per bearer token (requests with a made-up token get their own bucket
-    // but are refused by auth before they do anything). Routes without auth must set
-    // keyGenerator: byIp, or a made-up Authorization header would buy a fresh bucket.
-    keyGenerator: (req) => {
-      const auth = req.headers.authorization;
-      return auth ? "auth:" + createHash("sha256").update(auth).digest("hex") : "ip:" + req.ip;
-    },
+    // Signed-in routes count per bearer token once it is known to belong to a device; a missing,
+    // malformed or unknown token counts against the client's address. Routes that never take a
+    // device token set keyGenerator: byIp and skip the lookup.
+    keyGenerator: rateLimitKey(deps.db),
   });
 
   app.setErrorHandler((err: Error & { statusCode?: number }, req, reply) => {

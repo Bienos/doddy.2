@@ -1,6 +1,7 @@
 // What the chain adapters share: fetching from the chain's official hosts only, turning a fetch result into a
 // chain status, dates in Warsaw, and money from a chain's own numbers.
 import type { FetchResult } from "../fetcher.js";
+import { firstElement, forwardFinder, nextStartTag } from "../../htmlScan.js";
 import type { ChainContext, ChainRead, Money } from "../types.js";
 
 /** The address only if it is https on one of the chain's hosts (addresses in a chain's data are data). */
@@ -31,6 +32,49 @@ export async function fetchOfficial(ctx: ChainContext, url: string, hosts: reado
 
 export function parseJson(body: Buffer): unknown {
   try { return JSON.parse(body.toString("utf8")); } catch { return undefined; }
+}
+
+/** The text of the first `<script` whose start tag passes `accept`, up to the first "</script>" after it (case as
+ * `ci` says): what /<script[^>]*ATTR[^>]*>([\s\S]*?)<\/script>/ finds, in linear time. */
+export function scriptText(html: string, accept: (tag: string) => boolean, ci = false): string | undefined {
+  return firstElement(html, ci ? /<script/gi : /<script/g, ci ? /<\/script>/gi : "</script>", (tag) => accept(tag.text))?.content;
+}
+
+/**
+ * The JSON arrays a Next.js page pushes with `<script>self.__next_f.push([…])</script>`, in page order: what
+ * /<script[^>]*>\s*self\.__next_f\.push\((\[[\s\S]*?\])\)\s*;?\s*<\/script>/g finds when each push is its own script
+ * (Next escapes "<" inside the pushed strings), in linear time.
+ */
+export function nextFlightPushes(html: string): string[] {
+  const out: string[] = [];
+  const closeAt = forwardFinder(html, "</script>");
+  const head = /\s*self\.__next_f\.push\(\[/y;
+  let endFor = -1;
+  let end = -1; // for the script that closes at endFor: just past the "]" of its closing "])", or -1
+  for (let from = 0; ;) {
+    const tag = nextStartTag(html, /<script/g, from);
+    if (!tag) break;
+    const close = closeAt(tag.end);
+    if (!close) break;
+    head.lastIndex = tag.end;
+    if (head.test(html)) {
+      if (endFor !== close.index) { endFor = close.index; end = pushEnd(html, close.index); }
+      const open = head.lastIndex - 1; // the "["
+      if (end > open + 1) { out.push(html.slice(open, end)); from = close.end; continue; }
+    }
+    from = tag.end; // as the regex did, a "<script" inside a script that isn't a push is tried too
+  }
+  return out;
+}
+
+const isSpace = (c: string | undefined) => c !== undefined && /\s/.test(c);
+
+/** For a script body ending at `at` in "])", an optional ";" and spaces: just past its "]"; else -1. */
+function pushEnd(html: string, at: number): number {
+  let i = at;
+  while (isSpace(html[i - 1])) i--;
+  if (html[i - 1] === ";") { i--; while (isSpace(html[i - 1])) i--; }
+  return html[i - 1] === ")" && html[i - 2] === "]" ? i - 1 : -1;
 }
 
 export const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);

@@ -9,17 +9,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { FastifyPluginAsync } from "fastify";
 import type { Deps } from "../app.js";
-import { principal, requireDevice } from "../auth.js";
+import { principal, requireDeviceBeforeBody } from "../auth.js";
 import { AssistRequest, LIMITS, WIRE_MESSAGE, WIRE_STATUS, type WireCode } from "../assistant/request.js";
 import { addTokens, reserve } from "../assistant/usage.js";
 import { RECAP_LIMITS, RecapRequest } from "../assistant/recap.js";
 
 export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
-  const auth = requireDevice(deps.db);
+  // Both routes take bodies above the server default: the token is checked before the body is read.
+  const auth = requireDeviceBeforeBody(deps.db);
   const assistant = deps.assistant;
 
   app.post("/v1/assistant/ask", {
-    preHandler: auth,
+    preParsing: auth,
     bodyLimit: LIMITS.bodyBytes,
     config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
   }, async (req, reply) => {
@@ -85,7 +86,7 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
   // conversation was about, when the iPhone can't write them itself and the person said yes. The lines are
   // used for this one call and dropped; the request counts as one Messages request against the same caps.
   app.post("/v1/recaps", {
-    preHandler: auth,
+    preParsing: auth,
     bodyLimit: RECAP_LIMITS.bodyBytes,
     config: { rateLimit: { max: 30, timeWindow: "1 hour" } },
   }, async (req, reply) => {

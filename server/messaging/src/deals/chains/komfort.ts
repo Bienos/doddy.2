@@ -18,6 +18,7 @@
 // robots.txt: komfort.pl allows /st/gazetka to every agent (it disallows search, the cart, the account and `*klink=*`);
 // view.publitas.com has none (404: no rules, RFC 9309).
 import { currentWeek, decodeEntities, fetchOfficial, isObject, isoDay, officialUrl, parseJson } from "./common.js";
+import { startTags } from "../../htmlScan.js";
 import type { ChainAdapter, ChainRead, LeafletPage, LeafletRead } from "../types.js";
 
 export const KOMFORT_HOSTS = ["komfort.pl", "www.komfort.pl", "view.publitas.com"] as const;
@@ -29,13 +30,32 @@ export const komfortSpreads = (slug: string) => `${komfortLeafletUrl(slug)}sprea
 
 const LEAFLET = String.raw`https://view\.publitas\.com/${GROUP}/([a-z0-9][a-z0-9-]{1,100})(?=[/?"'])`;
 const FRAME = new RegExp(String.raw`<iframe[^>]*\ssrc="${LEAFLET}`);
-const BUTTON = new RegExp(String.raw`<a[^>]*\shref="${LEAFLET}[^"]*"[^>]*>\s*<button[^>]*class="gazetka-button"`);
+const BUTTON_HREF = new RegExp(String.raw`\shref="${LEAFLET}[^"]*"`, "y");
+const BUTTON_AFTER = /\s*<button[^>]*class="gazetka-button"/y;
+
+/** The leaflet of the link right before the "gazetka-button": what
+ * /<a[^>]*\shref="LEAFLET[^"]*"[^>]*>\s*<button[^>]*class="gazetka-button"/ finds, in linear time. As there, the last
+ * leaflet href in the link's tag wins. */
+function buttonLeaflet(html: string): string | undefined {
+  for (const tag of startTags(html, /<a/g)) {
+    BUTTON_AFTER.lastIndex = tag.end;
+    if (!BUTTON_AFTER.test(html)) continue;
+    const hrefs = [...tag.text.matchAll(/\shref="/g)];
+    for (let i = hrefs.length - 1; i >= 0; i--) {
+      BUTTON_HREF.lastIndex = hrefs[i]!.index;
+      const m = BUTTON_HREF.exec(tag.text);
+      if (m) return m[1];
+    }
+  }
+  return undefined;
+}
 
 /** The leaflet the page shows: the one in the "gazetka-view" frame, else the leaflet button's. */
 export function findLeaflet(html: string): string | undefined {
   const view = html.indexOf('class="gazetka-view"');
+  // The frame is looked for in 2,000 characters only, so its regex stays cheap.
   const framed = view >= 0 ? FRAME.exec(html.slice(view, view + 2000))?.[1] : undefined;
-  return framed ?? BUTTON.exec(html)?.[1];
+  return framed ?? buttonLeaflet(html);
 }
 
 /** "Oferta ważna od 28.10 do 01.12.2026 r." in the leaflet's own text, first page first. A start without a year takes

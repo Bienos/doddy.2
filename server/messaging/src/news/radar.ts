@@ -12,6 +12,7 @@ import { matchedKeywords } from "./match.js";
 import { shortlist, type Candidate } from "./rank.js";
 import { checkUrl } from "./safeFetch.js";
 import { isValidTimeZone, nextRunAt } from "./schedule.js";
+import { reserveWriter } from "./usage.js";
 import { shorten, validateLines } from "./writer.js";
 
 // On my radar alerts (owner, 10 Nov 2026; decision 2026-11-10-radar-alerts). A follow stays on the iPhone
@@ -301,7 +302,7 @@ async function tellDaily(ctx: RadarContext, alert: Claimed, now: Date): Promise<
   });
   if (late > DAILY_MAX_LATE_MS) return "daily_too_late";
   if (waiting.length === 0) return "nothing_new";
-  const lines = await summaryLines(ctx, alert, waiting);
+  const lines = await summaryLines(ctx, alert, waiting, now);
   return inTransaction(ctx.db, async (c) => {
     const still = new Set((await untold(c, alert.id)).map((h) => h.id));
     const covered = waiting.filter((h) => still.has(h.id));
@@ -316,14 +317,17 @@ async function tellDaily(ctx: RadarContext, alert: Claimed, now: Date): Promise<
 /**
  * The summary's lines. With a news writer on the server it picks and phrases up to five stories from their
  * headline and summary only, and validateLines keeps only lines for stories that exist; otherwise, or if it
- * fails, the newest headlines word for word. Each line names its publisher.
+ * fails, the newest headlines word for word. Each line names its publisher. The writer counts against the same daily
+ * caps as the digests (src/news/usage.ts); past one, the headlines.
  */
-async function summaryLines(ctx: RadarContext, alert: Claimed, hits: HitRow[]): Promise<{ lines: string[]; aiWritten: boolean }> {
+async function summaryLines(ctx: RadarContext, alert: Claimed, hits: HitRow[], now: Date): Promise<{ lines: string[]; aiWritten: boolean }> {
   const candidates: Candidate[] = hits.slice(0, 25).map((h, i) => ({
     id: `s${i + 1}`, title: h.title, summary: h.summary, url: h.url, source: h.source, publishedAt: h.published_at.toISOString(),
     topics: [alert.label], score: 0, urlHash: Buffer.alloc(0),
   }));
-  if (ctx.news.writer) {
+  const reserved = ctx.news.writer ? await reserveWriter(ctx.db, alert.account_id, ctx.news.writerCaps, now) : undefined;
+  if (reserved && reserved !== "ok") ctx.log("radar summary writer skipped, daily limit", { scope: reserved });
+  if (ctx.news.writer && reserved === "ok") {
     try {
       const picks = validateLines(await ctx.news.writer.write({ language: alert.language, topics: [alert.label], candidates }), candidates);
       if (picks.length) return { lines: picks.slice(0, 3).map((p) => `${p.line} (${p.candidate.source})`), aiWritten: true };

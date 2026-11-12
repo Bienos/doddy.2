@@ -1,5 +1,5 @@
 import type { TokenFloors } from "./auth.js";
-import { CLEANUP_RETRY, type QueuedCleanup, type Store, type UserErasure } from "./store.js";
+import { CLEANUP_RETRY, type QueuedCleanup, type Store, stuckCleanupLine, type UserErasure } from "./store.js";
 
 /**
  * Deleting a Doddy account on the server (ADR-674): everything this backend keeps for the person
@@ -85,26 +85,36 @@ export class AccountEraser {
 
   /**
    * Hourly (app.ts): retries removals owed after a deletion for `providers` that have no sweep of
-   * their own (ADR-818: a person's Supabase sign-in). Same rules as the other sweeps (CLEANUP_RETRY).
+   * their own (ADR-818: a person's Supabase sign-in). Same rules as the other sweeps (CLEANUP_RETRY):
+   * put off longer after each failure, never given up.
    */
   async sweep(providers: readonly string[]): Promise<void> {
     const now = this.deps.now?.() ?? Date.now();
-    const due = await this.deps.store.cleanupsToRetry([...providers], now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    const due = await this.deps.store.cleanupsToRetry([...providers], now, CLEANUP_RETRY.perSweep);
     for (const cleanup of due) await this.remove(cleanup);
   }
 
-  /** Removed and dequeued, or kept as `failed` for the sweep. A provider with no remover here stays queued. */
+  /**
+   * Removed and dequeued, or kept as `failed` for the sweep. A provider with no remover on this server
+   * stays queued too, and is reported stuck at once (`no_remover`): the sweep tries it again once a
+   * remover is set up (for `supabase_auth`, SUPABASE_SECRET_KEY).
+   */
   private async remove(cleanup: QueuedCleanup): Promise<"removed" | "failed"> {
     const remover = this.deps.removers.find((r) => r.providers.includes(cleanup.provider));
-    if (!remover) return "failed";
-    let result: "removed" | "failed";
-    try {
-      result = await remover.remove(cleanup.connectionId, AbortSignal.timeout(this.deps.timeoutMs));
-    } catch {
-      result = "failed";
+    let result: "removed" | "failed" = "failed";
+    if (remover) {
+      try {
+        result = await remover.remove(cleanup.connectionId, AbortSignal.timeout(this.deps.timeoutMs));
+      } catch {
+        result = "failed";
+      }
     }
-    if (result === "removed") await this.deps.store.finishCleanup(cleanup.connectionId);
-    else await this.deps.store.failCleanup(cleanup.connectionId, "remote_cleanup_failed");
+    if (result === "removed") {
+      await this.deps.store.finishCleanup(cleanup.connectionId);
+      return result;
+    }
+    const failure = await this.deps.store.failCleanup(cleanup.connectionId, remover ? "remote_cleanup_failed" : "no_remover", this.deps.now?.() ?? Date.now());
+    if (failure?.stuckNow) this.deps.log?.(stuckCleanupLine(failure));
     return result;
   }
 }
