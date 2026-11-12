@@ -68,6 +68,8 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case onlineAccounts
     /// The web, the news and places, looked up through the server (ADR-575).
     case webSearch
+    /// Flights: Kiwi.com search and Duffel booking through the server (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+    case flights
     /// Claude on the server: summaries, rewrites, and files it makes (ADR-574).
     case claudeDocuments
     /// This week's leaflets, "Cheapest this week" (ADR-609).
@@ -123,7 +125,9 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .birthdays: [VoiceToolName.upcomingBirthdays]
         case .steps: [VoiceToolName.readSteps]
         case .onlineAccounts: CloudToolName.all.subtracting(Feature.webSearch.tools).subtracting(Feature.claudeDocuments.tools)
+            .subtracting(Feature.flights.tools)
         case .webSearch: [CloudToolName.webSearch, "news_search", "find_places"]
+        case .flights: CloudToolName.flightTools
         case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument]
         case .deals: [VoiceToolName.findDeals]
         case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands]

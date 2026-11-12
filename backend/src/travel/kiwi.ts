@@ -2,8 +2,7 @@ import { z } from "zod";
 
 /**
  * Flights for the trip planner (decision 2026-11-11-travel-agent-plan, stage 2; owner, 12 Nov 2026: Kiwi.com
- * "od razu dla wszystkich"). Kiwi.com's public MCP server (https://mcp.kiwi.com, tool `search-flight`, no
- * key) answers with live itineraries, a total price for the party with the bags asked for, and a booking
+ * "od razu dla wszystkich"). Kiwi.com's public MCP server (called only from flights/kiwi.ts, no key) answers with live itineraries, a total price for the party with the bags asked for, and a booking
  * link on kiwi.com. Doddy only searches and links out: the person books and pays on Kiwi.com.
  *
  * Read on 12 Nov 2026 from this session: `initialize` and `tools/list` over JSON-RPC (Streamable HTTP,
@@ -13,8 +12,6 @@ import { z } from "zod";
  * (owner queue: ask Kiwi).
  */
 
-export const KIWI_MCP_URL = "https://mcp.kiwi.com";
-export const KIWI_TIMEOUT_MS = 15_000;
 
 /** What the planner asks for. Dates are YYYY-MM-DD; Kiwi wants dd/mm/yyyy, converted here. */
 export interface FlightQuery {
@@ -57,7 +54,7 @@ const Itinerary = z.object({
   inbound: Leg.nullable().optional(),
 }).passthrough();
 
-const SearchAnswer = z.object({
+export const SearchAnswer = z.object({
   currency: z.string(),
   itineraries: z.array(Itinerary),
   error: z.unknown().optional(),
@@ -73,77 +70,6 @@ export interface FlightSearch {
 export class FlightSearchError extends Error {
   constructor(readonly reason: "unavailable" | "malformed" | "refused") {
     super(`flight search ${reason}`);
-  }
-}
-
-const kiwiDate = (iso: string) => {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-};
-
-/** The tool arguments for a query. Exported for tests. */
-export function kiwiArguments(q: FlightQuery): Record<string, unknown> {
-  const args: Record<string, unknown> = {
-    flyFrom: q.from,
-    flyTo: q.to,
-    departureDate: kiwiDate(q.departFrom),
-    adults: q.adults,
-    currency: q.currency,
-    locale: "pl",
-    sort: "price",
-  };
-  if (q.departTo !== q.departFrom) args.departureDateTo = kiwiDate(q.departTo);
-  if (q.nightsMin !== null && q.nightsMax !== null) {
-    args.nights_in_dst_from = q.nightsMin;
-    args.nights_in_dst_to = q.nightsMax;
-  }
-  if (q.children > 0) args.children = q.children;
-  if (q.adultBags.some((b) => b > 0)) args.adults_hold_bags = q.adultBags;
-  if (q.directOnly) args.max_sector_stopovers = 0;
-  return args;
-}
-
-/** The `data:` payload of a Streamable HTTP answer (or the body itself when it is plain JSON). */
-export function parseRpcBody(body: string): unknown {
-  const data = body.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("");
-  return JSON.parse(data || body);
-}
-
-export class KiwiFlightSearch implements FlightSearch {
-  constructor(private readonly url = KIWI_MCP_URL, private readonly fetcher: typeof fetch = fetch) {}
-
-  async search(query: FlightQuery, signal: AbortSignal) {
-    let res: Response;
-    try {
-      res = await this.fetcher(this.url, {
-        method: "POST",
-        headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "search-flight", arguments: kiwiArguments(query) } }),
-        signal,
-        redirect: "error",
-      });
-    } catch {
-      throw new FlightSearchError("unavailable");
-    }
-    if (!res.ok) throw new FlightSearchError(res.status === 429 || res.status === 403 ? "refused" : "unavailable");
-    let rpc: unknown;
-    try {
-      rpc = parseRpcBody((await res.text()).slice(0, 2_000_000));
-    } catch {
-      throw new FlightSearchError("malformed");
-    }
-    const result = (rpc as { result?: { content?: { type?: string; text?: string }[]; isError?: boolean } }).result;
-    const text = result?.content?.find((c) => c.type === "text")?.text;
-    if (!result || result.isError || typeof text !== "string") throw new FlightSearchError(result?.isError ? "refused" : "malformed");
-    let parsed: z.infer<typeof SearchAnswer>;
-    try {
-      parsed = SearchAnswer.parse(JSON.parse(text));
-    } catch {
-      throw new FlightSearchError("malformed");
-    }
-    // Only links to Kiwi.com itself are passed on.
-    const itineraries = parsed.itineraries.filter((i) => /^https:\/\/(www\.)?kiwi\.com\//.test(i.bookingUrl));
-    return { currency: parsed.currency, itineraries };
   }
 }
 

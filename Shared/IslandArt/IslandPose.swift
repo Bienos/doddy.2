@@ -68,15 +68,17 @@ enum IslandPose: String, CaseIterable, Sendable {
         }
     }
 
-    /// Where the head is in a face pose: its centre as fractions of width and height, and its
+    /// Where the face is in a face pose: its centre as fractions of width and height, and its
     /// diameter as a fraction of the width. Nil for poses not used as a face. tools/whole_doddy/
-    /// cut_faces.py cuts the face pictures from these numbers.
+    /// cut_faces.py cuts the face pictures from these numbers: the cream disc of his face and a thin
+    /// rim, so nothing that touches his head (the hand at his ear, a sound mark, arms, neck) is in
+    /// the 26 pt face on the island (12 Nov 2026; before, the whole outline widened by 6 % took them in).
     var head: (x: Double, y: Double, diameter: Double)? {
         switch self {
-        case .listening: (205.0 / 400, 152.0 / 600, 172.0 / 400)
-        case .shush: (203.0 / 400, 140.0 / 600, 190.0 / 400)
-        case .yawnStretch: (201.0 / 400, 212.0 / 600, 160.0 / 400)
-        case .crosslegged: (200.0 / 400, 179.0 / 600, 196.0 / 400)
+        case .listening: (201.3 / 400, 150.7 / 600, 157.3 / 400)
+        case .shush: (204.0 / 400, 140.0 / 600, 208.0 / 400)
+        case .yawnStretch: (200.0 / 400, 186.0 / 600, 149.3 / 400)
+        case .crosslegged: (200.7 / 400, 186.0 / 600, 185.3 / 400)
         default: nil
         }
     }

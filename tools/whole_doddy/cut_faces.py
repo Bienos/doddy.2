@@ -12,9 +12,18 @@ Nothing is redrawn or recoloured.
 
     python3 -I tools/whole_doddy/cut_faces.py <repo root>
 
-Writes `WholeDoddy_face_<pose>.imageset` (art@2x = 48 px, art@3x = 72 px) in the app and the
-widget catalogs. Keep HEADS in step with `IslandPose.head` (IslandPose.swift);
-scripts/check_island_art.sh checks the image sets exist, the Swift checks the head boxes.
+Each circle is the cream disc of his face plus a 4/400 rim (3 px at the 300 x 450 pictures),
+measured from the pictures (12 Nov 2026, decision 2026-11-12-action-button-audio-and-island). Until
+then the circle was the whole head outline widened by 6 %, and it took in what touches his head:
+the hand cupped at his ear and an orange sound mark in "listening" (the face the island shows
+through a whole conversation), arms and neck in "yawn_stretch", a stub of neck under the others.
+At 26 pt those read as stray marks on the island. On the black island the rim is all of the
+outline that is needed.
+
+Writes `WholeDoddy_face_<pose>.imageset` (art@2x = 52 px, art@3x = 78 px: the compact island
+draws the face at 26 pt) in the app and the widget catalogs. Keep HEADS in step with
+`IslandPose.head` (IslandPose.swift); scripts/check_island_art.sh checks the image sets exist, the
+Swift checks the head boxes.
 """
 import json
 import os
@@ -24,16 +33,19 @@ from PIL import Image, ImageDraw
 APP = "DoddyApp/Resources/Assets.xcassets"
 WIDGETS = "DoddyWidgets/Assets.xcassets"
 INFO = {"author": "xcode", "version": 1}
-# Head centre and diameter as fractions of the picture's width and height (IslandPose.head).
+# Face centre and diameter as fractions of the picture's width and height (IslandPose.head): the
+# cream disc's box, plus the rim.
 HEADS = {
-    "listening": (205 / 400, 152 / 600, 172 / 400),
-    "shush": (203 / 400, 140 / 600, 190 / 400),
-    "yawn_stretch": (201 / 400, 212 / 600, 160 / 400),
-    "crosslegged": (200 / 400, 179 / 600, 196 / 400),
+    "listening": (201.3 / 400, 150.7 / 600, 157.3 / 400),
+    "shush": (204.0 / 400, 140.0 / 600, 208.0 / 400),
+    "yawn_stretch": (200.0 / 400, 186.0 / 600, 149.3 / 400),
+    "crosslegged": (200.7 / 400, 186.0 / 600, 185.3 / 400),
 }
-# The circle is a little wider than the head, as in the view that cropped it (diameter * 1.06).
-MARGIN = 1.06
+# The rim is already in HEADS.
+MARGIN = 1.0
 SUPERSAMPLE = 4
+# Pixels at 2x and 3x for the 26 pt the compact island draws (the minimal island's 24 pt scales down).
+SIZES = (("2x", 52), ("3x", 78))
 
 
 def face(picture, head):
@@ -57,7 +69,7 @@ def main(root):
         for catalog in (APP, WIDGETS):
             folder = os.path.join(root, catalog, f"WholeDoddy_face_{pose}.imageset")
             os.makedirs(folder, exist_ok=True)
-            for scale, size in (("2x", 48), ("3x", 72)):
+            for scale, size in SIZES:
                 picture = crop.resize((size, size), Image.LANCZOS)
                 alpha = Image.composite(picture.getchannel("A"), Image.new("L", (size, size), 0), round_mask(size))
                 picture.putalpha(alpha)

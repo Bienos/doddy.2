@@ -47,7 +47,10 @@ extension VoiceToolReply {
         + "Nothing was changed. Ask the user for the exact details, then try again."
 
     /// The result words the server starts a line with (backend/src/tools/catalog.ts).
-    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:", "started:"]
+    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:", "started:",
+                                         // book_flight (decision 2026-11-11-flights-kiwi-search-duffel-booking): "booked:" only with
+                                         // Duffel's order id and booking reference; "failed:" when Duffel said nothing was booked; else "unknown:".
+                                         "booked:", "failed:", "unknown:"]
 
     /// What the agent hears when `make_document` was asked with too little to go on. Starts with the fixed word
     /// `need_details`, then the server's one-line list of what is missing, then what to do.
@@ -79,6 +82,11 @@ extension VoiceToolReply {
         case .server(let code, _, _, let receipt):
             // The server's own receipt outranks the code: it recorded that the provider may have done it.
             if receipt?.status == .outcomeUnknown { return maybeDone }
+            // book_flight (decision 2026-11-11-flights-kiwi-search-duffel-booking): a blocked or failed receipt
+            // means the server proved nothing went to Duffel's booking (or Duffel said nothing was booked).
+            if tool == CloudToolName.bookFlight, let status = receipt?.status, status == .blocked || status == .failed {
+                return "failed: \(ToolData.clean(error.userMessage)) Nothing was booked."
+            }
             switch code {
             case "capability_disabled":
                 // ASK-01: the server had no yes for this exact call (or it was used or expired).

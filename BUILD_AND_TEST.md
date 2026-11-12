@@ -68,6 +68,15 @@ microphone/Live Activities, an interrupted start and a second press to end. An u
 must offer to open Doddy and must never start a delayed microphone afterward. Expansion and
 background microphone behaviour require a device; simulator compilation alone cannot verify them.
 
+Action Button audio session (decision `2026-11-12-action-button-audio-and-island`):
+`swift test --package-path Packages/DoddyCore --filter ConversationAudioHoldsTests` covers who sets the session
+up (LiveKit for every start but one without opening Doddy), a stale hold dropped by a newer start, and a late
+release that must not switch off a newer conversation's session. On an iPhone, press the Action Button with
+music playing in another app: the `voice-audio` connect line says `audio session held by Doddy … mixing with
+other apps ON`, Doddy is heard and hears you, the music keeps playing, and after Stop the log says `audio session
+given back to LiveKit`. The island faces come from `python3 -I tools/whole_doddy/cut_faces.py .`; a second run
+must change nothing.
+
 Provider network preparation: `VoiceNetworkPreparationTests` covers every permission/readiness gate,
 the two-minute request budget and its independence from token use, plus content-free SDK timing formatting.
 The native `DoddyTests/VoiceNetworkHostTests` checks our prewarm host against the pinned ElevenLabs
@@ -295,6 +304,12 @@ Without the backend you can drive the same flow with curl, e.g.
    also needs `DODDY_LIVE_CHECK_USER_ID` and `DODDY_LIVE_CHECK_TIME_ZONE`, or it prints NOT RUN and exits 2).
 6. **Disconnect** in the app. It blocks reads immediately and asks Composio to revoke and delete the connection; if that
    can't be confirmed the app says so — disconnect again or remove access in your Google Account.
+
+### Flights (decision `2026-11-11-flights-kiwi-search-duffel-booking`)
+Live mode only, each part off by default: `FLIGHT_SEARCH_ENABLED=1` (Kiwi.com's public MCP server, no key),
+`DUFFEL_ACCESS_TOKEN=duffel_test_…` (Duffel search), and `FLIGHT_BOOKING_ENABLED=1` (Duffel test bookings; the server
+refuses to book with a live key). Offline tests: `cd backend && npm run build && node --test dist/test/flights.test.js`
+(fake Kiwi and Duffel clients; no network, no key).
 
 ### Troubleshooting
 | Symptom | Likely cause |

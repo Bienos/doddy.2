@@ -365,6 +365,11 @@ struct VoiceView: View {
                                 .id("document-\(document.url.absoluteString)")
                         }
 
+                        if !controller.flightLinks.isEmpty {
+                            flightsCard(controller.flightLinks)
+                                .id("flights")
+                        }
+
                         if let card = controller.contactCard {
                             contactCard(card, controller: controller)
                                 .id("contactCard")
@@ -1730,6 +1735,29 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
+    /// find_flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): each flight opens on Kiwi.com,
+    /// where the user books and pays. Doddy books nothing here.
+    private func flightsCard(_ links: [RunLink]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Flights on Kiwi.com", systemImage: "airplane")
+                .font(.headline)
+            Text("Prices from Kiwi.com just now; they can change. You book and pay on Kiwi.com.")
+                .font(.callout)
+                .foregroundStyle(Theme.secondaryText)
+            ForEach(links, id: \.url) { link in
+                Button {
+                    UIApplication.shared.open(link.url)
+                } label: {
+                    Label(link.title, systemImage: "arrow.up.forward.app")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("voice.openFlight")
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
     /// Names and details of a contact lookup. Only the agent's copy is names; this is the full view.
     /// Call, Text and Email open the iPhone's own apps, and each one is a tap.
     private func contactCard(_ card: VoiceSessionController.ContactCard, controller: VoiceSessionController) -> some View {
@@ -2115,7 +2143,8 @@ struct VoiceView: View {
         switch controller.phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")
-        case .thinking: NSLocalizedString("Working on it…", comment: "")
+        // Named after the tool that runs, "still" after a while (decision 2026-11-12-voice-turn-feedback).
+        case .thinking: controller.turnFeedback.statusText
         case .speaking: NSLocalizedString("Speaking", comment: "")
         case .ended: NSLocalizedString("Conversation ended", comment: "")
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")

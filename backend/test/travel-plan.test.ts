@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import type { ClaudeProvider, StructuredInput } from "../src/tools/claude.js";
-import { FlightSearchError, type FlightQuery, kiwiArguments, KiwiFlightSearch, MockFlightSearch, parseRpcBody } from "../src/travel/kiwi.js";
+import { FlightSearchError, type FlightQuery, MockFlightSearch } from "../src/travel/kiwi.js";
+import { KiwiTripSearch, plannerKiwiArguments as kiwiArguments } from "../src/flights/kiwi.js";
 import { assumptions, cleanBrief, EMPTY_BRIEF, missing, pickOptions, stayLinks, toQuery, traps, type TripBrief } from "../src/travel/plan.js";
 import { USER_A } from "./helpers.js";
 import { type Rig, start } from "./toolsRig.js";
@@ -55,7 +56,7 @@ test("Kiwi.com's answer is read from its data line; a link that isn't Kiwi.com's
   const mock = await new MockFlightSearch().search(toQuery(full)!);
   const odd = { ...mock.itineraries[0]!, id: "x", bookingUrl: "https://evil.example/pay" };
   let sent: unknown;
-  const kiwi = new KiwiFlightSearch("https://mcp.kiwi.com", (async (_url: unknown, init?: RequestInit) => {
+  const kiwi = new KiwiTripSearch("https://mcp.kiwi.com", (async (_url: unknown, init?: RequestInit) => {
     sent = JSON.parse(String(init?.body));
     return new Response(rpc({ currency: "PLN", itineraries: [...mock.itineraries, odd] }), { status: 200 });
   }) as typeof fetch);
@@ -63,11 +64,10 @@ test("Kiwi.com's answer is read from its data line; a link that isn't Kiwi.com's
   assert.equal(out.itineraries.length, 3);
   assert.equal((sent as any).params.name, "search-flight");
   assert.equal((sent as any).params.arguments.departureDate, "12/02/2027");
-  assert.deepEqual(parseRpcBody('{"a":1}'), { a: 1 });
 });
 
 test("a refusal, an error answer or a broken one is an error, never an empty list", async () => {
-  const kiwi = (body: string, status = 200) => new KiwiFlightSearch("https://mcp.kiwi.com", (async () => new Response(body, { status })) as typeof fetch);
+  const kiwi = (body: string, status = 200) => new KiwiTripSearch("https://mcp.kiwi.com", (async () => new Response(body, { status })) as typeof fetch);
   const q = toQuery(full)!, s = AbortSignal.timeout(1000);
   await assert.rejects(kiwi("", 429).search(q, s), (e: unknown) => e instanceof FlightSearchError && e.reason === "refused");
   await assert.rejects(kiwi(`data: ${JSON.stringify({ jsonrpc: "2.0", id: 1, result: { isError: true, content: [{ type: "text", text: "bad" }] } })}`).search(q, s),

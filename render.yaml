@@ -104,6 +104,16 @@ services:
       # Web search through Monid (optional; empty = "not set up"). Paid from Doddy's Monid wallet.
       - key: MONID_API_KEY
         sync: false
+      # Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Each part is off until set:
+      # FLIGHT_SEARCH_ENABLED=1 turns on Kiwi.com search (KIWI_MCP_URL defaults to https://mcp.kiwi.com);
+      # DUFFEL_ACCESS_TOKEN (a duffel_test_ key) turns on Duffel search; FLIGHT_BOOKING_ENABLED=1 also lets
+      # Doddy book, test mode only (the server refuses to book with a live key).
+      - key: FLIGHT_SEARCH_ENABLED
+        value: "0"
+      - key: DUFFEL_ACCESS_TOKEN
+        sync: false
+      - key: FLIGHT_BOOKING_ENABLED
+        value: "0"
       # ADR-563: the phone signs itself in with a device ID. open (ADR-587, owner 22 Oct: Ask Doddy
       # for everyone) = the first iPhone that signs in owns this server; every other iPhone gets a
       # guest session good for Ask Doddy only (never the owner's accounts, search or documents).
