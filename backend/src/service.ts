@@ -26,7 +26,7 @@ import { AppError, ProviderError } from "./errors.js";
 import { ConfirmationPolicy, UsageLimiter } from "./policy.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import type { CalendarProvider } from "./providers/types.js";
-import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "./store.js";
+import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store, stuckCleanupLine } from "./store.js";
 import { addDays, isSupportedTimeZone, isValidDateString, localDate, localDayWindow, rfc3339Local } from "./time.js";
 
 export const PROVIDER = "google_calendar";
@@ -48,6 +48,8 @@ export interface ServiceDeps {
   completionMode: "verifier" | "callback" | "mock";
   now?: () => number;
   sleep?: (ms: number) => Promise<void>;
+  /** Operational log (content-free): here, a removal owed at Google that is stuck. Default: nothing. */
+  log?: (line: Record<string, unknown>) => void;
 }
 
 export class ConnectedAppsService {
@@ -478,8 +480,14 @@ export class ConnectedAppsService {
   async sweepAbandoned(): Promise<void> {
     const now = this.now();
     const ended = await this.store.expireAttempts(now, [PROVIDER]);
-    const retry = await this.store.cleanupsToRetry([PROVIDER], now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    const retry = await this.store.cleanupsToRetry([PROVIDER], now, CLEANUP_RETRY.perSweep);
     await this.removeQueued([...ended, ...retry]);
+  }
+
+  /** Kept queued for the sweep, put off a little longer each time; reported once when it is stuck. */
+  private async failed(connectionId: string): Promise<void> {
+    const failure = await this.store.failCleanup(connectionId, "remote_cleanup_failed", this.now());
+    if (failure?.stuckNow) this.deps.log?.(stuckCleanupLine(failure));
   }
 
   /** Removes connections a failed completion left at the provider; a failure stays queued and visible. */
@@ -502,7 +510,7 @@ export class ConnectedAppsService {
         result = "failed";
       }
       if (result === "removed") await this.store.finishCleanup(connectionId);
-      else await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+      else await this.failed(connectionId);
     }
   }
 
@@ -518,7 +526,7 @@ export class ConnectedAppsService {
       result = "failed";
     }
     if (result === "removed") await this.store.finishCleanup(connectionId);
-    else await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+    else await this.failed(connectionId);
     return result;
   }
 
