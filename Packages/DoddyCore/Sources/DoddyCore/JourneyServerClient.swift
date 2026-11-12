@@ -63,11 +63,13 @@ public struct JourneyPartnerRoute: Decodable, Equatable, Sendable {
         guard let first = formatter.date(from: startLocal),
               let last = formatter.date(from: finishLocal),
               last >= first, last.timeIntervalSince(first) <= 24 * 60 * 60 else { return nil }
-        return JourneyRoute(source: source, departs: first, arrives: last,
-                            segments: segments.map {
-            JourneySegment(line: $0.line, from: $0.stops.first?.name ?? "unknown",
-                           to: $0.stops.last?.name ?? "unknown")
-        })
+        let steps = segments.compactMap { segment -> JourneySegment? in
+            guard let from = segment.stops.first?.name, !from.isEmpty,
+                  let to = segment.stops.last?.name, !to.isEmpty else { return nil }
+            return JourneySegment(line: segment.line, from: from, to: to)
+        }
+        guard steps.count == segments.count else { return nil }
+        return JourneyRoute(source: source, departs: first, arrives: last, segments: steps)
     }
 }
 
