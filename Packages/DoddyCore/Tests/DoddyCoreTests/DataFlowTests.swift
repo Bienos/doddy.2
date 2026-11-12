@@ -126,6 +126,35 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("errands", state).what.contains("Serper"), "shopping tasks name the offer source")
     }
 
+    /// SHOPPING.md "Shopify": a search or a cart goes to Doddy's server, which asks Shopify's Shop service. The row says
+    /// what is sent and what isn't, that nothing is bought, and that nothing is sent without the server or while
+    /// Connections are paused.
+    func testShopifyRowSaysWhatGoesWhereAndThatNothingIsBought() {
+        XCTAssertFalse(row("shopify", base).isActive)
+        XCTAssertEqual(row("shopify", base).note, "Nothing has been sent to Doddy's server yet.")
+        XCTAssertFalse(DataFlow.networkSummary(base).contains("Shopify"))
+        var state = base
+        state.doddyServerSet = true
+        let shopify = row("shopify", state)
+        XCTAssertTrue(shopify.isActive)
+        XCTAssertTrue(shopify.destination.contains("Doddy server"))
+        XCTAssertTrue(shopify.destination.contains("Shopify's Shop service"))
+        for part in ["The words you search for", "variant ID", "the shop's domain", "the quantity",
+                     "no name, account, address or payment detail of yours"] {
+            XCTAssertTrue(shopify.what.contains(part), part)
+        }
+        XCTAssertTrue(shopify.when.contains("when you tap search"), "a search starts from the person's tap, never by itself")
+        XCTAssertTrue(shopify.when.contains("places no order and takes no payment"))
+        XCTAssertTrue(shopify.note?.contains("doesn't log the words you search for") ?? false)
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("Shopify's Shop service, asked by your Doddy server"))
+        state.pauseAll = true
+        XCTAssertFalse(row("shopify", state).isActive, "paused: nothing is sent")
+        XCTAssertEqual(row("shopify", state).note, "Connections are paused, so Shopify shops aren't searched.")
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("Shopify"))
+        // No AI service reads a Shopify search.
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("Shopify"))
+    }
+
     /// SHOPPING_WATCH.md (ADR-614): a watched price goes to the messaging server, which reads the shop's page;
     /// the notification has no product words, nothing is bought, no AI service is involved, and nothing is sent
     /// without a server or while Connections are paused.

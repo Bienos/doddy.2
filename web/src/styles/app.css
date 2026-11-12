@@ -261,6 +261,34 @@ a {
 
 .social-sign-in .field-hint {
   margin: 0;
+  font-size: 0.875rem;
+}
+
+.button-apple {
+  background: var(--reading-ink);
+  color: var(--page);
+  box-shadow: inset 0 -4px 0 var(--orange-cue);
+}
+
+.button-apple:hover:not(:disabled) {
+  box-shadow: inset 0 -6px 0 var(--orange-cue);
+}
+
+.notice.waiting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.notice.waiting p {
+  margin: 0;
+  flex: 1 1 14rem;
+}
+
+.popup-done {
+  text-align: center;
 }
 
 .divider {
@@ -446,21 +474,36 @@ a {
   padding: var(--space-6) 16px;
 }
 
-/* The notebook page: ruled paper, Doddy at the bottom corner, the website's sign-in card. */
+/* The sign-in page: Doddy and the welcome on one side, the ways in on the other (one column on a phone). */
 .sign-in-card {
   position: relative;
   width: 100%;
   max-width: 34rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-6) var(--space-6) var(--space-6);
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6);
   border-radius: 36px;
   border: 1px solid var(--separator);
-  background-color: var(--page);
-  background-image: repeating-linear-gradient(180deg, transparent 0 35px, var(--rule) 35px 36px);
-  box-shadow: var(--lift);
+  background: var(--page);
+  box-shadow: var(--lift-strong);
   overflow: hidden;
+}
+
+.sign-in-intro,
+.sign-in-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.sign-in-panel {
+  gap: var(--space-4);
+}
+
+.sign-in-intro h1 {
+  font-size: clamp(2rem, 7vw, 2.75rem);
+  line-height: 1.05;
 }
 
 .sign-in-top {
@@ -473,19 +516,84 @@ a {
 .sign-in-foot {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
   gap: var(--space-3);
-  margin-bottom: calc(var(--space-6) * -1);
+  margin-top: var(--space-2);
+}
+
+.sign-in-foot .doddy-figure {
+  width: 72px;
 }
 
 .sign-in-foot .says {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-3);
+  font-size: 1.5rem;
 }
 
+@media (min-width: 880px) {
+  .sign-in-card {
+    max-width: 62rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: 0;
+    padding: 0;
+  }
+
+  .sign-in-intro {
+    padding: 48px;
+    gap: var(--space-4);
+    background: color-mix(in srgb, var(--quiet-surface) 55%, var(--page));
+    border-right: 1px solid var(--separator);
+  }
+
+  .sign-in-panel {
+    padding: 48px;
+    justify-content: center;
+  }
+
+  .sign-in-foot {
+    margin-top: auto;
+  }
+
+  .sign-in-foot .doddy-figure {
+    width: 190px;
+  }
+
+  .sign-in-foot .says {
+    margin-bottom: var(--space-4);
+    font-size: 1.75rem;
+  }
+}
+
+/* The iPhone's code, as three numbered steps. */
 .steps {
-  padding-left: 1.4em;
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  counter-reset: step;
+  color: var(--secondary-text);
+}
+
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--quiet-surface);
+  box-shadow: inset 0 0 0 1px var(--separator);
+  color: var(--accent-text);
+  font-weight: 700;
+  font-size: 0.875rem;
 }
 
 .lead {
@@ -944,7 +1052,7 @@ a {
   }
 
   .sign-in-card {
-    padding: var(--space-5) var(--space-4) var(--space-6);
+    padding: var(--space-5) var(--space-4);
     border-radius: 28px;
   }
 }
