@@ -94,6 +94,8 @@ public enum ActivityText {
         "Read your tasks": "Odczytano zadania",
         "Add a task": "Dodaj zadanie",
         "Searched the web": "Wyszukano w sieci",
+        "Searched live Shopify offers": "Przeszukano oferty Shopify",
+        "Prepared merchant checkout": "Przygotowano koszyk u sprzedawcy",
         // Errands (ADR-570): "sprawa" is the user's word for a task handed over.
         "Hand over a task": "Przekaż sprawę",
         "Checked your tasks": "Sprawdzono sprawy",
