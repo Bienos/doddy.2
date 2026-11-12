@@ -3379,6 +3379,8 @@
   "Nothing chosen": "Nic nie wybrano",
   "Doddy looks for offers in shops in Poland in the background and reads each shop's own page. A price he couldn't confirm there isn't shown. The result waits in Shopping, in Tasks and in Messages.": "Doddy szuka w tle ofert w sklepach w Polsce i czyta stronę każdego sklepu. Ceny, której tam nie potwierdził, nie pokazuje. Wynik czeka w Zakupach, w Sprawach i w Wiadomościach.",
   "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result.": "Wszystko to trafia na serwer Doddy'ego; słowa, notatka i to, co najważniejsze, trafiają też do Anthropic, którego Claude robi rozeznanie. Hasła wyszukiwania, które Claude z nich układa, trafiają do Google Shopping przez Serper, a serwer Doddy'ego otwiera strony sklepów. Serwer usuwa swoją kopię, gdy ten iPhone zapisze wynik.",
+  "Food": "Jedzenie",
+  "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Otwiera aplikację, jeśli ją masz, albo stronę. Doddy nie widzi ani nie składa zamówienia.",
   "The trips saved on this iPhone couldn't be read. Search again to replace them.": "Nie udało się odczytać wyjazdów zapisanych na tym iPhonie. Wyszukaj jeszcze raz, żeby je zastąpić.",
   "Trips": "Wyjazdy",
   "Not going ahead": "Nie dojdą do skutku",
