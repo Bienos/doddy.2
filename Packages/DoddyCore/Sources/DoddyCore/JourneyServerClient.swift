@@ -131,6 +131,28 @@ private struct JourneyPlaceQuery: Encodable {
     let query: String
 }
 
+extension VoiceToolReply {
+    /// Only after a licensed provider returned source routes; never convert an empty/malformed
+    /// reply into invented times, destinations or ticket prices.
+    public static func licensedJourneys(_ response: JourneyPartnerRoutes, calendar: Calendar = .current) -> String {
+        let routes = response.routes.prefix(3).compactMap { $0.normalized() }
+        guard response.source == "Jakdojade", !routes.isEmpty else {
+            return "not found: Jakdojade did not return any complete route. Suggest opening Jakdojade to search manually."
+        }
+        let lines = routes.enumerated().map { index, route -> String in
+            let from = route.departs.formatted(date: .abbreviated, time: .shortened)
+            let to = route.arrives.formatted(date: .abbreviated, time: .shortened)
+            let steps = route.segments.map { "\($0.line): \($0.from) → \($0.to)" }
+                .joined(separator: "; ")
+            return "Option \(index + 1): \(from) to \(to); \(steps)"
+        }
+        return "found: Licensed Jakdojade scheduled transit connections, checked at \(response.fetchedAt). "
+            + "Not live vehicle positions or confirmed punctuality. No ticket purchase was made. "
+            + "These times came from the source, not Doddy; do not invent other lines.\\n"
+            + ToolData.block(lines)
+    }
+}
+
 extension DoddyServerClient {
     public func journeyProviderStatus() async throws -> JourneyProviderStatus {
         let response = try await authorized(.get, "/v1/journeys/provider", body: nil)
