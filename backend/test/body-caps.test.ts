@@ -103,7 +103,7 @@ test("only three web routes read more than 128 KB of body, and each has a length
     `PUT /v1/web/memory/notes ${MEMORY_NOTES_MAX_BODY_BYTES}`,
     `PUT /v1/web/messages ${THREAD_MAX_BODY_BYTES}`,
   ].sort());
-  // Everything else: 24 KB by default, Ask Doddy 128 KB, Logbook 24 KB (16 KB until 12 Nov 2026: 117 tools outgrew it).
+  // Everything else: 24 KB by default, Ask Doddy 128 KB, Logbook 32 KB (a day with all 120 tools, decision 2026-11-11-flights-kiwi-search-duffel-booking).
   assert.equal(ASSIST_MAX_BODY_BYTES, 128 * 1024);
-  assert.equal(LOGBOOK_MAX_BODY_BYTES, 24 * 1024);
+  assert.equal(LOGBOOK_MAX_BODY_BYTES, 32 * 1024);
 });

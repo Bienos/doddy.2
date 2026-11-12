@@ -263,7 +263,12 @@ enum TalkInIsland {
         // A deliberate press asks for the popup immediately, still labelled Connecting.
         // Waiting for the first speaking event made an otherwise working start look inert.
         // iOS owns whether the expansion is shown; no claim that the agent can hear yet.
-        if controller.backgroundStartReady, controller.isLive {
+        // Only with Settings › "Expand when Doddy speaks" on, which is off unless the owner turned it
+        // on (owner, 9 Nov 2026: only the small island; 12 Nov: "it switches from big to small"). The
+        // conversation's own expansion (`IslandExpansion`) already follows the same switch.
+        let expands = LaunchPreferencesMigration.islandExpands(
+            UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool)
+        if expands, controller.backgroundStartReady, controller.isLive {
             VoiceLiveActivity.shared.expand()
         }
         if !(run.finished || controller.phase.endedStart) {

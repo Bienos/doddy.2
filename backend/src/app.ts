@@ -31,6 +31,8 @@ import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
+import { type DuffelClient, HttpDuffelClient } from "./flights/duffel.js";
+import { HttpKiwiClient, type KiwiClient } from "./flights/kiwi.js";
 import { AccountContext } from "./web/chatContext.js";
 import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
@@ -46,6 +48,8 @@ export async function buildApp(
     provider?: CalendarProvider;
     toolsProvider?: ToolsProvider;
     webSearch?: WebSearchProvider | null;
+    /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking); tests pass fakes. */
+    flights?: { kiwi: KiwiClient | null; duffel: DuffelClient | null; bookingEnabled: boolean } | null;
     claude?: ClaudeProvider | null;
     /** The model that chats with a person's kept notes and conversations (ADR-603). */
     chatClaude?: ClaudeProvider | null;
@@ -115,9 +119,21 @@ export async function buildApp(
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
   // Document links are signed with the session key; without one, make_document says "not set up".
   const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
+  // Flights: live only, each part only when the owner set it (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+  const flights =
+    overrides.flights !== undefined
+      ? overrides.flights
+      : config.mode === "live"
+        ? {
+            kiwi: config.flights.kiwiUrl ? new HttpKiwiClient(config.flights.kiwiUrl) : null,
+            duffel: config.flights.duffelToken ? new HttpDuffelClient(config.flights.duffelToken, config.flights.duffelBaseUrl) : null,
+            bookingEnabled: config.flights.bookingEnabled,
+          }
+        : null;
   const tools = new CloudToolsService({
     store,
     provider: toolsProvider,
+    flights,
     claude,
     documentLinks,
     webSearch,

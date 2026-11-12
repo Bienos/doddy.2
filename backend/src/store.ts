@@ -1796,6 +1796,26 @@ export class Store {
     return row ? { outcome: row.outcome, externalId: row.external_id } : null;
   }
 
+  /**
+   * Every used approval for this user, tool and account since `since`, newest first, whatever its
+   * arguments. Flight booking binds its account to the Duffel offer (`duffel:<offer id>`), so this is
+   * every try at booking that offer: one that did or may have gone through blocks another
+   * (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+   */
+  async usedApprovals(input: { userId: string; capability: string; accountId: string; since: number }): Promise<{
+    outcome: WriteOutcome | null;
+    externalId: string | null;
+    consumedAt: number;
+  }[]> {
+    const result = await this.db.query<{ outcome: WriteOutcome | null; external_id: string | null; consumed_at: number }>(
+      `SELECT outcome, external_id, consumed_at FROM approvals
+       WHERE user_id = $1 AND capability = $2 AND account_id = $3 AND consumed_at IS NOT NULL AND consumed_at >= $4
+       ORDER BY consumed_at DESC LIMIT 20`,
+      [input.userId, input.capability, input.accountId, input.since],
+    );
+    return result.rows.map((r) => ({ outcome: r.outcome, externalId: r.external_id, consumedAt: Number(r.consumed_at) }));
+  }
+
   /** The newest run of the same write (user, tool, arguments) since `since` that did or may have gone through. */
   async latestWrite(input: { userId: string; capability: string; argsDigest: string; since: number }): Promise<{ outcome: WriteOutcome; finishedAt: number } | null> {
     const row = await this.one<{ outcome: WriteOutcome; finished_at: number }>(

@@ -435,6 +435,22 @@ struct IslandCompactTrailingView: View {
     }
 }
 
+/// The voice conversation's small island, right side: always the waves' own 48 x 26 pt, whatever
+/// Doddy is doing (12 Nov 2026, decision `2026-11-12-action-button-audio-and-island`). iOS sizes
+/// the small island to what it holds, so the waves while he listens or talks and the narrower dots
+/// or symbol while he thinks, connects or a card waits made the island shrink and grow on every
+/// turn. The dots, symbol, time or language codes sit in the middle of the same space. Only the
+/// voice activity uses it; timers and tools keep their own widths.
+struct IslandVoiceCompactTrailingView: View {
+    let scene: IslandScene
+    let startedAt: Date
+
+    var body: some View {
+        IslandCompactTrailingView(scene: scene, startedAt: startedAt)
+            .frame(width: IslandAuroraView.size.width, height: IslandAuroraView.size.height)
+    }
+}
+
 /// His voice on the small island as Home's fine lines (owner, 1 Nov 2026: option C, "Aurora, like
 /// Home", ADR-683): orange to amber to rose, highest in the middle, fading at their ends. Calm while
 /// he hears you. While he talks outside the app, each beat (about every 0.6 s) gives the lines a new

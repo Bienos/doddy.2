@@ -167,6 +167,13 @@ public enum ActivityText {
         "Create a Google Doc": "Utwórz Dokument Google",
         "Search the news": "Wyszukano wiadomości",
         "Find places": "Wyszukano miejsca",
+        // Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+        "Find flights": "Wyszukano loty",
+        "Find flights Doddy can book": "Wyszukano loty do rezerwacji",
+        "Check a flight booking": "Sprawdzono rezerwację lotu",
+        "Book a flight": "Zarezerwuj lot",
+        "Searched flights": "Wyszukano loty",
+        "Checked a flight booking": "Sprawdzono rezerwację lotu",
         // ADR-564
         "Ask Claude": "Zapytano Claude’a",
         "Make a document with Claude": "Zlecono Claude’owi dokument",
