@@ -1,0 +1,2 @@
+Docs: the two call agents' new prompts (13 Nov) are already live on ElevenLabs; `voice-agent/README.md` now says so and `docs/OWNER_QUEUE.md` 71 is done. The wording question (72) is untouched and still the owner's.
+Ran: read-only reads of the live agents (prompt lengths and distinctive sentences vs the repository files), `scripts/ci.sh --only checks`. Not run: anything that changes a live agent; no server deploy needed or done.
