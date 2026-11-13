@@ -191,23 +191,14 @@ public enum TripPlanText {
     /// "12 lutego, 14:15 → 23:05 · 1 przesiadka · Ryanair, easyJet"
     public static func leg(_ l: PlanLeg, polish: Bool) -> String {
         let day = TripDay(String(l.departs.prefix(10))).map { TripCheckText.day($0, polish: polish) } ?? ""
-        let stops: String = switch l.stops {
-        case 0: polish ? "bez przesiadek" : "direct"
-        case 1: polish ? "1 przesiadka" : "1 stop"
-        default: polish ? "przesiadki: \(l.stops)" : "\(l.stops) stops"
-        }
         let route = "\(l.fromCity ?? l.from) → \(l.toCity ?? l.to)"
-        return "\(route) · \(day), \(time(l.departs)) → \(time(l.arrives)) · \(stops)" + (l.airlines.isEmpty ? "" : " · \(l.airlines.joined(separator: ", "))")
+        return "\(route) · \(day), \(time(l.departs)) → \(time(l.arrives)) · \(stops(l.stops, polish: polish))"
+            + (l.airlines.isEmpty ? "" : " · \(l.airlines.joined(separator: ", "))")
     }
 
     /// "3055 zł za 2 osoby, 2 walizki wliczone"
     public static func price(_ o: PlanOption, adults: Int, polish: Bool) -> String {
-        let money = o.currency == "PLN" && polish ? "\(o.price) zł" : "\(o.price) \(o.currency)"
-        let people = polish ? (adults == 1 ? "za 1 osobę" : "za \(adults) osoby") : (adults == 1 ? "for 1 person" : "for \(adults) people")
-        let bags = o.checkedBagsIncluded > 0
-            ? (polish ? ", walizki wliczone: \(o.checkedBagsIncluded)" : ", checked bags included: \(o.checkedBagsIncluded)")
-            : (polish ? ", bez walizki" : ", no checked bag")
-        return "\(money) \(people)\(bags)"
+        "\(money(o, polish: polish)) \(party(o, people: adults, polish: polish))"
     }
 
     /// The words handed to Doddy's background task when the person asks it to look at stays. No links in them.

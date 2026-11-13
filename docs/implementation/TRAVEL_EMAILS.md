@@ -77,9 +77,9 @@ Check-in times are worked out in the departure airport's time zone (8 Dec, 14:00
 - **Mock mode:** one demo Ryanair email and a demo reading, so the screen can be tried without a mailbox.
 
 **App:**
-- **Trips screen:** Home's ••• menu › Trips (`DoddyApp/Features/Trips/`). The tap on "Find my trips in Gmail" is the yes (owner's decision `2026-11-11-asked-for-runs-at-once`: what the person asks for runs at once). The app asks for the server's single-use approval and uses it straight away for one search; there is no in-app card. What leaves the iPhone is written under the button.
+- **Trips screen:** Home's ••• menu › Trips (`DoddyApp/Features/Trips/`). Since 13 Nov 2026 the page opens on the trip planner (`TRAVEL_PLANNER.md`) and the Gmail search is in the page's ••• menu › Import bookings from Gmail (`TripsImportSheet.swift`; owner: the Gmail block "jest bez sensu" on the planning page). The tap on "Find my trips in Gmail" in that sheet is the yes (owner's decision `2026-11-11-asked-for-runs-at-once`: what the person asks for runs at once). The app asks for the server's single-use approval and uses it straight away for one search; there is no in-app card. What leaves the iPhone is written under the button.
 - **Storage:** the result is saved in `Application Support/Trips/trips-v1.json` and read back before the screen says it is saved (`TripStore`).
-- **What the screen shows:** trips with "Before you go", "Not going ahead", each booking's newest email as a link to Gmail, and "Forget my trips", which is checked.
+- **What the screen shows:** under the planner, "Your trips" (a card per trip with the countdown, opening the trip's bookings and "Before you travel"), "Earlier trips", and low down "Not going ahead"; each booking's newest email is a link to Gmail. "Forget my trips" is in the ••• menu and is checked.
 - **Home card:** while a trip is under way or starts within 60 days; the cross hides it for that trip.
 - **Plain refusals:** Gmail not connected, Read an email off, not set up, daily limit, expired yes, or couldn't search.
 - **What leaves this iPhone:** the Doddy server row now names the trip search.

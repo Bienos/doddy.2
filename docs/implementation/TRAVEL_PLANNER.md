@@ -7,17 +7,21 @@
 | Question | Answer |
 |---|---|
 | Kiwi.com's terms for use inside another company's app are not published | "Od razu dla wszystkich": the planner is on for everyone without waiting for Kiwi. The risk that Kiwi blocks it stays open (owner queue: ask Kiwi). |
-| Where planning starts | "Ekran, potem głos": a screen first (Trips › Plan a trip); a voice tool later (it needs the live agent, which changes only on the owner's word). |
+| Where planning starts | "Ekran, potem głos": a screen first (Trips, which opens on the planner since 13 Nov 2026); a voice tool later (it needs the live agent, which changes only on the owner's word). |
 | Stays | "Rozeznanie + linki": links to Booking.com and Airbnb with the dates and party filled in, and a button that hands Doddy's background task a request to research stays. |
 | Package holidays | "Link do wakacje.pl": a link with the country, dates and party; no prices read until the TravelLead account exists. |
 
 ## What a person sees
 
-1. Trips › **Plan a trip**. They type, or dictate with the keyboard's microphone: "Lisbon around 12 February, 4 nights, the two of us, no more than 2000 zł".
-2. Doddy asks **one** question at a time for what is missing, in this order: where to, where from, when, how many nights, how many people.
-3. It says what it **assumes** for the rest ("no checked bag", "stops are fine", "exactly that day").
-4. Up to three flights: **cheapest**, **fastest**, **easiest** (fewest stops, then fewest warnings). Each shows the price **for the whole party with the checked bags counted**, both legs, the airlines, and its **warnings**.
-5. Each option has **Book on Kiwi.com** (Kiwi's own booking link), **Booking.com** and **Airbnb** links with the dates and party filled in, a **wakacje.pl** link when a package was asked for, and **Have Doddy look at stays**, which shows the exact words and sends them as a normal background task only after "Yes, go".
+Since 13 Nov 2026 Trips opens on the planner (owner: "trzeba skupić się na zaplanowaniu wyjazdu, na wyszukiwaniu lotów, hoteli"; the old "Plan a trip" row and the Gmail block on the page "są bez sensu"). Finding trips in Gmail moved to the page's ••• menu (`TRAVEL_EMAILS.md`).
+
+1. **Where to next?** A form: leaving from, going to, when you leave (a day, exactly or ± 3 or ± 7 days, up to 330 days ahead), nights there (quick picks: weekend 2, long weekend 3, a week 7, two weeks 14, then a stepper), who's going (adults and children), extras (checked bag, direct only, package holiday) and an optional budget in zł. Nothing is filled in for the person except one adult, which the stepper shows. **Search flights and stays** sends a complete form straight to the search, with no model.
+2. If something the search needs is missing, Doddy asks **one** question for the first of it, in the server's order (where to, where from, when, nights, who), in a card under the form; the field gets an orange outline. The person fills in the field, or answers in the card.
+3. **Or just tell Doddy:** the same card takes the person's own words, typed or dictated ("Lisbon around 12 February, 4 nights, the two of us, no more than 2000 zł"). The server turns them into a brief, the form shows what it understood, and the search follows by itself once nothing is missing. Only these words go to Anthropic.
+4. **I'm assuming** chips under the button say what the search assumes for what wasn't set ("No checked bag", "Stops are fine", "No children", "Exactly that day").
+5. **Flights:** up to three cards: **cheapest**, **fastest**, **easiest** (fewest stops, then fewest warnings), each label only on the itinerary that really is best at it. Each card shows the price big, **for the whole party with the checked bags counted**, both legs with the airport codes, local times (+1 when it lands the next day), duration and stops, the airlines, its **warnings**, and **Book on Kiwi.com** (Kiwi's own booking link). "Searched for" chips above say what the search was for.
+6. **Stays:** one card for the flights' dates (a choice of which flights when their days differ): **Booking.com** and **Airbnb** with the city, dates and guests filled in, **wakacje.pl** when a package was asked for, and **Have Doddy look at stays**, which shows the exact words and sends them as a normal background task only after "Yes, go".
+7. Under them, the trips already saved on this iPhone from booking emails, with a countdown, and low down "Not going ahead".
 
 Doddy never books or pays.
 
@@ -32,7 +36,9 @@ Doddy never books or pays.
 | Labels are honest: an itinerary gets "fastest" only if it is the fastest of those returned; one that wins twice is shown once | `plan.ts` `pickOptions` |
 | Warnings come from the itinerary: airport change, different airlines on one connection, overnight or 6 h+ connection, leaving before 6:00, landing after 23:00 or the next day | `plan.ts` `traps` |
 | Stay and package links carry only the city, dates and party | `plan.ts` `stayLinks` |
-| The stay task's words carry no link (ADR-703) and start only after a card with those words and a tap (ADR-716, kept by `2026-11-11-asked-for-runs-at-once`) | `TripPlannerView.swift`, `TripPlanText.stayResearchWords` |
+| The stay task's words carry no link (ADR-703) and start only after a card with those words and a tap (ADR-716, kept by `2026-11-11-asked-for-runs-at-once`) | `TripsView.swift`, `TripPlanText.stayResearchWords` |
+| The form is the brief: blank places are unknown, numbers stay in the server's ranges, a window is at most 31 days, a trip to where it starts has no destination; what is missing and assumed are the server's rules, checked on the iPhone too | `TripPlanForm` (DoddyCore), tested in `TripPlanFormTests` |
+| A failed flight search is said as Kiwi.com's, never as a Gmail problem | `TripPlanProblem` |
 | The log line carries counts only | `trip_search` |
 
 ## Server
@@ -44,7 +50,7 @@ Doddy never books or pays.
 
 ## App
 
-`DoddyApp/Features/Trips/TripPlannerModel.swift` (the conversation, no views), `TripPlannerView.swift`; the rules and words in `Packages/DoddyCore/Sources/DoddyCore/Travel/TripPlanner.swift`.
+`DoddyApp/Features/Trips/TripPlannerModel.swift` (the form, the question and the calls, no views), `TripsView.swift` (the page), `TripPlanCards.swift` (the form, the question card, the flight and stay cards); the rules and words in `Packages/DoddyCore/Sources/DoddyCore/Travel/TripPlanner.swift` and `TripPlanForm.swift`. The SwiftUI views are not compiled here.
 
 ## Not built, and known limits
 
