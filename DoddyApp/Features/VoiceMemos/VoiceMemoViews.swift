@@ -283,7 +283,7 @@ struct MemoTodosCard: View {
                     Text("Adds to a new list called \u{201C}To do\u{201D}.").font(.footnote).foregroundStyle(Theme.secondaryText)
                 } else {
                     Picker("Add to", selection: Binding(get: { listID ?? store.lists.first?.id }, set: { listID = $0 })) {
-                        ForEach(store.lists) { list in Text(list.name).tag(Optional(list.id)) }
+                        ForEach(store.lists) { list in Text(verbatim: list.name).tag(Optional(list.id)) }
                     }
                 }
                 Button {
