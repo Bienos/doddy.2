@@ -1324,8 +1324,11 @@ export class CloudToolsService {
         tool,
         text:
           `started: Claude is making the ${info.label} "${doc.title}". It takes one to three minutes. ` +
-          "A card to open it is on the user's screen now, and it also arrives as Doddy's message in Messages in the app, where Share saves it to Files or sends it on. " +
-          "Tell the user that in one sentence. Don't read out any link. " +
+          // Owner, 13 Nov 2026: Doddy told the person to tap a card while they were talking. Nothing needs a tap now; the
+          // iPhone (from the build with MadeFileStart) answers the agent with its own words and this line is for older builds.
+          "When it's ready it arrives as Doddy's message in Messages in the app, with a notification; there Share saves it to Files or sends it on. " +
+          "The user doesn't need to tap anything now. Tell the user in one short sentence what you're making and that it will be in Messages; " +
+          "don't ask them to tap, open or look at anything, and don't read out any link. " +
           MODEL_TEXT_LABEL,
         count: 1,
         truncated: false,

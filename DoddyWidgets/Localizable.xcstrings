@@ -1580,17 +1580,6 @@
         }
       }
     },
-    "Its button is in Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jego przycisk jest w Doddym"
-          }
-        }
-      }
-    },
     "Kept in Doddy on this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -4736,6 +4725,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przejmij rozmowę"
+          }
+        }
+      }
+    },
+    "Takes a minute or two": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zajmie minutę lub dwie"
           }
         }
       }

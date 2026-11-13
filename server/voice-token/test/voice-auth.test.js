@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { generateKeyPairSync, sign as signRS256, createHash, verify as verifySig } from "node:crypto";
-import { connect } from "node:net";
+import { connect, createServer } from "node:net";
 import { test } from "node:test";
 import {
   handleVoiceAuthRequest,
@@ -740,14 +740,40 @@ async function localRedisFetch(port) {
   return { fetch, send, close: () => socket.destroy() };
 }
 
-test("the Redis limit script: a user over their own limit doesn't use up the global one", { skip: !hasRedis && "redis-server not installed" }, async () => {
-  const port = 20_000 + Math.floor(Math.random() * 20_000);
-  const server = spawn("redis-server", ["--port", String(port), "--save", "", "--appendonly", "no"], { stdio: "ignore" });
-  try {
+/** A free port from the operating system (a random guess can collide with something already listening). */
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const { port } = probe.address();
+      probe.close(() => resolve(port));
+    });
+  });
+}
+
+/**
+ * Starts a throwaway local redis-server and waits for it to answer: up to 3 tries, each on its own free port,
+ * each given 5 seconds, and a server that has already exited ends its try at once. A slow or busy runner then
+ * no longer fails the test with "local redis-server started".
+ */
+async function startLocalRedis() {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const port = await freePort();
+    const server = spawn("redis-server", ["--port", String(port), "--save", "", "--appendonly", "no"], { stdio: "ignore" });
     let client;
-    for (let i = 0; i < 50 && !client; i += 1) {
+    for (let i = 0; i < 100 && !client && server.exitCode === null; i += 1) {
       try { client = await localRedisFetch(port); } catch { await new Promise((resolve) => setTimeout(resolve, 50)); }
     }
+    if (client) return { server, client };
+    server.kill();
+  }
+  return { server: null, client: null };
+}
+
+test("the Redis limit script: a user over their own limit doesn't use up the global one", { skip: !hasRedis && "redis-server not installed" }, async () => {
+  const { server, client } = await startLocalRedis();
+  try {
     assert.ok(client, "local redis-server started");
     const store = createVoiceAuthStore({ url: "https://redis.example.test", token: "t", fetch: client.fetch });
     const perUser = 3;
@@ -763,25 +789,20 @@ test("the Redis limit script: a user over their own limit doesn't use up the glo
     assert.equal(other.globalCount, perUser + 1);
     client.close();
   } finally {
-    server.kill();
+    server?.kill();
   }
 });
 
 /** A throwaway local redis-server and a store on it; `command` runs one raw Redis command. */
 async function withLocalRedis(body) {
-  const port = 20_000 + Math.floor(Math.random() * 20_000);
-  const server = spawn("redis-server", ["--port", String(port), "--save", "", "--appendonly", "no"], { stdio: "ignore" });
-  let client;
+  const { server, client } = await startLocalRedis();
   try {
-    for (let i = 0; i < 50 && !client; i += 1) {
-      try { client = await localRedisFetch(port); } catch { await new Promise((resolve) => setTimeout(resolve, 50)); }
-    }
     assert.ok(client, "local redis-server started");
     const store = createVoiceAuthStore({ url: "https://redis.example.test", token: "t", fetch: client.fetch });
     await body({ store, command: (...parts) => client.send(parts.map(String)) });
   } finally {
     client?.close();
-    server.kill();
+    server?.kill();
   }
 }
 const REDIS_SKIP = !hasRedis && "redis-server not installed";
