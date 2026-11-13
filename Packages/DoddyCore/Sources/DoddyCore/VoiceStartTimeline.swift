@@ -7,12 +7,15 @@ import Foundation
 /// Privacy: stage names are a fixed set of words and the rest is seconds. Nothing said, saved or
 /// typed, no account, token or address can appear in a line.
 public enum VoiceStartStage: String, CaseIterable, Sendable {
+    /// From the press to the island being asked for (decision `2026-11-13-island-first`): the checks that
+    /// need nothing but the iPhone. Before the stages below, which used to come before the island.
+    case islandShown = "island shown"
     /// Restoring the Doddy voice session (may refresh the login over the network).
     case account
     /// Loading the saved profile when iOS started Doddy just for this press.
     case profile
-    /// The Live Activity and the audio session are up. This is what the Action Button's intent waits
-    /// for; the connect stage then runs on after the intent has returned (decision
+    /// The conversation's own Live Activity and the audio session are up (since 13 Nov the island itself is
+    /// already showing, `islandShown`). This is what the Action Button's intent waits for; the connect stage then runs on after the intent has returned (decision
     /// `2026-11-10-action-button-start`).
     case island
     /// Getting the voice token, joining the ElevenLabs room and the start of the conversation. The token

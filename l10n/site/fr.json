@@ -223,7 +223,7 @@
   "If that sounds like the kind of AI you'd actually want in your pocket, <a class=\"text-link\" href=\"/#join\">join early access</a> or come say hi in the <a class=\"text-link\" href=\"https://t.me/+u-YA6P_MISFjYWE0\" target=\"_blank\" rel=\"noopener\">Telegram group</a>.": "Si c’est le genre d’IA que tu voudrais vraiment avoir dans ta poche, <a class=\"text-link\" href=\"/#join\">rejoins l’accès anticipé</a> ou viens dire bonjour dans le <a class=\"text-link\" href=\"https://t.me/+u-YA6P_MISFjYWE0\" target=\"_blank\" rel=\"noopener\">groupe Telegram</a>.",
   "If that sounds like your kind of thing, <a class=\"text-link\" href=\"/#join\">join early access</a> or say hi in the <a class=\"text-link\" href=\"https://t.me/+u-YA6P_MISFjYWE0\" target=\"_blank\" rel=\"noopener\">Telegram group</a>.": "Si c’est ton genre, <a class=\"text-link\" href=\"/#join\">rejoins l’accès anticipé</a> ou viens dire bonjour dans le <a class=\"text-link\" href=\"https://t.me/+u-YA6P_MISFjYWE0\" target=\"_blank\" rel=\"noopener\">groupe Telegram</a>.",
   "If the pace METR measured keeps up, the tasks agents can handle grow 16 times in under two and a half years.": "Si le rythme mesuré par METR se maintient, les tâches que les agents savent gérer seront multipliées par 16 en moins de deux ans et demi.",
-  "Google Analytics also measures visits and sets cookies.": "Google Analytics mesure aussi les visites et dépose des cookies.",
+  "If you allow it, Google Analytics also measures visits and sets cookies. <button type=\"button\" class=\"foot-choice\" data-analytics-choices>Analytics choices</button>": "Si tu l’autorises, Google Analytics mesure aussi les visites et dépose des cookies. <button type=\"button\" class=\"foot-choice\" data-analytics-choices>Choix d’analyse</button>",
   "Illustration": "Illustration",
   "Illustration of Doddy reading next to a handwritten note of his house rules.": "Illustration de Doddy en train de lire à côté d’une note manuscrite de ses règles de la maison.",
   "Illustration of Doddy, the hand-drawn stick figure, saying “Hey. I&#x27;m Doddy.”.": "Illustration de Doddy, le petit bonhomme dessiné à la main, qui dit “Salut. Je suis Doddy.”.",
@@ -602,5 +602,9 @@
   "✓ Added, 10:00 · read back 22:31": "✓ Ajouté, 10:00 · relu à 22:31",
   "✓ Oat milk": "✓ Lait d’avoine",
   "Terms": "Conditions d’utilisation (en anglais)",
-  "Privacy Policy": "Politique de confidentialité (en anglais)"
+  "Privacy Policy": "Politique de confidentialité (en anglais)",
+  "Analytics choice": "Choix d’analyse",
+  "Can we count your visit with Google Analytics? It sets cookies. Nothing loads from Google unless you say yes, and you can change your mind at the bottom of any page.": "Pouvons-nous compter ta visite avec Google Analytics ? Il dépose des cookies. Rien n’est chargé depuis Google tant que tu n’as pas dit oui, et tu peux changer d’avis en bas de chaque page.",
+  "Allow": "Autoriser",
+  "No thanks": "Non merci"
 }

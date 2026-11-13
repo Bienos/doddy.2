@@ -444,7 +444,8 @@ extension IslandResult {
     var island: IslandWords {
         switch self {
         case .document: IslandWords(label: islandWord("READY"), title: "Your document is ready", subtitle: "Show opens it in Doddy")
-        case .documentStarted: IslandWords(label: islandWord("DOCUMENT"), title: "Making your document", subtitle: "Its button is in Doddy")
+        // No button to point at while it's made (owner, 13 Nov 2026): it lands in Messages, or the transcript if private.
+        case .documentStarted: IslandWords(label: islandWord("DOCUMENT"), title: "Making your document", subtitle: "Takes a minute or two")
         case .presentation: IslandWords(label: islandWord("READY"), title: "Your slides are ready", subtitle: "Show opens them in Doddy")
         case .photos: IslandWords(label: islandWord("PHOTOS"), title: "Photos to look at", subtitle: "Show opens them in Doddy")
         }

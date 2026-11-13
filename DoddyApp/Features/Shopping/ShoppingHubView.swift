@@ -246,7 +246,7 @@ struct ShoppingHubView: View {
     private func canGo(_ route: ShoppingRoute) -> Bool {
         // Only once the chip says where the words go: the card says it before the tap.
         guard shownPlace == route.place else { return false }
-        switch route.place {
+        return switch route.place {
         case .nothing: false
         case .link: true
         case .leaflets, .both: DealsModel.shared.phase != .checking

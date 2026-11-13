@@ -360,8 +360,9 @@ struct VoiceView: View {
                                 .id("accountNeeded")
                         }
 
-                        ForEach(controller.documents, id: \.url) { document in
-                            documentCard(document, about: controller.documentBriefs[document.url])
+                        // The pop-up card leaves out a file still being made: Home's island says it (owner, 13 Nov 2026).
+                        ForEach(controller.documents.filter { !asCard || MadeFileStart.popsUpCard($0) }, id: \.url) { document in
+                            documentCard(document, about: controller.documentBriefs[document.url], keptInMessages: !controller.isPrivate)
                                 .id("document-\(document.url.absoluteString)")
                         }
 
@@ -1763,7 +1764,64 @@ struct VoiceView: View {
     /// ADR-564: a file Claude is making. The link opens in Safari: Quick Look shows the deck,
     /// document or PDF, with Share to save or send it; until it's ready the page says so.
     /// `about` is what the person asked for (`ThreadDelivery.madeFileBrief`), so the card says what the file is.
-    private func documentCard(_ document: RunDocument, about: String?) -> some View {
+    /// A file still being made is one quiet line with nothing to tap (owner, 13 Nov 2026): it arrives in Messages.
+    /// In a private conversation nothing reaches Messages, so the line keeps Open: this is the only place the file is.
+    @ViewBuilder
+    private func documentCard(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
+        if MadeFileStart.showsNote(document) {
+            fileBeingMadeRow(document, about: about, keptInMessages: keptInMessages)
+        } else {
+            readyDocumentCard(document, about: about, keptInMessages: keptInMessages)
+        }
+    }
+
+    /// No spinner: the conversation doesn't hear when the file is done, so the row says only where it will be.
+    private func fileBeingMadeRow(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "doc.badge.clock")
+                .font(.title3)
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                MadeFileIslandNote.title(document.kind)
+                    .font(.headline)
+                let name = MadeFileStart.shownName(document)
+                if !name.isEmpty {
+                    Text(verbatim: name)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                if let about {
+                    Text(about)
+                        .font(.callout)
+                        .lineLimit(3)
+                }
+                if keptInMessages {
+                    Text("It lands in Messages when it's ready.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                } else {
+                    Text("This conversation is private, so it isn't kept in Messages. Open it here when it's ready.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    Button {
+                        UIApplication.shared.open(document.url)
+                    } label: {
+                        Label("Open", systemImage: "arrow.up.forward.app")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.openDocument")
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: keptInMessages ? .combine : .contain)
+        .accessibilityIdentifier("voice.fileBeingMade")
+    }
+
+    private func readyDocumentCard(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("\(document.label) from Claude", systemImage: "doc.richtext")
                 .font(.headline)
@@ -1774,9 +1832,11 @@ struct VoiceView: View {
                     .font(.callout)
                     .lineLimit(4)
             }
-            Text("It takes a minute or two. It also lands in Messages and in Files when it's ready.")
-                .font(.callout)
-                .foregroundStyle(Theme.secondaryText)
+            if keptInMessages {
+                Text("It's in Messages and in Files too.")
+                    .font(.callout)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             Button {
                 UIApplication.shared.open(document.url)
             } label: {
