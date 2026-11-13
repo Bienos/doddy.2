@@ -586,15 +586,18 @@ extension IslandScene {
 }
 
 enum WidgetCopy {
-    /// Widgets were turned off in Doddy's Settings: there is a snapshot, and it says off.
+    /// Widgets were turned off in Doddy's Settings: there is a snapshot, and it says off. A locked
+    /// snapshot is not "turned off": Doddy isn't turned away, the widget only says he is locked.
     static func isTurnedOff(_ snapshot: WidgetSnapshot?) -> Bool {
-        WidgetSnapshotFile.url != nil && snapshot.map { !$0.isOn } == true
+        WidgetSnapshotFile.url != nil && snapshot.map { !$0.isOn && !$0.isLocked } == true
     }
 
-    /// Why a widget shows none of the user's things, or nil when it can.
+    /// Why a widget shows none of the user's things, or nil when it can. With the Face ID lock on in
+    /// Doddy (ADR-723) the snapshot holds nothing of theirs and every widget says Doddy is locked.
     static func message(for snapshot: WidgetSnapshot?) -> String? {
         guard WidgetSnapshotFile.url != nil else { return "Open Doddy to set up widgets." }
         guard let snapshot else { return "Open Doddy once to fill this widget." }
+        if snapshot.isLocked { return NSLocalizedString("Doddy is locked", comment: "") }
         return snapshot.isOn ? nil : "Turned off in Doddy's Settings."
     }
 }
