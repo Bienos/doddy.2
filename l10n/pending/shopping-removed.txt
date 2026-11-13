@@ -1,6 +1,0 @@
-Groceries and everyday things: where each is cheapest in this week's leaflets.
-I look through shops in Poland and bring back up to three picks, each with a price I read on the shop's own page. You buy in the shop; I never buy anything.
-Nothing is sent until you say yes on the next card. Doddy works on it in the background; the result waits here.
-Open a result and tap “Watch the price” on a pick. You give your price, and Doddy tells you once when the shop's page shows that price or less.
-Search products in Shopify shops and prepare a cart at the shop. Doddy takes no payment.
-You get up to three picks with the reason for each, and you can ask Doddy to watch a price.

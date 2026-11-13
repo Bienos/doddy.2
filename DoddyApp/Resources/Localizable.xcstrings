@@ -185,6 +185,17 @@
         }
       }
     },
+    "%@ more than the lowest": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ więcej niż najtańsza"
+          }
+        }
+      }
+    },
     "%@ over your budget": {
       "extractionState": "manual",
       "localizations": {
@@ -601,6 +612,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min: zacznij spokojnie, potem %lld × %@ mocno, z %@ spokojnie pomiędzy, skończ spokojnie."
+          }
+        }
+      }
+    },
+    "%lld minutes before": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min wcześniej"
           }
         }
       }
@@ -3687,6 +3709,17 @@
         }
       }
     },
+    "A week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tydzień"
+          }
+        }
+      }
+    },
     "ACCESS": {
       "extractionState": "manual",
       "localizations": {
@@ -4501,6 +4534,17 @@
         }
       }
     },
+    "Add a reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj przypomnienie"
+          }
+        }
+      }
+    },
     "Add a reminder, after you tap Add": {
       "extractionState": "manual",
       "localizations": {
@@ -5046,6 +5090,17 @@
         }
       }
     },
+    "Add to Reminders": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj do Przypomnień"
+          }
+        }
+      }
+    },
     "Add to Shopping?": {
       "extractionState": "manual",
       "localizations": {
@@ -5389,6 +5444,17 @@
         }
       }
     },
+    "Added to Reminders: %@. Checked there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodane do Przypomnień: %@. Sprawdzone tam."
+          }
+        }
+      }
+    },
     "Added; it shows here only. %@": {
       "extractionState": "manual",
       "localizations": {
@@ -5536,6 +5602,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adres"
+          }
+        }
+      }
+    },
+    "Adds a link to package holidays on wakacje.pl with the same dates. Doddy reads no prices there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaje link do wycieczek na wakacje.pl na te same daty. Doddy nie czyta tam cen."
           }
         }
       }
@@ -5879,6 +5956,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ustalone"
+          }
+        }
+      }
+    },
+    "Air quality": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jakość powietrza"
           }
         }
       }
@@ -6894,6 +6982,17 @@
         }
       }
     },
+    "Amount, like 100": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kwota, np. 100"
+          }
+        }
+      }
+    },
     "An InPost parcel number has %lld digits. Check that none is missing.": {
       "extractionState": "manual",
       "localizations": {
@@ -7561,6 +7660,17 @@
         }
       }
     },
+    "Answer here, or fill it in above.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedz tutaj albo wpisz to wyżej."
+          }
+        }
+      }
+    },
     "Answer the intro questions again": {
       "extractionState": "manual",
       "localizations": {
@@ -8099,6 +8209,17 @@
         }
       }
     },
+    "Apple Maps didn't find that address. Add the street number and the city.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy Apple nie znalazły tego adresu. Dopisz numer domu i miasto."
+          }
+        }
+      }
+    },
     "Apple Maps didn't find that place.": {
       "extractionState": "manual",
       "localizations": {
@@ -8106,6 +8227,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mapy Apple nie znalazły tego miejsca."
+          }
+        }
+      }
+    },
+    "Apple Maps found no restaurants, cafés or bakeries for “%@” within %lld km. Try another word, or a restaurant's name.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy Apple nie znalazły restauracji, kawiarni ani piekarni dla „%@” w promieniu %lld km. Spróbuj innego słowa albo nazwy restauracji."
           }
         }
       }
@@ -8574,6 +8706,17 @@
         }
       }
     },
+    "As found in your last check, %@. Prices are the leaflets'; in the shop they can differ.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stan z ostatniego sprawdzenia, %@. Ceny są z gazetek; w sklepie mogą się różnić."
+          }
+        }
+      }
+    },
     "As it happens": {
       "extractionState": "manual",
       "localizations": {
@@ -8986,6 +9129,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pytam Claude'a…"
+          }
+        }
+      }
+    },
+    "Asking GIOŚ…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytam GIOŚ…"
+          }
+        }
+      }
+    },
+    "Asking IMGW-PIB…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytam IMGW-PIB…"
+          }
+        }
+      }
+    },
+    "Asking NBP…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytam NBP…"
           }
         }
       }
@@ -9664,6 +9840,28 @@
         }
       }
     },
+    "Bad": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zły"
+          }
+        }
+      }
+    },
+    "Bakery": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piekarnia"
+          }
+        }
+      }
+    },
     "Balanced": {
       "extractionState": "manual",
       "localizations": {
@@ -9855,6 +10053,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przed wyjściem"
+          }
+        }
+      }
+    },
+    "Before you travel": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przed wyjazdem"
           }
         }
       }
@@ -10312,6 +10521,17 @@
         }
       }
     },
+    "Budget for the flights (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budżet na loty (opcjonalnie)"
+          }
+        }
+      }
+    },
     "Budget: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -10319,6 +10539,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Budżet: %@"
+          }
+        }
+      }
+    },
+    "Burger": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burger"
+          }
+        }
+      }
+    },
+    "Burger, pho, pierogi…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burger, pho, pierogi…"
           }
         }
       }
@@ -10341,6 +10583,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kup w %@"
+          }
+        }
+      }
+    },
+    "Buy milk, call the dentist…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kupić mleko, zadzwonić do dentysty…"
           }
         }
       }
@@ -10492,6 +10745,17 @@
         }
       }
     },
+    "Café": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kawiarnia"
+          }
+        }
+      }
+    },
     "Calendar": {
       "extractionState": "manual",
       "localizations": {
@@ -10499,6 +10763,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kalendarz"
+          }
+        }
+      }
+    },
+    "Calendar didn't show “%@” as saved afterwards. Check it there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz potem nie pokazał „%@” jako zapisanego. Sprawdź tam."
           }
         }
       }
@@ -10521,6 +10796,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kalendarz jest wyłączony w Połączeniach, więc wydarzeń tu nie ma."
+          }
+        }
+      }
+    },
+    "Calendar still shows “%@”. Check it there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz wciąż pokazuje „%@”. Sprawdź tam."
           }
         }
       }
@@ -11544,6 +11830,17 @@
         }
       }
     },
+    "Catalog price. The merchant calculates the final amount.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena katalogowa. Ostateczną kwotę wylicza sprzedawca."
+          }
+        }
+      }
+    },
     "Change": {
       "extractionState": "manual",
       "localizations": {
@@ -11669,6 +11966,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zmień PIN"
+          }
+        }
+      }
+    },
+    "Change a reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień przypomnienie"
           }
         }
       }
@@ -12237,6 +12545,47 @@
         }
       }
     },
+    "Changes are saved in Reminders on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Changes are saved in Reminders on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Changes are saved in Reminders on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zmiany zapisują się w Przypomnieniach na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zmiany zapisują się w Przypomnieniach na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Changes made before Doddy kept every version weren't stored, so only the original and the current wording are shown.": {
       "extractionState": "manual",
       "localizations": {
@@ -12303,6 +12652,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Grafika postaci jest ukryta w Ustawieniach, więc tapeta to sam papier."
+          }
+        }
+      }
+    },
+    "Cheapest": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najtaniej"
           }
         }
       }
@@ -12701,6 +13061,17 @@
         }
       }
     },
+    "Checked bag": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walizka"
+          }
+        }
+      }
+    },
     "Checking the news…": {
       "extractionState": "manual",
       "localizations": {
@@ -12874,6 +13245,17 @@
         }
       }
     },
+    "Checkout prepared. No order was placed and no payment was made.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koszyk przygotowany. Nie złożono zamówienia ani nie pobrano pieniędzy."
+          }
+        }
+      }
+    },
     "Choose Talk to Doddy in Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -12940,6 +13322,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择备份文件"
+          }
+        }
+      }
+    },
+    "Choose a day": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz dzień"
           }
         }
       }
@@ -13117,6 +13510,28 @@
         }
       }
     },
+    "City or airport": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miasto albo lotnisko"
+          }
+        }
+      }
+    },
+    "City, airport or country": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miasto, lotnisko albo kraj"
+          }
+        }
+      }
+    },
     "Clear": {
       "extractionState": "manual",
       "localizations": {
@@ -13172,6 +13587,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "清空"
+          }
+        }
+      }
+    },
+    "Clear the address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyczyść adres"
           }
         }
       }
@@ -13574,6 +14000,28 @@
         }
       }
     },
+    "Close this to see them on the Trips page.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamknij to okno, a zobaczysz je na stronie Wyjazdy."
+          }
+        }
+      }
+    },
+    "Clothes, shoes and accessories": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ubrania, buty i dodatki"
+          }
+        }
+      }
+    },
     "Code": {
       "extractionState": "manual",
       "localizations": {
@@ -13784,6 +14232,17 @@
         }
       }
     },
+    "Compare": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porównaj"
+          }
+        }
+      }
+    },
     "Compare flights to Rome for a week next month, under 2000 zł": {
       "extractionState": "manual",
       "localizations": {
@@ -13791,6 +14250,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Porównaj loty do Rzymu na tydzień w przyszłym miesiącu, do 2000 zł"
+          }
+        }
+      }
+    },
+    "Compare the picks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porównaj propozycje"
+          }
+        }
+      }
+    },
+    "Compare the picks side by side": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porównaj propozycje obok siebie"
           }
         }
       }
@@ -14628,6 +15109,17 @@
         }
       }
     },
+    "Connections are paused (Settings › Connections), so nothing is sent to Shopify shops.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane (Ustawienia › Połączenia), więc nic nie wysyłam do sklepów Shopify."
+          }
+        }
+      }
+    },
     "Connections are paused, so Doddy didn't look the barcode up. You can type the item instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -14937,6 +15429,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "继续"
+          }
+        }
+      }
+    },
+    "Continue at merchant checkout": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokończ zakup u sprzedawcy"
           }
         }
       }
@@ -15335,6 +15838,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Copies “%@” to paste into the app's search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiuje „%@”, żeby wkleić to w wyszukiwarkę aplikacji."
           }
         }
       }
@@ -16057,6 +16571,17 @@
         }
       }
     },
+    "Couldn't load Shopify offers. Check your connection and Doddy account, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie mogę pobrać ofert Shopify. Sprawdź połączenie lub konto Doddy i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Couldn't load the settings for texts to Doddy. %@": {
       "extractionState": "manual",
       "localizations": {
@@ -16237,6 +16762,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieodczytane: %lld. Są pominięte, nie zgadywane."
+          }
+        }
+      }
+    },
+    "Couldn't read IMGW-PIB's warnings just now. Pull down to try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się teraz odczytać ostrzeżeń IMGW-PIB. Pociągnij w dół, żeby spróbować jeszcze raz."
+          }
+        }
+      }
+    },
+    "Couldn't read NBP's rates just now. Pull down to try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się teraz odczytać kursów NBP. Pociągnij w dół, żeby spróbować jeszcze raz."
           }
         }
       }
@@ -16981,6 +17528,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "日期和时间"
+          }
+        }
+      }
+    },
+    "Dates of which flights?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daty których lotów?"
           }
         }
       }
@@ -17921,6 +18479,17 @@
         }
       }
     },
+    "Delete reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń przypomnienie"
+          }
+        }
+      }
+    },
     "Delete the copy from %@": {
       "extractionState": "manual",
       "localizations": {
@@ -18687,6 +19256,17 @@
         }
       }
     },
+    "Deleted from Calendar: %@. Checked there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunięte z Kalendarza: %@. Sprawdzone tam."
+          }
+        }
+      }
+    },
     "Deleted from Doddy's server. Both switches are off.": {
       "extractionState": "manual",
       "localizations": {
@@ -18694,6 +19274,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunięto z serwera Doddy’ego. Oba przełączniki są wyłączone."
+          }
+        }
+      }
+    },
+    "Deleted from Reminders: %@. Checked there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunięte z Przypomnień: %@. Sprawdzone tam."
           }
         }
       }
@@ -18768,6 +19359,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usuwanie…"
+          }
+        }
+      }
+    },
+    "Deliver to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres dostawy"
+          }
+        }
+      }
+    },
+    "Delivery": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostawa"
+          }
+        }
+      }
+    },
+    "Delivery address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres dostawy"
+          }
+        }
+      }
+    },
+    "Delivery apps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplikacje z dostawą"
           }
         }
       }
@@ -19376,6 +20011,17 @@
         }
       }
     },
+    "Direct only": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko bez przesiadek"
+          }
+        }
+      }
+    },
     "Directions in Maps?": {
       "extractionState": "manual",
       "localizations": {
@@ -19763,6 +20409,17 @@
         }
       }
     },
+    "Dish": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danie"
+          }
+        }
+      }
+    },
     "Dismiss": {
       "extractionState": "manual",
       "localizations": {
@@ -20002,6 +20659,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy zapowiada, że rozmowa jest nagrywana lub zapisywana."
+          }
+        }
+      }
+    },
+    "Doddy asks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pyta"
           }
         }
       }
@@ -20913,6 +21581,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy compares areas and example prices in the background, with sources. You see the exact words first; nothing is booked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy porówna okolice i przykładowe ceny w tle, ze źródłami. Najpierw zobaczysz dokładne słowa; nic nie zostanie zarezerwowane."
           }
         }
       }
@@ -21856,6 +22535,28 @@
         }
       }
     },
+    "Doddy doesn't have full access to Calendar, so the event opened in the Calendar app. To change events here, allow Full Access in iPhone Settings, Privacy, Calendars.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie ma pełnego dostępu do Kalendarza, więc wydarzenie otworzyło się w aplikacji Kalendarz. Żeby zmieniać wydarzenia tutaj, zezwól na pełny dostęp w Ustawieniach iPhone’a, Prywatność, Kalendarze."
+          }
+        }
+      }
+    },
+    "Doddy doesn't order or pay. Ordering for you needs a wallet or card in Doddy, and that isn't built yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie zamawia i nie płaci. Żeby zamawiał za Ciebie, potrzebny jest portfel albo karta w Doddym, a tego jeszcze nie ma."
+          }
+        }
+      }
+    },
     "Doddy doesn't read this chain's leaflet yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -22712,6 +23413,17 @@
         }
       }
     },
+    "Doddy is reading your words…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy czyta twoje słowa…"
+          }
+        }
+      }
+    },
     "Doddy is recording. Stop the recording to record a voice memo.": {
       "extractionState": "manual",
       "localizations": {
@@ -22844,6 +23556,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy wciąż nad tym pracuje. Dostaniesz powiadomienie, gdy będzie gotowe."
+          }
+        }
+      }
+    },
+    "Doddy is still writing this reminder. Try again in a moment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy wciąż zapisuje to przypomnienie. Spróbuj za chwilę."
           }
         }
       }
@@ -23187,6 +23910,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 最后听到你说"
+          }
+        }
+      }
+    },
+    "Doddy looks across shops in Poland, puts up to three picks side by side and can watch a price for you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy szuka w sklepach w Polsce, stawia obok siebie do trzech propozycji i może pilnować dla ciebie ceny."
           }
         }
       }
@@ -23607,6 +24341,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy czeka na Twoje stuknięcie"
+          }
+        }
+      }
+    },
+    "Doddy never buys or pays. “Buy at” opens the shop's own page in Safari, and the shop takes the payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nigdy nie kupuje ani nie płaci. „Kup w” otwiera stronę sklepu w Safari, a płatność przyjmuje sklep."
           }
         }
       }
@@ -24076,6 +24821,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przeczytano %lld z %lld stron i nic w nich nie pasowało."
+          }
+        }
+      }
+    },
+    "Doddy reads the chains' leaflets and shows where each thing on your list is cheapest.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy czyta gazetki sieci i pokazuje, gdzie każda rzecz z twojej listy jest najtańsza."
           }
         }
       }
@@ -27700,6 +28456,17 @@
         }
       }
     },
+    "Earlier trips": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wcześniejsze wyjazdy"
+          }
+        }
+      }
+    },
     "Earlier versions (%lld)": {
       "extractionState": "manual",
       "localizations": {
@@ -27858,6 +28625,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Edytowano %@"
+          }
+        }
+      }
+    },
+    "Electronics": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elektronika"
           }
         }
       }
@@ -29076,6 +29854,17 @@
         }
       }
     },
+    "Exactly that day": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokładnie ten dzień"
+          }
+        }
+      }
+    },
     "Example": {
       "extractionState": "manual",
       "localizations": {
@@ -29094,6 +29883,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Poza tym, co pozwolisz sprawdzać serwerowi Doddy’ego: przechowuje tę pozycję, jej słowa i sposób powiadamiania, dopóki nie wyłączysz sprawdzania."
+          }
+        }
+      }
+    },
+    "Exchange rates": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kursy walut"
           }
         }
       }
@@ -29636,6 +30436,17 @@
         }
       }
     },
+    "Extras": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodatki"
+          }
+        }
+      }
+    },
     "FOCUS": {
       "extractionState": "manual",
       "localizations": {
@@ -29865,6 +30676,17 @@
         }
       }
     },
+    "Fashion & shoes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moda i buty"
+          }
+        }
+      }
+    },
     "Fast delivery": {
       "extractionState": "manual",
       "localizations": {
@@ -29979,6 +30801,17 @@
         }
       }
     },
+    "Find and compare": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź i porównaj"
+          }
+        }
+      }
+    },
     "Find in Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -30067,6 +30900,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Znajdź moje wyjazdy w Gmailu"
+          }
+        }
+      }
+    },
+    "Find places near this address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź miejsca blisko tego adresu"
           }
         }
       }
@@ -30749,6 +31593,28 @@
         }
       }
     },
+    "Flights": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loty"
+          }
+        }
+      }
+    },
+    "Flights from Kiwi.com, then stays on Booking.com and Airbnb. You book; Doddy never pays.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loty z Kiwi.com, potem noclegi na Booking.com i Airbnb. Ty rezerwujesz; Doddy nigdy nie płaci."
+          }
+        }
+      }
+    },
     "Flights on Kiwi.com": {
       "extractionState": "manual",
       "localizations": {
@@ -31088,6 +31954,17 @@
         }
       }
     },
+    "Food, drugstore and cleaning": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedzenie, drogeria i chemia"
+          }
+        }
+      }
+    },
     "For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -31169,6 +32046,17 @@
         }
       }
     },
+    "For example: a cordless drill for the house, under 400 zł": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: wiertarka akumulatorowa do domu, do 400 zł"
+          }
+        }
+      }
+    },
     "For example: a quiet 45 cm dishwasher under 2000 zł": {
       "extractionState": "manual",
       "localizations": {
@@ -31176,6 +32064,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na przykład: cicha zmywarka 45 cm do 2000 zł"
+          }
+        }
+      }
+    },
+    "For example: dry food for a large dog, 12 kg": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: sucha karma dla dużego psa, 12 kg"
+          }
+        }
+      }
+    },
+    "For example: noise-cancelling headphones under 600 zł": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: słuchawki z redukcją szumów do 600 zł"
+          }
+        }
+      }
+    },
+    "For example: washing powder for 60 washes, the cheapest per wash": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: proszek do prania na 60 prań, najtańszy za pranie"
+          }
+        }
+      }
+    },
+    "For example: white leather trainers, size 42, under 400 zł": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: białe skórzane sneakersy, rozmiar 42, do 400 zł"
           }
         }
       }
@@ -31778,6 +32710,17 @@
         }
       }
     },
+    "Found in Shopify shops": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znalezione w sklepach Shopify"
+          }
+        }
+      }
+    },
     "Found in your notes": {
       "extractionState": "manual",
       "localizations": {
@@ -32065,6 +33008,28 @@
         }
       }
     },
+    "Furniture, decor, tools and garden": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meble, dekoracje, narzędzia i ogród"
+          }
+        }
+      }
+    },
+    "GIOŚ map": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapa GIOŚ"
+          }
+        }
+      }
+    },
     "General": {
       "extractionState": "manual",
       "localizations": {
@@ -32212,6 +33177,17 @@
         }
       }
     },
+    "Give the price you'd pay; Doddy tells you once when the shop's page shows it or less.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podaj cenę, jaką zapłacisz; Doddy powie ci raz, gdy strona sklepu pokaże ją albo mniej."
+          }
+        }
+      }
+    },
     "Give your PESEL or address, unless ticked above as one": {
       "extractionState": "manual",
       "localizations": {
@@ -32223,6 +33199,17 @@
         }
       }
     },
+    "Give your price on a pick or a pasted link; Doddy tells you once when the shop's page shows it or less.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podaj swoją cenę przy propozycji albo wklejonym linku; Doddy powie ci raz, gdy strona sklepu pokaże ją albo mniej."
+          }
+        }
+      }
+    },
     "Glute bridge": {
       "extractionState": "manual",
       "localizations": {
@@ -32230,6 +33217,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostek biodrowy"
+          }
+        }
+      }
+    },
+    "Gmail": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gmail"
           }
         }
       }
@@ -32418,6 +33416,28 @@
         }
       }
     },
+    "Going to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokąd"
+          }
+        }
+      }
+    },
+    "Good": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobry"
+          }
+        }
+      }
+    },
     "Good reviews": {
       "extractionState": "manual",
       "localizations": {
@@ -32547,13 +33567,35 @@
         }
       }
     },
-    "Groceries and everyday things: where each is cheapest in this week's leaflets.": {
+    "Grade %lld of %lld": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jedzenie i rzeczy na co dzień: gdzie każda jest najtańsza w gazetkach z tego tygodnia."
+            "value": "Stopień %lld z %lld"
+          }
+        }
+      }
+    },
+    "Grade %lld of %lld, from very good to very bad": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopień %lld z %lld, od bardzo dobrego do bardzo złego"
+          }
+        }
+      }
+    },
+    "Groceries & household": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spożywcze i chemia"
           }
         }
       }
@@ -33144,6 +34186,17 @@
         }
       }
     },
+    "Hide keyboard": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schowaj klawiaturę"
+          }
+        }
+      }
+    },
     "High": {
       "extractionState": "manual",
       "localizations": {
@@ -33328,6 +34381,17 @@
         }
       }
     },
+    "Home & garden": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dom i ogród"
+          }
+        }
+      }
+    },
     "How Doddy makes it": {
       "extractionState": "manual",
       "localizations": {
@@ -33501,6 +34565,17 @@
         }
       }
     },
+    "How flexible?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak elastycznie?"
+          }
+        }
+      }
+    },
     "How he comes across": {
       "extractionState": "manual",
       "localizations": {
@@ -33556,6 +34631,17 @@
         }
       }
     },
+    "How much in złoty?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ile to w złotówkach?"
+          }
+        }
+      }
+    },
     "How much you train now": {
       "extractionState": "manual",
       "localizations": {
@@ -33596,6 +34682,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jak zrobić klucz"
+          }
+        }
+      }
+    },
+    "Humidity": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wilgotność"
           }
         }
       }
@@ -33655,6 +34752,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "幽默"
+          }
+        }
+      }
+    },
+    "Hunt for a deal": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poluj na okazję"
+          }
+        }
+      }
+    },
+    "Hunting for a deal: give the price you'd pay, and Doddy's server reads the shop's page a few times a day and tells you once when it's that or less. It never buys anything.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polowanie na okazję: podaj cenę, jaką zapłacisz, a serwer Doddy'ego kilka razy dziennie czyta stronę sklepu i mówi ci raz, gdy cena jest taka albo niższa. Nigdy niczego nie kupuje."
           }
         }
       }
@@ -33762,13 +34881,13 @@
         }
       }
     },
-    "I look through shops in Poland and bring back up to three picks, each with a price I read on the shop's own page. You buy in the shop; I never buy anything.": {
+    "I look through shops in Poland, put up to three picks side by side and watch prices for you. You buy in the shop; I never pay.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przeglądam sklepy w Polsce i przynoszę do trzech propozycji, każdą z ceną odczytaną na stronie sklepu. Kupujesz w sklepie; ja nigdy niczego nie kupuję."
+            "value": "Przeglądam sklepy w Polsce, stawiam obok siebie do trzech propozycji i pilnuję dla ciebie cen. Kupujesz w sklepie; ja nigdy nie płacę."
           }
         }
       }
@@ -34082,6 +35201,28 @@
         }
       }
     },
+    "IMGW-PIB has warnings in Poland, but none lists this city's county. Check IMGW-PIB's notices to be sure.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IMGW-PIB ma ostrzeżenia w Polsce, ale żadne nie wymienia powiatu tego miasta. Dla pewności sprawdź komunikaty IMGW-PIB."
+          }
+        }
+      }
+    },
+    "IMGW-PIB's own notices": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Komunikaty IMGW-PIB"
+          }
+        }
+      }
+    },
     "IN ONE LIST": {
       "extractionState": "manual",
       "localizations": {
@@ -34336,6 +35477,17 @@
         }
       }
     },
+    "Import bookings from Gmail": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pobierz rezerwacje z Gmaila"
+          }
+        }
+      }
+    },
     "Import from Google Keep or text files": {
       "extractionState": "manual",
       "localizations": {
@@ -34450,6 +35602,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "导入笔记"
+          }
+        }
+      }
+    },
+    "Important information": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ważne informacje"
           }
         }
       }
@@ -34653,6 +35816,17 @@
         }
       }
     },
+    "In Shopify shops: a cart prepared at the shop. No order is placed and Doddy takes no payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W sklepach Shopify: koszyk przygotowany w sklepie. Nie powstaje zamówienie, a Doddy nie pobiera płatności."
+          }
+        }
+      }
+    },
     "In a conversation, ask for one by name and Doddy shows one card with these steps. Every step still needs your tap, every time. A routine you don't use for 90 days is taken off below.": {
       "extractionState": "manual",
       "localizations": {
@@ -34778,6 +35952,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "进行中"
+          }
+        }
+      }
+    },
+    "In short": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W skrócie"
           }
         }
       }
@@ -35224,6 +36409,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "没成功，给我看看步骤"
+          }
+        }
+      }
+    },
+    "It goes in your default list in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trafi na Twoją domyślną listę w Przypomnieniach."
           }
         }
       }
@@ -36373,6 +37569,39 @@
         }
       }
     },
+    "It wasn't added. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zostało dodane. %@"
+          }
+        }
+      }
+    },
+    "It wasn't deleted. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zostało usunięte. %@"
+          }
+        }
+      }
+    },
+    "It wasn't saved. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zostało zapisane. %@"
+          }
+        }
+      }
+    },
     "It's deleted from Doddy's server and this iPhone. Doddy's server also deletes Anthropic's working copies.": {
       "extractionState": "manual",
       "localizations": {
@@ -36451,6 +37680,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "It's deleted in Reminders too, not only from this list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zniknie też z Przypomnień, nie tylko z tej listy."
           }
         }
       }
@@ -36753,6 +37993,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "在所有项目勾选完毕或你结束之前，清单项目会显示在锁定屏幕和灵动岛上，所以任何看到你 iPhone 的人都能读到。在那里勾选，这里也会勾选。"
+          }
+        }
+      }
+    },
+    "Its nudge was for the old time, so it was removed. Set it again with the bell.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jego szturchnięcie było na starą godzinę, więc zostało usunięte. Ustaw je ponownie dzwonkiem."
+          }
+        }
+      }
+    },
+    "Its nudge was removed too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jego szturchnięcie też zostało usunięte."
           }
         }
       }
@@ -37300,6 +38562,17 @@
         }
       }
     },
+    "Kebab": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kebab"
+          }
+        }
+      }
+    },
     "Keep Precise Location on, or iOS can't tell when you get there.": {
       "extractionState": "manual",
       "localizations": {
@@ -37588,6 +38861,17 @@
         }
       }
     },
+    "Keep it to one short line: a dish or a restaurant's name.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz krótko, w jednej linii: danie albo nazwę restauracji."
+          }
+        }
+      }
+    },
     "Keep on Doddy's server": {
       "extractionState": "manual",
       "localizations": {
@@ -37595,6 +38879,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przechowuj na serwerze Doddy’ego"
+          }
+        }
+      }
+    },
+    "Keep the notes under %lld characters.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki mogą mieć najwyżej tyle znaków: %lld."
+          }
+        }
+      }
+    },
+    "Keep the title under %lld characters.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tytuł może mieć najwyżej tyle znaków: %lld."
           }
         }
       }
@@ -38010,6 +39316,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Przechowywane w Doddym na tym iPhonie i w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe nie trafiają do eksportu; może je zawierać zaszyfrowana kopia zapasowa. Usunięcie tutaj nie kasuje wyeksportowanych plików ani starszych kopii."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Kept on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept on this iPad only."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept on this iPhone only."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostaje tylko na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostaje tylko na tym iPhonie."
                 }
               }
             }
@@ -38898,6 +40245,17 @@
         }
       }
     },
+    "Kiwi.com looks for flights leaving on any day in this window, up to 330 days ahead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi.com szuka lotów z wylotem w dowolnym dniu z tego okresu, najwyżej 330 dni naprzód."
+          }
+        }
+      }
+    },
     "Knee push-up": {
       "extractionState": "manual",
       "localizations": {
@@ -39627,6 +40985,17 @@
         }
       }
     },
+    "Leaflets": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki"
+          }
+        }
+      }
+    },
     "Leaflets Doddy doesn't read": {
       "extractionState": "manual",
       "localizations": {
@@ -39656,6 +41025,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gazetki do sprawdzenia"
+          }
+        }
+      }
+    },
+    "Leaflets: your items go to Doddy's server, which answers from the shops' own leaflets and uses Anthropic's Claude to read them. Nothing that identifies you goes to a shop.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki: twoje produkty trafiają na serwer Doddy'ego, który odpowiada z gazetek sklepów i czyta je za pomocą Claude'a od Anthropic. Do sklepów nie trafia nic, co cię identyfikuje."
           }
         }
       }
@@ -39859,6 +41239,17 @@
         }
       }
     },
+    "Leave on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wylot"
+          }
+        }
+      }
+    },
     "Leave shared list": {
       "extractionState": "manual",
       "localizations": {
@@ -39866,6 +41257,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opuść udostępnioną listę"
+          }
+        }
+      }
+    },
+    "Leaving from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skąd"
           }
         }
       }
@@ -40212,6 +41614,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przejdźmy się."
+          }
+        }
+      }
+    },
+    "Level %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopień: %@"
           }
         }
       }
@@ -42015,6 +43428,17 @@
         }
       }
     },
+    "Long weekend": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Długi weekend"
+          }
+        }
+      }
+    },
     "Longest call": {
       "extractionState": "manual",
       "localizations": {
@@ -42169,6 +43593,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szukam w Mapach Apple…"
+          }
+        }
+      }
+    },
+    "Looking in: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam w: %@"
           }
         }
       }
@@ -42353,6 +43788,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najniższa cena z 30 dni: %@"
+          }
+        }
+      }
+    },
+    "Lowest price here": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najniższa cena tutaj"
+          }
+        }
+      }
+    },
+    "Lowest price of these picks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najniższa cena z tych propozycji"
           }
         }
       }
@@ -43195,6 +44652,17 @@
         }
       }
     },
+    "Maps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy"
+          }
+        }
+      }
+    },
     "Mark as done": {
       "extractionState": "manual",
       "localizations": {
@@ -43486,6 +44954,17 @@
         }
       }
     },
+    "Measured at an IMGW-PIB weather station: an observation, not a forecast.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pomiar ze stacji IMGW-PIB: to obserwacja, nie prognoza."
+          }
+        }
+      }
+    },
     "Medium": {
       "extractionState": "manual",
       "localizations": {
@@ -43770,6 +45249,39 @@
         }
       }
     },
+    "Merchant": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprzedawca"
+          }
+        }
+      }
+    },
+    "Merchant terms and policies": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warunki sprzedawcy"
+          }
+        }
+      }
+    },
+    "Merchant totals": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kwoty podane przez sprzedawcę"
+          }
+        }
+      }
+    },
     "Messages": {
       "extractionState": "manual",
       "localizations": {
@@ -44035,6 +45547,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minuty na trening: %lld"
+          }
+        }
+      }
+    },
+    "Moderate": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umiarkowany"
           }
         }
       }
@@ -44625,6 +46148,17 @@
         }
       }
     },
+    "Most you'd pay, all together": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ile najwyżej zapłacisz, łącznie"
+          }
+        }
+      }
+    },
     "Motion & Fitness": {
       "extractionState": "manual",
       "localizations": {
@@ -45104,6 +46638,17 @@
         }
       }
     },
+    "My city": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje miasto"
+          }
+        }
+      }
+    },
     "My feeds": {
       "extractionState": "manual",
       "localizations": {
@@ -45284,6 +46829,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Moje sklepy"
+          }
+        }
+      }
+    },
+    "NBP's mid rate, not a bank's or an exchange office's rate. NBP publishes it on working days.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurs średni NBP, nie kurs banku ani kantoru. NBP publikuje go w dni robocze."
           }
         }
       }
@@ -46614,6 +48170,17 @@
         }
       }
     },
+    "Nights there": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczba nocy"
+          }
+        }
+      }
+    },
     "No": {
       "extractionState": "manual",
       "localizations": {
@@ -46632,6 +48199,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "W schowku nie ma 24-cyfrowego numeru InPost."
+          }
+        }
+      }
+    },
+    "No Shopify offers found for this search. Try other words.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie znalazłem ofert Shopify dla tego zapytania. Spróbuj innych słów."
+          }
+        }
+      }
+    },
+    "No air quality index for this city right now: GIOŚ didn't answer, or none of its stations here has one. Pull down to try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak teraz indeksu jakości powietrza dla tego miasta: GIOŚ nie odpowiedział albo żadna z jego stacji tutaj go nie ma. Pociągnij w dół, żeby spróbować jeszcze raz."
           }
         }
       }
@@ -46927,6 +48516,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jeszcze nie ma połączeń."
+          }
+        }
+      }
+    },
+    "No check yet. Ask for your items under “Cheapest”; each leaflet then says here what Doddy found in it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nic nie sprawdzałeś. Zapytaj o swoje produkty w „Najtaniej”; potem każda gazetka pokaże tu, co Doddy w niej znalazł."
           }
         }
       }
@@ -47672,6 +49272,17 @@
         }
       }
     },
+    "No shop of this kind is connected by name yet. “Find me this” looks across shops in Poland that Google Shopping lists and reads their own pages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma jeszcze podłączonego sklepu tego rodzaju z nazwy. „Znajdź mi to” szuka w sklepach w Polsce z listy Google Shopping i czyta ich strony."
+          }
+        }
+      }
+    },
     "No shops of these chains within 15 km.": {
       "extractionState": "manual",
       "localizations": {
@@ -47841,6 +49452,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dziś bez treningu. Odpoczynek też jest częścią planu."
+          }
+        }
+      }
+    },
+    "No weather reading right now: IMGW-PIB didn't answer, or this station has nothing new. Pull down to try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak teraz pomiaru pogody: IMGW-PIB nie odpowiedział albo ta stacja nie ma nic nowego. Pociągnij w dół, żeby spróbować jeszcze raz."
+          }
+        }
+      }
+    },
+    "No weather warnings: IMGW-PIB lists none in Poland right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak ostrzeżeń pogodowych: IMGW-PIB nie podaje teraz żadnych w Polsce."
           }
         }
       }
@@ -48442,6 +50075,17 @@
         }
       }
     },
+    "Not available now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz niedostępne"
+          }
+        }
+      }
+    },
     "Not brought up": {
       "extractionState": "manual",
       "localizations": {
@@ -49009,6 +50653,17 @@
         }
       }
     },
+    "Not in the result": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak w wyniku"
+          }
+        }
+      }
+    },
     "Not in these leaflets: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -49016,6 +50671,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie ma w tych gazetkach: %@"
+          }
+        }
+      }
+    },
+    "Not in your checks. Turn it on with “Change”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma jej w twoich sprawdzeniach. Włącz ją w „Zmień”."
           }
         }
       }
@@ -49259,6 +50925,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jeszcze nie obowiązuje: od %@"
+          }
+        }
+      }
+    },
+    "Not reported": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak pomiaru"
           }
         }
       }
@@ -50395,6 +52072,17 @@
         }
       }
     },
+    "Nothing due today.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na dziś nic."
+          }
+        }
+      }
+    },
     "Nothing exact was said, so there's nothing to save.": {
       "extractionState": "manual",
       "localizations": {
@@ -50653,13 +52341,13 @@
         }
       }
     },
-    "Nothing is sent until you say yes on the next card. Doddy works on it in the background; the result waits here.": {
+    "Nothing is sent until you say yes on the next card. Doddy works on it in the background; the picks wait here, in Tasks and in Messages.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nic nie jest wysyłane, dopóki nie powiesz „tak” na następnej karcie. Doddy pracuje nad tym w tle; wynik czeka tutaj."
+            "value": "Nic nie jest wysyłane, dopóki nie powiesz „tak” na następnej karcie. Doddy działa w tle; propozycje poczekają tutaj, w Sprawach i w Wiadomościach."
           }
         }
       }
@@ -50955,6 +52643,17 @@
         }
       }
     },
+    "Nothing more in Calendar today.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziś w Kalendarzu już nic."
+          }
+        }
+      }
+    },
     "Nothing new for your topics right now.": {
       "extractionState": "manual",
       "localizations": {
@@ -51069,6 +52768,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有添加新内容；这些已经在清单上，或者清单已满。"
+          }
+        }
+      }
+    },
+    "Nothing of this kind is watched yet. On a pick, tap “Watch the price” and give the price you'd pay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie pilnujesz jeszcze niczego z tego rodzaju. Przy propozycji dotknij „Pilnuj ceny” i podaj cenę, jaką zapłacisz."
           }
         }
       }
@@ -53191,6 +54901,28 @@
         }
       }
     },
+    "Nudge at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szturchnięcie o %@"
+          }
+        }
+      }
+    },
+    "Nudge at %@, the old time: the event moved. Set it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szturchnięcie o %@, czyli o starej godzinie: wydarzenie się przesunęło. Ustaw je ponownie."
+          }
+        }
+      }
+    },
     "Nudge before %@": {
       "extractionState": "manual",
       "localizations": {
@@ -53563,6 +55295,17 @@
         }
       }
     },
+    "Offered by %lld shops": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sklepy z tą ofertą: %lld"
+          }
+        }
+      }
+    },
     "Offline baseline": {
       "extractionState": "manual",
       "localizations": {
@@ -53714,6 +55457,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "On a day": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W dniu"
           }
         }
       }
@@ -54340,6 +56094,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jeden sklep"
+          }
+        }
+      }
+    },
+    "One station's reading, not a city-wide average. GIOŚ readings are preliminary and may be corrected later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odczyt z jednej stacji, nie średnia dla całego miasta. Odczyty GIOŚ są wstępne i mogą zostać później poprawione."
           }
         }
       }
@@ -55514,6 +57279,28 @@
         }
       }
     },
+    "Open %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz %@"
+          }
+        }
+      }
+    },
+    "Open %@ in Apple Maps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz %@ w Mapach Apple"
+          }
+        }
+      }
+    },
     "Open %@: activate its coupons and scan it at the till.": {
       "extractionState": "manual",
       "localizations": {
@@ -56490,13 +58277,13 @@
         }
       }
     },
-    "Open a result and tap “Watch the price” on a pick. You give your price, and Doddy tells you once when the shop's page shows that price or less.": {
+    "Open a result and tap “Watch the price” on a pick, or paste a product link below.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Otwórz wynik i dotknij „Pilnuj ceny” przy propozycji. Podajesz swoją cenę, a Doddy powie Ci raz, gdy strona sklepu pokaże tę cenę albo niższą."
+            "value": "Otwórz wynik i dotknij „Pilnuj ceny” przy propozycji albo wklej niżej link do produktu."
           }
         }
       }
@@ -57333,6 +59120,17 @@
         }
       }
     },
+    "Open this week's deals": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz okazje tygodnia"
+          }
+        }
+      }
+    },
     "Opened %@'s page": {
       "extractionState": "manual",
       "localizations": {
@@ -57635,6 +59433,28 @@
         }
       }
     },
+    "Opens Kiwi.com. You book and pay there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera Kiwi.com. Tam rezerwujesz i płacisz."
+          }
+        }
+      }
+    },
+    "Opens it to change or delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera je, żeby je zmienić albo usunąć"
+          }
+        }
+      }
+    },
     "Opens its screen with Pause and Stop.": {
       "extractionState": "manual",
       "localizations": {
@@ -57712,6 +59532,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "如果你装了应用就打开应用，否则打开网站。Doddy 不会查看或下单。"
+          }
+        }
+      }
+    },
+    "Opens the event to change or delete it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera wydarzenie, żeby je zmienić albo usunąć"
           }
         }
       }
@@ -57797,6 +59628,17 @@
         }
       }
     },
+    "Optional": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opcjonalnie"
+          }
+        }
+      }
+    },
     "Optional note type": {
       "extractionState": "manual",
       "localizations": {
@@ -57874,6 +59716,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Albo miasto lub ulica"
+          }
+        }
+      }
+    },
+    "Or just tell Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Albo po prostu powiedz Doddy'emu"
           }
         }
       }
@@ -58007,6 +59860,28 @@
         }
       }
     },
+    "Order from %@ in a delivery app": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamów w aplikacji z dostawą: %@"
+          }
+        }
+      }
+    },
+    "Order in…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamów w…"
+          }
+        }
+      }
+    },
     "Original capture": {
       "extractionState": "manual",
       "localizations": {
@@ -58121,6 +59996,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "其他"
+          }
+        }
+      }
+    },
+    "Outbound": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wylot"
           }
         }
       }
@@ -58327,6 +60213,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "SKĄD CENA"
+          }
+        }
+      }
+    },
+    "Package holiday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycieczka z biurem"
           }
         }
       }
@@ -58750,6 +60647,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "再次输入密码"
+          }
+        }
+      }
+    },
+    "Past": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minął"
           }
         }
       }
@@ -59236,6 +61144,28 @@
         }
       }
     },
+    "Pets, toys, sport and the rest": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwierzęta, zabawki, sport i reszta"
+          }
+        }
+      }
+    },
+    "Pho": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pho"
+          }
+        }
+      }
+    },
     "Phone call with Doddy, %@": {
       "extractionState": "manual",
       "localizations": {
@@ -59486,6 +61416,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Numery telefonów widać tylko na twoim ekranie. Doddy nie ma dostępu do twojego banku i nie widzi, czy przelew został wysłany."
+          }
+        }
+      }
+    },
+    "Phones, laptops, TV and audio": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefony, laptopy, telewizory i audio"
           }
         }
       }
@@ -60235,6 +62176,17 @@
         }
       }
     },
+    "Pierogi": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pierogi"
+          }
+        }
+      }
+    },
     "Pike push-up": {
       "extractionState": "manual",
       "localizations": {
@@ -60371,6 +62323,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已置顶"
+          }
+        }
+      }
+    },
+    "Pizza": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pizza"
           }
         }
       }
@@ -60559,17 +62522,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "地点和应用"
-          }
-        }
-      }
-    },
-    "Plan a trip": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaplanuj wyjazd"
           }
         }
       }
@@ -60813,6 +62765,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Do ceny dochodzi kaucja za butelkę lub puszkę."
+          }
+        }
+      }
+    },
+    "Poland": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polska"
           }
         }
       }
@@ -61249,6 +63212,17 @@
         }
       }
     },
+    "Prepare checkout": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotuj koszyk"
+          }
+        }
+      }
+    },
     "Prepare the card": {
       "extractionState": "manual",
       "localizations": {
@@ -61293,6 +63267,17 @@
         }
       }
     },
+    "Price from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skąd cena"
+          }
+        }
+      }
+    },
     "Price on the page now": {
       "extractionState": "manual",
       "localizations": {
@@ -61326,6 +63311,17 @@
         }
       }
     },
+    "Prices and delivery fees are only in the apps. Doddy doesn't see them yet, so he can't say where it's cheapest.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny i koszty dostawy są tylko w aplikacjach. Doddy jeszcze ich nie widzi, więc nie powie, gdzie jest najtaniej."
+          }
+        }
+      }
+    },
     "Prices and times are Kiwi.com's, read %@. They can change before you book; the price shown is for the whole party with the bags counted above.": {
       "extractionState": "manual",
       "localizations": {
@@ -61333,6 +63329,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ceny i godziny są z Kiwi.com, odczytane o %@. Mogą się zmienić przed rezerwacją; cena dotyczy całej grupy, z bagażem podanym wyżej."
+          }
+        }
+      }
+    },
+    "Prices can change after the time they were checked. A price from the Google Shopping list wasn't checked on the shop's page, so it can't be watched. Doddy never buys: “Buy at” opens the shop's page in Safari.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny mogą się zmienić po sprawdzeniu. Cena z listy Google Shopping nie była sprawdzona na stronie sklepu, więc nie da się jej pilnować. Doddy nigdy nie kupuje: „Kup w” otwiera stronę sklepu w Safari."
           }
         }
       }
@@ -61784,6 +63791,17 @@
         }
       }
     },
+    "Products of shops that sell through Shopify, with a cart prepared at the shop. You pay there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Produkty sklepów, które sprzedają przez Shopify, z koszykiem przygotowanym w sklepie. Płacisz tam."
+          }
+        }
+      }
+    },
     "Provider reference: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -62130,6 +64148,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "PRZYPOMNIENIE"
+          }
+        }
+      }
+    },
+    "Rain": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opady"
+          }
+        }
+      }
+    },
+    "Ramen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ramen"
           }
         }
       }
@@ -62580,7 +64620,7 @@
         }
       }
     },
-    "Read from Calendar and Reminders on this iPhone. Nothing here is sent anywhere.": {
+    "Read from and saved to Calendar and Reminders on this iPhone. Nothing here goes to Doddy's server; Open in Maps hands the place to Apple Maps.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -62589,13 +64629,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Read from Calendar and Reminders on this iPad. Nothing here is sent anywhere."
+                  "value": "Read from and saved to Calendar and Reminders on this iPad. Nothing here goes to Doddy's server; Open in Maps hands the place to Apple Maps."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Read from Calendar and Reminders on this iPhone. Nothing here is sent anywhere."
+                  "value": "Read from and saved to Calendar and Reminders on this iPhone. Nothing here goes to Doddy's server; Open in Maps hands the place to Apple Maps."
                 }
               }
             }
@@ -62607,16 +64647,60 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Czytane z Kalendarza i Przypomnień na tym iPadzie. Nic stąd nie jest nigdzie wysyłane."
+                  "value": "Czytane z Kalendarza i Przypomnień na tym iPadzie i tam zapisywane. Nic stąd nie trafia na serwer Doddy’ego; Otwórz w Mapach przekazuje miejsce do Map Apple."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Czytane z Kalendarza i Przypomnień na tym iPhonie. Nic stąd nie jest nigdzie wysyłane."
+                  "value": "Czytane z Kalendarza i Przypomnień na tym iPhonie i tam zapisywane. Nic stąd nie trafia na serwer Doddy’ego; Otwórz w Mapach przekazuje miejsce do Map Apple."
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Read in your checks, only for items it sells.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytana w twoich sprawdzeniach, tylko dla produktów, które sprzedaje."
+          }
+        }
+      }
+    },
+    "Read in your checks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytana w twoich sprawdzeniach."
+          }
+        }
+      }
+    },
+    "Read in your last check.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytana w ostatnim sprawdzeniu."
+          }
+        }
+      }
+    },
+    "Read in your last check; nothing on your list was in it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytana w ostatnim sprawdzeniu; nie było w niej nic z twojej listy."
           }
         }
       }
@@ -62904,6 +64988,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prawdziwe pieniądze"
+          }
+        }
+      }
+    },
+    "Real products of shops that sell through Shopify. Doddy can prepare a cart at the shop; you finish and pay there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prawdziwe produkty sklepów, które sprzedają przez Shopify. Doddy może przygotować koszyk w sklepie; zakup kończysz i płacisz tam."
           }
         }
       }
@@ -64659,6 +66754,28 @@
         }
       }
     },
+    "Reminders are off for Doddy, so nothing can be changed here. Turn them on in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone dla Doddy’ego, więc nic tu nie zmienisz. Włącz je w Ustawieniach, Połączenia."
+          }
+        }
+      }
+    },
+    "Reminders are off for Doddy, so nothing was added. Turn them on in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone dla Doddy’ego, więc nic nie zostało dodane. Włącz je w Ustawieniach, Połączenia."
+          }
+        }
+      }
+    },
     "Reminders are off for Doddy, so nothing was changed. Open it in Reminders instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -64666,6 +66783,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypomnienia są wyłączone dla Doddy’ego, więc nic się nie zmieniło. Zrób to w aplikacji Przypomnienia."
+          }
+        }
+      }
+    },
+    "Reminders are off for Doddy, so nothing was changed. Turn them on in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone dla Doddy’ego, więc nic się nie zmieniło. Włącz je w Ustawieniach, Połączenia."
+          }
+        }
+      }
+    },
+    "Reminders are off for Doddy, so nothing was deleted. Turn them on in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone dla Doddy’ego, więc nic nie zostało usunięte. Włącz je w Ustawieniach, Połączenia."
           }
         }
       }
@@ -64747,6 +66886,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "提醒事项已确认"
+          }
+        }
+      }
+    },
+    "Reminders couldn't be read just now, so nothing was added. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się teraz odczytać Przypomnień, więc nic nie zostało dodane. Spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
+    "Reminders didn't confirm it. Look in Reminders before trying again; Save again won't make a second copy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia tego nie potwierdziły. Zajrzyj do Przypomnień, zanim spróbujesz jeszcze raz; ponowne zapisanie nie zrobi drugiej kopii."
           }
         }
       }
@@ -64939,6 +67100,28 @@
         }
       }
     },
+    "Reminders still shows “%@”. Check it there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia wciąż pokazują „%@”. Sprawdź tam."
+          }
+        }
+      }
+    },
+    "Reminders took the change to “%@” but didn't show it afterwards. Check it there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia przyjęły zmianę w „%@”, ale potem jej nie pokazały. Sprawdź tam."
+          }
+        }
+      }
+    },
     "Reminders took “%@” but didn't show it as done afterwards. Check it there.": {
       "extractionState": "manual",
       "localizations": {
@@ -64957,6 +67140,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypomnienia przyjęły „%@”, ale potem nie pokazały go jako otwartego. Sprawdź tam."
+          }
+        }
+      }
+    },
+    "Reminders will alert you at this time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia dadzą Ci znać o tej godzinie."
           }
         }
       }
@@ -66768,6 +68962,17 @@
         }
       }
     },
+    "Restaurant": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restauracja"
+          }
+        }
+      }
+    },
     "Resting heart rate": {
       "extractionState": "manual",
       "localizations": {
@@ -67018,6 +69223,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Połącz ponownie"
+          }
+        }
+      }
+    },
+    "Return": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powrót"
           }
         }
       }
@@ -67662,6 +69878,17 @@
         }
       }
     },
+    "Salad": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sałatki"
+          }
+        }
+      }
+    },
     "Same as this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -68278,6 +70505,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "保存为模板"
+          }
+        }
+      }
+    },
+    "Save in Reminders": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz w Przypomnieniach"
           }
         }
       }
@@ -68986,6 +71224,17 @@
         }
       }
     },
+    "Saved in Calendar: %@. Checked there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane w Kalendarzu: %@. Sprawdzone tam."
+          }
+        }
+      }
+    },
     "Saved in Doddy for %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -69052,6 +71301,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "已保存到你 iPhone 上的 Doddy。"
+          }
+        }
+      }
+    },
+    "Saved in Reminders on this iPhone, so it shows wherever your Reminders do. Nothing here goes to Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved in Reminders on this iPad, so it shows wherever your Reminders do. Nothing here goes to Doddy's server."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved in Reminders on this iPhone, so it shows wherever your Reminders do. Nothing here goes to Doddy's server."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisuje się w Przypomnieniach na tym iPadzie, więc widać je wszędzie tam, gdzie Twoje Przypomnienia. Nic stąd nie trafia na serwer Doddy’ego."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisuje się w Przypomnieniach na tym iPhonie, więc widać je wszędzie tam, gdzie Twoje Przypomnienia. Nic stąd nie trafia na serwer Doddy’ego."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Saved in Reminders: %@. Checked there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane w Przypomnieniach: %@. Sprawdzone tam."
           }
         }
       }
@@ -70437,28 +72738,6 @@
         }
       }
     },
-    "Say where you want to go…": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Napisz, dokąd chcesz polecieć…"
-          }
-        }
-      }
-    },
-    "Say where, when and with whom; Doddy asks what's missing and shows up to three flights with the real total. You book on Kiwi.com yourself.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Powiedz, dokąd, kiedy i z kim; Doddy dopyta o to, czego brakuje, i pokaże do trzech lotów z prawdziwą ceną całości. Rezerwujesz sam na Kiwi.com."
-          }
-        }
-      }
-    },
     "Say who Doddy is calling.": {
       "extractionState": "manual",
       "localizations": {
@@ -70676,6 +72955,39 @@
         }
       }
     },
+    "Search Shopify shops": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj w sklepach Shopify"
+          }
+        }
+      }
+    },
+    "Search and cart": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukanie i koszyk"
+          }
+        }
+      }
+    },
+    "Search flights and stays": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj lotów i noclegów"
+          }
+        }
+      }
+    },
     "Search for": {
       "extractionState": "manual",
       "localizations": {
@@ -70823,17 +73135,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szukaj dalej w internecie"
-          }
-        }
-      }
-    },
-    "Search products in Shopify shops and prepare a cart at the shop. Doddy takes no payment.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Szukaj produktów w sklepach Shopify i przygotuj koszyk w sklepie. Doddy nie pobiera płatności."
           }
         }
       }
@@ -70989,6 +73290,17 @@
         }
       }
     },
+    "Searched for": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukano"
+          }
+        }
+      }
+    },
     "Searches your saved notes and reads the matching note aloud. Works only when your device is unlocked.": {
       "extractionState": "manual",
       "localizations": {
@@ -71048,6 +73360,28 @@
         }
       }
     },
+    "Searching live merchant offers…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam ofert sklepów…"
+          }
+        }
+      }
+    },
+    "Searching sends what you set (places, dates, nights, people, bags, stops) to Doddy's server and on to Kiwi.com; your budget stays on Doddy's server. Nothing is saved, and Doddy never books or pays: you book on Kiwi.com yourself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyszukiwanie wysyła to, co ustawisz (miejsca, daty, noce, osoby, bagaż, przesiadki), na serwer Doddy'ego i dalej do Kiwi.com; budżet zostaje na serwerze Doddy'ego. Nic nie jest zapisywane, a Doddy nigdy nie rezerwuje ani nie płaci: rezerwujesz samodzielnie na Kiwi.com."
+          }
+        }
+      }
+    },
     "Searching the web…": {
       "extractionState": "manual",
       "localizations": {
@@ -71055,6 +73389,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szukam w internecie…"
+          }
+        }
+      }
+    },
+    "Searching…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam…"
           }
         }
       }
@@ -73941,6 +76286,50 @@
         }
       }
     },
+    "Shipping and tax may change after you enter your address.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostawa i podatki mogą zmienić się po podaniu adresu."
+          }
+        }
+      }
+    },
+    "Shop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sklep"
+          }
+        }
+      }
+    },
+    "Shop by kind": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sklepy według rodzaju"
+          }
+        }
+      }
+    },
+    "Shopify notices": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uwagi Shopify"
+          }
+        }
+      }
+    },
     "Shopify shops": {
       "extractionState": "manual",
       "localizations": {
@@ -73948,6 +76337,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sklepy Shopify"
+          }
+        }
+      }
+    },
+    "Shopify: the words you search for go to Doddy's server and from there to Shopify's Shop service, only when you tap search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopify: słowa, których szukasz, trafiają na serwer Doddy'ego i stamtąd do usługi Shop firmy Shopify, dopiero gdy dotkniesz szukania."
           }
         }
       }
@@ -74158,6 +76558,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "W ostatni dzień promocji sklepy są zamknięte: kup do %@."
+          }
+        }
+      }
+    },
+    "Shops by name": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sklepy z nazwy"
           }
         }
       }
@@ -75086,6 +77497,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokazuje, co Doddy może robić z: %@."
+          }
+        }
+      }
+    },
+    "Side by side, as Doddy's server registered them. The lowest price is marked only when the prices can be compared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obok siebie, tak jak zapisał je serwer Doddy'ego. Najniższa cena jest oznaczona tylko wtedy, gdy ceny da się porównać."
           }
         }
       }
@@ -76806,6 +79228,17 @@
         }
       }
     },
+    "Start a new plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij nowy plan"
+          }
+        }
+      }
+    },
     "Start another": {
       "extractionState": "manual",
       "localizations": {
@@ -76990,17 +79423,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "从模板开始"
-          }
-        }
-      }
-    },
-    "Start over": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zacznij od nowa"
           }
         }
       }
@@ -77675,6 +80097,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "状态"
+          }
+        }
+      }
+    },
+    "Stays": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noclegi"
+          }
+        }
+      }
+    },
+    "Stays in %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noclegi: %@"
           }
         }
       }
@@ -78792,6 +81236,17 @@
         }
       }
     },
+    "Street, number, city": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ulica, numer, miasto"
+          }
+        }
+      }
+    },
     "Strength": {
       "extractionState": "manual",
       "localizations": {
@@ -78935,6 +81390,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "含蓄"
+          }
+        }
+      }
+    },
+    "Sufficient": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostateczny"
           }
         }
       }
@@ -79097,6 +81563,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podsumowanie napisane przez Claude na podstawie zapisu."
+          }
+        }
+      }
+    },
+    "Sushi": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sushi"
+          }
+        }
+      }
+    },
+    "Swap from and to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamień skąd i dokąd"
           }
         }
       }
@@ -79863,6 +82351,28 @@
         }
       }
     },
+    "Tap an event to change or delete it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij wydarzenie, żeby je zmienić albo usunąć."
+          }
+        }
+      }
+    },
+    "Tap the circle to tick one off, or the words to change it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij kółko, żeby odhaczyć, albo tekst, żeby zmienić."
+          }
+        }
+      }
+    },
     "Tap the plus at the top left, then Add a Control.": {
       "extractionState": "manual",
       "localizations": {
@@ -80006,6 +82516,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiedzieć, czyje urodziny się zbliżają, na podstawie dat z twoich kontaktów"
+          }
+        }
+      }
+    },
+    "Temperature %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temperatura: %@"
           }
         }
       }
@@ -80518,6 +83039,17 @@
         }
       }
     },
+    "Thai": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tajskie"
+          }
+        }
+      }
+    },
     "That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPhone's account.": {
       "extractionState": "manual",
       "localizations": {
@@ -80625,6 +83157,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "该地址没有返回新闻订阅源。请在网站上查找 RSS 或 Atom 链接。"
+          }
+        }
+      }
+    },
+    "That address is too long. Street, number and city are enough.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten adres jest za długi. Wystarczą ulica, numer i miasto."
           }
         }
       }
@@ -82414,6 +84957,17 @@
         }
       }
     },
+    "That time has already passed. Pick a later time, or turn the time off.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta godzina już minęła. Wybierz późniejszą albo wyłącz godzinę."
+          }
+        }
+      }
+    },
     "That time has already passed. Pick a time at least a minute from now.": {
       "extractionState": "manual",
       "localizations": {
@@ -82745,6 +85299,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 dni wcześniej"
+          }
+        }
+      }
+    },
+    "The Calendar app didn't open. Open it yourself to change this event.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplikacja Kalendarz się nie otworzyła. Otwórz Kalendarz, żeby zmienić to wydarzenie."
           }
         }
       }
@@ -83831,6 +86396,47 @@
         }
       }
     },
+    "The dish and the address go to Apple Maps for the search; nothing goes to Doddy's server. The address stays on this iPhone until you clear it. In a delivery app, that app's own terms and privacy apply.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The dish and the address go to Apple Maps for the search; nothing goes to Doddy's server. The address stays on this iPad until you clear it. In a delivery app, that app's own terms and privacy apply."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The dish and the address go to Apple Maps for the search; nothing goes to Doddy's server. The address stays on this iPhone until you clear it. In a delivery app, that app's own terms and privacy apply."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Danie i adres trafiają do Map Apple, żeby wyszukać miejsca; nic nie trafia na serwer Doddy’ego. Adres zostaje na tym iPadzie, dopóki go nie wyczyścisz. W aplikacji z dostawą obowiązują jej własny regulamin i zasady prywatności."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Danie i adres trafiają do Map Apple, żeby wyszukać miejsca; nic nie trafia na serwer Doddy’ego. Adres zostaje na tym iPhonie, dopóki go nie wyczyścisz. W aplikacji z dostawą obowiązują jej własny regulamin i zasady prywatności."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "The draft and the person's name, when Doddy drafts one.": {
       "extractionState": "manual",
       "localizations": {
@@ -84383,6 +86989,28 @@
         }
       }
     },
+    "The leaflets": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki"
+          }
+        }
+      }
+    },
+    "The leaflets of %lld shops and where each thing on your list is cheapest, in one place.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki sklepów (%lld) i to, gdzie każda rzecz z twojej listy jest najtańsza, w jednym miejscu."
+          }
+        }
+      }
+    },
     "The length and label of a timer, or the time and label of an alarm, when Doddy sets one.": {
       "extractionState": "manual",
       "localizations": {
@@ -84390,6 +87018,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Długość i nazwa minutnika albo godzina i nazwa budzika, gdy Doddy go ustawia."
+          }
+        }
+      }
+    },
+    "The links open with the city, dates and guests filled in. Doddy reads no prices from them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linki otwierają się z wpisanym miastem, datami i liczbą gości. Doddy nie czyta z nich cen."
           }
         }
       }
@@ -84838,6 +87477,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "The merchant couldn't create a checkout. Nothing was purchased. Search again or view the merchant's store.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się utworzyć koszyka u sprzedawcy. Nic nie zostało kupione. Wyszukaj ponownie albo otwórz sklep sprzedawcy."
           }
         }
       }
@@ -87269,7 +89919,7 @@
         }
       }
     },
-    "The trips saved on this iPhone couldn't be read. Search again to replace them.": {
+    "The trips saved on this iPhone couldn't be read. Import them from Gmail again to replace them.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -87278,13 +89928,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The trips saved on this iPad couldn't be read. Search again to replace them."
+                  "value": "The trips saved on this iPad couldn't be read. Import them from Gmail again to replace them."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The trips saved on this iPhone couldn't be read. Search again to replace them."
+                  "value": "The trips saved on this iPhone couldn't be read. Import them from Gmail again to replace them."
                 }
               }
             }
@@ -87296,13 +89946,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Nie udało się odczytać wyjazdów zapisanych na tym iPadzie. Wyszukaj jeszcze raz, żeby je zastąpić."
+                  "value": "Nie udało się odczytać wyjazdów zapisanych na tym iPadzie. Pobierz je z Gmaila jeszcze raz, żeby je zastąpić."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Nie udało się odczytać wyjazdów zapisanych na tym iPhonie. Wyszukaj jeszcze raz, żeby je zastąpić."
+                  "value": "Nie udało się odczytać wyjazdów zapisanych na tym iPhonie. Pobierz je z Gmaila jeszcze raz, żeby je zastąpić."
                 }
               }
             }
@@ -87535,6 +90185,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się zapisać słów. Dźwięk został zachowany. Spróbuj ponownie poniżej."
+          }
+        }
+      }
+    },
+    "The words you search for go to Doddy's server and from there to Shopify's Shop service, only when you tap search. This is not a comparison of all shops, only Shopify shops. Prices are the shops' catalogue prices; the shop works out the final amount.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Słowa, których szukasz, trafiają na serwer Doddy'ego i stamtąd do usługi Shop firmy Shopify, dopiero gdy dotkniesz szukania. To nie jest porównanie wszystkich sklepów, tylko sklepów Shopify. Ceny są katalogowe; ostateczną kwotę wylicza sklep."
           }
         }
       }
@@ -88027,6 +90688,17 @@
         }
       }
     },
+    "These prices are in different currencies, so Doddy doesn't mark the lowest.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te ceny są w różnych walutach, więc Doddy nie oznacza najniższej."
+          }
+        }
+      }
+    },
     "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken.": {
       "extractionState": "manual",
       "localizations": {
@@ -88367,17 +91039,6 @@
         }
       }
     },
-    "Thinking…": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Myślę…"
-          }
-        }
-      }
-    },
     "This adds to this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -88699,6 +91360,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta wersja Doddy’ego nie może korzystać ze Zdrowia (%@)."
+          }
+        }
+      }
+    },
+    "This calendar can't be changed from Doddy, so the event opened in the Calendar app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego kalendarza nie da się zmieniać z Doddy’ego, więc wydarzenie otworzyło się w aplikacji Kalendarz."
           }
         }
       }
@@ -90808,6 +93480,17 @@
         }
       }
     },
+    "This price came from a list, not the shop's page, so Doddy can't watch it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta cena pochodzi z listy, nie ze strony sklepu, więc Doddy nie może jej pilnować."
+          }
+        }
+      }
+    },
     "This price only when buying at least %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -90815,6 +93498,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta cena tylko przy zakupie co najmniej %lld szt."
+          }
+        }
+      }
+    },
+    "This reading has no temperature.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten pomiar nie ma temperatury."
           }
         }
       }
@@ -90874,6 +93568,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法播放这段录音。"
+          }
+        }
+      }
+    },
+    "This reminder repeats, so it keeps a day. Change or stop the repeat in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To przypomnienie się powtarza, więc musi mieć dzień. Powtarzanie zmienisz albo wyłączysz w Przypomnieniach."
           }
         }
       }
@@ -91680,6 +94385,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "本周"
+          }
+        }
+      }
+    },
+    "This week's deals": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okazje tygodnia"
+          }
+        }
+      }
+    },
+    "This week's deals: leaflets and the cheapest shop for your list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okazje tygodnia: gazetki i najtańszy sklep na twoją listę"
+          }
+        }
+      }
+    },
+    "This week's leaflets, the cheapest shop for each thing on your list, and anything else found for you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki z tego tygodnia, najtańszy sklep dla każdej rzeczy z twojej listy i wszystko inne, czego ci poszukam."
           }
         }
       }
@@ -93103,6 +95841,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dziś ostatni dzień."
+          }
+        }
+      }
+    },
+    "Today lists reminders due today or tomorrow; the others are in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekran Dzisiaj pokazuje przypomnienia na dziś i jutro; pozostałe są w Przypomnieniach."
           }
         }
       }
@@ -95337,6 +98086,17 @@
         }
       }
     },
+    "Two weeks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dwa tygodnie"
+          }
+        }
+      }
+    },
     "Type": {
       "extractionState": "manual",
       "localizations": {
@@ -95396,6 +98156,28 @@
         }
       }
     },
+    "Type a dish and your address. Doddy finds matching places nearby in Apple Maps, nearest first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz danie i swój adres. Doddy znajdzie w Mapach Apple pasujące miejsca w pobliżu, od najbliższych."
+          }
+        }
+      }
+    },
+    "Type a dish first, or tap one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw wpisz danie albo stuknij jedno z podpowiedzi."
+          }
+        }
+      }
+    },
     "Type a topic, a name or a few words, or paste the address of an RSS or Atom feed.": {
       "extractionState": "manual",
       "localizations": {
@@ -95403,6 +98185,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisz temat, nazwę lub kilka słów albo wklej adres kanału RSS lub Atom."
+          }
+        }
+      }
+    },
+    "Type an amount like 100 or 12,50 to convert it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz kwotę, np. 100 albo 12,50, żeby ją przeliczyć."
           }
         }
       }
@@ -95436,6 +98229,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisz kwotę, aby potwierdzić"
+          }
+        }
+      }
+    },
+    "Type your delivery address first, so Doddy knows where to look.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw wpisz adres dostawy, żeby Doddy wiedział, gdzie szukać."
           }
         }
       }
@@ -96509,6 +99313,28 @@
         }
       }
     },
+    "Up to three picks from shops in Poland, each price read on the shop's own page, with the reason for each.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do trzech propozycji ze sklepów w Polsce, każda cena odczytana na stronie sklepu, z uzasadnieniem."
+          }
+        }
+      }
+    },
+    "Up to three picks from shops in Poland, side by side.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do trzech propozycji ze sklepów w Polsce, obok siebie."
+          }
+        }
+      }
+    },
     "Up to three things you said, offered when a conversation ends. Nothing is saved unless you tap Save.": {
       "extractionState": "manual",
       "localizations": {
@@ -97387,6 +100213,28 @@
         }
       }
     },
+    "Valid %@ – %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ważna %@ – %@"
+          }
+        }
+      }
+    },
+    "Valid until %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ważne do: %@"
+          }
+        }
+      }
+    },
     "Verified": {
       "extractionState": "manual",
       "localizations": {
@@ -97663,6 +100511,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wersja %lld · %@"
+          }
+        }
+      }
+    },
+    "Very bad": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bardzo zły"
+          }
+        }
+      }
+    },
+    "Very good": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bardzo dobry"
+          }
+        }
+      }
+    },
+    "View at merchant": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz w sklepie"
           }
         }
       }
@@ -98366,6 +101247,17 @@
         }
       }
     },
+    "Watched prices here": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilnowane ceny tutaj"
+          }
+        }
+      }
+    },
     "Watching until %@": {
       "extractionState": "manual",
       "localizations": {
@@ -98395,6 +101287,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zaktualizowaliśmy regulamin"
+          }
+        }
+      }
+    },
+    "Weather now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pogoda teraz"
+          }
+        }
+      }
+    },
+    "Weather warnings": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostrzeżenia pogodowe"
+          }
+        }
+      }
+    },
+    "Weather, air and warnings for your city, from official sources, plus today's exchange rates.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pogoda, powietrze i ostrzeżenia dla Twojego miasta z oficjalnych źródeł, do tego dzisiejsze kursy walut."
           }
         }
       }
@@ -98557,6 +101482,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅工作日"
+          }
+        }
+      }
+    },
+    "Weekend": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekend"
           }
         }
       }
@@ -98767,6 +101703,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 对你的称呼"
+          }
+        }
+      }
+    },
+    "What Doddy can do here": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy może tu zrobić"
           }
         }
       }
@@ -99176,6 +102123,17 @@
         }
       }
     },
+    "What are you shopping for?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego szukasz?"
+          }
+        }
+      }
+    },
     "What do I need to renew my ID card? Step by step": {
       "extractionState": "manual",
       "localizations": {
@@ -99183,6 +102141,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co muszę zrobić, żeby wymienić dowód osobisty? Krok po kroku"
+          }
+        }
+      }
+    },
+    "What do you fancy?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na co masz ochotę?"
           }
         }
       }
@@ -100193,6 +103162,17 @@
         }
       }
     },
+    "What you type here goes to Doddy's server and to Anthropic, only to fill in the search above. You can also dictate with the microphone on your keyboard.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co tu wpiszesz, trafia na serwer Doddy'ego i do Anthropic, tylko po to, żeby wypełnić wyszukiwanie powyżej. Możesz też podyktować to mikrofonem na klawiaturze."
+          }
+        }
+      }
+    },
     "What's Marta's number?": {
       "extractionState": "manual",
       "localizations": {
@@ -100920,6 +103900,47 @@
         }
       }
     },
+    "When this page opens or you pull it down, Doddy asks IMGW-PIB (weather and warnings), GIOŚ (air) and NBP (exchange rates) directly. Only the city you picked goes with a request, never where you are. The city stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "When this page opens or you pull it down, Doddy asks IMGW-PIB (weather and warnings), GIOŚ (air) and NBP (exchange rates) directly. Only the city you picked goes with a request, never where you are. The city stays on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "When this page opens or you pull it down, Doddy asks IMGW-PIB (weather and warnings), GIOŚ (air) and NBP (exchange rates) directly. Only the city you picked goes with a request, never where you are. The city stays on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy otwierasz tę stronę albo pociągasz ją w dół, Doddy pyta bezpośrednio IMGW-PIB (pogoda i ostrzeżenia), GIOŚ (powietrze) i NBP (kursy walut). Z zapytaniem idzie tylko wybrane miasto, nigdy to, gdzie jesteś. Wybór miasta zostaje na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy otwierasz tę stronę albo pociągasz ją w dół, Doddy pyta bezpośrednio IMGW-PIB (pogoda i ostrzeżenia), GIOŚ (powietrze) i NBP (kursy walut). Z zapytaniem idzie tylko wybrane miasto, nigdy to, gdzie jesteś. Wybór miasta zostaje na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "When you answer, Doddy says:": {
       "extractionState": "manual",
       "localizations": {
@@ -101030,6 +104051,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gdy zapytasz na przykład „Jak mi poszedł tydzień?”, Doddy najpierw zapyta, a dopiero po Twoim „tak” jego głos usłyszy to samo podsumowanie: liczby z tygodnia, bez surowych danych ze Zdrowia."
+          }
+        }
+      }
+    },
+    "When you leave": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiedy wylot"
           }
         }
       }
@@ -101240,6 +104272,17 @@
         }
       }
     },
+    "Where to next?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokąd teraz?"
+          }
+        }
+      }
+    },
     "Where you are now": {
       "extractionState": "manual",
       "localizations": {
@@ -101310,13 +104353,13 @@
         }
       }
     },
-    "Where, when, with whom and what you'd pay: write it, or dictate it with the microphone on your keyboard.": {
+    "Where, when, with whom…": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dokąd, kiedy, z kim i za ile: napisz albo podyktuj mikrofonem na klawiaturze."
+            "value": "Dokąd, kiedy, z kim…"
           }
         }
       }
@@ -101472,6 +104515,17 @@
         }
       }
     },
+    "Who's going": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kto leci"
+          }
+        }
+      }
+    },
     "Whose birthday is this week?": {
       "extractionState": "manual",
       "localizations": {
@@ -101479,6 +104533,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kto ma urodziny w tym tygodniu?"
+          }
+        }
+      }
+    },
+    "Why this one": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dlaczego ta"
           }
         }
       }
@@ -101652,6 +104717,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法更新小组件，所以它们可能显示较旧的笔记或清单。在 Doddy 中打开小组件的笔记，查看已保存的内容。"
+          }
+        }
+      }
+    },
+    "Wind": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiatr"
           }
         }
       }
@@ -102381,6 +105457,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najpierw wpisz, czym Doddy ma się zająć."
+          }
+        }
+      }
+    },
+    "Write what to remember first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw wpisz, o czym pamiętać."
           }
         }
       }
@@ -103432,6 +106519,17 @@
         }
       }
     },
+    "You finish and pay on the shop's own page. Doddy doesn't see the payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakup kończysz i płacisz na stronie sklepu. Doddy nie widzi płatności."
+          }
+        }
+      }
+    },
     "You get a notification and a text with the answer.": {
       "extractionState": "manual",
       "localizations": {
@@ -103454,13 +106552,13 @@
         }
       }
     },
-    "You get up to three picks with the reason for each, and you can ask Doddy to watch a price.": {
+    "You get up to three picks with the reason for each, side by side in “Compare”, and you can ask Doddy to watch a price.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dostajesz do trzech propozycji z uzasadnieniem każdej i możesz poprosić Doddy'ego o pilnowanie ceny."
+            "value": "Dostajesz do trzech propozycji z uzasadnieniem, obok siebie w „Porównaj”, i możesz poprosić Doddy'ego o pilnowanie ceny."
           }
         }
       }
@@ -104624,6 +107722,17 @@
         }
       }
     },
+    "Your answer…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja odpowiedź…"
+          }
+        }
+      }
+    },
     "Your body weight and a backpack": {
       "extractionState": "manual",
       "localizations": {
@@ -104653,6 +107762,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoje połączenia"
+          }
+        }
+      }
+    },
+    "Your checkout": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój koszyk"
+          }
+        }
+      }
+    },
+    "Your city": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje miasto"
           }
         }
       }
@@ -104793,6 +107924,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的一天，\n一目了然。"
+          }
+        }
+      }
+    },
+    "Your day: events from Calendar and reminders from Reminders on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your day: events from Calendar and reminders from Reminders on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your day: events from Calendar and reminders from Reminders on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twój dzień: wydarzenia z Kalendarza i przypomnienia z Przypomnień na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twój dzień: wydarzenia z Kalendarza i przypomnienia z Przypomnień na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -105011,6 +108183,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Your items and the shops to check go to Doddy's server, which answers from the shops' own leaflets and uses Anthropic's Claude to read and match them. Nothing that identifies you goes to a shop; Rossmann and the shoe, home and pet shops get the item names as a search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje produkty i sklepy do sprawdzenia trafiają na serwer Doddy'ego, który odpowiada z gazetek sklepów i czyta je oraz dopasowuje za pomocą Claude'a od Anthropic. Do sklepów nie trafia nic, co cię identyfikuje; Rossmann oraz sklepy z butami, dla domu i dla zwierząt dostają nazwy produktów jako wyszukiwanie."
+          }
+        }
+      }
+    },
+    "Your last check: %lld items, %lld leaflets read.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnie sprawdzenie: produkty: %lld, przeczytane gazetki: %lld."
           }
         }
       }
@@ -106496,6 +109690,28 @@
         }
       }
     },
+    "Your trips": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje wyjazdy"
+          }
+        }
+      }
+    },
+    "Your trips from Gmail": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje wyjazdy z Gmaila"
+          }
+        }
+      }
+    },
     "Your turn": {
       "extractionState": "manual",
       "localizations": {
@@ -106978,6 +110194,17 @@
         }
       }
     },
+    "days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dni"
+          }
+        }
+      }
+    },
     "deep %@, REM %@, core %@": {
       "extractionState": "manual",
       "localizations": {
@@ -107051,6 +110278,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "mieści się"
+          }
+        }
+      }
+    },
+    "for its kind of items": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dla swoich produktów"
+          }
+        }
+      }
+    },
+    "from %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "od %@"
           }
         }
       }
@@ -107202,6 +110451,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS nie pozwolił Doddy’emu włączyć mikrofonu bez otwierania aplikacji. Otwórz Doddy’ego, żeby porozmawiać."
+          }
+        }
+      }
+    },
+    "iOS doesn't let Doddy use Reminders, so nothing was added. Allow Full Access in iPhone Settings, Privacy, Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS nie pozwala Doddy’emu korzystać z Przypomnień, więc nic nie zostało dodane. Zezwól na pełny dostęp w Ustawieniach iPhone’a, Prywatność, Przypomnienia."
           }
         }
       }
@@ -107513,6 +110773,28 @@
         }
       }
     },
+    "leaflet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gazetka"
+          }
+        }
+      }
+    },
+    "link to its leaflet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "link do gazetki"
+          }
+        }
+      }
+    },
     "live": {
       "extractionState": "manual",
       "localizations": {
@@ -107660,6 +110942,17 @@
         }
       }
     },
+    "on the Polish air quality index": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "w polskim indeksie jakości powietrza"
+          }
+        }
+      }
+    },
     "only in some shops: check yours": {
       "extractionState": "manual",
       "localizations": {
@@ -107711,6 +111004,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "zapisane"
+          }
+        }
+      }
+    },
+    "search & cart": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "szukanie i koszyk"
           }
         }
       }
@@ -108592,6 +111896,28 @@
         }
       }
     },
+    "± 3 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "± 3 dni"
+          }
+        }
+      }
+    },
+    "± 7 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "± 7 dni"
+          }
+        }
+      }
+    },
     "“%@”": {
       "extractionState": "manual",
       "localizations": {
@@ -108599,6 +111925,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "„%@”"
+          }
+        }
+      }
+    },
+    "“%@” changed in Calendar, so it didn't open. This is how your day is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wydarzenie „%@” zmieniło się w Kalendarzu, więc się nie otworzyło. Tak wygląda teraz Twój dzień."
+          }
+        }
+      }
+    },
+    "“%@” changed in Reminders since you opened it, so it wasn't deleted. Close this and open it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie „%@” zmieniło się w Przypomnieniach od chwili otwarcia, więc nie zostało usunięte. Zamknij to okno i otwórz je ponownie."
+          }
+        }
+      }
+    },
+    "“%@” changed in Reminders since you opened it, so nothing was saved. Close this and open it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie „%@” zmieniło się w Przypomnieniach od chwili otwarcia, więc nic nie zostało zapisane. Zamknij to okno i otwórz je ponownie."
           }
         }
       }
@@ -108621,6 +111980,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypomnienie „%@” zmieniło się w Przypomnieniach, więc nie zostało odhaczone. Tak wygląda teraz."
+          }
+        }
+      }
+    },
+    "“%@” is no longer open in Reminders. This is how your list is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie „%@” nie jest już otwarte w Przypomnieniach. Tak wygląda teraz Twoja lista."
           }
         }
       }
@@ -108869,6 +112239,28 @@
         }
       }
     },
+    "“%@” near %@, nearest first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@” w pobliżu: %@, od najbliższych."
+          }
+        }
+      }
+    },
+    "“%@” was already in Reminders, so nothing new was added.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie „%@” już było w Przypomnieniach, więc nic nowego nie zostało dodane."
+          }
+        }
+      }
+    },
     "“%@” wasn't put back. %@": {
       "extractionState": "manual",
       "localizations": {
@@ -108902,6 +112294,17 @@
         }
       }
     },
+    "“Find me this” sends your words, what matters most and this kind to Doddy's server and to Anthropic, whose Claude does the research, only after you say yes. Search phrases go to Google Shopping through Serper, and Doddy's server opens shops' pages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Znajdź mi to” wysyła twoje słowa, to, co najważniejsze, i ten rodzaj sklepów na serwer Doddy'ego i do Anthropic, którego Claude szuka, dopiero gdy powiesz „tak”. Frazy wyszukiwania trafiają do Google Shopping przez Serper, a serwer Doddy'ego otwiera strony sklepów."
+          }
+        }
+      }
+    },
     "“Hey Siri, Open Doddy” works too.": {
       "extractionState": "manual",
       "localizations": {
@@ -108920,6 +112323,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "„Notatka zapisana” na Dynamic Island"
+          }
+        }
+      }
+    },
+    "“Prepare checkout” sends that offer's variant, the shop's address and the quantity to Doddy's server and from there to Shopify, so the shop can make a cart. It places no order and takes no payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Przygotuj koszyk” wysyła wariant tej oferty, adres sklepu i liczbę sztuk na serwer Doddy'ego i stamtąd do Shopify, żeby sklep mógł utworzyć koszyk. Nie składa zamówienia i nie pobiera płatności."
           }
         }
       }
