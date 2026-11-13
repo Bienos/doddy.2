@@ -229,8 +229,8 @@ public enum DataFlow {
                     : "Only when CEIDG is switched on on the server; otherwise it answers that it isn't, and nothing is asked."),
             DataFlowRow(
                 id: "placeSearch", destination: "Apple Maps (place search and travel time)",
-                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are.",
-                when: "Only when you search for a place for a reminder, ask when to leave, or look for your shops in Cheapest this week.", isActive: true,
+                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are. For Food: the dish and the delivery address you type.",
+                when: "Only when you search for a place for a reminder, ask when to leave, look for your shops in Cheapest this week, or search for food in Food.", isActive: true,
                 note: "Doddy keeps only the place you pick, and only on this iPhone. iOS watches a reminder's place itself; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
@@ -553,6 +553,8 @@ public enum DataFlow {
                 : "Conversations: none are remembered.",
             "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
+            // Decision 2026-11-13-food-search-nearby: typed, kept for the next search, sent only to Apple Maps.
+            "The delivery address you type in Food, until you clear it there; it goes to Apple Maps only when you search.",
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
             // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
             "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",

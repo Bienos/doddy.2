@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-12
 - **Decided by:** owner, 12 Nov 2026: "Both and merge" (the restaurant's page and ordering by phone), then, on the two open questions: **pay on delivery only**, and the **address typed on the card each time**.
-- **Status:** design merged (#371). Step 1 (server and agent folder) is in the pull request that adds this line; the app's card and voice tool are step 3. Built in the steps below, each its own pull request, after `2026-11-12-food-by-voice` (#355, merged 12 Nov 2026).
+- **Status:** design merged (#371). Step 1 (server and agent folder) is in the pull request that adds this line; step 3a (DoddyCore model and parser, #435) is merged; step 3b (the card, the availability check and the `order_*` fields of `call_places` in `tools.json`) is in its own pull request. Built in the steps below, each its own pull request, after `2026-11-12-food-by-voice` (#355, merged 12 Nov 2026).
 - **Replaces:** nothing. Extends `2026-11-12-book-agent` (same pattern, a third agent) and sits beside `2026-11-12-food-by-voice` (the person's own app, no phone call).
 
 ## Why
@@ -36,6 +36,11 @@ No delivery company lets another app order on a person's own account in Poland (
 - **Agent and spec:** `voice-agent/task-call-order/` (prompt, session, no tools beyond `end_call` and voicemail), `TASK_ORDER_AGENT_SPEC`, `scripts/voice_agent_spec.py check --agent task-call-order` in `scripts/ci.sh`, `setup-task-call-agent.mjs --agent order`. Migration `037_order_calls.sql` only widens two CHECKs.
 - **Off until set up** (owner queue 61): without `ELEVENLABS_TASK_ORDER_AGENT_ID`, 503 `order_not_configured`; `/v1/call-cases/availability` gains `order`, `orderAgentConfigured`, `orderAgentProblems`.
 - An order is meant to go through a task (one place). A single call case of kind `order` is accepted by the server like a booking one, but its brief is then deleted only when the phone acknowledges the result.
+
+## What step 3 changed from the design above
+- **No separate `order_by_phone` tool.** Like a booking, an order is `call_places` with `order_*` fields and exactly one place (`order_name`, `order_item_names` with `order_item_quantities` and optional `order_item_notes`, then `order_street`, `order_apartment`, `order_postcode`, `order_city`, `order_phone` or `order_pickup`, and optional `order_max_total_pln`). The tool stays `ask: tap`, `confirm_on_screen`; one tool is one place for the owner to attach, not two. The quantities are digit strings, because the voice agent's tool arrays hold strings only.
+- **The card** shows the lines, the address as typed (or "Pickup at the restaurant"), the courier's phone, the name, the highest total, "Payment on delivery or at pickup. Doddy never gives card details.", the server's confirmation sentence, and a **Call and order** button. Without `order: true` from `/v1/call-cases/availability` the tool answers "ordering by phone isn't switched on" and no card is shown.
+- Not on the live main agent: `call_places` is `not_synced` (owner queue 48).
 
 ## Not decided here
 - A cap default and whether to allow pickup in the first release (proposed: both).

@@ -4253,6 +4253,11 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.callTaskBookingOff)
             return
         }
+        // Ordering food needs the order agent on the server (decision 2026-11-12-food-by-phone).
+        if draft.order != nil, availability.order != true {
+            await reply(toolCallID, VoiceToolReply.callTaskOrderOff)
+            return
+        }
         guard !callerFirstName.isEmpty else {
             await reply(toolCallID, VoiceToolReply.callTaskNoName)
             return
@@ -4280,7 +4285,7 @@ final class VoiceSessionController {
         guard approval.state != "unknown" else { return (VoiceToolReply.callTaskUnknown, true) }
         let first = preview.places.first?.callee.name ?? ""
         return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult,
-                                               booking: preview.isBooking), true)
+                                               booking: preview.isBooking, order: preview.isOrder), true)
     }
 
     // MARK: Calls from Doddy's number later (ADR-754)

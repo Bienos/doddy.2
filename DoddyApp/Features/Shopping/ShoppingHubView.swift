@@ -74,6 +74,10 @@ struct ShoppingHubView: View {
                         OnlineNextCard(things: moreOnline, priorities: moreOnlinePriorities)
                         if !shoppingTasks.isEmpty { searches }
                     }
+                    // Shops by kind (decision 2026-11-13-shopping-by-kind): groceries, fashion, electronics, home, other.
+                    if scope.shows(.errands) || scope.shows(.deals) {
+                        ShopKindsSection()
+                    }
                     if scope.shows(.priceWatch) {
                         checkThisCard.id(Self.checkThisCardID)
                         WatchesSection()
