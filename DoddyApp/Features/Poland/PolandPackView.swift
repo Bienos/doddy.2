@@ -2,12 +2,12 @@ import DoddyCore
 import Foundation
 import SwiftUI
 
-/// Poland Pack: real public-data reads, no accounts or background polling.
-/// The screen is loaded only when requested; it adds no weight to voice startup.
+/// My city (owner, 13 Nov 2026: "Polska na co dzień … nie wiem, o co tu chodzi … rzeczy się powtarzają"): what was the
+/// Poland Pack, cut to what only it shows and laid out as tiles in Doddy's colours. The weather now (IMGW), weather
+/// warnings for the city's county (IMGW), the air (GIOŚ) and NBP's reference rates with a converter, all read from
+/// public sources when the screen opens; no accounts, no background polling, nothing added to voice startup. The
+/// leaflets row and the InPost section left: leaflets are in Shopping, parcels in Settings › Parcels.
 struct PolandPackView: View {
-    let dealsEnabled: Bool
-    let parcelTrackingEnabled: Bool
-
     @Environment(\.dismiss) private var dismiss
     @AppStorage("polandPack.city") private var cityCode = PolandCity.warszawa.rawValue
     @State private var weather: PolandWeather?
@@ -15,13 +15,10 @@ struct PolandPackView: View {
     @State private var air: PolandAirIndex?
     @State private var rates: [PolandExchangeRate] = []
     @State private var stationListing: Data?
-    @State private var shipmentNumber = ""
     @State private var conversionAmount = "100"
     @State private var isLoading = false
     @State private var hasLoaded = false
     @State private var currentRequestID = UUID()
-    @State private var showDeals = false
-    @State private var showParcels = false
 
     private var city: PolandCity { PolandCity(rawValue: cityCode) ?? .warszawa }
     private var polish: Bool { NotificationLanguage.current == .polish }
@@ -29,168 +26,24 @@ struct PolandPackView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    Picker(t("Miasto", "City"), selection: $cityCode) {
-                        ForEach(PolandCity.allCases) { city in
-                            Text(city.name).tag(city.rawValue)
-                        }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    weatherHero
+                    HStack(alignment: .top, spacing: 12) {
+                        airTile
+                        warningsTile
                     }
-                    if isLoading {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                            Text(t("Pobieram dane ze źródeł urzędowych…", "Loading official data…"))
-                                .font(.footnote)
-                        }
-                    } else if hasLoaded {
-                        Text(t("Źródła są odczytywane na żądanie. Brak danych nie oznacza zera.", "Sources are read on demand. Missing data never means zero."))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text(t("Wybierz lokalizację", "Choose a location"))
+                    warningDetails
+                    ratesCard
+                    DoddyFootnote(text: t("Źródła są odczytywane na żądanie: IMGW-PIB, GIOŚ i NBP. Brak danych nie oznacza zera.",
+                                          "Read on demand from IMGW-PIB, GIOŚ and NBP. Missing data never means zero."),
+                                  systemImage: "building.columns")
                 }
-
-                Section {
-                    if let weather {
-                        if let degrees = weather.temperatureCelsius {
-                            LabeledContent(t("Temperatura", "Temperature"), value: String(format: "%.1f °C", degrees))
-                        }
-                        if let wind = weather.wind {
-                            LabeledContent(t("Wiatr", "Wind"), value: String(format: "%.1f m/s", wind))
-                        }
-                        if let rain = weather.precipitation {
-                            LabeledContent(t("Opady", "Rainfall"), value: String(format: "%.1f mm", rain))
-                        }
-                        if let humidity = weather.humidity {
-                            LabeledContent(t("Wilgotność", "Humidity"), value: String(format: "%.0f%%", humidity))
-                        }
-                        Text("\(weather.station) · \(weather.observedAt) · IMGW-PIB")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        unavailable
-                    }
-                } header: {
-                    Label(t("Pogoda teraz", "Current weather"), systemImage: "thermometer.medium")
-                } footer: {
-                    Text(t("Pomiar ze stacji IMGW — nie prognoza pogody.", "An IMGW station observation, not a forecast."))
-                }
-
-                Section {
-                    if let warnings {
-                        switch warnings {
-                        case .noWarningsInPoland:
-                            Text(t("IMGW nie publikuje obecnie ostrzeżeń meteorologicznych.", "IMGW currently reports no meteorological warnings."))
-                        case .locationNotVerified:
-                            Text(t("Nie mogę potwierdzić ostrzeżeń dla tego powiatu. Sprawdź komunikaty IMGW.", "County-specific warning status could not be verified. Check IMGW notices."))
-                        case .matching(let items):
-                            ForEach(items.indices, id: \.self) { i in
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(items[i].event).font(.headline)
-                                    if let level = items[i].level { Text(t("Stopień: ", "Level: ") + level) }
-                                    if let detail = items[i].text { Text(detail).font(.subheadline) }
-                                    if let validTo = items[i].validTo {
-                                        Text(t("Ważne do: ", "Valid until: ") + validTo)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        unavailable
-                    }
-                    Link(t("Komunikaty IMGW", "Official IMGW notices"),
-                         destination: URL(string: "https://meteo.imgw.pl/")!)
-                } header: {
-                    Label(t("Ostrzeżenia pogodowe", "Weather warnings"), systemImage: "exclamationmark.triangle")
-                }
-
-                Section {
-                    if let air {
-                        LabeledContent(t("Polski indeks", "Polish air index"), value: air.category)
-                        Text(air.station).font(.footnote)
-                        Text(t("GIOŚ · Wskazanie jednej stacji, nie średnia z całego miasta.", "GIOŚ · One station's reading, not a citywide average."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        unavailable
-                    }
-                    Link(t("Sprawdź mapę GIOŚ", "Open GIOŚ map"),
-                         destination: URL(string: "https://powietrze.gios.gov.pl/pjp/current")!)
-                } header: {
-                    Label(t("Jakość powietrza", "Air quality"), systemImage: "aqi.medium")
-                } footer: {
-                    Text(t("GIOŚ publikuje wstępne odczyty; mogą zostać później skorygowane.", "GIOŚ readings are preliminary and may be revised."))
-                }
-
-                Section {
-                    TextField(t("Kwota, np. 100", "Amount, e.g. 100"), text: $conversionAmount)
-                        .keyboardType(.decimalPad)
-                        .accessibilityIdentifier("poland.amount")
-                    if rates.isEmpty { unavailable }
-                    ForEach(rates, id: \.code) { rate in
-                        if let entry = rate.latest {
-                            VStack(alignment: .leading, spacing: 3) {
-                                LabeledContent("1 \(rate.code)", value: String(format: "%.4f PLN", entry.mid))
-                                if let amount = amountValue, let pln = rate.pln(for: amount) {
-                                    Text(String(format: "%.2f %@ = %.2f PLN", amount, rate.code, pln))
-                                        .font(.footnote)
-                                }
-                                Text("NBP · \(entry.effectiveDate)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                } header: {
-                    Label(t("Kursy NBP i przelicznik", "NBP rates and converter"), systemImage: "polishzlotysign.circle")
-                } footer: {
-                    Text(t("Kurs średni NBP, nie kurs transakcyjny banku ani kantoru.", "NBP reference rate, not a bank or exchange office transaction rate."))
-                }
-
-                Section {
-                    if parcelTrackingEnabled {
-                        Button { showParcels = true } label: {
-                            Label(t("Moje paczki — sprawdź status", "My parcels — check status"), systemImage: "shippingbox.circle")
-                        }
-                        .accessibilityIdentifier("poland.parcels")
-                    }
-                    TextField(t("24-cyfrowy numer paczki", "24-digit tracking number"), text: $shipmentNumber)
-                        .keyboardType(.numberPad)
-                        .accessibilityIdentifier("poland.parcel.number")
-                    if let link = PolandParcel.trackingURL(number: shipmentNumber) {
-                        Link(t("Śledź na stronie InPost", "Track on InPost"), destination: link)
-                    } else {
-                        Text(t("Wpisz poprawny 24-cyfrowy numer, aby otworzyć śledzenie.", "Enter a valid 24-digit number to open tracking."))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    Link(t("Znajdź Paczkomat lub PaczkoPunkt", "Find a parcel locker or pickup point"),
-                         destination: PolandParcel.lockerFinder)
-                } header: {
-                    Label(t("Paczki InPost", "InPost parcels"), systemImage: "shippingbox")
-                } footer: {
-                    Text(t("Moje paczki sprawdza status dopiero po włączeniu listy i świadomym dodaniu lub odświeżeniu numeru. Link otwiera serwis InPost.", "My parcels checks status only after enabling the list and explicitly adding or refreshing a number. The link opens InPost."))
-                }
-
-                if dealsEnabled {
-                    Section {
-                        Button {
-                            showDeals = true
-                        } label: {
-                            Label(t("Sprawdź Biedronkę, Lidla i inne gazetki", "Compare Biedronka, Lidl and other leaflets"),
-                                  systemImage: "cart")
-                        }
-                    } header: {
-                        Text(t("Zakupy w Polsce", "Shopping in Poland"))
-                    } footer: {
-                        Text(t("Otwiera istniejące porównanie promocji i koszyka w DODDY.", "Opens DODDY's existing grocery-deals and basket comparison."))
-                    }
-                }
+                .padding(16)
+                .readableColumn()
             }
-            .navigationTitle(t("Polska na co dzień", "Poland Pack"))
+            .doddyScreen()
+            .navigationTitle(t("Moje miasto", "My city"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -208,24 +61,202 @@ struct PolandPackView: View {
             }
             .refreshable { await refresh() }
             .task(id: cityCode) { await refresh() }
-            .sheet(isPresented: $showDeals) { DealsView() }
-            .sheet(isPresented: $showParcels) {
-                NavigationStack {
-                    ParcelsView()
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button(t("Zamknij", "Close")) { showParcels = false }
-                            }
-                        }
-                }
-            }
         }
     }
 
+    // MARK: Weather
+
+    private var weatherHero: some View {
+        DoddyHero(title: city.name, subtitle: t("Pogoda teraz, ze stacji IMGW", "The weather now, from an IMGW station"), pose: .leaning) {
+            if let weather, let degrees = weather.temperatureCelsius {
+                Text(verbatim: String(format: "%.0f°", degrees))
+                    .font(.system(size: 64, weight: .heavy, design: .rounded))
+                    .accessibilityLabel(Text(verbatim: String(format: t("%.1f stopnia", "%.1f degrees"), degrees)))
+                Text(verbatim: weatherLine(weather))
+                    .font(.subheadline.weight(.semibold))
+                Text(verbatim: "\(weather.station) · \(weather.observedAt) · IMGW-PIB")
+                    .font(.caption)
+                    .opacity(0.8)
+            } else if isLoading {
+                HStack(spacing: 8) {
+                    ProgressView().tint(Theme.inkOnOrange)
+                    Text(verbatim: t("Pobieram dane ze źródeł urzędowych…", "Loading official data…")).font(.subheadline)
+                }
+            } else if hasLoaded {
+                Text(verbatim: t("IMGW nie podał teraz pomiaru dla tej stacji.", "IMGW has no reading for this station right now."))
+                    .font(.subheadline)
+            }
+            Menu {
+                Picker(t("Miasto", "City"), selection: $cityCode) {
+                    ForEach(PolandCity.allCases) { city in
+                        Text(verbatim: city.name).tag(city.rawValue)
+                    }
+                }
+            } label: {
+                Label(t("Zmień miasto", "Change city"), systemImage: "mappin.and.ellipse")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 36)
+                    .background(Theme.canvas.opacity(0.55), in: Capsule())
+                    .frame(minHeight: 44)
+            }
+            .foregroundStyle(Theme.inkOnOrange)
+            .accessibilityIdentifier("poland.city")
+        }
+    }
+
+    private func weatherLine(_ w: PolandWeather) -> String {
+        var parts: [String] = []
+        if let wind = w.wind { parts.append(String(format: t("wiatr %.1f m/s", "wind %.1f m/s"), wind)) }
+        if let rain = w.precipitation { parts.append(String(format: t("opady %.1f mm", "rain %.1f mm"), rain)) }
+        if let humidity = w.humidity { parts.append(String(format: t("wilgotność %.0f%%", "humidity %.0f%%"), humidity)) }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: Tiles
+
+    private var airTile: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(t("Powietrze", "Air"), systemImage: "aqi.medium")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.secondaryText)
+            if let air {
+                HStack(spacing: 8) {
+                    Circle().fill(airColour(air.category)).frame(width: 12, height: 12).accessibilityHidden(true)
+                    Text(verbatim: air.category)
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text(verbatim: air.station).font(.caption).foregroundStyle(Theme.secondaryText).lineLimit(2)
+                Text(verbatim: t("GIOŚ · jedna stacja, wstępny odczyt", "GIOŚ · one station, preliminary"))
+                    .font(.caption2)
+                    .foregroundStyle(Theme.secondaryText)
+            } else {
+                unavailable
+            }
+            Link(t("Mapa GIOŚ", "GIOŚ map"), destination: URL(string: "https://powietrze.gios.gov.pl/pjp/current")!)
+                .font(.caption.weight(.semibold))
+        }
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .doddyCard(padding: 14)
+    }
+
+    /// The Polish index's six words, from good to bad; the dot only repeats what the word says.
+    private func airColour(_ category: String) -> Color {
+        let c = category.lowercased()
+        if c.contains("bardzo zły") || c.contains("very bad") || c.contains("zły") || c.contains("bad") { return Theme.error }
+        if c.contains("dostateczny") || c.contains("umiarkowany") || c.contains("moderate") || c.contains("sufficient") { return Theme.orangeCue }
+        return Theme.confirmed
+    }
+
+    private var warningsTile: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(t("Ostrzeżenia", "Warnings"), systemImage: "exclamationmark.triangle")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.secondaryText)
+            switch warnings {
+            case .none:
+                unavailable
+            case .noWarningsInPoland?:
+                Text(verbatim: t("Brak", "None")).font(.system(.title3, design: .rounded, weight: .bold))
+                Text(verbatim: t("IMGW nie publikuje teraz ostrzeżeń.", "IMGW reports no warnings now."))
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+            case .locationNotVerified?:
+                Text(verbatim: t("Nie wiem", "Not sure")).font(.system(.title3, design: .rounded, weight: .bold))
+                Text(verbatim: t("Nie mogę potwierdzić ostrzeżeń dla tego powiatu.", "I can't confirm warnings for this county."))
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+            case .matching(let items)?:
+                Text(verbatim: items.isEmpty ? t("Brak dla miasta", "None here") : String(format: t("Aktywne: %lld", "Active: %lld"), items.count))
+                    .font(.system(.title3, design: .rounded, weight: .bold))
+                    .foregroundStyle(items.isEmpty ? Theme.ink : Theme.error)
+                if let first = items.first {
+                    Text(verbatim: first.event).font(.caption).foregroundStyle(Theme.secondaryText).lineLimit(2)
+                }
+            }
+            Link(t("Komunikaty IMGW", "IMGW notices"), destination: URL(string: "https://meteo.imgw.pl/")!)
+                .font(.caption.weight(.semibold))
+        }
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .doddyCard(padding: 14)
+    }
+
+    @ViewBuilder private var warningDetails: some View {
+        if case .matching(let items)? = warnings, !items.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(items.indices, id: \.self) { i in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(verbatim: items[i].event).font(.headline)
+                            Spacer()
+                            if let level = items[i].level { DoddyTag(text: t("Stopień ", "Level ") + level, strong: true) }
+                        }
+                        if let detail = items[i].text { Text(verbatim: detail).font(.subheadline) }
+                        if let validTo = items[i].validTo {
+                            Text(verbatim: t("Ważne do: ", "Valid until: ") + validTo)
+                                .font(.caption)
+                                .foregroundStyle(Theme.secondaryText)
+                        }
+                    }
+                }
+            }
+            .doddyCard()
+        }
+    }
+
+    // MARK: Rates
+
+    private var ratesCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                DoddySymbolTile(systemImage: "polishzlotysign", size: 36)
+                Text(verbatim: t("Kursy NBP i przelicznik", "NBP rates and converter"))
+                    .font(.system(.headline, design: .rounded))
+            }
+            HStack(spacing: 8) {
+                TextField(t("Kwota, np. 100", "Amount, e.g. 100"), text: $conversionAmount)
+                    .keyboardType(.decimalPad)
+                    .font(.title3.weight(.semibold).monospacedDigit())
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 44)
+                    .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .accessibilityIdentifier("poland.amount")
+                Text(verbatim: t("w walucie →  zł", "in currency → PLN"))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if rates.isEmpty { unavailable }
+            ForEach(rates, id: \.code) { rate in
+                if let entry = rate.latest {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(verbatim: rate.code).font(.system(.headline, design: .rounded, weight: .heavy))
+                        Text(verbatim: String(format: "%.4f zł", entry.mid))
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(Theme.secondaryText)
+                        Spacer()
+                        if let amount = amountValue, let pln = rate.pln(for: amount) {
+                            Text(verbatim: String(format: "%.2f zł", pln))
+                                .font(.headline.monospacedDigit())
+                        }
+                    }
+                    .padding(.vertical, 2)
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            if let date = rates.compactMap({ $0.latest?.effectiveDate }).first {
+                Text(verbatim: t("Kurs średni NBP z \(date), nie kurs banku ani kantoru.", "NBP reference rate of \(date), not a bank's or exchange office's rate."))
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        .doddyCard()
+    }
+
     private var unavailable: some View {
-        Text(t("Brak aktualnych danych. Sprawdź źródło lub spróbuj ponownie.", "Current data unavailable. Check the source or retry."))
+        Text(verbatim: t("Brak aktualnych danych. Sprawdź źródło lub spróbuj ponownie.", "Current data unavailable. Check the source or retry."))
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.secondaryText)
     }
 
     private var amountValue: Double? {

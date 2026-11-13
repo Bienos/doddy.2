@@ -5,7 +5,7 @@
 // built, from plain headlines, as when the writer is unavailable. Counts only: no story, topic or account id is stored
 // (the per-account row is keyed by a hash of the account id, like the per-account text count, and pruned after 2 days).
 import { sha256 } from "../crypto.js";
-import { takeCounter } from "../dailyCounters.js";
+import { returnCounter, takeCounter } from "../dailyCounters.js";
 import { inTransaction, type Db } from "../db.js";
 import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL, takeServerSlots } from "../serverUsage.js";
 
@@ -45,6 +45,37 @@ export async function reserveWriter(db: Db, accountId: string, caps: NewsWriterC
     // An account id is a random uuid: a plain hash is enough (as for the per-account text count).
     if (await takeCounter(c, "news_account", sha256(accountId).toString("hex"), limits.perAccount, day)) return "ok";
     await slots.giveBack();
+    return "account_cap";
+  });
+}
+
+// Article summaries (POST /v1/news/summary, src/news/summary.ts) have caps of their own, apart from digests: per account
+// and for the whole server per UTC day. They are counted in daily_counters under the `news_account` scope with keys of
+// their own, "summary:<hash of the account id>" and "summary:server", so they need no migration and never share a count
+// with digests (whose keys are the bare hash). A summary is counted once its page has been read, before the model is
+// asked, so a failed answer still counts; a cached summary counts nothing. Counts only, pruned after two days.
+
+export interface NewsSummaryCaps {
+  /** Summaries the model writes for one account per UTC day. */
+  perAccount: number;
+  /** For the whole server per UTC day. */
+  perServer: number;
+}
+
+/** Each can be set (`NEWS_SUMMARY_DAILY_*`). */
+export const DEFAULT_NEWS_SUMMARY_CAPS: NewsSummaryCaps = { perAccount: 40, perServer: 1000 };
+
+export const SUMMARY_SERVER_KEY = "summary:server";
+export const summaryAccountKey = (accountId: string) => `summary:${sha256(accountId).toString("hex")}`;
+
+/** Reserves one summary for the account on `now`'s UTC day, or says which cap stopped it. Both rows stay locked until
+ * the transaction ends, so every cap is exact; a refused account gives the server's slot back. */
+export async function reserveSummary(db: Db, accountId: string, caps: NewsSummaryCaps, now: Date): Promise<"ok" | "account_cap" | "server_cap"> {
+  const day = utcDay(now);
+  return inTransaction(db, async (c) => {
+    if (!(await takeCounter(c, "news_account", SUMMARY_SERVER_KEY, caps.perServer, day))) return "server_cap";
+    if (await takeCounter(c, "news_account", summaryAccountKey(accountId), caps.perAccount, day)) return "ok";
+    await returnCounter(c, "news_account", SUMMARY_SERVER_KEY, day);
     return "account_cap";
   });
 }

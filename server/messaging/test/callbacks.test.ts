@@ -81,7 +81,7 @@ describe("call-backs against real Postgres", { skip: dbSkip }, () => {
     const r = await callIn(app, michal);
     assert.equal(r.statusCode, 200);
     assert.match(r.headers["content-type"] as string, /xml/);
-    assert.match(r.body, /Tu Doddy, asystent AI\. Łączę z osobą, w której imieniu dzwonił Doddy\./);
+    assert.match(r.body, /Tu Doddy, wirtualny asystent\. Łączę z osobą, w której imieniu dzwonił Doddy\./);
     assert.match(r.body, new RegExp(`<Dial callerId="\\${DODDY_FROM}" timeout="25" timeLimit="900" record="do-not-record"`));
     assert.match(r.body, new RegExp(`<Number>\\${owner.phone}</Number>`));
     assert.doesNotMatch(r.body, /<Record[\s>/]/);

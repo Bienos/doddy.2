@@ -489,6 +489,7 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Check:** `python3 -I scripts/voice_agent_spec.py check --agent task-call` (in `scripts/ci.sh`). It also checks that the server's copy, `server/messaging/src/taskCalls/agentSpec.ts`, matches this folder. The server refuses to call while the live agent differs from it.
 - **Create:** `server/messaging/scripts/setup-task-call-agent.mjs` (`--dry-run` prints the request). It needs a Polish voice id in `TASK_CALL_VOICE_ID`; `session.json` holds only a placeholder.
 - **Status: not created yet.** The owner's steps are in `docs/decisions/calls.md` and `docs/implementation/CALL_CASES_STATUS.md`.
+- **13 Nov 2026, in the repository only (not on any live agent):** both call agents' prompts (`task-call/`, `task-call-book/`) sound like the person's own assistant: a "How you sound" section, varied reactions, their own short goodbye; asked whether they are an AI they still say "Tak, jestem asystentem AI" (DOD-03). The server-built opening says "tu Doddy, wirtualny asystent" instead of "asystent AI". Decision `docs/decisions/2026-11-13-call-agent-sounds-like-an-assistant.md`; syncing them is the owner's (`docs/OWNER_QUEUE.md` 71), and the server accepts the previous prompts until then.
 
 ## Changes to the live main agent, 11 and 18 Oct 2026 (rounds 4 to 6, ASK-01)
 

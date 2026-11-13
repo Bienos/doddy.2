@@ -701,6 +701,16 @@ struct Arguments {
         values[key] as? Double
     }
 
+    /// A list that must hold only numbers; a single number counts as a list of one. Nil if absent or
+    /// if anything in it isn't a number (nothing is dropped).
+    func numbers(_ key: String) -> [Double]? {
+        guard let value = values[key], !(value is NSNull) else { return nil }
+        if let single = value as? Double { return [single] }
+        guard let list = value as? [Any] else { return nil }
+        let doubles = list.compactMap { $0 as? Double }
+        return doubles.count == list.count ? doubles : nil
+    }
+
     /// The first text argument longer than its bound, if any (review C11). Too long is refused,
     /// never cut: the agent hears which argument and asks the user. List items are bounded by
     /// the list itself (ListLimits.itemLength), item by item.

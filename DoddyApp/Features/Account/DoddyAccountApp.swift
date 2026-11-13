@@ -190,6 +190,9 @@ enum DoddyAccountServers {
     /// 1. the messaging server deletes its account (phone number, updates);
     /// 1b. an account made with Apple has Sign in with Apple ended at Apple (`revokeApple`, decision
     ///    2026-11-09-apple-revoke-for-doddy-accounts); Apple failing is said at the end and doesn't stop the rest;
+    /// 1c. the voice server deletes the account's voice conversations at ElevenLabs (`deleteVoiceConversations`, decision
+    ///    2026-11-12-voice-conversations-per-account). Like the servers above, no answer stops here and leaves the person
+    ///    signed in; an answer with some still pending goes on, and the end says so (`VoiceConversationErasure`);
     /// 2. the backend deletes what it keeps and, with it, the sign-in at the account service (its
     ///    cleanup queue, decision 2026-11-08-required-account), and disconnects the online accounts;
     /// 3. this iPhone's own voice account, if it still has one, is deleted the way it always was;
@@ -225,6 +228,14 @@ enum DoddyAccountServers {
         // Before the backend removes the sign-in at the account service: the voice server checks the
         // account's token to end Sign in with Apple. A failure doesn't stop the deletion; it is said at the end.
         let appleLine = await revokeApple()
+        // Also before the backend removes the sign-in: the voice server checks the account's token for this too.
+        // Unlike Apple, this is Doddy's own server, so with no answer nothing more is deleted and the person stays
+        // signed in to try again (asking again is harmless: it answers 0 and 0 once everything is gone).
+        let conversations = await deleteVoiceConversations()
+        guard conversations.mayContinue else {
+            model.message = NSLocalizedString("Your messaging data was deleted, but Doddy's voice server didn't confirm deleting your voice conversations, so you're still signed in. Check your connection and try again.", comment: "")
+            return
+        }
         guard await DeviceSession.ensure(server: backend) else {
             model.message = NSLocalizedString("Your messaging data was deleted, but Doddy couldn't reach his server to delete the rest, so you're still signed in. Check your connection and try again.", comment: "")
             return
@@ -244,8 +255,30 @@ enum DoddyAccountServers {
         let userID = model.session?.userID
         await model.signOut()
         if let userID { UserDefaults.standard.removeObject(forKey: appleRevokedKey(userID)) }
+        // The agreement to keep voice conversations belonged to this account; the next one is asked again. Nothing
+        // asks yet (`VoiceConsent.requiredVersion` is nil), so this only clears what was never written.
+        VoiceConsent.withdraw()
         let done = NSLocalizedString("Your Doddy account was deleted and this iPhone is signed out. Notes on this iPhone stay.", comment: "")
-        model.message = [done, serverLine, voiceLine, appleLine].compactMap { $0 }.joined(separator: " ")
+        // Voice conversations are named as deleted only when the voice server confirmed all of them (DOD-08).
+        let conversationsLine: String? = switch conversations.finalLine {
+        case .deleted:
+            NSLocalizedString("Your voice conversations were deleted.", comment: "")
+        case .stillDeleting:
+            NSLocalizedString("Some of your voice conversations are still being deleted. Doddy's server keeps trying every day until they're gone.", comment: "")
+        case nil:
+            nil
+        }
+        model.message = [done, serverLine, conversationsLine, voiceLine, appleLine].compactMap { $0 }.joined(separator: " ")
+    }
+
+    /// Step 1c of `deleteAccount`: the voice server deletes the account's voice conversations at ElevenLabs and answers
+    /// counts. Sends the Doddy account's token and this iPhone's old per-install id (`PreferenceKey.voiceUserID`), so
+    /// conversations from before the account's own user id existed are found too. No token, or no answer: not confirmed.
+    private static func deleteVoiceConversations() async -> VoiceConversationErasure.Outcome {
+        guard let token = try? await DoddyAccountModel.shared.accessToken() else { return .notConfirmed }
+        let attempt = await VoiceAuthAPI.shared.deleteConversations(
+            accountToken: token, installID: UserDefaults.standard.string(forKey: PreferenceKey.voiceUserID))
+        return VoiceConversationErasure.outcome(attempt)
     }
 
     /// The Doddy account's own token for the messaging server, asked for with the account as after a sign-in

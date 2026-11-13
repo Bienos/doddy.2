@@ -37,7 +37,7 @@
     "silence_end_call_timeout": 20,
     "disable_first_message_interruptions": true,
     "placeholders": {
-      "doddy_opening_line": "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy mogą Państwo zarezerwować stolik dla 2 osób w piątek 14 listopada o 19:00 na nazwisko Anna Kowalska?",
+      "doddy_opening_line": "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy mogą Państwo zarezerwować stolik dla 2 osób w piątek 14 listopada o 19:00 na nazwisko Anna Kowalska?",
       "doddy_question": "Czy mogą Państwo zarezerwować stolik dla 2 osób w piątek 14 listopada o 19:00 na nazwisko Anna Kowalska?",
       "doddy_principal": "Anny",
       "doddy_callee": "Trattoria Demo",

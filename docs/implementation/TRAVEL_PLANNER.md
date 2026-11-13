@@ -32,7 +32,7 @@ Doddy never books or pays.
 | Labels are honest: an itinerary gets "fastest" only if it is the fastest of those returned; one that wins twice is shown once | `plan.ts` `pickOptions` |
 | Warnings come from the itinerary: airport change, different airlines on one connection, overnight or 6 h+ connection, leaving before 6:00, landing after 23:00 or the next day | `plan.ts` `traps` |
 | Stay and package links carry only the city, dates and party | `plan.ts` `stayLinks` |
-| The stay task's words carry no link (ADR-703) and start only after a card with those words and a tap (ADR-716, kept by `2026-11-11-asked-for-runs-at-once`) | `TripPlannerView.swift`, `TripPlanText.stayResearchWords` |
+| The stay task's words carry no link (ADR-703) and start only after a card with those words and a tap (ADR-716, kept by `2026-11-11-asked-for-runs-at-once`) | `TripsView.swift` (the planner is inline there since 13 Nov 2026), `TripPlanText.stayResearchWords`, `StaySearch.researchWords` |
 | The log line carries counts only | `trip_search` |
 
 ## Server
@@ -44,7 +44,7 @@ Doddy never books or pays.
 
 ## App
 
-`DoddyApp/Features/Trips/TripPlannerModel.swift` (the conversation, no views), `TripPlannerView.swift`; the rules and words in `Packages/DoddyCore/Sources/DoddyCore/Travel/TripPlanner.swift`.
+`DoddyApp/Features/Trips/TripPlannerModel.swift` (the conversation, no views), shown inline in `TripsView.swift` since 13 Nov 2026 (decision `2026-11-13-feature-screens-in-doddys-colours`); the rules and words in `Packages/DoddyCore/Sources/DoddyCore/Travel/TripPlanner.swift`.
 
 ## Not built, and known limits
 

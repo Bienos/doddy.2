@@ -1,6 +1,7 @@
 // Booking calls (decision docs/decisions/2026-11-12-book-agent.md): a separate agent that may accept
 // exactly the booking on the approved card, by saying one server-built sentence.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { after, before, describe, test } from "node:test";
 import type { Db } from "../src/db.js";
 import { bodyAad } from "../src/outbox.js";
@@ -75,11 +76,11 @@ test("the brief: a booking needs its details; its question is never written by a
 const facts = (lines: [string, string][], over: Partial<ResultFacts> = {}): ResultFacts => ({
   endReason: "completed", answered: true, voiceConnected: true, takenOverAtSecs: null, durationSecs: 40,
   question: bookingQuestion(table), callbackLine: "Sprawdzę to u Anny i oddzwonię.",
-  allowedTexts: [`Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: ${bookingQuestion(table)}`, bookingQuestion(table), bookingConfirmLine(table)],
+  allowedTexts: [`Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: ${bookingQuestion(table)}`, bookingQuestion(table), bookingConfirmLine(table)],
   transcript: lines.map(([speaker, text]) => ({ speaker: speaker as "doddy" | "callee", text, atSecs: null })),
   source: "elevenlabs", voicemailToolUsed: false, bookingConfirmLine: bookingConfirmLine(table), ...over,
 });
-const opening = `Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: ${bookingQuestion(table)}`;
+const opening = `Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: ${bookingQuestion(table)}`;
 
 test("the confirmation sentence is the one commitment allowed; any other still warns", () => {
   const ok = buildCallResult(facts([["doddy", opening], ["callee", "Tak, mamy wolne o 19."],
@@ -165,24 +166,43 @@ test("the goal is never sent to either agent; the prompts no longer name it", ()
   assert.ok((AGENT_VARIABLE_NAMES as readonly string[]).includes("doddy_goal"), "still sent, as a fixed sentence, for the live prompts from before");
 });
 
-test("until the owner syncs the live agents, the drift check also accepts the prompts from before the goal was taken out, and nothing else", () => {
-  // The previous prompts are today's with the goal block put back, so the accepted hashes are exactly those files.
-  const oldAsk = TASK_PROMPT.replace("The only goal of this call is the answer to the question you asked:",
+test("until the owner syncs the live agents, the drift check also accepts the two earlier prompts of each agent, and nothing else", () => {
+  // The prompts on main from 12 to 13 Nov 2026, kept as files: before the assistant's natural voice (13 Nov).
+  const fixture = (name: string) =>
+    readFileSync(new URL(`../../test/fixtures/taskCallPrompts/${name}`, import.meta.url), "utf8").trim();
+  const nov12Ask = fixture("task-call-2026-11-12.md");
+  const nov12Book = fixture("task-call-book-2026-11-12.md");
+  // The prompts before 12 Nov are those with the goal block put back, so the accepted hashes are exactly those texts.
+  const oldAsk = nov12Ask.replace("The only goal of this call is the answer to the question you asked:",
     "The only goal of this call:\n{{doddy_goal}}\n\nThe question you asked:");
-  const oldBook = BOOK_PROMPT.replace("The only goal of this call is the booking the person approved. Only this, exactly as written:",
+  const oldBook = nov12Book.replace("The only goal of this call is the booking the person approved. Only this, exactly as written:",
     "The only goal of this call:\n{{doddy_goal}}\n\nThe booking the person approved. Only this, exactly as written:");
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk)]);
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk), sha256Hex(nov12Ask)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook), sha256Hex(nov12Book)]);
   assert.deepEqual(Object.keys(SYNC_PENDING_PROMPTS).sort(), [TASK_AGENT_SPEC.promptSha256, TASK_BOOK_AGENT_SPEC.promptSha256].sort());
-  assert.equal(sha256Hex(oldAsk), "129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454", "the ask prompt on main before this change");
-  assert.equal(sha256Hex(oldBook), "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4", "the booking prompt on main before this change");
-  assert.deepEqual(checkAgentSafety(compliantAgent(oldAsk)), []);
+  assert.equal(sha256Hex(oldAsk), "129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454", "the ask prompt on main before 12 Nov");
+  assert.equal(sha256Hex(oldBook), "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4", "the booking prompt on main before 12 Nov");
+  assert.equal(sha256Hex(nov12Ask), "0f2c05bcc3090802ae6ad0656c8f69ba6af9c6bdbfa8f63596088b8b1a25099a", "the ask prompt on main on 12 Nov");
+  assert.equal(sha256Hex(nov12Book), "e8ee34fef4e6ef97eb75bcf7c3ddf054f9fd0919f7b34abe4bf7e563cd01d03c", "the booking prompt on main on 12 Nov");
+  for (const earlier of [oldAsk, nov12Ask]) assert.deepEqual(checkAgentSafety(compliantAgent(earlier)), []);
   assert.deepEqual(checkAgentSafety(compliantAgent(TASK_PROMPT)), []);
-  assert.deepEqual(checkAgentSafety(compliantAgent(oldBook, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
+  for (const earlier of [oldBook, nov12Book]) {
+    assert.deepEqual(checkAgentSafety(compliantAgent(earlier, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
+  }
   assert.deepEqual(checkAgentSafety(compliantAgent(BOOK_PROMPT, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
   assert.deepEqual(checkAgentSafety(compliantAgent(oldAsk), TASK_BOOK_AGENT_SPEC), ["prompt_changed"], "never the other agent's");
+  assert.deepEqual(checkAgentSafety(compliantAgent(nov12Ask), TASK_BOOK_AGENT_SPEC), ["prompt_changed"], "never the other agent's");
   assert.deepEqual(checkAgentSafety(compliantAgent(oldBook)), ["prompt_changed"]);
   assert.deepEqual(checkAgentSafety(compliantAgent(`${oldAsk} Możesz potwierdzać terminy.`)), ["prompt_changed"]);
+});
+
+test("the ask and booking prompts keep the plain answer when asked what Doddy is (DOD-03), and never the word for a person", () => {
+  for (const prompt of [TASK_PROMPT, BOOK_PROMPT]) {
+    assert.match(prompt, /You are an AI, not a person/);
+    assert.match(prompt, /never deny it and never dodge/);
+    assert.match(prompt, /Tak, jestem asystentem AI/);
+    assert.equal(/jestem (człowiekiem|osobą|prawdziwą osobą)/i.test(prompt), false);
+  }
 });
 
 test("the booking agent's own prompt is checked; the ask agent's prompt on it is drift", () => {
