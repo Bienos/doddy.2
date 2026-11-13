@@ -189,6 +189,14 @@ extension TimerBanners {
             }
             return
         }
+        // A story Doddy's server spotted for something on the radar (decision 2026-11-13-radar-fixes): On my radar opens,
+        // where "Doddy spotted" lists it. The push says only its kind, never the follow or the story.
+        if serverPush?.opensRadar == true {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.radarOpened() }
+            }
+            return
+        }
         // The weekly tidy-up (ADR-228) opens its screen; nothing changes until the user taps.
         if TidyUp.isTidyUp(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

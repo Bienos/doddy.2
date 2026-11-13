@@ -25527,6 +25527,17 @@
         }
       }
     },
+    "Doddy's server hasn't answered yet, so only the words can be changed now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego jeszcze nie odpowiedział, więc teraz można zmienić tylko słowa."
+          }
+        }
+      }
+    },
     "Doddy's server is placing this call.": {
       "extractionState": "manual",
       "localizations": {
@@ -88064,6 +88075,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "These topics are only for the daily message. What you follow in On my radar (Home › •••) is a separate list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te tematy są tylko do codziennej wiadomości. To, co śledzisz w „Na radarze” (ekran główny › •••), to osobna lista."
           }
         }
       }

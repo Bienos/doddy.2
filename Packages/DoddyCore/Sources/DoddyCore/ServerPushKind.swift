@@ -11,9 +11,15 @@ public enum ServerPushKind: String, Equatable, Sendable {
     case errandResult = "errand-result"
     /// A file Doddy was making is ready (or failed): open Messages, where the file is.
     case fileReady = "file-ready"
+    /// Doddy's server spotted a story for something on the person's radar (decision 2026-11-10-radar-alerts):
+    /// open On my radar, where "Doddy spotted" lists it. Which follow and which story stay off the payload.
+    case radar = "radar"
 
     /// Opens Messages when tapped (owner, 10 Nov 2026).
     public var opensMessages: Bool { self == .errandResult || self == .fileReady }
+
+    /// Opens On my radar when tapped (owner's review, 12 Nov 2026: "Dotknięcie powiadomienia nie otwiera radaru").
+    public var opensRadar: Bool { self == .radar }
 
     public static func parse(_ userInfo: [AnyHashable: Any]) -> ServerPushKind? {
         guard let hint = userInfo["doddy"] as? [String: Any], let kind = hint["kind"] as? String else { return nil }
