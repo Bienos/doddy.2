@@ -20,18 +20,30 @@ import SwiftUI
 // Since ADR-662 and 663: products of another kind in the item's family are listed as "similar, not the same"
 // (never picked, never in the basket); "My shops" sets the chains a check asks for and names the user's shop
 // when an offer is only in some shops.
+// Since 13 Nov 2026 (decision 2026-11-13-shopping-one-field): the Shopping screen's one field opens this screen with
+// its everyday items and checks them at once (`start`); the answer is three tabs, one shop, two shops and each item
+// separately (BasketTabsView), where the basket was a screen of its own; an item's card lists every offer in full;
+// and the things worth comparing online (`ShoppingRoute.onlineNext`) are offered under the answer, each behind the
+// existing "Find me this" yes card.
 
 struct DealsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(MemoryStore.self) private var store
     private let model = DealsModel.shared
+    /// Items the Shopping screen's field sent here: filled in and checked once, when the screen opens.
+    var start: [String] = []
+    /// Things the field sent to online shops too, offered under the answer in this order.
+    var online: [String] = []
+    /// What matters most, as tapped on the Shopping screen, for those online searches.
+    var onlinePriorities: [String] = []
     /// The items, one chip each (owner, 10 Nov 2026: "I say milk and this, find how much it costs").
     @State private var items: [String] = []
     /// What is being typed; a comma or Return turns it into chips.
     @State private var draft = ""
     // E.Leclerc starts off: its leaflets cost a screening on every search (ADR-667).
     @State private var chains: Set<DealsChain> = Set(DealsChain.defaultRead)
-    @State private var showBasket = false
+    /// `start` was checked already (the screen appears again after an item's card closes).
+    @State private var startedOnce = false
     @State private var showShops = false
     /// The kind picked per item (by its place in the answer); absent: all kinds.
     @State private var kinds: [Int: String] = [:]
@@ -75,11 +87,6 @@ struct DealsView: View {
             .navigationTitle("Cheapest this week")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .navigationDestination(isPresented: $showBasket) {
-                if let result = model.lastResult {
-                    BasketView(result: result, quantities: model.lastQuantities, programs: programs)
-                }
-            }
             .navigationDestination(for: DealsItemPage.self) { page in
                 if let result = model.lastResult, page.index < result.items.count {
                     itemPage(result.items[page.index], index: page.index, chainOrder: BasketSolver.chainOrder(result))
@@ -91,7 +98,20 @@ struct DealsView: View {
             .onAppear {
                 // Seen here, so Home's card for a voice search goes (ADR-666).
                 model.homeCardSeen()
-                if items.isEmpty, let last = model.lastRequest {
+                if !start.isEmpty {
+                    guard !startedOnce else { return }
+                    startedOnce = true
+                    // The shops of the last check, else My shops, else the default; then the field's items, checked now.
+                    if let last = model.lastRequest {
+                        chains = Set(last.chainsAsked)
+                    } else if !myShops.shops.isEmpty {
+                        chains = Set(myShops.chains)
+                    }
+                    items = []
+                    draft = ""
+                    add(start)
+                    Task { await search() }
+                } else if items.isEmpty, let last = model.lastRequest {
                     items = last.items
                     chains = Set(last.chainsAsked)
                 } else if model.lastRequest == nil, !myShops.shops.isEmpty {
@@ -317,9 +337,8 @@ struct DealsView: View {
 
     @ViewBuilder
     private func results(_ result: DealsResult) -> some View {
-        let chainOrder = BasketSolver.chainOrder(result)
         VStack(alignment: .leading, spacing: 10) {
-            Text("Where it's cheapest").font(.title3.weight(.bold))
+            Text("Where to go").font(.title3.weight(.bold))
             // Said first, not inside "What wasn't checked" (11 Nov 2026): when most leaflets couldn't be read this time,
             // "Not in the leaflets that were read" under every item read as "nothing is on offer".
             let read = result.chains.filter { $0.status.wasRead }.count
@@ -334,77 +353,12 @@ struct DealsView: View {
                 Text(String(format: NSLocalizedString("Read %@. Prices are the leaflets'; in the shop they can differ.", comment: ""), DateText.full(checked)))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
             }
-            VStack(spacing: 0) {
-                ForEach(Array(result.items.enumerated()), id: \.offset) { index, item in
-                    if index > 0 { Divider().overlay(Theme.separator) }
-                    NavigationLink(value: DealsItemPage(index: index)) {
-                        summaryRow(item, index: index, chainOrder: chainOrder)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("deals.item.\(index)")
-                }
-            }
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
-            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
-            Button {
-                showBasket = true
-            } label: {
-                Label("Work out the basket: one shop or two", systemImage: "cart")
-            }
-            .buttonStyle(SecondaryButtonStyle())
-            .disabled(!result.items.contains { !$0.offers.isEmpty })
-            .accessibilityIdentifier("deals.basket")
+            // The tabs count only the kind picked on an item's card ("kawa" → "mielona").
+            BasketTabsView(result: result.narrowed(to: kinds), quantities: model.lastQuantities, programs: programs,
+                           headers: result.items.indices.map { header(result.items[$0], index: $0) })
         }
+        OnlineNextCard(things: ShoppingRoute.onlineNext(result, also: online), priorities: onlinePriorities)
         notes(result)
-    }
-
-    /// One item: its name, the best price and where, the price per unit, how many other shops have it.
-    private func summaryRow(_ item: DealsItemResult, index: Int, chainOrder: [DealsChain]) -> some View {
-        let shown = shownOffers(item, variants: DealsVariants.split(item), index: index)
-        let best = BasketSolver.bestValue(shown, chainOrder: chainOrder, programs: programs)
-        return HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(verbatim: header(item, index: index)).font(.headline)
-                if let best {
-                    Text(verbatim: best.product).font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(2)
-                    HStack(spacing: 6) {
-                        Text(verbatim: best.chain.name)
-                            .font(.caption.weight(.bold))
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Capsule().fill(Theme.orangeCue.opacity(0.18)))
-                        if best.check {
-                            Text("Check the leaflet").font(.caption.weight(.semibold)).foregroundStyle(Theme.error)
-                        } else if !best.conditions.isEmpty {
-                            Text(verbatim: best.conditions.joined(separator: " · "))
-                                .font(.caption.weight(.semibold)).foregroundStyle(Theme.accentText).lineLimit(1)
-                        }
-                    }
-                } else if !item.promotions.isEmpty {
-                    Text("A promotion without a printed price").font(.footnote).foregroundStyle(Theme.secondaryText)
-                } else {
-                    Text("Not in the leaflets that were read.").font(.footnote).foregroundStyle(Theme.secondaryText)
-                }
-            }
-            Spacer(minLength: 8)
-            if let best {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(verbatim: best.price.text(language)).font(.title3.weight(.heavy))
-                    if let unit = best.unitPriceMoney, let per = best.unitPrice?.per {
-                        Text(verbatim: "\(unit.text(language))/\(per.rawValue)").font(.caption).foregroundStyle(Theme.secondaryText)
-                    }
-                    let others = Set(shown.map(\.chain)).subtracting([best.chain]).count
-                    if others > 0 {
-                        Text(String(format: NSLocalizedString("+%lld other shops", comment: "other chains with this item"), others))
-                            .font(.caption).foregroundStyle(Theme.secondaryText)
-                    }
-                }
-            }
-            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryText)
-                .accessibilityHidden(true)
-        }
-        .padding(14)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
     }
 
     /// What wasn't looked up, what was read only in part, what wasn't checked and where to look further.
@@ -454,11 +408,23 @@ struct DealsView: View {
 
     // MARK: One item
 
-    /// Everything about one item: the pick with what it takes, why it was picked, the other shops,
-    /// similar products and promotions without a price. Nothing on the summary hides any of it.
+    /// Everything about one item: the best value pick with what it takes and why it was picked, similar products and
+    /// promotions without a price, then every other offer in full (its conditions and its last day). Nothing on the
+    /// answer hides any of it.
     private func itemPage(_ item: DealsItemResult, index: Int, chainOrder: [DealsChain]) -> some View {
-        Form {
+        let others = otherOffers(item, index: index, chainOrder: chainOrder)
+        return Form {
             Section { itemRows(item, index: index, chainOrder: chainOrder) }
+            if !others.isEmpty {
+                Section {
+                    ForEach(Array(others.enumerated()), id: \.offset) { _, offer in
+                        DealRow(offer: offer, language: language, today: today, missingProgram: programs.missing(for: offer),
+                                myShops: myShops.shops(of: offer.chain))
+                    }
+                } header: {
+                    Text(String(format: NSLocalizedString("Other offers (%lld)", comment: "the other offers for one item"), others.count))
+                }
+            }
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)
@@ -484,11 +450,6 @@ struct DealsView: View {
             DealRow(offer: best, language: language, today: today, missingProgram: nil, myShops: myShops.shops(of: best.chain))
             if let why = DealsWhy.reason(shown, chainOrder: chainOrder, programs: programs) {
                 Text(whyText(why)).font(.footnote).foregroundStyle(Theme.secondaryText)
-            }
-            let others = shown.filter { $0 != best }.prefix(3)
-            if !others.isEmpty {
-                Text(others.map { otherText($0) }.joined(separator: " · "))
-                    .font(.footnote).foregroundStyle(Theme.secondaryText)
             }
         } else if let first = shown.first {
             // Only prices the user can't get (or none Doddy could compare): shown, and said why.
@@ -538,14 +499,17 @@ struct DealsView: View {
         }
     }
 
-    /// "Lidl 5,49 zł", "Dino 25,99 zł (3 for 17,33 zł each)", "Lidl 4,49 zł (app you don't use)".
-    private func otherText(_ offer: DealOffer) -> String {
-        var text = "\(offer.chain.name) \(offer.price.text(language))"
-        if offer.isMultiBuy, let e = offer.effective {
-            text += " (" + String(format: NSLocalizedString("%lld for %@ each", comment: "a multi-buy price per piece"), e.quantity, e.price.text(language)) + ")"
+    /// The item's offers other than the one shown first on its card (the best value pick, or the first offer when no
+    /// price counts), in the server's order: each is shown in full, with what it needs and its last day.
+    private func otherOffers(_ item: DealsItemResult, index: Int, chainOrder: [DealsChain]) -> [DealOffer] {
+        let shown = shownOffers(item, variants: DealsVariants.split(item), index: index)
+        if let best = BasketSolver.bestValue(shown, chainOrder: chainOrder, programs: programs),
+           let at = shown.firstIndex(of: best) {
+            var others = shown
+            others.remove(at: at)
+            return others
         }
-        if programs.missing(for: offer) != nil { text += " (" + NSLocalizedString("an app you don't use", comment: "") + ")" }
-        return text
+        return Array(shown.dropFirst())
     }
 
     // MARK: Parts
@@ -559,8 +523,8 @@ struct DealsView: View {
     }
 }
 
-/// An item's own page in the answer, by its place.
-private struct DealsItemPage: Hashable {
+/// An item's own page in the answer, by its place (opened from BasketTabsView's rows).
+struct DealsItemPage: Hashable {
     let index: Int
 }
 
