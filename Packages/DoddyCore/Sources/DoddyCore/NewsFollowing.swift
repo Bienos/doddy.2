@@ -198,9 +198,23 @@ public struct NewsCard: Equatable, Sendable, Decodable, Identifiable, Hashable {
     public let imageUrl: String?
     /// The follows this story belongs to, by label.
     public let follows: [String]
+    /// The same story from other publishers, as the server grouped them (13 Nov 2026, decision
+    /// 2026-11-13-news-more-sources). Empty when no one else carried it, or from an older server.
+    public let alsoFrom: [OtherPublisher]
+
+    /// Another publisher's copy of the story: its name and its own link.
+    public struct OtherPublisher: Equatable, Sendable, Decodable, Hashable {
+        public let source: String
+        public let url: String
+
+        public init(source: String, url: String) {
+            self.source = source
+            self.url = url
+        }
+    }
 
     public init(id: String, title: String, summary: String, url: String, source: String, publishedAt: String,
-                imageUrl: String? = nil, follows: [String]) {
+                imageUrl: String? = nil, follows: [String], alsoFrom: [OtherPublisher] = []) {
         self.id = id
         self.title = title
         self.summary = summary
@@ -209,6 +223,37 @@ public struct NewsCard: Equatable, Sendable, Decodable, Identifiable, Hashable {
         self.publishedAt = publishedAt
         self.imageUrl = imageUrl
         self.follows = follows
+        self.alsoFrom = alsoFrom
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, summary, url, source, publishedAt, imageUrl, follows, alsoFrom
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try c.decode(String.self, forKey: .id),
+            title: try c.decode(String.self, forKey: .title),
+            summary: try c.decode(String.self, forKey: .summary),
+            url: try c.decode(String.self, forKey: .url),
+            source: try c.decode(String.self, forKey: .source),
+            publishedAt: try c.decode(String.self, forKey: .publishedAt),
+            imageUrl: try c.decodeIfPresent(String.self, forKey: .imageUrl),
+            follows: try c.decode([String].self, forKey: .follows),
+            alsoFrom: (try? c.decodeIfPresent([OtherPublisher].self, forKey: .alsoFrom)) ?? []
+        )
+    }
+
+    /// "Also: Onet and RMF24" / "Też: Onet i RMF24", or nil when no other publisher carried the story. The names are
+    /// the publishers' own, as the server sent them; a publisher named twice, or this card's own, is said once.
+    public func alsoFromLine(polish: Bool) -> String? {
+        var names: [String] = []
+        for other in alsoFrom where !other.source.isEmpty && other.source != source && !names.contains(other.source) {
+            names.append(other.source)
+        }
+        guard !names.isEmpty else { return nil }
+        return (polish ? "Też: " : "Also: ") + RadarText.list(names, polish: polish)
     }
 
     public var publishedDate: Date? { ServerDates.parse(publishedAt) }

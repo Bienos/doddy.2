@@ -843,6 +843,7 @@ public enum DealsResultText {
         if let line = basketLine(basket, money) { data.append(line) }
         if let single = basket.bestSingleChain, let line = checklistLine(single, today: today) { data.append(line) }
         data += chainLines(result)
+        if let line = onlineNextLine(result) { data.append(line) }
         if let line = variantsLine(result) { data.append(line) }
         let order = BasketSolver.chainOrder(result)
         for item in result.items {
@@ -886,6 +887,19 @@ public enum DealsResultText {
         }
         data.append("Read at: \(clip(result.checkedAt, 40))")
         return ErrandResultText.bounded(header: header, data: data, footer: footer(result), maxCharacters: maxCharacters, cutNote: cutNote)
+    }
+
+    /// "Find me this" by voice (owner, 13 Nov 2026): the things the leaflets aren't the place for (`ShoppingRoute.onlineNext`:
+    /// in-between and online things, and unknown ones the leaflets had nothing for; never everyday groceries) are offered
+    /// once for a search of online shops. Only an offer: `hand_over_errand`'s own card starts it, on the person's tap.
+    static func onlineNextLine(_ result: DealsResult) -> String? {
+        let next = ShoppingRoute.onlineNext(result).prefix(3)
+        guard !next.isEmpty else { return nil }
+        let things = next.map { "\"\(ErrandsPrompt.clip($0, DealsRequest.maxItemLength))\"" }.joined(separator: ", ")
+        return "Online shops next: leaflets aren't where " + things + (next.count == 1 ? " is" : " are")
+            + " usually bought cheapest. Offer once, in one short line, to look in online shops in the background "
+            + "(Polish: 'Mam poszukać tego w sklepach internetowych?'). If they want it, use hand_over_errand with kind "
+            + "'shopping' as its description says; its card starts it only on their tap. Never give a price for it yourself."
     }
 
     /// A chain's name, cleaned: one this app doesn't know is named by the server's identifier.

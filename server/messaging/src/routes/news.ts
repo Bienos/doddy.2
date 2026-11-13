@@ -10,6 +10,8 @@ import { buildDigest, gatherItems, MAX_FEEDS, MAX_TOPICS, type FollowedTopic, ty
 import { buildFeed, FEED_LIMIT } from "../news/feed.js";
 import { parseFeed } from "../news/feeds.js";
 import { httpsFeedUrl } from "../news/radar.js";
+import { FeedReader } from "../news/reader.js";
+import { log } from "../log.js";
 import { checkUrl, safeFetchText, UnsafeUrlError } from "../news/safeFetch.js";
 import { isValidTimeZone, nextRunAt } from "../news/schedule.js";
 
@@ -163,8 +165,11 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     // The person's own words are looked for in every catalog feed (and their own feeds), not only in their other
     // follows: without a news search key (the live server has none, 10 Nov 2026) "Tesla" alone found nothing.
     const report = new Map<string, FollowSources>();
-    const gathered = await gatherItems(db, news, topics, [], body.language, now, { keywordPool: "catalog", report });
-    const cards = buildFeed(gathered, now, body.limit);
+    const reader = new FeedReader(db, news.feeds, { now });
+    const gathered = await gatherItems(db, news, topics, [], body.language, now, { keywordPool: "catalog", report, reader });
+    const cards = buildFeed(gathered, now, body.limit, body.language);
+    // Counts and time only: never a follow, a word, an address or a headline.
+    log("news feed built", { follows: topics.length, cards: cards.length, ms: Date.now() - now.getTime(), ...reader.stats });
     return {
       fetchedAt: now.toISOString(),
       keywordSearch: !!news.search,

@@ -10,7 +10,7 @@ A new call was about four screens and eight or more fields: who, the number, whe
 
 ## Decision
 1. **One field first.** New call opens a screen with one field, "Who and why" (8 to 400 characters), the contact pick as an option, Next, and "Fill in every field myself", which opens the full editor exactly as before.
-2. **The model only proposes.** Next sends the words, and the picked contact's name (never its number), to `POST /v1/call-cases/draft` on the messaging server. The server asks Claude (`ClaudeBriefDrafter`, `claude-opus-5-5` at low effort, structured output in a closed schema: `callee_name`, `goal`, `question`, `facts[{kind, text}]`). The schema has no number field.
+2. **The model only proposes.** Next sends the words, and the picked contact's name (never its number), to `POST /v1/call-cases/draft` on the messaging server. The server asks Claude (`ClaudeBriefDrafter`, `claude-sonnet-5-5` at low effort since 13 Nov 2026, owner: "Haiku albo Sonnet jest lepszy"; first merged with `claude-opus-5-5`; structured output in a closed schema: `callee_name`, `goal`, `question`, `facts[{kind, text}]`). The schema has no number field.
 3. **Typed code decides** (`server/messaging/src/taskCalls/draft.ts`, `checkDraft`), field by field. A field that fails is dropped with a reason code and reported as missing; nothing is repaired or guessed:
    - **The number** is read from the user's own words by code (`readNumbers`): exactly one number Doddy may call (the same allowlist as a call, `phone.ts`; not the user's own number, not Doddy's). Two or more, or one Doddy may not call, leave it for the user. The app uses the picked contact's number instead when there is one, and uses the server's only if its digits are in what the user wrote.
    - **The name** must be made of words the user wrote (Polish endings allowed: "Fryzjer Anna" from "do fryzjera Anna"); the picked contact's name counts.
@@ -26,7 +26,7 @@ A new call was about four screens and eight or more fields: who, the number, whe
 
 ## Consequences
 - A typical call is: one sentence → Next → check → Prepare the card → approve. The fields are still all there, one tap away.
-- Drafts cost a model call each (Claude Opus 5.5 at low effort; the answer card uses Claude Haiku 5.5). The owner may prefer Haiku 5.5 here too: it is one constructor argument (`new ClaudeBriefDrafter(key, { model })`); no env variable was added.
+- Drafts cost a model call each (Claude Sonnet 5.5 at low effort; the answer card uses Claude Haiku 5.5). The owner chose Haiku or Sonnet over Opus on 13 Nov 2026; Sonnet was picked for the formal Polish question. Changing it is one constructor argument (`new ClaudeBriefDrafter(key, { model })`); no env variable was added.
 - The name check is strict on purpose: a model that writes "Salon fryzjerski Anna" for "fryzjer Anna" gets the name dropped and the user types it. If that proves annoying in use, loosen the rule in code, not in the prompt.
 - No server-side model fallback on a refusal: a refusal is a 502 and the user types the fields.
 - Not in this change: drafting a call that books (the editor's brief is ask-only; booking stays with `call_places` and its own card), several places from one sentence (that is `call_places` in a conversation), and the hub's other cards. `server/messaging/README.md` is not edited here because two open pull requests hold it; this file and `docs/implementation/CALL_CASES_STATUS.md` describe the endpoint.

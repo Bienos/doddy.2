@@ -9,13 +9,26 @@ import SwiftUI
 //   - Watched prices (SHOPPING_WATCH.md), the same section as on Tasks.
 //   - "Cheapest this week" (the leaflets), opened from here as from Home's menu.
 // Every price shown is one the server confirmed on a shop's own page; this screen writes none itself.
+// Since 13 Nov 2026 (owner's review, docs/strategy/PRZEGLAD_APLIKACJI_2026-11-12.md 1.5; decision
+// 2026-11-13-shopping-one-field) one field at the top, "What do you need?", with "From my list", takes every kind of
+// shopping. `ShoppingRoute` (DoddyCore) decides where the words go, and the card says it before the tap:
+//   - everyday things: "Cheapest this week" opens with them and checks this week's leaflets at once;
+//   - a thing to compare online: "Find me this", behind the same yes card as before (DOD-07);
+//   - things in between: the leaflets now, and online shops offered under the answer as the next step;
+//   - a product link: the "Check this" card below, which still asks for its own tap.
+// The person can pick the other place before the tap. Leaflet prices are the leaflets' as the server parsed them.
 
 struct ShoppingHubView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(MemoryStore.self) private var store
     private let model = ErrandsModel.shared
     private let watches = WatchModel.shared
     @State private var words = ""
+    /// The person's own pick of where the words go; nil lets the code decide.
+    @State private var place: ShoppingRoute.Place?
+    /// Where the chip says the words go: `route.place` once the words have settled (`settlesRoute`, ShoppingMotion.swift).
+    @State private var shownPlace: ShoppingRoute.Place = .nothing
     /// What matters most, in the order it was tapped.
     @State private var priorities: [String] = []
     /// A priority of the person's own, being typed.
@@ -24,6 +37,11 @@ struct ShoppingHubView: View {
     @State private var note: HandOverNote?
     @State private var opened: UUID?
     @State private var showDeals = false
+    /// The leaflet check the field asked for: "Cheapest this week" opens with these items and checks them.
+    @State private var leafletCheck: LeafletCheck?
+    /// More things for online shops than one yes card holds: each offered after the first, one tap each.
+    @State private var moreOnline: [String] = []
+    @State private var moreOnlinePriorities: [String] = []
     @State private var showShopify = false
     /// "Check this": the link being pasted, the person's own name for the product, and the page whose card is open.
     @State private var link = ""
@@ -49,8 +67,11 @@ struct ShoppingHubView: View {
                             .foregroundStyle(Theme.error)
                             .tasksCard()
                     }
-                    if scope.shows(.errands) {
+                    if scope.shows(.errands) || scope.shows(.deals) {
                         findCard
+                    }
+                    if scope.shows(.errands) {
+                        OnlineNextCard(things: moreOnline, priorities: moreOnlinePriorities)
                         if !shoppingTasks.isEmpty { searches }
                     }
                     if scope.shows(.priceWatch) {
@@ -79,6 +100,9 @@ struct ShoppingHubView: View {
                 TypedHandOverSheet(draft: ask.draft) { outcome in finished(outcome) }
             }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(item: $leafletCheck) { check in
+                DealsView(start: check.items, online: check.online, onlinePriorities: check.priorities)
+            }
             .sheet(isPresented: $showShopify) { ShopifyLiveShoppingView() }
             .sheet(item: $watchPage) { WatchCard(page: $0) }
             .refreshable { await reload() }
@@ -119,10 +143,10 @@ struct ShoppingHubView: View {
         return layout {
             WholeDoddyView(pose: .kneelingInspect, height: 112)
             VStack(alignment: .leading, spacing: 6) {
-                Text("What are you looking for?")
+                Text("What do you need?")
                     .font(.title2.weight(.bold))
                     .accessibilityAddTraits(.isHeader)
-                Text("I look through shops in Poland and bring back up to three picks, each with a price I read on the shop's own page. You buy in the shop; I never buy anything.")
+                Text("Groceries: I check this week's leaflets right away. Things to compare: I look through online shops in Poland in the background. You buy in the shop; I never buy anything.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -132,18 +156,26 @@ struct ShoppingHubView: View {
         .padding(.top, 8)
     }
 
-    // MARK: Find me this
+    // MARK: The one field
+
+    /// Where the words go now: the person's pick, or the code's (`ShoppingRoute`), within what this build shows.
+    private var route: ShoppingRoute {
+        var pick = place
+        if !scope.shows(.errands) { pick = .leaflets } else if !scope.shows(.deals) { pick = .online }
+        return ShoppingRoute.route(words, to: pick)
+    }
 
     private var findCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Find me this").font(.headline).accessibilityAddTraits(.isHeader)
-            TextField("Find me this", text: $words, prompt: Text("For example: a quiet 45 cm dishwasher under 2000 zł"), axis: .vertical)
+        let route = self.route
+        return VStack(alignment: .leading, spacing: 12) {
+            TextField("What do you need?", text: $words, prompt: Text("Milk, butter, coffee, or a quiet 45 cm dishwasher under 2000 zł"), axis: .vertical)
                 .lineLimit(2...5)
                 .focused($typing)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.canvas))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
-                .onChange(of: words) { _, new in if !new.isEmpty { note = nil } }
+                .shoppingFieldChrome(focused: typing)
+                .onChange(of: words) { _, new in
+                    if !new.isEmpty { note = nil }
+                    if new.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { place = nil }
+                }
                 .accessibilityIdentifier("shopping.words")
             if words.utf16.count > ErrandDraft.maxWords - 200 {
                 Text(verbatim: "\(words.utf16.count) / \(ErrandDraft.maxWords)")
@@ -151,15 +183,21 @@ struct ShoppingHubView: View {
                     .foregroundStyle(words.utf16.count > ErrandDraft.maxWords ? Theme.error : Theme.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            prioritiesPicker
+            fromListButton
+            if shownPlace != .nothing {
+                whereItGoes(route)
+            }
+            if !route.online.isEmpty, shownPlace == .online || shownPlace == .both {
+                prioritiesPicker
+            }
             Button {
                 typing = false
-                ask()
+                go(route)
             } label: {
-                Label("Find it", systemImage: "magnifyingglass")
+                goLabel(shownPlace)
             }
             .buttonStyle(PrimaryButtonStyle())
-            .disabled(words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !model.isServerConfigured || model.isHandingOver)
+            .disabled(!canGo(route))
             .accessibilityIdentifier("shopping.find")
             if let note {
                 Label(note.text, systemImage: note.kind.symbol)
@@ -168,12 +206,112 @@ struct ShoppingHubView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("shopping.findNote")
             }
-            Text("Nothing is sent until you say yes on the next card. Doddy works on it in the background; the result waits here.")
+            Text("Leaflet prices come back in seconds, and nothing is handed over for them. For online shops nothing is sent until you say yes on the next card; Doddy works on it in the background and the result waits here.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .tasksCard()
+        .settlesRoute(route.place, typing: typing, shown: $shownPlace)
+    }
+
+    /// Where the words go, said before the tap, with a way to pick the other place.
+    private func whereItGoes(_ route: ShoppingRoute) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            ShoppingRouteChip(place: shownPlace, online: route.online)
+            Spacer(minLength: 4)
+            if shownPlace != .link, scope.shows(.errands), scope.shows(.deals) {
+                Menu {
+                    Button("Let Doddy decide") { place = nil }
+                    Button("Only this week's leaflets") { place = .leaflets }
+                    Button("Only online shops") { place = .online }
+                } label: {
+                    Text("Change").font(.footnote.weight(.semibold)).foregroundStyle(Theme.accentText)
+                }
+                .accessibilityIdentifier("shopping.place")
+            }
+        }
+        .accessibilityIdentifier("shopping.route")
+    }
+
+    @ViewBuilder
+    private func goLabel(_ place: ShoppingRoute.Place) -> some View {
+        switch place {
+        case .online: Label("Find it", systemImage: "magnifyingglass")
+        case .link: Label("Check this page", systemImage: "magnifyingglass")
+        default: Label("Check prices", systemImage: "tag")
+        }
+    }
+
+    private func canGo(_ route: ShoppingRoute) -> Bool {
+        // Only once the chip says where the words go: the card says it before the tap.
+        guard shownPlace == route.place else { return false }
+        return switch route.place {
+        case .nothing: false
+        case .link: true
+        case .leaflets, .both: DealsModel.shared.phase != .checking
+        case .online: model.isServerConfigured && !model.isHandingOver
+        }
+    }
+
+    /// The tap: the leaflets open and check at once; online shops get the yes card; a link fills "Check this".
+    private func go(_ route: ShoppingRoute) {
+        switch route.place {
+        case .nothing:
+            return
+        case .link:
+            guard scope.shows(.priceWatch), let text = route.link else {
+                note = HandOverNote(text: ErrandText.issue(.containsLink), kind: .problem)
+                return
+            }
+            link = text
+            linkName = ""
+            words = ""
+            note = nil
+            scrollToCheckThis = true
+        case .leaflets, .both:
+            note = nil
+            moreOnline = []
+            leafletCheck = LeafletCheck(items: route.leaflets, online: route.online, priorities: priorities)
+        case .online:
+            moreOnline = Array(route.online.dropFirst())
+            moreOnlinePriorities = priorities
+            if let first = route.online.first { ask(first) }
+        }
+    }
+
+    /// "From my list": the list's open items fill the field, one per line (a comma inside an item would split it).
+    @ViewBuilder
+    private var fromListButton: some View {
+        let lists = store.lists.filter { !$0.open.isEmpty }
+        if lists.count == 1, let list = lists.first {
+            Button {
+                fill(from: list)
+            } label: {
+                Label(String(format: NSLocalizedString("From my list: %@", comment: "fills the items from a shopping list"), list.name), systemImage: "list.bullet")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.accentText)
+            .accessibilityIdentifier("shopping.fromList")
+        } else if lists.count > 1 {
+            Menu {
+                ForEach(lists) { list in
+                    Button(list.name) { fill(from: list) }
+                }
+            } label: {
+                Label("From my list", systemImage: "list.bullet")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .foregroundStyle(Theme.accentText)
+            .accessibilityIdentifier("shopping.fromList")
+        }
+    }
+
+    private func fill(from list: DoddyList) {
+        words = list.open.map { $0.text.replacingOccurrences(of: ",", with: " ") }.joined(separator: "\n")
+        place = nil
+        note = nil
     }
 
     /// "What matters most?": tap in the order that matters. The number on a chip is its place.
@@ -207,6 +345,7 @@ struct ShoppingHubView: View {
                     .accessibilityIdentifier("shopping.priority")
                 }
             }
+            .choiceMotion(priorities)
             if priorities.count < ErrandDraft.maxPriorities {
                 TextField("Something else", text: $ownPriority, prompt: Text("Something else, e.g. white, made in the EU"))
                     .font(.subheadline)
@@ -247,10 +386,11 @@ struct ShoppingHubView: View {
     }
 
     /// Checks here first (the server checks again): no link, not too long, Connections not paused.
-    /// Only then does the card ask; nothing has been sent at this point.
-    private func ask() {
+    /// Only then does the card ask; nothing has been sent at this point. `thing` is the field's words when they
+    /// name one thing, exactly as typed (trimmed), or one of several things.
+    private func ask(_ thing: String) {
         let language = ErrandDraft.typedLanguage(Bundle.main.preferredLocalizations.first ?? "en")
-        let draft = ErrandDraft.typedShopping(words, priorities: priorities, language: language)
+        let draft = ErrandDraft.typedShopping(thing, priorities: priorities, language: language)
         if let issue = draft.validationIssues().first {
             note = HandOverNote(text: ErrandText.issue(issue), kind: .problem)
             return
@@ -434,4 +574,12 @@ struct ShoppingHubView: View {
         .fixedSize(horizontal: false, vertical: true)
         .tasksCard()
     }
+}
+
+/// The leaflet check the one field asked for, with the things it also sends to online shops.
+private struct LeafletCheck: Identifiable {
+    let id = UUID()
+    let items: [String]
+    let online: [String]
+    let priorities: [String]
 }

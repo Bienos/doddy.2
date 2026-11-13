@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { spawn, spawnSync } from "node:child_process";
 import { generateKeyPairSync, sign as signRS256, createHash, verify as verifySig } from "node:crypto";
-import { connect, createServer } from "node:net";
 import { test } from "node:test";
+import { fakeConversationStore, fakeElevenLabs } from "./conversation-fakes.js";
+import { hasRedis, startLocalRedis, withLocalRedis } from "./local-redis.js";
 import {
   handleVoiceAuthRequest,
   clientAddress,
@@ -30,6 +30,8 @@ const ENV = {
   VERCEL: "1",
 };
 const CALLER = "203.0.113.7";
+/** Deleting a voice account that never had a conversation recorded: nothing deleted, nothing owed. */
+const NO_CONVERSATIONS = { deleted: 0, pending: 0 };
 
 // A Sign in with Apple key, as the owner would make one in the Apple Developer account (ADR-524).
 const APPLE_KEY = generateKeyPairSync("ec", { namedCurve: "P-256" });
@@ -54,6 +56,8 @@ function fakeStore() {
     if (session.previousRefreshHash) refresh.delete(session.previousRefreshHash);
   };
   return {
+    // Deleting a voice account also looks after its conversations at ElevenLabs (test/conversations.test.js).
+    ...fakeConversationStore(),
     sessions, refresh, nonces, appleTokens, signIns,
     async setAppleToken(userId, sealed) { appleTokens.set(userId, sealed); },
     async getAppleToken(userId) { return appleTokens.get(userId) ?? null; },
@@ -148,6 +152,8 @@ async function run(req, options = {}) {
     revokeAppleToken: options.revokeAppleToken,
     authenticateDoddyAccount: options.authenticateDoddyAccount,
     fetch: options.fetch,
+    // ElevenLabs is never reached from these tests: an empty one answers what deleting a voice account asks it.
+    elevenLabsFetch: options.elevenLabsFetch ?? fakeElevenLabs({ apiKey: ENV.ELEVENLABS_API_KEY }).fetch,
   });
   return { response, body: await response.json(), logs };
 }
@@ -282,7 +288,7 @@ test("account deletion revokes all sessions for the same Apple identity", async 
   assert.equal(store.sessions.size, 2);
   const deleted = await run(request("delete-account", {}, a.body.accessToken), { store });
   assert.equal(deleted.response.status, 200);
-  assert.deepEqual(deleted.body, { deleted: true, appleRevoked: false });
+  assert.deepEqual(deleted.body, { deleted: true, appleRevoked: false, conversations: NO_CONVERSATIONS });
   assert.equal(deleted.logs[0].apple, "not_configured");
   assert.equal(store.sessions.size, 0);
   assert.equal(store.refresh.size, 0);
@@ -308,7 +314,7 @@ test("with an Apple key, sign-in keeps Apple's token sealed and deletion revokes
 
   const deleted = await run(request("delete-account", {}, signedIn.body.accessToken), options);
   assert.equal(deleted.response.status, 200);
-  assert.deepEqual(deleted.body, { deleted: true, appleRevoked: true });
+  assert.deepEqual(deleted.body, { deleted: true, appleRevoked: true, conversations: NO_CONVERSATIONS });
   assert.deepEqual(revoked, ["apple-refresh-token-value"]);
   assert.equal(store.appleTokens.size, 0, "the sealed token goes with the account");
   assert.equal(store.sessions.size, 0);
@@ -331,7 +337,7 @@ test("Apple failing never blocks sign-in or deletion, and the reply says so", as
   assert.equal(a.response.status, 200);
   assert.equal(store.appleTokens.size, 0);
   const deletedA = await run(request("delete-account", {}, a.body.accessToken), failingSwap);
-  assert.deepEqual(deletedA.body, { deleted: true, appleRevoked: false });
+  assert.deepEqual(deletedA.body, { deleted: true, appleRevoked: false, conversations: NO_CONVERSATIONS });
   assert.equal(deletedA.logs[0].apple, "no_token");
 
   // The swap throws (Apple unreachable): sign-in still works.
@@ -349,7 +355,7 @@ test("Apple failing never blocks sign-in or deletion, and the reply says so", as
   const b = await run(request("sign-in", { identityToken: "id-b", rawNonce: "B".repeat(43), authorizationCode: "code-b" }), refusing);
   const deletedB = await run(request("delete-account", {}, b.body.accessToken), refusing);
   assert.equal(deletedB.response.status, 200);
-  assert.deepEqual(deletedB.body, { deleted: true, appleRevoked: false });
+  assert.deepEqual(deletedB.body, { deleted: true, appleRevoked: false, conversations: NO_CONVERSATIONS });
   assert.equal(deletedB.logs[0].apple, "failed");
   assert.equal([...store.sessions.values()].filter((item) => item.userId === b.body.userId).length, 0);
 });
@@ -677,100 +683,7 @@ test("the caller's address: first of Vercel's list, an IPv4 behind IPv6 is IPv4,
   assert.equal(addressOf("<script>"), "unknown");
 });
 
-// The limit script itself, run on a real Redis when one is installed (CI may not have it).
-const hasRedis = spawnSync("redis-server", ["--version"]).status === 0;
-
-/** Upstash's /multi-exec, served by a local redis-server over its own protocol. */
-async function localRedisFetch(port) {
-  const socket = connect(port, "127.0.0.1");
-  await new Promise((resolve, reject) => { socket.once("connect", resolve); socket.once("error", reject); });
-  let buffer = Buffer.alloc(0);
-  let waiting = null;
-  socket.on("data", (chunk) => { buffer = Buffer.concat([buffer, chunk]); waiting?.(); });
-  const parse = (at) => {
-    const end = buffer.indexOf("\r\n", at);
-    if (end < 0) return null;
-    const type = String.fromCharCode(buffer[at]);
-    const line = buffer.toString("utf8", at + 1, end);
-    if (type === "+" ) return { value: line, next: end + 2 };
-    if (type === "-") return { value: new Error(line), next: end + 2 };
-    if (type === ":") return { value: Number(line), next: end + 2 };
-    if (type === "$") {
-      const length = Number(line);
-      if (length < 0) return { value: null, next: end + 2 };
-      if (buffer.length < end + 2 + length + 2) return null;
-      return { value: buffer.toString("utf8", end + 2, end + 2 + length), next: end + 2 + length + 2 };
-    }
-    if (type === "*") {
-      const items = [];
-      let next = end + 2;
-      for (let i = 0; i < Number(line); i += 1) {
-        const item = parse(next);
-        if (!item) return null;
-        items.push(item.value);
-        next = item.next;
-      }
-      return { value: items, next };
-    }
-    throw new Error(`unexpected reply ${type}`);
-  };
-  const sendNow = async (command) => {
-    socket.write(`*${command.length}\r\n${command.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("")}`);
-    for (;;) {
-      const reply = parse(0);
-      if (reply) { buffer = buffer.subarray(reply.next); return reply.value; }
-      await new Promise((resolve) => { waiting = resolve; });
-    }
-  };
-  // One command at a time on the one connection, so two requests running at once can't read each other's replies.
-  let queue = Promise.resolve();
-  const send = (command) => {
-    const turn = queue.then(() => sendNow(command));
-    queue = turn.catch(() => {});
-    return turn;
-  };
-  const fetch = async (_url, init) => {
-    const results = [];
-    for (const command of JSON.parse(init.body)) {
-      const value = await send(command);
-      results.push(value instanceof Error ? { error: value.message } : { result: value });
-    }
-    return Response.json(results);
-  };
-  return { fetch, send, close: () => socket.destroy() };
-}
-
-/** A free port from the operating system (a random guess can collide with something already listening). */
-function freePort() {
-  return new Promise((resolve, reject) => {
-    const probe = createServer();
-    probe.once("error", reject);
-    probe.listen(0, "127.0.0.1", () => {
-      const { port } = probe.address();
-      probe.close(() => resolve(port));
-    });
-  });
-}
-
-/**
- * Starts a throwaway local redis-server and waits for it to answer: up to 3 tries, each on its own free port,
- * each given 5 seconds, and a server that has already exited ends its try at once. A slow or busy runner then
- * no longer fails the test with "local redis-server started".
- */
-async function startLocalRedis() {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const port = await freePort();
-    const server = spawn("redis-server", ["--port", String(port), "--save", "", "--appendonly", "no"], { stdio: "ignore" });
-    let client;
-    for (let i = 0; i < 100 && !client && server.exitCode === null; i += 1) {
-      try { client = await localRedisFetch(port); } catch { await new Promise((resolve) => setTimeout(resolve, 50)); }
-    }
-    if (client) return { server, client };
-    server.kill();
-  }
-  return { server: null, client: null };
-}
-
+// The scripts themselves, run on a real Redis when one is installed (CI may not have it; test/local-redis.js).
 test("the Redis limit script: a user over their own limit doesn't use up the global one", { skip: !hasRedis && "redis-server not installed" }, async () => {
   const { server, client } = await startLocalRedis();
   try {
@@ -793,18 +706,6 @@ test("the Redis limit script: a user over their own limit doesn't use up the glo
   }
 });
 
-/** A throwaway local redis-server and a store on it; `command` runs one raw Redis command. */
-async function withLocalRedis(body) {
-  const { server, client } = await startLocalRedis();
-  try {
-    assert.ok(client, "local redis-server started");
-    const store = createVoiceAuthStore({ url: "https://redis.example.test", token: "t", fetch: client.fetch });
-    await body({ store, command: (...parts) => client.send(parts.map(String)) });
-  } finally {
-    client?.close();
-    server?.kill();
-  }
-}
 const REDIS_SKIP = !hasRedis && "redis-server not installed";
 const HOUR = 3_600_000;
 

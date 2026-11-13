@@ -1,5 +1,7 @@
 import type { Limits } from "./config.js";
+import { createHash } from "node:crypto";
 import { AppError, ProviderError } from "./errors.js";
+import { ASK_DEDUP, RequestOnce } from "./idempotency.js";
 import type { Store } from "./store.js";
 import { type ClaudeProvider, ClaudeRefusal } from "./tools/claude.js";
 
@@ -139,15 +141,20 @@ export function buildSchema(aliases: string[]): Record<string, unknown> {
 }
 
 export class AssistService {
+  private readonly once: RequestOnce<AssistReply>;
   constructor(
     private readonly deps: {
       store: Store;
+      /** Remembers a finished answer for a few minutes so a repeated request id isn't paid for twice (decision 2026-11-09-ask-request-dedup). Account deletion drops it. */
+      once?: RequestOnce<AssistReply>;
       claude: ClaudeProvider | null;
       limits: Pick<Limits, "userDailyAsk" | "serviceDailyAsk" | "serviceDailyGuestAsk">;
       log?: (line: Record<string, unknown>) => void;
       now?: () => number;
     },
-  ) {}
+  ) {
+    this.once = deps.once ?? new RequestOnce<AssistReply>({ ...ASK_DEDUP, ...(deps.now ? { now: deps.now } : {}) });
+  }
 
   /** `scope`: the caller's session scope; `ask` is a guest (ADR-587), counted in the guests' own pool. */
   async answer(userId: string, body: unknown, scope?: "ask"): Promise<AssistReply> {
@@ -156,6 +163,16 @@ export class AssistService {
     const claude = this.deps.claude;
     if (!claude || !claude.isConfigured()) throw new AppError("live_not_configured", { message: "Ask Doddy isn't set up on this server." });
 
+    // The same account asking the same request id again (a retry after a lost reply) gets the first
+    // result, or waits for it, before anything is counted or sent. The fingerprint is a hash of the
+    // question, so the same id with another question is refused.
+    const fingerprint = createHash("sha256").update(JSON.stringify({ ...req, requestId: req.requestId.toLowerCase() })).digest("hex");
+    const { value, replayed } = await this.once.run(userId, req.requestId, fingerprint, () => this.generate(userId, req, scope, claude));
+    if (replayed) this.deps.log?.({ level: "info", event: "assist", outcome: "replayed", notes: req.memories.length });
+    return value;
+  }
+
+  private async generate(userId: string, req: AssistRequest, scope: "ask" | undefined, claude: ClaudeProvider): Promise<AssistReply> {
     const day = `day:${new Date(this.deps.now?.() ?? Date.now()).toISOString().slice(0, 10)}`;
     const allowed = await this.deps.store.reserveUsage(
       [
