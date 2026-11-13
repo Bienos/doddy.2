@@ -124,8 +124,16 @@ final class IslandBaselineTests: XCTestCase {
         }
         actions.endConversation = { ended = true; island.end() }
         island.show(.init(status: .testFixture, isMuted: false), startedAt: .now)
-        _ = try await ToggleDoddyMuteIntent().perform()
+        _ = await waitUntil { Activity<DoddyVoiceAttributes>.activities.count == 1 }
+        _ = try await MuteDoddyIntent().perform()
         XCTAssertTrue(muted)
+        // Mute never unmutes (IslandMute): pressed again while the island shows Muted, nothing changes.
+        _ = await waitUntil { Activity<DoddyVoiceAttributes>.activities.first?.content.state.isMuted == true }
+        _ = try await MuteDoddyIntent().perform()
+        XCTAssertTrue(muted)
+        // Unmute on an unlocked simulator gets Doddy back.
+        _ = try await UnmuteDoddyIntent().perform()
+        XCTAssertFalse(muted)
         _ = try await EndDoddyConversationIntent().perform()
         XCTAssertTrue(ended)
         let removed = await waitUntil { Activity<DoddyVoiceAttributes>.activities.isEmpty }
