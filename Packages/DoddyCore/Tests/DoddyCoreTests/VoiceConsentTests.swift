@@ -10,7 +10,8 @@ final class VoiceConsentTests: XCTestCase {
     private func defaults() -> UserDefaults {
         let suite = "VoiceConsentTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
-        addTeardownBlock { defaults.removePersistentDomain(forName: suite) }
+        // The teardown closure is Sendable: it carries only the suite's name (a String) and opens the suite itself.
+        addTeardownBlock { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
         return defaults
     }
 
