@@ -156,7 +156,10 @@ tests primary success, download/install failures, fallback failure and cleanup.
   `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
   once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; then the
   simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
-  simulator sometimes freezes during it: ADR-764). It no longer
+  simulator sometimes freezes during it: ADR-764). A UI test that failed only because the app would not start
+  ("Failed to launch", "Failed to get launch progress") is run once more on a restarted simulator; any other
+  failure fails the step as before (`scripts/ci_launch_failures.sh`, decision `2026-11-13-ui-launch-retry`).
+  It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
 - Pushes to `main` (ADR-811) run every job, each commit in its own run that nothing cancels; pull requests
