@@ -195,6 +195,7 @@ async function buildAndStore(ctx: TaskCallContext, r: ResultRow) {
       // An order's details (address, courier's phone) may be said after they take it: they are what the person typed on the card.
       ...(payload.agent.variables.doddy_order ? [payload.agent.variables.doddy_order] : [])] : [],
     ...(confirmLine ? { bookingConfirmLine: confirmLine } : {}),
+    ...(payload?.display.order ? { maxTotalPln: payload.display.order.maxTotalPln } : {}),
     transcript, source, voicemailToolUsed, writer,
   });
   const json = canonicalJson(result);

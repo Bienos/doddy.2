@@ -53,6 +53,12 @@ enum ScreenShareFiles {
         return (readiness, nil)
     }
 
+    /// Whether Home shows the screen as shared (`ScreenShareIndicator`): the state file only, not the picture.
+    static func isSharing(now: Date = Date()) -> Bool {
+        let state = stateURL.flatMap { try? Data(contentsOf: $0) }.flatMap(ScreenShareState.decoded)
+        return ScreenShareIndicator.isSharing(state, now: now)
+    }
+
     private static var writeOptions: Data.WritingOptions {
         #if os(iOS)
         // Readable while the iPhone is unlocked only; the extension runs only while the person shares.

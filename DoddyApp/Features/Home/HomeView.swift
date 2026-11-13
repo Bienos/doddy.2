@@ -215,12 +215,12 @@ struct HomeView: View {
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
                 Spacer()
-                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
-                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
-                // On the trailing side, beside the menu (owner, 11 Nov 2026: "ta kropka w złym miejscu, bo
-                // zasłania"): next to the transcript capsule iOS's round record glyph sat on the wordmark.
-                if conversation.live != nil, scope.shows(Feature.messages) {
-                    showScreenButton
+                // "Show screen" (decision 2026-11-09-doddy-looks-at-the-screen) is a capsule over Mute and End
+                // while Doddy talks (owner review, 13 Nov 2026). After the conversation, a small mark stays here
+                // only while the screen is still shared, so it can be stopped from Home. It comes and goes with
+                // Messages, whose server reads the picture.
+                if conversation.live == nil, scope.shows(Feature.messages) {
+                    ScreenShareCapsule(compact: true)
                 }
                 moreMenu
             }
@@ -253,14 +253,6 @@ struct HomeView: View {
         .buttonStyle(DoddyPressStyle())
         .foregroundStyle(Theme.ink)
         .accessibilityIdentifier("home.transcript")
-    }
-
-    /// Starts sharing the screen with Doddy through iOS's "Start Broadcast" sheet, so he can look when asked.
-    private var showScreenButton: some View {
-        ScreenShareButton(tint: UIColor(Theme.ink))
-            .frame(width: 36, height: 36)
-            .background(Theme.quietSurface, in: Circle())
-            .frame(width: 44, height: 44)
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
@@ -547,8 +539,20 @@ struct HomeView: View {
         }
     }
 
-    /// While he talks (ADR-595): Mute and End, where Messages and Files are.
+    /// While he talks (ADR-595): Mute and End, where Messages and Files are, with "Show screen" over them.
     private func talkBar(_ live: VoiceSessionController) -> some View {
+        VStack(spacing: 8) {
+            if scope.shows(Feature.messages) {
+                ScreenShareCapsule()
+            }
+            muteAndEnd(live)
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func muteAndEnd(_ live: VoiceSessionController) -> some View {
         HStack(spacing: 12) {
             Button {
                 Task { await live.toggleMute() }
@@ -581,9 +585,6 @@ struct HomeView: View {
         .lineLimit(1)
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .foregroundStyle(Theme.ink)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
-        .frame(maxWidth: .infinity)
     }
 
     private var restBar: some View {

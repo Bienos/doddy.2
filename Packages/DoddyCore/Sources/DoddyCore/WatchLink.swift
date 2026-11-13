@@ -49,6 +49,8 @@ public enum WatchReply: Codable, Equatable, Sendable {
         case .unticked: self = .unticked
         case .notFound: self = .notFound
         case .failed: self = .failed
+        // No new reply on the wire to the (paused, ADR-572) watch: the existing "not saved" with Siri's words.
+        case .locked: self = .notSaved(reason: AppLockPolicy.lockedAnswer)
         }
     }
 

@@ -194,6 +194,8 @@ export function answerOf(result: CallResult, writer: WriterOutput | undefined, k
   if (STOPS.has(result.outcome)) return "stop";
   if (NOT_REACHED.has(result.outcome)) return "none";
   if (result.outcome !== "answered") return "unclear";
+  // Doddy may have agreed to another time or price there: the person reads it; never "no", never the next place.
+  if (result.warnings.some((w) => w.kind === "possible_other_booking")) return "unclear";
   const confirmed = kind === "ask" || result.bookingConfirmed === true;
   if (writer?.answer === "yes" && result.quote && result.confidence !== "low" && result.warnings.length === 0 && confirmed) return "yes";
   // Doddy said yes to a booking or order the model can't confirm: the person must read it, never "no" and never the next place.
@@ -266,19 +268,38 @@ async function finishTask(c: Q, ctx: TaskCallContext, task: TaskRow, outcome: Ta
   return true;
 }
 
+/** A link, a bare web address on a common domain, or an e-mail address, as a transcript may write one. */
+const WEB_ADDRESS = new RegExp([
+  // Up to the next space, leaving the sentence's own punctuation after it.
+  String.raw`(?:https?:\/\/|www\.)\S*[^\s.,;:!?)”"'»]`,
+  String.raw`[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.\p{L}{2,}`,
+  String.raw`(?<![\p{L}\p{N}.@-])[\p{L}\p{N}][\p{L}\p{N}-]*(?:\.[\p{L}\p{N}-]+)*\.(?:pl|com|eu|net|org|info|io|me|ly|co|app|biz|online|site|shop|link|xyz)(?![\p{L}\p{N}])(?:\/\S*)?`,
+].join("|"), "giu");
+/** Six or more digits together, or split by single spaces or hyphens (a phone, card, account or code number). */
+const LONG_NUMBER = /\+?\p{Nd}(?:[  -]?\p{Nd}){5,}/gu;
+
+/**
+ * The callee's words as a text may quote them: links, web and e-mail addresses and long numbers become "…". The callee
+ * is not the user, so nothing they said reaches the user's phone as a tappable link or a number to call or pay.
+ */
+export function quotableWords(words: string): string {
+  return words.replace(WEB_ADDRESS, "…").replace(LONG_NUMBER, "…").replace(/\s{2,}/g, " ").trim();
+}
+
 /** The result text, in Polish, built from the approved card and the quote cut from the transcript. At most 640 characters. */
 async function resultText(c: Q, ctx: TaskCallContext, task: TaskRow, outcome: TaskOutcome,
   x: { accountId: string; caseId: string; result: CallResult }): Promise<string> {
   const placeName = await calleeName(c, ctx, task.account_id, x.caseId);
   const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+  const quote = clip(quotableWords(x.result.quote?.text ?? ""), 300);
   let text: string;
   switch (outcome) {
     case "yes":
       text = task.kind === "order"
-        ? `Doddy: ${placeName} przyjmuje zamówienie: „${clip(x.result.quote?.text ?? "", 300)}”. Szczegóły w aplikacji Doddy.`
+        ? `Doddy: ${placeName} przyjmuje zamówienie: „${quote}”. Szczegóły w aplikacji Doddy.`
         : task.kind === "book"
-        ? `Doddy: ${placeName} potwierdza rezerwację: „${clip(x.result.quote?.text ?? "", 300)}”. Szczegóły w aplikacji Doddy.`
-        : `Doddy: ${placeName} odpowiada: „${clip(x.result.quote?.text ?? "", 300)}”. Szczegóły w aplikacji Doddy.`;
+        ? `Doddy: ${placeName} potwierdza rezerwację: „${quote}”. Szczegóły w aplikacji Doddy.`
+        : `Doddy: ${placeName} odpowiada: „${quote}”. Szczegóły w aplikacji Doddy.`;
       break;
     case "unclear":
       text = task.kind === "order"

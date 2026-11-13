@@ -1,0 +1,2 @@
+Backend: row level security on the backend schema. Every start turns it on (no policies, not forced) for each table in `doddy_backend` and takes back anything `anon` or `authenticated` hold there; the backend, as the tables' owner, is unaffected (decision `2026-11-12-backend-schema-not-exposed`).
+Ran: `npm run typecheck` and `npm test` in `backend/` (PGlite); read-only role checks on Supabase. Not run: the change against the hosted database (it runs at the next deploy of `doddy`; no owner step needed).

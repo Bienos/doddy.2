@@ -86,6 +86,14 @@ const schema = z.object({
   SMS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   SMS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(300),
   OUTBOUND_CALLS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(10000).default(20),
+  // Calls to Doddy's number put through per account (a rolling 24 hours, like "call me") and for the server per UTC
+  // day; the server's count includes forwarded call-backs. Past either, the caller hears a fixed line.
+  INBOUND_CALLS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(20),
+  INBOUND_CALLS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(200),
+  // Call-backs (decision 2026-11-12-call-back-limits): how many days after Doddy last dialled a number a call from it
+  // is still put through, and how many a day one route puts through.
+  CALLBACK_ROUTE_DAYS: z.coerce.number().int().min(1).max(90).default(7),
+  CALLBACK_FORWARDS_PER_ROUTE_DAY: z.coerce.number().int().min(1).max(20).default(3),
   // Memory on calls: the encrypted copy one account may keep, and all accounts together, in MB (1,048,576 bytes) of
   // stored ciphertext. One snapshot replaces an account's copy, so the account's number is also the largest snapshot
   // (the request body is capped at 8 MB). Over either: 413 memory_copy_too_large or 507 memory_copy_server_full.
@@ -405,6 +413,10 @@ export interface AbuseLimits {
   verifyPerIpDay: number; verifyPerAccountDay: number;
   smsPerAccountDay: number; smsPerServerDay: number;
   outboundCallsPerServerDay: number;
+  /** Calls to Doddy's number put through to the phone agent per account (24 h) and, with call-backs, per server (UTC day). */
+  inboundCallsPerAccountDay: number; inboundCallsPerServerDay: number;
+  /** Call-backs: days a route lasts after the last dial, and calls one route puts through per day (src/callbacks.ts). */
+  callbackRouteDays: number; callbackForwardsPerRouteDay: number;
   /** Calling codes without "+", see phoneCountries.ts. */
   allowedCountryCodes: readonly string[];
   /** Memory on calls: stored ciphertext one account may keep, and all accounts together, in bytes. */
@@ -418,6 +430,8 @@ export const DEFAULT_ABUSE_LIMITS: AbuseLimits = {
   verifyPerIpDay: 20, verifyPerAccountDay: 6,
   smsPerAccountDay: 30, smsPerServerDay: 300,
   outboundCallsPerServerDay: 20,
+  inboundCallsPerAccountDay: 20, inboundCallsPerServerDay: 200,
+  callbackRouteDays: 7, callbackForwardsPerRouteDay: 3,
   allowedCountryCodes: DEFAULT_ALLOWED_COUNTRY_CODES,
   memoryCopyBytesPerAccount: 4 * MB, memoryCopyBytesPerServer: 400 * MB,
 };
@@ -524,6 +538,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       verifyPerIpDay: e.VERIFY_DAILY_PER_IP, verifyPerAccountDay: e.VERIFY_DAILY_PER_ACCOUNT,
       smsPerAccountDay: e.SMS_DAILY_PER_ACCOUNT, smsPerServerDay: e.SMS_DAILY_PER_SERVER,
       outboundCallsPerServerDay: e.OUTBOUND_CALLS_DAILY_PER_SERVER,
+      inboundCallsPerAccountDay: e.INBOUND_CALLS_DAILY_PER_ACCOUNT, inboundCallsPerServerDay: e.INBOUND_CALLS_DAILY_PER_SERVER,
+      callbackRouteDays: e.CALLBACK_ROUTE_DAYS, callbackForwardsPerRouteDay: e.CALLBACK_FORWARDS_PER_ROUTE_DAY,
       allowedCountryCodes: e.PHONE_ALLOWED_COUNTRY_CODES,
       memoryCopyBytesPerAccount: e.MEMORY_COPY_MB_PER_ACCOUNT * MB, memoryCopyBytesPerServer: e.MEMORY_COPY_MB_PER_SERVER * MB,
     },

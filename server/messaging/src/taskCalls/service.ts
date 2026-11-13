@@ -270,7 +270,11 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
     const callerPhone = callerPhoneHash(ctx.keys, own);
     const callerAccount = callerAccountHash(ctx.keys, a.account_id);
     const limit = await limitReached(ctx, c, callerPhone, callerAccount, a.destination_hash, now);
-    if (limit) return gate(limit);
+    if (limit) {
+      // Which limit it was stays in the log; the user hears the public code (publicLimit).
+      ctx.log("task call limit", { attemptId, limit });
+      return gate(publicLimit(limit));
+    }
     // One call at a time per account (also a unique index; checked here so it is a clear refusal).
     const { rows: live } = await c.query(
       `SELECT 1 FROM call_attempts WHERE account_id = $1 AND id <> $2
@@ -286,7 +290,7 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
       [attemptId, a.account_id, plus(now, ms(24 * 60)), plus(now, ms(2)), ["twilio_call", "twilio_transcription", "elevenlabs_voice"]]);
     await c.query("INSERT INTO call_dial_log (destination_hash, caller_phone_hash, caller_account_hash, dialed_at) VALUES ($1, $2, $3, $4)",
       [a.destination_hash, callerPhone, callerAccount, now]);
-    // A call-back from this number reaches this user (decision 2026-11-09-call-backs-and-contact-calls).
+    // A call-back from this number may reach this user for a while (src/callbacks.ts, decision 2026-11-12-call-back-limits).
     await rememberCallbackRoute(c, a.destination_hash, a.account_id, now);
     return { kind: "claimed" as const, payload, accountId: a.account_id };
   });
@@ -353,6 +357,15 @@ async function limitReached(ctx: TaskCallContext, c: Q, caller: Buffer, account:
   if (r.dest_day >= l.destinationPerDay) return "limit_destination_day";
   if (r.dest_recent > 0) return "limit_destination_gap";
   return undefined;
+}
+
+/**
+ * The code a refusal shows the user. The per-number limits count other users' calls too (3 a day in all, 15 minutes
+ * apart), so naming which one was reached would tell a user that someone else called that number lately: all three
+ * are `limit_destination`, "this number has been called enough for now". The others are the user's own or the server's.
+ */
+export function publicLimit(limit: string): string {
+  return limit.startsWith("limit_destination") ? "limit_destination" : limit;
 }
 
 /** The limits above read the last day of the dial log (the longest gap is a day too); a second day is margin. */

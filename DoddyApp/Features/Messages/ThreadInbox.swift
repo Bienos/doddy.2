@@ -28,8 +28,8 @@ enum ThreadInbox {
     }
 
     /// A file a voice conversation started. Not for a private conversation: nothing of it is kept on this iPhone.
-    static func deliver(document: RunDocument, polish: Bool, now: Date = Date()) async {
-        guard let message = ThreadDelivery.document(document, polish: polish, now: now) else { return }
+    static func deliver(document: RunDocument, about: String? = nil, polish: Bool, now: Date = Date()) async {
+        guard let message = ThreadDelivery.document(document, about: about, polish: polish, now: now) else { return }
         guard let recent = try? await repository.recent(limit: ThreadRules.displayLimit),
               !ThreadDelivery.hasDocument(document, in: recent) else { return }
         await save(message)

@@ -140,6 +140,19 @@ test("the courier's phone is a Polish number kept as nine digits, so it is never
   for (const typed of ["12345", "+49 600 000 000", "6000000001", "abc"]) assert.equal(phoneOf(typed).success, false, typed);
 });
 
+test("the seller naming the total or a delivery time is the answer; a total above the card's highest, or paying first, is another offer", () => {
+  const withCap = (lines: [string, string][]) => buildCallResult(facts(lines, { maxTotalPln: delivery.maxTotalPln }));
+  const fine = withCap([["doddy", opening], ["callee", "Tak. Wyjdzie 89 złotych, dostawa około 40 minut, będziemy o 20:30."],
+    ["doddy", orderConfirmLine(delivery)], ["callee", "Przyjęte."]]);
+  assert.deepEqual(fine.warnings, [], "a total up to the cap and a time are not offers on an order");
+  const dear = withCap([["doddy", opening], ["callee", "Tak, razem 180 złotych."], ["doddy", orderConfirmLine(delivery)], ["callee", "Przyjęte."]]);
+  assert.deepEqual(dear.warnings.map((w) => w.kind), ["possible_other_booking"], "a yes while the total is above the card's highest");
+  const prepay = withCap([["doddy", opening], ["callee", "Tak, ale proszę o przedpłatę przelewem."], ["doddy", orderConfirmLine(delivery)], ["callee", "Dobrze."]]);
+  assert.deepEqual(prepay.warnings.map((w) => w.kind), ["possible_other_booking"], "paying first is a condition");
+  const back = withCap([["doddy", opening], ["callee", "Razem 180 złotych."], ["doddy", "Sprawdzę to u Anny i oddzwonię."]]);
+  assert.deepEqual(back.warnings, [], "Doddy deferring to the person is the right answer to an offer");
+});
+
 const result = (over: Partial<CallResult>): CallResult => ({
   format: 1, outcome: "answered", source: "elevenlabs", confidence: "high", confidenceReasons: [], summary: "", summaryBy: "rules",
   quote: { text: "Tak, przyjmujemy.", line: 1 }, transcript: [], nextStep: { kind: "none", text: "" }, warnings: [], callbackPromised: false,

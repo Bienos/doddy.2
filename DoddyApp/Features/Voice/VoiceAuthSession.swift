@@ -111,10 +111,18 @@ final class VoiceAuthSession {
         throw lastFailure ?? .sessionExpired
     }
 
+    /// Ends the session on this iPhone at once, then tells the voice server (best effort), so nothing here uses it
+    /// while the server answers. Also called when the Doddy account signs out (decision 2026-11-12-local-data-owner).
     func signOut() async {
-        if let token = try? await bearerToken() { try? await VoiceAuthAPI.shared.signOut(token) }
+        // A restore already on its way finishes first, so it can't save a session again after this one ends.
+        if let restoreTask { await restoreTask.value }
+        let live = accessTokenExpiresAt.timeIntervalSinceNow > 30 ? accessToken : nil
+        let refreshToken = VoiceSessionKeychain.refreshToken()
         clearLocalSession()
         message = nil
+        var token = live
+        if token == nil, let refreshToken { token = try? await VoiceAuthAPI.shared.refresh(refreshToken).accessToken }
+        if let token { try? await VoiceAuthAPI.shared.signOut(token) }
     }
 
     func deleteAccount() async {

@@ -45023,61 +45023,61 @@
         }
       }
     },
-    "Mute or unmute Doddy": {
+    "Mute Doddy": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy stumm/laut schalten"
+            "value": "Doddy stumm schalten"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Silenciar o activar Doddy"
+            "value": "Silenciar a Doddy"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couper ou rétablir le son de Doddy"
+            "value": "Couper le son de Doddy"
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Utišaj Doddyja ili uključi zvuk"
+            "value": "Utišaj Doddyja"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Silenzia o riattiva l'audio di Doddy"
+            "value": "Silenzia Doddy"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyの消音／消音解除"
+            "value": "Doddyを消音"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wycisz lub wyłącz wyciszenie Doddy’ego"
+            "value": "Wycisz Doddy’ego"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Silenciar ou reativar o som do Doddy"
+            "value": "Silenciar o Doddy"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "将 Doddy 静音或取消静音"
+            "value": "将 Doddy 静音"
           }
         }
       }
@@ -70606,6 +70606,17 @@
         }
       }
     },
+    "Screen shared with Doddy. Opens iOS's sheet, where Stop Broadcast ends it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekran udostępniony Doddy’emu. Otwiera okno iOS, w którym Zatrzymaj transmisję kończy udostępnianie."
+          }
+        }
+      }
+    },
     "Scroll down to Back Tap and choose Double Tap.": {
       "extractionState": "manual",
       "localizations": {
@@ -73841,6 +73852,17 @@
         }
       }
     },
+    "Sharing screen · Stop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniasz ekran · Zatrzymaj"
+          }
+        }
+      }
+    },
     "Sharing stops first: the copy in your iCloud is deleted and the people you invited lose the list. Undo brings it back on this iPhone only, not shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -74659,6 +74681,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż otworzy je w Doddym"
+          }
+        }
+      }
+    },
+    "Show screen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż ekran"
           }
         }
       }
@@ -89554,6 +89587,17 @@
         }
       }
     },
+    "This iPhone holds Doddy data from another account, so nothing from it is sent to yours. Nothing was sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tym iPhonie są dane Doddy’ego z innego konta, więc nic z nich nie trafia na twoje. Nic nie zostało wysłane."
+          }
+        }
+      }
+    },
     "This iPhone uses its own account again.": {
       "extractionState": "manual",
       "localizations": {
@@ -95889,6 +95933,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Włącz mikrofon"
+          }
+        }
+      }
+    },
+    "Unmute Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy laut schalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar el sonido de Doddy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rétablir le son de Doddy"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uključi zvuk Doddyja"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riattiva l'audio di Doddy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyの消音を解除"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłącz wyciszenie Doddy’ego"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reativar o som do Doddy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消 Doddy 静音"
           }
         }
       }

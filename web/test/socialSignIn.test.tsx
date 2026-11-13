@@ -28,7 +28,7 @@ function renderApp(path = "/", language: Language = "en") {
 const GOOGLE_ID = "5b0c8f7e-2a41-4c3d-9e6f-0123456789ab";
 const signedInRoutes = {
   "GET /v1/web/session": { body: fixture("web/session-current") },
-  "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+  "GET /v1/server": { body: { mode: "live" } },
   "GET /v1/web/documents": { body: fixture("web/documents-ready") },
   "GET /v1/tools": { body: fixture("online-accounts/catalog-gmail-on") },
   "GET /v1/tools/receipts": { body: fixture("online-accounts/receipts") },
