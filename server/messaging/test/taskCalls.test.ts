@@ -124,7 +124,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const ok = await createCase(w, u.h);
     assert.equal(ok.statusCode, 201);
     const p = ok.json();
-    assert.match(p.openingLine, /^Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny\. Chciałbym zapytać: Czy laptop z serwisu jest gotowy\?$/);
+    assert.match(p.openingLine, /^Dzień dobry, tu Doddy, wirtualny asystent\. Dzwonię w imieniu Anny\. Chciałbym zapytać: Czy laptop z serwisu jest gotowy\?$/);
     assert.equal(p.recordsAudio, false);
     assert.equal(p.notice, "off");
     assert.equal(p.maxDurationSecs, 240);
@@ -257,7 +257,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const d = await dialled(w, u.h);
     await status(w, d, "ringing", 1);
     await answer(w, d);
-    await say(w, d, "outbound_track", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny.");
+    await say(w, d, "outbound_track", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny.");
     await say(w, d, "inbound_track", "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.");
     const live = (await api(w, "GET", `/v1/call-cases/${d.caseId}/live`, u.h)).json();
     assert.equal(live.attempt.phase, "talking", "the phase still shows");
@@ -266,7 +266,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await status(w, d, "completed", 3, "41");
     const reply = "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.";
     w.voice.conversations.set("conv_2", conversation(d.attemptId, "conv_2", [
-      ["agent", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
       ["user", reply], ["agent", "Dziękuję bardzo, do widzenia."]]) as never);
     assert.equal((await postCall(w, w.voice.conversations.get("conv_2")!)).statusCode, 200);
     assert.equal(await processResults(w.ctx), 1);
@@ -287,7 +287,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const d = await dialled(w, u.h);
     await status(w, d, "ringing", 1);
     await answer(w, d);
-    await say(w, d, "outbound_track", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny.");
+    await say(w, d, "outbound_track", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny.");
     await say(w, d, "inbound_track", "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.");
     const live = (await api(w, "GET", `/v1/call-cases/${d.caseId}/live`, u.h)).json();
     assert.equal(live.attempt.phase, "talking");
@@ -298,7 +298,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await status(w, d, "completed", 3, "41");
     const reply = "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.";
     w.voice.conversations.set("conv_1", conversation(d.attemptId, "conv_1", [
-      ["agent", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
       ["user", reply], ["agent", "Dziękuję bardzo, do widzenia."]]) as never);
     assert.equal((await postCall(w, w.voice.conversations.get("conv_1")!)).statusCode, 200);
     assert.equal(await processResults(w.ctx), 1);
@@ -541,7 +541,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await answer(w, d2);
     await status(w, d2, "completed", 3, "30");
     assert.equal((await postCall(w, conversation(d2.attemptId, "conv_ok", [
-      ["agent", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
       ["user", "Tak, jest gotowy."]]))).statusCode, 200);
     await processResults(w.ctx);
     const again = await api(w, "POST", `/v1/call-cases/${d2.caseId}/approve`, u.h, { digest: d2.preview.digest, at });

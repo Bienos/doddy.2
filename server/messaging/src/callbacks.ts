@@ -36,8 +36,8 @@ const escapeXml = (s: string) => s.replace(/[<>&"']/g, (ch) => `&#${ch.charCodeA
 /** What the caller hears: Doddy says it's an AI and that it is connecting them, then the user's phone rings. */
 export function forwardTwiml(target: string, callerId: string, doneUrl: string): string {
   return '<?xml version="1.0" encoding="UTF-8"?><Response>'
-    + '<Say language="pl-PL" voice="Polly.Ola-Neural">Tu Doddy, asystent AI. Łączę z osobą, w której imieniu dzwonił Doddy.</Say>'
-    + '<Say language="en-US" voice="Polly.Joanna">This is Doddy, an AI assistant. Connecting you to the person Doddy called for.</Say>'
+    + '<Say language="pl-PL" voice="Polly.Ola-Neural">Tu Doddy, wirtualny asystent. Łączę z osobą, w której imieniu dzwonił Doddy.</Say>'
+    + '<Say language="en-US" voice="Polly.Joanna">This is Doddy, a virtual assistant. Connecting you to the person Doddy called for.</Say>'
     + `<Dial callerId="${escapeXml(callerId)}" timeout="25" record="do-not-record" action="${escapeXml(doneUrl)}">`
     + `<Number>${escapeXml(target)}</Number></Dial></Response>`;
 }

@@ -147,8 +147,8 @@ test("fixed call lines say Doddy is an AI, in Polish then English, hang up, and 
   const lines: FixedLine[] = ["unknown_caller", "calls_off", "not_set_up", "cant_talk", "unavailable"];
   for (const line of lines) {
     const xml = sayAndHangUp(line);
-    assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?><Response><Say language="pl-PL" voice="Polly\.Ola-Neural">Tu Doddy, asystent AI\./, line);
-    assert.match(xml, /<Say language="en-US" voice="Polly\.Joanna">This is Doddy, an AI assistant\./, line);
+    assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?><Response><Say language="pl-PL" voice="Polly\.Ola-Neural">Tu Doddy, wirtualny asystent\./, line);
+    assert.match(xml, /<Say language="en-US" voice="Polly\.Joanna">This is Doddy, a virtual assistant\./, line);
     assert.match(xml, /<Hangup\/><\/Response>$/, line);
     assert.doesNotMatch(xml, /record/i, line);
     assert.doesNotMatch(xml, /&/, `${line}: the text needs no XML escaping`);
