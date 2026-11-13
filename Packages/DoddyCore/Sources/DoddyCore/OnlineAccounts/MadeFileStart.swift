@@ -23,7 +23,7 @@ public enum MadeFileStart {
         document.status == .working
     }
 
-    /// The file's name as the note shows it: without the extension the server added ("Atenza.pptx" → "Atenza"),
+    /// The file's name as the note shows it: without the extension the server added ("Plan.pptx" → "Plan"),
     /// on one line. Empty when the name is only an extension or blank.
     public static func shownName(_ document: RunDocument) -> String {
         let name = document.name.components(separatedBy: .newlines).joined(separator: " ")

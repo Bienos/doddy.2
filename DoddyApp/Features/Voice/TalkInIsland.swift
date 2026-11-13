@@ -161,6 +161,9 @@ enum TalkInIsland {
         guard !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
+        // How old this process is and how long iOS took to load Doddy before this press (the timeline below
+        // begins here, so it can't show that): fixed words and seconds only.
+        log.notice("talk start launch: \(LaunchWork.launchTiming().line(), privacy: .public)")
         // Where the seconds go between the press and a connected conversation (decision 2026-11-10-voice-start-timing):
         // fixed stage words and seconds only, on the "voice-audio" log, whatever way the start ends.
         let requestedAt = ProcessInfo.processInfo.systemUptime

@@ -17,7 +17,7 @@ its unit and UI tests in the iPhone simulator. Nothing in CI runs on a real iPho
 | Node.js 22 | `backend/`, `server/`, `gateway/`, `web/`, `site/`, `tools/secrets/` | `backend/` asks for ≥ 22.22.3 (`@composio/core`); `server/messaging/` for ≥ 22.12 |
 | A disposable Postgres database | `server/messaging/` database tests | `TEST_DATABASE_URL`; CI uses Postgres 16. The tests drop its schema |
 | macOS with Xcode 26.6 | building the app, unit and UI tests | the version CI pins (`.github/workflows/ios.yml`, `xcodeVersion` in `project.yml`) |
-| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | generating `Doddy.xcodeproj` | `brew install xcodegen`; a development tool, not shipped |
+| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | generating `Doddy.xcodeproj` | `brew install xcodegen` on your own Mac; a development tool, not shipped. GitHub's Mac jobs use a pinned version instead (below) |
 
 Deployment target: **iOS 17.0**, iPhone and iPad (`TARGETED_DEVICE_FAMILY 1,2` in `project.yml`). Swift language
 mode 6.
@@ -135,6 +135,14 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds come from Xcode Cloud only (ADR-697,
 `docs/implementation/XCODE_CLOUD.md`).
 
+**Pinned tool versions in CI.** The Mac jobs install XcodeGen with `scripts/install_xcodegen.sh`: the
+exact release in the script (2.46.0), downloaded from its GitHub release and unpacked only when its SHA-256 equals the
+checksum in the script. To move it, change `version` and `sha256` together in a pull request of their own; the checks
+group tests the installer with a stand-in download (`scripts/test_install_xcodegen.sh`). Render's builds of `backend/`
+and `server/messaging/` run `npm ci --ignore-scripts` (none of their locked packages has an install script; if one
+gains one, remove the flag for that service), while `web/`, whose build tool esbuild has an install script, installs
+as before. `web/` tests run on Vitest 4.1.12.
+
 The Ubuntu 24.04 checks/Swift/Node/messaging jobs install the same dependency packages through
 `scripts/ci_install_ubuntu_packages.sh`. If the default apt sources fail, it retries
 with isolated package lists from the HTTPS kernel.org Ubuntu mirror, authenticated
@@ -166,12 +174,10 @@ tests primary success, download/install failures, fallback failure and cleanup.
   7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
   test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
-  2.19.0). `Config/Package.resolved` is meant to lock every package they pull in too, but **it isn't committed
-  yet** (7 Nov 2026). Until it is, `make project`, `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` print
-  that there are no pins, and CI records "App package versions match Config/Package.resolved" as SKIPPED. Each
-  Mac run keeps what it resolved as the `app-package-resolved` artifact; committing that file as
-  `Config/Package.resolved` turns the check on, and from then on CI fails if resolution changes it. To move
-  versions later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
+  2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
+  `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution
+  changes it, and each Mac run keeps what it resolved as the `app-package-resolved` artifact. To move versions
+  later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
   `docs/decisions/2026-11-07-reproducible-app-builds.md`).
 - The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a
   download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit

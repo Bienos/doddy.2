@@ -20,6 +20,7 @@ Dropping the AI disclosure entirely was not done:
 
 ## Consequences
 - Both prompts changed, so their hashes in `server/messaging/src/taskCalls/agentSpec.ts` changed. Until the owner syncs the live agents, the server's drift check (ADR-503) still accepts the prompts that may be live: main's before 12 Nov and main's of 12 Nov (`SYNC_PENDING_PROMPTS`, texts in `server/messaging/test/fixtures/task-call-prompts/`). So deploying `doddy-messaging` doesn't stop calls; the calls just sound like the old prompt until the sync. Remove those entries once the live agents hold these prompts.
+- The order agent for food by phone (`voice-agent/task-call-order/`, #373, off until set up) arrived on `main` while this was being merged and is **not** changed here. Give it the same "How you sound" section before it is turned on (owner queue 61 is its own row).
 - Legal wording ("asystent AI <imię>") is still not reviewed by a lawyer (`calls.md`, open question 3).
 
 ## Evidence

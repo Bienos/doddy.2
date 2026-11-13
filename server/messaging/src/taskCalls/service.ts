@@ -43,7 +43,7 @@ export type Refusal =
   | { status: 409; error: "no_verified_phone" | "too_many_open_cases" | "not_approvable" | "digest_mismatch" | "outside_hours"
       | "attempt_open" | "already_answered" | "no_more_attempts" | "not_live" | "taken_over" | "not_takeoverable" | "result_mismatch"
       | "part_of_task" | "call_in_progress" }
-  | { status: 503; error: "calls_disabled" | "not_configured" | "booking_not_configured" };
+  | { status: 503; error: "calls_disabled" | "not_configured" | "booking_not_configured" | "order_not_configured" };
 
 const ms = (minutes: number) => minutes * 60_000;
 const plus = (d: Date, millis: number) => new Date(d.getTime() + millis);
@@ -98,6 +98,8 @@ export async function compileCase(ctx: TaskCallContext, accountId: string, body:
   const brief = parsed.data;
   // Booking needs its own agent (decision 2026-11-12-book-agent); without one nothing is stored.
   if (brief.kind === "book" && !ctx.config.bookAgentId) return refuse(503, "booking_not_configured");
+  // Likewise a food order (decision 2026-11-12-food-by-phone).
+  if (brief.kind === "order" && !ctx.config.orderAgentId) return refuse(503, "order_not_configured");
   if (brief.booking && !bookingDateAllowed(brief.booking, ctx.now())) {
     return { refusal: { status: 400, error: "brief_refused", field: `${fieldPrefix}booking.date`, reason: "booking_date" } as Refusal };
   }
@@ -226,7 +228,7 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
   // Network check before taking locks: the live agent for this call's kind must still match its spec.
   const { rows: kindRows } = await ctx.db.query<{ kind: string }>(
     "SELECT c.kind FROM call_attempts a JOIN call_cases c ON c.id = a.case_id WHERE a.id = $1", [attemptId]);
-  const drift = await ctx.driftFor(kindRows[0]?.kind === "book" ? "book" : "ask").problems();
+  const drift = await ctx.driftFor(kindRows[0]?.kind === "order" ? "order" : kindRows[0]?.kind === "book" ? "book" : "ask").problems();
   const now = ctx.now();
   const claim = await inTransaction(ctx.db, async (c) => {
     // One dial claim at a time across the server: limits are counted and recorded atomically.

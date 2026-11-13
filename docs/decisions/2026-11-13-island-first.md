@@ -36,7 +36,7 @@ What was kept, and why:
 ## How to read the log
 Console.app, subsystem `com.bienos.doddy2.dev`, category `voice-audio`, one press:
 - `talk in the island: island shown before the set-up` (or `refused by iOS`);
-- `talk start timing: island shown … · account … · profile … · island … · connect … · total …`. `island shown` is the time from the press to the island; the old `island` stage is now the time until the audio session is up;
+- `talk start timing: island shown … · account … · profile … · island … · connect … · total …`. `island shown` is the time from the intent's `perform()` starting to the island, not from the press: loading the app comes before it, see the launch line below; the old `island` stage is now the time until the audio session is up;
 - after a refused press: `talk in the island: the press's island was ended, no conversation took it over`.
 
 ## Evidence
@@ -44,3 +44,6 @@ Console.app, subsystem `com.bienos.doddy2.dev`, category `voice-audio`, one pres
 - `scripts/ci.sh --only checks`: every check PASS; "Studio skills: renderers on samples" NOT RUN (no reportlab or matplotlib here), so the group reports BLOCKED.
 - `swiftc -parse` on `TalkInIsland.swift`: syntax only.
 - **The app is not compiled here** (no Xcode); the hosted Mac job builds it. Nothing was seen on a phone.
+
+## Follow-up: the launch line (13 Nov 2026)
+The start timeline begins when the intent's `perform()` runs, so it cannot see the time iOS needs to start Doddy for a press (loading the libraries, `DoddyApp.init`). A second line says it: `talk start launch: process age 1.20 s (fresh launch) · before app init 0.60 s · app init 0.15 s`. `process age` is the time from the process's start (the kernel's own record) to the press; under 15 s it counts as a fresh launch, and then it is split into the time before `DoddyApp.init` began and `init` itself. For a process that was already running it says only its age (`already running`). Logging only, fixed words and seconds (`TalkLaunchTiming`, DoddyCore; `LaunchWork.launchTiming`, `ProcessStart`). Reading both lines after one press: if `process age` of a fresh launch is large and `island shown` small, the delay is iOS loading the app, not the start; if `before app init` dominates, it is loading the libraries; if `app init` does, it is the work in `init`.
