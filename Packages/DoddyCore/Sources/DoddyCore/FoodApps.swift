@@ -47,7 +47,8 @@ public struct FoodApp: Identifiable, Equatable, Sendable {
 
 public enum FoodApps {
     /// In the order the screen lists them. The pages are the providers' front pages: their search addresses
-    /// aren't published, so Doddy doesn't pass a search in.
+    /// aren't published, so Doddy doesn't pass a search in. (Home › Food copies a place's name for the person to
+    /// paste into the app's search instead, decision `2026-11-13-food-search-nearby`.)
     public static let all: [FoodApp] = [
         app("ubereats", "Uber Eats", "https://www.ubereats.com"),
         app("wolt", "Wolt", "https://wolt.com"),
