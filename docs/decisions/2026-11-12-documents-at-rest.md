@@ -21,6 +21,7 @@ The iPhone keeps the signed link in its Messages thread and on the voice card an
 ## Consequences
 - **Deploy:** `doddy` must have `DODDY_MEMORY_KEY` before this ships, or making files stops ("not set up"). On 12 Nov 2026 the live service answered `PUT /v1/web/messages` with `503 live_not_configured`, which means the key isn't set there (owner queue).
 - Changing or losing the key makes the stored files unreadable (they read as missing); they are deleted within a week anyway.
+- The memory key now covers files too, and file links stay signed with `DODDY_SESSION_SIGNING_KEY`. If keys are split per purpose (proposal `2026-11-12-account-and-device-tokens`), files can get their own key: each row carries its `key_version`, and a link's signature is checked on every open.
 - Links made before the deploy stop opening (they say "expired"); the files stay listed and downloadable in the app and on Doddy Web.
 - The sandbox policy is new on the file itself. That Safari on an iPhone still previews a deck, a Word file, a spreadsheet and a PDF with Quick Look under it has **not been checked on a device**.
 
