@@ -28,7 +28,7 @@ import {
   headMention, itemRules, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, meetsRules, normalize, parsePrintedUnitPrice, parseSize,
   pickWithModel, terms, unitPrice, unitPricesAgree, type ItemRules, type Terms,
 } from "./match.js";
-import { categoryOf, relation, type Category } from "./categories.js";
+import { categoryMatch, categoryOf, relation, type Category } from "./categories.js";
 import { brandsOf, marksIn, queryMarks, thingOf, type QueryMarks } from "./brands.js";
 import { DEFAULT_MAX_AGE_HOURS, isCatalogChain, materialFromSnapshot, type CatalogStore, type ChainSnapshot } from "./catalog.js";
 import { prepareImage, readPage, readScreen, screenBatches, type Mechanic, type ReadDate, type ReadProduct, type ReadPromotion } from "./vision.js";
@@ -309,6 +309,8 @@ export interface QueryEnv {
   queryRules: ItemRules[];
   /** Each item's brands and thing (brands.ts). Absent: worked out from the rules' words. */
   queryMarks?: QueryMarks[];
+  /** Product facts kept across many items (deal-watch checks); absent: worked out per call. */
+  factsCache?: Map<string, ProductFacts>;
   today: string;
   language: string;
   nextId: () => string;
@@ -330,6 +332,25 @@ interface Env extends QueryEnv {
 
 const best = (scores: number[]) => scores.reduce((a, b) => Math.max(a, b), 0);
 
+/** What the matcher works out about a product's name whatever the item: its words, its category, its brands and what
+ * it is. The same for every item, so the deal-watch checks, which match many items against one catalog, keep it. */
+export interface ProductFacts {
+  t: Terms;
+  cat?: Category;
+  named: Set<string>;
+  product: ReturnType<typeof thingOf>;
+}
+
+export function productFacts(text: string, cache?: Map<string, ProductFacts>): ProductFacts {
+  const held = cache?.get(text);
+  if (held) return held;
+  const cm = categoryMatch(text);
+  const marks = marksIn(text);
+  const facts: ProductFacts = { t: terms(text), cat: cm?.category, named: brandsOf(marks), product: thingOf(text, marks, cm) };
+  cache?.set(text, facts);
+  return facts;
+}
+
 /** The score a product gets for an item when it matched through its brand or model, not its words: above the threshold,
  * below a product whose own words name the item, so the latter comes first among the candidates. */
 export const BRAND_SCORE = 0.7;
@@ -345,11 +366,7 @@ export const BRAND_SCORE = 0.7;
 function makeJudge(env: QueryEnv) {
   const qMarks = env.queryMarks ?? env.queryRules.map((r) => queryMarks(r.words));
   return (text: string) => {
-    const t = terms(text);
-    const cat = categoryOf(text);
-    const marks = marksIn(text);
-    const named = brandsOf(marks);
-    const product = thingOf(text, marks);
+    const { t, cat, named, product } = productFacts(text, env.factsCache);
     const rel = env.queryCats.map((q) => relation(q, cat));
     // The person's own rules hold for similar products too: "tylko Łaciate" wants Łaciate, whatever the kind.
     const meets = env.queryRules.map((r) => meetsRules(r, text));
@@ -754,12 +771,13 @@ export function chainOffers(chain: ReadChain, m: ChainMaterial, env: QueryEnv):
  * the item, by its words or its brand (never a similar product), each saying how it matched. Code only: no model, no
  * fetch, no page read.
  */
-export function itemOffers(item: string, chain: ReadChain, m: ChainMaterial, today: string, language: string): Offer[] {
+export function itemOffers(item: string, chain: ReadChain, m: ChainMaterial, today: string, language: string,
+  factsCache?: Map<string, ProductFacts>): Offer[] {
   const rules = itemRules(item.trim());
   let n = 0;
   const env: QueryEnv = {
     queryTerms: [terms(rules.words)], queryCats: [categoryOf(rules.words)], queryRules: [rules], queryMarks: [queryMarks(rules.words)],
-    today, language, nextId: () => `w${++n}`,
+    today, language, nextId: () => `w${++n}`, ...(factsCache ? { factsCache } : {}),
   };
   return chainOffers(chain, m, env).candidates
     .filter((c) => (c.scores[0] ?? 0) >= MATCH_THRESHOLD && !c.similar?.[0])

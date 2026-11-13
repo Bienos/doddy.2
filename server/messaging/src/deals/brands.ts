@@ -245,18 +245,31 @@ function sameWord(name: Token, word: Token): boolean {
   return name.stem === word.stem && word.raw.length >= name.raw.length && name.raw.length >= 4;
 }
 
+/** Every name by the stem of its first word: a word can only start a name whose first word has its stem (the same word
+ * has the same stem), so a product's words are looked up instead of every name tried at every place. */
+const BY_FIRST_STEM = new Map<string, { mark: CompiledMark; phrase: Token[] }[]>();
+for (const mark of MARKS) {
+  for (const phrase of mark.phrases) {
+    const key = phrase[0]!.stem;
+    const list = BY_FIRST_STEM.get(key) ?? [];
+    list.push({ mark, phrase });
+    BY_FIRST_STEM.set(key, list);
+  }
+}
+
 /** The marks a text names, the longest name first; a shorter name inside a longer one found at the same place is left
  * out ("Galaxy Buds" is not also "Galaxy"; "Żywiec Zdrój" is not also "Żywiec"). */
 export function marksIn(text: string): Mark[] {
   const words = tokenize(text);
   const found: { mark: CompiledMark; start: number; end: number }[] = [];
-  for (const mark of MARKS) {
-    for (const p of mark.phrases) {
-      for (let i = 0; i + p.length <= words.length; i++) {
-        if (p.every((t, j) => sameWord(t, words[i + j]!))) found.push({ mark, start: i, end: i + p.length });
+  words.forEach((w, i) => {
+    for (const { mark, phrase } of BY_FIRST_STEM.get(w.stem) ?? []) {
+      if (i + phrase.length <= words.length && phrase.every((t, j) => sameWord(t, words[i + j]!))) {
+        found.push({ mark, start: i, end: i + phrase.length });
       }
     }
-  }
+  });
+  if (found.length === 0) return [];
   found.sort((a, b) => (b.end - b.start) - (a.end - a.start) || a.start - b.start);
   const kept: typeof found = [];
   for (const f of found) {
@@ -293,8 +306,8 @@ const STRONG = 0.9;
  * What a product is: its own words when they say it clearly ("Słuchawki …", "Ciastka Milka"), else the one thing its
  * brand or model is ("AirPods 4": headphones; "Finish tabletki": dishwasher tablets), else a weak guess from its words.
  */
-export function thingOf(text: string, marks: readonly Mark[] = marksIn(text)): { thing?: Category; from?: "words" | "mark" } {
-  const words = categoryMatch(text);
+export function thingOf(text: string, marks: readonly Mark[] = marksIn(text), words = categoryMatch(text)):
+  { thing?: Category; from?: "words" | "mark" } {
   if (words && words.quality >= STRONG) return { thing: words.category, from: "words" };
   const mark = markThing(marks);
   if (mark) return { thing: mark, from: "mark" };

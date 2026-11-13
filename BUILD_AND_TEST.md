@@ -94,7 +94,7 @@ swallows network failures; it cannot establish that a connection was prepared or
 
 Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
 `DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
-SQL files, 001 to 030 on 12 Nov 2026, in the `messaging` group). Renaming, reordering or removing a merged migration,
+SQL files, 001 to 037 on 13 Nov 2026, with no 011, 031, 035 or 036 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
 or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
 the same commit.
 

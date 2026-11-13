@@ -25,7 +25,7 @@ import { DEFAULT_TIME_ZONE, inQuietHours, QUIET_HOURS_DEFAULT, type QuietHours }
 import { CATALOG_CHAINS, DbCatalogStore, isCatalogChain, materialFromSnapshot, type CatalogStore } from "./catalog.js";
 import { warsawDay } from "./chains/common.js";
 import { normalize } from "./match.js";
-import { itemOffers, type DealsDeps } from "./service.js";
+import { itemOffers, type DealsDeps, type ProductFacts } from "./service.js";
 import type { Offer, ReadChain } from "./types.js";
 
 export const ITEM_MAX = 60;
@@ -130,7 +130,7 @@ export interface ChainState { chain: ReadChain; readAt: string; complete: boolea
  * the code stands behind, and at or below the price when one is set. With each chain's scan time and completeness.
  */
 export async function catalogMatches(catalog: CatalogStore, w: { item: string; maxPriceMinor?: number; chains?: readonly ReadChain[] },
-  now: Date, language: string): Promise<{ offers: Offer[]; chains: ChainState[] }> {
+  now: Date, language: string, facts?: Map<string, ProductFacts>): Promise<{ offers: Offer[]; chains: ChainState[] }> {
   const wanted = w.chains?.length ? w.chains.filter(isCatalogChain) : [...CATALOG_CHAINS];
   const snapshots = await catalog.snapshots(wanted);
   const today = warsawDay(now);
@@ -143,7 +143,7 @@ export async function catalogMatches(catalog: CatalogStore, w: { item: string; m
     if (m === "stale") continue;
     chains.push({ chain, readAt: s.scannedAt, complete: s.complete });
     if (m === "no_leaflet") continue;
-    for (const o of itemOffers(w.item, chain, m, today, language)) {
+    for (const o of itemOffers(w.item, chain, m, today, language, facts)) {
       if (o.check) continue;
       if (w.maxPriceMinor !== undefined && o.price.minor > w.maxPriceMinor) continue;
       offers.push(o);
@@ -271,6 +271,8 @@ export async function checkDealWatches(ctx: DealWatchContext, scanned: readonly 
   if (!ctx.enabled || scanned.length === 0) return counts;
   const add = (k: string, n = 1) => { if (n) counts[k] = (counts[k] ?? 0) + n; };
   const now = ctx.now();
+  // What the matcher works out about each product's name is the same for every watch: worked out once in this run.
+  const facts = new Map<string, ProductFacts>();
   for (;;) {
     const claimed = await inTransaction(ctx.db, async (c) => {
       const { rows } = await c.query<Row>(
@@ -286,7 +288,7 @@ export async function checkDealWatches(ctx: DealWatchContext, scanned: readonly 
       try {
         const item = openItem(ctx, w);
         if (!item) { add("unreadable"); ctx.log("deal watch unreadable", { watchId: w.id }); continue; }
-        const m = await catalogMatches(ctx.catalog, { item, maxPriceMinor: w.max_price_minor ?? undefined, chains: watchChains(w) }, now, w.language);
+        const m = await catalogMatches(ctx.catalog, { item, maxPriceMinor: w.max_price_minor ?? undefined, chains: watchChains(w) }, now, w.language, facts);
         const fresh = await inTransaction(ctx.db, (c) => recordHits(c, ctx, w, m.offers, now));
         add("checked");
         add("new_offers", fresh.length);
@@ -294,6 +296,8 @@ export async function checkDealWatches(ctx: DealWatchContext, scanned: readonly 
         add("failed");
         ctx.log("deal watch check failed", { watchId: w.id, error: err instanceof Error ? err.name : "unknown" });
       }
+      // Matching is code on the event loop: let the web requests in this process through between two watches.
+      await new Promise<void>((r) => setImmediate(r));
     }
     if (claimed.length < BATCH) break;
   }

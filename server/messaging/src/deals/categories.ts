@@ -250,21 +250,50 @@ export function categoryOf(text: string): Category | undefined {
 export function categoryMatch(text: string): { category: Category; quality: number } | undefined {
   const words = normalize(text).split(" ").filter(Boolean).map((raw) => ({ raw, stem: stem(raw) }));
   if (!words.length) return undefined;
+  // Only phrases whose first word could be like the word at this place are tried (PHRASES_BY_START), in the list's own
+  // order, so the answer is the one trying every phrase at every place gave: the best quality, then the longest phrase,
+  // then the earliest in the list. (13 Nov 2026: trying all ~900 phrases took about 0.7 ms a product name, 13 s for a
+  // catalog of 20,000 products; a search and every deal-watch check read the whole catalog.)
   let found: Category | undefined;
   let bestQuality = 0;
   let longest = 0;
-  for (const c of CATEGORIES) {
-    for (const p of c.phrases) {
-      if (p.words.length === 0 || p.words.length > words.length) continue;
-      for (let i = 0; i + p.words.length <= words.length; i++) {
-        const quality = Math.min(...p.words.map((w, j) => wordSimilarity(w, words[i + j]!)));
-        if (quality < SIMILAR) continue;
-        if (quality > bestQuality || (quality === bestQuality && p.length > longest)) { found = c; bestQuality = quality; longest = p.length; }
+  let bestOrder = Infinity;
+  for (let i = 0; i < words.length; i++) {
+    for (const { c, p, order } of PHRASES_BY_START.get(startKey(words[i]!.stem)) ?? []) {
+      if (i + p.words.length > words.length) continue;
+      const quality = Math.min(...p.words.map((w, j) => wordSimilarity(w, words[i + j]!)));
+      if (quality < SIMILAR) continue;
+      if (quality > bestQuality || (quality === bestQuality && (p.length > longest || (p.length === longest && order < bestOrder)))) {
+        found = c; bestQuality = quality; longest = p.length; bestOrder = order;
       }
     }
   }
   return found ? { category: found, quality: bestQuality } : undefined;
 }
+
+/**
+ * Two words are alike enough (wordSimilarity ≥ 0.6) only when their stems share their first three letters: the same
+ * word or stem, a diminutive of a stem of three letters or more, or a shared start of five. A stem shorter than three
+ * letters matches only itself. So a phrase can start only where a word's stem starts with its first word's three.
+ */
+const startKey = (s: string) => s.slice(0, 3);
+
+/** Every phrase by the start of its first word's stem, each with its place in the list (category, then phrase). */
+const PHRASES_BY_START: ReadonlyMap<string, { c: Compiled; p: Compiled["phrases"][number]; order: number }[]> = (() => {
+  const map = new Map<string, { c: Compiled; p: Compiled["phrases"][number]; order: number }[]>();
+  let order = 0;
+  for (const c of CATEGORIES) {
+    for (const p of c.phrases) {
+      order++;
+      if (p.words.length === 0) continue;
+      const key = startKey(p.words[0]!.stem);
+      const list = map.get(key) ?? [];
+      list.push({ c, p, order });
+      map.set(key, list);
+    }
+  }
+  return map;
+})();
 
 /** How a product's category stands to a query's: the same thing, a similar one (a substitute), another kind of
  * thing altogether, or not known (a side without a category: matching by words decides). */
