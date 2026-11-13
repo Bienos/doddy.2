@@ -87,7 +87,7 @@ use Node's built-in modules only.
 | Tool | Used for | Licence | Note |
 |---|---|---|---|
 | Swift 6.1 Linux toolchain (swift.org) | `Packages/DoddyCore` tests on Linux | Apache-2.0 w/ runtime exception | CI's `swift` job uses the official `swift:6.1-noble` image. On 7 Nov 2026, 6.1.3 ran `make test-core`: 2416 tests, 0 failures. 6.1.0 crashes while compiling DoddyCore, so use 6.1.3 or newer. Toolchains downloaded by hand (6.3.3 earlier, 6.1.0 and 6.1.3 on 7 Nov) came over HTTPS; their **GPG signatures were not verified** |
-| XcodeGen | generating the Xcode project | MIT | `brew install xcodegen` on your own Mac. CI and Xcode Cloud install version 2.46.0 from its GitHub release file after a SHA-256 check (`scripts/install_xcodegen.sh`). 2.44.1 was built on Linux once to validate `project.yml` |
+| XcodeGen | generating the Xcode project | MIT | `brew install xcodegen` on your own Mac. GitHub's Mac jobs install version 2.46.0 from its GitHub release file after a SHA-256 check (`scripts/install_xcodegen.sh`). 2.44.1 was built on Linux once to validate `project.yml` |
 | Xcode / iOS SDK | app build | Apple developer terms | Xcode 26.6 on the `macos-26` runner, pinned in `.github/workflows/ios.yml` and `project.yml` (`xcodeVersion`) |
 | Node.js 22 | servers, Doddy Web and site tests | MIT | every `package.json` but `site/`'s sets `engines`; CI uses `actions/setup-node` with `22` |
 

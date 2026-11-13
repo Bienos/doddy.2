@@ -17,7 +17,7 @@ its unit and UI tests in the iPhone simulator. Nothing in CI runs on a real iPho
 | Node.js 22 | `backend/`, `server/`, `gateway/`, `web/`, `site/`, `tools/secrets/` | `backend/` asks for ≥ 22.22.3 (`@composio/core`); `server/messaging/` for ≥ 22.12 |
 | A disposable Postgres database | `server/messaging/` database tests | `TEST_DATABASE_URL`; CI uses Postgres 16. The tests drop its schema |
 | macOS with Xcode 26.6 | building the app, unit and UI tests | the version CI pins (`.github/workflows/ios.yml`, `xcodeVersion` in `project.yml`) |
-| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | generating `Doddy.xcodeproj` | `brew install xcodegen` on your own Mac; a development tool, not shipped. CI and Xcode Cloud use a pinned version instead (below) |
+| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | generating `Doddy.xcodeproj` | `brew install xcodegen` on your own Mac; a development tool, not shipped. GitHub's Mac jobs use a pinned version instead (below) |
 
 Deployment target: **iOS 17.0**, iPhone and iPad (`TARGETED_DEVICE_FAMILY 1,2` in `project.yml`). Swift language
 mode 6.
@@ -135,7 +135,7 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds come from Xcode Cloud only (ADR-697,
 `docs/implementation/XCODE_CLOUD.md`).
 
-**Pinned tool versions in CI.** The Mac jobs and Xcode Cloud install XcodeGen with `scripts/install_xcodegen.sh`: the
+**Pinned tool versions in CI.** The Mac jobs install XcodeGen with `scripts/install_xcodegen.sh`: the
 exact release in the script (2.46.0), downloaded from its GitHub release and unpacked only when its SHA-256 equals the
 checksum in the script. To move it, change `version` and `sha256` together in a pull request of their own; the checks
 group tests the installer with a stand-in download (`scripts/test_install_xcodegen.sh`). Render's builds of `backend/`
@@ -176,11 +176,7 @@ tests primary success, download/install failures, fallback failure and cleanup.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
   2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
   `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution
-  changes it, and each Mac run keeps what it resolved as the `app-package-resolved` artifact. Xcode Cloud's resolve
-  call also passes `-onlyUsePackageVersionsFromResolvedFile`, so it fetches only the pinned versions and fails when
-  the file is out of date (`DODDY_PACKAGES_FREE=1` in the workflow lifts that for one build; not tried on Xcode Cloud
-  yet, `docs/implementation/XCODE_CLOUD.md`). `Packages/DoddyCore/Package.resolved` (committed) pins the package's
-  own dependencies for its tests; Xcode Cloud's script deletes its copy of it before resolving. To move versions
+  changes it, and each Mac run keeps what it resolved as the `app-package-resolved` artifact. To move versions
   later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
   `docs/decisions/2026-11-07-reproducible-app-builds.md`).
 - The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a

@@ -4,8 +4,7 @@
 # be executable, and finish without error, or the build stops.
 #
 # Why it is needed:
-#   1. `Doddy.xcodeproj` is not committed; XcodeGen makes it from `project.yml` (as `make project`),
-#      at the one version pinned in scripts/install_xcodegen.sh.
+#   1. `Doddy.xcodeproj` is not committed; XcodeGen makes it from `project.yml` (as `make project`).
 #   2. Every upload to TestFlight needs a build number higher than the last. The app and its two
 #      extensions must have the same one. Xcode Cloud numbers its builds (CI_BUILD_NUMBER).
 #   3. Xcode Cloud does not resolve Swift packages by itself: it needs `Package.resolved` in the
@@ -25,10 +24,6 @@
 #                    isn't enabled on the App ID, which makes signing fail). Anything else, or not
 #                    set: push on. The App ID needs the Push Notifications capability either way
 #                    it is on.
-#   DODDY_PACKAGES_FREE  `1` lets package resolution move versions again. By default, with the
-#                    committed pins in the project, it uses only the pinned versions and fails when
-#                    the pins file is out of date (step 6). For one build, if that ever blocks a
-#                    TestFlight build; then refresh the pins (`make update-packages`).
 #
 # Nothing here signs, uploads or reads a key: Xcode Cloud signs with the team's cloud-managed
 # certificates and uploads to TestFlight as the workflow says.
@@ -65,26 +60,21 @@ set_setting() {
   echo "ci_post_clone: $what set"
 }
 
-# 1. The project, as `make project` makes it (the shipping build, with the App Group). XcodeGen is
-# the one version GitHub's CI uses, installed from its release file after a SHA-256 check
-# (scripts/install_xcodegen.sh) instead of whatever Homebrew has on the day.
+# 1. The project, as `make project` makes it (the shipping build, with the App Group).
 if [ -z "${DODDY_SKIP_XCODEGEN:-}" ]; then
-  xcodegen_bin=$(sh "$repo/scripts/install_xcodegen.sh") || { echo "ci_post_clone: couldn't install the pinned XcodeGen" >&2; exit 1; }
-  PATH="$xcodegen_bin:$PATH"
-  export PATH
-  xcodegen --version || true
+  if ! command -v xcodegen >/dev/null 2>&1; then
+    HOMEBREW_NO_AUTO_UPDATE=1 brew install xcodegen
+  fi
   xcodegen generate --spec project.yml
 fi
 [ -f "$pbx" ] || { echo "ci_post_clone: $pbx wasn't generated" >&2; exit 1; }
 
 # 1b. The app's pinned package versions (Config/Package.resolved, 7 Nov 2026 audit), as `make project`
 # and scripts/ci.sh install them, so TestFlight gets exactly the versions GitHub's CI built and
-# tested. Before step 6, which resolves from them and nothing newer (pins_installed).
-pins_installed=0
+# tested. Before step 6, so resolution there only confirms them.
 if [ -f Config/Package.resolved ]; then
   mkdir -p Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
   cp Config/Package.resolved Doddy.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
-  pins_installed=1
   echo "ci_post_clone: pinned package versions installed"
 fi
 
@@ -142,8 +132,7 @@ fi
 if [ -z "${DODDY_SKIP_RESOLVE:-}" ]; then
   # Xcode Cloud turns automatic package resolution off and refuses an out-of-date Package.resolved
   # (its first build failed with "an out-of-date resolved file was detected"). The project is
-  # generated here, and when that build failed it had no resolved file of its own: allow the resolver
-  # to run. With the pins installed (step 1b) the resolver is held to them just below.
+  # generated here, so there is no committed resolved file to trust: allow the resolver to run.
   if command -v defaults >/dev/null 2>&1; then
     defaults write com.apple.dt.Xcode IDEDisableAutomaticPackageResolution -bool NO
     defaults write com.apple.dt.Xcode IDEPackageOnlyUseVersionsFromResolvedFile -bool NO
@@ -157,21 +146,8 @@ if [ -z "${DODDY_SKIP_RESOLVE:-}" ]; then
   # anonymous users" incident, which came and went for hours). Try up to six times, waiting 30 s,
   # 60 s, 90 s, 120 s and 150 s (about 7.5 minutes in all); a real resolution error still stops the
   # build after the last try.
-  #
-  # With the committed pins in the project (step 1b), resolve only to the versions in that file:
-  # -onlyUsePackageVersionsFromResolvedFile fails when the file is out of date instead of quietly
-  # moving a package to a newer version, so TestFlight can't get versions GitHub's CI didn't test
-  # (CI fails when resolution would change the pins). Without pins there is nothing to hold it to.
-  # DODDY_PACKAGES_FREE=1, set in the workflow's environment, lets the resolver move versions again
-  # (for one build, if a stale pins file ever blocks TestFlight; then run `make update-packages`).
-  resolve_flags=""
-  if [ "$pins_installed" = 1 ] && [ "${DODDY_PACKAGES_FREE:-}" != "1" ]; then
-    resolve_flags="-onlyUsePackageVersionsFromResolvedFile"
-    echo "ci_post_clone: resolving only the pinned package versions"
-  fi
   attempt=1
-  # shellcheck disable=SC2086
-  until xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy $resolve_flags; do
+  until xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy; do
     if [ "$attempt" -ge "${DODDY_RESOLVE_ATTEMPTS:-6}" ]; then
       echo "ci_post_clone: package resolution failed $attempt times" >&2
       exit 1
