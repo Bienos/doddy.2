@@ -108,7 +108,8 @@ Product contracts designed here — **not** Composio endpoints. All routes under
 
 | Method + path | Body | Returns |
 |---|---|---|
-| `GET /v1/health` (no auth) | — | `{status, mode, api, capabilities}` — no configuration details |
+| `GET /v1/health` (no auth) | — | `{status}` only (`ok`, or 503 `unavailable`), since 12 Nov 2026; it was `{status, mode, api, capabilities}` |
+| `GET /v1/server` | — | `{mode}`; an iPhone token or Doddy Web's browser session |
 | `GET /v1/connected-apps` | — | `{mode, apps:[ConnectionView], planned:[…]}` |
 | `GET /v1/connected-apps/google-calendar` | — | `ConnectionView` (user-triggered status check, ≤ 1 provider lookup / 30 s) |
 | `POST …/google-calendar/connect` | `{}` | `ConnectResponse` |

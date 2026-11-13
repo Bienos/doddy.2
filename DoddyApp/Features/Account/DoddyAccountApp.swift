@@ -17,10 +17,16 @@ extension DoddyAccountModel {
         let model = DoddyAccountModel(
             config: DoddyAccountSetup.config(), transport: URLSessionTransport.shared,
             store: DoddyAccountKeychain(), authenticator: SystemWebAuthenticator())
-        model.afterSignIn = { session in await DoddyAccountServers.bringEarlierData(session) }
+        model.afterSignIn = { session in
+            // Whose data this iPhone holds is recorded first; nothing goes to an account that doesn't own it
+            // (decision 2026-11-12-local-data-owner, `LocalDataOwnership.swift`).
+            await DoddyAccountServers.claimLocalData()
+            await DoddyAccountServers.bringEarlierData(session)
+        }
         model.afterSignOut = {
             DoddyAccountServers.forgetAccountTokens()
             VoiceTokenWarmer.shared.clear()
+            DoddyAccountServers.stopUploadsAfterSignOut()
         }
         return model
     }()
@@ -199,10 +205,15 @@ enum DoddyAccountServers {
             model.message = NSLocalizedString("Doddy's server isn't set up for Doddy accounts yet, so it can't delete yours. Nothing was deleted. Try again later.", comment: "")
             return
         }
-        if let messaging = ServerConfig.client() {
-            do {
-                try await messaging.deleteAccount()
-            } catch {
+        if let messaging = ServerConfig.client(), let server = ServerConfig.baseURL() {
+            // Decision 2026-11-12-account-deletion-truth: no token on this iPhone, or a refused one, is not "deleted".
+            // The account's own token is minted and the delete tried once more; only a 204, or the server saying it
+            // takes no Doddy accounts, counts (`AccountErasurePlan`).
+            let outcome = await AccountErasurePlan.run(
+                deleteWithStoredToken: { await messaging.deleteAccountWithStoredToken() },
+                mintAccountToken: { await mintMessagingToken(server) },
+                deleteWithToken: { token in await messaging.deleteAccount(withToken: token) })
+            guard outcome.isConfirmed else {
                 model.message = NSLocalizedString("Doddy's server didn't confirm deleting your messaging data, so nothing else was deleted and you're still signed in. Check your connection and try again.", comment: "")
                 return
             }
@@ -235,6 +246,22 @@ enum DoddyAccountServers {
         if let userID { UserDefaults.standard.removeObject(forKey: appleRevokedKey(userID)) }
         let done = NSLocalizedString("Your Doddy account was deleted and this iPhone is signed out. Notes on this iPhone stay.", comment: "")
         model.message = [done, serverLine, voiceLine, appleLine].compactMap { $0 }.joined(separator: " ")
+    }
+
+    /// The Doddy account's own token for the messaging server, asked for with the account as after a sign-in
+    /// (`POST /v1/accounts/sign-in`), for deleting its account there when this iPhone keeps no token or a refused
+    /// one (decision 2026-11-12-account-deletion-truth). Used for that one delete and not kept. A refused account
+    /// token is refreshed and asked once more, as `signInMessaging` does.
+    private static func mintMessagingToken(_ server: URL) async -> AccountErasurePlan.Mint {
+        let model = DoddyAccountModel.shared
+        guard let session = await model.freshSession() else { return .failed }
+        var answer = await DoddyAccountLink.signInMessaging(
+            server: server, account: session, earlierDeviceToken: nil, transport: URLSessionTransport.shared)
+        if answer == .accountRefused, (try? await model.refreshAfterRefusal()) != nil, let fresh = model.session {
+            answer = await DoddyAccountLink.signInMessaging(
+                server: server, account: fresh, earlierDeviceToken: nil, transport: URLSessionTransport.shared)
+        }
+        return AccountErasurePlan.Mint(answer)
     }
 
     // MARK: Sign in with Apple, ended when the account is deleted

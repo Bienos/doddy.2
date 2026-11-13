@@ -49,17 +49,21 @@ private final class PaymentsFakeAuthenticator: PaymentAuthenticator {
 }
 
 private final class PaymentsFakeClient: PaymentsClient, @unchecked Sendable {
+    var pageResult: Result<PaymentPageCard, PaymentsError>
     var prepareResult: Result<PaymentPrepared, PaymentsError>
     var payResult: Result<PaymentResult, PaymentsError>
     var receiptsResult: Result<[PaymentReceipt], PaymentsError> = .success([])
     var statusResult: Result<PaymentStatus, PaymentsError>
     var switchResult: Result<PaymentSwitchResult, PaymentsError>
     var duringPay: (@Sendable () async -> Void)?
-    private(set) var prepareCalls: [String] = []
+    var duringPrepare: (@Sendable () async -> Void)?
+    private(set) var pageCalls: [String] = []
+    private(set) var prepareCalls: [(url: String, approvalId: UUID)] = []
     private(set) var payCalls: [(url: String, approvalId: UUID, confirmAmount: String?)] = []
     private(set) var switchCalls: [Bool] = []
 
     init() throws {
+        pageResult = .success(try paymentFixture(PaymentPageCard.self, "page-card"))
         prepareResult = .success(try paymentFixture(PaymentPrepared.self, "prepared"))
         payResult = .success(try paymentFixture(PaymentResult.self, "paid"))
         statusResult = .success(try paymentFixture(PaymentStatus.self, "status-off"))
@@ -71,8 +75,13 @@ private final class PaymentsFakeClient: PaymentsClient, @unchecked Sendable {
         switchCalls.append(enabled)
         return try switchResult.get()
     }
-    func prepare(url: String) async throws(PaymentsError) -> PaymentPrepared {
-        prepareCalls.append(url)
+    func page(url: String) async throws(PaymentsError) -> PaymentPageCard {
+        pageCalls.append(url)
+        return try pageResult.get()
+    }
+    func prepare(url: String, approvalId: UUID) async throws(PaymentsError) -> PaymentPrepared {
+        prepareCalls.append((url, approvalId))
+        await duringPrepare?()
         return try prepareResult.get()
     }
     func pay(url: String, approvalId: UUID, confirmAmount: String?) async throws(PaymentsError) -> PaymentResult {
@@ -113,6 +122,14 @@ final class PaymentsContractTests: XCTestCase {
         XCTAssertTrue(switched.status.enabled)
         XCTAssertEqual(switched.receipt.operation, .switchPayments)
 
+        let card = try paymentFixture(PaymentPageCard.self, "page-card")
+        XCTAssertEqual(card.page, PaymentPage(host: "demo-shop.example", path: "/articles/42"))
+        XCTAssertEqual(card.preview.confirmLabel, "Check the price")
+        XCTAssertEqual(card.expiryDate, PaymentTime.parse("2026-10-12T10:02:00Z"))
+        let notRead = try paymentFixture(PaymentErrorBody.self, "error-read-not-approved")
+        XCTAssertEqual(notRead.error.receipt?.errorCode, "confirmation_required")
+        XCTAssertEqual(notRead.error.receipt?.operation, .prepare)
+
         let prepared = try paymentFixture(PaymentPrepared.self, "prepared")
         XCTAssertEqual(prepared.preview.confirmLabel, "Pay 0.05 USDC")
         XCTAssertEqual(prepared.preview.lines.count, 5)
@@ -135,7 +152,7 @@ final class PaymentsContractTests: XCTestCase {
         XCTAssertEqual(receipts.receipts.first?.operation, .pay)
         XCTAssertTrue(receipts.receipts.contains { $0.operation == .switchPayments })
 
-        for name in ["error-fresh-confirmation", "error-no-wallet", "error-over-limit", "error-unconfirmed"] {
+        for name in ["error-fresh-confirmation", "error-no-wallet", "error-over-limit", "error-unconfirmed", "error-read-not-approved"] {
             let body = try paymentFixture(PaymentErrorBody.self, name)
             XCTAssertNotNil(body.error.receipt, name)
             XCTAssertFalse(body.error.message.isEmpty, name)
@@ -168,6 +185,7 @@ final class PaymentsContractTests: XCTestCase {
         XCTAssertFalse(try serverError("error-over-limit").mightHaveBeenPaid)
         XCTAssertFalse(try serverError("error-fresh-confirmation").mightHaveBeenPaid)
         XCTAssertFalse(try serverError("error-no-wallet").mightHaveBeenPaid)
+        XCTAssertFalse(try serverError("error-read-not-approved").mightHaveBeenPaid)
         XCTAssertTrue(PaymentsError.transport("URLError").mightHaveBeenPaid)
         XCTAssertTrue(PaymentsError.unreadableResponse.mightHaveBeenPaid)
         XCTAssertFalse(PaymentsError.unauthenticated.mightHaveBeenPaid)
@@ -245,13 +263,27 @@ final class PaymentsClientTests: XCTestCase {
         XCTAssertEqual(body, ["url": page, "approvalId": approval.uuidString.lowercased()], "no amount, recipient or wallet can be sent")
     }
 
-    func testPreparingSendsOnlyThePage() async throws {
+    func testThePageCardSendsOnlyThePage() async throws {
+        let capture = Capture()
+        capture.reply = (200, try paymentFixtureData("page-card"))
+        let card = try await client(capture).page(url: page)
+        XCTAssertEqual(card.page.host, "demo-shop.example")
+        let request = try XCTUnwrap(capture.requests.first)
+        XCTAssertEqual(request.method, "POST")
+        XCTAssertEqual(request.url.absoluteString, "https://api.doddy.test/v1/payments/page")
+        XCTAssertEqual(try JSONSerialization.jsonObject(with: XCTUnwrap(request.body)) as? [String: String], ["url": page])
+    }
+
+    func testPreparingSendsOnlyThePageAndThePagesApproval() async throws {
         let capture = Capture()
         capture.reply = (200, try paymentFixtureData("prepared"))
-        _ = try await client(capture).prepare(url: page)
+        let approval = UUID()
+        _ = try await client(capture).prepare(url: page, approvalId: approval)
         let request = try XCTUnwrap(capture.requests.first)
         XCTAssertEqual(request.url.absoluteString, "https://api.doddy.test/v1/payments/prepare")
-        XCTAssertEqual(try JSONSerialization.jsonObject(with: XCTUnwrap(request.body)) as? [String: String], ["url": page])
+        XCTAssertEqual(
+            try JSONSerialization.jsonObject(with: XCTUnwrap(request.body)) as? [String: String],
+            ["url": page, "approvalId": approval.uuidString.lowercased()])
     }
 
     func testStatusAndSwitchAndReceipts() async throws {
@@ -301,10 +333,108 @@ final class PaymentApprovalModelTests: XCTestCase {
         PaymentApprovalModel(client: client, authenticator: auth, now: { clock.date })
     }
 
+    /// The page card, then the person's tap on "Check the price": the terms are on screen.
     private func ready(_ client: PaymentsFakeClient, _ auth: PaymentsFakeAuthenticator, _ clock: TestClock = TestClock(startOfDay)) async -> PaymentApprovalModel {
         let model = make(client, auth, clock)
         await model.start(url: page)
+        await model.checkPrice()
         return model
+    }
+
+    func testThePageIsNotReadBeforeThePersonSaysYesToIt() async throws {
+        let client = try PaymentsFakeClient()
+        let auth = PaymentsFakeAuthenticator()
+        let model = make(client, auth)
+        await model.start(url: page)
+        guard case .awaitingPageApproval(let card) = model.phase else { return XCTFail("\(model.phase)") }
+        XCTAssertEqual(model.pageCard, card)
+        XCTAssertEqual(card.page.path, "/articles/42")
+        XCTAssertEqual(client.pageCalls, [page])
+        XCTAssertTrue(client.prepareCalls.isEmpty, "nothing asks the server to read the page before the tap")
+        XCTAssertTrue(client.payCalls.isEmpty)
+        XCTAssertTrue(auth.reasons.isEmpty, "reading a price needs no Face ID")
+        XCTAssertEqual(model.secondsLeft(), 90)
+        XCTAssertTrue(model.canDismiss)
+        XCTAssertNil(model.prepared)
+
+        await model.approve() // the pay button isn't there yet
+        XCTAssertTrue(client.payCalls.isEmpty)
+
+        await model.checkPrice()
+        XCTAssertEqual(client.prepareCalls.count, 1)
+        XCTAssertEqual(client.prepareCalls.first?.url, page)
+        XCTAssertEqual(client.prepareCalls.first?.approvalId, card.approvalId, "the page card's own approval, for that page")
+        guard case .awaitingApproval = model.phase else { return XCTFail("\(model.phase)") }
+        XCTAssertNil(model.pageCard)
+    }
+
+    func testClosingThePageCardReadsNothing() async throws {
+        let client = try PaymentsFakeClient()
+        let model = make(client, PaymentsFakeAuthenticator())
+        await model.start(url: page)
+        async let waiting = model.outcome()
+        model.dismiss()
+        let result = await waiting
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertEqual(model.phase, .idle)
+        await model.checkPrice()
+        XCTAssertTrue(client.prepareCalls.isEmpty)
+    }
+
+    func testAnExpiredPageApprovalReadsNothing() async throws {
+        let client = try PaymentsFakeClient()
+        let clock = TestClock(startOfDay)
+        let model = make(client, PaymentsFakeAuthenticator(), clock)
+        await model.start(url: page)
+        clock.date = PaymentTime.parse(afterExpiry)!
+        XCTAssertEqual(model.secondsLeft(), 0)
+        await model.checkPrice()
+        XCTAssertTrue(client.prepareCalls.isEmpty)
+        guard case .failed(let message, _) = model.phase else { return XCTFail("\(model.phase)") }
+        XCTAssertTrue(message.contains("Nothing was read or paid"))
+    }
+
+    func testTwoQuickTapsOnThePageCardReadItOnce() async throws {
+        let client = try PaymentsFakeClient()
+        let model = make(client, PaymentsFakeAuthenticator())
+        await model.start(url: page)
+        let seen = Observed()
+        client.duringPrepare = {
+            await MainActor.run {
+                seen.phase = model.phase
+                seen.busy = model.isBusy
+                seen.canDismiss = model.canDismiss
+            }
+        }
+        async let first: Void = model.checkPrice()
+        async let second: Void = model.checkPrice()
+        _ = await (first, second)
+        XCTAssertEqual(client.prepareCalls.count, 1)
+        guard case .preparing? = seen.phase else { return XCTFail("\(String(describing: seen.phase))") }
+        XCTAssertEqual(seen.busy, true)
+        XCTAssertEqual(seen.canDismiss, false)
+    }
+
+    func testARefusedPageCardIsAFailureThatReadNothing() async throws {
+        let client = try PaymentsFakeClient()
+        client.pageResult = .failure(try serverError("error-no-wallet"))
+        let model = make(client, PaymentsFakeAuthenticator())
+        await model.start(url: page)
+        guard case .failed(let message, let receipt) = model.phase else { return XCTFail("\(model.phase)") }
+        XCTAssertEqual(message, "No payment wallet is set up on this server.")
+        XCTAssertEqual(receipt?.status, .blocked)
+        XCTAssertTrue(client.prepareCalls.isEmpty)
+        guard case .failed = await model.outcome() else { return XCTFail("known at once") }
+    }
+
+    func testAPriceReadThatFailsPaidNothing() async throws {
+        for failure in [PaymentsError.transport("URLError"), try serverError("error-read-not-approved")] {
+            let client = try PaymentsFakeClient()
+            client.prepareResult = .failure(failure)
+            let model = await ready(client, PaymentsFakeAuthenticator())
+            guard case .failed = model.phase else { return XCTFail("\(failure): \(model.phase)") }
+            XCTAssertTrue(client.payCalls.isEmpty)
+        }
     }
 
     func testNothingIsAskedOrPaidBeforeThePersonApproves() async throws {
@@ -313,7 +443,8 @@ final class PaymentApprovalModelTests: XCTestCase {
         let model = await ready(client, auth)
         guard case .awaitingApproval(let prepared) = model.phase else { return XCTFail("\(model.phase)") }
         XCTAssertEqual(prepared.preview.confirmLabel, "Pay 0.05 USDC")
-        XCTAssertEqual(client.prepareCalls, [page])
+        XCTAssertEqual(client.pageCalls, [page])
+        XCTAssertEqual(client.prepareCalls.map(\.url), [page])
         XCTAssertTrue(client.payCalls.isEmpty)
         XCTAssertTrue(auth.reasons.isEmpty)
         XCTAssertEqual(model.secondsLeft(), 90)
@@ -342,6 +473,7 @@ final class PaymentApprovalModelTests: XCTestCase {
         await model.approve()
         model.finish()
         await model.start(url: page)
+        await model.checkPrice()
         await model.approve()
         XCTAssertEqual(auth.reasons.count, 2, "no remembered yes")
         XCTAssertEqual(client.payCalls.count, 2)
@@ -624,6 +756,7 @@ final class PaymentApprovalModelTests: XCTestCase {
         XCTAssertTrue(client.payCalls.isEmpty)
 
         await model.start(url: page)
+        await model.checkPrice()
         await model.approve()
         guard case .paid = model.phase else { return XCTFail("\(model.phase)") }
         model.dismiss()
@@ -647,13 +780,15 @@ final class PaymentApprovalModelTests: XCTestCase {
         let model = make(client, PaymentsFakeAuthenticator())
         await model.start(url: "   ")
         guard case .failed = model.phase else { return XCTFail("\(model.phase)") }
-        XCTAssertTrue(client.prepareCalls.isEmpty)
+        XCTAssertTrue(client.pageCalls.isEmpty)
         model.finish()
 
         await model.start(url: "  \(page)  ")
-        XCTAssertEqual(client.prepareCalls, [page], "the address is trimmed")
+        XCTAssertEqual(client.pageCalls, [page], "the address is trimmed")
         await model.start(url: "https://other.example/x")
-        XCTAssertEqual(client.prepareCalls.count, 1, "a second start while a card is up is ignored")
+        XCTAssertEqual(client.pageCalls.count, 1, "a second start while a card is up is ignored")
+        await model.checkPrice()
+        XCTAssertEqual(client.prepareCalls.map(\.url), [page], "the price is read at the page the card showed")
     }
 
     func testWithoutAServerThePaymentSaysSo() async {

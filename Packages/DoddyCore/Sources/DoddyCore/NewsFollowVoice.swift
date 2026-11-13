@@ -1,7 +1,7 @@
 import Foundation
 
 // "Śledź CPK" by voice (ADR-657; owner, 28 Oct 2026: "Ma umieć tak"). One tool, follow_news, that
-// adds a follow to Following (ADR-656) on this iPhone. ASK-01: a change, so a card and a tap; the
+// adds a follow to On my radar (ADR-656; named Following until 10 Nov 2026) on this iPhone. ASK-01: a change, so a card and a tap; the
 // follow is written only after the tap and said only once it is read back from the list. Doddy's
 // own feature on this iPhone, no other app or account, so it sits outside Pause all, like the
 // stopwatch. What the voice hears back is the follow's name, never a story.
@@ -10,6 +10,16 @@ import Foundation
 
 extension VoiceToolName {
     public static let followNews = "follow_news"
+}
+
+/// On my radar as the app names it (Polish "Na radarze"; "Following" / "Śledzone" until 10 Nov 2026) and where it is.
+public enum RadarScreen {
+    public static func name(polish: Bool) -> String { polish ? "Na radarze" : "On my radar" }
+
+    /// "On my radar (Home › •••)" / "„Na radarze” (ekran główny › •••)".
+    public static func whereItIs(polish: Bool) -> String {
+        polish ? "„Na radarze” (ekran główny › •••)" : "On my radar (Home › •••)"
+    }
 }
 
 /// What the person asked to follow, before the screen's language gives a topic its name.
@@ -73,13 +83,13 @@ public indirect enum NewsFollowAsk: Equatable, Sendable {
             let alertLine = RadarAlert(followID: "", words: alert.words, how: alert.how, dailyTime: alert.dailyTime).summary(polish: polish)
             return inner.cardLines(polish: polish) + [alertLine]
         case (.topic(let id), false):
-            return ["Topic: \(Self.topicName(id, polish: false) ?? id)", "Stories show in Following, in Home's menu"]
+            return ["Topic: \(Self.topicName(id, polish: false) ?? id)", "Stories show in \(RadarScreen.whereItIs(polish: false))"]
         case (.topic(let id), true):
-            return ["Temat: \(Self.topicName(id, polish: true) ?? id)", "Artykuły pojawią się w Śledzonych, w menu ekranu głównego"]
+            return ["Temat: \(Self.topicName(id, polish: true) ?? id)", "Artykuły pojawią się w \(RadarScreen.whereItIs(polish: true))"]
         case (.words(let name, let keywords), false):
-            return ["“\(name)”", "Stories with: \(keywords.joined(separator: ", "))", "Shown in Following, in Home's menu"]
+            return ["“\(name)”", "Stories with: \(keywords.joined(separator: ", "))", "Shown in \(RadarScreen.whereItIs(polish: false))"]
         case (.words(let name, let keywords), true):
-            return ["„\(name)”", "Artykuły ze słowami: \(keywords.joined(separator: ", "))", "W Śledzonych, w menu ekranu głównego"]
+            return ["„\(name)”", "Artykuły ze słowami: \(keywords.joined(separator: ", "))", "W \(RadarScreen.whereItIs(polish: true))"]
         }
     }
 
@@ -205,25 +215,32 @@ extension VoiceToolReply {
             switch kept.how {
             case .instant: how = "Doddy's server checks and sends a notification when a story mentions the words"
             case .daily: how = "Doddy's server sends one summary a day at \(kept.dailyTime)"
-            case .app: how = "stories that mention the words get a flag in Following; no notification is sent"
+            case .app: how = "stories that mention the words get a flag on On my radar; no notification is sent"
             }
             return base + "\nalert kept: " + how + ". Never promise a time or a story."
         case (.added, .hereOnly(let reason)), (.alreadyFollowing, .hereOnly(let reason)):
-            return base + "\nalert not on the server: it shows in Following on this iPhone only (" + reason + "). Say so in one short sentence; never say it will notify."
+            return base + "\nalert not on the server: it shows on On my radar on this iPhone only (" + reason + "). Say so in one short sentence; never say it will notify."
         default:
             return base
         }
     }
 
+    /// Where the screen is, for the voice. The app shows it as "On my radar", in Polish "Na radarze" (it was "Following"
+    /// until 10 Nov 2026), so the agent names it as the person sees it in either language.
+    static let radarForVoice = "the On my radar screen (in Polish \"Na radarze\"; Home, the ••• menu, then On my radar)"
+
     public static func newsFollow(_ outcome: NewsFollowOutcome) -> String {
         switch outcome {
         case .added(let follow):
-            "added: now following this in Following (Home's menu, then Following). Its stories show there; nothing is sent to the user. Name:\n"
+            // The next step is said, not done (owner's review, 12 Nov 2026): no voice tool opens a screen, so Doddy says
+            // where to look and never that he opened it.
+            "added: now on the user's radar, kept on this iPhone. Its stories show on \(radarForVoice); nothing is sent to the user. "
+                + "Next step to offer in the same short sentence: they can look there now. Never promise a story; you can't open the screen for them, so never say you did. Name:\n"
                 + ToolData.block([quoted("Name", follow.label)])
         case .alreadyFollowing(let follow):
-            "failed: the user already follows this. Nothing changed. Name:\n" + ToolData.block([quoted("Name", follow.label)])
+            "failed: the user already follows this on \(radarForVoice). Nothing changed. Name:\n" + ToolData.block([quoted("Name", follow.label)])
         case .full:
-            "failed: the user already follows \(NewsFollowList.maxFollows) things, the most there can be. Nothing was added. They can remove one in Following, Edit."
+            "failed: the user already follows \(NewsFollowList.maxFollows) things, the most there can be. Nothing was added. They can remove one on \(radarForVoice), with Edit."
         case .notKept:
             "failed: the follow couldn't be kept on this iPhone. Nothing was added. Say so in one short sentence."
         }

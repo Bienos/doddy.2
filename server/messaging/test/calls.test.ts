@@ -158,6 +158,31 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await report("CAnobody", "completed")).statusCode, 204);
   });
 
+  test("inbound calls are capped per account and for the server per day; a refused call hears why and leaves no row", async () => {
+    await db.query("DELETE FROM server_daily_usage WHERE feature = 'inbound_calls'");
+    const capped = await testApp(db, { limits: { accountsPerIpDay: 100_000, inboundCallsPerAccountDay: 2, inboundCallsPerServerDay: 3 } });
+    const on = { app: capped.app, registrar: capped.registrar };
+    const a = await user("+48500000060", { pin: "258025", inbound: true });
+    const b = await user("+48500000061", { pin: "258025", inbound: true });
+    const rows = async (accountId: string) =>
+      Number((await db.query("SELECT count(*) AS n FROM calls WHERE account_id = $1", [accountId])).rows[0].n);
+
+    assert.equal((await dial("+48500000060", on)).twiml, CONNECT_TWIML);
+    assert.equal((await dial("+48500000060", on)).twiml, CONNECT_TWIML);
+    const third = await dial("+48500000060", on);
+    assert.match(third.twiml, /Na dziś to już limit rozmów.*That's the limit of calls for today/s);
+    assert.equal(third.agent, undefined, "the phone agent is never asked");
+    assert.equal(await rows(a.accountId), 2);
+
+    // The account's cap refused the third without using the server's day: one slot is left, for b.
+    assert.equal((await dial("+48500000061", on)).twiml, CONNECT_TWIML);
+    const full = await dial("+48500000061", on);
+    assert.match(full.twiml, /That's the limit of calls for today/);
+    assert.equal(full.agent, undefined);
+    assert.equal(await rows(b.accountId), 1);
+    await capped.app.close();
+  });
+
   test("inbound: memories only after the right PIN; wrong PINs lock", async () => {
     const owner = await user("+48500000003", { pin: "258025", inbound: true, memories: ["Klucze do piwnicy są u pani Łucji", "Dentist on Tuesday at 15:00"] });
     const v = await ring("+48500000003");

@@ -9,7 +9,8 @@ struct ServerHTTPTransport: ServerTransport {
     /// Server origin, e.g. `https://doddy-messaging.onrender.com`.
     let baseURL: URL
 
-    private final class RefuseRedirects: NSObject, URLSessionTaskDelegate, Sendable {
+    /// Also used by the voice token client (`VoiceTokenClient`, `VoiceAuthAPI`), whose requests carry a token too.
+    final class RefuseRedirects: NSObject, URLSessionTaskDelegate, Sendable {
         func urlSession(
             _ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
             newRequest request: URLRequest

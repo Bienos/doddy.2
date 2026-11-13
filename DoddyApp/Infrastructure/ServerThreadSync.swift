@@ -7,11 +7,18 @@ import Foundation
 ///
 /// Compiled in hosted CI (#195), NOT RUN on a device; the client and the snapshot are tested in DoddyCore.
 struct ServerThreadSync: ThreadSyncClient {
+    /// Only to the account that owns this iPhone's thread (decision 2026-11-12-local-data-owner): with another
+    /// account's messages here, or nobody signed in, nothing is sent. `MessagesModel.syncToWeb` ignores the error,
+    /// as it does any failed send.
     func send(_ snapshot: ThreadSync.Snapshot) async throws(WebLinkError) {
+        guard await DoddyAccountServers.mayUploadLocalData else { throw .notConfigured }
         try await withClient { client throws(WebLinkError) in try await client.send(snapshot) }
     }
 
+    /// With another account's thread on this iPhone, the signed-in account's web copy isn't this thread's copy
+    /// (nothing of it was sent there), so deleting this thread leaves it alone: "no copy" (`.notConfigured`).
     func deleteAll() async throws(WebLinkError) {
+        guard await DoddyAccountServers.localDataUpload() != .otherAccount else { throw .notConfigured }
         try await withClient { client throws(WebLinkError) in try await client.deleteAll() }
     }
 

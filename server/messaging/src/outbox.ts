@@ -241,14 +241,16 @@ function openBody(cipher: TextCipher | undefined, row: ClaimedRow): string | und
 
 /**
  * What a tap on this push should open, from the key it was queued under (the call worker queues
- * `call-result:<attempt>`, the errand worker `errand-result:<id>`, the file watch `file-watch:<id>`). A kind
- * only: the attempt, the task, the file and the words stay on the server and in the app. A finished task or
- * file opens Messages, where Doddy's message about it is (owner, 10 Nov 2026).
+ * `call-result:<attempt>`, the errand worker `errand-result:<id>`, the file watch `file-watch:<id>`, the radar
+ * `radar:<alert>:<story>`). A kind only: the attempt, the task, the file, the follow, the story and the words stay
+ * on the server and in the app. A finished task or file opens Messages, where Doddy's message about it is (owner,
+ * 10 Nov 2026); a radar story opens On my radar, where "Doddy spotted" lists it (decision 2026-11-13-radar-fixes).
  */
 export function pushData(idempotencyKey: string | undefined): PushData | undefined {
   if (idempotencyKey?.startsWith("call-result:")) return { kind: "call-result" };
   if (idempotencyKey?.startsWith("errand-result:")) return { kind: "errand-result" };
   if (idempotencyKey?.startsWith("file-watch:")) return { kind: "file-ready" };
+  if (idempotencyKey?.startsWith("radar:")) return { kind: "radar" };
   return undefined;
 }
 

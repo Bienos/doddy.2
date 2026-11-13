@@ -57,7 +57,7 @@ struct NewsSettingsView: View {
                 .foregroundStyle(Theme.secondaryText)
         }
 
-        Section("Topics") {
+        Section {
             ForEach(model.catalog) { topic in
                 Button {
                     model.toggleCatalog(topic.id)
@@ -72,6 +72,12 @@ struct NewsSettingsView: View {
                 }
                 .accessibilityAddTraits(model.selectedCatalog.contains(topic.id) ? .isSelected : [])
             }
+        } header: {
+            Text("Topics")
+        } footer: {
+            // Owner's review, 12 Nov 2026: "Wiadomości dnia" is a second set of topics. Said plainly until the two are
+            // one list (proposal: decision 2026-11-13-radar-fixes).
+            Text("These topics are only for the daily message. What you follow in On my radar (Home › •••) is a separate list.")
         }
 
         Section {

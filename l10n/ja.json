@@ -467,7 +467,8 @@
   "Moved %lld to tomorrow. %lld couldn't be moved (changed in Reminders, or the time doesn't exist tomorrow); check them there.": "%lld件を明日に移しました。%lld件は移せませんでした（リマインダーで変更されたか、明日にはその時刻がありません）。リマインダーで確認してください。",
   "Moved %lld to tomorrow. Checked in Reminders.": "%lld件を明日に移しました。リマインダーで確認済みです。",
   "Music": "ミュージック",
-  "Mute or unmute Doddy": "Doddyの消音／消音解除",
+  "Mute Doddy": "Doddyを消音",
+  "Unmute Doddy": "Doddyの消音を解除",
   "My feeds": "マイフィード",
   "My own topics": "自分のトピック",
   "Name": "名前",
@@ -1205,5 +1206,6 @@
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "会話はこのiPhoneから削除されましたが、Doddy Web用のコピーが削除されたことをDoddyのサーバーが確認していません。確認されるまでWebにまだ表示されることがあります。",
   "Food": "フード",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "アプリがあればアプリを、なければウェブサイトを開きます。Doddyは注文を見ることも、注文することもしません。",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。"
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。",
+  "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads. Logbook counts how you use Doddy, never your words; its row below says where the counts go.": "現在の設定に基づいて、あなたの情報がどこへ行くかを示します。何も販売されず、広告もありません。Logbookは、あなたの言葉ではなく、Doddyをどう使ったかの回数だけを数えます。その回数がどこへ行くかは、下のLogbookの行に書かれています。"
 }

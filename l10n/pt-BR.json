@@ -467,7 +467,8 @@
   "Moved %lld to tomorrow. %lld couldn't be moved (changed in Reminders, or the time doesn't exist tomorrow); check them there.": "%lld movidos para amanhã. %lld não puderam ser movidos (alterados no Lembretes, ou o horário não existe amanhã); verifique lá.",
   "Moved %lld to tomorrow. Checked in Reminders.": "%lld movidos para amanhã. Verificado no Lembretes.",
   "Music": "Música",
-  "Mute or unmute Doddy": "Silenciar ou reativar o som do Doddy",
+  "Mute Doddy": "Silenciar o Doddy",
+  "Unmute Doddy": "Reativar o som do Doddy",
   "My feeds": "Meus feeds",
   "My own topics": "Meus tópicos",
   "Name": "Nome",
@@ -1205,5 +1206,6 @@
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "A conversa saiu deste iPhone, mas o servidor do Doddy não confirmou que a cópia dela para o Doddy Web foi apagada. Ela ainda pode aparecer na web até que seja.",
   "Food": "Comida",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "Abre o app, se você tiver, ou o site. O Doddy não vê nem faz o pedido.",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vale a partir da sua próxima conversa por voz. “Começa em” define o idioma em que o Doddy cumprimenta você; em Automático, ele começa em inglês. De qualquer forma, ele acompanha o idioma europeu que você falar e troca quando você troca."
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "Vale a partir da sua próxima conversa por voz. “Começa em” define o idioma em que o Doddy cumprimenta você; em Automático, ele começa em inglês. De qualquer forma, ele acompanha o idioma europeu que você falar e troca quando você troca.",
+  "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads. Logbook counts how you use Doddy, never your words; its row below says where the counts go.": "Para onde suas informações vão, com base nos seus ajustes de agora. Nada é vendido, e não há anúncios. O Logbook conta como você usa o Doddy, nunca suas palavras; a linha dele abaixo diz para onde vão as contagens."
 }

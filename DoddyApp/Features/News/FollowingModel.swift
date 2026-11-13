@@ -67,6 +67,10 @@ final class FollowingModel {
     /// What Doddy's server checks for this account and what it found; nil until asked.
     private(set) var radar: RadarServerState?
 
+    /// Whether Doddy's server checks follows, from its own last answer only (decision 2026-11-13-radar-fixes): "Tell me…"
+    /// and the server's ways of telling are offered only when it said yes.
+    var alertsAvailability: RadarAlertsAvailability { RadarAlertsAvailability(radar) }
+
     nonisolated static var polish: Bool { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish }
     var language: String { Self.polish ? "pl" : "en" }
 
@@ -280,13 +284,12 @@ final class FollowingModel {
         return UpdatesModel.text(for: error)
     }
 
-    /// Asks the server what it checks and what it found. A change that didn't reach it earlier is sent first.
+    /// Asks the server what it checks and what it found. A change that didn't reach it earlier is sent first; if the
+    /// server refused it (for example because it checks nothing yet), it is still asked what it holds, so the screen
+    /// knows whether to offer alerts at all (13 Nov 2026: before, a refused send left that unknown).
     func loadRadar() async {
         guard let backend else { return }
-        if defaults.bool(forKey: Self.needsSyncKey) {
-            await syncRadar()
-            return
-        }
+        if defaults.bool(forKey: Self.needsSyncKey), await syncRadar() { return }
         if let state = try? await backend.radarState() { radar = state }
     }
 

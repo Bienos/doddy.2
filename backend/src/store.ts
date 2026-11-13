@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { ConnectionReason, ConnectionStatus, Receipt } from "./contracts.js";
-import { type Database, type DatabaseOptions, openDatabase, type Queryable } from "./db.js";
+import { type Database, type DatabaseOptions, openDatabase, type Queryable, SCHEMA } from "./db.js";
 import { AppError } from "./errors.js";
 import { requestCredential } from "./requestCredential.js";
 
@@ -472,6 +472,51 @@ export const SCHEMA_SQL = `
 `;
 
 /**
+ * Row level security on the backend's schema, and no use of it by Supabase's API roles (decision
+ * 2026-11-12-backend-schema-not-exposed). Run after SCHEMA_SQL on every start, in the same transaction,
+ * one whole statement each (the DO blocks hold semicolons, so they aren't split like SCHEMA_SQL):
+ * - every table in the schema that the backend's role owns gets row level security, with no policies
+ *   and NOT forced. A table's owner isn't held to it unless it is forced, so the backend (the owner:
+ *   `doddy_backend` on Supabase, `postgres` in PGlite) reads and writes as before; any other role that
+ *   isn't BYPASSRLS sees no rows. Only tables without it are altered, so a start after the first changes
+ *   nothing, and a table added later gets it at the next start;
+ * - `anon` and `authenticated`, where they exist (Supabase; not PGlite or a plain Postgres), lose what
+ *   they hold on the schema and its tables. On Supabase the schema is owned by `postgres`, so the backend's
+ *   role can take back only what it granted itself; a refused change is a notice, never a failed start.
+ */
+export const SCHEMA_GUARDS: readonly string[] = [
+  `DO $$
+  DECLARE t record;
+  BEGIN
+    FOR t IN
+      SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = '${SCHEMA}' AND c.relkind IN ('r', 'p') AND NOT c.relrowsecurity AND pg_has_role(c.relowner, 'USAGE')
+    LOOP
+      EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY', '${SCHEMA}', t.relname);
+    END LOOP;
+  END $$`,
+  `DO $$
+  DECLARE r text;
+  BEGIN
+    FOREACH r IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+      CONTINUE WHEN NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r);
+      IF has_schema_privilege(r, '${SCHEMA}', 'USAGE') OR has_schema_privilege(r, '${SCHEMA}', 'CREATE') THEN
+        EXECUTE format('REVOKE ALL ON SCHEMA %I FROM %I', '${SCHEMA}', r);
+      END IF;
+      IF EXISTS (
+        SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = '${SCHEMA}' AND c.relkind IN ('r', 'p')
+          AND has_table_privilege(r, c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+      ) THEN
+        EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA %I FROM %I', '${SCHEMA}', r);
+      END IF;
+    END LOOP;
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'privileges of the API roles on the backend schema left as they were';
+  END $$`,
+];
+
+/**
  * An Apple or Google sign-in linked to a Doddy account (ADR-818). `identity_id` is the Supabase Auth
  * user's UUID; one Supabase user belongs to at most one Doddy account.
  */
@@ -567,12 +612,13 @@ export class Store {
     await this.db.query("SELECT 1");
   }
 
-  /** Opens the database and makes sure every table exists. */
+  /** Opens the database and makes sure every table exists, with row level security on (SCHEMA_GUARDS). */
   static async open(options: DatabaseOptions): Promise<Store> {
     const db = await openDatabase(options);
     try {
       await db.transaction(async (tx) => {
         for (const statement of SCHEMA_SQL.split(";").map((s) => s.trim()).filter(Boolean)) await tx.query(statement);
+        for (const statement of SCHEMA_GUARDS) await tx.query(statement);
       });
     } catch (error) {
       await db.close().catch(() => {});

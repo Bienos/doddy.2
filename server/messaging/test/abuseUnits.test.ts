@@ -101,6 +101,19 @@ describe("abuse settings (ADR-702, ADR-704, ADR-705)", () => {
     }
   });
 
+  test("calls to Doddy's number and call-backs: safe defaults, each can be set, values out of range are refused", () => {
+    const pick = (c: ReturnType<typeof loadConfig>) => [c.limits.inboundCallsPerAccountDay, c.limits.inboundCallsPerServerDay,
+      c.limits.callbackRouteDays, c.limits.callbackForwardsPerRouteDay];
+    assert.deepEqual(pick(loadConfig(ENV)), [20, 200, 7, 3]);
+    assert.deepEqual(pick(loadConfig({
+      ...ENV, INBOUND_CALLS_DAILY_PER_ACCOUNT: "5", INBOUND_CALLS_DAILY_PER_SERVER: "50", CALLBACK_ROUTE_DAYS: "2", CALLBACK_FORWARDS_PER_ROUTE_DAY: "1",
+    })), [5, 50, 2, 1]);
+    for (const bad of [{ INBOUND_CALLS_DAILY_PER_ACCOUNT: "0" }, { INBOUND_CALLS_DAILY_PER_SERVER: "0" }, { INBOUND_CALLS_DAILY_PER_ACCOUNT: "2.5" },
+      { CALLBACK_ROUTE_DAYS: "0" }, { CALLBACK_ROUTE_DAYS: "91" }, { CALLBACK_FORWARDS_PER_ROUTE_DAY: "0" }, { CALLBACK_FORWARDS_PER_ROUTE_DAY: "21" }]) {
+      assert.throws(() => loadConfig({ ...ENV, ...bad }), JSON.stringify(bad));
+    }
+  });
+
   test("the errand research budget: finite by default, 0 means no limit only when set on purpose", () => {
     assert.deepEqual(loadConfig(ENV).errandSettings.budget, DEFAULT_RESEARCH_BUDGET);
     const unlimited = loadConfig({ ...ENV, ERRAND_MAX_SEARCHES: "0", ERRAND_MAX_FETCHES: "0", ERRAND_MAX_REQUESTS: "0", ERRAND_MAX_OUTPUT_TOKENS: "0" });

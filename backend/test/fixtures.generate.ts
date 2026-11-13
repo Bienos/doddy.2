@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { CAL, connectMock, harness, tomorrow } from "./helpers.js";
 import { connect, off as switchOff, on, ready, run as runTool, start as startRig } from "./toolsRig.js";
-import { enable as enablePay, pay as payPage, prepare as preparePay, startPay } from "./paymentsRig.js";
+import { enable as enablePay, pageCard, pay as payPage, prepare as preparePay, readPrice, startPay } from "./paymentsRig.js";
 
 /**
  * Regenerates contracts/connected-apps/*.json from the mock server (fixed clock), so the Swift
@@ -92,7 +92,10 @@ const writePay = (name: string, body: unknown) => writeFileSync(join(outPay, `${
 const p1 = await startPay();
 writePay("status-off", (await p1.call("GET", "/v1/payments")).body);
 writePay("switch-result-on", (await enablePay(p1)).body);
-const offer = await preparePay(p1);
+const card = await pageCard(p1);
+writePay("page-card", card.body);
+writePay("error-read-not-approved", (await readPrice(p1, "00000000-0000-4000-8000-000000000001")).body);
+const offer = await readPrice(p1, card.body.approvalId);
 writePay("prepared", offer.body);
 writePay("paid", (await payPage(p1, offer.body.approvalId)).body);
 writePay("error-fresh-confirmation", (await payPage(p1, offer.body.approvalId)).body);

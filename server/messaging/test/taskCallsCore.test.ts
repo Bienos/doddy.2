@@ -184,6 +184,15 @@ describe("payload", () => {
     assert.equal(JSON.stringify(p.agent).includes("Mokotów"), false);
   });
 
+  test("the goal stays on the card and is never sent to the agent: the call is about the question only", () => {
+    const p = compile({ goal: "Odebrać laptop przed wyjazdem do Gdańska w piątek." });
+    assert.equal(p.display.goal, "Odebrać laptop przed wyjazdem do Gdańska w piątek.");
+    assert.equal(previewOf(p, Buffer.alloc(32), new Date()).goal, "Odebrać laptop przed wyjazdem do Gdańska w piątek.");
+    // The live agent from before the change still names {{doddy_goal}}: it gets a fixed sentence, never the person's words.
+    assert.equal(p.agent.variables.doddy_goal, "Uzyskać odpowiedź na pytanie poniżej.");
+    assert.equal(JSON.stringify(p.agent).includes("Gdańsk"), false);
+  });
+
   test("ticking PESEL changes what may be said and what the card forbids", () => {
     const p = compile({ facts: [{ kind: "pesel", text: VALID_PESEL }] });
     assert.equal(p.agent.variables.doddy_facts, `- PESEL: ${VALID_PESEL}`);

@@ -378,7 +378,9 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     assert.equal(y.telephony.created.length, 1);
     await y.app.close();
 
-    // Same destination from two users within 15 minutes: the second is refused.
+    // Same destination from two users within 15 minutes: the second is refused. The user hears only that this number
+    // has been called enough for now, never that someone else called it: every per-number limit gives one code, and
+    // which one it was stays in the server's log.
     const x = await world();
     const a = await user(x);
     const b = await user(x);
@@ -387,7 +389,12 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const q = (await createCase(x, b.h, { callee: { name: "Serwis", phone: dest, source: "typed" } })).json();
     const refused = await api(x, "POST", `/v1/call-cases/${q.caseId}/approve`, b.h, { digest: q.digest });
     assert.equal(refused.statusCode, 409);
-    assert.deepEqual([refused.json().error, refused.json().gate], ["gate_refused", "limit_destination_gap"]);
+    assert.deepEqual([refused.json().error, refused.json().gate], ["gate_refused", "limit_destination"]);
+    assert.doesNotMatch(refused.body, /gap|day|recent/);
+    const { rows: stored } = await db.query("SELECT error_code FROM call_attempts WHERE id = $1", [refused.json().attemptId]);
+    assert.deepEqual(stored, [{ error_code: "limit_destination" }]);
+    assert.ok(x.logs.some((l) => l.msg === "task call limit" && (l.extra as { limit?: string }).limit === "limit_destination_gap"),
+      "the operator still sees which limit it was");
     assert.equal(x.telephony.created.length, 1);
     await x.app.close();
   });

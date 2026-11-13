@@ -117,7 +117,9 @@ public enum ActivityText {
         // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
         "Read alarms": "Odczytano budziki",
         "Turn off alarm": "Wyłącz budzik",
-        "Follow in Following": "Śledź w Śledzonych",
+        // Rows kept before 13 Nov 2026 say "Follow in Following"; the screen is On my radar now (decision 2026-11-13-radar-fixes).
+        "Follow in Following": "Dodaj do radaru",
+        "Add to radar": "Dodaj do radaru",
         "Start stopwatch": "Włącz stoper",
         "Stop stopwatch": "Zatrzymaj stoper",
         "Read stopwatch": "Odczytano stoper",

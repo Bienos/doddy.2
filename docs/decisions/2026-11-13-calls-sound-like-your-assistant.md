@@ -19,13 +19,13 @@ Dropping the AI disclosure entirely was not done:
 - **Unchanged:** every safety rule (no agreeing, no paying, only ticked facts, the fixed call-back line, the booking-confirm line said at most once, voicemail, automated menus, prompt injection, time limit).
 
 ## Consequences
-- Both prompts changed, so their hashes in `server/messaging/src/taskCalls/agentSpec.ts` changed. The server refuses to dial while the live agent's prompt differs (ADR-503), so **the live agents and the `doddy-messaging` deploy must be updated together**: until both are, task calls and booking calls are refused (fail closed), not made with a half-changed agent.
+- Both prompts changed, so their hashes in `server/messaging/src/taskCalls/agentSpec.ts` changed. Until the owner syncs the live agents, the server's drift check (ADR-503) still accepts the prompts that may be live: main's before 12 Nov and main's of 12 Nov (`SYNC_PENDING_PROMPTS`, texts in `server/messaging/test/fixtures/task-call-prompts/`). So deploying `doddy-messaging` doesn't stop calls; the calls just sound like the old prompt until the sync. Remove those entries once the live agents hold these prompts.
 - Legal wording ("asystent AI <imię>") is still not reviewed by a lawyer (`calls.md`, open question 3).
 
 ## Evidence
 - `python3 -I scripts/voice_agent_spec.py check --agent task-call` and `--agent task-call-book`: PASS.
-- `cd server/messaging && npm ci && npx tsc -p tsconfig.json && node --test --test-concurrency=1 dist/test/*.test.js`: 673 tests, 673 pass (suites that need `TEST_DATABASE_URL` skip themselves).
+- After merging main (13 Nov): `cd server/messaging && npm ci && npx tsc -p tsconfig.json && TEST_DATABASE_URL=<disposable Postgres> node --test --test-concurrency=1 dist/test/*.test.js`: 1129 tests, 1129 pass.
 - Not run: a real call; the live ElevenLabs agents were not read or changed.
 
 ## Owner step
-Update both live agents' prompts to these files (`node server/messaging/scripts/setup-task-call-agent.mjs --dry-run`, and `--agent book --dry-run`, print exactly what each agent should hold; the live ask agent and the booking agent `agent_9401m76my4d4fwbvvjf7b3b6tgrd` then get that prompt) and deploy `doddy-messaging` from `main` in the same sitting.
+Update both live agents' prompts to these files (`node server/messaging/scripts/setup-task-call-agent.mjs --dry-run`, and `--agent book --dry-run`, print exactly what each agent should hold; the live ask agent and the booking agent `agent_9401m76my4d4fwbvvjf7b3b6tgrd` then get that prompt) then delete the two `SYNC_PENDING_PROMPTS` entries in `agentSpec.ts`. The server deploy and the sync can happen in either order.

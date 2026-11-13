@@ -49,6 +49,13 @@ Generated files (string catalogs, site pages, blog, web assets, tokens) are neve
 last, because it translates the English pages that `build_blog.py` and `build_day.py` write; `scripts/test_regen.sh`
 (in the `checks` group) checks that.
 
+Privacy manifests: `scripts/check_privacy_manifest.sh` (in the `checks` group, through
+`scripts/test_check_privacy_manifest.sh`) checks each bundle's `PrivacyInfo.xcprivacy` against the Swift built into
+it: the app, and the widgets, Share and screen extensions, which link DoddyCore and so have manifests of their own.
+The app manifest's collected data types must equal DoddyCore's `DataFlow.collectedData`, which names the rows of
+"What leaves this iPhone" behind each type: `swift test --package-path Packages/DoddyCore --filter PrivacyManifestTests`
+(on Linux add the flags above). Change the list and the manifest together.
+
 Voice startup regression tests (no provider calls or microphone):
 `swift test --package-path Packages/DoddyCore --filter 'VoiceTokenSupplyTests|VoiceTokenShelfTests|VoiceStartTimelineTests|VoiceNetworkPreparationTests'`
 (on Linux add the same flags as `make test-core`). These cover an unfinished warm-up joined by a press,
@@ -87,7 +94,7 @@ swallows network failures; it cannot establish that a connection was prepared or
 
 Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
 `DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
-SQL files, 001 to 033 on 13 Nov 2026, in the `messaging` group). Renaming, reordering or removing a merged migration,
+SQL files, 001 to 035 on 13 Nov 2026, in the `messaging` group). Renaming, reordering or removing a merged migration,
 or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
 the same commit.
 

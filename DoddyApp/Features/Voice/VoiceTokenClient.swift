@@ -56,12 +56,16 @@ struct VoiceTokenClient: Sendable {
         let session = URLSession(configuration: .ephemeral)
         defer { session.finishTasksAndInvalidate() }
         do {
-            (data, response) = try await session.data(for: request)
+            // Redirects are refused, as for the messaging server, so the bearer token never follows one
+            // (decision 2026-11-12-local-data-owner).
+            (data, response) = try await session.data(for: request, delegate: ServerHTTPTransport.RefuseRedirects())
         } catch {
             // Only a missing or lost connection is "offline"; a cancelled request, a timeout and a
             // refused secure connection each say what happened (ADR-681).
             throw VoiceTokenServer.loadingFailure(error)
         }
+        // An answer from any other address than the one asked isn't read.
+        guard BearerHost.answered(response.url, sameAs: endpoint) else { throw .badResponse }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         // A refused account token says nothing about the voice session, so that one is left alone.
         if status == 401, accountToken == nil { await VoiceAuthSession.shared.serverRejectedSession() }
@@ -124,8 +128,11 @@ actor VoiceAuthAPI {
         let (data, response): (Data, URLResponse)
         let session = URLSession(configuration: .ephemeral)
         defer { session.finishTasksAndInvalidate() }
-        do { (data, response) = try await session.data(for: request) }
+        // Redirects refused and the answer read only from the address asked, as for the token above
+        // (decision 2026-11-12-local-data-owner): these requests carry a session or account token.
+        do { (data, response) = try await session.data(for: request, delegate: ServerHTTPTransport.RefuseRedirects()) }
         catch { throw VoiceAuthFailure.offline }
+        guard BearerHost.answered(response.url, sameAs: endpoint) else { throw VoiceAuthFailure.badResponse }
         guard let status = (response as? HTTPURLResponse)?.statusCode else { throw VoiceAuthFailure.badResponse }
         guard (200..<300).contains(status) else {
             // A 429 on a sign-in is the server's limit per caller address, not Apple's token failing to
