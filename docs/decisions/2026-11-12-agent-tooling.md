@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-12
 - **Decided by:** proposal, owner approval pending. Agent configuration is the owner's decision.
-- **Status:** proposed — waiting for the owner. No file under `.claude/` or `.agents/` and no connector is changed by this file.
+- **Status:** item 1 (the Composio skill) decided and done on 13 Nov 2026: removed, as recommended (the owner asked for the recommendations to be followed). Items 2 and 3 (read-only console access, and how it is enforced) are still proposed — waiting for the owner. No connector is changed by this file.
 - **Replaces:** nothing. Applies the rule in `CLAUDE.md` ("Prompts describe rules; code enforces them") to the agents that work on this repository.
 
 ## Why
@@ -25,7 +25,7 @@
 3. **Console work the owner asks for** (a deploy, a setting, an agent sync) runs in a session the owner opens for that purpose, with write access, and records what it did as today (`voice-agent/README.md`, `docs/OWNER_QUEUE.md`).
 
 ## What the owner decides
-1. The Composio skill: remove (proposed) or pin.
+1. ~~The Composio skill: remove (proposed) or pin.~~ **Removed (13 Nov 2026).** `.claude/skills/composio`, `.agents/skills/composio/` and its entry in `skills-lock.json` are deleted; someone who needs the skill installs it in their own session. The check against lines that pipe a download into a shell is left for a pull request of its own.
 2. Yes or no to read-only console access for routine sessions, and for which consoles.
 3. How it is enforced: read-only credentials in the consoles, deny rules checked into `.claude/settings.json` (they apply to every session opened in this repository, the owner's included), or the owner's connector settings per session.
 4. Yes or no to the CI check against pipe-to-shell lines.
