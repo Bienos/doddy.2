@@ -23,7 +23,9 @@ services:
     rootDir: backend
     # Also builds Doddy Web (web/, ADR-600), which this service serves on its own origin. The live
     # service was made by hand: its build command has to be changed the same way in the dashboard.
-    buildCommand: npm ci && npm run build && npm ci --prefix ../web && npm run build --prefix ../web
+    # The server's install skips package scripts (--ignore-scripts): none of its locked packages has
+    # one. The web install keeps them: its build tool, esbuild, ships an install script.
+    buildCommand: npm ci --ignore-scripts && npm run build && npm ci --prefix ../web && npm run build --prefix ../web
     startCommand: node dist/src/server.js
     healthCheckPath: /v1/health
     autoDeploy: false
@@ -156,7 +158,9 @@ services:
     plan: starter
     rootDir: server/messaging
     # --include=dev: with NODE_ENV=production npm ci would leave out TypeScript, which the build needs.
-    buildCommand: npm ci --include=dev && npm run build
+    # --ignore-scripts: none of its locked packages has an install script, so none is needed. A
+    # dependency that adds one needs this removed (the build would still pass, the package would not be set up).
+    buildCommand: npm ci --include=dev --ignore-scripts && npm run build
     startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: false
@@ -274,7 +278,8 @@ services:
     plan: starter
     rootDir: server/messaging
     # --include=dev: with NODE_ENV=production npm ci would leave out TypeScript, which the build needs.
-    buildCommand: npm ci --include=dev && npm run build
+    # --ignore-scripts: as doddy-messaging (no locked package has an install script).
+    buildCommand: npm ci --include=dev --ignore-scripts && npm run build
     startCommand: npm run worker
     autoDeploy: false
     envVars:

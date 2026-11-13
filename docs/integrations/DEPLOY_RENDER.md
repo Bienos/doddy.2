@@ -102,7 +102,7 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    access to `Bienos/doddy.2` (Account Settings → Git Providers), or the repo cannot be fetched. Do **not** use
    New → Blueprint: `render.yaml` also creates the paid messaging services and Postgres.
    * Name `doddy`, region Frankfurt, plan Free, root directory `backend`
-   * Build `npm ci && npm run build`, start `node dist/src/server.js`, health check path `/v1/health`
+   * Build `npm ci --ignore-scripts && npm run build`, start `node dist/src/server.js`, health check path `/v1/health` (`render.yaml` has the full build line, which also builds Doddy Web)
 2. Environment (Render → service → Environment). Type the secrets **there**, never in chat or git:
 
    | Key | Value |
