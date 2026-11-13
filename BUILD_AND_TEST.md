@@ -49,6 +49,13 @@ Generated files (string catalogs, site pages, blog, web assets, tokens) are neve
 last, because it translates the English pages that `build_blog.py` and `build_day.py` write; `scripts/test_regen.sh`
 (in the `checks` group) checks that.
 
+Privacy manifests: `scripts/check_privacy_manifest.sh` (in the `checks` group, through
+`scripts/test_check_privacy_manifest.sh`) checks each bundle's `PrivacyInfo.xcprivacy` against the Swift built into
+it: the app, and the widgets, Share and screen extensions, which link DoddyCore and so have manifests of their own.
+The app manifest's collected data types must equal DoddyCore's `DataFlow.collectedData`, which names the rows of
+"What leaves this iPhone" behind each type: `swift test --package-path Packages/DoddyCore --filter PrivacyManifestTests`
+(on Linux add the flags above). Change the list and the manifest together.
+
 Voice startup regression tests (no provider calls or microphone):
 `swift test --package-path Packages/DoddyCore --filter 'VoiceTokenSupplyTests|VoiceTokenShelfTests|VoiceStartTimelineTests|VoiceNetworkPreparationTests'`
 (on Linux add the same flags as `make test-core`). These cover an unfinished warm-up joined by a press,

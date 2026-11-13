@@ -360,6 +360,9 @@ final class VoiceSessionController {
     private(set) var accountMessage: String?
     /// ADR-564: files Claude is making in this conversation, newest first. Each opens by its link.
     private(set) var documents: [RunDocument] = []
+    /// What each file in `documents` is about, by its link: the request the agent gave `make_document`
+    /// (`ThreadDelivery.madeFileBrief`). In memory only, like `documents`.
+    private(set) var documentBriefs: [URL: String] = [:]
     /// find_flights: the latest search's flights on Kiwi.com, as buttons (never read out by the agent).
     private(set) var flightLinks: [RunLink] = []
     private(set) var isMuted = false {
@@ -3810,7 +3813,7 @@ final class VoiceSessionController {
                 // single-use approval is still made for exactly these words and used straight away.
                 let prepared = try await client.prepare(cloud)
                 let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
-                await keepMadeDocument(result)
+                await keepMadeDocument(result, from: cloud)
                 keepFlightLinks(result)
                 await reply(toolCallID, VoiceToolReply.cloudResult(result))
             } else {
@@ -3839,7 +3842,7 @@ final class VoiceSessionController {
         }
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
-            await keepMadeDocument(result)
+            await keepMadeDocument(result, from: cloud)
             await reply(toolCallID, VoiceToolReply.cloudResult(result))
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
@@ -3852,9 +3855,12 @@ final class VoiceSessionController {
         flightLinks = (result.links ?? []).filter(\.isKiwi)
     }
 
-    /// ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
-    private func keepMadeDocument(_ result: RunResult) async {
+    /// ADR-564: a file Claude is making gets a button on screen; the agent never gets its link. Its card and its
+    /// message in Messages say what it is about: what the agent asked the server for (owner review, 13 Nov 2026).
+    private func keepMadeDocument(_ result: RunResult, from call: CloudToolCall) async {
         guard let document = result.document else { return }
+        let about = ThreadDelivery.madeFileBrief(of: call)
+        if let about { documentBriefs[document.url] = about }
         documents.insert(document, at: 0)
         // ADR-616: "ready" only when the server says the file is ready.
         switch document.status {
@@ -3867,7 +3873,7 @@ final class VoiceSessionController {
         }
         // Also Doddy's own message in Messages, with the file to open and share from (owner, 10 Nov 2026).
         // A private conversation keeps nothing on this iPhone, so it adds nothing there either.
-        if !isPrivate { await ThreadInbox.deliver(document: document, polish: Self.cardsInPolish) }
+        if !isPrivate { await ThreadInbox.deliver(document: document, about: about, polish: Self.cardsInPolish) }
     }
 
     /// ADR-563: what the agent hears when a server tool fails. An account that isn't connected gets

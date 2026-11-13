@@ -75,9 +75,10 @@ const call = async (method: string, path: string, body?: unknown) => {
   return { status: res.status, body: (await res.json()) as any };
 };
 
-test("health says live", async () => {
+test("the server says live to a signed-in caller; health says only ok", async () => {
+  assert.deepEqual((await call("GET", "/v1/server")).body, { mode: "live" });
   const res = await fetch(`${url}/v1/health`);
-  assert.equal(((await res.json()) as any).mode, "live");
+  assert.deepEqual(await res.json(), { status: "ok" });
 });
 
 test("accounts are not set up; web search is ready and runs against Monid", async () => {

@@ -120,8 +120,10 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    | `MONID_API_KEY` | **secret**: app.monid.ai → Access → API keys (`monid_live_…`) |
 
    Leave every `COMPOSIO_*` variable out (all of them, or all three Calendar ones plus a toolkit pair later).
-3. Deploy. `GET https://<service>/v1/health` should answer `"mode":"live"`. If the server refuses to start, the
-   log names the variable (never its value).
+3. Deploy. `GET https://<service>/v1/health` should answer `{"status":"ok"}` (since 12 Nov 2026 it says nothing
+   else), and the start log's `listening` line should say `"mode":"live"` and name the running `commit`. With a phone
+   token, `GET /v1/server` answers `{"mode":"live"}`. If the server refuses to start, the log names the variable
+   (never its value).
 4. Mint a phone token with the **same** signing key, on your computer:
    `cd backend && npm ci && npm run build && DODDY_SESSION_SIGNING_KEY=… npm run session:mint -- [user-uuid] [ttl-days]`
    (default 7 days, max 30). It is printed once and is a bearer credential: put it only into the app.
@@ -147,6 +149,11 @@ switches, approvals or receipts. For testing it is the free Supabase project `do
 
 * Schema `doddy_backend`, created by the migration `doddy_backend_schema`. The server creates its tables there at
   startup. The public API roles (`anon`, `authenticated`) have no access and the schema is not exposed by the Data API.
+  Since decision `2026-11-12-backend-schema-not-exposed` every start also turns on row level security (no policies,
+  not forced) on each of its tables and takes back anything `anon` or `authenticated` hold on them
+  (`SCHEMA_GUARDS` in `backend/src/store.ts`). This works because the role `doddy_backend` owns the tables (read on
+  12 Nov 2026): an owner isn't held to row level security unless it is forced. Keep it the owner; any other role
+  without `BYPASSRLS` sees no rows.
 * Login role `doddy_backend` (no other rights, 10 connections at most), through the **session pooler**:
   `postgresql://doddy_backend.sliondswemhneuzehpoq:<password>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres`.
   The direct host `db.<ref>.supabase.co` is IPv6 only on the free plan, which Render can't reach.

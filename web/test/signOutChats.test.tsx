@@ -31,7 +31,7 @@ type Routes = Parameters<typeof fakeServer>[0];
 function renderAt(path: string, routes: Routes) {
   const server = fakeServer({
     "GET /v1/web/session": { body: current },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     "GET /v1/web/chat/context": { body: ChatContext.parse(fixture("web/chat-context")) },
     "GET /v1/web/documents": { body: fixture("web/documents-ready") },
     "GET /v1/web/sessions": { body: { sessions: [current.session] } },

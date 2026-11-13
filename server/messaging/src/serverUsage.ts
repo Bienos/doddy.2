@@ -4,8 +4,10 @@
 import type pg from "pg";
 
 /** Features with a server-wide cap. `accounts`, `sms` and `outbound_calls` are the abuse caps of ADR-702 and ADR-704;
- * `news` counts digests the AI writer is asked to write (migration 030). */
-export type CappedFeature = "assistant" | "deals" | "errands" | "studio" | "news" | "accounts" | "sms" | "outbound_calls";
+ * `news` counts digests the AI writer is asked to write (migration 030); `inbound_calls` counts calls to Doddy's number
+ * put through to the phone agent or forwarded as call-backs (migration 034). */
+export type CappedFeature =
+  "assistant" | "deals" | "errands" | "studio" | "news" | "accounts" | "sms" | "outbound_calls" | "inbound_calls";
 /** The part of a paid feature's cap that accounts still "new" share (ADR-702). Counted inside the feature's own total. */
 export type NewAccountPool = "assistant_new" | "deals_new" | "errands_new" | "studio_new" | "news_new";
 type Q = Pick<pg.PoolClient, "query"> | pg.Pool;

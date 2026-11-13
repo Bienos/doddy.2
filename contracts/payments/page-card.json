@@ -1,0 +1,18 @@
+{
+  "mode": "mock",
+  "page": {
+    "host": "demo-shop.example",
+    "path": "/articles/42"
+  },
+  "preview": {
+    "title": "Check the price on demo-shop.example?",
+    "lines": [
+      "Site: demo-shop.example",
+      "Page: /articles/42",
+      "Doddy opens this page to read its price only after you say yes. Nothing is paid yet."
+    ],
+    "confirmLabel": "Check the price"
+  },
+  "approvalId": "df179381-3f61-4e85-8ddb-1416b4cc4a93",
+  "expiresAt": "2026-10-12T10:02:00.000Z"
+}

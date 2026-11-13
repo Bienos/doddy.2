@@ -38,6 +38,14 @@ struct PaymentApprovalCard: View {
         switch model.phase {
         case .idle:
             EmptyView()
+        case .openingPage:
+            HStack(spacing: 12) {
+                ProgressView()
+                Text("Getting the page ready…")
+            }
+            .accessibilityElement(children: .combine)
+        case .awaitingPageApproval(let card):
+            pageCard(card)
         case .preparing:
             HStack(spacing: 12) {
                 ProgressView()
@@ -67,6 +75,59 @@ struct PaymentApprovalCard: View {
                     .accessibilityIdentifier("payment.done")
             }
         }
+    }
+
+    // MARK: The page (before anything is read from it)
+
+    /// The site and path Doddy would open, in the server's words. Nothing has been read from the page yet: only
+    /// "Check the price" lets the server read it, once.
+    @ViewBuilder
+    private func pageCard(_ card: PaymentPageCard) -> some View {
+        if card.mode == .mock {
+            Label("Demo: no real money moves", systemImage: "theatermasks")
+                .font(.headline)
+                .accessibilityIdentifier("payment.demoBanner")
+        }
+        Text(card.preview.title)
+            .font(.title2.weight(.semibold))
+            .accessibilityIdentifier("payment.pageTitle")
+
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(card.preview.lines.enumerated()), id: \.offset) { index, line in
+                Text(line)
+                    .font(index < 2 ? .body.monospaced() : .footnote)
+                    .foregroundStyle(index < 2 ? Theme.ink : Theme.secondaryText)
+                    .textSelection(.enabled)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("payment.page")
+
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            if let seconds = model.secondsLeft() {
+                if seconds > 0 {
+                    Text(String(format: NSLocalizedString("This confirmation runs out in %lld s.", comment: ""), seconds))
+                } else {
+                    Text("This confirmation has run out.")
+                }
+            }
+        }
+        .font(.footnote)
+        .foregroundStyle(Theme.secondaryText)
+
+        Button {
+            Task { await model.checkPrice() }
+        } label: {
+            Label(card.preview.confirmLabel, systemImage: "magnifyingglass")
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Theme.ink)
+        .accessibilityIdentifier("payment.checkPrice")
+
+        Button("Cancel", role: .cancel) { model.cancel() }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .accessibilityIdentifier("payment.cancel")
     }
 
     // MARK: Terms (before and during the payment)

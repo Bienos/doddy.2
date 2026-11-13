@@ -227,6 +227,11 @@ test("a browser session reads the workspace lists and nothing that runs tools or
   assert.equal((await rig.call("GET", "/v1/tools/receipts", { cookie })).status, 200);
   assert.equal((await rig.call("GET", "/v1/web/documents", { cookie })).status, 200);
   assert.equal((await rig.call("GET", "/v1/web/sessions", { cookie })).status, 200);
+  // The "Demo server" banner's question (the open health check no longer answers it).
+  const server = await rig.call("GET", "/v1/server", { cookie });
+  assert.equal(server.status, 200);
+  assert.deepEqual(server.body, { mode: "mock" });
+  assert.equal((await rig.call("GET", "/v1/server")).status, 401, "not without the session");
   // Same-origin headers don't widen it.
   for (const [method, path, body] of [
     ["POST", "/v1/tools/prepare", { tool: "web_search", arguments: { query: "x" } }],
