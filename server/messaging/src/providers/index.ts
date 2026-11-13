@@ -8,6 +8,7 @@ import { ElevenLabsTaskClient, TwilioCallClient } from "./taskCalls.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { callsAvailable } from "../routes/twilioVoice.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
+import { ClaudeArticleSummarizer, SummaryCache } from "../news/summary.js";
 import type { TaskCallDeps } from "../taskCalls/context.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
 import type { ErrandDeps } from "../errands/context.js";
@@ -197,6 +198,17 @@ export function providersFrom(config: Config) {
       writer: config.anthropicApiKey ? new ClaudeDigestWriter(config.anthropicApiKey)
         : config.openaiApiKey ? new OpenAIDigestWriter(config.openaiApiKey, { model: config.openaiModel })
         : undefined,
+      // Article summaries for On my radar (POST /v1/news/summary): Claude only, with the switch on (NEWS_SUMMARY_ENABLED,
+      // default 0) and an Anthropic key; the page is read by the same polite fetcher (robots.txt, the AI-input content
+      // signal). One in-memory cache for the process.
+      summary: {
+        settings: config.newsSummarySettings,
+        summarizer: config.newsSummarySettings.enabled && config.anthropicApiKey
+          ? new ClaudeArticleSummarizer(config.anthropicApiKey, { model: config.newsSummarySettings.model })
+          : undefined,
+        fetcher,
+        cache: new SummaryCache(),
+      },
     },
   };
 }

@@ -12,6 +12,8 @@ import { parseFeed } from "../news/feeds.js";
 import { httpsFeedUrl } from "../news/radar.js";
 import { checkUrl, safeFetchText, UnsafeUrlError } from "../news/safeFetch.js";
 import { isValidTimeZone, nextRunAt } from "../news/schedule.js";
+import { MAX_TITLE_CHARS, SUMMARY_ERROR_STATUS, SummaryCache, summarizeArticle, type SummaryErrorCode } from "../news/summary.js";
+import { reserveSummary } from "../news/usage.js";
 
 const keyword = z.string().trim().min(2).max(40);
 const topic = z.union([
@@ -42,6 +44,12 @@ const feedBody = z.object({
   language: z.enum(["en", "pl"]).default("en"),
   follows: z.array(follow).min(1).max(MAX_TOPICS),
   limit: z.number().int().min(1).max(FEED_LIMIT).default(FEED_LIMIT),
+});
+// The address is checked by articleUrl (src/news/summary.ts), so a bad one is `invalid_url`, not `invalid_request`.
+const summaryBody = z.object({
+  url: z.string(),
+  title: z.string().max(MAX_TITLE_CHARS).optional(),
+  language: z.enum(["pl", "en"]),
 });
 
 export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
@@ -177,6 +185,34 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
         cards: cards.filter((c) => c.follows.includes(t.label)).length,
       })),
     };
+  });
+
+  // A short summary of one story's article, for On my radar (owner, 13 Nov 2026; src/news/summary.ts). Off unless
+  // NEWS_SUMMARY_ENABLED=1. Nothing of the request is stored but the day's counts; the log holds codes and counts, never
+  // the address, the headline or the article.
+  const summaryCache = news?.summary?.cache ?? new SummaryCache();
+  app.post("/v1/news/summary", { preHandler: auth, config: { rateLimit: { max: 60, timeWindow: "1 hour" } } }, async (req, reply) => {
+    const fail = (error: SummaryErrorCode) => reply.code(SUMMARY_ERROR_STATUS[error]).send({ error });
+    const summary = news?.summary;
+    if (!summary?.settings.enabled) return fail("summary_off");
+    if (!summary.summarizer) return fail("not_configured");
+    const body = parse(summaryBody, req.body, reply);
+    if (!body) return;
+    const { accountId } = principal(req);
+    const now = new Date();
+    // The page read and the model call stop when the app gives up on the request (it closes the connection).
+    const controller = new AbortController();
+    reply.raw.once("close", () => { if (!reply.raw.writableFinished) controller.abort(); });
+    const caps = { perAccount: summary.settings.dailyPerAccount, perServer: summary.settings.dailyPerServer };
+    const outcome = await summarizeArticle(body, { ...summary, cache: summaryCache },
+      () => reserveSummary(db, accountId, caps, now), { now, signal: controller.signal });
+    if (controller.signal.aborted) return reply; // the person left; nobody is listening
+    if (outcome.kind === "error") {
+      req.log.warn({ error: outcome.error, reason: outcome.reason }, "news summary not written");
+      return fail(outcome.error);
+    }
+    req.log.info(outcome.log, outcome.body.cached ? "news summary from cache" : "news summary written");
+    return outcome.body;
   });
 
   app.get("/v1/news/digests", { preHandler: auth }, async (req) => {
