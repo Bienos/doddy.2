@@ -701,14 +701,21 @@ struct Arguments {
         values[key] as? Double
     }
 
-    /// A list that must hold only numbers; a single number counts as a list of one. Nil if absent or
+    /// A list that must hold only numbers; a single number counts as a list of one. Digit strings
+    /// ("2") count as numbers, because the voice agent's tool arrays hold strings only. Nil if absent or
     /// if anything in it isn't a number (nothing is dropped).
     func numbers(_ key: String) -> [Double]? {
         guard let value = values[key], !(value is NSNull) else { return nil }
-        if let single = value as? Double { return [single] }
-        guard let list = value as? [Any] else { return nil }
-        let doubles = list.compactMap { $0 as? Double }
-        return doubles.count == list.count ? doubles : nil
+        func number(_ item: Any) -> Double? {
+            if let d = item as? Double { return d }
+            if let s = item as? String { return Double(s.trimmingCharacters(in: .whitespaces)) }
+            return nil
+        }
+        if let list = value as? [Any] {
+            let doubles = list.compactMap(number)
+            return doubles.count == list.count ? doubles : nil
+        }
+        return number(value).map { [$0] }
     }
 
     /// The first text argument longer than its bound, if any (review C11). Too long is refused,
