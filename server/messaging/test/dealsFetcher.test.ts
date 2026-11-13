@@ -171,6 +171,20 @@ describe("PoliteFetcher", () => {
     assert.equal((await new PoliteFetcher({ fetch: exact.fetch }).fetchPage("https://a.example/x")).kind, "ok");
   });
 
+  test("one page known to be bigger may raise the cap, never above 8 MB, and never lower it (13 Nov 2026)", async () => {
+    const page = Buffer.alloc(4 * 1024 * 1024, 0x61);
+    const web = new FakeWeb().on("https://a.example/x", { body: page });
+    const f = new PoliteFetcher({ fetch: web.fetch });
+    assert.deepEqual(await f.fetchPage("https://a.example/x"), { kind: "failed", reason: "too_large" });
+    assert.equal((await f.fetchPage("https://a.example/x", { maxBytes: 6 * 1024 * 1024 })).kind, "ok");
+    const huge = new FakeWeb().on("https://a.example/y", { headers: { "content-length": String(9 * 1024 * 1024) }, body: Buffer.alloc(16) });
+    assert.deepEqual(await new PoliteFetcher({ fetch: huge.fetch }).fetchPage("https://a.example/y", { maxBytes: 64 * 1024 * 1024 }),
+      { kind: "failed", reason: "too_large" }, "capped at LARGE_PAGE_MAX_BYTES");
+    const small = new FakeWeb().on("https://a.example/z", { body: Buffer.alloc(2 * 1024 * 1024, 0x61) });
+    assert.equal((await new PoliteFetcher({ fetch: small.fetch }).fetchPage("https://a.example/z", { maxBytes: 1024 })).kind, "ok",
+      "a smaller number never lowers the fetcher's own cap");
+  });
+
   test("the time limit covers the whole fetch, and the caller can stop it", async () => {
     const hang = (_u: URL, init: RequestInit) => new Promise<never>((_, reject) => {
       init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));

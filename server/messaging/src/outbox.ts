@@ -251,6 +251,8 @@ export function pushData(idempotencyKey: string | undefined): PushData | undefin
   if (idempotencyKey?.startsWith("errand-result:")) return { kind: "errand-result" };
   if (idempotencyKey?.startsWith("file-watch:")) return { kind: "file-ready" };
   if (idempotencyKey?.startsWith("radar:")) return { kind: "radar" };
+  // A deal watch's offer (decision 2026-11-13-leaflet-results-and-deal-watches) opens Shopping; never the item or the offer.
+  if (idempotencyKey?.startsWith("deal-watch:")) return { kind: "deal-watch" };
   return undefined;
 }
 

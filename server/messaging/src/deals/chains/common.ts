@@ -21,9 +21,10 @@ export function notRead(r: Exclude<FetchResult, { kind: "ok" }>): ChainRead {
 }
 
 /** Fetches from one of the chain's hosts; a redirect off them counts as failed. */
-export async function fetchOfficial(ctx: ChainContext, url: string, hosts: readonly string[], accept: string): Promise<Fetched> {
+export async function fetchOfficial(ctx: ChainContext, url: string, hosts: readonly string[], accept: string,
+  extra: { maxBytes?: number } = {}): Promise<Fetched> {
   if (!officialUrl(url, hosts)) return { ok: false, read: { kind: "failed", reason: "not_official_host" } };
-  const r = await ctx.fetcher.fetchPage(url, { accept, signal: ctx.signal });
+  const r = await ctx.fetcher.fetchPage(url, { accept, signal: ctx.signal, ...(extra.maxBytes ? { maxBytes: extra.maxBytes } : {}) });
   if (r.kind !== "ok") return { ok: false, read: notRead(r) };
   const finalUrl = officialUrl(r.finalUrl, hosts);
   if (!finalUrl) return { ok: false, read: { kind: "failed", reason: "redirected_off_host" } };

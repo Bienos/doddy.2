@@ -14,12 +14,18 @@ public enum ServerPushKind: String, Equatable, Sendable {
     /// Doddy's server spotted a story for something on the person's radar (decision 2026-11-10-radar-alerts):
     /// open On my radar, where "Doddy spotted" lists it. Which follow and which story stay off the payload.
     case radar = "radar"
+    /// A deal watch found a new leaflet offer (decision 2026-11-13-leaflet-results-and-deal-watches): open Shopping, which
+    /// reads the watch's matches (`GET /v1/deal-watches/{id}/offers`). Which watch, item, shop and price stay off the payload.
+    case dealWatch = "deal-watch"
 
     /// Opens Messages when tapped (owner, 10 Nov 2026).
     public var opensMessages: Bool { self == .errandResult || self == .fileReady }
 
     /// Opens On my radar when tapped (owner's review, 12 Nov 2026: "Dotknięcie powiadomienia nie otwiera radaru").
     public var opensRadar: Bool { self == .radar }
+
+    /// Opens Shopping when tapped (13 Nov 2026). The app's screens wire this; DoddyCore only says it.
+    public var opensShopping: Bool { self == .dealWatch }
 
     public static func parse(_ userInfo: [AnyHashable: Any]) -> ServerPushKind? {
         guard let hint = userInfo["doddy"] as? [String: Any], let kind = hint["kind"] as? String else { return nil }

@@ -21,6 +21,9 @@ export const LECLERC_HOSTS = ["leclerc.pl", "www.leclerc.pl"] as const;
 export const LECLERC_LISTING = "https://leclerc.pl/gazetki/";
 /** Pages handed to the service per request, all leaflets together (its screening reads at most 120). */
 export const LECLERC_MAX_PAGES = 120;
+/** The catalog takes every current page (13 Nov 2026: nine leaflets, cut at 120 on every scan of 12 Nov), up to this,
+ * and spreads the reads over its scans and its daily budget. */
+export const LECLERC_CATALOG_MAX_PAGES = 600;
 const ALCOHOL = /alkohol|\bwin[ao]?\b|\bpiw(?:o|a|ny|ne|na)?\b|w[oó]dk|whisk|likier|\bgin\b|\brum\b|szampan|prosecco|\btrunk/i;
 const AGE_GATE = /adult|inactive-newspaper|pe[łl]noletn/i;
 
@@ -134,7 +137,7 @@ export const leclerc: ChainAdapter = {
     if (!r.ok) return r.read;
     const listed = parseListing(r.body.toString("utf8"), ctx.today);
     if (!listed) return { kind: "failed", reason: "unreadable_listing" };
-    const { leaflets, dropped, empty } = leclercLeaflets(listed, ctx.today);
+    const { leaflets, dropped, empty } = leclercLeaflets(listed, ctx.today, ctx.forCatalog ? LECLERC_CATALOG_MAX_PAGES : LECLERC_MAX_PAGES);
     if (leaflets.length === 0) return empty ? { kind: "failed", reason: "no_pages" } : { kind: "no_leaflet" };
     // Pages left out (the cap, a leaflet without readable pages) mean "nothing matched" can't be claimed.
     const incomplete = dropped ? "page_cap" : empty ? "some_leaflets_failed" : undefined;
