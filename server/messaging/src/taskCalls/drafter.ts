@@ -38,7 +38,8 @@ export class ClaudeBriefDrafter implements BriefDrafter {
   private readonly client: Anthropic;
 
   constructor(apiKey: string, options: { model?: string; baseURL?: string } = {}) {
-    this.model = options.model ?? "claude-opus-5-5";
+    // Sonnet: good formal Polish for one short question at a fraction of Opus's cost (owner, 13 Nov 2026).
+    this.model = options.model ?? "claude-sonnet-5-5";
     // The user waits on this screen: one retry, and the app gives up after 45 seconds.
     this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 1, timeout: 20_000 });
   }

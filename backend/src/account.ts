@@ -44,6 +44,8 @@ export class AccountEraser {
       timeoutMs: number;
       /** Told the moment this person's earlier sign-ins are cut off, so it takes effect at once on this instance (ADR-709). */
       floors?: TokenFloors;
+      /** Told when a person is erased, to drop anything held for them in memory only (Ask Doddy replies kept for dedup). */
+      forget?: (userId: string) => void;
       now?: () => number;
       log?: (line: Record<string, unknown>) => void;
     },
@@ -53,6 +55,7 @@ export class AccountEraser {
   async erase(userId: string, accountSubjects: readonly string[] = []): Promise<AccountErasure> {
     const now = this.deps.now?.() ?? Date.now();
     const erased = await this.deps.store.eraseUser(userId, now, accountSubjects);
+    this.deps.forget?.(userId);
     // The cut-off is already in the database (same transaction as the erasure); this makes it count here without waiting for the memory to refresh.
     this.deps.floors?.remember(userId, erased.tokensValidAfter, now);
     for (const subject of erased.subjects) this.deps.floors?.remember(subject, erased.tokensValidAfter, now);
