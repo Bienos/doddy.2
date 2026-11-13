@@ -63,6 +63,8 @@ export interface WriterInput {
   question: string; goal: string; transcript: Line[];
   /** Booking calls only: the approved booking, one detail per line. "yes" then means booked exactly this. */
   booking?: string;
+  /** Order calls only: the approved order, one detail per line. "yes" then means ordered exactly this. */
+  order?: string;
 }
 export interface WriterOutput {
   answerLine: number | null;
@@ -95,6 +97,8 @@ export interface ResultFacts {
   writer?: WriterOutput;
   /** Booking calls only: the one sentence that accepts the booking. Doddy's lines holding it are not commitment warnings. */
   bookingConfirmLine?: string;
+  /** Order calls only: the card's highest total in zł; the seller naming a price up to it is not another offer. */
+  maxTotalPln?: number;
 }
 
 const IVR = ["nacisnij", "wcisnij", "wybierz", "aby polaczyc", "witamy w", "infolinia", "prosimy czekac", "prosze czekac",
@@ -123,7 +127,7 @@ const norm = (s: string) => s.normalize("NFC").replace(/\s+/g, " ").trim();
 export function buildCallResult(f: ResultFacts): CallResult {
   const transcript = f.transcript.map((l) => ({ ...l, text: norm(l.text) })).filter((l) => l.text.length > 0);
   const callee = transcript.map((l, i) => ({ ...l, i })).filter((l) => l.speaker === "callee");
-  const warnings = audit(transcript, f.allowedTexts, f.bookingConfirmLine, f.callbackLine);
+  const warnings = audit(transcript, f.allowedTexts, f.bookingConfirmLine, f.callbackLine, f.maxTotalPln);
   const bookingConfirmed = f.bookingConfirmLine === undefined ? undefined
     : transcript.some((l) => l.speaker === "doddy" && saysLine(l.text, f.bookingConfirmLine!));
   const callbackPromised = transcript.some((l) => l.speaker === "doddy" && fold(l.text).includes(fold(f.callbackLine).slice(0, 24)));
@@ -227,8 +231,12 @@ export function findSpan(text: string, quote: string): string | undefined {
  * own terms or Doddy says it will check with the person (`callbackLine`, which rule 3 of both prompts asks for); any
  * yes while it is open, the booking sentence included, is `possible_other_booking`.
  */
-export function audit(transcript: Line[], allowedTexts: string[], bookingConfirmLine?: string, callbackLine?: string): Warning[] {
-  const allowedDigits = new Set(allowedTexts.flatMap((t) => (t.match(/\d+/g) ?? [])));
+export function audit(transcript: Line[], allowedTexts: string[], bookingConfirmLine?: string, callbackLine?: string, maxPriceZl?: number): Warning[] {
+  // A listed number is allowed as written in pieces ("00", "001") and as the lines below read it, joined across single
+  // spaces and hyphens ("00001"): a postcode or phone number Doddy was given is not "a number it wasn't given".
+  const allowedDigits = new Set(allowedTexts.flatMap((t) => [
+    ...(t.match(/\d+/g) ?? []), ...(t.match(/\d(?:[ \-]?\d)*/g)?.map((d) => d.replace(/\D/g, "")) ?? []),
+  ]));
   const card = termsIn(allowedTexts.join("\n"));
   const booking = bookingConfirmLine !== undefined;
   const deferral = callbackLine ? fold(callbackLine).slice(0, 24) : undefined;
@@ -238,7 +246,7 @@ export function audit(transcript: Line[], allowedTexts: string[], bookingConfirm
   transcript.forEach((l, i) => {
     if (l.speaker === "callee") {
       const said = termsIn(l.text);
-      if (otherTerms(said, card, booking)) offerOpen = true;
+      if (otherTerms(said, card, booking, maxPriceZl)) offerOpen = true;
       else if (anyTerms(said)) offerOpen = false; // back to the card's own time, day or price
       return;
     }
@@ -329,11 +337,14 @@ const anyTerms = (t: Terms) => t.times.size + t.days.size + t.prices.size > 0 ||
  * without a time, a time in the answer is the answer), any price or paying condition on a booking call, or a price
  * other than the card's. Relative days ("jutro") can't be compared with a date, so they are not offers.
  */
-function otherTerms(said: Terms, card: Terms, booking: boolean): boolean {
+function otherTerms(said: Terms, card: Terms, booking: boolean, maxPriceZl?: number): boolean {
   const outside = (a: Set<string>, b: Set<string>) => [...a].some((x) => !b.has(x));
   if (card.times.size > 0 && outside(said.times, card.times)) return true;
   if (card.days.size > 0 && outside(said.days, card.days)) return true;
-  if ((booking || card.prices.size > 0) && outside(said.prices, card.prices)) return true;
+  // A food order has no price on the card but a highest total (decision 2026-11-12-food-by-phone): the seller naming the
+  // total, or a dish's price, is the answer; only a price above that cap is another offer.
+  if (maxPriceZl !== undefined) { if ([...said.prices].some((p) => Number(p) > maxPriceZl)) return true; }
+  else if ((booking || card.prices.size > 0) && outside(said.prices, card.prices)) return true;
   return booking && said.condition && !card.condition;
 }
 

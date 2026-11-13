@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { bookingQuestion, bookingSchema } from "./booking.js";
 import { clean } from "./clean.js";
+import { orderQuestion, orderSchema } from "./order.js";
 
 export const FACT_KINDS = ["general", "reference", "date", "device", "contact", "pesel", "address"] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
@@ -12,11 +13,12 @@ const text = (max: number, min = 1) => z.string().min(min).max(max * 2).transfor
 
 /**
  * Strict: an unknown field is a 400, never silently ignored. "ask" calls only ask (ADR-500); "book"
- * calls may accept exactly the booking on the card (decision 2026-11-12-book-agent), and their
- * question is built from it here, never written by the model.
+ * calls may accept exactly the booking on the card (decision 2026-11-12-book-agent), and "order" calls
+ * exactly the food order on the card (decision 2026-11-12-food-by-phone); their question is built from
+ * it here, never written by the model.
  */
 export const briefSchema = z.strictObject({
-  kind: z.enum(["ask", "book"]).default("ask"),
+  kind: z.enum(["ask", "book", "order"]).default("ask"),
   callee: z.strictObject({
     name: text(80),
     phone: z.string().min(3).max(40),
@@ -33,15 +35,21 @@ export const briefSchema = z.strictObject({
   goal: text(160, 3),
   question: text(200, 5).optional(),
   booking: bookingSchema.optional(),
+  order: orderSchema.optional(),
   facts: z.array(z.strictObject({ kind: z.enum(FACT_KINDS), text: text(160) })).max(5),
   maxDurationSecs: z.number().int().min(60).max(300).default(240),
 }).superRefine((b, ctx) => {
   if (b.kind === "ask" && b.question === undefined) ctx.addIssue({ code: "custom", path: ["question"], message: "required" });
-  if (b.kind === "ask" && b.booking !== undefined) ctx.addIssue({ code: "custom", path: ["booking"], message: "ask_has_no_booking" });
+  if (b.kind !== "book" && b.booking !== undefined) ctx.addIssue({ code: "custom", path: ["booking"], message: "only_a_booking_has_one" });
   if (b.kind === "book" && b.booking === undefined) ctx.addIssue({ code: "custom", path: ["booking"], message: "required" });
-  // A booking's question is the server's own sentence; one written elsewhere is refused, not ignored.
-  if (b.kind === "book" && b.question !== undefined) ctx.addIssue({ code: "custom", path: ["question"], message: "built_from_booking" });
-}).transform((b) => ({ ...b, question: b.booking ? bookingQuestion(b.booking) : b.question! }));
+  if (b.kind !== "order" && b.order !== undefined) ctx.addIssue({ code: "custom", path: ["order"], message: "only_an_order_has_one" });
+  if (b.kind === "order" && b.order === undefined) ctx.addIssue({ code: "custom", path: ["order"], message: "required" });
+  // A booking's or order's question is the server's own sentence; one written elsewhere is refused, not ignored.
+  if (b.kind !== "ask" && b.question !== undefined) ctx.addIssue({ code: "custom", path: ["question"], message: "built_from_card" });
+}).transform((b) => ({
+  ...b,
+  question: b.booking ? bookingQuestion(b.booking) : b.order ? orderQuestion(b.order) : b.question!,
+}));
 
 export type BriefInput = z.input<typeof briefSchema>;
 export type Brief = z.infer<typeof briefSchema>;
@@ -69,7 +77,28 @@ function fields(b: Brief): { field: string; value: string; factKind?: FactKind }
     { field: "goal", value: b.goal },
     { field: "question", value: b.question },
     ...(b.booking ? [{ field: "booking.name", value: b.booking.name }, ...(b.booking.service ? [{ field: "booking.service", value: b.booking.service }] : [])] : []),
+    ...(b.order ? orderFields(b.order) : []),
     ...b.facts.map((f, i) => ({ field: `facts.${i}`, value: f.text, factKind: f.kind })),
+  ];
+}
+
+/**
+ * What a person typed into an order. The delivery address and phone are typed on the card for this one
+ * call, so they count as a ticked address; the dish names, notes and the name still get every check.
+ */
+function orderFields(o: NonNullable<Brief["order"]>): { field: string; value: string; factKind?: FactKind }[] {
+  const d = o.delivery;
+  return [
+    { field: "order.name", value: o.name },
+    ...o.lines.flatMap((l, i) => [
+      { field: `order.lines.${i}.name`, value: l.name },
+      ...(l.note ? [{ field: `order.lines.${i}.note`, value: l.note }] : []),
+    ]),
+    ...(d ? [
+      { field: "order.delivery.street", value: d.street, factKind: "address" as const },
+      ...(d.apartment ? [{ field: "order.delivery.apartment", value: d.apartment, factKind: "address" as const }] : []),
+      { field: "order.delivery.city", value: d.city, factKind: "address" as const },
+    ] : []),
   ];
 }
 

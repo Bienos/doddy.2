@@ -424,7 +424,7 @@ export class DbPageReadStore implements PageReadStore {
   }
 }
 
-/** Tokens the catalog's scans spent per chain and Warsaw day (migration 037), for the daily budget. */
+/** Tokens the catalog's scans spent per chain and Warsaw day (migration 038), for the daily budget. */
 export class DbTokenLedger {
   constructor(private readonly db: Db) {}
 

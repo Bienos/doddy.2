@@ -166,6 +166,7 @@ run_step "Voice agent spec" python3 -I scripts/voice_agent_spec.py check
 run_step "Phone agent spec" python3 -I scripts/voice_agent_spec.py check --agent phone
 run_step "Task-call agent spec" python3 -I scripts/voice_agent_spec.py check --agent task-call
 run_step "Booking agent spec" python3 -I scripts/voice_agent_spec.py check --agent task-call-book
+run_step "Order agent spec" python3 -I scripts/voice_agent_spec.py check --agent task-call-order
 run_step "Translator agent spec" python3 -I scripts/voice_agent_spec.py check --agent translator
 run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
@@ -186,6 +187,7 @@ run_step "One scripts/regen.sh run brings every generated file up to date" scrip
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
+run_step "XcodeGen installs only its pinned release, checksum checked before unpacking" scripts/test_install_xcodegen.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 run_step "Ubuntu CI dependency mirror fallback" scripts/test_ci_install_ubuntu_packages.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh

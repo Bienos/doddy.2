@@ -139,6 +139,8 @@ const schema = z.object({
   ELEVENLABS_TASK_AGENT_ID: optional,
   // The booking agent (decision 2026-11-12-book-agent). Absent: "book" tasks answer 503 booking_not_configured.
   ELEVENLABS_TASK_BOOK_AGENT_ID: optional,
+  // The order agent (decision 2026-11-12-food-by-phone). Absent: "order" tasks answer 503 order_not_configured.
+  ELEVENLABS_TASK_ORDER_AGENT_ID: optional,
   // Secret of the ElevenLabs post-call webhook (HMAC).
   ELEVENLABS_WEBHOOK_SECRET: z.string().min(16).optional(),
   // Spoken after the AI disclosure. "off" until the owner confirms the legal basis (calls.md).
@@ -371,11 +373,14 @@ export interface TaskCallConfig {
   elevenLabsApiKey: string; agentId: string; webhookSecret: string;
   /** The booking agent (decision 2026-11-12-book-agent); absent while it isn't set up. */
   bookAgentId?: string;
+  /** The order agent (decision 2026-11-12-food-by-phone); absent while it isn't set up. */
+  orderAgentId?: string;
 }
 
-/** The booking agent is optional: calls that only ask work without it (decision 2026-11-12-book-agent). */
-export const withBookAgent = (c: Omit<TaskCallConfig, "bookAgentId"> | undefined, bookAgentId: string | undefined): TaskCallConfig | undefined =>
-  c && (bookAgentId ? { ...c, bookAgentId } : c);
+/** The booking and order agents are optional: calls that only ask work without them (decisions 2026-11-12-book-agent, 2026-11-12-food-by-phone). */
+export const withBookAgent = (c: Omit<TaskCallConfig, "bookAgentId" | "orderAgentId"> | undefined, bookAgentId: string | undefined,
+  orderAgentId?: string | undefined): TaskCallConfig | undefined =>
+  c && { ...c, ...(bookAgentId ? { bookAgentId } : {}), ...(orderAgentId ? { orderAgentId } : {}) };
 
 export interface TaskCallSettings {
   killSwitch: boolean; notice: RecordingNotice; limits: TaskCallLimits; prices: TaskCallPrices; sayVoice: string;
@@ -602,14 +607,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,
     },
     elevenLabsWebhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
-    taskCalls: withBookAgent(all<Omit<TaskCallConfig, "bookAgentId">>({
+    taskCalls: withBookAgent(all<Omit<TaskCallConfig, "bookAgentId" | "orderAgentId">>({
       twilioAccountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
       twilioAuthToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
       fromNumber: e.TASK_CALL_FROM_NUMBER ?? e.DODDY_PHONE_NUMBER,
       elevenLabsApiKey: e.ELEVENLABS_API_KEY,
       agentId: e.ELEVENLABS_TASK_AGENT_ID,
       webhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
-    }), e.ELEVENLABS_TASK_BOOK_AGENT_ID),
+    }), e.ELEVENLABS_TASK_BOOK_AGENT_ID, e.ELEVENLABS_TASK_ORDER_AGENT_ID),
     taskCallSettings: {
       killSwitch: e.TASK_CALLS_KILL_SWITCH === "1",
       notice: e.CALL_RECORDING_NOTICE,
