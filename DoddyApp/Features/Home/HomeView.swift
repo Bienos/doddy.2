@@ -181,6 +181,13 @@ struct HomeView: View {
                 router.isMessagesRequested = false
                 showAsk = true
             }
+            // A radar story's push, tapped (decision 2026-11-13-radar-fixes): On my radar, where "Doddy spotted" lists it.
+            .onChange(of: router.isRadarRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isRadarRequested = false
+                guard scope.shows(.following) else { return }
+                showFollowing = true
+            }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
                              file: fileForMessages, openSettings: { selectedTab = .settings })
