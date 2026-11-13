@@ -113,8 +113,10 @@ jobs:
         with:
           xcode-version: "26.6"
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      # One pinned XcodeGen version, installed from its release file after a SHA-256 check (the pin is
+      # in scripts/install_xcodegen.sh); the script also adds it to this job's PATH.
+      - name: Install XcodeGen (pinned)
+        run: scripts/install_xcodegen.sh
 
       # scripts/check_platform_specs.py reads the per-platform XcodeGen specs.
       - name: Install PyYAML
@@ -352,8 +354,10 @@ jobs:
         with:
           xcode-version: "26.6"
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      # One pinned XcodeGen version, installed from its release file after a SHA-256 check (the pin is
+      # in scripts/install_xcodegen.sh); the script also adds it to this job's PATH.
+      - name: Install XcodeGen (pinned)
+        run: scripts/install_xcodegen.sh
 
       - name: scripts/ci_island.sh
         run: scripts/ci_island.sh
@@ -391,8 +395,10 @@ jobs:
         with:
           xcode-version: "26.6"
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      # One pinned XcodeGen version, installed from its release file after a SHA-256 check (the pin is
+      # in scripts/install_xcodegen.sh); the script also adds it to this job's PATH.
+      - name: Install XcodeGen (pinned)
+        run: scripts/install_xcodegen.sh
 
       - name: scripts/ci_screens.sh
         env:
