@@ -21,8 +21,30 @@ import SwiftUI
 // (never picked, never in the basket); "My shops" sets the chains a check asks for and names the user's shop
 // when an offer is only in some shops.
 
+// Since 13 Nov 2026 (owner: "'Zakupy najtaniej w tym tygodniu' — przecież to wszystko jest połączone [z gazetkami], to
+// trzeba złączyć"): "This week's deals", one screen in two parts. "Cheapest" is the question and answer above, as it
+// was; "Leaflets" lists the leaflets Doddy reads and links to, with what the last check found in each (read, read in
+// part, no leaflet, blocked) and the leaflet's dates and page. The logic below is unchanged. `DealsView` keeps its
+// sheet (Home, Poland); the Shopping screen pushes `DealsScreen` from its groceries page.
+
 struct DealsView: View {
     @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            DealsScreen()
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+}
+
+/// The two parts of "This week's deals".
+private enum DealsPart: Hashable {
+    case cheapest
+    case leaflets
+}
+
+struct DealsScreen: View {
     @Environment(MemoryStore.self) private var store
     private let model = DealsModel.shared
     /// The items, one chip each (owner, 10 Nov 2026: "I say milk and this, find how much it costs").
@@ -33,6 +55,7 @@ struct DealsView: View {
     @State private var chains: Set<DealsChain> = Set(DealsChain.defaultRead)
     @State private var showBasket = false
     @State private var showShops = false
+    @State private var part: DealsPart = .cheapest
     /// The kind picked per item (by its place in the answer); absent: all kinds.
     @State private var kinds: [Int: String] = [:]
     @AppStorage(PreferenceKey.dealsProgramsNotUsed) private var programsStored = ""
@@ -45,81 +68,114 @@ struct DealsView: View {
     private var today: DealDay? { ShoppingCalendar.today() }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    hero
-                    itemsCard
-                    searchButton
-                    switch model.phase {
-                    case .checking:
-                        checkingCard
-                    case .failed(let message):
-                        card {
-                            Label(message, systemImage: "exclamationmark.triangle")
-                                .foregroundStyle(Theme.error)
-                        }
-                    case .idle:
-                        EmptyView()
-                    }
-                    if let result = model.lastResult, model.phase != .checking {
-                        results(result)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 32)
+        DoddyPage {
+            DoddyPageHeader(eyebrow: "Groceries & household", title: "This week's deals",
+                            subtitle: "I check this week's leaflets and show where each thing is cheapest.",
+                            pose: .kneelingInspect)
+            partChips
+            switch part {
+            case .cheapest:
+                cheapestPart
+            case .leaflets:
+                leafletsPart
             }
-            .scrollDismissesKeyboard(.interactively)
-            .background(Theme.canvas)
-            .foregroundStyle(Theme.ink)
-            .navigationTitle("Cheapest this week")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .navigationDestination(isPresented: $showBasket) {
-                if let result = model.lastResult {
-                    BasketView(result: result, quantities: model.lastQuantities, programs: programs)
-                }
-            }
-            .navigationDestination(for: DealsItemPage.self) { page in
-                if let result = model.lastResult, page.index < result.items.count {
-                    itemPage(result.items[page.index], index: page.index, chainOrder: BasketSolver.chainOrder(result))
-                }
-            }
-            .sheet(isPresented: $showShops) {
-                DealsShopsSheet(chains: $chains, programsStored: $programsStored, myShops: myShops)
-            }
-            .onAppear {
-                // Seen here, so Home's card for a voice search goes (ADR-666).
-                model.homeCardSeen()
-                if items.isEmpty, let last = model.lastRequest {
-                    items = last.items
-                    chains = Set(last.chainsAsked)
-                } else if model.lastRequest == nil, !myShops.shops.isEmpty {
-                    chains = Set(myShops.chains)
-                }
+            DoddyFinePrint(text: Text("Your items and the shops to check go to Doddy's server, which answers from the shops' own leaflets and uses Anthropic's Claude to read and match them. Nothing that identifies you goes to a shop; Rossmann and the shoe, home and pet shops get the item names as a search."))
+        }
+        .navigationTitle("This week's deals")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showBasket) {
+            if let result = model.lastResult {
+                BasketView(result: result, quantities: model.lastQuantities, programs: programs)
             }
         }
+        .navigationDestination(for: DealsItemPage.self) { page in
+            if let result = model.lastResult, page.index < result.items.count {
+                itemPage(result.items[page.index], index: page.index, chainOrder: BasketSolver.chainOrder(result))
+            }
+        }
+        .sheet(isPresented: $showShops) {
+            DealsShopsSheet(chains: $chains, programsStored: $programsStored, myShops: myShops)
+        }
+        .onAppear {
+            // Seen here, so Home's card for a voice search goes (ADR-666).
+            model.homeCardSeen()
+            if items.isEmpty, let last = model.lastRequest {
+                items = last.items
+                chains = Set(last.chainsAsked)
+            } else if model.lastRequest == nil, !myShops.shops.isEmpty {
+                chains = Set(myShops.chains)
+            }
+        }
+    }
+
+    // MARK: The two parts
+
+    private var partChips: some View {
+        ChipFlow(spacing: 8) {
+            DoddyChip(title: "Cheapest", systemImage: "tag", isSelected: part == .cheapest) { part = .cheapest }
+                .accessibilityIdentifier("deals.part.cheapest")
+            DoddyChip(title: "Leaflets", systemImage: "newspaper", isSelected: part == .leaflets) { part = .leaflets }
+                .accessibilityIdentifier("deals.part.leaflets")
+        }
+    }
+
+    /// The question, then the answer: item → price → shop (decision 2026-11-10-cheapest-this-week-simpler).
+    @ViewBuilder
+    private var cheapestPart: some View {
+        DoddySectionTitle(title: "What do you need?")
+        itemsCard
+        searchButton
+        switch model.phase {
+        case .checking:
+            checkingCard
+        case .failed(let message):
+            DoddyNotice(text: Text(verbatim: message), isProblem: true)
+        case .idle:
+            EmptyView()
+        }
+        if let result = model.lastResult, model.phase != .checking {
+            results(result)
+        }
+    }
+
+    // MARK: The leaflets
+
+    /// Every leaflet Doddy reads or links to, with what the last check found in it. Nothing is fetched to draw this:
+    /// before a check it says which leaflets a check reads.
+    @ViewBuilder
+    private var leafletsPart: some View {
+        DoddySectionTitle(title: "The leaflets") {
+            Button { showShops = true } label: {
+                Text("Change").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.accentText)
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("deals.leaflets.change")
+        }
+        if let result = model.lastResult, let checked = result.checkedDate {
+            Text(verbatim: String(format: NSLocalizedString("As found in your last check, %@. Prices are the leaflets'; in the shop they can differ.", comment: "a date"), DateText.full(checked)))
+                .font(.footnote).foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            DoddyNotice(text: Text("No check yet. Ask for your items under “Cheapest”; each leaflet then says here what Doddy found in it."))
+        }
+        leafletList(DealsChain.read)
+            .accessibilityIdentifier("deals.leaflets")
+        DoddySectionTitle(title: "Leaflets Doddy doesn't read")
+        leafletList(DealsChain.linkOnly)
+    }
+
+    private func leafletList(_ list: [DealsChain]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(list.enumerated()), id: \.element.rawValue) { index, chain in
+                if index > 0 { Divider().overlay(Theme.separator) }
+                LeafletRow(chain: chain, report: model.lastResult?.report(for: chain), inChecks: chains.contains(chain))
+            }
+        }
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     // MARK: The question
-
-    /// Doddy with the leaflets and what this screen does, in one line.
-    private var hero: some View {
-        HStack(alignment: .bottom, spacing: 12) {
-            UploadedCharacterView(assetName: "WholeDoddy_kneeling_inspect", height: 104)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("What do you need?")
-                    .font(.title2.weight(.bold))
-                Text("I check this week's leaflets and show where each thing is cheapest.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.top, 8)
-    }
 
     /// The items as chips, a field for the next one, examples while it's empty and the user's lists.
     private var itemsCard: some View {
@@ -200,7 +256,7 @@ struct DealsView: View {
             } label: {
                 Label("Check prices", systemImage: "tag")
             }
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(DoddyAccentButtonStyle())
             .disabled(allEntries.isEmpty || chains.isEmpty || model.phase == .checking)
             .accessibilityIdentifier("deals.search")
             Button { showShops = true } label: {
@@ -319,7 +375,7 @@ struct DealsView: View {
     private func results(_ result: DealsResult) -> some View {
         let chainOrder = BasketSolver.chainOrder(result)
         VStack(alignment: .leading, spacing: 10) {
-            Text("Where it's cheapest").font(.title3.weight(.bold))
+            DoddySectionTitle(title: "Where it's cheapest")
             // Said first, not inside "What wasn't checked" (11 Nov 2026): when most leaflets couldn't be read this time,
             // "Not in the leaflets that were read" under every item read as "nothing is on offer".
             let read = result.chains.filter { $0.status.wasRead }.count
@@ -344,8 +400,7 @@ struct DealsView: View {
                     .accessibilityIdentifier("deals.item.\(index)")
                 }
             }
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
-            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             Button {
                 showBasket = true
             } label: {
@@ -551,11 +606,7 @@ struct DealsView: View {
     // MARK: Parts
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
-            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
+        content().doddyCard()
     }
 }
 
@@ -944,6 +995,121 @@ private struct ChainNotReadRow: View {
                 NSLocalizedString("The leaflet couldn't be read this time.", comment: "")
             }
         default: NSLocalizedString("Not checked.", comment: "")
+        }
+    }
+}
+
+/// One leaflet on "Leaflets": the chain, its kind when it isn't groceries, what the last check found in it, the
+/// leaflet's days and a link to it. Before any check it says only whether a check reads it. Nothing is fetched here.
+private struct LeafletRow: View {
+    let chain: DealsChain
+    let report: DealsChainReport?
+    /// The chain is among the leaflets a check reads (the "Change" sheet).
+    let inChecks: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(symbolColor)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(verbatim: chain.name).font(.headline).foregroundStyle(Theme.ink)
+                    if chain.category != .groceries {
+                        Text(verbatim: chain.category.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                            .padding(.horizontal, 8).padding(.vertical, 2)
+                            .background(Theme.orangeCue.opacity(0.18), in: Capsule())
+                    }
+                }
+                Text(verbatim: state).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let days {
+                    Text(verbatim: days).font(.footnote).foregroundStyle(Theme.ink)
+                }
+                if let url = (report?.leafletUrl ?? report?.leaflet?.url).flatMap(ShopPage.url) {
+                    Link(destination: url) {
+                        Label("Open the leaflet", systemImage: "arrow.up.right")
+                            .font(.footnote.weight(.semibold))
+                            .frame(minHeight: 44, alignment: .leading)
+                    }
+                    .accessibilityIdentifier("deals.leaflet.open")
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Read: a tick; read with nothing found, in part, or not read: other marks. Never colour alone.
+    private var symbol: String {
+        guard let report else { return chain.isRead ? (inChecks ? "circle.dashed" : "circle") : "link" }
+        switch report.status {
+        case .checked, .noMatch: return report.pages == nil ? "checkmark.circle.fill" : "circle.lefthalf.filled"
+        case .linkOnly: return "link"
+        case .noLeaflet: return "minus.circle"
+        case .blocked, .failed, .unknown: return "exclamationmark.circle"
+        }
+    }
+
+    private var symbolColor: Color {
+        guard let report else { return Theme.secondaryText }
+        switch report.status {
+        case .checked, .noMatch: return report.pages == nil ? Theme.confirmed : Theme.ink
+        case .blocked, .failed: return Theme.error
+        default: return Theme.secondaryText
+        }
+    }
+
+    /// What the last check found, in a line.
+    private var state: String {
+        guard let report else {
+            if !chain.isRead { return NSLocalizedString("Doddy doesn't read this chain's leaflet yet.", comment: "") }
+            if !inChecks { return NSLocalizedString("Not in your checks. Turn it on with “Change”.", comment: "a leaflet") }
+            return DealsChain.specialty.contains(chain)
+                ? NSLocalizedString("Read in your checks, only for items it sells.", comment: "a leaflet")
+                : NSLocalizedString("Read in your checks.", comment: "a leaflet")
+        }
+        switch report.status {
+        case .checked:
+            if let pages = report.pages {
+                return String(format: NSLocalizedString("%@: Doddy read %lld of %lld pages. A cheaper offer may be on the others.", comment: "a leaflet read in part"),
+                              chain.name, pages.read, pages.of)
+            }
+            return NSLocalizedString("Read in your last check.", comment: "a leaflet")
+        case .noMatch:
+            return NSLocalizedString("Read in your last check; nothing on your list was in it.", comment: "a leaflet")
+        case .linkOnly:
+            return NSLocalizedString("Doddy doesn't read this chain's leaflet yet.", comment: "")
+        case .blocked:
+            return NSLocalizedString("Its site doesn't let automated readers in, and Doddy doesn't get around that.", comment: "")
+        case .noLeaflet:
+            return NSLocalizedString("No leaflet for this week was found.", comment: "")
+        case .failed:
+            if let pages = report.pages, pages.read > 0 {
+                return String(format: NSLocalizedString("Doddy read %lld of %lld pages and found nothing in them.", comment: "a leaflet read in part"), pages.read, pages.of)
+            }
+            return NSLocalizedString("The leaflet couldn't be read this time.", comment: "")
+        case .unknown:
+            return NSLocalizedString("Not checked.", comment: "")
+        }
+    }
+
+    /// "Valid Mon 10 Nov – Sat 15 Nov", from the leaflet the server read.
+    private var days: String? {
+        guard let leaflet = report?.leaflet else { return nil }
+        switch (leaflet.validFrom, leaflet.validTo) {
+        case let (from?, to?):
+            return String(format: NSLocalizedString("Valid %@ – %@", comment: "a leaflet's first and last day"), DealDayText.text(from), DealDayText.text(to))
+        case let (nil, to?):
+            return String(format: NSLocalizedString("Until %@", comment: "leaflet offer end date"), DealDayText.text(to))
+        default:
+            return nil
         }
     }
 }

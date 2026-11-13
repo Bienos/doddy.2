@@ -1,0 +1,3 @@
+Shopping redrawn in Doddy's colours: "Find me this" first, then five kinds of shop (groceries, fashion, electronics, home, other), each with its own page (scoped "Find me this", the shops by name and what Doddy does there, its watched prices); this week's deals are one screen ("Cheapest" and "Leaflets"); a result's picks can be compared side by side; Shopify shops redrawn (grid, a product's offers, cart sheet). No server change.
+Decision `docs/decisions/2026-11-13-shopping-by-kind.md`; SHOPPING.md "Shopping by kind of shop". New strings with Polish in `l10n/pending/shopping.json` (not yet merged into the catalogs).
+Not run: DoddyCore `ShopCategoryTests` and the app (no Swift toolchain here): not compiled, nothing seen on a device.

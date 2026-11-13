@@ -11,15 +11,31 @@ import SwiftUI
 // so this is drawn the same way: a heading, the note on what a watch does, and one card per watch.
 
 struct WatchesSection: View {
+    /// The heading and the note (Tasks); the Shopping screens draw their own above it.
+    let showsHeading: Bool
+    /// Only these watches (a kind's page on the Shopping screen); nil: every watch.
+    let only: Set<UUID>?
     private let model = WatchModel.shared
 
+    init(showsHeading: Bool = true, only: Set<UUID>? = nil) {
+        self.showsHeading = showsHeading
+        self.only = only
+    }
+
+    private var shown: [WatchSummary] {
+        guard let only else { return model.watches }
+        return model.watches.filter { only.contains($0.id) }
+    }
+
     var body: some View {
-        if !model.watches.isEmpty || model.loadProblem != nil || model.message != nil {
+        if !shown.isEmpty || model.loadProblem != nil || model.message != nil {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Watched prices").font(.title3.weight(.bold)).accessibilityAddTraits(.isHeader)
-                Text("Doddy's server reads each shop's page a few times a day while a watch is on. It only tells you; it never buys anything.")
-                    .font(.footnote).foregroundStyle(Theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+                if showsHeading {
+                    Text("Watched prices").font(.title3.weight(.bold)).accessibilityAddTraits(.isHeader)
+                    Text("Doddy's server reads each shop's page a few times a day while a watch is on. It only tells you; it never buys anything.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if let problem = model.loadProblem {
                     Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
                         .tasksCard()
@@ -30,7 +46,7 @@ struct WatchesSection: View {
                         .tasksCard()
                         .accessibilityIdentifier("watch.message")
                 }
-                ForEach(model.watches) { watch in
+                ForEach(shown) { watch in
                     WatchEntry(watch: watch)
                 }
             }

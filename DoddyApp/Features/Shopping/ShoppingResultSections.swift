@@ -6,6 +6,7 @@ import SwiftUI
 // what was left out; "Buy at …", which opens the shop's own page in Safari (the shop takes the
 // payment there; Doddy records only that the page was opened, never that anything was bought; no web
 // view inside the app, scripts/check_forbidden_capabilities.sh); and the PDF report drawn on this iPhone. Every price and time here is the one the server's code registered.
+// Since 13 Nov 2026: "Compare the picks side by side" (ShoppingCompareView, the lowest price marked by the code only).
 
 struct ShoppingResultSections: View {
     let errand: StoredErrand
@@ -15,6 +16,7 @@ struct ShoppingResultSections: View {
     @Environment(\.openURL) private var openURL
     @State private var reportURL: URL?
     @State private var reportProblem: String?
+    @State private var showCompare = false
     private let language = NotificationLanguage.current
 
     var body: some View {
@@ -32,6 +34,19 @@ struct ShoppingResultSections: View {
             if let budget = shopping.budget {
                 Text(String(format: NSLocalizedString("Your budget: %@", comment: ""), budget.text(language)))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
+            // The picks side by side (owner, 13 Nov 2026: "porównywanie dogłębsze"), from this result only.
+            if shopping.picksInDisplayOrder.count > 1 {
+                Button {
+                    showCompare = true
+                } label: {
+                    Label("Compare the picks side by side", systemImage: "rectangle.split.3x1")
+                        .font(.body.weight(.semibold))
+                }
+                .accessibilityIdentifier("shopping.compare")
+                .sheet(isPresented: $showCompare) {
+                    ShoppingCompareView(title: errand.title, shopping: shopping)
+                }
             }
         }
         .accessibilityIdentifier("shopping.summary")

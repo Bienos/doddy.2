@@ -8,18 +8,38 @@ import SwiftUI
 // is watched before that tap, and the card says "watching" only when the server said so. Doddy only tells
 // the user; nothing is bought. The sentences come from DoddyCore (`WatchWords`), where tests hold them.
 
-/// The button under a pick. Only for an offer whose price was read from the shop's own page.
+/// The button under a pick. Only for an offer whose price was read from the shop's own page. Prominent (orange, in
+/// "Compare"): the way to hunt for a deal on that pick (owner, 13 Nov 2026: "ustawienia cen, szukanie okazji").
 struct WatchPriceButton: View {
     let offer: ShoppingOffer
+    let prominent: Bool
     @State private var showCard = false
 
+    init(offer: ShoppingOffer, prominent: Bool = false) {
+        self.offer = offer
+        self.prominent = prominent
+    }
+
     var body: some View {
-        Button {
-            showCard = true
-        } label: {
-            Label("Watch the price", systemImage: "bell")
+        Group {
+            if prominent {
+                Button {
+                    showCard = true
+                } label: {
+                    Label("Watch the price", systemImage: "bell.badge")
+                }
+                .buttonStyle(DoddyAccentButtonStyle())
+            } else {
+                Button {
+                    showCard = true
+                } label: {
+                    Label("Watch the price", systemImage: "bell.badge")
+                        .font(.body.weight(.semibold))
+                }
+            }
         }
         .accessibilityIdentifier("watch.start")
+        .accessibilityHint("Give the price you'd pay; Doddy tells you once when the shop's page shows it or less.")
         .sheet(isPresented: $showCard) { WatchCard(offer: offer) }
     }
 }
