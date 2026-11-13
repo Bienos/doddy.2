@@ -117,24 +117,21 @@ final class ScreenFixtureTests: XCTestCase {
     @MainActor
     private func openDeals(_ app: XCUIApplication) -> Bool {
         settle(2)
-        // "Cheapest this week" is Shopping › Groceries since 13 Nov 2026 (it left Home's menu).
-        guard menu(app, ["home.shopping", "shopping.tab.groceries", "shopping.leaflets"]),
-              see(app.descendants(matching: .any)["deals.items"], 15) else { return false }
-        // The answer sits below the form's long list of shops, which isn't built until it scrolls in
-        // (the first run's picture, 2 Nov, showed only the form).
-        return app.reveal(app.buttons["deals.basket"], maxSteps: 14)
+        guard menu(app, ["home.deals"]), see(app.descendants(matching: .any)["deals.items"], 15) else { return false }
+        // The answer sits below the question; its tabs (decision 2026-11-13-shopping-one-field) start it.
+        return app.reveal(app.buttons["deals.tab.eachItem"], maxSteps: 14)
     }
 
+    /// The basket: since 13 Nov 2026 the answer's "Two shops" tab (the fixture's Lidl + Dino cover one more item
+    /// than Lidl alone), where it was a screen of its own behind a button.
     @MainActor
     private func openBasket(_ app: XCUIApplication) -> Bool {
         guard openDeals(app) else { return false }
-        let basket = app.buttons["deals.basket"]
-        if !basket.isHittable { _ = app.reveal(basket, maxSteps: 12) }
-        guard basket.isHittable else { return false }
-        basket.tap()
-        // The Basket screen itself (the 2 Nov picture was the real Basket, but this waited for a button
-        // lower down, in a section a Form doesn't build until it scrolls in).
-        return see(app.navigationBars["Basket"], 10)
+        let tab = app.buttons["deals.tab.twoShops"]
+        if !tab.isHittable { _ = app.reveal(tab, maxSteps: 12) }
+        guard tab.isHittable else { return false }
+        tab.tap()
+        return see(app.descendants(matching: .any)["basket.twoShops"], 10)
     }
 
     @MainActor
