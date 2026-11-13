@@ -321,10 +321,10 @@ struct HomeView: View {
                 // The food-delivery apps the owner adds to (11 Nov 2026): one row each, opened from here, nothing sent.
                 Button { showFood = true } label: { Label("Food", systemImage: "fork.knife") }
                     .accessibilityIdentifier("home.food")
-                // Poland Pack reads official local data only when opened; no startup request.
+                // My city (owner, 13 Nov 2026: "Polska na co dzień … nie wiem, o co tu chodzi"; was Poland Pack): weather,
+                // air and warnings for the person's city plus exchange rates, read from official sources only when opened.
                 Button { showPolandPack = true } label: {
-                    Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
-                          systemImage: "mappin.and.ellipse")
+                    Label("My city", systemImage: "building.2")
                 }
                 .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
