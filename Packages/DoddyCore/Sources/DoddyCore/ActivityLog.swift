@@ -347,7 +347,8 @@ public struct ActivityRequest: Equatable, Sendable {
         case .cancelAlarm(let clock, let label):
             return ActivityRequest(app: .timers, title: "Turn off alarm", detail: [clock, label.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
         case .followNews(let ask):
-            return ActivityRequest(app: .news, title: "Follow in Following", detail: "“\(ask.name)”", isLookup: false)
+            // "Add to radar", the screen's own words since 10 Nov 2026 (decision 2026-11-13-radar-fixes).
+            return ActivityRequest(app: .news, title: "Add to radar", detail: "“\(ask.name)”", isLookup: false)
         case .startStopwatch(let label):
             return ActivityRequest(app: .timers, title: "Start stopwatch", detail: label.map { "“\($0)”" } ?? "Counts up", isLookup: false)
         case .stopStopwatch:

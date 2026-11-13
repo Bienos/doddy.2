@@ -52,8 +52,10 @@ public struct WeekTotals: Equatable, Sendable {
 
 /// The person's yes to sending a summary of Health data to Doddy's server and Claude. A new
 /// wording of the consent screen raises `version`, and an older yes no longer counts.
+/// Version 2 (12 Nov 2026): the screen says that the message's text is also copied, encrypted, to Doddy's
+/// server for Doddy on the web (ThreadSync), which version 1 left out.
 public enum HealthShareConsent {
-    public static let version = 1
+    public static let version = 2
 
     public static func isGranted(storedVersion: Int) -> Bool { storedVersion >= version }
 }

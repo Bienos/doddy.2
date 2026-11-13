@@ -1,5 +1,6 @@
 import { purgeExpiredSessions, sweepPhoneAgentOrphans } from "./calls.js";
-import type { AbuseLimits } from "./config.js";
+import { pruneCallbackRoutes } from "./callbacks.js";
+import { DEFAULT_ABUSE_LIMITS, type AbuseLimits } from "./config.js";
 import type { TextCipher } from "./crypto.js";
 import { pruneCounters } from "./dailyCounters.js";
 import type { Db } from "./db.js";
@@ -54,8 +55,8 @@ export interface WorkerDeps {
   radar?: RadarContext;
   /** The leaflet catalog's scans (decision 2026-11-12-leaflet-catalog); only with DEALS_CATALOG_ENABLED=1. */
   catalog?: CatalogContext;
-  /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
-  limits?: Pick<AbuseLimits, "allowedCountryCodes">;
+  /** Calling codes a text may go to, checked again when it is sent (ADR-704); how long call-back routes last. */
+  limits?: Pick<AbuseLimits, "allowedCountryCodes"> & Partial<Pick<AbuseLimits, "callbackRouteDays">>;
   /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753): the main account's... */
   deleter?: RecordDeleter;
   /** ...and the task-call account's, with that account's own credentials. */
@@ -272,7 +273,7 @@ async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
 }
 
 async function dispatchLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; limits?: Pick<AbuseLimits, "allowedCountryCodes"> },
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; limits?: WorkerDeps["limits"] },
   shouldStop: () => boolean,
 ) {
   let lastTidy = 0;
@@ -291,8 +292,10 @@ async function dispatchLoop(
         const reasons = await pruneCallReasons(db);
         const deliveries = await pruneDeliveries(db); // lapsed quotes and finished deliveries' details
         const dialLog = await pruneDialLog(db); // task calls' dial log past what the limits read
-        if (sessions || pruned || deletions || reasons || deliveries || dialLog) {
-          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons, deliveryRows: deliveries, dialLogRows: dialLog });
+        // Call-back routes past CALLBACK_ROUTE_DAYS (never used after that either).
+        const routes = await pruneCallbackRoutes(db, deps.limits?.callbackRouteDays ?? DEFAULT_ABUSE_LIMITS.callbackRouteDays);
+        if (sessions || pruned || deletions || reasons || deliveries || dialLog || routes) {
+          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons, deliveryRows: deliveries, dialLogRows: dialLog, callbackRoutes: routes });
         }
       }
       if (r.processed || r.reaped) log("dispatch pass", r);

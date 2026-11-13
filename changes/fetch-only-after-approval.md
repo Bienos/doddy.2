@@ -1,0 +1,3 @@
+Payment pages are read only after the person approves the exact address: a new first card (`POST /v1/payments/page`, nothing fetched) shows the site and path, and `prepare` needs that card's single-use approval; live payments with a wallet need `DODDY_PAYMENTS_ALLOWED_HOSTS`, and query strings need `DODDY_PAYMENTS_QUERY_HOSTS`. Shopping's `check_offer_page` reads only addresses the run's own results named; Studio refuses links in topic, audience and details like errands do.
+Ship order: backend and the app together (payments are off live); an older app gets a 400 at `prepare` and shows "nothing was paid".
+Ran: backend `npm test`, messaging tests on Postgres, DoddyCore payment tests on Linux. Not compiled here: `DoddyApp/Features/Payments/PaymentApprovalCard.swift`.

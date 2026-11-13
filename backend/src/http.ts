@@ -150,6 +150,7 @@ export function createHandler(deps: HttpDeps) {
         "GET /v1/payments": (userId) => payments.status(userId),
         "GET /v1/payments/receipts": async (userId) => ({ receipts: await payments.receipts(userId) }),
         "PUT /v1/payments/switch": (userId, body) => payments.setSwitch(userId, body),
+        "POST /v1/payments/page": (userId, body) => payments.page(userId, body),
         "POST /v1/payments/prepare": (userId, body) => payments.prepare(userId, body),
         "POST /v1/payments/pay": (userId, body) => payments.pay(userId, body),
       }

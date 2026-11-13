@@ -17,11 +17,11 @@ Two things limit how far that goes:
 - **Prompts** (`voice-agent/task-call/instructions.md`, `voice-agent/task-call-book/instructions.md`): a "How you sound" section: natural, warm, everyday Polish; short sentences; react before going on, with varied acknowledgements; adapt to someone busy or friendly; re-say things in simpler words instead of repeating them; never pad sentences with "jako asystent AI"; never pretend to have feelings, a body or a life. The goodbye is the agent's own short words instead of one fixed sentence (the booking confirmation sentence and the call-back line stay fixed, as safety requires).
 - **Asked directly** whether it is a robot, a computer, an AI or a person, the agent never denies or dodges: "Tak, jestem asystentem AI, wirtualnym asystentem {imienia}. Wszystko przekażę." Then it carries on if they are happy to. This is the DOD-03 line and stays.
 - **Nothing else changes:** the agent still only asks (or books exactly the card's booking), never agrees, pays or gives data beyond the ticked facts, and the server's checks, caps and transcripts are as before.
-- **Live agents:** `server/messaging/src/taskCalls/agentSpec.ts` has the new prompt hashes, and `SYNC_PENDING_PROMPTS` still accepts the two earlier prompts of each agent, so a deploy of this server doesn't stop calls before the owner syncs ElevenLabs (owner queue 61).
+- **Live agents:** `server/messaging/src/taskCalls/agentSpec.ts` has the new prompt hashes, and `SYNC_PENDING_PROMPTS` still accepts the two earlier prompts of each agent, so a deploy of this server doesn't stop calls before the owner syncs ElevenLabs (owner queue 71).
 
 ## Consequences
 - Callers hear a shorter, friendlier opening, and an agent that reacts like a person would, while still being told once, first, that it is a virtual assistant.
-- **Owner decision (owner queue 62):** whether "wirtualny asystent" alone is enough disclosure under Art. 50 for Polish listeners, or the opening should say "wirtualny asystent AI". Not legal advice; `legal_review_required_before_launch` in `docs/trust/config/doddy_rules.yaml` still applies.
+- **Owner decision (owner queue 72):** whether "wirtualny asystent" alone is enough disclosure under Art. 50 for Polish listeners, or the opening should say "wirtualny asystent AI". Not legal advice; `legal_review_required_before_launch` in `docs/trust/config/doddy_rules.yaml` still applies.
 - Removing the disclosure altogether, or having the agent claim to be a person, is not offered: it breaks DOD-03 and the CI check, and very likely Art. 50.
 
 ## Evidence

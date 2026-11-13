@@ -78,3 +78,11 @@ export function linkFields(c: { words: string; brief: string; title: string; pri
   c.priorities?.forEach((p, i) => { if (hasLink(p)) out.push(`priorities.${i}`); });
   return out;
 }
+
+/**
+ * The same check for any other text a model will read with a web fetch at hand (Studio's topic, audience and
+ * details): the names of the fields that hold a link, in the order given. Names only, never the text.
+ */
+export function textLinkFields(fields: Readonly<Record<string, string | undefined>>): string[] {
+  return Object.entries(fields).flatMap(([name, text]) => (text !== undefined && hasLink(text) ? [name] : []));
+}

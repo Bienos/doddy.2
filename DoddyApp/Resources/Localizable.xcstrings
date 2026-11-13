@@ -2365,6 +2365,47 @@
         }
       }
     },
+    "A photo for a note is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A photo for a note is kept with the note on this iPad, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A photo for a note is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdjęcie do notatki zostaje z notatką na tym iPadzie, nigdzie nie jest wysyłane ani zapisywane w twojej bibliotece zdjęć. Możesz też stuknąć Zrób zdjęcie podczas pisania notatki."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdjęcie do notatki zostaje z notatką na tym iPhonie, nigdzie nie jest wysyłane ani zapisywane w twojej bibliotece zdjęć. Możesz też stuknąć Zrób zdjęcie podczas pisania notatki."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -2399,6 +2440,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Zdjęcie, które zachowasz, trafia do nowej notatki, którą sprawdzasz i zapisujesz. Jego tekst jest odczytywany na tym iPhonie. Nic nie trafia do Twojej biblioteki zdjęć, a zdjęcie nigdy nie jest nigdzie wysyłane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "A photo you take to ask Doddy about goes, when you tap Send in Messages, to Doddy's server and Claude (Anthropic) for the answer; neither Doddy's server nor this iPhone keeps it. For a barcode you scan, only its number goes to Open Food Facts. From a photo note, only the words you save can reach Doddy's voice, like any note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A photo you take to ask Doddy about goes, when you tap Send in Messages, to Doddy's server and Claude (Anthropic) for the answer; neither Doddy's server nor this iPad keeps it. For a barcode you scan, only its number goes to Open Food Facts. From a photo note, only the words you save can reach Doddy's voice, like any note."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A photo you take to ask Doddy about goes, when you tap Send in Messages, to Doddy's server and Claude (Anthropic) for the answer; neither Doddy's server nor this iPhone keeps it. For a barcode you scan, only its number goes to Open Food Facts. From a photo note, only the words you save can reach Doddy's voice, like any note."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdjęcie, o które chcesz zapytać Doddy'ego, trafia po stuknięciu Wyślij w Wiadomościach na serwer Doddy'ego i do Claude (Anthropic), który pisze odpowiedź; nie przechowuje go ani serwer Doddy'ego, ani ten iPad. Z zeskanowanego kodu kreskowego do Open Food Facts trafia tylko jego numer. Ze zdjęcia w notatce do głosu Doddy'ego mogą trafić tylko słowa, które zapiszesz, jak w każdej notatce."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdjęcie, o które chcesz zapytać Doddy'ego, trafia po stuknięciu Wyślij w Wiadomościach na serwer Doddy'ego i do Claude (Anthropic), który pisze odpowiedź; nie przechowuje go ani serwer Doddy'ego, ani ten iPhone. Z zeskanowanego kodu kreskowego do Open Food Facts trafia tylko jego numer. Ze zdjęcia w notatce do głosu Doddy'ego mogą trafić tylko słowa, które zapiszesz, jak w każdej notatce."
                 }
               }
             }
@@ -21648,6 +21730,17 @@
         }
       }
     },
+    "Doddy couldn't fill this in just now, so most fields are empty. Fill them in yourself; nothing was dialled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł teraz tego uzupełnić, więc większość pól jest pusta. Wypełnij je samodzielnie; nic nie zostało wybrane."
+          }
+        }
+      }
+    },
     "Doddy couldn't finish a task.": {
       "extractionState": "manual",
       "localizations": {
@@ -22389,6 +22482,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "此专注模式下的 Doddy"
+          }
+        }
+      }
+    },
+    "Doddy filled this in from what you wrote. Check every field: the card shows exactly this, and nothing is dialled until you approve it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy uzupełnił to na podstawie Twoich słów. Sprawdź każde pole: karta pokaże dokładnie to, a nic nie jest wybierane, dopóki jej nie zatwierdzisz."
           }
         }
       }
@@ -23514,6 +23618,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 最后听到你说"
+          }
+        }
+      }
+    },
+    "Doddy left out a name you didn't write. Type who Doddy calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pominął nazwę, której nie było w Twoim tekście. Wpisz, do kogo Doddy dzwoni."
+          }
+        }
+      }
+    },
+    "Doddy left out something that can't go on a call card. Check the fields below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pominął coś, co nie może trafić na kartę rozmowy. Sprawdź pola poniżej."
           }
         }
       }
@@ -24768,6 +24894,17 @@
         }
       }
     },
+    "Doddy says: w imieniu %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy mówi: w imieniu %@"
+          }
+        }
+      }
+    },
     "Doddy searches Gmail for booking emails from the last 400 days (airlines, Booking.com, Airbnb, travel agents, trains) and reads up to 25 of them.": {
       "extractionState": "manual",
       "localizations": {
@@ -25788,6 +25925,17 @@
         }
       }
     },
+    "Doddy's server didn't confirm deleting your messaging data, so nothing was changed. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie potwierdził usunięcia Twoich danych wiadomości, więc nic nie zmieniono. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Doddy's server didn't confirm the item is gone, so it isn't shown as deleted. Pull down to check again.": {
       "extractionState": "manual",
       "localizations": {
@@ -25861,6 +26009,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego przyjął dziś tyle spraw, ile pozwala dla wszystkich. Spróbuj jutro. Nic nie ruszyło."
+          }
+        }
+      }
+    },
+    "Doddy's server hasn't answered yet, so only the words can be changed now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego jeszcze nie odpowiedział, więc teraz można zmienić tylko słowa."
           }
         }
       }
@@ -26037,6 +26196,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego przeszukuje źródła wiadomości pod kątem tych słów."
+          }
+        }
+      }
+    },
+    "Doddy's server sends these words to Claude (Anthropic) to fill in the fields, with phone numbers taken out first, and doesn't keep them. A contact's number stays on this iPhone until you prepare the card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server sends these words to Claude (Anthropic) to fill in the fields, with phone numbers taken out first, and doesn't keep them. A contact's number stays on this iPad until you prepare the card."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server sends these words to Claude (Anthropic) to fill in the fields, with phone numbers taken out first, and doesn't keep them. A contact's number stays on this iPhone until you prepare the card."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego wysyła te słowa do Claude’a (Anthropic), żeby uzupełnić pola, wcześniej usuwa z nich numery telefonów i ich nie przechowuje. Numer z kontaktu zostaje na tym iPadzie, dopóki nie przygotujesz karty."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego wysyła te słowa do Claude’a (Anthropic), żeby uzupełnić pola, wcześniej usuwa z nich numery telefonów i ich nie przechowuje. Numer z kontaktu zostaje na tym iPhonie, dopóki nie przygotujesz karty."
+                }
+              }
+            }
           }
         }
       }
@@ -30166,6 +30366,17 @@
         }
       }
     },
+    "Facts Doddy may say: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacje, które Doddy może podać: %lld"
+          }
+        }
+      }
+    },
     "Failed": {
       "extractionState": "manual",
       "localizations": {
@@ -30324,6 +30535,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pliki"
+          }
+        }
+      }
+    },
+    "Fill in every field myself": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wypełnij wszystkie pola samodzielnie"
+          }
+        }
+      }
+    },
+    "Filling in the fields…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzupełnianie pól…"
           }
         }
       }
@@ -31617,6 +31850,17 @@
         }
       }
     },
+    "For example: call the hairdresser Anna on Długa, 600 100 200, and ask if they have a free slot on Saturday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: zadzwoń do fryzjera Anna na Długiej, 600 100 200, i zapytaj, czy mają wolne w sobotę"
+          }
+        }
+      }
+    },
     "For reminders at a place, when you tap “Use where I am”. Never in the background.": {
       "extractionState": "manual",
       "localizations": {
@@ -32586,6 +32830,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szykuję się"
+          }
+        }
+      }
+    },
+    "Getting the page ready…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotowuję stronę…"
           }
         }
       }
@@ -35764,13 +36019,13 @@
         }
       }
     },
-    "It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked.": {
+    "It goes to Doddy's server and to Claude (Anthropic), which writes the answer. The server that asks Claude doesn't keep or log what you write, only how many questions you asked.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Trafia na serwer Doddy’ego i do Claude (Anthropic), który pisze odpowiedź. Serwer Doddy’ego nie zapisuje ani nie loguje tego, co piszesz, tylko liczbę pytań."
+            "value": "Trafia na serwer Doddy’ego i do Claude (Anthropic), który pisze odpowiedź. Serwer, który pyta Claude, nie zapisuje ani nie loguje tego, co piszesz, tylko liczbę pytań."
           }
         }
       }
@@ -40413,6 +40668,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opuść udostępnioną listę"
+          }
+        }
+      }
+    },
+    "Leave your PESEL out of this field. If Doddy really needs it, add it on the next screen as a fact marked PESEL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie wpisuj tu numeru PESEL. Jeśli Doddy naprawdę go potrzebuje, dodaj go na następnym ekranie jako informację oznaczoną jako PESEL."
           }
         }
       }
@@ -51096,17 +51362,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有说出具体内容，所以没有可保存的。"
-          }
-        }
-      }
-    },
-    "Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nic z aparatu. Do głosu Doddy'ego mogą trafić tylko słowa, które zapiszesz w notatce, jak w każdej notatce."
           }
         }
       }
@@ -71436,6 +71691,17 @@
         }
       }
     },
+    "Screen shared with Doddy. Opens iOS's sheet, where Stop Broadcast ends it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekran udostępniony Doddy’emu. Otwiera okno iOS, w którym Zatrzymaj transmisję kończy udostępnianie."
+          }
+        }
+      }
+    },
     "Scroll down to Back Tap and choose Double Tap.": {
       "extractionState": "manual",
       "localizations": {
@@ -74671,6 +74937,17 @@
         }
       }
     },
+    "Sharing screen · Stop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniasz ekran · Zatrzymaj"
+          }
+        }
+      }
+    },
     "Sharing stops first: the copy in your iCloud is deleted and the people you invited lose the list. Undo brings it back on this iPhone only, not shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -75478,6 +75755,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż otworzy je w Doddym"
+          }
+        }
+      }
+    },
+    "Show screen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż ekran"
           }
         }
       }
@@ -86916,47 +87204,6 @@
         }
       }
     },
-    "The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "The photo is kept with the note on this iPad, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zdjęcie zostaje z notatką na tym iPadzie, nigdzie nie jest wysyłane ani zapisywane w twojej bibliotece zdjęć. Możesz też stuknąć Zrób zdjęcie podczas pisania notatki."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zdjęcie zostaje z notatką na tym iPhonie, nigdzie nie jest wysyłane ani zapisywane w twojej bibliotece zdjęć. Możesz też stuknąć Zrób zdjęcie podczas pisania notatki."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "The photo you picked": {
       "extractionState": "manual",
       "localizations": {
@@ -88863,6 +89110,17 @@
         }
       }
     },
+    "There's more than one phone number in what you wrote. Type the one Doddy should call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W Twoim tekście jest więcej niż jeden numer telefonu. Wpisz ten, pod który Doddy ma zadzwonić."
+          }
+        }
+      }
+    },
     "There's no text or web link here that Doddy can keep. Nothing was saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -88993,6 +89251,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "These topics are only for the daily message. What you follow in On my radar (Home › •••) is a separate list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te tematy są tylko do codziennej wiadomości. To, co śledzisz w „Na radarze” (ekran główny › •••), to osobna lista."
           }
         }
       }
@@ -90479,6 +90748,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这台 iPhone 没有设置密码或面容 ID，所以 Doddy 无法锁定。"
+          }
+        }
+      }
+    },
+    "This iPhone has no sign-in for Doddy's messaging server, so nothing was deleted from here. If you reinstalled the app, delete your Doddy account in Settings to remove what the server holds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie ma logowania do serwera wiadomości Doddy’ego, więc stąd nic nie usunięto. Jeśli aplikacja była instalowana od nowa, usuń konto Doddy w Ustawieniach, żeby usunąć to, co trzyma serwer."
           }
         }
       }
@@ -102419,6 +102699,65 @@
         }
       }
     },
+    "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads. Logbook counts how you use Doddy, never your words; its row below says where the counts go.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wohin deine Informationen gehen, nach deinen aktuellen Einstellungen. Nichts wird verkauft, und es gibt keine Werbung. Logbook zählt, wie du Doddy nutzt, nie deine Worte; seine Zeile unten sagt, wohin die Zahlen gehen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adónde va tu información, según tus ajustes actuales. No se vende nada, y no hay anuncios. Logbook cuenta cómo usas Doddy, nunca tus palabras; su fila de abajo dice adónde van los recuentos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Où vont tes informations, selon tes réglages actuels. Rien n’est vendu, et il n’y a pas de publicité. Logbook compte comment tu utilises Doddy, jamais tes mots ; sa ligne ci-dessous dit où vont ces chiffres."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamo idu tvoji podaci, prema tvojim trenutačnim postavkama. Ništa se ne prodaje i nema oglasa. Logbook broji kako koristiš Doddyja, nikad tvoje riječi; njegov redak ispod kaže kamo idu ti brojevi."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dove vanno le tue informazioni, in base alle tue impostazioni attuali. Niente viene venduto, e non ci sono pubblicità. Logbook conta come usi Doddy, mai le tue parole; la sua riga qui sotto dice dove vanno i conteggi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在の設定に基づいて、あなたの情報がどこへ行くかを示します。何も販売されず、広告もありません。Logbookは、あなたの言葉ではなく、Doddyをどう使ったかの回数だけを数えます。その回数がどこへ行くかは、下のLogbookの行に書かれています。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokąd trafiają Twoje informacje, zgodnie z obecnymi ustawieniami. Nic nie jest sprzedawane i nie ma reklam. Dziennik liczy, jak korzystasz z Doddy'ego, ale nigdy nie zbiera Twoich słów; jego wiersz poniżej mówi, dokąd trafiają te liczby."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para onde suas informações vão, com base nos seus ajustes de agora. Nada é vendido, e não há anúncios. O Logbook conta como você usa o Doddy, nunca suas palavras; a linha dele abaixo diz para onde vão as contagens."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根据你当前的设置，你的信息会去向哪里。不会出售任何内容，也没有广告。Logbook 只统计你使用 Doddy 的次数，从不记录你的话；下方的 Logbook 一行说明这些统计会去向哪里。"
+          }
+        }
+      }
+    },
     "Where, when and with whom. Doddy shows up to three flights with the real total.": {
       "extractionState": "manual",
       "localizations": {
@@ -102577,6 +102916,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Do kogo dzwoni Doddy"
+          }
+        }
+      }
+    },
+    "Who and why": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do kogo i po co"
           }
         }
       }
@@ -103501,6 +103851,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najpierw wpisz, czym Doddy ma się zająć."
+          }
+        }
+      }
+    },
+    "Write who Doddy calls and what to ask, with their number unless you pick a contact. Doddy fills in the rest; you check every field next, and nothing is dialled until you approve the card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisz, do kogo Doddy ma zadzwonić i o co zapytać, razem z numerem, chyba że wybierzesz kontakt. Resztę uzupełni Doddy; potem sprawdzisz każde pole, a nic nie jest wybierane, dopóki nie zatwierdzisz karty."
           }
         }
       }
@@ -106316,7 +106677,7 @@
         }
       }
     },
-    "Your message and the answer are saved in Messages on this iPhone until you delete them.": {
+    "Your message and the answer stay in Messages on this iPhone until you delete them. A copy of their text is kept, encrypted, on Doddy's server so Doddy on the web can show it; deleting the conversation in Messages deletes it there too.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -106325,13 +106686,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your message and the answer are saved in Messages on this iPad until you delete them."
+                  "value": "Your message and the answer stay in Messages on this iPad until you delete them. A copy of their text is kept, encrypted, on Doddy's server so Doddy on the web can show it; deleting the conversation in Messages deletes it there too."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your message and the answer are saved in Messages on this iPhone until you delete them."
+                  "value": "Your message and the answer stay in Messages on this iPhone until you delete them. A copy of their text is kept, encrypted, on Doddy's server so Doddy on the web can show it; deleting the conversation in Messages deletes it there too."
                 }
               }
             }
@@ -106343,13 +106704,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Twoja wiadomość i odpowiedź są zapisane w Wiadomościach na tym iPadzie, dopóki ich nie usuniesz."
+                  "value": "Twoja wiadomość i odpowiedź zostają w Wiadomościach na tym iPadzie, dopóki ich nie usuniesz. Kopia ich tekstu jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w przeglądarce; usunięcie rozmowy w Wiadomościach usuwa ją także tam."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Twoja wiadomość i odpowiedź są zapisane w Wiadomościach na tym iPhonie, dopóki ich nie usuniesz."
+                  "value": "Twoja wiadomość i odpowiedź zostają w Wiadomościach na tym iPhonie, dopóki ich nie usuniesz. Kopia ich tekstu jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w przeglądarce; usunięcie rozmowy w Wiadomościach usuwa ją także tam."
                 }
               }
             }

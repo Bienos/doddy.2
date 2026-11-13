@@ -15,8 +15,8 @@
 - **Today:** a tap on a reminder opens a sheet to change its title and day or time, tick it off or delete it; Add makes a new one. Every write goes to Reminders on this iPhone and is read back before the card says it happened (`ReminderEdit` in DoddyCore, `TodayModel.edit`, `.delete`, `.add`). A due is moved or added here, never cleared.
 
 ## Consequences
-- Not done, and why: ordering food for the person (needs a wallet or card, owner queue 63); prices across delivery apps (no public data); more shops in Shopping (each needs an API or partner account, owner queue 64); hotel prices inside the app (needs a stays API, owner queue 65). None is shown on screen as if it worked.
-- The radar's AI summary sends a story's link and headline to Doddy's server and the page's text to Anthropic; the privacy policy must say so before it is switched on (owner queue 66).
+- Not done, and why: ordering food for the person (needs a wallet or card, owner queue 73); prices across delivery apps (no public data); more shops in Shopping (each needs an API or partner account, owner queue 74); hotel prices inside the app (needs a stays API, owner queue 75). None is shown on screen as if it worked.
+- The radar's AI summary sends a story's link and headline to Doddy's server and the page's text to Anthropic; the privacy policy must say so before it is switched on (owner queue 76).
 - UI tests that opened "Cheapest this week" from Home's menu now go through Shopping › Groceries.
 
 ## Evidence

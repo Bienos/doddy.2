@@ -48,6 +48,23 @@ expect 1 false "Claude's rules" CLAUDE.md
 expect 1 false "Claude's permissions" .claude/settings.json
 expect 1 false "the constitution" docs/trust/01_THE_DODDY_CONSTITUTION.md
 expect 1 false "the constitution's config" docs/trust/config/doddy_rules.yaml
+expect 1 false "folder agent notes" DoddyApp/CLAUDE.md
+expect 1 false "a nested AGENTS.md" Packages/DoddyCore/AGENTS.md
+expect 1 false "anything under .claude" .claude/skills/composio
+expect 1 false "agent skills" .agents/skills/composio/SKILL.md
+expect 1 false "agent prompts" prompts/M1_MEMORY.md
+expect 1 false "Studio skills" studio-skills/doddy-brand/brand.py
+expect 1 false "the CI entry point" scripts/ci.sh
+expect 1 false "other CI scripts" scripts/ci_needs_mac.sh scripts/ci_install_ubuntu_packages.sh
+expect 1 false "the Makefile" Makefile
+expect 1 false "a Node manifest" web/package.json
+expect 1 false "a Node lockfile" backend/package-lock.json
+expect 1 false "a root Node manifest" package.json
+expect 1 false "the app's package pins" Config/Package.resolved
+expect 1 false "site server functions" site/api/waitlist.js
+expect 1 false "the voice token server" server/voice-token/src/handler.js
+expect 1 false "a server's secret references" gateway/.env.op
+expect 1 false "code owners" .github/CODEOWNERS
 expect 1 false "one sensitive file among ordinary ones" DoddyApp/Features/Home/HomeView.swift Config/Doddy-Info.plist docs/a.md
 expect 1 false "a renamed entitlements file (both paths are listed)" Config/Old.entitlements Config/New.entitlements
 
@@ -64,10 +81,13 @@ expect 0 false "server source" server/messaging/src/index.ts backend/src/app.ts
 expect 0 false "server tests" server/messaging/test/helpers.ts
 expect 0 false "voice agent notes" voice-agent/README.md voice-agent/phone/README.md
 expect 0 false "docs and status" STATUS.md DECISIONS.md docs/OWNER_QUEUE.md BUILD_AND_TEST.md
-expect 0 false "folder agent notes" DoddyApp/CLAUDE.md Packages/DoddyCore/CLAUDE.md
-expect 0 false "other CI scripts" scripts/ci.sh scripts/ci_needs_mac.sh
+expect 0 false "decision files (left out on purpose)" docs/decisions/2026-11-13-example.md
+expect 0 false "change notes" changes/example.md
+expect 0 false "scripts that aren't CI or guards" scripts/regen.sh scripts/test_ci_groups.sh scripts/test_check_sensitive_paths.sh
+expect 0 false "notes named like agent rules" docs/CLAUDE_NOTES.md
 expect 0 false "the PR template" .github/pull_request_template.md
 expect 0 false "web and site" web/src/App.tsx site/index.html
+expect 0 false "other servers' source" gateway/src/index.ts server/messaging/test/x.test.ts
 expect 0 false "paused Watch code" DoddyWatch/A.swift
 expect 0 false "blank lines only" "" ""
 expect 0 true "ordinary work, labelled anyway" DoddyApp/App/RootView.swift
