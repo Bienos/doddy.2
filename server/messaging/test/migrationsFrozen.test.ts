@@ -48,6 +48,7 @@ const FROZEN = [
   "029_leaflet_catalog.sql",
   "030_account_quotas.sql",
   "032_task_call_records.sql",
+  "033_phone_recaps_need_pin.sql",
   "034_callback_route_limits.sql",
 ];
 

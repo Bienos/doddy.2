@@ -153,13 +153,19 @@ private struct IslandControls: View {
         HStack(spacing: 6) {
             // Mute needs the conversation's process; a stale island has none to talk to.
             if !shown.isStale, !shown.state.isEnded {
-                Button(intent: ToggleDoddyMuteIntent()) {
-                    // While muted, Unmute is the cream pill so getting Doddy back is one obvious tap.
-                    IslandPillLabel(title: shown.state.isMuted ? islandWord("Unmute") : islandWord("Mute"),
-                                    systemImage: shown.state.isMuted ? "mic.fill" : "mic.slash.fill",
-                                    prominent: shown.state.isMuted)
+                // While muted, Unmute is the cream pill so getting Doddy back is one obvious tap. Unmute
+                // asks for the iPhone to be unlocked first; Mute never does (`IslandMute`).
+                if shown.state.isMuted {
+                    Button(intent: UnmuteDoddyIntent()) {
+                        IslandPillLabel(title: islandWord("Unmute"), systemImage: "mic.fill", prominent: true)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Button(intent: MuteDoddyIntent()) {
+                        IslandPillLabel(title: islandWord("Mute"), systemImage: "mic.slash.fill", prominent: false)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             if showsInDoddy, !shown.isStale {
                 // The card itself, in the conversation; opening it approves nothing.
@@ -213,25 +219,25 @@ private struct Controls: View {
         return "phone.down.fill"
     }
 
-    /// While muted, Unmute is the main button, so getting Doddy back is one obvious tap.
+    /// While muted, Unmute is the main button, so getting Doddy back is one obvious tap. Unmute asks for
+    /// the iPhone to be unlocked first; Mute never does (`IslandMute`).
     @ViewBuilder
     private var muteButton: some View {
-        let muted = shown.state.isMuted
-        let button = Button(intent: ToggleDoddyMuteIntent()) {
-            Label { IslandText(muted ? islandWord("Unmute") : islandWord("Mute")) } icon: {
-                Image(systemName: muted ? "mic.fill" : "mic.slash.fill")
+        if shown.state.isMuted {
+            Button(intent: UnmuteDoddyIntent()) {
+                Label { IslandText(islandWord("Unmute")) } icon: { Image(systemName: "mic.fill") }
+                    .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
-        }
-        if muted {
-            button
-                .buttonStyle(.borderedProminent)
-                .tint(Palette.ink)
-                .foregroundStyle(Palette.card)
+            .buttonStyle(.borderedProminent)
+            .tint(Palette.ink)
+            .foregroundStyle(Palette.card)
         } else {
-            button
-                .buttonStyle(.bordered)
-                .tint(Palette.ink)
+            Button(intent: MuteDoddyIntent()) {
+                Label { IslandText(islandWord("Mute")) } icon: { Image(systemName: "mic.slash.fill") }
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(Palette.ink)
         }
     }
 }
