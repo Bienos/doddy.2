@@ -1,11 +1,21 @@
 import { createHash } from "node:crypto";
 import type { Db } from "../db.js";
 import { httpUrl, parseFeed, plainText, type NewsItem } from "./feeds.js";
-import { safeFetchText } from "./safeFetch.js";
+import { safeFetchText, type Validators } from "./safeFetch.js";
+
+export interface FetchedFeed extends Validators {
+  title: string;
+  items: NewsItem[];
+  /** The publisher answered 304 to the validators it was given: nothing changed, keep what is cached. */
+  notModified?: boolean;
+}
 
 export interface FeedSource {
-  /** Throws when the feed can't be fetched or parsed. */
-  fetchFeed(url: string): Promise<{ title: string; items: NewsItem[] }>;
+  /**
+   * Throws when the feed can't be fetched or parsed. With `conditional` (the publisher's validators from the last
+   * answer) it may answer `notModified` instead of the feed (reader.ts).
+   */
+  fetchFeed(url: string, conditional?: Validators): Promise<FetchedFeed>;
 }
 
 export interface NewsSearch {
@@ -13,10 +23,11 @@ export interface NewsSearch {
 }
 
 export class HttpFeedSource implements FeedSource {
-  async fetchFeed(url: string) {
-    const res = await safeFetchText(url);
+  async fetchFeed(url: string, conditional?: Validators): Promise<FetchedFeed> {
+    const res = await safeFetchText(url, { conditional });
+    if (res.status === 304 && (conditional?.etag || conditional?.lastModified)) return { title: "", items: [], notModified: true };
     if (res.status < 200 || res.status >= 300) throw new Error(`feed HTTP ${res.status}`);
-    return parseFeed(res.text, new URL(res.finalUrl).hostname);
+    return { ...parseFeed(res.text, new URL(res.finalUrl).hostname), etag: res.etag, lastModified: res.lastModified };
   }
 }
 
