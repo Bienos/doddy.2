@@ -136,15 +136,26 @@ final class RecordingDetailModel {
         let text = TranscriptFormat.markdown(
             title: title, startedAt: recording.startedAt, durationMilliseconds: recording.durationMilliseconds,
             languageCode: recording.languageCode, segments: segments, gaps: recording.gaps, language)
-        let safe = title.filter { !"/\\:*?\"<>|".contains($0) }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe.isEmpty ? "Recording" : safe).md")
+        // One file in the share folder, readable only while the iPhone is unlocked. The share's end deletes it
+        // (`FileShareSheet.onFinished`, the sheet's `onDismiss`, leaving the page), and an earlier one goes first.
+        clearExport()
         do {
-            try Data(text.utf8).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            let url = try TemporaryShareFiles.write(Data(text.utf8), title: title, fileExtension: "md", fallback: "Recording")
+            exported = url
             return url
         } catch {
             problem = NSLocalizedString("Doddy couldn't prepare the transcript to share.", comment: "")
             return nil
         }
+    }
+
+    /// The transcript file made for the share sheet, until it is deleted.
+    @ObservationIgnored private var exported: URL?
+
+    /// Deletes the transcript file made for sharing, if there is one. The words are still kept in Doddy.
+    func clearExport() {
+        if let exported { TemporaryShareFiles.remove(exported) }
+        exported = nil
     }
 
     /// Whether a recap can be written now: the words exist and aren't still being written out.
@@ -267,7 +278,10 @@ struct RecordingDetailView: View {
                 await model.refresh()
             }
         }
-        .onDisappear { model.player.stop() }
+        .onDisappear {
+            model.player.stop()
+            model.clearExport()
+        }
     }
 
     @ViewBuilder
@@ -307,7 +321,10 @@ struct RecordingDetailView: View {
                 await model.remember(text: text, kind: draft.kind, atMilliseconds: draft.atMilliseconds, store: store)
             }
         }
-        .sheet(item: $exportURL) { file in FileShareSheet(url: file.url) }
+        // The transcript file is deleted when the share sheet finishes, and again when the sheet is gone.
+        .sheet(item: $exportURL, onDismiss: { model.clearExport() }) { file in
+            FileShareSheet(url: file.url, onFinished: { model.clearExport() })
+        }
         .confirmationDialog("Delete this recording?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { Task { if await model.delete() { dismiss() } } }
             Button("Cancel", role: .cancel) {}

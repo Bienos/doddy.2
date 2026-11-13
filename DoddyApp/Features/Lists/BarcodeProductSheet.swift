@@ -21,7 +21,7 @@ struct BarcodeProductSheet: View {
                 if let quantity = product.quantity {
                     Text(verbatim: quantity).foregroundStyle(Theme.secondaryText)
                 }
-                Text(String(format: NSLocalizedString("It goes on “%@” as: %@", comment: ""), listName, product.itemText))
+                Text(verbatim: String(format: NSLocalizedString("It goes on “%@” as: %@", comment: ""), listName, product.itemText))
                     .font(.subheadline)
                 Text("Product data from Open Food Facts (ODbL). Only the barcode number was sent to them; the photo stayed on this iPhone and wasn't kept.")
                     .font(.caption)
@@ -31,7 +31,7 @@ struct BarcodeProductSheet: View {
                     onAdd()
                     dismiss()
                 } label: {
-                    Text(String(format: NSLocalizedString("Add to “%@”", comment: ""), listName))
+                    Text(verbatim: String(format: NSLocalizedString("Add to “%@”", comment: ""), listName))
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.borderedProminent)
