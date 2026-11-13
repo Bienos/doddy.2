@@ -95,7 +95,7 @@ describe("agent drift check", () => {
 });
 
 describe("answer card", () => {
-  const opening = "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?";
+  const opening = "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?";
   const base = (transcript: Line[], over: Partial<ResultFacts> = {}): ResultFacts => ({
     endReason: "completed", answered: true, voiceConnected: true, takenOverAtSecs: null, durationSecs: 40,
     question: "Czy laptop z serwisu jest gotowy?", callbackLine: "Sprawdzę to u Anny i oddzwonię.",
@@ -166,7 +166,7 @@ describe("answer card", () => {
     const plain = buildCallResult(base([d(opening), c("Tak, gotowy, proszę przyjść jutro o 10."), d("Dobrze, dziękuję, do widzenia.")]));
     assert.deepEqual(plain.warnings, []);
     // A card that asks about 19:00: "o 21" is another time, and "pasuje" agrees to it.
-    const q = "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy mają Państwo wolny stolik dla dwóch osób dziś o 19:00?";
+    const q = "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy mają Państwo wolny stolik dla dwóch osób dziś o 19:00?";
     const r = buildCallResult(base([d(q), c("O 19 nie, ale o 21 mamy."), d("Dobrze, pasuje.")], { allowedTexts: [q] }));
     assert.deepEqual(r.warnings.map((w) => w.kind), ["possible_other_booking"]);
     assert.equal(r.confidence, "low");

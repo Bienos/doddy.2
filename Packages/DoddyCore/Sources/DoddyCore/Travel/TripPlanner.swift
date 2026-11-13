@@ -191,18 +191,33 @@ public enum TripPlanText {
     /// "12 lutego, 14:15 → 23:05 · 1 przesiadka · Ryanair, easyJet"
     public static func leg(_ l: PlanLeg, polish: Bool) -> String {
         let day = TripDay(String(l.departs.prefix(10))).map { TripCheckText.day($0, polish: polish) } ?? ""
-        let stops: String = switch l.stops {
-        case 0: polish ? "bez przesiadek" : "direct"
-        case 1: polish ? "1 przesiadka" : "1 stop"
-        default: polish ? "przesiadki: \(l.stops)" : "\(l.stops) stops"
-        }
+        let stops = Self.stops(l.stops, polish: polish)
         let route = "\(l.fromCity ?? l.from) → \(l.toCity ?? l.to)"
         return "\(route) · \(day), \(time(l.departs)) → \(time(l.arrives)) · \(stops)" + (l.airlines.isEmpty ? "" : " · \(l.airlines.joined(separator: ", "))")
     }
 
+    /// "bez przesiadek", "1 przesiadka", "przesiadki: 2" (the boarding-pass cards show it under the plane).
+    public static func stops(_ n: Int, polish: Bool) -> String {
+        switch n {
+        case 0: polish ? "bez przesiadek" : "direct"
+        case 1: polish ? "1 przesiadka" : "1 stop"
+        default: polish ? "przesiadki: \(n)" : "\(n) stops"
+        }
+    }
+
+    /// "3055 zł", or "412 EUR": the big number on a flight card.
+    public static func money(_ o: PlanOption, polish: Bool) -> String {
+        o.currency == "PLN" && polish ? "\(o.price) zł" : "\(o.price) \(o.currency)"
+    }
+
+    /// "za 2 osoby, bez walizki": what the big number covers.
+    public static func priceDetail(_ o: PlanOption, adults: Int, polish: Bool) -> String {
+        String(price(o, adults: adults, polish: polish).dropFirst(money(o, polish: polish).count + 1))
+    }
+
     /// "3055 zł za 2 osoby, 2 walizki wliczone"
     public static func price(_ o: PlanOption, adults: Int, polish: Bool) -> String {
-        let money = o.currency == "PLN" && polish ? "\(o.price) zł" : "\(o.price) \(o.currency)"
+        let money = Self.money(o, polish: polish)
         let people = polish ? (adults == 1 ? "za 1 osobę" : "za \(adults) osoby") : (adults == 1 ? "for 1 person" : "for \(adults) people")
         let bags = o.checkedBagsIncluded > 0
             ? (polish ? ", walizki wliczone: \(o.checkedBagsIncluded)" : ", checked bags included: \(o.checkedBagsIncluded)")
@@ -217,5 +232,102 @@ public enum TripPlanText {
         let checkOut = TripDay(String((o.inbound?.departs ?? o.outbound.arrives).prefix(10))).map { TripCheckText.day($0, polish: true) } ?? ""
         let who = children > 0 ? "\(adults) dorosłych i \(children) dzieci" : (adults == 1 ? "1 osoby" : "\(adults) osób")
         return "Sprawdź noclegi. Miejsce: \(city). Od \(checkIn) do \(checkOut), dla \(who). Które okolice wybrać i dlaczego, przykładowe ceny za noc i za cały pobyt ze źródłem i datą sprawdzenia, oraz na co uważać."
+    }
+}
+
+/// Stays on their own (owner, 13 Nov 2026: Trips is "planowanie wyjazdu, wyszukiwanie lotów, hoteli"): the
+/// person types a place, a check-in day, the nights and who is going; the iPhone builds the same Booking.com
+/// and Airbnb searches as the server's `stayLinks` (backend/src/travel/plan.ts), with everything filled in.
+/// Nothing is read from those pages and nothing is booked; the words for Doddy's background research name
+/// the same stay. No server is asked, so it works with no connection to Doddy's server.
+public struct StaySearch: Equatable, Sendable {
+    public static let maxNights = 30
+    public static let maxAdults = 9
+    public static let maxChildren = 6
+
+    public let place: String
+    public let checkIn: TripDay
+    public let nights: Int
+    public let adults: Int
+    public let children: Int
+
+    /// Nil for an empty place (after trimming), a place over 80 characters, no nights or too many, nobody
+    /// grown up, or too many people. The checks are the screen's steppers' limits, so a nil is a bug there.
+    public init?(place: String, checkIn: TripDay, nights: Int, adults: Int, children: Int) {
+        let trimmed = place.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count <= 80, (1...Self.maxNights).contains(nights),
+              (1...Self.maxAdults).contains(adults), (0...Self.maxChildren).contains(children) else { return nil }
+        self.place = trimmed
+        self.checkIn = checkIn
+        self.nights = nights
+        self.adults = adults
+        self.children = children
+    }
+
+    public var checkOut: TripDay { checkIn.adding(days: nights) }
+
+    /// Booking.com's search: `ss`, `checkin`, `checkout`, `group_adults`, `group_children`, `no_rooms`.
+    public var bookingURL: URL? {
+        var c = URLComponents(string: "https://www.booking.com/searchresults.html")
+        c?.queryItems = [
+            URLQueryItem(name: "ss", value: place), URLQueryItem(name: "checkin", value: checkIn.description),
+            URLQueryItem(name: "checkout", value: checkOut.description), URLQueryItem(name: "group_adults", value: String(adults)),
+            URLQueryItem(name: "group_children", value: String(children)), URLQueryItem(name: "no_rooms", value: "1"),
+        ]
+        return c?.url
+    }
+
+    /// Airbnb's search for the place: `checkin`, `checkout`, `adults` and, with children, `children`.
+    public var airbnbURL: URL? {
+        let allowed = CharacterSet.urlPathAllowed.subtracting(CharacterSet(charactersIn: "/?#"))
+        guard let path = place.addingPercentEncoding(withAllowedCharacters: allowed) else { return nil }
+        var c = URLComponents(string: "https://www.airbnb.com/s/\(path)/homes")
+        var items = [
+            URLQueryItem(name: "checkin", value: checkIn.description), URLQueryItem(name: "checkout", value: checkOut.description),
+            URLQueryItem(name: "adults", value: String(adults)),
+        ]
+        if children > 0 { items.append(URLQueryItem(name: "children", value: String(children))) }
+        c?.queryItems = items
+        return c?.url
+    }
+
+    /// "Lizbona · 12 lutego – 16 lutego · 4 noce · 2 osoby"
+    public func summary(polish: Bool) -> String {
+        let days = "\(TripCheckText.day(checkIn, polish: polish)) – \(TripCheckText.day(checkOut, polish: polish))"
+        let nightsText: String
+        if polish {
+            nightsText = nights == 1 ? "1 noc" : (Self.polishFew(nights) ? "\(nights) noce" : "\(nights) nocy")
+        } else {
+            nightsText = nights == 1 ? "1 night" : "\(nights) nights"
+        }
+        let people = adults + children
+        let peopleText: String
+        if polish {
+            peopleText = people == 1 ? "1 osoba" : (Self.polishFew(people) ? "\(people) osoby" : "\(people) osób")
+        } else {
+            peopleText = people == 1 ? "1 person" : "\(people) people"
+        }
+        return [place, days, nightsText, peopleText].joined(separator: " · ")
+    }
+
+    /// The words handed to Doddy's background research, in the same shape as `TripPlanText.stayResearchWords`.
+    public var researchWords: String {
+        let who = children > 0 ? "\(adults) dorosłych i \(children) dzieci" : (adults == 1 ? "1 osoby" : "\(adults) osób")
+        return "Sprawdź noclegi. Miejsce: \(place). Od \(TripCheckText.day(checkIn, polish: true)) do \(TripCheckText.day(checkOut, polish: true)), dla \(who). Które okolice wybrać i dlaczego, przykładowe ceny za noc i za cały pobyt ze źródłem i datą sprawdzenia, oraz na co uważać."
+    }
+
+    /// Polish "2, 3, 4, 22, 23, 24…" take "noce"/"osoby"; the rest take the genitive plural.
+    static func polishFew(_ n: Int) -> Bool {
+        let last = n % 10, lastTwo = n % 100
+        return (2...4).contains(last) && !(12...14).contains(lastTwo)
+    }
+}
+
+/// How long a flight leg takes, for the boarding-pass cards: "2 h 55 min" / "2h 55m".
+public enum TripDuration {
+    public static func text(minutes: Int, polish: Bool) -> String {
+        let h = max(0, minutes) / 60, m = max(0, minutes) % 60
+        if polish { return h == 0 ? "\(m) min" : (m == 0 ? "\(h) h" : "\(h) h \(m) min") }
+        return h == 0 ? "\(m)m" : (m == 0 ? "\(h)h" : "\(h)h \(m)m")
     }
 }

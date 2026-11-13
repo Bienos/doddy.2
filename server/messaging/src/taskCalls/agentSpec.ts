@@ -4,7 +4,7 @@
 // server/messaging, so the expected values live here.
 export const TASK_AGENT_SPEC = {
   /** sha256 of voice-agent/task-call/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "0f2c05bcc3090802ae6ad0656c8f69ba6af9c6bdbfa8f63596088b8b1a25099a",
+  promptSha256: "8c8d5c482fccffbdf179ebbe4297e317988f8960c1d1f6213408fd30e734a83b",
   firstMessage: "{{doddy_opening_line}}",
   language: "pl",
   systemTools: ["end_call", "voicemail_detection"] as readonly string[],
@@ -21,7 +21,7 @@ export const TASK_AGENT_SPEC = {
 export const TASK_BOOK_AGENT_SPEC = {
   ...TASK_AGENT_SPEC,
   /** sha256 of voice-agent/task-call-book/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "e8ee34fef4e6ef97eb75bcf7c3ddf054f9fd0919f7b34abe4bf7e563cd01d03c",
+  promptSha256: "9a9eb76821299973cde1b70087342982a1d0e2127305c3f8eb7e5eb1670de42c",
 } as const;
 
 /**
@@ -43,12 +43,21 @@ export const TASK_ORDER_AGENT_SPEC = {
  *
  * 12 Nov 2026 (OWNER_QUEUE 52): {{doddy_goal}} was taken out of both prompts. The server now sends `doddy_goal` as a
  * fixed sentence (payload.ts), so the old prompts get no goal text either while they are still live.
+ * 13 Nov 2026: both prompts sound like the person's own assistant; the opening line (server-built) says "wirtualny
+ * asystent". An older live prompt still answers honestly when asked, so it stays accepted until the owner's sync.
  */
 export const SYNC_PENDING_PROMPTS: Readonly<Record<string, readonly string[]>> = {
-  // task-call, main before 12 Nov 2026
-  [TASK_AGENT_SPEC.promptSha256]: ["129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454"],
-  // task-call-book, main before 12 Nov 2026
-  [TASK_BOOK_AGENT_SPEC.promptSha256]: ["422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4"],
+  // task-call: main before 12 Nov 2026, then main from 12 to 13 Nov 2026 (before the assistant's natural voice,
+  // decision docs/decisions/2026-11-13-call-agent-sounds-like-an-assistant.md)
+  [TASK_AGENT_SPEC.promptSha256]: [
+    "129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454",
+    "0f2c05bcc3090802ae6ad0656c8f69ba6af9c6bdbfa8f63596088b8b1a25099a",
+  ],
+  // task-call-book: the same two
+  [TASK_BOOK_AGENT_SPEC.promptSha256]: [
+    "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4",
+    "e8ee34fef4e6ef97eb75bcf7c3ddf054f9fd0919f7b34abe4bf7e563cd01d03c",
+  ],
 };
 
 export type TaskAgentSpec = { readonly promptSha256: string } & Omit<typeof TASK_AGENT_SPEC, "promptSha256">;

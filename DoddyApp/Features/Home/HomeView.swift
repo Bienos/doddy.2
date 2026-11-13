@@ -148,9 +148,7 @@ struct HomeView: View {
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: $showShopping) { ShoppingHubView() }
             .sheet(isPresented: $showFood) { FoodView() }
-            .sheet(isPresented: $showPolandPack) {
-                PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
-            }
+            .sheet(isPresented: $showPolandPack) { PolandPackView() }
             .sheet(isPresented: $showTrips, onDismiss: { TripsModel.shared.reload() }) { TripsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
@@ -332,10 +330,11 @@ struct HomeView: View {
                 // The food-delivery apps the owner adds to (11 Nov 2026): one row each, opened from here, nothing sent.
                 Button { showFood = true } label: { Label("Food", systemImage: "fork.knife") }
                     .accessibilityIdentifier("home.food")
-                // Poland Pack reads official local data only when opened; no startup request.
+                // My city (was Poland Pack, "Polska na co dzień", until 13 Nov 2026): the weather, warnings, air and NBP
+                // rates, read from official sources only when opened; no startup request.
                 Button { showPolandPack = true } label: {
-                    Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
-                          systemImage: "mappin.and.ellipse")
+                    Label(NotificationLanguage.current == .polish ? "Moje miasto" : "My city",
+                          systemImage: "building.2")
                 }
                 .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.

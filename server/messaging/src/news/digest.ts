@@ -10,6 +10,7 @@ import { shortlist, type TopicItems } from "./rank.js";
 import { FeedReader } from "./reader.js";
 import { localDate, nextRunAt } from "./schedule.js";
 import { cached, searchQuery, type FeedSource, type NewsSearch } from "./sources.js";
+import type { NewsSummaryDeps } from "./summary.js";
 import { reserveWriter, type NewsWriterCaps } from "./usage.js";
 import { shorten, validateLines, type DigestWriter } from "./writer.js";
 
@@ -23,6 +24,8 @@ export interface NewsDeps {
   smsCaps?: { perAccount: number; perServer: number };
   /** Digests the writer may write per UTC day: per account, for the server, for new accounts. Default DEFAULT_NEWS_WRITER_CAPS. */
   writerCaps?: NewsWriterCaps;
+  /** Article summaries for On my radar (POST /v1/news/summary): the switch, Claude Haiku, the polite fetcher, the cache. */
+  summary?: NewsSummaryDeps;
 }
 
 export const MAX_TOPICS = 10;

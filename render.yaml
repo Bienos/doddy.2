@@ -250,6 +250,8 @@ services:
         value: "0"
       - key: RADAR_ALERTS_ENABLED # On my radar alerts (decision 2026-11-10-radar-alerts): "0" (the default) answers 503 radar_disabled to a new alert and checks nothing; "1" keeps the follows a person chose to have checked and pushes new matching stories (the worker checks)
         value: "0"
+      - key: NEWS_SUMMARY_ENABLED # On my radar, AI summary of one story on a tap (13 Nov 2026): "0" (the default) answers 503 summary_off; "1" reads the publisher's page and has NEWS_SUMMARY_MODEL [claude-haiku-5-5] summarize it (needs ANTHROPIC_API_KEY; caps NEWS_SUMMARY_DAILY_PER_ACCOUNT [40], NEWS_SUMMARY_DAILY_PER_SERVER [1000])
+        value: "0"
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"
       - key: SERPER_API_KEY # Shopping errands (ADR-607): Google Shopping offers for Poland; empty means find_offers answers "not set up"
@@ -355,6 +357,8 @@ services:
       - key: WATCHES_ENABLED # Price watches (shopping stage 2): "0" (the default) answers 503 watches_disabled and checks nothing; "1" reads a shop page about 4 times a day for 30 days (the worker does the checks; needs MEMORY_ENCRYPTION_KEY)
         value: "0"
       - key: RADAR_ALERTS_ENABLED # On my radar alerts (decision 2026-11-10-radar-alerts): "0" (the default) answers 503 radar_disabled to a new alert and checks nothing; "1" keeps the follows a person chose to have checked and pushes new matching stories (the worker checks)
+        value: "0"
+      - key: NEWS_SUMMARY_ENABLED # On my radar, AI summary of one story on a tap (13 Nov 2026): "0" (the default) answers 503 summary_off; "1" reads the publisher's page and has NEWS_SUMMARY_MODEL [claude-haiku-5-5] summarize it (needs ANTHROPIC_API_KEY; caps NEWS_SUMMARY_DAILY_PER_ACCOUNT [40], NEWS_SUMMARY_DAILY_PER_SERVER [1000])
         value: "0"
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"
