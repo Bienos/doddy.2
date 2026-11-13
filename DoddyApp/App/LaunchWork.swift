@@ -20,14 +20,37 @@ enum LaunchWork {
     private static var launchState: OSSignpostIntervalState?
     private static var initState: OSSignpostIntervalState?
 
+    /// When `DoddyApp.init` began (wall clock, to compare with the process's start) and how long it took
+    /// (monotonic clock). Read by `launchTiming` for the Action Button's log line; two clock readings
+    /// each, nothing else, so `init` pays nothing for them.
+    private static var initBeganAt: Date?
+    private static var initBeganUptime: Double?
+    private static var initSeconds: Double?
+
     /// First line of `DoddyApp.init`.
     static func appInitBegan() {
+        initBeganAt = Date()
+        initBeganUptime = ProcessInfo.processInfo.systemUptime
         launchState = signposter.beginInterval("Launch to first screen")
         initState = signposter.beginInterval("App.init")
     }
 
+    /// Where the time before an Action Button press went, for its log line (follow-up to decision
+    /// `2026-11-13-island-first`): how old this process is, how long iOS took to reach `DoddyApp.init`, and how
+    /// long `init` took. The start timeline can't show it: it begins when the intent's `perform()` runs.
+    static func launchTiming(now: Date = Date()) -> TalkLaunchTiming {
+        let started = ProcessStart.date()
+        var beforeAppInit: Double?
+        if let started, let began = initBeganAt { beforeAppInit = max(0, began.timeIntervalSince(started)) }
+        return TalkLaunchTiming(
+            processAge: started.map { max(0, now.timeIntervalSince($0)) },
+            beforeAppInit: beforeAppInit,
+            appInit: initSeconds)
+    }
+
     /// Last line of `DoddyApp.init`.
     static func appInitEnded() {
+        if let began = initBeganUptime { initSeconds = max(0, ProcessInfo.processInfo.systemUptime - began) }
         guard let state = initState else { return }
         signposter.endInterval("App.init", state)
         initState = nil
@@ -87,5 +110,19 @@ enum LaunchWork {
             await timed(name, job)
             try? await Task.sleep(for: gap)
         }
+    }
+}
+
+/// When this process started, from the kernel's own record of it (`sysctl`, the process table), the same
+/// for a process iOS started for an intent and for one the person opened. Nil if the kernel doesn't say.
+enum ProcessStart {
+    static func date() -> Date? {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var name: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        guard sysctl(&name, UInt32(name.count), &info, &size, nil, 0) == 0, size > 0 else { return nil }
+        let started = info.kp_proc.p_un.__p_starttime
+        guard started.tv_sec > 0 else { return nil }
+        return Date(timeIntervalSince1970: TimeInterval(started.tv_sec) + TimeInterval(started.tv_usec) / 1_000_000)
     }
 }
