@@ -153,6 +153,39 @@ with_watchdog() {  # seconds, command...
   done
   wait "$pid"
 }
+# Runs an xcodebuild test pass and, when it fails only because the app would not start, runs just those
+# tests once more on a restarted simulator (decision 2026-11-13-ui-launch-retry). Twice on 13 Nov 2026 (runs
+# 43412031979's neighbour 43412040308 and 43412113691) the first UI tests failed with "Failed to launch ...
+# Timed out while launching application" or "Failed to get launch progress", before any test code ran, and
+# the whole push to main went red (one of them after a 10-minute hang). scripts/ci_launch_failures.sh names the
+# tests to run again, and only when EVERY failed test has nothing but a launch error: an assertion, a crash, a
+# test that timed out in its own code, or more than 25 failures is never retried. The retry runs once;
+# its result is the step's result, and the first failure stays in the log and in the summary.
+launch_retry_note=""
+with_launch_retry() {  # xcodebuild test-without-building ... (the whole command)
+  local log rc retry a cmd
+  cmd=()
+  log=$(mktemp)
+  "$@" 2>&1 | tee "$log"
+  rc=${PIPESTATUS[0]}
+  if [ "$rc" -ne 0 ]; then
+    retry=$(scripts/ci_launch_failures.sh "$log") || retry=""
+    if [ -n "$retry" ]; then
+      echo; echo "RETRY: these tests failed only because the app would not start; running just them once more on a restarted simulator:"
+      echo "$retry"
+      launch_retry_note=$(printf '%s\n' "$retry" | sed 's/^-only-testing://' | tr '\n' ' ')
+      if [ -n "${sim_id:-}" ]; then restart_simulator "$sim_id"; fi
+      for a in "$@"; do
+        case "$a" in -only-testing:* | -skip-testing:*) ;; *) cmd+=("$a") ;; esac
+      done
+      # shellcheck disable=SC2086
+      "${cmd[@]}" $retry 2>&1 | tee "$log"
+      rc=${PIPESTATUS[0]}
+    fi
+  fi
+  rm -f "$log"
+  return "$rc"
+}
 
 if [ "$app_only" -eq 1 ]; then
   record "Pack, guard, agent spec, page and catalog checks" "SKIPPED" "--app-only: Linux core runs them"
@@ -185,6 +218,7 @@ run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I too
 run_step "Site colour tokens match the app" python3 -I tools/gen_site_tokens.py --check
 run_step "One scripts/regen.sh run brings every generated file up to date" scripts/test_regen.sh
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
+run_step "UI tests that failed only because the app would not start are named for one more run (2026-11-13)" scripts/test_ci_launch_failures.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
 run_step "XcodeGen installs only its pinned release, checksum checked before unpacking" scripts/test_install_xcodegen.sh
@@ -403,13 +437,16 @@ else
       ui_workers=${DODDY_UI_TEST_WORKERS:-1}
       if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
         # shellcheck disable=SC2086
-        run_step "xcodebuild test: $ui_label ($ui_workers simulators)" xcodebuild test-without-building \
+        run_step "xcodebuild test: $ui_label ($ui_workers simulators)" with_launch_retry xcodebuild test-without-building \
           -project Doddy.xcodeproj -scheme Doddy -destination "$dest" $ui_tests \
           -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
       else
         # shellcheck disable=SC2086
-        run_step "xcodebuild test: $ui_label" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+        run_step "xcodebuild test: $ui_label" with_launch_retry xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
           -destination "$dest" $ui_tests $test_limits
+      fi
+      if [ -n "$launch_retry_note" ]; then
+        record "UI tests run again because the app would not start" "NOTE" "$launch_retry_note"
       fi
       if [ "$ui_scope" = "smoke" ]; then
         record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); every push to main runs it"
