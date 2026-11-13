@@ -235,13 +235,26 @@ export function createHandler(deps: HttpDeps) {
       }
 
       // Decision 2026-11-08-required-account: a Doddy account takes over this iPhone's earlier data,
-      // once, with the iPhone's own device token in the body as proof.
+      // once. The iPhone's own device session starts it (a one-time code), the account's sign-in
+      // finishes it with that code, and for a day the device session can take it back (accountLinks.ts).
+      if (key === "POST /v1/account/link-device/start" && deps.accountLinker) {
+        route = key;
+        const code = await deps.accountLinker.start(header(req, "authorization"), now());
+        status = 200;
+        return send(res, 200, code);
+      }
       if (key === "POST /v1/account/link-device" && deps.accountLinker) {
         route = key;
         const body = await readJson(req, deps.maxBodyBytes);
         const linked = await deps.accountLinker.link(header(req, "authorization"), body, now());
         status = 200;
         return send(res, 200, linked);
+      }
+      if (key === "POST /v1/account/link-device/undo" && deps.accountLinker) {
+        route = key;
+        const undone = await deps.accountLinker.undo(header(req, "authorization"), now());
+        status = 200;
+        return send(res, 200, undone);
       }
 
       // Doddy Web (ADR-600): its own routes, then its pages for anything that isn't the API.

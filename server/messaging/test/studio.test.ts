@@ -321,6 +321,103 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await dayRows()).spend, before, "nothing came back for a job whose cost is unknown");
   });
 
+  // Studio spend counts cancelled work: a request cut off mid-way (Cancel, the time limit, a provider failure) has
+  // spent an amount nobody counted, so the job's whole reservation stays on the server's day and month.
+  const spendWorld = () => world({ settings: { dailyServerCapUsd: 100, dailyCapUsd: 100, maxOpen: 10, dailyPerAccount: 10 } });
+  const monthTotal = async () => (await monthRows()).reduce((n, r) => n + (r[1] as number), 0);
+
+  test("a job cancelled while a research request runs keeps its whole reservation, though the plan's cost was counted", async () => {
+    const w = await spendWorld();
+    const api = w.api!;
+    api.hang.add("research");
+    const item = await approveJob(w);
+    assert.equal((await dayRows()).spend, 2);
+    api.onCall = async (step) => {
+      if (step === "research") assert.equal((await w.call("POST", `/v1/studio/${item.id}/cancel`)).statusCode, 204);
+    };
+    await runNext(w.ctx);
+    assert.equal((await row(item.id)).state, "cancelled");
+    const counted = Number((await row(item.id)).cost_usd);
+    assert.ok(counted > 0 && counted < 2, `the plan was counted (${counted})`);
+    assert.equal((await dayRows()).spend, 2, "nothing came back: the cut-off request's cost is unknown");
+    assert.equal(await monthTotal(), 2);
+  });
+
+  test("a provider failure mid-request keeps the reservation; a cancel between steps gives back only what wasn't spent", async () => {
+    const w = await spendWorld();
+    w.api!.failing.add("research");
+    const broken = await approveJob(w);
+    await runNext(w.ctx);
+    assert.equal((await row(broken.id)).failure, "provider_error");
+    assert.equal((await dayRows()).spend, 2);
+
+    // Cancelled at the start of the write step, before its request went out: everything spent was counted.
+    w.api!.failing.clear();
+    const between = await approveJob(w);
+    w.api!.onCall = async (step) => {
+      if (step === "write") await w.call("POST", `/v1/studio/${between.id}/cancel`);
+    };
+    await runNext(w.ctx);
+    assert.equal((await row(between.id)).state, "cancelled");
+    const cost = Number((await row(between.id)).cost_usd);
+    assert.ok(Math.abs((await dayRows()).spend - (2 + 2 - (2 - cost))) < 0.001, "the unspent part of the second job came back");
+  });
+
+  test("spending past the reservation is never given back: the day counts what was spent", async () => {
+    const w = await world({ settings: { dailyServerCapUsd: 100, dailyCapUsd: 100, maxOpen: 10, dailyPerAccount: 10, jobLimitUsd: 0.05 } });
+    const item = await approveJob(w);
+    assert.equal((await dayRows()).spend, 0.05);
+    await runNext(w.ctx);
+    const r = await row(item.id);
+    assert.equal(r.failure, "cost_limit");
+    const cost = Number(r.cost_usd);
+    assert.ok(cost > 0.05, `the job went past its limit before the check stopped it (${cost})`);
+    assert.ok(Math.abs((await dayRows()).spend - cost) < 0.001, "the day holds the real spend, not the smaller reservation");
+    assert.ok(Math.abs((await monthTotal()) - cost) < 0.001);
+  });
+
+  // Copies made at Anthropic are written down the moment their ids come back, so nothing that ends the run early loses them.
+  test("file ids are on the item while it runs; the sweep leaves a running item alone; a delete mid-run hands them to the sweep", async () => {
+    const api = new FakeStudioApi();
+    api.stubborn.add("file_2");
+    const w = await world({ api });
+    const item = await approveJob(w);
+    let seenWhileRunning: string[] = [];
+    api.onDownload = async (id) => {
+      if (id !== "file_1") return;
+      seenWhileRunning = (await row(item.id)).anthropic_files_pending;
+      await tidyAnthropicFiles(w.ctx); // the background sweep, while the job still needs its files
+      assert.equal(api.deleted.size, 0, "a running item's files are not swept");
+      assert.equal((await w.call("DELETE", `/v1/studio/${item.id}`)).statusCode, 200);
+    };
+    await runNext(w.ctx);
+    assert.deepEqual([...seenWhileRunning].sort(), ["file_1", "file_2", "file_3", "file_4"]);
+    assert.equal((await db.query("SELECT 1 FROM studio_items WHERE id = $1", [item.id])).rowCount, 0);
+    assert.ok(api.deleted.has("file_1") && api.deleted.has("file_3"), "the run deleted what it could");
+    await tidyAnthropicFiles(w.ctx);
+    assert.deepEqual((await db.query("SELECT file_id FROM studio_orphan_files ORDER BY file_id")).rows.map((r) => r.file_id), ["file_2"],
+      "the copy whose delete never took is still owed after the item is gone");
+  });
+
+  test("an item reaped while its run still had files: the ids stay owed and the sweep takes them over", async () => {
+    const api = new FakeStudioApi();
+    api.stubborn.add("file_2");
+    const w = await world({ api, settings: { timeLimitMinutes: 20 } });
+    const item = await approveJob(w);
+    api.onDownload = async (id) => {
+      if (id !== "file_1") return;
+      w.clock.now = new Date(w.clock.now.getTime() + 26 * 60_000);
+      assert.equal(await reapInterrupted(w.ctx), 1, "another worker reaped it as interrupted");
+    };
+    await runNext(w.ctx);
+    const r = await row(item.id);
+    assert.equal(r.failure, "interrupted");
+    assert.deepEqual(r.anthropic_files_pending, ["file_2"], "the run's undeleted copy is written on the reaped item");
+    api.stubborn.clear();
+    assert.equal(await tidyAnthropicFiles(w.ctx), 1);
+    assert.deepEqual((await row(item.id)).anthropic_files_pending, []);
+  });
+
   test("a draft expires after 10 minutes; off, unconfigured or without skills answers 503", async () => {
     const w = await world();
     const draft = (await w.call("POST", "/v1/studio", job)).json();

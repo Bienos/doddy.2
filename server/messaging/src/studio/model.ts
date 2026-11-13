@@ -8,6 +8,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
+import { WEB_FETCH_MAX_CONTENT_TOKENS } from "../errands/budget.js";
 import { FALLBACK_BETA, type ResearchMessage, type ResearchTurn } from "../errands/researcher.js";
 import { supportsServerFallback, type StepModels, type StudioStep } from "./models.js";
 import { ContentOutput, PackOutput, PlanOutput } from "./schema.js";
@@ -135,12 +136,12 @@ export class AnthropicStudioApi implements StudioModelApi {
     return supportsServerFallback(model) ? { betas: [FALLBACK_BETA], fallbacks: "default" as const } : {};
   }
 
-  /** Research tools: only these two, capped; blocked domains when the owner set some. */
+  /** Research tools: only these two, capped (and a fetched page capped in size); blocked domains when the owner set some. */
   researchTools() {
     const blocked = this.options.blockedDomains.length ? { blocked_domains: this.options.blockedDomains } : {};
     return [
       { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: this.options.maxSearches, ...blocked },
-      { type: "web_fetch_20260209" as const, name: "web_fetch" as const, max_uses: this.options.maxFetches, ...blocked },
+      { type: "web_fetch_20260209" as const, name: "web_fetch" as const, max_uses: this.options.maxFetches, max_content_tokens: WEB_FETCH_MAX_CONTENT_TOKENS, ...blocked },
     ];
   }
 

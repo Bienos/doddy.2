@@ -6,7 +6,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { ErrandEffort } from "../config.js";
-import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, withMaxUses, type BudgetLeft, type ResearchBudget } from "../errands/budget.js";
+import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, WEB_FETCH_MAX_CONTENT_TOKENS, withMaxUses, type BudgetLeft, type ResearchBudget } from "../errands/budget.js";
 import {
   apiErrorDetail, countToolUses, echoable, FALLBACK_BETA, languageName, RESEARCH_TOOLS,
   type ErrandResearcher, type ErrandTask, type ResearchControl, type ResearchOutcome, type RunStats, type Usage,
@@ -321,7 +321,7 @@ const DYNAMIC_FILTERING_MODELS: ReadonlySet<string> = new Set([
 /** The basic web search and fetch tools: no code execution behind them, so they work on any model that has web tools. */
 const BASIC_WEB_TOOLS = [
   { type: "web_search_20250305", name: "web_search" },
-  { type: "web_fetch_20250910", name: "web_fetch" },
+  { type: "web_fetch_20250910", name: "web_fetch", max_content_tokens: WEB_FETCH_MAX_CONTENT_TOKENS },
 ] as const;
 
 export const supportsServerFallback = (model: string): boolean => SERVER_FALLBACK_MODELS.has(model);

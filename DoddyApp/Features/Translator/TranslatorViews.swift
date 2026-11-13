@@ -57,6 +57,8 @@ struct TranslatorScreen: View {
             }
         }
         .padding(20)
+        // Arabic, Persian, Urdu and Hebrew read from the right: their lines start there (12 Nov 2026).
+        .environment(\.layoutDirection, other?.isRightToLeft == true ? .rightToLeft : .leftToRight)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Their half, facing them")
     }

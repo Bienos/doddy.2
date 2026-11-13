@@ -158,21 +158,28 @@ export async function approveItem(ctx: StudioContext, accountId: string, id: str
 }
 
 /**
- * Gives back to the server's day the part of an approval's reservation the job didn't spend (ADR-742). The day is the
- * UTC day of the approval. Never gives back more than was reserved, and never goes below zero. Not called for an
- * interrupted job, whose cost isn't known: its reservation stays.
+ * Settles an approval's reservation on the server's day and month once the job has ended (ADR-742): the day and month
+ * then hold what the job spent instead of what was reserved. The day is the UTC day of the approval.
+ *   - spent less than reserved: the rest goes back;
+ *   - spent more (the last request went past the job's limit before the check after it): the excess is added, so
+ *     spending is never given back;
+ *   - `keepReservation` (a request was cut off mid-way, or the job was interrupted, so the real cost isn't known):
+ *     nothing goes back; what was counted past the reservation is still added.
+ * Never goes below zero.
  */
-export async function releaseUnspent(c: Pick<pg.PoolClient, "query">, itemId: string, spentUsd: number): Promise<void> {
+export async function releaseUnspent(c: Pick<pg.PoolClient, "query">, itemId: string, spentUsd: number, keepReservation = false): Promise<void> {
+  // What stays committed for this job, and the change from the reservation (positive: given back).
+  const back = `(i.reserved_usd - CASE WHEN $3::boolean THEN greatest(i.reserved_usd, $2::numeric) ELSE $2::numeric END)`;
   await c.query(
-    `UPDATE studio_server_spend SET committed_usd = greatest(0, committed_usd - greatest(0, i.reserved_usd - $2::numeric))
+    `UPDATE studio_server_spend SET committed_usd = greatest(0, committed_usd - ${back})
      FROM studio_items i WHERE i.id = $1 AND i.approved_at IS NOT NULL AND studio_server_spend.day = (i.approved_at AT TIME ZONE 'utc')::date`,
-    [itemId, spentUsd]);
-  // The same part goes back to the month the approval was counted in.
+    [itemId, spentUsd, keepReservation]);
+  // The same change for the month the approval was counted in.
   await c.query(
-    `UPDATE studio_server_spend_month SET committed_usd = greatest(0, committed_usd - greatest(0, i.reserved_usd - $2::numeric))
+    `UPDATE studio_server_spend_month SET committed_usd = greatest(0, committed_usd - ${back})
      FROM studio_items i WHERE i.id = $1 AND i.approved_at IS NOT NULL
        AND studio_server_spend_month.month = date_trunc('month', i.approved_at AT TIME ZONE 'utc')::date`,
-    [itemId, spentUsd]);
+    [itemId, spentUsd, keepReservation]);
 }
 
 // ---------- reads ----------
