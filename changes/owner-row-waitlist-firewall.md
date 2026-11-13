@@ -1,1 +1,1 @@
-Owner queue row 78: the rate-limit rule for the two waitlist admin routes, which an agent's Vercel connection can't add (firewall access answers 404). Docs only; no code, no deploy. Ran: `scripts/ci.sh --only checks`.
+Owner queue row 79: the rate-limit rule for the two waitlist admin routes, which an agent's Vercel connection can't add (firewall access answers 404). Docs only; no code, no deploy. Ran: `scripts/ci.sh --only checks`.
