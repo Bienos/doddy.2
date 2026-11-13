@@ -134,6 +134,23 @@ final class AccountErasurePlanTests: XCTestCase {
         XCTAssertEqual(transport.requests.first?.bearerToken, "minted")
         XCTAssertNil(try credentials.load())
     }
+
+    // MARK: Settings › Messaging › Delete (one DELETE with the stored token)
+
+    func testSettingsDeleteSaysDeletedOnlyOnA204() {
+        XCTAssertEqual(AccountErasurePlan.SettingsDelete(.deleted), .deleted)
+    }
+
+    func testSettingsDeleteWithNoTokenIsNotCalledDeleted() {
+        // After a reinstall the token is gone but the server can still hold the account: "nothing was deleted from
+        // here", never "deleted".
+        XCTAssertEqual(AccountErasurePlan.SettingsDelete(.noToken), .nothingKept)
+    }
+
+    func testSettingsDeleteThatWasRefusedOrFailedIsNotConfirmed() {
+        XCTAssertEqual(AccountErasurePlan.SettingsDelete(.refused), .notConfirmed)
+        XCTAssertEqual(AccountErasurePlan.SettingsDelete(.failed), .notConfirmed)
+    }
 }
 
 private final class Scripted: ServerTransport, @unchecked Sendable {

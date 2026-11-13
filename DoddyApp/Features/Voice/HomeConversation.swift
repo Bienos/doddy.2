@@ -48,10 +48,12 @@ final class HomeConversation {
     /// spot, a presentation, photos, the lost-wallet steps, the BLIK details to copy, list items he
     /// couldn't tell apart). When it changes to something new, the pop-up card comes up by itself
     /// (owner, 10 Nov 2026), so nothing waits only in the transcript. Empty when there is nothing;
-    /// never a reason to start a conversation.
+    /// never a reason to start a conversation. A file still being made isn't one: there is nothing to open yet, so
+    /// Home's island shows a small note instead and the file arrives in Messages (owner, 13 Nov 2026,
+    /// `MadeFileStart.popsUpCard`).
     var resultsToShow: String {
         guard let controller else { return "" }
-        var parts: [String] = controller.documents.map { "doc:\($0.url.absoluteString)" }
+        var parts: [String] = controller.documents.filter(MadeFileStart.popsUpCard).map { "doc:\($0.url.absoluteString)" }
         if let card = controller.contactCard { parts.append("contact:\(card.query)") }
         if controller.parkingCard != nil { parts.append("parking") }
         if let ready = controller.presentationReady { parts.append("deck:\(ready.url.absoluteString)") }
