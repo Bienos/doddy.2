@@ -2,6 +2,8 @@
 // claimed with FOR UPDATE SKIP LOCKED before any model call, so no job runs twice. The outcome is
 // stored in steps: files first (stage `store`), then each file is read back and compared by SHA-256,
 // and only then the item becomes ready and the push is queued. The push never carries words.
+// Copies made at Anthropic are written on the item the moment their ids come back; the sweep takes over
+// what a run didn't confirm deleted (on a finished item, or as orphans once the item is gone).
 import type pg from "pg";
 import { sameBytes } from "../crypto.js";
 import { inTransaction } from "../db.js";
@@ -84,7 +86,16 @@ export async function runNext(ctx: StudioContext, shutdown?: AbortSignal): Promi
 
 const noStats = (model = "unknown") => ({
   usage: { inputTokens: 0, cacheWriteTokens: 0, cacheReadTokens: 0, outputTokens: 0 }, searches: 0, fetches: 0, containerSeconds: 0, costUsd: 0, model,
+  costUnknown: false,
 });
+
+/** Copies at Anthropic whose item is gone: the sweep keeps deleting them, whatever happens to the account. */
+async function orphanFiles(c: Pick<pg.PoolClient, "query">, accountId: string, ids: readonly string[], now: Date): Promise<void> {
+  if (!ids.length) return;
+  await c.query(
+    "INSERT INTO studio_orphan_files (file_id, account_id, since) SELECT unnest($1::text[]), $2, $3 ON CONFLICT DO NOTHING",
+    [ids, accountId, now]);
+}
 
 export async function runClaimed(ctx: StudioContext, e: Claimed, shutdown?: AbortSignal): Promise<void> {
   const api = ctx.api;
@@ -105,16 +116,26 @@ export async function runClaimed(ctx: StudioContext, e: Claimed, shutdown?: Abor
   const setStage = async (stage: Stage) => {
     await ctx.db.query("UPDATE studio_items SET stage = $2 WHERE id = $1 AND state = 'running'", [e.id, stage]);
   };
+  // Written on the item before anything is downloaded, so a delete (which hands them to the orphan sweep), the
+  // reaper or a crash still finds them; if the item is already gone, straight to the orphans.
+  const noteFiles = async (ids: string[]) => {
+    const { rowCount } = await ctx.db.query(
+      `UPDATE studio_items SET anthropic_files_pending = ARRAY(SELECT DISTINCT f FROM unnest(anthropic_files_pending || $2::text[]) AS f ORDER BY f)
+       WHERE id = $1`, [e.id, ids]);
+    if (!rowCount) await orphanFiles(ctx.db, e.account_id, ids, ctx.now());
+  };
   ctx.log("studio started", { itemId: e.id, model: api.model, timeLimitMinutes: ctx.settings.timeLimitMinutes });
   let outcome: StudioOutcome;
   try {
     outcome = await runStudio(api, job, {
       deadline, isCancelled, setStage, signal: shutdown, jobLimitUsd: ctx.settings.jobLimitUsd,
-      now: ctx.now, cancelPollMs: ctx.cancelPollMs, log: ctx.log,
+      now: ctx.now, cancelPollMs: ctx.cancelPollMs, log: ctx.log, noteFiles,
     });
   } catch (err) {
     ctx.log("studio pipeline threw", { itemId: e.id, error: (err as Error).name });
-    outcome = { kind: "failed", code: "interrupted", pending: [], ...noStats(api.model) };
+    // Nothing is known about the copies it made: the ones written on the item stay owed.
+    const { rows } = await ctx.db.query<{ pending: string[] }>("SELECT anthropic_files_pending AS pending FROM studio_items WHERE id = $1", [e.id]);
+    outcome = { kind: "failed", code: "interrupted", pending: rows[0]?.pending ?? [], ...noStats(api.model) };
   }
   await finish(ctx, e, outcome);
 }
@@ -179,10 +200,21 @@ async function finish(ctx: StudioContext, e: Claimed, outcome: StudioOutcome): P
     const { rows } = await c.query<{ state: string; cancel_requested_at: Date | null }>(
       "SELECT state, cancel_requested_at FROM studio_items WHERE id = $1 FOR UPDATE", [e.id]);
     const r = rows[0];
-    if (!r || r.state !== "running") return r ? `already_${r.state}` : "deleted";
-    // What the job didn't spend goes back to the server's day (ADR-742). A job cut short by an error of ours
-    // (`interrupted`) may have spent more than was counted, so its reservation stays.
-    if (!(outcome.kind === "failed" && outcome.code === "interrupted")) await releaseUnspent(c, e.id, outcome.costUsd);
+    // Ended elsewhere (deleted, or reaped while this run went on): the copies this run couldn't confirm deleted stay
+    // owed, on the item for the sweep, or as orphans when the item is gone.
+    if (!r) {
+      await orphanFiles(c, e.account_id, outcome.pending, now);
+      return "deleted";
+    }
+    if (r.state !== "running") {
+      await c.query("UPDATE studio_items SET anthropic_files_pending = $2 WHERE id = $1", [e.id, outcome.pending]);
+      return `already_${r.state}`;
+    }
+    // What the job didn't spend goes back to the server's day and month (ADR-742), and what it spent past its
+    // reservation is added. A job with a request cut off mid-way (Cancel, the time limit, a provider failure) or cut
+    // short by an error of ours (`interrupted`) may have spent more than was counted, so its whole reservation stays.
+    const keep = outcome.costUnknown || (outcome.kind === "failed" && outcome.code === "interrupted");
+    await releaseUnspent(c, e.id, outcome.costUsd, keep);
     const end = `stage = NULL, finished_at = $11, ${setStats}`;
     if (outcome.kind === "cancelled" || r.cancel_requested_at) {
       await c.query("DELETE FROM studio_files WHERE item_id = $1", [e.id]);
@@ -249,8 +281,9 @@ export async function tidyAnthropicFiles(ctx: StudioContext): Promise<number> {
       return false;
     }
   };
+  // A running item's copies are still being downloaded by its run, which deletes them itself.
   const { rows: items } = await ctx.db.query<{ id: string; anthropic_files_pending: string[] }>(
-    `SELECT id, anthropic_files_pending FROM studio_items WHERE anthropic_files_pending <> '{}' LIMIT ${TIDY_BATCH}`);
+    `SELECT id, anthropic_files_pending FROM studio_items WHERE anthropic_files_pending <> '{}' AND state <> 'running' LIMIT ${TIDY_BATCH}`);
   for (const item of items) {
     const left: string[] = [];
     for (const id of item.anthropic_files_pending) {

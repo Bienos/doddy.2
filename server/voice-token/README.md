@@ -41,6 +41,7 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `UPSTASH_REDIS_REST_TOKEN` | Secret for that store. Never log or expose it to the app. |
 | `ELEVENLABS_API_KEY` | Owner-held ElevenLabs API credential. |
 | `ELEVENLABS_AGENT_ID` | The DODDY agent ID configured by the owner. |
+| `ELEVENLABS_TRANSLATOR_AGENT_ID` | Optional. The translator-only agent (no tools; `voice-agent/translator/`). A request with the body `{"agent":"translator"}` gets a token for it. When unset, the id in `src/handler.js` (`DEFAULT_TRANSLATOR_AGENT_ID`, public) is used, so nothing has to be set. Any other `agent` value is a 400 `unknown_agent`; no body is the main agent, as before. |
 | `DODDY_TOKENS_PER_HOUR` | Optional shared per-account issuance limit; defaults to `30`. |
 | `DODDY_TOKENS_PER_DAY` | Optional per-account issuance limit per UTC day, on top of the hourly one; defaults to `150` (ADR-712). |
 | `DODDY_GLOBAL_TOKENS_PER_HOUR` | Optional shared global issuance limit; defaults to `100`. |
