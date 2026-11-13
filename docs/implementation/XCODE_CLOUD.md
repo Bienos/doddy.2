@@ -18,7 +18,9 @@ Cloud's own counter), and TestFlight refuses a build number it has already seen 
 **What this repository adds:** `ci_scripts/ci_post_clone.sh`. Xcode Cloud runs it on its Mac
 after it downloads the code and before it builds. It does five things:
 1. Generates `Doddy.xcodeproj` from `project.yml`, as `make project` does. The project isn't
-   committed.
+   committed. XcodeGen is installed at one pinned version from its GitHub release file, after a
+   SHA-256 check (`scripts/install_xcodegen.sh`, the same script GitHub's CI uses), not from
+   Homebrew.
 2. Gives the app and its three extensions (widgets, share, notification content) Xcode Cloud's
    build number. TestFlight needs a higher one for every upload, the same in all four.
 3. Writes the commit the build is made from (`CI_COMMIT`) into the `DODDY_GIT_COMMIT` build
@@ -27,7 +29,10 @@ after it downloads the code and before it builds. It does five things:
    says `local` and shows only the version and build number (7 Nov 2026 audit).
 4. Sets a team or a bundle ID, but only if the workflow names one (below).
 5. Resolves the Swift packages. Xcode Cloud won't do that itself without `Package.resolved`, which
-   a generated project doesn't have.
+   a generated project doesn't have. The committed `Config/Package.resolved` is copied into the
+   project first, and the resolve call carries `-onlyUsePackageVersionsFromResolvedFile`, so it
+   fetches those versions and fails when the file is out of date instead of moving a package.
+   `DODDY_PACKAGES_FREE=1` in the workflow's environment lifts that for one build.
 
 It never signs, uploads or reads a key. `scripts/test_xcode_cloud_post_clone.sh` checks it on
 Linux, and `scripts/ci.sh` runs that test.
@@ -90,7 +95,9 @@ Linux, and `scripts/ci.sh` runs that test.
    - **Environment:** the latest released Xcode. Environment variables only if needed:
      `DODDY_TEAM_ID` = your team ID (developer.apple.com › Account › Membership) if the first
      build says signing needs a team; `DODDY_BUNDLE_ID` only if you choose another bundle ID than
-     the app record's (checklist C1); `DODDY_PUSH` = `0` only to leave push out (see above).
+     the app record's (checklist C1); `DODDY_PUSH` = `0` only to leave push out (see above);
+     `DODDY_PACKAGES_FREE` = `1` only to let one build resolve package versions other than the
+     committed pins (if a stale `Config/Package.resolved` ever stops a build; then `make update-packages`).
    - **Actions:** one **Archive** action, platform iOS, scheme **Doddy**, distribution preparation
      **TestFlight (Internal Testing Only)**. Delete the default Build and Test actions: GitHub runs
      the tests.
@@ -117,9 +124,15 @@ Linux, and `scripts/ci.sh` runs that test.
 ## Not checked
 
 - Xcode Cloud hasn't run this script yet. The first build on your account is the check:
-  - XcodeGen from Homebrew on Xcode Cloud's Mac;
+  - the pinned XcodeGen download and unpacking on Xcode Cloud's Mac (`curl`, `unzip` and `shasum`
+    are expected there). The installer's logic is tested on Linux with a stand-in download, and its
+    real download and checksum were run once on Linux on 13 Nov 2026; the macOS binary was never
+    run;
   - whether signing needs `DODDY_TEAM_ID`;
-  - the packages resolving there.
+  - the packages resolving there, now with `-onlyUsePackageVersionsFromResolvedFile`: the flag
+    and a `Config/Package.resolved` written by GitHub's Xcode 26.6 have not been tried on Xcode
+    Cloud's Xcode. The `defaults` lines in the script still turn automatic resolution on for the
+    later archive step; making that stricter too waits for a green run.
 - Apple's guidance is that a script in `ci_scripts/` next to the project runs after the clone.
   Projects generated with XcodeGen commonly use it this way. The stand-in test covers the
   substitutions, not XcodeGen's real output on that Mac, and XcodeGen changing its output would
