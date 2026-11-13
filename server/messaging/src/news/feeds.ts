@@ -9,6 +9,8 @@ export interface NewsItem {
   publishedAt: string | null; // ISO
   /** A picture the publisher put in the feed (enclosure, media:content/thumbnail or the first <img>), https only. Absent when there is none. */
   imageUrl?: string;
+  /** The language of a catalog feed's stories (catalog.ts), set when they are gathered; never cached. Absent for other feeds. */
+  lang?: "pl" | "en";
 }
 
 const parser = new XMLParser({

@@ -61,10 +61,28 @@ const safeLookup: LookupFunction = (hostname, options, callback) => {
   });
 };
 
-export interface FetchedText { status: number; text: string; finalUrl: string }
+/**
+ * A cache validator (ETag or Last-Modified) as a publisher sent it. It comes from an untrusted server and goes
+ * back out in a request header, so only visible ASCII and spaces, at most 200 characters, are kept; anything
+ * else is dropped and the next fetch is simply unconditional.
+ */
+export function validator(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const v = value.trim();
+  return v.length > 0 && v.length <= 200 && /^[\x21-\x7e][\x20-\x7e]*$/.test(v) ? v : undefined;
+}
+
+export interface Validators {
+  /** Sent as If-None-Match. */
+  etag?: string;
+  /** Sent as If-Modified-Since. */
+  lastModified?: string;
+}
+
+export interface FetchedText extends Validators { status: number; text: string; finalUrl: string }
 
 export async function safeFetchText(
-  raw: string, opts: { timeoutMs?: number; maxBytes?: number; maxRedirects?: number; userAgent?: string } = {},
+  raw: string, opts: { timeoutMs?: number; maxBytes?: number; maxRedirects?: number; userAgent?: string; conditional?: Validators } = {},
 ): Promise<FetchedText> {
   const { timeoutMs = 10_000, maxBytes = 2 * 1024 * 1024, maxRedirects = 3 } = opts;
   // One deadline for the whole fetch, redirects included: a server that drips a byte every few
@@ -72,35 +90,44 @@ export async function safeFetchText(
   const deadline = Date.now() + timeoutMs;
   let url = checkUrl(raw);
   for (let hop = 0; ; hop++) {
-    const res = await requestOnce(url, deadline, maxBytes, opts.userAgent);
+    const res = await requestOnce(url, deadline, maxBytes, opts.userAgent, opts.conditional);
     if (res.status >= 300 && res.status < 400 && res.location) {
       if (hop >= maxRedirects) throw new UnsafeUrlError("too many redirects");
       url = checkUrl(new URL(res.location, url).toString());
       continue;
     }
-    return { status: res.status, text: res.text, finalUrl: url.toString() };
+    return { status: res.status, text: res.text, finalUrl: url.toString(), etag: res.etag, lastModified: res.lastModified };
   }
 }
 
-/** Exported for tests only: one request with an overall deadline (no redirect handling). */
-export function requestOnce(url: URL, deadline: number, maxBytes: number, userAgent?: string) {
-  return new Promise<{ status: number; text: string; location?: string }>((resolve, reject) => {
+/**
+ * Exported for tests only: one request with an overall deadline (no redirect handling). With `conditional`, the
+ * publisher's validators from the last fetch go out as If-None-Match / If-Modified-Since, so an unchanged feed
+ * answers 304 with no body (decision 2026-11-13-news-more-sources).
+ */
+export function requestOnce(url: URL, deadline: number, maxBytes: number, userAgent?: string, conditional: Validators = {}) {
+  return new Promise<{ status: number; text: string; location?: string } & Validators>((resolve, reject) => {
     const remaining = deadline - Date.now();
     if (remaining <= 0) return reject(new Error("timeout"));
     const timeoutMs = remaining;
     const lib = url.protocol === "https:" ? https : http;
+    const etag = validator(conditional.etag);
+    const lastModified = validator(conditional.lastModified);
     const req = lib.get(url, {
       lookup: safeLookup,
       timeout: timeoutMs,
       headers: {
         "user-agent": userAgent ?? "Mozilla/5.0 (compatible; DoddyNewsBot/0.1)",
         accept: "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, */*;q=0.5",
+        ...(etag ? { "if-none-match": etag } : {}),
+        ...(lastModified ? { "if-modified-since": lastModified } : {}),
       },
     }, (res) => {
       const status = res.statusCode ?? 0;
+      const got = { etag: validator(res.headers.etag), lastModified: validator(res.headers["last-modified"]) };
       if (status >= 300 && status < 400) {
         res.resume();
-        return resolve({ status, text: "", location: res.headers.location });
+        return resolve({ status, text: "", location: res.headers.location, ...got });
       }
       let size = 0;
       const chunks: Buffer[] = [];
@@ -109,7 +136,7 @@ export function requestOnce(url: URL, deadline: number, maxBytes: number, userAg
         if (size > maxBytes) { req.destroy(new UnsafeUrlError("too large")); return; }
         chunks.push(c);
       });
-      res.on("end", () => resolve({ status, text: Buffer.concat(chunks).toString("utf8") }));
+      res.on("end", () => resolve({ status, text: Buffer.concat(chunks).toString("utf8"), ...got }));
       res.on("error", reject);
     });
     req.on("timeout", () => req.destroy(new Error("timeout")));

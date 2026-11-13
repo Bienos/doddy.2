@@ -8,6 +8,10 @@ import SwiftUI
 // A button only prepares "Find me this": the same typed shopping task as on the Shopping screen, behind the same
 // yes card that shows exactly what goes to Doddy's server (constitution DOD-07). Nothing is sent before "Yes, go".
 // A start Doddy's server didn't confirm keeps its button off, so the same task isn't handed over twice blindly.
+// The look (13 Nov 2026): a card marked as the next step (an orange edge and an arrow), with each thing as a chip
+// you tap, its icon saying its state: a magnifying glass to start, a tick once Doddy's server confirmed the start, a
+// question mark when it couldn't confirm, a warning when it didn't start. VoiceOver hears "Search online shops for
+// “X”" on each chip, as before.
 
 struct OnlineNextCard: View {
     /// The things to offer, in order, each in the person's words.
@@ -24,29 +28,28 @@ struct OnlineNextCard: View {
     var body: some View {
         if !things.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                Label("Online shops next", systemImage: "magnifyingglass")
-                    .font(.headline)
-                    .accessibilityAddTraits(.isHeader)
+                Label {
+                    Text("Online shops next")
+                } icon: {
+                    Image(systemName: "arrow.turn.down.right").foregroundStyle(Theme.orangeCue)
+                }
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
                 Text("Doddy can compare these in online shops in the background and bring back up to three picks, each with the price read on the shop's own page. Nothing is sent until you say yes on the next card.")
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
-                ForEach(things, id: \.self) { thing in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Button {
-                            ask(thing)
-                        } label: {
-                            Label(String(format: NSLocalizedString("Search online shops for “%@”", comment: "starts the Find me this card for one item"), thing),
-                                  systemImage: "bag")
-                        }
-                        .buttonStyle(SecondaryButtonStyle())
-                        .disabled(sent.contains(thing) || !model.isServerConfigured || model.isHandingOver)
-                        .accessibilityIdentifier("shopping.searchOnline")
-                        if let note = notes[thing] {
-                            Label(note.text, systemImage: note.kind.symbol)
-                                .font(.footnote)
-                                .foregroundStyle(note.kind.color)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                ChipFlow(spacing: 8) {
+                    ForEach(things, id: \.self) { thing in
+                        thingButton(thing)
+                    }
+                }
+                ForEach(things.filter { notes[$0] != nil }, id: \.self) { thing in
+                    if let note = notes[thing] {
+                        Label(things.count > 1 ? String(format: NSLocalizedString("“%@”: %@", comment: "a thing searched for in online shops and what happened to it"), thing, note.text) : note.text,
+                              systemImage: note.kind.symbol)
+                            .font(.footnote)
+                            .foregroundStyle(note.kind.color)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 if !model.isServerConfigured {
@@ -56,11 +59,59 @@ struct OnlineNextCard: View {
                 }
             }
             .tasksCard()
+            .overlay(alignment: .leading) {
+                // The next step's mark: a short orange edge on the card's leading side. Decoration only.
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(Theme.orangeCue)
+                    .frame(width: 4)
+                    .padding(.vertical, 20)
+                    .accessibilityHidden(true)
+            }
             .accessibilityIdentifier("shopping.onlineNext")
             .sheet(item: $asking) { ask in
                 TypedHandOverSheet(draft: ask.draft) { outcome in finished(ask.thing, outcome) }
             }
         }
+    }
+
+    /// One thing as a chip: tap to open its yes card. Its icon says where it stands.
+    private func thingButton(_ thing: String) -> some View {
+        let done = sent.contains(thing)
+        let off = done || !model.isServerConfigured || model.isHandingOver
+        return Button {
+            ask(thing)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: symbol(thing))
+                    .foregroundStyle(notes[thing]?.kind.color ?? Theme.accentText)
+                    .accessibilityHidden(true)
+                Text(verbatim: thing)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !done {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .frame(minHeight: 44)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.canvas))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.ink.opacity(done ? 0.15 : 0.35), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .opacity(off && !done ? 0.45 : 1)
+        }
+        .buttonStyle(ShoppingPressStyle())
+        .disabled(off)
+        .accessibilityLabel(Text(String(format: NSLocalizedString("Search online shops for “%@”", comment: "starts the Find me this card for one item"), thing)))
+        .accessibilityIdentifier("shopping.searchOnline")
+    }
+
+    private func symbol(_ thing: String) -> String {
+        notes[thing]?.kind.symbol ?? "magnifyingglass"
     }
 
     /// The same checks as the Shopping screen's field, here first (the server checks again). Nothing is sent here.

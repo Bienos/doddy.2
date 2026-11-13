@@ -24,7 +24,7 @@ server embeds (server/messaging/src/taskCalls/agentSpec.ts, payload.ts) match th
 say one server-built confirmation line for the approved order, and never pay, open a link or accept anything else.
 `--agent translator` checks the translator-only agent (voice-agent/translator/, decision 2026-11-12-translator-agent): no
 function tools, only the language_detection system tool, the same languages as the app's agent, and one agent id in step with
-the token server (server/voice-token/src/handler.js) and the app (VoiceConfig.translatorDirectAgentID).
+the token server (server/voice-token/src/conversations.js) and the app (VoiceConfig.translatorDirectAgentID).
 `--agent task-call-book` checks the booking agent (voice-agent/task-call-book/, decision
 2026-11-12-book-agent) the same way, against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES: it may say
 one server-built confirmation line for the approved booking, and never pay or accept anything else.
@@ -169,7 +169,8 @@ def check(tools, session, instructions):
 
 
 TRANSLATOR_AGENT_SOURCES = {
-    "the token server": (ROOT / "server" / "voice-token" / "src" / "handler.js", r'DEFAULT_TRANSLATOR_AGENT_ID = "([^"]+)"'),
+    # The id now lives in conversations.js, which both the token and the deletion of voice conversations use.
+    "the token server": (ROOT / "server" / "voice-token" / "src" / "conversations.js", r'DEFAULT_TRANSLATOR_AGENT_ID = "([^"]+)"'),
     "the app (VoiceConfig)": (ROOT / "DoddyApp" / "Features" / "Voice" / "VoiceConfig.swift", r'translatorDirectAgentID = "([^"]+)"'),
 }
 
