@@ -76632,6 +76632,17 @@
         }
       }
     },
+    "Some of your voice conversations are still being deleted. Doddy's server keeps trying every day until they're gone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Część twoich rozmów głosowych jest jeszcze usuwana. Serwer Doddy’ego ponawia próbę codziennie, aż znikną."
+          }
+        }
+      }
+    },
     "Some payments weren't confirmed. Check your wallet's history before paying that page again.": {
       "extractionState": "manual",
       "localizations": {
@@ -106148,6 +106159,17 @@
         }
       }
     },
+    "Your messaging data was deleted, but Doddy's voice server didn't confirm deleting your voice conversations, so you're still signed in. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane wiadomości zostały usunięte, ale serwer głosowy Doddy’ego nie potwierdził usunięcia twoich rozmów głosowych, więc nadal jesteś zalogowany. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Your microphone is muted.": {
       "extractionState": "manual",
       "localizations": {
@@ -107477,6 +107499,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój głos i rozmowa trafiają do usługi głosowej dopiero po twojej zgodzie, przy pierwszej rozmowie. Gdy Doddy słucha, iOS pokazuje pomarańczową kropkę."
+          }
+        }
+      }
+    },
+    "Your voice conversations were deleted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje rozmowy głosowe zostały usunięte."
           }
         }
       }

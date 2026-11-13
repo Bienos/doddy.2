@@ -18,7 +18,12 @@ struct VoiceTokenClient: Sendable {
             Self.log.notice("voice token request took \(took, privacy: .public)")
         }
         let (status, data, retryAfter) = try await post(agent: agent)
-        return try VoiceTokenServer.token(status: status, body: data, retryAfter: retryAfter).get()
+        let token = try VoiceTokenServer.token(status: status, body: data, retryAfter: retryAfter).get()
+        // Decision 2026-11-12-voice-conversations-per-account: the server's keyed id for this account comes with the
+        // token. It is kept with that token until the token is used, so the conversation starts with the user id
+        // that belongs to it (`VoiceUserIDPolicy`); an answer without one leaves the install id, as before.
+        VoiceTokenUserIDs.shared.remember(VoiceTokenServer.userID(fromAnswer: data), forToken: token)
+        return token
     }
 
     /// The status, the body and the reply's Retry-After header, which says how long a 429 lasts (the
@@ -116,6 +121,33 @@ actor VoiceAuthAPI {
     func revokeApple(accountToken: String) async throws -> Bool {
         let reply: AppleRevokeReply = try await post(["action": "apple-revoke"], bearer: accountToken)
         return reply.appleRevoked
+    }
+
+    /// Before the account is deleted (decision 2026-11-12-voice-conversations-per-account): the voice server deletes the
+    /// account's voice conversations at ElevenLabs, reads each one back, and answers counts. It takes the Doddy
+    /// account's token, like `revokeApple`, and the install id this iPhone gave ElevenLabs before there was an account
+    /// id, so older conversations go too. The status and body go to `VoiceConversationErasure`, which decides what
+    /// counts as confirmed; nothing is thrown, because a failure is an answer ("not confirmed"), not an error to show.
+    func deleteConversations(accountToken: String, installID: String?) async -> VoiceConversationErasure.Attempt {
+        guard let endpoint = VoiceConfig.authEndpoint,
+              let body = try? JSONSerialization.data(withJSONObject: VoiceConversationErasure.requestBody(installID: installID))
+        else { return .failed }
+        // The server works for up to about 10 seconds before it answers with what is left.
+        var request = URLRequest(url: endpoint, timeoutInterval: 30)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accountToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = body
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.finishTasksAndInvalidate() }
+        let (data, response): (Data, URLResponse)
+        // Redirects refused and the answer read only from the address asked, as for every request here that carries a token.
+        do { (data, response) = try await session.data(for: request, delegate: ServerHTTPTransport.RefuseRedirects()) }
+        catch { return .failed }
+        guard BearerHost.answered(response.url, sameAs: endpoint),
+              let status = (response as? HTTPURLResponse)?.statusCode
+        else { return .failed }
+        return VoiceConversationErasure.attempt(status: status, body: data)
     }
 
     private func post<T: Decodable>(_ body: [String: Any], bearer: String? = nil) async throws -> T {
