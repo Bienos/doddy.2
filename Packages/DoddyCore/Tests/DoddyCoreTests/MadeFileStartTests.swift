@@ -4,13 +4,13 @@ import XCTest
 /// Owner, 13 Nov 2026: a file being made doesn't bring up the card, and Doddy never asks for a tap
 /// (decision 2026-11-13-file-being-made-island-note).
 final class MadeFileStartTests: XCTestCase {
-    private func document(_ status: RunDocument.Status, name: String = "Atenza lek na ADHD.pptx", kind: String = "deck") -> RunDocument {
+    private func document(_ status: RunDocument.Status, name: String = "Doddy beta plan.pptx", kind: String = "deck") -> RunDocument {
         RunDocument(url: URL(string: "https://doddy.example.com/v1/documents/abc?exp=1&sig=x")!, name: name, kind: kind, status: status)
     }
 
     private func run(_ document: RunDocument?, tool: String = CloudToolName.makeDocument, mode: String = "live") throws -> RunResult {
         let receipt = #"{"operationId":"7a1c6a52-6f0e-4b4a-9d4c-1f0d2b2c3d4e","operation":"read","toolkit":"claude","tool":"\#(tool)","timestamp":"t","mode":"\#(mode)","status":"succeeded","summary":"s","errorCode":null,"providerReference":null}"#
-        var json = #"{"mode":"\#(mode)","tool":"\#(tool)","text":"started: Claude is making the deck \"Atenza\". It takes one to three minutes. A card to open it is on the user's screen now. Tell the user that in one sentence.","count":1,"truncated":false,"receipt":\#(receipt)"#
+        var json = #"{"mode":"\#(mode)","tool":"\#(tool)","text":"started: Claude is making the deck \"Doddy beta plan\". It takes one to three minutes. A card to open it is on the user's screen now. Tell the user that in one sentence.","count":1,"truncated":false,"receipt":\#(receipt)"#
         if let document {
             let encoded = String(decoding: try JSONEncoder().encode(document), as: UTF8.self)
             json += #","document":\#(encoded)"#
@@ -39,7 +39,7 @@ final class MadeFileStartTests: XCTestCase {
         XCTAssertFalse(reply.contains("Tell the user that in one sentence"), "nothing of the server's line is passed on")
         XCTAssertFalse(reply.contains("Doddy's server answered"), reply)
         XCTAssertFalse(reply.contains("https://"), "the agent never gets the link")
-        XCTAssertTrue(reply.hasSuffix(ToolData.block(["Atenza lek na ADHD"])), "the name follows as data, without its extension")
+        XCTAssertTrue(reply.hasSuffix(ToolData.block(["Doddy beta plan"])), "the name follows as data, without its extension")
         XCTAssertEqual(ActivityEntry.outcome(of: reply, isLookup: true).0, .lookedUp)
     }
 
@@ -50,7 +50,7 @@ final class MadeFileStartTests: XCTestCase {
         XCTAssertTrue(reply.contains("opens it from this conversation's transcript"), reply)
         XCTAssertFalse(reply.contains("will be in Messages in a minute"), reply)
         XCTAssertFalse(reply.contains("https://"), reply)
-        XCTAssertTrue(reply.hasSuffix(ToolData.block(["Atenza lek na ADHD"])), reply)
+        XCTAssertTrue(reply.hasSuffix(ToolData.block(["Doddy beta plan"])), reply)
     }
 
     func testTheNameCantCloseTheDataBlockOrAddALine() throws {
@@ -82,7 +82,7 @@ final class MadeFileStartTests: XCTestCase {
     }
 
     func testShownNameDropsOnlyTheExtension() {
-        XCTAssertEqual(MadeFileStart.shownName(document(.working, name: "Atenza lek na ADHD.pptx")), "Atenza lek na ADHD")
+        XCTAssertEqual(MadeFileStart.shownName(document(.working, name: "Doddy beta plan.pptx")), "Doddy beta plan")
         XCTAssertEqual(MadeFileStart.shownName(document(.working, name: "Budżet 2027.xlsx")), "Budżet 2027")
         XCTAssertEqual(MadeFileStart.shownName(document(.working, name: "Raport")), "Raport")
         XCTAssertEqual(MadeFileStart.shownName(document(.working, name: "Plan v1.5 beta")), "Plan v1.5 beta")
