@@ -207,6 +207,9 @@ private struct WebMemoryProblemText: View {
                 Text("Doddy's server sent something the app couldn't read. Nothing was changed here.")
             case .server:
                 Text("Something went wrong on Doddy's server. Nothing was changed.")
+            case .otherAccountsData:
+                // Decision 2026-11-12-local-data-owner.
+                Text("This iPhone holds Doddy data from another account, so nothing from it is sent to yours. Nothing was sent.")
             }
         }
         .foregroundStyle(Theme.error)

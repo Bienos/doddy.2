@@ -35,9 +35,27 @@ test("every public path keeps exactly the headers it had, with one Content-Secur
     assert.equal(withCsp(path).length, 1, `${path}: exactly one rule sets the policy`);
     const headers = headersFor(path);
     for (const [key, value] of Object.entries(SITE_HEADERS)) assert.equal(headers[key], value, `${path}: ${key}`);
-    assert.deepEqual(Object.keys(headers).filter((key) => !(key in SITE_HEADERS)), path.startsWith("/assets/") ? ["Cache-Control"] : [], `${path}: nothing else`);
+    const extra = [...(path.startsWith("/api/") ? [] : ["Access-Control-Allow-Origin"]), ...(path.startsWith("/assets/") ? ["Cache-Control"] : [])];
+    assert.deepEqual(Object.keys(headers).filter((key) => !(key in SITE_HEADERS)).sort(), extra.sort(), `${path}: nothing else`);
   }
   assert.equal(headersFor("/assets/day/poses/x.webp")["Cache-Control"], "public, max-age=86400");
+});
+
+// Vercel serves static files with "Access-Control-Allow-Origin: *" unless a rule names the header (a rule's
+// value replaces Vercel's own, as the /assets/ Cache-Control rule does). Pages, scripts, styles and images are
+// for this site only; the API routes add no CORS header and are called from this site's own pages.
+test("the site's files name the site itself as the only origin that may read them; the API routes allow none", () => {
+  for (const path of [...PUBLIC_PATHS, ...ADMIN_PATHS, "/_vercel/insights/script.js", "/blog/feed.xml", "/i18n/de.js"]) {
+    const values = rulesFor(path).flatMap((rule) => rule.headers).filter((h) => h.key.toLowerCase() === "access-control-allow-origin");
+    if (path.startsWith("/api/")) {
+      assert.deepEqual(values, [], `${path}: no CORS header`);
+    } else {
+      assert.deepEqual(values.map((h) => h.value), ["https://www.doddy.lol"], `${path}: exactly one, never *`);
+    }
+  }
+  for (const rule of rules) {
+    for (const h of rule.headers) assert.ok(!(h.key.toLowerCase().startsWith("access-control-") && h.value.includes("*")), `${rule.source}: no wildcard`);
+  }
 });
 
 test("the admin page has its own policy: no Google Tag Manager, no inline script, nothing it does not need", () => {

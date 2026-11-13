@@ -7,9 +7,18 @@
 # `owner-approved` label), otherwise 0.
 #
 # This is a speed bump, not a lock: anyone who can label pull requests can add the label. It makes
-# such a change visible and deliberate. Agents never add the label themselves; the owner does.
+# such a change visible and deliberate. An agent adds the label to its own pull request once the
+# description says why each listed file changes (AGENTS.md, "Merging (owner, 8 Nov 2026)"); the
+# owner can add it too.
+#
+# The workflow (.github/workflows/pr-guard.yml) runs this script from the default branch, never from
+# the pull request, so an edit to this list takes effect from the pull request after the one that
+# merges it. .github/CODEOWNERS names the owner for the same paths: keep the two in step.
 #
 # Keep the list short. A label asked for on every pull request gets added without reading.
+# docs/decisions/ is left out on purpose: more than half of all pull requests add a decision file
+# (68 of the latest 120 commits on main, 13 Nov 2026), and a decision that changes agent rules also changes
+# AGENTS.md, CLAUDE.md or docs/trust/, which are listed.
 set -euo pipefail
 
 # Prints why a path is sensitive, or nothing.
@@ -24,17 +33,25 @@ reason() {
     # Where and how servers deploy, and which keys they get.
     render.yaml | vercel.json | */vercel.json) echo "deploy configuration" ;;
     secrets/*) echo "secrets manifest" ;;
+    .env.op | */.env.op) echo "secret references for a server" ;;
+    # Server code a merge deploys to production by itself (Vercel builds main).
+    site/api/*) echo "site server functions (deployed on merge)" ;;
+    server/voice-token/*) echo "voice token server (deployed on merge)" ;;
     # What the live voice agents say and can do (the owner changes the live prompt, CLAUDE.md).
     voice-agent/README.md | voice-agent/*/README.md) ;;
     voice-agent/*) echo "voice agent spec" ;;
     # Data on phones and servers.
     server/messaging/migrations/*) echo "messaging database migration" ;;
     Packages/DoddyCore/Sources/DoddyPersistence/DoddyDatabase.swift) echo "on-device database migrations" ;;
-    Packages/DoddyCore/Package.swift | Packages/DoddyCore/Package.resolved) echo "Swift package dependencies" ;;
+    # Outside code that builds and runs: dependency manifests and pins.
+    Packages/DoddyCore/Package.swift | Packages/DoddyCore/Package.resolved | Config/Package.resolved) echo "Swift package dependencies" ;;
+    package.json | */package.json | package-lock.json | */package-lock.json) echo "Node dependencies and scripts" ;;
     # The checks and rules themselves.
-    .github/workflows/* | .github/dependabot.yml | .github/rulesets/*) echo "CI or repository rules" ;;
+    .github/workflows/* | .github/dependabot.yml | .github/rulesets/* | .github/CODEOWNERS) echo "CI or repository rules" ;;
     scripts/check_sensitive_paths.sh | scripts/check_forbidden_capabilities.sh) echo "guard script" ;;
-    AGENTS.md | CLAUDE.md | .claude/settings.json | docs/trust/*) echo "rules for agents" ;;
+    scripts/ci*.sh | Makefile) echo "CI or build script" ;;
+    AGENTS.md | CLAUDE.md | */AGENTS.md | */CLAUDE.md | docs/trust/*) echo "rules for agents" ;;
+    .claude/* | .agents/* | prompts/* | studio-skills/*) echo "agent settings, skills or prompts" ;;
   esac
 }
 

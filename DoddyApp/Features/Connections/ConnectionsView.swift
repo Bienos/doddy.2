@@ -428,8 +428,10 @@ struct ConnectionInfo {
                     NSLocalizedString("Open Doddy's camera, after you tap Open camera", comment: ""),
                     NSLocalizedString("Put the photo you keep into a new note, with its text read on this iPhone, for you to check and save", comment: ""),
                 ],
-                leavesPhone: NSLocalizedString("Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.", comment: ""),
-                staysHere: NSLocalizedString("The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.", comment: ""))
+                // 12 Nov 2026: Home's + › Take a photo sends the photo with a question in Messages (MESSAGES_PHOTOS.md),
+                // and a list's barcode scan sends the barcode's number (ADR-631).
+                leavesPhone: NSLocalizedString("A photo you take to ask Doddy about goes, when you tap Send in Messages, to Doddy's server and Claude (Anthropic) for the answer; neither Doddy's server nor this iPhone keeps it. For a barcode you scan, only its number goes to Open Food Facts. From a photo note, only the words you save can reach Doddy's voice, like any note.", comment: ""),
+                staysHere: NSLocalizedString("A photo for a note is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.", comment: ""))
         case .home:
             // Needs the HomeKit entitlement (a paid Apple team): HOME_COMMANDS_STATUS.md.
             ConnectionInfo(

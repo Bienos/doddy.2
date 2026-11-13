@@ -2,7 +2,7 @@ import type { z } from "zod";
 import { LogbookDeleted, LogbookView } from "../logbook/schema.js";
 import { OwnerAccounts, OwnerFlag, OwnerOverview } from "../owner/schema.js";
 import { ChatContext, ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../memory/schema.js";
-import { AccountDeleted, AccountKind, CurrentSession, DocumentList, ErrorBody, IdentityList, ReceiptList, SessionList, SignedOut, SignedUp, SignInOptions, type SocialProvider, ThreadView, ToolsCatalog, Unlinked } from "./schemas.js";
+import { AccountDeleted, AccountKind, CurrentSession, DocumentList, ErrorBody, IdentityList, ReceiptList, ServerInfo, SessionList, SignedOut, SignedUp, SignInOptions, type SocialProvider, ThreadView, ToolsCatalog, Unlinked } from "./schemas.js";
 
 /**
  * Talks to Doddy's server on this page's own origin (ADR-600). The session is a cookie the page
@@ -139,6 +139,8 @@ export const api = {
   /** The iPhone's Messages thread, as it last sent it. Read only. */
   messages: (signal?: AbortSignal) => json(ThreadView, "/v1/web/messages", { signal }),
   catalog: (signal?: AbortSignal) => json(ToolsCatalog, "/v1/tools", { signal }),
+  /** Whether the server runs on demo data, for the "Demo server" banner. */
+  server: (signal?: AbortSignal) => json(ServerInfo, "/v1/server", { signal }),
   receipts: (signal?: AbortSignal) => json(ReceiptList, "/v1/tools/receipts", { signal }).then((r) => r.receipts),
   /** The days the iPhone has sent for Logbook (ADR-602), and whether it is on. */
   logbook: (signal?: AbortSignal) => json(LogbookView, "/v1/web/logbook", { signal }),

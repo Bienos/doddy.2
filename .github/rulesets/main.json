@@ -29,9 +29,9 @@
       "parameters": {
         "strict_required_status_checks_policy": false,
         "required_status_checks": [
-          { "context": "core" },
-          { "context": "ios-build" },
-          { "context": "sensitive-paths" }
+          { "context": "core", "integration_id": 15368 },
+          { "context": "ios-build", "integration_id": 15368 },
+          { "context": "sensitive-paths", "integration_id": 15368 }
         ]
       }
     }

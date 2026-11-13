@@ -20,8 +20,8 @@
     "ja": "Doddyが位置情報を使うのは、あなたが頼んだときだけです。場所で設定したリマインダーのため（「今いる場所を使う」をタップしたときに現在地を調べ、到着時や出発時にiOSがリマインドできるようにするため）、駐車した場所を保存するため、そしてAppleのマップでどこかへの出発時刻を計算するためです。Doddyは位置情報を保存せず、あなたの行き先を追跡することもありません。"
   },
   "NSMicrophoneUsageDescription": {
-    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
-    "ja": "あなたの声を聞くために、Doddyはマイクが必要です。Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。会話中のあなたの声は、会話を処理するためにElevenLabsに送られます。ホームの声をOpenAIに切り替えている場合はOpenAIに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。「録音」で始めた録音も、このiPhoneにとどまります。Doddyは録音中、そのことをずっと表示します。"
+    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation goes to ElevenLabs, which runs Doddy's voice and keeps a recording and transcript of each conversation; in translator mode, so does the other person's voice. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
+    "ja": "あなたの声を聞くために、Doddyはマイクが必要です。Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。会話中のあなたの声は、Doddyの声を動かすElevenLabsに送られます。ElevenLabsは各会話の録音と文字起こしを保存します。翻訳モードでは、相手の声も同じように送られます。メモに録音したボイスメモは、このiPhoneにとどまります。「録音」で始めた録音も、このiPhoneにとどまります。Doddyは録音中、そのことをずっと表示します。"
   },
   "NSRemindersFullAccessUsageDescription": {
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
@@ -32,24 +32,24 @@
     "ja": "Doddyは、ボイスメモや録音をこのiPhone上で文字に書き起こし、言葉を確認したり検索したりできるようにします。メッセージでマイクをタップしたときに話した内容も文字にします。音声とその文字はどこにも送られません。メッセージに音声入力した言葉は、メッセージとして送信したときだけこのiPhoneの外に出ます。"
   },
   "NSMotionUsageDescription": {
-    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
-    "ja": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存しません。オフにするには、設定の「連携」を使ってください。"
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, as part of that conversation. Doddy doesn't save them anywhere else. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値が会話の一部として、Doddyの声を動かすElevenLabsに送られます。Doddyはこれらをほかの場所には保存しません。オフにするには、設定の「連携」を使ってください。"
   },
   "NSHealthShareUsageDescription": {
-    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
-    "ja": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取り、Doddyの「Apple Health」画面に表示します。このiPhoneの外に出るのは週の短いまとめだけで、それもあなたが許可したときだけです。メッセージであなた自身が送るとき、またはあなたが尋ねて「はい」と答えたときにDoddyの音声に渡されます。Doddyは何も保存せず、ヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week can leave this iPhone, and only when you allow it. In Messages, when you tap Send, it goes to Doddy's server and Anthropic's Claude for the answer, and it stays in Messages, with a copy of the text on Doddy's server for Doddy on the web, until you delete it. In a voice conversation, when you ask and say yes, it goes to ElevenLabs, which runs Doddy's voice, and is kept with that conversation. Doddy writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "ja": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取り、Doddyの「Apple Health」画面に表示します。このiPhoneの外に出られるのは週の短いまとめだけで、それもあなたが許可したときだけです。「メッセージ」で「送信」をタップすると、Doddyのサーバーと、回答を書くAnthropicのClaudeに送られ、あなたが削除するまで「メッセージ」に残ります。そのテキストのコピーは、Web版Doddyで表示するためにDoddyのサーバーにも保存されます。音声会話では、あなたが尋ねて「はい」と答えると、Doddyの声を動かすElevenLabsに送られ、その会話とともに保存されます。Doddyはヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
   },
   "NSHealthUpdateUsageDescription": {
     "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
     "ja": "Doddyがヘルスケアに書き込んだり、内容を変更したりすることはありません。読み取りの許可を求めるのは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値だけです。ヘルスケアの許可画面は読み取りと書き込みの両方を扱うため、iOSはアプリにこの文章を求めます。"
   },
   "NSCameraUsageDescription": {
-    "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
-    "ja": "Doddyがカメラを開くのは、「写真を撮る」または「カメラを開く」をタップしたときだけです。残した写真はこのiPhone上のメモに入り、その文字はここで読み取られます。どこにも送信されず、写真ライブラリにも保存されません。"
+    "en": "Doddy opens the camera only when you tap Take a photo, Open camera or Scan a barcode. A photo for a note stays in that note on this iPhone, and its text is read here. For a barcode, only its number goes to Open Food Facts, and the photo isn't kept. A photo you take to ask Doddy about goes, when you tap Send in Messages, to Doddy's server and Anthropic's Claude for the answer; neither Doddy's server nor this iPhone keeps it. Doddy never saves a photo to your photo library.",
+    "ja": "Doddyがカメラを開くのは、「写真を撮る」「カメラを開く」「バーコードをスキャン」をタップしたときだけです。メモ用の写真はこのiPhone上のそのメモに残り、その文字はここで読み取られます。バーコードの場合、Open Food Factsに送られるのは番号だけで、写真は保存されません。Doddyに尋ねるために撮った写真は、「メッセージ」で「送信」をタップすると、Doddyのサーバーと、回答を書くAnthropicのClaudeに送られます。Doddyのサーバーもこの iPhoneも、その写真を保存しません。Doddyが写真ライブラリに写真を保存することはありません。"
   },
   "NSPhotoLibraryUsageDescription": {
-    "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
-    "ja": "Doddyは、あなたが尋ねた日に撮った写真とビデオの数を数え、画面に表示します。その会話でDoddyの声（ElevenLabs、またはホームの音声をOpenAIに切り替えた場合はOpenAI）に送られるのは、枚数と撮影日時だけです。写真そのものがこのiPhoneから出ることはありません。Doddyがライブラリを変更することはありません。オフにするには、設定の「連携」を使ってください。"
+    "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to ElevenLabs, which runs Doddy's voice, in that conversation; these pictures don't leave this iPhone. A photo you pick yourself to ask Doddy about in Messages goes, made smaller and without its location, to Doddy's server and Anthropic's Claude for the answer; neither Doddy's server nor this iPhone keeps it. Doddy never changes your library. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが尋ねた日に撮った写真とビデオの数を数え、画面に表示します。その会話でDoddyの声を動かすElevenLabsに送られるのは、枚数と撮影日時だけです。これらの写真がこのiPhoneから出ることはありません。「メッセージ」でDoddyに尋ねるためにあなたが自分で選んだ写真は、縮小され位置情報を除いた状態で、Doddyのサーバーと、回答を書くAnthropicのClaudeに送られます。Doddyのサーバーもこの iPhoneも、その写真を保存しません。Doddyがライブラリを変更することはありません。オフにするには、設定の「連携」を使ってください。"
   },
   "NSHomeKitUsageDescription": {
     "en": "Doddy turns a light, outlet or fan on or off, or runs a scene, in your Home only when you ask and after you tap Yes on a card that names it. It never controls locks, garage doors, alarms or cameras. The name of what you asked for and whether it worked go to Doddy's voice in that conversation; Doddy keeps none of it.",

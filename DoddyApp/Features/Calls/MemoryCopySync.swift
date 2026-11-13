@@ -28,8 +28,12 @@ final class MemoryCopySync {
 
     var isOn: Bool { UserDefaults.standard.bool(forKey: PreferenceKey.memoryCopyOn) }
 
+    /// Only the account that owns this iPhone's notes gets a copy (decision 2026-11-12-local-data-owner): with
+    /// another account's notes here, or nobody signed in, nothing is sent.
+    private var mayUpload: Bool { DoddyAccountServers.mayUploadLocalData }
+
     func schedule(_ records: [MemoryRecord], delay: Duration = .seconds(2)) {
-        guard isOn, let client = ServerConfig.client() else { return }
+        guard isOn, mayUpload, let client = ServerConfig.client() else { return }
         pending?.cancel()
         needsRetry = true
         pending = Task {
@@ -75,9 +79,10 @@ final class MemoryCopySync {
 
     /// Uploads now and waits for the server's answer, for callers that must say what happened
     /// (switching the copy on, Delete all). Throws when the copy couldn't be replaced; it is then
-    /// tried again by `retryIfNeeded`. Does nothing when the copy is off.
+    /// tried again by `retryIfNeeded`. Does nothing when the copy is off, or when this iPhone's notes may not go
+    /// to the signed-in account.
     func uploadNow(_ records: [MemoryRecord]) async throws {
-        guard isOn, let client = ServerConfig.client() else { return }
+        guard isOn, mayUpload, let client = ServerConfig.client() else { return }
         pending?.cancel()
         needsRetry = true
         do {

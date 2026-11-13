@@ -56,6 +56,10 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
       if (await verifyPin(pin, st.pin_hash)) {
         await c.query("UPDATE call_settings SET pin_failed_attempts = 0, pin_lock_count = 0, pin_locked_until = NULL WHERE account_id = $1", [s.accountId]);
         await c.query("UPDATE call_sessions SET pin_verified_at = now() WHERE id = $1", [s.id]);
+        // The call keeps it after its session ends: only a verified call gets a recap (src/phoneRecaps.ts).
+        await c.query(
+          `UPDATE calls SET pin_verified_at = coalesce(pin_verified_at, now())
+           WHERE id = (SELECT call_id FROM call_sessions WHERE id = $1) AND account_id = $2`, [s.id, s.accountId]);
         return { status: "verified" };
       }
       const attempts = st.attempts + 1;

@@ -9,9 +9,17 @@ import { Mode, ReceiptStatus } from "../contracts.js";
  */
 
 export const PAY_TOOL = "pay_x402";
+/**
+ * The approval to READ a payment page (its price), which comes before any approval to pay. A model chose
+ * the address, so nothing is fetched from it until the person has seen the site and path and said yes.
+ */
+export const PAY_READ_TOOL = "pay_x402_read";
 
 export const PaymentSwitchSchema = z.object({ enabled: z.boolean() }).strict();
-export const PaymentPrepareSchema = z.object({ url: z.string().trim().min(8).max(2048) }).strict();
+/** Step 1: the page a model proposed. Only checked for shape; nothing is fetched. */
+export const PaymentPageSchema = z.object({ url: z.string().trim().min(8).max(2048) }).strict();
+/** Step 2, after the person's yes on the page card: read the price with the single-use approval from step 1. */
+export const PaymentPrepareSchema = z.object({ url: z.string().trim().min(8).max(2048), approvalId: z.string().uuid() }).strict();
 /** `confirmAmount` is what the person typed; the server requires it to equal the price from the confirm threshold up. */
 export const PaymentPaySchema = z
   .object({ url: z.string().trim().min(8).max(2048), approvalId: z.string().uuid(), confirmAmount: z.string().trim().max(20).optional() })
@@ -59,6 +67,21 @@ export const PaymentStatusSchema = z
   })
   .strict();
 export type PaymentStatus = z.infer<typeof PaymentStatusSchema>;
+
+/**
+ * The card before anything is read: the site and the page (path, and a query only on sites allowed to have one)
+ * exactly as Doddy would open them, with a single-use approval to read that one address. Nothing was fetched.
+ */
+export const PaymentPageCardSchema = z
+  .object({
+    mode: Mode,
+    page: z.object({ host: z.string(), path: z.string() }).strict(),
+    preview: z.object({ title: z.string(), lines: z.array(z.string()), confirmLabel: z.string() }).strict(),
+    approvalId: z.string().uuid(),
+    expiresAt: z.string(),
+  })
+  .strict();
+export type PaymentPageCard = z.infer<typeof PaymentPageCardSchema>;
 
 export const PaymentPreparedSchema = z
   .object({

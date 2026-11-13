@@ -9,7 +9,7 @@ cd site && python3 -m http.server 8765
 # open http://localhost:8765
 ```
 
-There's no build step: plain HTML, CSS and a small vanilla script. Some pages are written by Python generators and committed (the translated pages, the blog, `/what-can-doddy-do/`, `tokens.css`); never edit those by hand. After a merge conflict in one, run `scripts/regen.sh`. Visits are counted with Vercel Web Analytics (no cookies) and Google Analytics 4 (cookies, on every visit); see [Analytics](#analytics).
+There's no build step: plain HTML, CSS and a small vanilla script. Some pages are written by Python generators and committed (the translated pages, the blog, `/what-can-doddy-do/`, `tokens.css`); never edit those by hand. After a merge conflict in one, run `scripts/regen.sh`. Visits are counted with Vercel Web Analytics (no cookies) and, only after the visitor taps Allow in a banner, Google Analytics 4 (cookies); see [Analytics](#analytics).
 
 ## How it connects to the app
 
@@ -18,7 +18,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. Some pages ar
 | Colours | `tokens.css` holds the app's light values only (the site is light-only by owner request, including on dark-mode devices). It is generated from `Packages/DoddyCore/Sources/DoddyDesignTokens/CandidateTokens.swift`. Run `python3 -I tools/gen_site_tokens.py` after changing app tokens; `--check` fails if the site is out of date. |
 | Character | `assets/day/` holds the owner's `DODDY-Numbered-Video-Assets-v01` pack as WebP (poses at 640 and 320 px, 16:9 scenery at 1600 and 800 px, props, effects, one face); every pose, scene and prop on the homepage and on `/what-can-doddy-do/` comes from it (CLAUDE.md, 11 October). The v1.3 SVGs that were in `assets/poses/` were deleted on 9 Nov 2026: the blog (`tools/build_blog.py`), the admin page and everything else now use the pack's poses. The favicon (64 px) and touch icon (180 px) are the app icon, Doddy's face on orange `#FF6A00`, Lanczos-resized (`assets/doddy-favicon.png`, `assets/doddy-touch-icon.png`; ADR-565, written by `tools/whole_doddy/make_app_icon.py`). Before 21 Oct they were a square cut of the pack's wave frame. |
 | Copy | Headings and disclosures reuse the app's words (`HomeView`, `VoiceView`, `SettingsView`, `RecallCopy.noMatch`). |
-| Waitlist | The form posts to `api/waitlist.js` on the same site, which stores each signup as one private JSON file in the Vercel Blob store **doddy-waitlist** (region fra1, private access; the site gets `BLOB_READ_WRITE_TOKEN` automatically). Stored: email, page, consent version, time, plus the optional answers (phone, where they heard about Doddy, what they'd like Doddy to do). See the admin page at `/admin/` or download an Excel-ready CSV from `/api/waitlist-export` (password = `WAITLIST_ADMIN_PASSWORD`, any username). |
+| Waitlist | The form posts to `api/waitlist.js` on the same site, which stores each signup as one private JSON file in the Vercel Blob store **doddy-waitlist** (region fra1, private access; the site gets `BLOB_READ_WRITE_TOKEN` automatically). Stored: email, page, consent version, time, plus the optional answers (phone, where they heard about Doddy, what they'd like Doddy to do). See the admin page at `/admin/` or download an Excel-ready CSV from `/api/waitlist-export` (password = `WAITLIST_ADMIN_PASSWORD`, any username; the admin page limits sign-in attempts, see [Waitlist](#waitlist)). |
 | Open Doddy | `APP_URL` in `main.js` (`doddy://home`); the app handles `doddy://home`, `memories`, `settings`, `parking`, `recordings` and `conversation` (`DeepLink` in DoddyCore). On non-iPhone devices it explains that Doddy runs on iPhone; on iPhone, if the page is still visible after 1.5 s, it says the app isn't installed. |
 | Telegram | Community group link `https://t.me/+u-YA6P_MISFjYWE0` in the join section ("Want to chat now?") and the footer; opens in a new tab. Change it in both places in `index.html` and in the footers that `tools/build_day.py` and `tools/build_blog.py` write, then run `scripts/regen.sh` so the generated pages follow. |
 | Social | TikTok `https://www.tiktok.com/@doddy_mate` and Instagram `https://www.instagram.com/doddy_mate/` in the join section ("Follow Doddy", labelled with the handle) and the footer (labelled just "TikTok" and "Instagram"); open in a new tab. The app links the same two accounts from Settings → Follow Doddy (ADR-130). |
@@ -41,13 +41,14 @@ There's no build step: plain HTML, CSS and a small vanilla script. Some pages ar
 - **Checks in `api/waitlist.js`:** same-site origin only, 2 KB body limit, email format and length, honeypot field, leading formula characters stripped.
 - **Same reply for a known email:** a signup for an email already on the list gets the same `added` reply, without the answers key, so the form can't be used to check who signed up.
 - **Answers can't bring a deleted signup back:** `api/waitlist-answers.js` writes only if the file is still the one it read (`ifMatch` on the etag). A signup deleted in between gets 403, and nothing is written.
-- **Tests:** `npm ci`, then `npm test` in `site/` (also in `scripts/ci.sh --only node`) runs the waitlist, answers, export and admin functions against an in-memory `@vercel/blob` stand-in (`test/fake-blob.js`), with no network, and checks the `vercel.json` headers (24 tests on 7 Nov). Without `npm ci` three of the four test files fail: the stand-in imports `@vercel/blob`. `.vercelignore` keeps `test/` out of the deployment.
+- **Tests:** `npm ci`, then `npm test` in `site/` (also in `scripts/ci.sh --only node`) runs the waitlist, answers, export and admin functions against an in-memory `@vercel/blob` stand-in (`test/fake-blob.js`), with no network, checks the admin sign-in limit (`test/admin-guard.test.js`, fake clock), the analytics choice (`test/analytics.test.js`: `analytics.js` in a small stand-in page) and the `vercel.json` headers (43 tests on 12 Nov 2026). Without `npm ci` the test files that use the stand-in fail: it imports `@vercel/blob`. `.vercelignore` keeps `test/` out of the deployment.
 - **Admin page:** `/admin/` (Doddy style, not linked from the site, `noindex`). Sign in with `WAITLIST_ADMIN_PASSWORD`. Shows total, today, last 7 days, latest signup, answer breakdowns (phone, heard about Doddy, latest wishes), sign-ups per day (30 days, 14 on phones), and a searchable, filterable table (iPhone, Android, answered, has a wish) with copy, delete (two taps, for removal requests), copy all emails and download for Excel. Data comes from `api/waitlist-admin.js` (GET list, DELETE one by hashed id); shared code in `api/_waitlist-store.js`.
 - **Download:** open `/api/waitlist-export` in a browser, enter any username and the `WAITLIST_ADMIN_PASSWORD`; you get `doddy-waitlist-YYYY-MM-DD.csv` (UTF-8 with BOM, opens in Excel). Change the password in Vercel → Project → Settings → Environment Variables, then redeploy.
-- **Not built:** rate limiting beyond Vercel's defaults, double opt-in emails, multiple admin accounts.
+- **Not built:** rate limiting of signups beyond Vercel's defaults, double opt-in emails, multiple admin accounts.
 - **Admin page policy (ADR-714):** `/admin*` has its own Content-Security-Policy (scripts from the site only, no Google Tag Manager), and a request that brings a wrong password waits 750 ms before it is answered (best effort on serverless).
-- **Admin password:** the admin routes have no lockout, so `WAITLIST_ADMIN_PASSWORD` must be long and random (for example `openssl rand -base64 24`), never a word. A changed password only takes effect in a new build: the ignore step cancels a redeploy when nothing under `site/` changed, so push a `site/` change after editing the variable.
-- **Rate limit (owner, recommended):** add a Vercel Firewall rule (Project → Firewall → Rules): rate-limit `/api/` by IP to about 20 requests a minute. It needs no code, and slows scripted signups and admin password guessing. Not set yet.
+- **Sign-in limit (`api/_admin-guard.js`, 12 Nov 2026):** the admin page and the export count sign-in attempts per client address (the address Vercel reports in `x-vercel-forwarded-for`; an IPv6 address counts as its /64). Five in 15 minutes lock that address out for 15 minutes: the fifth wrong password and every request after it get 429 with `Retry-After`, and while locked no password is compared, not even the right one. The right password clears the address's count. Each attempt is written to the waitlist's Blob store with a conditional put **before** its password is compared, so attempts sent in parallel can't get more than five compared; when the store can't be read or written, the answer is 503 and nothing is compared. A request with no credentials (the browser's first visit to the export) is not counted. The store holds no address: each record is named by an HMAC of the address keyed with `WAITLIST_ADMIN_PASSWORD` and holds only the attempt times; records older than 30 minutes are deleted by the next signed-in list. The comparison itself is constant-time (`timingSafeEqual` on SHA-256 digests). Log lines name the route and method only. Cost: every request with credentials is one Blob read and one write, plus a delete when the password is right. Tests: `test/admin-guard.test.js`.
+- **Admin password:** the limit is per address, so someone with many addresses gets five guesses on each: `WAITLIST_ADMIN_PASSWORD` must still be long and random (for example `openssl rand -base64 24`), never a word. A changed password only takes effect in a new build: the ignore step cancels a redeploy when nothing under `site/` changed, so push a `site/` change after editing the variable. Changing it also starts every address's count again.
+- **Rate limit (owner, recommended):** add a Vercel Firewall rule (Project → Firewall → Rules): rate-limit `/api/` by IP to about 20 requests a minute. It needs no code, slows scripted signups, and adds a limit in front of the code's own. Not set yet.
 
 ## Languages (ADR-460)
 
@@ -93,24 +94,56 @@ sent before the script has loaded. No npm dependency, no build step.
 - **Custom events** (for example a waitlist signup) are possible with
   `window.va('event', { name: '...' })`; none are sent yet.
 
-### Google Analytics 4 (ADR-245)
+### Google Analytics 4 (ADR-245; decision `2026-11-12-site-analytics-after-consent`)
 
-`analytics.js`, loaded on every public page in every language (homepage, `/what-can-doddy-do/`, blog, legal pages), not on `/admin/`.
+`analytics.js`, loaded on every public page in every language (homepage, `/what-can-doddy-do/`, blog, legal pages), not on `/admin/`. **Analytics load only after consent.**
 
 - **Measurement ID:** `G-MRF40685L1` (web stream "doddy website", property "doddy", `properties/559137115` in the Name Atlas account), the `GA_MEASUREMENT_ID` constant at the top of `analytics.js`
-  (Google Analytics → Admin → Data streams → Web). The file does not check the ID, so keep it set.
-- **No consent step (owner, 15 October):** `analytics.js` loads Google's tag (`gtag.js`) on every
-  page as it runs, with no banner and no "Analytics choices" link. This is the plain tag Google
-  gives (`gtag('config', ID)`). GA sets `_ga` / `_ga_*` cookies on every visit. It replaces the
-  consent-first design in ADR-245 (amended).
-- **Settings:** Google signals and ad settings are whatever the GA property is set to in Admin.
-  The site code does not change them. No custom events yet (a waitlist signup event would be
-  `gtag('event', 'sign_up')`).
+  (Google Analytics → Admin → Data streams → Web). With an ID that isn't `G-…`, the file does nothing.
+- **The choice:** a first visit shows a small banner at the bottom ("Can we count your visit with
+  Google Analytics? …", Allow / No thanks; a labelled region that doesn't take focus). Nothing
+  from Google loads until Allow. No thanks means it never loads. The choice is kept in
+  `localStorage` (`doddy-analytics-consent`, `granted` or `denied`), not a cookie; where storage is
+  blocked the visitor is asked on each page and nothing loads until Allow. "Analytics choices" in
+  every footer opens the banner again, with focus on Allow. Until the visitor allows it, any `_ga`
+  / `_ga_*` cookies left from earlier visits (GA ran without asking from 15 Oct to this change) are
+  removed on each page; switching to No thanks also tells a loaded tag `analytics_storage: denied`.
+  This brings back the consent-first design of ADR-245 and replaces the owner's 15 Oct choice of
+  no consent step; the owner confirms at review.
+- **Settings:** the tag starts with Google's consent mode: analytics granted, `ad_storage`,
+  `ad_user_data` and `ad_personalization` denied, and `allow_google_signals` and
+  `allow_ad_personalization_signals` off, because the banner asks about measuring visits only.
+  No custom events yet (a waitlist signup event would be `gtag('event', 'sign_up')`).
+- **Texts:** the banner's four texts go through `doddyT()` (in all ten languages, drafts like the
+  rest); the script waits for `DOMContentLoaded` because `i18n.js` runs after it on the blog pages.
+  The footer sentence (`data-ga-note`, shown by the script) is in the homepage, `build_day.py`,
+  `build_blog.py` and the four hand-written legal pages.
 - **CSP:** `vercel.json` allows `https://www.googletagmanager.com` in `script-src` and the GA
   collection hosts (`*.google-analytics.com`, `*.analytics.google.com`, `*.googletagmanager.com`)
-  in `img-src` and `connect-src`, as Google's CSP guide lists. No inline script was added.
-- **Privacy:** the footer says Google Analytics measures visits and sets cookies. A privacy policy
-  naming Google Analytics, and the EU consent question, are still open (see Needs the owner).
+  in `img-src` and `connect-src`, as Google's CSP guide lists. The banner is built by the script
+  (no inline script or style).
+- **Privacy:** the footer and the Privacy Policy (`#website`, EN and PL) say Google Analytics runs
+  only after Allow. Google Fonts still loads on every page and sends the visitor's IP address to
+  Google; the banner doesn't cover it (Needs the owner, 4).
+- **Tests:** `test/analytics.test.js` (no request to Google before Allow, none after No thanks, the
+  stored choice, the footer button, removed cookies, blocked storage). Checked in a browser on
+  12 Nov 2026 (headless Chromium 1243 via Playwright, `site/` served with the `vercel.json`
+  headers, Google's tag and fonts stubbed; a session script, not in the repository, 40 checks):
+  `/`, `/de/`, `/de/blog/`, `/pl/privacy/`, `/ja/what-can-doddy-do/`: the banner in the page's
+  language, no request to Google before a choice or after No thanks, one `gtag/js` request after
+  Allow and again on reload, keyboard use, focus, no console errors or CSP violations; 390 px wide
+  on four pages: no sideways scroll; `/admin/` has no banner. Not checked: real Safari, VoiceOver,
+  the live deploy, data arriving in GA.
+
+### Cross-origin reads
+
+Vercel sends `Access-Control-Allow-Origin: *` with every static file unless a rule names that header
+(`curl -sI https://www.doddy.lol/` showed it on 12 Nov 2026). `vercel.json` sets it to
+`https://www.doddy.lol` on every path outside `/api/`, so only the site itself may read its pages,
+scripts and images from another page's script; a rule's value replaces Vercel's own, as the
+`/assets/` `Cache-Control` rule does. The API routes send no CORS header: the site calls them from
+its own pages. `test/headers.test.js` checks both. After the deploy, check with
+`curl -sI https://www.doddy.lol/ | grep -i access-control`.
 
 ## Builds on Vercel
 
@@ -121,7 +154,7 @@ sent before the script has loaded. No npm dependency, no build step.
 1. **Check the deep link on an iPhone.** The app registers `doddy://` (`Config/Doddy-Info.plist`) and opens `home`, `memories`, `settings` and three more places (`DeepLink` in DoddyCore, handled in `RootView`). The app builds in CI; the link from this page is not recorded as tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
 2. **Waitlist:** add a contact address people can use to ask for deletion; the form promises deletion on request.
 3. **Domain, contact address and privacy policy.** Pages now name `https://www.doddy.lol/` as their canonical host (`canonical`, `og:url`, `og:image`); the RSS feed keeps `https://doddy-eight.vercel.app` so item links and guids don't change under subscribers. Hosted on Vercel (project `doddy`, team `doddyyyy`) at https://www.doddy.lol, with `doddy.lol` redirecting to it. The old `doddy-eight.vercel.app` belonged to the previous team and answers 402; nothing should point at it. Production deploys from the default branch, `main` (renamed from `claude/loving-dirac-uuxoux` on 7 Nov, ADR-765). Branches named `claude/…` get no deployment; any other branch gets a preview that sits behind Vercel login. No contact address yet. Draft Terms and Privacy Policy pages exist (see "Legal pages"), not yet approved.
-4. **Fonts:** Bricolage Grotesque and Caveat (both OFL) load from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host them after licence review; the CSS falls back to system fonts without them.
+4. **Fonts:** Bricolage Grotesque and Caveat (both OFL) load from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host them after licence review; the CSS falls back to system fonts without them. A lighter option (proposal, 12 Nov 2026): drop the Google Fonts link and use those system fonts, which needs no font files and sends nothing to Google. The analytics banner doesn't cover the fonts.
 5. **Character art:** done on 9 Nov 2026. Every page, the blog included, uses the pack; `assets/poses/` (the v1.3 SVGs) is deleted.
 6. **Voice testing line:** done on the owner's word (13 October). The line went with the voice section on 14 October; the footer now points to `/what-can-doddy-do/` for what works today.
 7. **Brand:** Brand Guidelines V2.2 is the reference for colour, type and voice (owner, 20 Oct 2026, ADR-556; `docs/design/BRAND_V2_2_REVIEW.md`): `tokens.css` carries its ink `#171715`, paper `#FFF7E9` and orange `#FF6A00`. The homepage copy from that review (its item 7: headline, `<title>`) waits for the owner, and so does the hero.

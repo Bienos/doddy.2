@@ -91,8 +91,13 @@ export interface PaymentsSettings {
   confirmAmount: number;
   userDaily: number;
   serviceDaily: number;
-  /** Empty: any public https site. Each payment still needs its own approval. */
+  /**
+   * Empty: any public https site, which only mock mode accepts. Live mode with a wallet refuses to start without
+   * a list. Each payment still needs its own approvals: one to read the page, one to pay it.
+   */
   allowedHosts: string[];
+  /** Sites whose payment page addresses may keep a query string ("?..."). Empty: none may. */
+  queryHosts: string[];
   /** Live mode with wallet "coinbase_cdp" only. */
   cdp: CdpSettings | null;
 }
@@ -304,6 +309,7 @@ const EnvSchema = z.object({
   DODDY_PAYMENTS_USER_DAILY_USDC: z.string().default("1.00"),
   DODDY_PAYMENTS_SERVICE_DAILY_USDC: z.string().default("5.00"),
   DODDY_PAYMENTS_ALLOWED_HOSTS: z.string().default(""),
+  DODDY_PAYMENTS_QUERY_HOSTS: z.string().default(""),
   CDP_API_KEY_ID: z.string().optional(),
   CDP_API_KEY_SECRET: z.string().optional(),
   CDP_WALLET_SECRET: z.string().optional(),
@@ -690,8 +696,15 @@ function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): Payment
     problems.push("DODDY_PAYMENTS_NETWORK must be base-sepolia: paying on a network with real money is not approved (ADR-737)");
   }
 
-  const allowedHosts = e.DODDY_PAYMENTS_ALLOWED_HOSTS.split(",").map((h) => h.trim().toLowerCase()).filter((h) => h !== "");
+  const hosts = (value: string) => value.split(",").map((h) => h.trim().toLowerCase()).filter((h) => h !== "");
+  const allowedHosts = hosts(e.DODDY_PAYMENTS_ALLOWED_HOSTS);
   if (allowedHosts.some((h) => !HOSTNAME.test(h))) problems.push("DODDY_PAYMENTS_ALLOWED_HOSTS must be comma-separated host names like example.com");
+  // A model chooses the page; with a real wallet it may only be one of the sites the owner listed.
+  if (e.DODDY_MODE === "live" && e.DODDY_PAYMENTS_WALLET !== "none" && allowedHosts.length === 0) {
+    problems.push("DODDY_PAYMENTS_ALLOWED_HOSTS must list the sites Doddy may pay when DODDY_MODE=live and DODDY_PAYMENTS_WALLET is set");
+  }
+  const queryHosts = hosts(e.DODDY_PAYMENTS_QUERY_HOSTS);
+  if (queryHosts.some((h) => !HOSTNAME.test(h))) problems.push("DODDY_PAYMENTS_QUERY_HOSTS must be comma-separated host names like example.com");
 
   let cdp: CdpSettings | null = null;
   const names = ["CDP_API_KEY_ID", "CDP_API_KEY_SECRET", "CDP_WALLET_SECRET", "CDP_PAYMENT_ACCOUNT_ADDRESS"] as const;
@@ -721,6 +734,7 @@ function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): Payment
     userDaily,
     serviceDaily,
     allowedHosts,
+    queryHosts,
     cdp,
   };
 }

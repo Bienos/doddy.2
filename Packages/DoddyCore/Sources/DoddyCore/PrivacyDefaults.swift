@@ -34,9 +34,11 @@ public struct PrivacyDefaults: Equatable, Sendable {
     /// conversation is open. Saved notes stay on the device; the notes, calendar entries and
     /// contact names the agent uses during a conversation are sent to it. This is also what the
     /// shipping app states, so it includes the lists the user shares through iCloud.
+    /// Analytics is built: Logbook counts how the person uses Doddy, on unless they turn it off (decision
+    /// 2026-11-09-usage-counts-on-by-default). Whether it is on right now is `DataFlow.analyticsSummary`.
     public static let v1Voice = PrivacyDefaults(
         accountRequired: false, networkRequestsMade: true, microphoneUsed: true,
-        contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: true, syncEnabled: false,
+        contentTelemetryEnabled: false, analyticsEnabled: true, cloudAIEnabled: true, syncEnabled: false,
         sharesListsThroughICloud: true)
 
     /// The Settings → Privacy "Sync" row. Shared lists and the server copies are not a sync of
