@@ -7,7 +7,7 @@ import { keyedDigest } from "./crypto.js";
 type Q = Pick<pg.PoolClient, "query"> | pg.Pool;
 
 /** `news_account`: digests the AI writer is asked to write per account (migration 030). `news_summary_account`: the
- * story summaries one account asks for in On my radar (migration 035). */
+ * story summaries one account asks for in On my radar (migration 037). */
 export type CounterScope = "signup_ip" | "sms_account" | "news_account" | "news_summary_account";
 
 /** The day in parameter `n` (YYYY-MM-DD, for a fixed clock) or today in UTC as the database counts it. */

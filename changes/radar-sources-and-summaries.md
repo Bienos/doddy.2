@@ -1,4 +1,4 @@
 On my radar redesigned in Doddy's colours: follows as chips, story cards with picture, publisher and time; "Add sources" shows every publisher Doddy's server reads, by topic, and the three ways to follow; a tapped story opens with a short summary by Claude Haiku, labelled as AI (`POST /v1/news/summary`; catalog gains `group`, `groupLabel`, `publishers`). Decision `2026-11-13-radar-sources-and-ai-summary`.
-Server: migration `035_news_summaries.sql` (CHECKs only), caps `NEWS_SUMMARY_DAILY_*`; needs `ANTHROPIC_API_KEY` (else 503 not_configured). Deploy is an owner step.
+Server: migration `037_news_summaries.sql` (CHECKs only), caps `NEWS_SUMMARY_DAILY_*`; needs `ANTHROPIC_API_KEY` (else 503 not_configured). Deploy is an owner step.
 Ran: `server/messaging` `npm test` against a local Postgres 16, 1074/1074 pass. Not run: DoddyCore tests (no Swift here). Not compiled: the SwiftUI and `FollowingModel.swift`; no device run, no real Anthropic call.
 Owner: the privacy policy and App Store answers should mention article text going to Anthropic on a tap (not yet a row in `docs/OWNER_QUEUE.md`).

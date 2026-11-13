@@ -282,6 +282,15 @@ private struct StoryCard: View {
                     .multilineTextAlignment(.leading)
                     .lineLimit(3)
             }
+            // The same story from other publishers, grouped by the server (decision 2026-11-13-news-more-sources).
+            if let also = card.alsoFromLine(polish: polish) {
+                Text(verbatim: also)
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("following.alsoFrom")
+            }
             if !card.follows.isEmpty {
                 Text(verbatim: card.follows.joined(separator: " · "))
                     .font(.caption.weight(.semibold))

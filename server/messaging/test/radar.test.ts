@@ -394,10 +394,11 @@ describe("radar against real Postgres", { skip: dbSkip }, () => {
     type Topic = { id: string; label: string; sources: string[]; group: string; groupLabel: string; publishers: { name: string; domain: string }[] };
     const crypto = (r.json() as { topics: Topic[] }).topics.find((t) => t.id === "crypto")!;
     assert.equal(crypto.label, "Kryptowaluty");
-    assert.deepEqual(crypto.sources, ["CoinDesk", "Cointelegraph", "Decrypt", "The Block", "Bitcoin.pl"]);
+    assert.deepEqual(crypto.sources, ["CoinDesk", "Cointelegraph", "Decrypt", "The Block", "Bitcoin.pl", "CryptoSlate"]);
     // Since 13 Nov 2026, for the app's Sources list: the shelf and each publisher's feed host.
     assert.deepEqual([crypto.group, crypto.groupLabel], ["money", "Pieniądze"]);
-    assert.deepEqual(crypto.publishers, [
+    assert.deepEqual(crypto.publishers.map((p: { name: string }) => p.name), crypto.sources);
+    assert.deepEqual(crypto.publishers.slice(0, 5), [
       { name: "CoinDesk", domain: "coindesk.com" }, { name: "Cointelegraph", domain: "cointelegraph.com" },
       { name: "Decrypt", domain: "decrypt.co" }, { name: "The Block", domain: "theblock.co" }, { name: "Bitcoin.pl", domain: "bitcoin.pl" }]);
   });
