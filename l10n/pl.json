@@ -1944,6 +1944,7 @@
   "You can turn this off whenever you like. That deletes it from Doddy's server. You can also read it, download it and delete it on the web.": "Możesz to wyłączyć, kiedy chcesz. To usuwa dane z serwera Doddy’ego. Możesz je też przeczytać, pobrać i usunąć w przeglądarce.",
   "Doddy's server isn't keeping this any more (it may have been deleted on the web). Turn it on again if you want it kept.": "Serwer Doddy’ego już tego nie przechowuje (mogło to zostać usunięte w przeglądarce). Włącz to ponownie, jeśli chcesz to zachować.",
   "Doddy's server isn't set up to keep this yet. Nothing was sent.": "Serwer Doddy’ego nie jest jeszcze przygotowany do przechowywania tego. Nic nie wysłano.",
+  "This iPhone holds Doddy data from another account, so nothing from it is sent to yours. Nothing was sent.": "Na tym iPhonie są dane Doddy’ego z innego konta, więc nic z nich nie trafia na twoje. Nic nie zostało wysłane.",
   "That was more than Doddy's server will keep. Nothing was stored.": "To więcej, niż serwer Doddy’ego przechowa. Nic nie zapisano.",
   "Too many tries. Try again later.": "Zbyt wiele prób. Spróbuj później.",
   "Doddy's server sent something the app couldn't read. Nothing was changed here.": "Serwer Doddy’ego wysłał coś, czego aplikacja nie mogła odczytać. Nic tu nie zmieniono.",
