@@ -22,13 +22,13 @@ Shopping had two ways in with different words: "Find me this" (online shops, a b
   The kind picked on an item's card ("kawa" → "mielona") now narrows the tabs too (`DealsResult.narrowed`).
 - **The row and the card:** the row is the basket's cheapest line (the price for the quantity); the item's card keeps the best value per kg, "Why this one", similar products and promotions, and now lists **every other offer in full** (conditions, "Until …", reminders, leaflet page) where it showed three in one line.
 - **"Search online shops"** after a leaflet answer (`ShoppingRoute.onlineNext`): for things in between, things for online shops, and an unknown item with no offer and no promotion. Never for groceries. A button prepares the same typed shopping task and opens the same yes card; nothing is sent before "Yes, go"; a start the server didn't confirm keeps its button off.
-- **Not changed:** the server, the leaflet request and its limits, matching and picking on the server, the errand request, digest and approval, the partner-link wording, "Check this", watches, Shopify, the voice tool `find_deals`.
+- **Not changed:** the server, the leaflet request and its limits, matching and picking on the server, the errand request, digest and approval, the partner-link wording, "Check this", watches, Shopify, the voice tool `find_deals` and its description.
 
 ## Consequences
 - The routing is a guess by word lists, said on screen before anything happens; a wrong guess costs one tap on "Change". A missed word means the leaflets are asked first, which is free and quick. Leaflet checks still count against the day's limit.
 - "Each item separately" ranks by the price for the quantity asked, like the other two tabs, so the three tabs add up; the best value per kg stays on the item's card. An item can show a smaller pack in the row than the card's best-value pick.
 - No new data leaves the iPhone: the leaflet request and the errand are the same requests as before, sent at the same taps.
-- Voice: `find_deals` is unchanged; the review's "Doddy proposes Find me this when a non-food search is empty" by voice needs the agent's prompt, which changes only on the owner's separate instruction.
+- Voice (owner, 13 Nov 2026: "Find me this"): `find_deals`'s reply, which the app writes, ends its data with "Online shops next" for the same things the screen offers (`ShoppingRoute.onlineNext`, at most three; never everyday groceries), asking Doddy to offer once, in one short line, to look in online shops in the background, and to use `hand_over_errand` with kind `shopping` if the person wants it. Its own card still starts it only on their tap (ASK-01). The live agent's prompt and `voice-agent/tools.json` are unchanged (`DealsResultText.onlineNextLine`).
 
 ## Evidence
 `make test-core` on Linux (Swift 6.1.2) with the new `ShoppingRouteTests` and `BasketTabsTests`; `swiftc -parse` on every changed app file; string catalogs `--check`; `scripts/ci.sh --only checks`; `scripts/typecheck_app_logic.sh`. **Not compiled:** the SwiftUI views (no Xcode here); nothing was seen on a device; the UI test that opens the basket was updated but not run.
