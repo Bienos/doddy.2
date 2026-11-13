@@ -343,6 +343,41 @@ describe("the pipeline against a fake Claude", () => {
     assert.equal(((o) => o.kind === "failed" && o.code)(await runStudio(late, job, control({ deadline: new Date(Date.now() - 1) }).c)), "time_limit");
   });
 
+  test("a run says when a request may have spent more than it counted: cut off by Cancel, the time limit or the provider, or a reply without its usage", async () => {
+    const whole = await runStudio(new FakeStudioApi(), job, control().c);
+    assert.equal(whole.costUnknown, false, "every request finished and was counted");
+
+    let cancelled = false;
+    const cancelledMidRequest = new FakeStudioApi();
+    cancelledMidRequest.hang.add("research");
+    cancelledMidRequest.onCall = (s) => { if (s === "research") cancelled = true; };
+    const a = await runStudio(cancelledMidRequest, job, control({ isCancelled: async () => cancelled }).c);
+    assert.deepEqual([a.kind, a.costUnknown], ["cancelled", true]);
+    assert.ok(a.costUsd > 0, "the plan before it was counted");
+
+    const timedOut = new FakeStudioApi();
+    timedOut.hang.add("research");
+    const b = await runStudio(timedOut, job, control({ deadline: new Date(Date.now() + 80) }).c);
+    assert.deepEqual([b.kind === "failed" && b.code, b.costUnknown], ["time_limit", true]);
+
+    const cutOff = new FakeStudioApi();
+    cutOff.failing.add("research");
+    const c = await runStudio(cutOff, job, control().c);
+    assert.deepEqual([c.kind === "failed" && c.code, c.costUnknown], ["provider_error", true]);
+
+    const unparsed = new FakeStudioApi();
+    unparsed.plans.push({ kind: "unparsed" });
+    const d = await runStudio(unparsed, job, control().c);
+    assert.deepEqual([d.kind === "failed" && d.code, d.costUnknown], ["unreadable_result", true]);
+
+    // Cancel seen between steps, before the next request went out: nothing went uncounted.
+    let later = false;
+    const between = new FakeStudioApi();
+    between.onCall = (s) => { if (s === "write") later = true; };
+    const e = await runStudio(between, job, control({ isCancelled: async () => later }).c);
+    assert.deepEqual([e.kind, e.costUnknown], ["cancelled", false]);
+  });
+
   test("a run's cost is each call priced with its own step's model", async () => {
     const api = new FakeStudioApi();
     api.models = { ...MODEL_MIXES.cheap! };

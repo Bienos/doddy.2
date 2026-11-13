@@ -85,6 +85,24 @@ export function stuckCleanupLine(failure: CleanupFailure): Record<string, unknow
   };
 }
 
+/** What linking an account to an iPhone's earlier data did (decision 2026-11-08-required-account). */
+export type AccountLinkOutcome = "linked" | "already" | "subject_taken" | "user_taken" | "account_has_data";
+
+/** An account that took over an iPhone's data: the account (a Supabase user id), the data's user id, and when. */
+export interface AccountLinkRow {
+  subject: string;
+  user_id: string;
+  linked_at: number;
+}
+
+/** Ways into the data that ended with a link: browser sessions, Apple or Google sign-ins, joined iPhones, unused codes. */
+export interface LinkEnded {
+  webSessions: number;
+  webIdentities: number;
+  deviceJoins: number;
+  pending: number;
+}
+
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 /**
@@ -110,6 +128,7 @@ export const ERASED_TABLES = [
   "web_accounts",
   "device_joins",
   "account_links",
+  "account_link_codes",
   "logbook_state",
   "logbook_days",
   "memory_state",
@@ -343,6 +362,16 @@ export const SCHEMA_SQL = `
     user_id TEXT NOT NULL UNIQUE,
     linked_at BIGINT NOT NULL
   );
+  -- A one-time code the iPhone's own device session asked for (\`POST /v1/account/link-device/start\`),
+  -- so an account takes over that iPhone's data only when the iPhone itself started it a moment ago.
+  -- Only its hash is kept. The link uses it up, and an unused one goes when it expires.
+  CREATE TABLE IF NOT EXISTS account_link_codes (
+    code_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS account_link_codes_user ON account_link_codes(user_id);
   CREATE TABLE IF NOT EXISTS device_joins (
     device_user_id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -1693,24 +1722,111 @@ export class Store {
    * - `subject_taken`: the account already took over other data;
    * - `user_taken`: another account took over this data;
    * - `account_has_data`: the account has data of its own, which would have to be merged.
+   * The route links only with a code the iPhone asked for (`linkAccountWithCode`); this is for tests and
+   * tools that already know both ids.
    */
-  linkAccount(subject: string, userId: string, now: number): Promise<"linked" | "already" | "subject_taken" | "user_taken" | "account_has_data"> {
-    return this.db.transaction(async (tx) => {
-      const mine = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
-      if (mine) return mine.user_id === userId ? "already" : "subject_taken";
-      if (await this.one<{ one: number }>(tx, "SELECT 1 AS one FROM account_links WHERE user_id = $1", [userId])) return "user_taken";
-      if (subject !== userId) {
-        for (const table of ERASED_TABLES) {
-          if (table === "account_links") continue;
-          if (await this.one<{ one: number }>(tx, `SELECT 1 AS one FROM ${table} WHERE user_id = $1 LIMIT 1`, [subject])) return "account_has_data";
-        }
+  linkAccount(subject: string, userId: string, now: number): Promise<AccountLinkOutcome> {
+    return this.db.transaction((tx) => this.linkAccountIn(tx, subject, userId, now));
+  }
+
+  private async linkAccountIn(tx: Queryable, subject: string, userId: string, now: number): Promise<AccountLinkOutcome> {
+    const mine = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
+    if (mine) return mine.user_id === userId ? "already" : "subject_taken";
+    if (await this.one<{ one: number }>(tx, "SELECT 1 AS one FROM account_links WHERE user_id = $1", [userId])) return "user_taken";
+    if (subject !== userId) {
+      for (const table of ERASED_TABLES) {
+        if (table === "account_links" || table === "account_link_codes") continue;
+        if (await this.one<{ one: number }>(tx, `SELECT 1 AS one FROM ${table} WHERE user_id = $1 LIMIT 1`, [subject])) return "account_has_data";
       }
-      // Two links at once: the keys decide, and the loser reads what won.
-      const inserted = await tx.query("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", [subject, userId, now]);
-      if (inserted.rowCount === 1) return "linked";
-      const now2 = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
-      return now2 ? (now2.user_id === userId ? "already" : "subject_taken") : "user_taken";
+    }
+    // Two links at once: the keys decide, and the loser reads what won.
+    const inserted = await tx.query("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", [subject, userId, now]);
+    if (inserted.rowCount === 1) return "linked";
+    const now2 = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
+    return now2 ? (now2.user_id === userId ? "already" : "subject_taken") : "user_taken";
+  }
+
+  /**
+   * A one-time link code for this iPhone's own user id, asked for by its own device session. Any earlier
+   * code of this iPhone stops working. Only the hash is stored.
+   */
+  async createAccountLinkCode(userId: string, codeHash: string, now: number, ttlMs: number): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.query("DELETE FROM account_link_codes WHERE user_id = $1", [userId]);
+      await tx.query("INSERT INTO account_link_codes (code_hash, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)", [codeHash, userId, now, now + ttlMs]);
     });
+  }
+
+  /**
+   * The account `subject` takes over the data of the iPhone the code was issued to. The code is used up
+   * in the same transaction, whatever the outcome; `bad_code` when it is unknown, used or expired.
+   */
+  linkAccountWithCode(subject: string, codeHash: string, now: number): Promise<AccountLinkOutcome | "bad_code"> {
+    return this.db.transaction(async (tx) => {
+      const code = await this.one<{ user_id: string }>(
+        tx,
+        "DELETE FROM account_link_codes WHERE code_hash = $1 AND expires_at > $2 RETURNING user_id",
+        [codeHash, now],
+      );
+      if (!code) return "bad_code";
+      return this.linkAccountIn(tx, subject, code.user_id, now);
+    });
+  }
+
+  /** Link codes past their expiry (never used). Hourly, with the other sweeps. */
+  async pruneAccountLinkCodes(now: number): Promise<number> {
+    return (await this.db.query("DELETE FROM account_link_codes WHERE expires_at < $1", [now])).rowCount;
+  }
+
+  /**
+   * The iPhone takes its data back from the account that took it over, within `windowMs` of the link.
+   * `not_linked` when there is no link (also a repeat after a lost answer); `too_late` past the window.
+   */
+  undoAccountLink(userId: string, now: number, windowMs: number): Promise<{ outcome: "undone" | "not_linked" | "too_late"; ended: LinkEnded | null }> {
+    return this.db.transaction(async (tx) => {
+      const link = await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE user_id = $1", [userId]);
+      if (!link) return { outcome: "not_linked", ended: null };
+      if (now - Number(link.linked_at) > windowMs) return { outcome: "too_late", ended: null };
+      return { outcome: "undone", ended: await this.unlinkIn(tx, link, now) };
+    });
+  }
+
+  /**
+   * The operator ends a link, whenever it was made (`npm run account:unlink`): found by the account (a
+   * Supabase user id, `subject`) or by the data's user id. Null when there is no such link.
+   */
+  unlinkAccount(id: string, now: number): Promise<(AccountLinkRow & { ended: LinkEnded }) | null> {
+    return this.db.transaction(async (tx) => {
+      const link =
+        (await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE subject = $1", [id])) ??
+        (await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE user_id = $1", [id]));
+      if (!link) return null;
+      return { ...link, linked_at: Number(link.linked_at), ended: await this.unlinkIn(tx, link, now) };
+    });
+  }
+
+  /**
+   * Removes the link and every way into the data opened since it was made, so the account keeps no way
+   * in: browser sessions (revoked), Apple or Google sign-ins linked to the data, other iPhones that joined
+   * it, and sign-in codes and tickets not yet used. Data written meanwhile stays with the data. The
+   * iPhone's own device token works again: it is refused only while its data is linked.
+   */
+  private async unlinkIn(tx: Queryable, link: AccountLinkRow, now: number): Promise<LinkEnded> {
+    const since = Number(link.linked_at);
+    await tx.query("DELETE FROM account_links WHERE subject = $1", [link.subject]);
+    const count = async (sql: string) => (await tx.query(sql, [link.user_id, since])).rowCount;
+    return {
+      webSessions: (await tx.query(
+        "UPDATE web_sessions SET revoked_at = $3 WHERE user_id = $1 AND created_at >= $2 AND revoked_at IS NULL",
+        [link.user_id, since, now],
+      )).rowCount,
+      webIdentities: await count("DELETE FROM web_identities WHERE user_id = $1 AND created_at >= $2"),
+      deviceJoins: await count("DELETE FROM device_joins WHERE user_id = $1 AND created_at >= $2"),
+      pending:
+        (await count("DELETE FROM web_link_codes WHERE user_id = $1 AND created_at >= $2")) +
+        (await count("DELETE FROM web_link_pending WHERE user_id = $1 AND created_at >= $2")) +
+        (await count("DELETE FROM web_oauth_states WHERE user_id = $1 AND created_at >= $2")),
+    };
   }
 
   // ------------------------------------------------------------ an iPhone using another account (ADR-819)

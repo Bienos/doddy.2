@@ -104,7 +104,8 @@ export const textSettingsRoutes = (deps: Deps): FastifyPluginAsync => async (app
       phone,
       textSettings: texts,
       calls: await q<object>(
-        `SELECT id, direction, status, error_code AS "errorCode", created_at AS "createdAt" FROM calls
+        `SELECT id, direction, status, error_code AS "errorCode", created_at AS "createdAt",
+                recap_not_created AS "recapNotCreated" FROM calls
          WHERE account_id = $1 ORDER BY created_at DESC LIMIT $2`),
       textsFromDoddy: await q<object>(
         `SELECT id, state, delivery_status AS "deliveryStatus", error_code AS "errorCode", approved_text AS "approvedByYou",
