@@ -37,9 +37,16 @@ const snapshotBody = z.object({
 }).refine((b) => new Set(b.items.map((i) => i.id)).size === b.items.length, "duplicate ids");
 const idParam = z.object({ id: z.uuid() });
 
-/** A changed or removed PIN also ends the access that calls in progress got with the old one. */
-const forgetPinOnCalls = (c: pg.PoolClient, accountId: string) =>
-  c.query("UPDATE call_sessions SET pin_verified_at = NULL WHERE account_id = $1", [accountId]);
+/**
+ * A changed or removed PIN also ends the access that calls in progress got with the old one, and their right to a
+ * recap (src/phoneRecaps.ts). A finished call has no session left, so it keeps its own.
+ */
+async function forgetPinOnCalls(c: pg.PoolClient, accountId: string): Promise<void> {
+  await c.query(
+    `UPDATE calls SET pin_verified_at = NULL
+     WHERE account_id = $1 AND id IN (SELECT call_id FROM call_sessions WHERE account_id = $1 AND call_id IS NOT NULL)`, [accountId]);
+  await c.query("UPDATE call_sessions SET pin_verified_at = NULL WHERE account_id = $1", [accountId]);
+}
 
 export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
@@ -187,9 +194,10 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     return reply.code(202).send({ callId, status });
   });
 
+  // `recapNotCreated`: why a call has no recap while recaps are on ("pin_not_verified", src/phoneRecaps.ts), else null.
   app.get("/v1/calls", { preHandler: auth }, async (req) => {
     const { rows } = await db.query(
-      `SELECT id, direction, status, created_at AS "createdAt" FROM calls
+      `SELECT id, direction, status, created_at AS "createdAt", recap_not_created AS "recapNotCreated" FROM calls
        WHERE account_id = $1 ORDER BY created_at DESC LIMIT 20`, [principal(req).accountId]);
     return { calls: rows };
   });
