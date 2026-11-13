@@ -16,6 +16,11 @@ export interface AgentVariables {
   doddy_question: string;
   doddy_principal: string;
   doddy_callee: string;
+  /**
+   * Not the person's goal: a fixed sentence (GOAL_FOR_LIVE_PROMPT). The goal is on the card only and never said on the
+   * call (12 Nov 2026); the prompts no longer name it, but a live agent not yet synced still does, and without a value
+   * it would read its placeholder. Drop it once the live agents have the new prompts (agentSpec.ts).
+   */
   doddy_goal: string;
   doddy_facts: string;
   doddy_callback_line: string;
@@ -33,6 +38,11 @@ export const AGENT_VARIABLE_NAMES = [
 export const BOOK_AGENT_VARIABLE_NAMES = [
   ...AGENT_VARIABLE_NAMES, "doddy_booking", "doddy_booking_confirm_line",
 ] as const satisfies readonly (keyof AgentVariables)[];
+/** What a live prompt from before 12 Nov 2026 reads as the goal: about the question or the booking on the card, nothing more. */
+export const GOAL_FOR_LIVE_PROMPT = {
+  ask: "Uzyskać odpowiedź na pytanie poniżej.",
+  book: "Zarezerwować dokładnie to, co opisano poniżej.",
+} as const;
 /** Added at answer time so the post-call webhook can be matched to the attempt. Not in the prompt. */
 export const ATTEMPT_VARIABLE = "doddy_attempt";
 
@@ -102,7 +112,7 @@ export function compilePayload({ caseId, brief, destination, fromNumber, notice 
         doddy_question: question,
         doddy_principal: g,
         doddy_callee: brief.callee.name,
-        doddy_goal: brief.goal,
+        doddy_goal: GOAL_FOR_LIVE_PROMPT[brief.kind],
         doddy_facts: factLines(facts),
         doddy_callback_line: callbackLine(g),
         doddy_max_minutes: String(Math.round(brief.maxDurationSecs / 60)),

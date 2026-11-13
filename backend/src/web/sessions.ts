@@ -55,7 +55,7 @@ const CODE_LENGTH = 8;
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 
 /** Read-only routes elsewhere in the API that a browser session may also use. Everything else needs the iPhone's session. */
-export const COOKIE_READABLE: ReadonlySet<string> = new Set(["GET /v1/tools", "GET /v1/tools/receipts"]);
+export const COOKIE_READABLE: ReadonlySet<string> = new Set(["GET /v1/tools", "GET /v1/tools/receipts", "GET /v1/server"]);
 
 export interface WebSessionContext {
   sessionId: string;

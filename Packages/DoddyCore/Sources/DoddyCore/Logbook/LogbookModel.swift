@@ -21,6 +21,9 @@ public final class LogbookModel {
         case unreadable
         /// The server's own words.
         case server(String)
+        /// What would be counted on this iPhone was made with another Doddy account, so nothing is sent to the
+        /// signed-in one (decision 2026-11-12-local-data-owner).
+        case otherAccountsData
     }
 
     /// The person's switch. Absent means on.
@@ -52,21 +55,26 @@ public final class LogbookModel {
 
     private let makeClient: @Sendable () async -> (any LogbookClient)?
     private let renewClient: @Sendable () async -> (any LogbookClient)?
+    /// Whether this iPhone's data may go to the signed-in account now (`LocalDataOwner`), asked before a day is sent.
+    private let uploadGate: @MainActor () -> LocalDataUpload
     private let defaults: UserDefaults
     private let now: @Sendable () -> Date
     private let calendar: @Sendable () -> Calendar
     private var client: (any LogbookClient)?
     private var syncing = false
 
+    /// `uploadGate` has no default: every caller says whose data may be sent (`LocalDataOwner.upload(for:)`).
     public init(
         makeClient: @escaping @Sendable () async -> (any LogbookClient)?,
         renewClient: @escaping @Sendable () async -> (any LogbookClient)?,
+        uploadGate: @escaping @MainActor () -> LocalDataUpload,
         defaults: UserDefaults = .standard,
         now: @escaping @Sendable () -> Date = { Date() },
         calendar: @escaping @Sendable () -> Calendar = { Calendar.current }
     ) {
         self.makeClient = makeClient
         self.renewClient = renewClient
+        self.uploadGate = uploadGate
         self.defaults = defaults
         self.now = now
         self.calendar = calendar
@@ -125,6 +133,24 @@ public final class LogbookModel {
         if isOn { await upload(sources) }
     }
 
+    // MARK: - signing out
+
+    /// The Doddy account signed out (decision 2026-11-12-local-data-owner). The person's switch stays as it is:
+    /// Logbook is on unless they turned it off (decision 2026-11-09-usage-counts-on-by-default), and off also
+    /// means "delete the counts on the server", which must never be applied to whichever account signs in next.
+    /// What belongs to the account that left goes: the conversations counted for it, which days were sent, and,
+    /// while the switch is on, what its server last confirmed (the next account's server is asked afresh). With
+    /// nobody signed in, the upload gate sends nothing.
+    public func accountSignedOut() {
+        saveConversations([])
+        defaults.removeObject(forKey: Self.sendStateKey)
+        if isOn { serverOn = nil }
+        client = nil
+        problem = nil
+        lastSent = nil
+        deletedDays = nil
+    }
+
     // MARK: - plumbing
 
     /// Asks the server to match the switch, if it doesn't already. True when it matches now.
@@ -144,6 +170,13 @@ public final class LogbookModel {
     }
 
     private func upload(_ sources: LogbookSources) async {
+        switch uploadGate() {
+        case .allowed: break
+        case .waiting: return
+        case .otherAccount:
+            problem = .otherAccountsData
+            return
+        }
         var all = sources
         all.conversations = storedConversations()
         var state = loadSendState()

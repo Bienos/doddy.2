@@ -4,7 +4,7 @@
 // server reads the live agent and refuses to call while it differs (ADR-503). Only setting names
 // are reported, never values.
 import { createHash } from "node:crypto";
-import { TASK_AGENT_SPEC, type TaskAgentSpec } from "./agentSpec.js";
+import { SYNC_PENDING_PROMPTS, TASK_AGENT_SPEC, type TaskAgentSpec } from "./agentSpec.js";
 
 export type AgentProblem =
   | "unreadable" | "prompt_changed" | "first_message_changed" | "language_changed"
@@ -32,7 +32,9 @@ export function checkAgentSafety(agent: unknown, spec: TaskAgentSpec = TASK_AGEN
   const a = at(cc, "agent");
   const prompt = at(a, "prompt");
   const text = at(prompt, "prompt");
-  if (typeof text !== "string" || sha256Hex(text.trim()) !== spec.promptSha256) problems.push("prompt_changed");
+  // The spec's prompt, or the one it replaced while the owner hasn't synced the live agent yet (agentSpec.ts).
+  const accepted = [spec.promptSha256, ...(SYNC_PENDING_PROMPTS[spec.promptSha256] ?? [])];
+  if (typeof text !== "string" || !accepted.includes(sha256Hex(text.trim()))) problems.push("prompt_changed");
   if (at(a, "first_message") !== spec.firstMessage) problems.push("first_message_changed");
   if (at(a, "language") !== spec.language) problems.push("language_changed");
   if (nonEmpty(at(prompt, "tool_ids"))) problems.push("tool_ids_present");

@@ -95,7 +95,7 @@ DODDY_DB_PATH=:memory: DODDY_WEB_ORIGIN=http://127.0.0.1:5173 node dist/src/serv
 # second terminal
 cd web && npm ci && npm run dev        # http://127.0.0.1:5173, /v1 is forwarded to :8787
 ```
-Mock mode uses demo data, and every page shows a "Demo server" banner. To get a code without an iPhone, play the phone with curl:
+Mock mode uses demo data, and every page shows a "Demo server" banner (the page asks `GET /v1/server` with its session; since 12 Nov 2026 the open `GET /v1/health` answers `{"status":"ok"}` and nothing else). To get a code without an iPhone, play the phone with curl:
 ```sh
 TOKEN=$(curl -s -X POST localhost:8787/v1/session/device -H 'content-type: application/json' \
   -d '{"deviceId":"6f1c2c4e-8b1d-4c39-9a7e-2a4b5c6d7e8f"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
@@ -122,7 +122,7 @@ The web app is served by the existing Render service `doddy`, so there's no new 
    - The admin dashboard needs `DODDY_OWNER_ACCOUNTS` (the owner's account ids, comma-separated); `SUPABASE_SECRET_KEY` adds emails, names and join dates (and deletes a person's sign-in, ADR-818). Without the first there is no dashboard.
    - Memory and Messages need one secret, `DODDY_MEMORY_KEY` (base64 of 32 random bytes); without it they say "not set up". It isn't in `render.yaml` or `secrets/manifest.json` (the 7 Nov audit asks for it).
 3. **Deploy** the branch or main (autoDeploy is off). Check:
-   - `GET /v1/health` answers;
+   - `GET /v1/health` answers `{"status":"ok"}` (status only; the start log's `listening` line names the mode and the running commit);
    - `GET /` shows the sign-in page, not "isn't built";
    - the response headers include `content-security-policy`.
 4. **Phone:** a build with this branch (the hosted Mac CI is its first compile), then Settings › Doddy on the web › Get a sign-in code, and sign in from a computer.

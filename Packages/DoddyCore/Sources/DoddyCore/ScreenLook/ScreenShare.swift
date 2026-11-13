@@ -93,6 +93,23 @@ public enum ScreenLookReadiness: Equatable, Sendable {
     }
 }
 
+/// Whether Home says the screen is shared with Doddy: the "Show screen" capsule turns into "Screen shared", and
+/// after the conversation a small mark stays in Home's header so the person can stop it (owner review, 13 Nov 2026).
+/// iOS shows its own indicator too; this one only says what the extension's state file says, and stops saying it
+/// when that file goes quiet, so an extension iOS ended without a word is never shown as sharing for long.
+public enum ScreenShareIndicator {
+    /// iOS sends the extension no new picture while the screen doesn't change, so this is longer than
+    /// `ScreenShare.freshFor`: a still screen keeps counting as shared for two minutes after its last picture.
+    public static let shownFor: TimeInterval = 120
+
+    public static func isSharing(_ state: ScreenShareState?, now: Date) -> Bool {
+        guard let state, state.live else { return false }
+        let age = now.timeIntervalSince(state.frameAt ?? state.startedAt)
+        // A clock that went backwards a lot is not trusted either (as in `ScreenLookReadiness`).
+        return age <= shownFor && age > -ScreenShare.freshFor
+    }
+}
+
 /// The size the extension scales a screen to: the long edge at most `ScreenShare.frameLongEdge`, never larger
 /// than the screen, whole pixels, aspect kept.
 public enum ScreenFrameSize {

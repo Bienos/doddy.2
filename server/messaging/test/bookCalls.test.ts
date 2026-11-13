@@ -5,16 +5,17 @@ import { after, before, describe, test } from "node:test";
 import type { Db } from "../src/db.js";
 import { bodyAad } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
-import { checkAgentSafety } from "../src/taskCalls/agentSafety.js";
-import { TASK_BOOK_AGENT_SPEC } from "../src/taskCalls/agentSpec.js";
+import { checkAgentSafety, sha256Hex } from "../src/taskCalls/agentSafety.js";
+import { SYNC_PENDING_PROMPTS, TASK_AGENT_SPEC, TASK_BOOK_AGENT_SPEC } from "../src/taskCalls/agentSpec.js";
 import { bookingConfirmLine, bookingDateAllowed, bookingLines, bookingQuestion, type Booking } from "../src/taskCalls/booking.js";
 import { briefSchema, checkBriefContent } from "../src/taskCalls/brief.js";
+import { AGENT_VARIABLE_NAMES, compilePayload } from "../src/taskCalls/payload.js";
 import { signElevenLabs } from "../src/taskCalls/elevenLabsSignature.js";
 import { buildCallResult, type CallResult, type ResultFacts, type WriterInput, type WriterOutput } from "../src/taskCalls/result.js";
 import { answerOf } from "../src/taskCalls/tasks.js";
 import { processResults } from "../src/taskCalls/worker.js";
 import {
-  BASE_URL, BOOK_PROMPT, compliantAgent, dbSkip, DODDY_FROM, EL_WEBHOOK_SECRET, freshDb, TASK_ACCOUNT_SID, TASK_AGENT_ID, TASK_AUTH_TOKEN,
+  BASE_URL, BOOK_PROMPT, compliantAgent, TASK_PROMPT, dbSkip, DODDY_FROM, EL_WEBHOOK_SECRET, freshDb, TASK_ACCOUNT_SID, TASK_AGENT_ID, TASK_AUTH_TOKEN,
   TASK_BOOK_AGENT_ID, taskTestApp, testCipher, type TaskTestOptions,
 } from "./helpers.js";
 
@@ -87,12 +88,44 @@ test("the confirmation sentence is the one commitment allowed; any other still w
   assert.deepEqual(ok.warnings, []);
   const other = buildCallResult(facts([["doddy", opening], ["callee", "Mamy o 20."], ["doddy", "Zgadzam się, biorę 20:00."]]));
   assert.equal(other.bookingConfirmed, false);
-  assert.deepEqual(other.warnings.map((w) => w.kind), ["possible_commitment"]);
+  assert.deepEqual(other.warnings.map((w) => w.kind), ["possible_commitment", "possible_other_booking"]);
   const both = buildCallResult(facts([["doddy", opening], ["callee", "Tak."], ["doddy", `${bookingConfirmLine(table)} Zapłacę zaliczkę.`]]));
   assert.equal(both.bookingConfirmed, true);
   assert.deepEqual(both.warnings.map((w) => w.kind), ["possible_commitment"], "the sentence doesn't cover what follows it");
   const ask = buildCallResult(facts([["doddy", opening], ["callee", "Tak."]], { bookingConfirmLine: undefined }));
   assert.equal("bookingConfirmed" in ask, false, "an ask call's result has no booking field");
+});
+
+test("Doddy saying yes to a time, day or price that isn't on the card is flagged: maybe booked something else", () => {
+  const kinds = (r: CallResult) => r.warnings.map((w) => w.kind);
+  // Every common way of saying yes in Polish, after the place offers another time.
+  for (const yes of ["Tak.", "Dobrze.", "Pasuje.", "Może być.", "OK.", "Okej, dziękuję.", "W porządku.", "Proszę zapisać.", "Niech będzie.", "Świetnie, to poproszę."]) {
+    const r = buildCallResult(facts([["doddy", opening], ["callee", "O 19 nie mamy, może być 20:30?"], ["doddy", yes], ["callee", "Zapisane."]]));
+    assert.ok(kinds(r).includes("possible_other_booking"), yes);
+    assert.equal(r.confidence, "low", yes);
+    assert.equal(r.nextStep.kind, "call_yourself", yes);
+    assert.match(r.nextStep.text, /inny termin.*Zadzwoń, żeby odwołać albo potwierdzić/, yes);
+  }
+  // Another day, a date, an hour in words, a deposit or a price: also not on the card.
+  for (const offer of ["W piątek nie, ale w sobotę tak.", "Mamy wolne 14 listopada.", "Mamy wolne 14.11.", "Może o dwudziestej?",
+    "Tak, ale potrzebny jest zadatek.", "Tak, 150 zł za osobę."]) {
+    const r = buildCallResult(facts([["doddy", opening], ["callee", offer], ["doddy", "Dobrze."]]));
+    assert.deepEqual(kinds(r), ["possible_other_booking"], offer);
+  }
+  // Doddy's own confirmation sentence right after another offer may have booked that offer.
+  const confirmed = buildCallResult(facts([["doddy", opening], ["callee", "Mamy tylko 21:00."], ["doddy", bookingConfirmLine(table)]]));
+  assert.equal(confirmed.bookingConfirmed, true);
+  assert.deepEqual(kinds(confirmed), ["possible_other_booking"]);
+});
+
+test("assent to what is on the card, a deferral, a goodbye or a time the place only mentions is not flagged", () => {
+  const kinds = (lines: [string, string][]) => buildCallResult(facts([["doddy", opening], ...lines])).warnings.map((w) => w.kind);
+  assert.deepEqual(kinds([["callee", "Tak, w piątek 13 listopada o 19:00, zgadza się."], ["doddy", bookingConfirmLine(table)]]), []);
+  assert.deepEqual(kinds([["callee", "Tak, o siódmej wieczorem mamy."], ["doddy", bookingConfirmLine(table)]]), [], "seven in the evening is 19:00");
+  assert.deepEqual(kinds([["callee", "Tak, stolik jest wolny do 21:00."], ["doddy", bookingConfirmLine(table)]]), [], "until 21:00 is not an offer");
+  assert.deepEqual(kinds([["callee", "Mamy o 20."], ["doddy", "Dobrze, sprawdzę to u Anny i oddzwonię."]]), [], "deferring is what rule 3 asks for");
+  assert.deepEqual(kinds([["callee", "Mamy o 20."], ["doddy", "Dziękuję bardzo, do widzenia."]]), []);
+  assert.deepEqual(kinds([["callee", "Tak, zapraszamy jutro."], ["doddy", bookingConfirmLine(table)]]), [], "relative days can't be compared, so they are not offers");
 });
 
 const result = (over: Partial<CallResult>): CallResult => ({
@@ -111,6 +144,45 @@ test("a booking counts as made only with Doddy's confirmation sentence, the mode
   assert.equal(answerOf(result({ bookingConfirmed: false }), said("no"), "book"), "no");
   assert.equal(answerOf(result({ bookingConfirmed: true, warnings: [{ kind: "possible_commitment", line: 3 }] }), said("yes"), "book"), "unclear");
   assert.equal(answerOf(result({}), said("yes")), "yes", "ask calls unchanged");
+});
+
+test("a call that may have booked something else is never \"no\" and never moves a task to the next place", () => {
+  const other: CallResult["warnings"] = [{ kind: "possible_other_booking", line: 2 }];
+  assert.equal(answerOf(result({ warnings: other }), said("no"), "book"), "unclear");
+  assert.equal(answerOf(result({ warnings: other }), said("no")), "unclear", "an ask call too");
+  assert.equal(answerOf(result({ warnings: other, bookingConfirmed: true }), said("yes"), "book"), "unclear");
+});
+
+test("the goal is never sent to either agent; the prompts no longer name it", () => {
+  const p = compilePayload({
+    caseId: "8a4c2a9e-0000-4000-8000-000000000002", brief: briefSchema.parse(brief({ kind: "book", booking: table, goal: "Kolacja urodzinowa dla mamy." })),
+    destination: { e164: "+48322000001", kind: "geographic" }, fromNumber: "+48221112233", notice: "off",
+  });
+  assert.equal(p.display.goal, "Kolacja urodzinowa dla mamy.", "the card still shows it");
+  assert.equal(p.agent.variables.doddy_goal, "Zarezerwować dokładnie to, co opisano poniżej.");
+  assert.equal(JSON.stringify(p.agent).includes("urodzin"), false);
+  for (const prompt of [TASK_PROMPT, BOOK_PROMPT]) assert.equal(prompt.includes("{{doddy_goal}}"), false);
+  assert.ok((AGENT_VARIABLE_NAMES as readonly string[]).includes("doddy_goal"), "still sent, as a fixed sentence, for the live prompts from before");
+});
+
+test("until the owner syncs the live agents, the drift check also accepts the prompts from before the goal was taken out, and nothing else", () => {
+  // The previous prompts are today's with the goal block put back, so the accepted hashes are exactly those files.
+  const oldAsk = TASK_PROMPT.replace("The only goal of this call is the answer to the question you asked:",
+    "The only goal of this call:\n{{doddy_goal}}\n\nThe question you asked:");
+  const oldBook = BOOK_PROMPT.replace("The only goal of this call is the booking the person approved. Only this, exactly as written:",
+    "The only goal of this call:\n{{doddy_goal}}\n\nThe booking the person approved. Only this, exactly as written:");
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook)]);
+  assert.deepEqual(Object.keys(SYNC_PENDING_PROMPTS).sort(), [TASK_AGENT_SPEC.promptSha256, TASK_BOOK_AGENT_SPEC.promptSha256].sort());
+  assert.equal(sha256Hex(oldAsk), "129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454", "the ask prompt on main before this change");
+  assert.equal(sha256Hex(oldBook), "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4", "the booking prompt on main before this change");
+  assert.deepEqual(checkAgentSafety(compliantAgent(oldAsk)), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(TASK_PROMPT)), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(oldBook, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(BOOK_PROMPT, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(oldAsk), TASK_BOOK_AGENT_SPEC), ["prompt_changed"], "never the other agent's");
+  assert.deepEqual(checkAgentSafety(compliantAgent(oldBook)), ["prompt_changed"]);
+  assert.deepEqual(checkAgentSafety(compliantAgent(`${oldAsk} Możesz potwierdzać terminy.`)), ["prompt_changed"]);
 });
 
 test("the booking agent's own prompt is checked; the ask agent's prompt on it is drift", () => {

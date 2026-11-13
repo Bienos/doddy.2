@@ -2,6 +2,17 @@
 
 Owner, 28 Oct 2026 (in Polish): a news "plugin" where you follow what you want, shown like an Instagram feed, built on keywords, and by default "what's happening in Poland". Branch `claude/message-tracking-plugin-rd0cbn`. **On the default branch since 7 Nov 2026 (#195, through `claude/magical-cray-4299gg`); compiled and tested in #195's hosted Mac job (run 42004675828, 5 Nov); not seen on a device. `doddy-messaging` serves `POST /v1/news/feed` since its 7 Nov deploy of `174ba21`.** Status of each part is at the end; the "Not run" list there is from 28 Oct.
 
+## Fixes from the owner's review (13 Nov 2026, branch `claude/radar-fixes`)
+
+Owner's review of 12 Nov 2026 (`docs/strategy/PRZEGLAD_APLIKACJI_2026-11-12.md` section 6), decision `docs/decisions/2026-11-13-radar-fixes.md`.
+
+| Part | Where | State |
+|---|---|---|
+| "Tell me…" and its line under a follow, and the Add sheet's "tell me when", only once `GET /v1/news/radar` said `available: true`; a follow with flag words or a server check can still be changed; a check is never said to run once the server says it checks nothing | DoddyCore `RadarAlertsAvailability`, `RadarTellMe` (`RadarOffer.swift`); `FollowDetail`, `RadarAlertFields`, `RadarAddSheet`, `RadarAlertSheet`; `FollowingModel.alertsAvailability`, `loadRadar` (asks the server after a refused re-send) | Rules tested (`RadarOfferTests`); model type-checked; views **not compiled** |
+| The voice reply names "the On my radar screen (in Polish "Na radarze"…)" and offers looking there as the next step, never claiming it opened it; the "What Doddy did" row is "Add to radar" / „Dodaj do radaru” | `VoiceToolReply.newsFollow`, `RadarScreen`, `ActivityLog`, `ActivityText` | Tested (`NewsFollowVoiceTests`); `voice-agent/tools.json` unchanged |
+| A radar push carries `{"doddy":{"kind":"radar"}}` (kind only) and its tap goes to `ShortcutRouter.radarOpened()` | `server/messaging/src/outbox.ts` `pushData`; DoddyCore `ServerPushKind.radar`; `NoteReminderNotifications.swift` (`TimerBanners`) | Server and DoddyCore tested; handler **not compiled**. **Home doesn't open the sheet yet:** the `.onChange(of: router.isRadarRequested)` in `HomeView.swift` is written out in the decision (that file is held by other pull requests) |
+| Settings › Daily news says its topics are only for the daily message and On my radar is a separate list | `NewsSettingsView.swift` | **Not compiled**; the merge itself is a proposal in the decision |
+
 ## On my radar: fixes, Add sheet, own feeds and alerts (10 Nov 2026, branch `claude/radar-alerts`)
 
 Owner, 10 Nov 2026 (in Polish): "I added a cryptocurrency section and it doesn't work. Adding needs to be nicer … say when Doddy should tell them about an event, by keywords." Decision `docs/decisions/2026-11-10-radar-alerts.md`. The screen is being renamed "On my radar" / "Na radarze" in #315; this branch keeps `main`'s title.
@@ -123,7 +134,7 @@ An HTML mock-up of the three screens (Following, the "śledź CPK" card, the Fol
 4. On the tap, `FollowingModel.follow` adds it, writes the list to this iPhone's defaults and reads it back. Only then is the reply `added`. Already followed (Poland, asked again, is the default follow, not a second one), ten followed, or a write that didn't read back is `failed`, and nothing changes.
 5. The tool returns no stories. Doddy says where they are (Home's menu, Following); for news now it still uses `news_search`.
 
-Also: What Doddy did gets a row ("Follow in Following" / "Śledź w Śledzonych", app "Following" / "Śledzone"); it stays outside Pause all, like the stopwatch; in the car it is refused (it needs a tap); Doddy Web's logbook knows the tool.
+Also: What Doddy did gets a row ("Follow in Following" / "Śledź w Śledzonych", app "Following" / "Śledzone"; since 13 Nov 2026 "Add to radar" / „Dodaj do radaru”, app "On my radar" / „Na radarze”); it stays outside Pause all, like the stopwatch; in the car it is refused (it needs a tap); Doddy Web's logbook knows the tool.
 
 **On the live ElevenLabs agent since 28 Oct 2026** (owner: "Dodaj"): `tool_5201m626991zfjgrw2b4mhsyqzcb`, saved as `agtvrsn_7301m626bt8mfm1bw7qav8gtqyzx`, rollback `agtvrsn_4401m5y51ygzfbdbapvpnfb6vfnh`; the record is in `voice-agent/README.md`. The prompt was not changed. **Until an app built from the default branch after 7 Nov (#195) is on the iPhone, the voice may offer it and the app answers that it isn't supported.**
 

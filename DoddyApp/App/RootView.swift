@@ -240,8 +240,12 @@ struct RootView: View {
                 lockLifted()
             }
         }
-        // Signed in: a server that didn't answer about the account last time is asked again.
-        .task { await DoddyAccountServers.catchUp() }
+        // Signed in: whose data this iPhone holds is recorded before anything is sent (decision
+        // 2026-11-12-local-data-owner), then a server that didn't answer about the account last time is asked again.
+        .task {
+            await DoddyAccountServers.claimLocalData()
+            await DoddyAccountServers.catchUp()
+        }
         .task {
             let notesLoad = LaunchWork.signposter.beginInterval("Notes load")
             await store.reload()
