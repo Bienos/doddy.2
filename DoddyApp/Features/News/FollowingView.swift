@@ -236,6 +236,14 @@ private struct StoryCard: View {
                         .foregroundStyle(Theme.secondaryText)
                         .lineLimit(3)
                 }
+                // The same story from other publishers, grouped by the server (decision 2026-11-13-news-more-sources).
+                if let also = card.alsoFromLine(polish: polish) {
+                    Text(verbatim: also)
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondaryText)
+                        .lineLimit(2)
+                        .accessibilityIdentifier("following.alsoFrom")
+                }
             }
             .padding(.horizontal, 16)
 

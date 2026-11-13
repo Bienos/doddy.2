@@ -1,6 +1,11 @@
 // Doddy voice token server. It exchanges a valid DODDY voice session for a short-lived
 // ElevenLabs conversation token. The provider key never ships in the app.
 //
+// Deleting an account also deletes its voice conversations (decision 2026-11-12-voice-conversations-per-account),
+// so each token the server hands out is tied to its account first: the conversation id ElevenLabs answers with is
+// recorded under a keyed hash of the account, and the answer adds `userId`, another keyed hash, which the app gives
+// ElevenLabs as the conversation's user. If the id can't be recorded the token is not handed out.
+//
 // ElevenLabs is the only voice (owner decision, 9 Nov 2026: OpenAI voice removed). A body that names
 // any other provider, including the old {"provider":"openai"} an earlier app build sends, gets a 400.
 //
@@ -11,12 +16,15 @@ const ELEVENLABS_TOKEN_URL = "https://api.elevenlabs.io/v1/convai/conversation/t
 const UPSTREAM_TIMEOUT_MS = 10_000;
 // The translator-only agent "Doddy 6 · Tłumacz": no tools at all (owner, 12 Nov 2026, decision
 // 2026-11-12-translator-agent). Its id is public, like the main agent's (the repo's docs name both), so
-// it is the default here and nothing has to be set on Vercel; ELEVENLABS_TRANSLATOR_AGENT_ID overrides it.
-const DEFAULT_TRANSLATOR_AGENT_ID = "agent_8901m787fgppedy9kkvg7memny34";
+// it is the default here (`DEFAULT_TRANSLATOR_AGENT_ID`, shared with the deletion of its conversations) and nothing
+// has to be set on Vercel; ELEVENLABS_TRANSLATOR_AGENT_ID overrides it.
 import {
   authenticateVoiceSession, DEFAULT_TOKENS_PER_DAY, limitSetting, sessionStoreFromEnv, VoiceAuthStoreUnavailable,
 } from "./voice-auth.js";
 import { AccountCheckUnavailable, authenticateDoddyAccount } from "./doddy-account.js";
+import {
+  conversationIdentity, DEFAULT_TRANSLATOR_AGENT_ID, MAX_RECORDED_CONVERSATIONS, validConversationId,
+} from "./conversations.js";
 
 const DEFAULT_TOKENS_PER_HOUR = 30;
 const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
@@ -26,6 +34,7 @@ const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
  * @property {string} [ELEVENLABS_API_KEY]  server-only secret
  * @property {string} [ELEVENLABS_AGENT_ID] the authenticated Doddy agent
  * @property {string} [ELEVENLABS_TRANSLATOR_AGENT_ID] the authenticated translator-only agent; defaults to DEFAULT_TRANSLATOR_AGENT_ID
+ * @property {string} [DODDY_SESSION_SIGNING_KEY] also makes the keyed hashes that tie a conversation to its account
  * @property {string} [DODDY_TOKENS_PER_HOUR] per DODDY account; default 30
  * @property {string} [DODDY_TOKENS_PER_DAY] per DODDY account per UTC day; default 150
  * @property {string} [DODDY_GLOBAL_TOKENS_PER_HOUR] global shared limit; default 100
@@ -89,7 +98,11 @@ export async function handleTokenRequest(request, env, deps = {}) {
   // Which agent this conversation talks to: the main one (no body, as ever), or the translator-only one.
   const agentId = agent === "translator" ? (env.ELEVENLABS_TRANSLATOR_AGENT_ID || DEFAULT_TRANSLATOR_AGENT_ID) : env.ELEVENLABS_AGENT_ID;
   const providerConfigured = Boolean(env.ELEVENLABS_API_KEY && agentId);
-  if (!providerConfigured || perHour === null || perDay === null || globalPerHour === null || !store.hitLimits) {
+  // Without the key that makes the account's hashes, or a store that can record, a conversation could not be
+  // deleted later, so none is started.
+  const identity = conversationIdentity(env, userId);
+  if (!providerConfigured || perHour === null || perDay === null || globalPerHour === null || !store.hitLimits
+      || !identity || typeof store.recordConversation !== "function") {
     return finish(500, "server_not_configured", { provider });
   }
 
@@ -104,10 +117,10 @@ export async function handleTokenRequest(request, env, deps = {}) {
     return finish(429, "rate_limited", { provider, limit: decision.limit }, undefined, { "retry-after": String(decision.retryAfterSeconds) });
   }
 
-  return elevenLabsToken(env, agentId, agent, fetchImpl, finish);
+  return elevenLabsToken(env, agentId, agent, fetchImpl, finish, { store, identity, now });
 }
 
-async function elevenLabsToken(env, agentId, agent, fetchImpl, finish) {
+async function elevenLabsToken(env, agentId, agent, fetchImpl, finish, { store, identity, now }) {
   const url = new URL(ELEVENLABS_TOKEN_URL);
   url.searchParams.set("agent_id", agentId);
 
@@ -128,11 +141,26 @@ async function elevenLabsToken(env, agentId, agent, fetchImpl, finish) {
     });
   }
 
-  const token = await response.json().then((body) => body?.token, () => undefined);
+  const answer = await response.json().then((body) => body, () => undefined);
+  const token = answer?.token;
   if (typeof token !== "string" || token.length === 0) {
     return finish(502, "upstream_bad_response", { provider: "elevenlabs", agent, upstreamStatus: response.status });
   }
-  return finish(200, null, { provider: "elevenlabs", agent }, { token });
+  // ElevenLabs names the conversation when it issues the token (GET /v1/convai/conversation/token answers
+  // `{ token, conversation_id }`). Keep it under the account so deleting the account can delete it. If it can't be
+  // kept, nobody gets a token: a conversation the server can't delete later must not start. If ElevenLabs sent no
+  // usable id, the token is still handed out; `userId` below lets the deletion find that conversation by listing.
+  // Logged as a fixed word, never the id.
+  const conversationId = validConversationId(answer?.conversation_id);
+  if (conversationId) {
+    try {
+      await store.recordConversation(identity.recordKey, conversationId, now(), MAX_RECORDED_CONVERSATIONS);
+    } catch {
+      return finish(503, "server_not_configured", { provider: "elevenlabs", agent, conversation_id: "not_recorded" });
+    }
+  }
+  return finish(200, null, { provider: "elevenlabs", agent, conversation_id: conversationId ? "recorded" : "missing" },
+    { token, userId: identity.userId });
 }
 
 async function callUpstream(fetchImpl, url, init) {

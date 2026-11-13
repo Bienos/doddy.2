@@ -393,6 +393,6 @@ describe("radar against real Postgres", { skip: dbSkip }, () => {
     const r = await app.inject({ method: "GET", url: "/v1/news/catalog?lang=pl", headers: h });
     const crypto = (r.json() as { topics: { id: string; label: string; sources: string[] }[] }).topics.find((t) => t.id === "crypto")!;
     assert.equal(crypto.label, "Kryptowaluty");
-    assert.deepEqual(crypto.sources, ["CoinDesk", "Cointelegraph", "Decrypt", "The Block", "Bitcoin.pl"]);
+    assert.deepEqual(crypto.sources, ["CoinDesk", "Cointelegraph", "Decrypt", "The Block", "Bitcoin.pl", "CryptoSlate"]);
   });
 });
