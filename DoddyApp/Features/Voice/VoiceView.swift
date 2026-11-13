@@ -361,7 +361,7 @@ struct VoiceView: View {
                         }
 
                         ForEach(controller.documents, id: \.url) { document in
-                            documentCard(document)
+                            documentCard(document, about: controller.documentBriefs[document.url])
                                 .id("document-\(document.url.absoluteString)")
                         }
 
@@ -387,12 +387,24 @@ struct VoiceView: View {
                             .buttonStyle(SecondaryButtonStyle())
                             .accessibilityIdentifier("voice.showConversation")
                         }
+
+                        // The end of everything above, lines and cards (owner review, 13 Nov 2026).
+                        Color.clear
+                            .frame(height: 1)
+                            .accessibilityHidden(true)
+                            .id(Self.conversationEnd)
                     }
                     .padding(24)
                     .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.15), value: controller.lines.count)
                 }
+                // A new line scrolls to the end of everything, not to the line: the cards come after the
+                // lines, and scrolling to the last line pushed a card waiting below it off the screen while
+                // Doddy kept talking (owner review, 13 Nov 2026: "karty chowają się pod transkrypcją").
                 .onChange(of: controller.lines.count) { _, _ in
-                    if let last = controller.lines.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
+                    if !controller.lines.isEmpty { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(Self.conversationEnd, anchor: .bottom) } }
+                }
+                .onChange(of: controller.documents.first?.url) { _, url in
+                    if let url { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("document-\(url.absoluteString)", anchor: .bottom) } }
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
@@ -1745,14 +1757,23 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
+    /// The id of the empty view after the last line and card, which a new line scrolls to.
+    private static let conversationEnd = "conversationEnd"
+
     /// ADR-564: a file Claude is making. The link opens in Safari: Quick Look shows the deck,
     /// document or PDF, with Share to save or send it; until it's ready the page says so.
-    private func documentCard(_ document: RunDocument) -> some View {
+    /// `about` is what the person asked for (`ThreadDelivery.madeFileBrief`), so the card says what the file is.
+    private func documentCard(_ document: RunDocument, about: String?) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("\(document.label) from Claude", systemImage: "doc.richtext")
                 .font(.headline)
             Text(document.name)
                 .foregroundStyle(Theme.secondaryText)
+            if let about {
+                Text(about)
+                    .font(.callout)
+                    .lineLimit(4)
+            }
             Text("It takes a minute or two. It also lands in Messages and in Files when it's ready.")
                 .font(.callout)
                 .foregroundStyle(Theme.secondaryText)

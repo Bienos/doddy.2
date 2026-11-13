@@ -222,4 +222,25 @@ final class ScreenLookTests: XCTestCase {
         XCTAssertTrue(ScreenLookSpeech.sheetOpened.contains("Start Broadcast"))
         XCTAssertTrue(ScreenLookSpeech.sheetOpened.contains("ask again"))
     }
+
+    func testHomeSaysSharedOnlyWhileTheStateFileIsLiveAndRecent() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        XCTAssertFalse(ScreenShareIndicator.isSharing(nil, now: start), "no file: not shared")
+        XCTAssertFalse(ScreenShareIndicator.isSharing(ScreenShareState(live: false, startedAt: start), now: start))
+
+        // Just started, no picture yet: shared (iOS's sheet said so a moment ago).
+        let started = ScreenShareState(live: true, startedAt: start)
+        XCTAssertTrue(ScreenShareIndicator.isSharing(started, now: start.addingTimeInterval(5)))
+
+        // A still screen sends no new picture: a minute after the last one it still counts as shared…
+        let framed = ScreenShareState(live: true, startedAt: start, frameAt: start.addingTimeInterval(10), frameBytes: 1_000)
+        XCTAssertTrue(ScreenShareIndicator.isSharing(framed, now: start.addingTimeInterval(70)))
+        XCTAssertTrue(ScreenShareIndicator.isSharing(framed, now: start.addingTimeInterval(10 + ScreenShareIndicator.shownFor)))
+        // …but an extension iOS stopped without clearing its file is not shown as sharing for long.
+        XCTAssertFalse(ScreenShareIndicator.isSharing(framed, now: start.addingTimeInterval(11 + ScreenShareIndicator.shownFor)))
+        XCTAssertGreaterThan(ScreenShareIndicator.shownFor, ScreenShare.freshFor)
+
+        // A clock far behind the file is not trusted.
+        XCTAssertFalse(ScreenShareIndicator.isSharing(framed, now: start.addingTimeInterval(-60)))
+    }
 }

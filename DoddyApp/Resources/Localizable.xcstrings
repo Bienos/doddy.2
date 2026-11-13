@@ -70606,6 +70606,17 @@
         }
       }
     },
+    "Screen shared with Doddy. Opens iOS's sheet, where Stop Broadcast ends it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekran udostępniony Doddy’emu. Otwiera okno iOS, w którym Zatrzymaj transmisję kończy udostępnianie."
+          }
+        }
+      }
+    },
     "Scroll down to Back Tap and choose Double Tap.": {
       "extractionState": "manual",
       "localizations": {
@@ -73841,6 +73852,17 @@
         }
       }
     },
+    "Sharing screen · Stop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniasz ekran · Zatrzymaj"
+          }
+        }
+      }
+    },
     "Sharing stops first: the copy in your iCloud is deleted and the people you invited lose the list. Undo brings it back on this iPhone only, not shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -74659,6 +74681,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż otworzy je w Doddym"
+          }
+        }
+      }
+    },
+    "Show screen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż ekran"
           }
         }
       }
