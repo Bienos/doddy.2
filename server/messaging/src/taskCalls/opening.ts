@@ -11,10 +11,15 @@ export const NOTICE_TEXT: Record<RecordingNotice, string> = {
   zapisywana: "Treść rozmowy jest zapisywana.",
 };
 
-/** "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. [notice] Chciałbym zapytać: …?" */
+/**
+ * "Dzień dobry, tu Doddy, asystent AI Anny. [notice] Chciałbym zapytać: …?"
+ * Owner, 13 Nov 2026: Doddy introduces himself as the person's own assistant calling for them, and the rest
+ * of the call sounds like a person's assistant, not a script. The AI disclosure stays, once, in this fixed
+ * first sentence (EU AI Act art. 50(1), constitution DOD-03): "asystent AI Anny". The model never phrases it.
+ */
 export function openingLine(principalGenitive: string, notice: RecordingNotice, question: string): string {
   const q = /[?？]$/.test(question) ? question : `${question}?`;
-  const parts = [`Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu ${principalGenitive}.`];
+  const parts = [`Dzień dobry, tu Doddy, asystent AI ${principalGenitive}.`];
   if (NOTICE_TEXT[notice]) parts.push(NOTICE_TEXT[notice]);
   parts.push(`Chciałbym zapytać: ${q}`);
   return parts.join(" ");

@@ -4,7 +4,7 @@
 // server/messaging, so the expected values live here.
 export const TASK_AGENT_SPEC = {
   /** sha256 of voice-agent/task-call/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454",
+  promptSha256: "03365dd4c3006a854f639a5bb274b32b3fc5363689e5c647cae60a0f678a68cb",
   firstMessage: "{{doddy_opening_line}}",
   language: "pl",
   systemTools: ["end_call", "voicemail_detection"] as readonly string[],
@@ -21,7 +21,7 @@ export const TASK_AGENT_SPEC = {
 export const TASK_BOOK_AGENT_SPEC = {
   ...TASK_AGENT_SPEC,
   /** sha256 of voice-agent/task-call-book/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4",
+  promptSha256: "9d0a1ebe54e06d1029baa4a3c20a74bc0874deb3de450f6a437914f77a3a6ad1",
 } as const;
 
 export type TaskAgentSpec = { readonly promptSha256: string } & Omit<typeof TASK_AGENT_SPEC, "promptSha256">;

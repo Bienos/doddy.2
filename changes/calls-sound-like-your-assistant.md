@@ -1,0 +1,3 @@
+Calls Doddy makes for you (ask and booking agents) sound like your own assistant: opening "Dzień dobry, tu Doddy, asystent AI Anny.", a "How you sound" section in both prompts, honest in its own words when asked if it's a robot. The AI is still said once (EU AI Act art. 50, DOD-03). Decision `2026-11-13-calls-sound-like-your-assistant`.
+Ran: voice_agent_spec.py check for task-call and task-call-book (PASS); messaging tests, 673/673 pass (database suites skip). Not run: a real call.
+Owner step: update both live task-call agents and deploy `doddy-messaging` together; until both match, task calls are refused (prompt hash check).

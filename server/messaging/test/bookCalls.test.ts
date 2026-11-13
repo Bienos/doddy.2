@@ -74,11 +74,11 @@ test("the brief: a booking needs its details; its question is never written by a
 const facts = (lines: [string, string][], over: Partial<ResultFacts> = {}): ResultFacts => ({
   endReason: "completed", answered: true, voiceConnected: true, takenOverAtSecs: null, durationSecs: 40,
   question: bookingQuestion(table), callbackLine: "Sprawdzę to u Anny i oddzwonię.",
-  allowedTexts: [`Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: ${bookingQuestion(table)}`, bookingQuestion(table), bookingConfirmLine(table)],
+  allowedTexts: [`Dzień dobry, tu Doddy, asystent AI Anny. Chciałbym zapytać: ${bookingQuestion(table)}`, bookingQuestion(table), bookingConfirmLine(table)],
   transcript: lines.map(([speaker, text]) => ({ speaker: speaker as "doddy" | "callee", text, atSecs: null })),
   source: "elevenlabs", voicemailToolUsed: false, bookingConfirmLine: bookingConfirmLine(table), ...over,
 });
-const opening = `Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: ${bookingQuestion(table)}`;
+const opening = `Dzień dobry, tu Doddy, asystent AI Anny. Chciałbym zapytać: ${bookingQuestion(table)}`;
 
 test("the confirmation sentence is the one commitment allowed; any other still warns", () => {
   const ok = buildCallResult(facts([["doddy", opening], ["callee", "Tak, mamy wolne o 19."],

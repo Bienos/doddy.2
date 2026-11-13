@@ -95,7 +95,7 @@ describe("agent drift check", () => {
 });
 
 describe("answer card", () => {
-  const opening = "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?";
+  const opening = "Dzień dobry, tu Doddy, asystent AI Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?";
   const base = (transcript: Line[], over: Partial<ResultFacts> = {}): ResultFacts => ({
     endReason: "completed", answered: true, voiceConnected: true, takenOverAtSecs: null, durationSecs: 40,
     question: "Czy laptop z serwisu jest gotowy?", callbackLine: "Sprawdzę to u Anny i oddzwonię.",
