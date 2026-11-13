@@ -20,6 +20,30 @@ public enum TalkStartAccount {
     }
 }
 
+/// The island comes first (owner, 13 Nov 2026: the Action Button should show the island at once, "zależy mi na
+/// szybkości"; decision `2026-11-13-island-first`). A press puts the island up, as "Connecting…", as soon as the
+/// checks that need nothing but the iPhone have passed, before it waits for the notes store, the profile, the
+/// conversation's own set-up, the audio session, the token and the connect. Those used to run before the island
+/// was asked for. The island never says Doddy listens before he does: the waves come with the provider's events.
+public enum TalkIslandFirst {
+    /// What happens to the island the press put up, once the start has handed back, failed, been refused or
+    /// been cancelled.
+    public enum Afterwards: Equatable, Sendable {
+        /// A conversation is connecting or live: it shows itself on that island now, and ends it itself.
+        case leave
+        /// Nothing took it over: it goes at once, so a refused or cancelled press leaves no "Connecting…" island.
+        case end
+    }
+
+    /// - Parameters:
+    ///   - shownByPress: this press asked for the island (it was not already up) and iOS put it up.
+    ///   - conversationLive: a conversation is connecting or live now (this press's, or one started meanwhile).
+    public static func afterwards(shownByPress: Bool, conversationLive: Bool) -> Afterwards {
+        guard shownByPress, !conversationLive else { return .leave }
+        return .end
+    }
+}
+
 /// When the Action Button's intent may return. A background intent has a short time budget, so it
 /// must not wait for the token request and the ElevenLabs connect (up to 10 s): it waits only until
 /// the checks are done and the island and audio session are up, or the start has already ended.

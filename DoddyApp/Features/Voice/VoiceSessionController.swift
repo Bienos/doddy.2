@@ -363,6 +363,17 @@ final class VoiceSessionController {
     /// What each file in `documents` is about, by its link: the request the agent gave `make_document`
     /// (`ThreadDelivery.madeFileBrief`). In memory only, like `documents`.
     private(set) var documentBriefs: [URL: String] = [:]
+    /// A file still being made (owner, 13 Nov 2026, decision 2026-11-13-file-being-made-island-note): instead of the
+    /// pop-up card, Home's island drops a small note saying what Doddy is making, for `MadeFileStart.noteSeconds`.
+    /// Nothing on it needs a tap; the file arrives in Messages when the server says it is ready.
+    struct MadeFileNote: Equatable, Identifiable {
+        let id = UUID()
+        let document: RunDocument
+        /// False in a private conversation: nothing from it reaches Messages, so the file opens from the transcript.
+        let keptInMessages: Bool
+    }
+    private(set) var madeFileNote: MadeFileNote?
+    @ObservationIgnored private var madeFileNoteClear: Task<Void, Never>?
     /// find_flights: the latest search's flights on Kiwi.com, as buttons (never read out by the agent).
     private(set) var flightLinks: [RunLink] = []
     private(set) var isMuted = false {
@@ -3815,7 +3826,7 @@ final class VoiceSessionController {
                 let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
                 await keepMadeDocument(result, from: cloud)
                 keepFlightLinks(result)
-                await reply(toolCallID, VoiceToolReply.cloudResult(result))
+                await reply(toolCallID, madeFileReply(result))
             } else {
                 // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
                 // single-use approval; the read runs only after the user's yes (runAskedCloudRead).
@@ -3843,7 +3854,7 @@ final class VoiceSessionController {
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
             await keepMadeDocument(result, from: cloud)
-            await reply(toolCallID, VoiceToolReply.cloudResult(result))
+            await reply(toolCallID, madeFileReply(result))
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
         }
@@ -3867,6 +3878,8 @@ final class VoiceSessionController {
         case .ready: flashIsland(.resultReady(.document))
         case .working:
             flashIsland(.resultReady(.documentStarted))
+            // In the app: the island's small note, not the pop-up card (MadeFileStart.popsUpCard).
+            showMadeFileNote(document)
             // One notification when it is done, if the messaging server is set up for it.
             FileReadyPush.watch(document)
         case .failed: break
@@ -3874,6 +3887,30 @@ final class VoiceSessionController {
         // Also Doddy's own message in Messages, with the file to open and share from (owner, 10 Nov 2026).
         // A private conversation keeps nothing on this iPhone, so it adds nothing there either.
         if !isPrivate { await ThreadInbox.deliver(document: document, about: about, polish: Self.cardsInPolish) }
+    }
+
+    /// Home's island note for a file being made: up for a few seconds, then gone by itself.
+    private func showMadeFileNote(_ document: RunDocument) {
+        guard MadeFileStart.showsNote(document) else { return }
+        madeFileNote = MadeFileNote(document: document, keptInMessages: !isPrivate)
+        madeFileNoteClear?.cancel()
+        madeFileNoteClear = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(MadeFileStart.noteSeconds))
+            guard !Task.isCancelled else { return }
+            self?.madeFileNote = nil
+        }
+    }
+
+    /// What the agent hears for a server tool's result. A file still being made gets the phone's own words, with no
+    /// card or tap in them, and no promise of Messages in a private conversation (`MadeFileStart.voiceReply`).
+    private func madeFileReply(_ result: RunResult) -> String {
+        MadeFileStart.voiceReply(result, keptInMessages: !isPrivate) ?? VoiceToolReply.cloudResult(result)
+    }
+
+    /// A tap on the island note puts it away sooner. Nothing else happens.
+    func dismissMadeFileNote() {
+        madeFileNoteClear?.cancel()
+        madeFileNote = nil
     }
 
     /// ADR-563: what the agent hears when a server tool fails. An account that isn't connected gets

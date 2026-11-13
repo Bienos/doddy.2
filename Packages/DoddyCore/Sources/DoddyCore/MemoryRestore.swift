@@ -13,6 +13,9 @@ public enum MemoryRestoreError: Error, Equatable, Sendable {
     case conflictingDuplicate(position: Int)
     /// One correction (1-based position in the file's corrections) is damaged (ADR-252).
     case unreadableCorrection(position: Int)
+    /// The list of private notes in the file is damaged. Refused whole: restoring a private note as an
+    /// ordinary one would put its words where Private notes never go.
+    case unreadablePrivateMarks
 }
 
 /// What a restore would do, worked out before anything is written (ADR-178).
@@ -105,6 +108,22 @@ public enum MemoryRestore {
         guard data.count <= maxBytes else { throw .tooLarge(bytes: data.count, maximum: maxBytes) }
         guard let items = try? JSONDecoder().decode(Items.self, from: data) else { throw .notADoddyExport }
         return (items.listItems ?? []).filter { ListText.cleaned($0.text) != nil && ListText.fitsItemLength($0.text) }
+    }
+
+    /// The notes the file names as private (ADR-310); empty for a file that names none. A damaged list is refused,
+    /// so a private note never comes back unmarked. Only the ids of notes a restore adds matter to the caller.
+    public static func privateIDs(_ data: Data, maxBytes: Int = maxFileBytes) throws(MemoryRestoreError) -> Set<UUID> {
+        struct Marks: Decodable { let privateNoteIds: [String]? }
+        guard data.count <= maxBytes else { throw .tooLarge(bytes: data.count, maximum: maxBytes) }
+        let decoder = JSONDecoder()
+        guard (try? decoder.decode(VersionOnly.self, from: data)) != nil else { throw .notADoddyExport }
+        guard let marks = try? decoder.decode(Marks.self, from: data) else { throw .unreadablePrivateMarks }
+        var ids = Set<UUID>()
+        for text in marks.privateNoteIds ?? [] {
+            guard let id = UUID(uuidString: text) else { throw .unreadablePrivateMarks }
+            ids.insert(id)
+        }
+        return ids
     }
 
     public static func plan(

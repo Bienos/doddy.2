@@ -36,6 +36,9 @@ struct JourneyHeading: View {
     let eyebrow: String
     let title: String
     var subtitle: String?
+    /// True when `title` is somebody's own words, such as the name of a list another person shared: it is then
+    /// shown exactly as written, never looked up as a translation key or read as Markdown.
+    var titleIsVerbatim = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -43,12 +46,16 @@ struct JourneyHeading: View {
                 Text(LocalizedStringKey(eyebrow)).textCase(.uppercase)
                     .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
             }
-            Text(LocalizedStringKey(title)).font(.largeTitle.weight(.medium)).tracking(-1)
+            titleText.font(.largeTitle.weight(.medium)).tracking(-1)
                 .accessibilityAddTraits(.isHeader)
             if let subtitle {
                 Text(LocalizedStringKey(subtitle)).font(.subheadline).foregroundStyle(Theme.secondaryText)
             }
         }
+    }
+
+    private var titleText: Text {
+        titleIsVerbatim ? Text(verbatim: title) : Text(LocalizedStringKey(title))
     }
 }
 

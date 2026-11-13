@@ -1,3 +1,4 @@
+import { WIDTH_RANGES } from "./fontWidths.js";
 import type { DeckImage, ResearchPack, ResearchSource } from "./research.js";
 import type { Deck, Slide } from "./spec.js";
 import { zip, type ZipEntry } from "./zip.js";
@@ -17,6 +18,9 @@ import { zip, type ZipEntry } from "./zip.js";
  *  - Pictures only from the research pack (Wikimedia Commons, free licence), cropped to fill their
  *    box, with author and licence under them and on the sources slide.
  *  - Links only on the sources slide, and only to addresses research found.
+ *  - One grid: every slide's body starts at BODY_TOP and ends above the source line, at the same
+ *    left and right margins. Boxes side by side (cards, columns) share one text size. Text is
+ *    measured with Arial's own widths (`fontWidths.ts`) so it fits without a viewer shrinking it.
  */
 
 export const COLORS = {
@@ -34,6 +38,11 @@ export const FONT = "Arial";
 
 const W = 13.333;
 const H = 7.5;
+/** The body of every content slide: under the title, above the source line, between the margins. */
+const LEFT = 0.6;
+const RIGHT = 12.7;
+const BODY_TOP = 1.95;
+const BODY_BOTTOM = 6.4;
 const INCH = 914_400;
 const emu = (inches: number) => Math.round(inches * INCH);
 
@@ -270,14 +279,16 @@ class SlideBuilder {
     );
   }
 
-  table(box: Box, widths: number[], rows: { cells: string[]; fill: string }[], rowHeight: number): void {
+  /** A table whose rows are as tall as their text needs (measured by the caller), so it ends where it should. */
+  table(box: { x: number; y: number }, widths: number[], rows: { cells: string[]; fill: string; height: number }[]): void {
     const id = this.id();
     const grid = widths.map((w) => `<a:gridCol w="${emu(w)}"/>`).join("");
     const none = "<a:lnL><a:noFill/></a:lnL><a:lnR><a:noFill/></a:lnR><a:lnT><a:noFill/></a:lnT><a:lnB><a:noFill/></a:lnB>";
+    const total = rows.reduce((sum, row) => sum + emu(row.height), 0);
     const body = rows
       .map(
         (row) =>
-          `<a:tr h="${emu(rowHeight)}">` +
+          `<a:tr h="${emu(row.height)}">` +
           row.cells
             .map(
               (cell) =>
@@ -289,7 +300,7 @@ class SlideBuilder {
       .join("");
     this.add(
       `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${id}" name="Table ${id}"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>` +
-        `<p:xfrm><a:off x="${emu(box.x)}" y="${emu(box.y)}"/><a:ext cx="${emu(box.w)}" cy="${emu(rowHeight * rows.length)}"/></p:xfrm>` +
+        `<p:xfrm><a:off x="${emu(box.x)}" y="${emu(box.y)}"/><a:ext cx="${widths.reduce((sum, w) => sum + emu(w), 0)}" cy="${total}"/></p:xfrm>` +
         `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${grid}</a:tblGrid>${body}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`,
     );
   }
@@ -341,11 +352,11 @@ function agendaSlide(ctx: DeckContext, number: number, total: number): BuiltSlid
   const columnWidth = columns === 2 ? 5.9 : 12.1;
   const rowHeight = Math.min(0.85, 4.4 / perColumn);
   const textBox = { w: columnWidth - 0.75, h: rowHeight };
-  const size = fitSize([items.reduce((a, b) => (a.length >= b.length ? a : b), "")], textBox, [22, 20, 18, 16, 14]);
+  const size = fitEach(items.map((t) => [t]), textBox, [22, 20, 18, 16, 14]);
   items.forEach((title, i) => {
     const column = Math.floor(i / perColumn);
-    const x = 0.6 + column * 6.2;
-    const y = 2.0 + (i % perColumn) * rowHeight;
+    const x = LEFT + column * 6.2;
+    const y = BODY_TOP + (i % perColumn) * rowHeight;
     const d = Math.min(0.5, rowHeight - 0.15);
     s.shape("ellipse", { x, y: y + (rowHeight - d) / 2, w: d, h: d }, COLORS.orange, { paragraphs: [para([run(String(i + 1), { size: 15, bold: true, color: COLORS.ink, lang: ctx.lang })], { align: "ctr" })] });
     s.text({ x: x + 0.75, y, w: textBox.w, h: rowHeight }, [para([run(title, { size, color: COLORS.ink, lang: ctx.lang })])], { anchor: "ctr" });
@@ -357,13 +368,13 @@ function summarySlide(ctx: DeckContext, number: number, total: number): BuiltSli
   const s = new SlideBuilder("summary", COLORS.night);
   chrome(s, ctx, ctx.deck.labels.summary, number, total, "", true);
   const items = ctx.deck.takeaways;
-  const rowHeight = Math.min(1.05, 4.5 / items.length);
-  const box = { x: 1.45, y: 0, w: 11.2, h: rowHeight };
-  const size = fitSize([items.reduce((a, b) => (a.length >= b.length ? a : b), "")], box, [24, 22, 20, 18, 16]);
+  const rowHeight = Math.min(1.05, 4.45 / items.length);
+  const box = { x: 1.45, y: 0, w: RIGHT - 1.45, h: rowHeight };
+  const size = fitEach(items.map((t) => [t]), box, [24, 22, 20, 18, 16]);
   items.forEach((item, i) => {
-    const y = 2.0 + i * rowHeight;
+    const y = BODY_TOP + i * rowHeight;
     const d = Math.min(0.55, rowHeight - 0.2);
-    s.shape("ellipse", { x: 0.6, y: y + (rowHeight - d) / 2, w: d, h: d }, COLORS.orange, { paragraphs: [para([run(String(i + 1), { size: 16, bold: true, color: COLORS.ink, lang: ctx.lang })], { align: "ctr" })] });
+    s.shape("ellipse", { x: LEFT, y: y + (rowHeight - d) / 2, w: d, h: d }, COLORS.orange, { paragraphs: [para([run(String(i + 1), { size: 16, bold: true, color: COLORS.ink, lang: ctx.lang })], { align: "ctr" })] });
     s.text({ ...box, y }, [para([run(item, { size, color: COLORS.paper, lang: ctx.lang })])], { anchor: "ctr" });
   });
   return s.build(ctx.deck.summary_notes || items.join(" "));
@@ -392,12 +403,16 @@ function sourcesSlide(ctx: DeckContext, number: number, total: number): BuiltSli
       { text: ", Wikimedia Commons", color: COLORS.ink },
     ]);
   }
-  const box = { x: 0.6, y: 1.95, w: 12.1, h: 4.9 };
-  const size = fitSize(lines.map((parts) => parts.map((p) => p.text).join("")), box, [18, 16, 14, 13, 12, 11, 10], false, 0.35);
+  const box = { x: LEFT, y: BODY_TOP, w: RIGHT - LEFT, h: 4.9 };
+  // A wider gap sets the picture credits apart from the numbered sources.
+  const firstCredit = ctx.cited.length;
+  const size = fitSize(lines.map((parts) => parts.map((p) => p.text).join("")), { ...box, h: box.h - 0.25 }, [18, 16, 14, 13, 12, 11, 10], false, 0.35);
   s.text(
     box,
-    lines.map((parts) =>
-      para(parts.map((p) => run(p.text, { size, color: p.color, lang: ctx.lang, ...(p.url ? { link: s.link(p.url) } : {}) })), { spaceBefore: size * 0.35 }),
+    lines.map((parts, i) =>
+      para(parts.map((p) => run(p.text, { size, color: p.color, lang: ctx.lang, ...(p.url ? { link: s.link(p.url) } : {}) })), {
+        spaceBefore: i === 0 ? 0 : i === firstCredit ? size * 0.35 + 18 : size * 0.35,
+      }),
     ),
   );
   const notes = [
@@ -415,65 +430,83 @@ function contentSlide(ctx: DeckContext, slide: Slide, number: number, total: num
   switch (slide.layout) {
     case "bullets": {
       if (slide.points.length <= 3 && slide.points.every((p) => p.length <= 90)) {
-        const short = slide.points.every((p) => p.length <= 50);
+        const height = slide.points.every((p) => p.length <= 50) ? 3.4 : 4.2;
+        const text = { w: cardWidth(slide.points.length) - 0.7, h: height - 1.65 };
+        const size = fitEach(slide.points.map((p) => [p]), text, [28, 26, 24, 22, 20, 18, 16]);
         cards(s, slide.points.length, (box, i) => {
           s.text({ x: box.x + 0.35, y: box.y + 0.3, w: box.w - 0.7, h: 0.75 }, [para([t(String(i + 1).padStart(2, "0"), 30, COLORS.accentText, true)])]);
           s.shape("rect", { x: box.x + 0.35, y: box.y + 1.1, w: 0.5, h: 0.06 }, COLORS.orange);
-          const text = { x: box.x + 0.35, y: box.y + 1.35, w: box.w - 0.7, h: box.h - 1.65 };
-          s.text(text, [para([t(slide.points[i]!, fitSize([slide.points[i]!], text, [28, 26, 24, 22, 20, 18, 16]), COLORS.ink)])]);
-        }, short ? 3.4 : 4.2);
+          s.text({ x: box.x + 0.35, y: box.y + 1.35, ...text }, [para([t(slide.points[i]!, size, COLORS.ink)])]);
+        }, height);
       } else {
-        const box = { x: 0.6, y: 1.95, w: 12.1, h: 4.5 };
-        bulletList(s, ctx, slide.points, box, [28, 26, 24, 22, 20, 18, 16], COLORS.ink);
+        const box = { x: LEFT, y: BODY_TOP, w: RIGHT - LEFT, h: BODY_BOTTOM - BODY_TOP };
+        bulletList(s, ctx, slide.points, box, bulletSize([slide.points], box, [28, 26, 24, 22, 20, 18, 16]), COLORS.ink);
       }
       break;
     }
     case "two_column": {
-      [slide.left, slide.right].forEach((column, i) => {
-        const card = { x: 0.6 + i * 6.15, y: 1.95, w: 5.95, h: 4.5 };
-        s.shape("roundRect", card, COLORS.card);
-        const heading = { x: card.x + 0.4, y: card.y + 0.3, w: card.w - 0.8, h: 0.7 };
-        s.text(heading, [para([t(column.heading, fitSize([column.heading], heading, [26, 24, 22, 20], true), COLORS.accentText, true)])], { anchor: "b" });
+      const columns = [slide.left, slide.right];
+      const height = BODY_BOTTOM - BODY_TOP;
+      const heading = { w: cardWidth(2) - 0.8, h: 0.7 };
+      const list = { w: cardWidth(2) - 0.8, h: height - 1.6 };
+      const headingSize = fitEach(columns.map((c) => [c.heading]), heading, [26, 24, 22, 20], true);
+      const listSize = bulletSize(columns.map((c) => c.points), list, [24, 22, 20, 18, 16, 14]);
+      cards(s, 2, (card, i) => {
+        const column = columns[i]!;
+        s.text({ x: card.x + 0.4, y: card.y + 0.3, ...heading }, [para([t(column.heading, headingSize, COLORS.accentText, true)])], { anchor: "b" });
         s.shape("rect", { x: card.x + 0.4, y: card.y + 1.1, w: 0.5, h: 0.06 }, COLORS.orange);
-        bulletList(s, ctx, column.points, { x: card.x + 0.4, y: card.y + 1.35, w: card.w - 0.8, h: card.h - 1.6 }, [24, 22, 20, 18, 16, 14], COLORS.ink);
-      });
+        bulletList(s, ctx, column.points, { x: card.x + 0.4, y: card.y + 1.35, ...list }, listSize, COLORS.ink);
+      }, height);
       break;
     }
     case "stats": {
       if (slide.items.length === 1) {
         const item = slide.items[0]!;
-        const valueBox = { x: 0.6, y: 1.9, w: slide.context ? 7.4 : 12.1, h: 2.3 };
+        const valueBox = { x: LEFT, y: BODY_TOP, w: slide.context ? 7.4 : RIGHT - LEFT, h: 2.25 };
         s.text(valueBox, [para([t(item.value, fitSize([item.value], valueBox, [120, 104, 88, 72, 60], true), COLORS.ink, true)])], { anchor: "b" });
-        s.shape("rect", { x: 0.6, y: 4.35, w: 1.2, h: 0.1 }, COLORS.orange);
-        const label = { x: 0.6, y: 4.6, w: valueBox.w, h: 1.5 };
+        s.shape("rect", { x: LEFT, y: 4.35, w: 1.2, h: 0.1 }, COLORS.orange);
+        const label = { x: LEFT, y: 4.6, w: valueBox.w, h: 1.5 };
         s.text(label, [para([t(item.label, fitSize([item.label], label, [28, 26, 24, 22, 20]), COLORS.secondary)])]);
         if (slide.context) {
-          const card = { x: 8.4, y: 2.1, w: 4.3, h: 3.9 };
+          const card = { x: 8.4, y: BODY_TOP, w: RIGHT - 8.4, h: BODY_BOTTOM - BODY_TOP };
           s.shape("roundRect", card, COLORS.card);
           const text = { x: card.x + 0.35, y: card.y + 0.35, w: card.w - 0.7, h: card.h - 0.7 };
           s.text(text, [para([t(slide.context, fitSize([slide.context], text, [22, 20, 18, 16]), COLORS.ink)])], { anchor: "ctr" });
         }
       } else {
+        const height = slide.context ? 3.2 : 4.2;
+        const value = { w: cardWidth(slide.items.length) - 0.7, h: 1.4 };
+        const label = { w: value.w, h: height - 2.35 };
+        // One size for every value and one for every label: numbers side by side are compared, so they must look alike.
+        const valueSize = fitEach(slide.items.map((item) => [item.value]), value, [66, 60, 54, 48, 40, 34], true);
+        const labelSize = fitEach(slide.items.map((item) => [item.label]), label, [22, 20, 18, 16]);
         cards(s, slide.items.length, (box, i) => {
           const item = slide.items[i]!;
-          const value = { x: box.x + 0.35, y: box.y + 0.35, w: box.w - 0.7, h: 1.4 };
-          s.text(value, [para([t(item.value, fitSize([item.value], value, [66, 60, 54, 48, 40, 34], true), COLORS.ink, true)])], { anchor: "b" });
+          s.text({ x: box.x + 0.35, y: box.y + 0.35, ...value }, [para([t(item.value, valueSize, COLORS.ink, true)])], { anchor: "b" });
           s.shape("rect", { x: box.x + 0.35, y: box.y + 1.9, w: 0.6, h: 0.07 }, COLORS.orange);
-          const label = { x: box.x + 0.35, y: box.y + 2.1, w: box.w - 0.7, h: box.h - 2.35 };
-          s.text(label, [para([t(item.label, fitSize([item.label], label, [22, 20, 18, 16]), COLORS.secondary)])]);
-        }, slide.context ? 3.2 : 4.2);
+          s.text({ x: box.x + 0.35, y: box.y + 2.1, ...label }, [para([t(item.label, labelSize, COLORS.secondary)])]);
+        }, height);
         if (slide.context) {
-          const box = { x: 0.6, y: 5.4, w: 12.1, h: 1.05 };
+          const top = BODY_TOP + height + 0.2;
+          const box = { x: LEFT, y: top, w: RIGHT - LEFT, h: BODY_BOTTOM - top };
           s.text(box, [para([t(slide.context, fitSize([slide.context], box, [22, 20, 18, 16]), COLORS.ink)])], { anchor: "ctr" });
         }
       }
       break;
     }
     case "quote": {
-      s.text({ x: 0.5, y: 1.95, w: 1.3, h: 1.5 }, [para([t("“", 140, COLORS.orange, true)], { lineSpacing: 80 })]);
-      const box = { x: 1.9, y: 2.05, w: 10.3, h: 3.2 };
-      s.text(box, [para([t(slide.quote, fitSize([slide.quote], box, [40, 36, 32, 30, 28, 26, 24, 22]), COLORS.paper)], { lineSpacing: 105 })], { anchor: "ctr" });
-      s.text({ x: 1.9, y: 5.4, w: 10.3, h: 0.6 }, [para([t(`— ${slide.attribution}`, 20, COLORS.nightText)])]);
+      // The quote and its attribution as one block, centred in the body; the mark sits level with the first line.
+      const x = 1.9, w = RIGHT - 0.5 - x, top = 2.1, gap = 0.35;
+      const attribution = `— ${slide.attribution}`;
+      const attributionSize = fitSize([attribution], { w, h: 0.7 }, [20, 18, 16, 14]);
+      const attributionHeight = textHeight(attribution, attributionSize, w);
+      const size = fitSize([slide.quote], { w, h: BODY_BOTTOM - top - gap - attributionHeight }, [40, 36, 32, 30, 28, 26, 24, 22]);
+      const quoteHeight = textHeight(slide.quote, size, w);
+      const y = top + Math.max(0, (BODY_BOTTOM - top - quoteHeight - gap - attributionHeight) / 2);
+      const mark = 120;
+      s.text({ x: LEFT, y: y + (CAP_GAP * (size - mark)) / 72, w: 1.2, h: 1.9 }, [para([t("“", mark, COLORS.orange, true)])]);
+      s.text({ x, y, w, h: quoteHeight + 0.05 }, [para([t(slide.quote, size, COLORS.paper)])]);
+      s.text({ x, y: y + quoteHeight + gap, w, h: attributionHeight + 0.05 }, [para([t(attribution, attributionSize, COLORS.nightText)])]);
       break;
     }
     case "timeline": {
@@ -481,8 +514,8 @@ function contentSlide(ctx: DeckContext, slide: Slide, number: number, total: num
       const left = 0.9, width = 11.5, lineY = 4.0;
       const slot = width / n;
       s.shape("rect", { x: left, y: lineY, w: width, h: 0.05 }, COLORS.line);
-      const whenSize = Math.min(...slide.events.map((e) => fitSize([e.when], { w: slot - 0.15, h: 1.0 }, [30, 26, 24, 22, 20, 18, 16], true)));
-      const whatSize = Math.min(...slide.events.map((e) => fitSize([e.what], { w: slot - 0.15, h: 1.9 }, [20, 18, 16, 15, 14, 13, 12])));
+      const whenSize = fitEach(slide.events.map((e) => [e.when]), { w: slot - 0.15, h: 1.0 }, [30, 26, 24, 22, 20, 18, 16], true);
+      const whatSize = fitEach(slide.events.map((e) => [e.what]), { w: slot - 0.15, h: 1.9 }, [20, 18, 16, 15, 14, 13, 12]);
       slide.events.forEach((event, i) => {
         const centre = left + slot * (i + 0.5);
         const d = 0.34;
@@ -493,23 +526,7 @@ function contentSlide(ctx: DeckContext, slide: Slide, number: number, total: num
       break;
     }
     case "comparison": {
-      const header = [slide.row_header, ...slide.columns];
-      const longestFirst = Math.max(slide.row_header.length, ...slide.rows.map((r) => r.label.length));
-      const first = longestFirst > 18 ? 3.4 : 2.7;
-      const rest = (12.1 - first) / slide.columns.length;
-      const widths = [first, ...slide.columns.map(() => rest)];
-      const rowHeight = Math.min(0.8, 4.45 / (slide.rows.length + 1));
-      const longestCell = Math.max(...slide.rows.flatMap((r) => r.cells.map((c) => c.length)), ...slide.columns.map((c) => c.length));
-      const size = longestCell > 32 || slide.rows.length > 4 ? 15 : 18;
-      const cell = (text: string, color: string, bold: boolean) => para([t(text || " ", size, color, bold)]);
-      const rows = [
-        { cells: header.map((h) => cell(h, COLORS.paper, true)), fill: COLORS.night },
-        ...slide.rows.map((r, i) => ({
-          cells: [cell(r.label, COLORS.ink, true), ...r.cells.map((c) => cell(c, COLORS.ink, false))],
-          fill: i % 2 === 0 ? COLORS.card : COLORS.paper,
-        })),
-      ];
-      s.table({ x: 0.6, y: 1.95, w: 12.1, h: 4.45 }, widths, rows, rowHeight);
+      comparison(s, ctx, slide);
       break;
     }
     case "chart": {
@@ -518,26 +535,36 @@ function contentSlide(ctx: DeckContext, slide: Slide, number: number, total: num
     }
     case "image": {
       const image = ctx.image(slide.image);
-      const textX = image ? 8.0 : 0.6;
-      const textW = image ? 4.7 : 12.1;
+      const words = !!slide.caption || slide.points.length > 0;
+      let textX = LEFT;
       if (image) {
-        const box = { x: 0.6, y: 1.9, w: 7.0, h: 4.25 };
-        s.image(image, ctx.mediaName(image), box);
-        s.text({ x: 0.6, y: 6.2, w: 7.0, h: 0.32 }, [para([t(credit(image), 10, COLORS.secondary)])], { anchor: "ctr" });
+        // Beside words the picture takes the left part, narrower for a tall picture so less of it is cut;
+        // alone it is centred at its own shape.
+        const h = 4.25;
+        const natural = (h * image.width) / image.height;
+        const w = words ? Math.min(7.0, Math.max(3.6, natural)) : Math.min(RIGHT - LEFT, natural);
+        const x = words ? LEFT : (W - w) / 2;
+        s.image(image, ctx.mediaName(image), { x, y: BODY_TOP, w, h });
+        const line = credit(image);
+        const creditBox = words ? { x, y: BODY_TOP + h + 0.05, w, h: 0.3 } : { x: LEFT, y: BODY_TOP + h + 0.05, w: RIGHT - LEFT, h: 0.3 };
+        s.text(creditBox, [para([t(line, fitSize([line], { w: creditBox.w, h: 0.2 }, [10, 9, 8]), COLORS.secondary)], { align: words ? "l" : "ctr" })], { anchor: "ctr" });
+        textX = x + w + 0.4;
       }
-      let y = 1.95;
+      const textW = RIGHT - textX;
+      let y = BODY_TOP;
       if (slide.caption) {
         const box = { x: textX, y, w: textW, h: 1.5 };
         const size = fitSize([slide.caption], box, [26, 24, 22, 20, 18], true);
-        // As tall as its lines, so the points follow right under it.
-        const lines = wrappedLines(slide.caption, Math.max(1, Math.floor((textW * 72) / (size * 0.56))));
-        const height = Math.min(1.5, (lines * size * 1.2) / 72 + 0.05);
-        // Anchored at the bottom: the length estimate errs long, and the caption should sit on its rule either way.
+        // As tall as its lines, so the rule and the points follow right under it.
+        const height = Math.min(1.5, textHeight(slide.caption, size, textW, true) + 0.05);
         s.text({ ...box, h: height }, [para([t(slide.caption, size, COLORS.ink, true)])], { anchor: "b" });
         s.shape("rect", { x: textX, y: y + height + 0.15, w: 0.5, h: 0.06 }, COLORS.orange);
         y += height + 0.45;
       }
-      if (slide.points.length) bulletList(s, ctx, slide.points, { x: textX, y, w: textW, h: 6.4 - y }, [22, 20, 18, 16, 14], COLORS.ink);
+      if (slide.points.length) {
+        const box = { x: textX, y, w: textW, h: BODY_BOTTOM - y };
+        bulletList(s, ctx, slide.points, box, bulletSize([slide.points], box, [22, 20, 18, 16, 14]), COLORS.ink);
+      }
       break;
     }
   }
@@ -547,31 +574,84 @@ function contentSlide(ctx: DeckContext, slide: Slide, number: number, total: num
 /** Title, orange mark, source line, deck title and slide number: the frame every content slide shares. */
 function chrome(s: SlideBuilder, ctx: DeckContext, title: string, number: number, total: number, sourceLine: string, dark = false): void {
   const quiet = dark ? COLORS.nightText : COLORS.secondary;
-  s.shape("rect", { x: 0.6, y: 0.55, w: 0.7, h: 0.07 }, COLORS.orange);
-  const titleBox = { x: 0.6, y: 0.72, w: 12.1, h: 1.05 };
+  s.shape("rect", { x: LEFT, y: 0.55, w: 0.7, h: 0.07 }, COLORS.orange);
+  const titleBox = { x: LEFT, y: 0.72, w: RIGHT - LEFT, h: 1.05 };
   s.text(titleBox, [para([run(title, { size: fitSize([title], titleBox, [36, 32, 28, 26, 24], true), bold: true, color: dark ? COLORS.paper : COLORS.ink, lang: ctx.lang })], { lineSpacing: 95 })], { name: "Title" });
-  if (sourceLine) s.text({ x: 0.6, y: 6.6, w: 12.1, h: 0.3 }, [para([run(sourceLine, { size: 10, color: quiet, lang: ctx.lang })])], { anchor: "ctr" });
-  s.text({ x: 0.6, y: 6.98, w: 9.5, h: 0.3 }, [para([run(ctx.deck.title, { size: 10, color: quiet, lang: ctx.lang })])], { anchor: "ctr" });
-  s.text({ x: 11.3, y: 6.98, w: 1.4, h: 0.3 }, [para([run(`${number} / ${total}`, { size: 10, color: quiet, lang: ctx.lang })], { align: "r" })], { anchor: "ctr" });
+  if (sourceLine) s.text({ x: LEFT, y: 6.6, w: RIGHT - LEFT, h: 0.3 }, [para([run(sourceLine, { size: 10, color: quiet, lang: ctx.lang })])], { anchor: "ctr" });
+  s.text({ x: LEFT, y: 6.98, w: 9.5, h: 0.3 }, [para([run(ctx.deck.title, { size: 10, color: quiet, lang: ctx.lang })])], { anchor: "ctr" });
+  s.text({ x: 11.3, y: 6.98, w: RIGHT - 11.3, h: 0.3 }, [para([run(`${number} / ${total}`, { size: 10, color: quiet, lang: ctx.lang })], { align: "r" })], { anchor: "ctr" });
 }
 
-/** n cards side by side in the body. */
+const CARD_GAP = 0.3;
+
+function cardWidth(n: number): number {
+  return (RIGHT - LEFT - CARD_GAP * (n - 1)) / n;
+}
+
+/** n cards side by side at the top of the body. */
 function cards(s: SlideBuilder, n: number, fill: (box: Box, index: number) => void, height = 4.2): void {
-  const gap = 0.3;
-  const w = (12.1 - gap * (n - 1)) / n;
+  const w = cardWidth(n);
   for (let i = 0; i < n; i++) {
-    const box = { x: 0.6 + i * (w + gap), y: 2.0, w, h: height };
+    const box = { x: LEFT + i * (w + CARD_GAP), y: BODY_TOP, w, h: height };
     s.shape("roundRect", box, COLORS.card);
     fill(box, i);
   }
 }
 
-function bulletList(s: SlideBuilder, ctx: DeckContext, points: string[], box: Box, sizes: number[], color: string): void {
-  const size = fitSize(points, { ...box, w: box.w - 0.45 }, sizes, false, 0.55);
+/** A bullet's indent (`para`), and the gap between points as a share of the size. */
+const BULLET_INDENT = 0.42;
+const BULLET_GAP = 0.55;
+
+/** The size at which each list fits its box as bullets. */
+function bulletSize(lists: string[][], box: { w: number; h: number }, sizes: number[]): number {
+  return fitEach(lists, { w: box.w - BULLET_INDENT, h: box.h }, sizes, false, BULLET_GAP);
+}
+
+function bulletList(s: SlideBuilder, ctx: DeckContext, points: string[], box: Box, size: number, color: string): void {
   s.text(
     box,
-    points.map((p, i) => para([run(p, { size, color, lang: ctx.lang })], { bullet: COLORS.orange, spaceBefore: i === 0 ? 0 : size * 0.55 })),
+    points.map((p, i) => para([run(p, { size, color, lang: ctx.lang })], { bullet: COLORS.orange, spaceBefore: i === 0 ? 0 : size * BULLET_GAP })),
   );
+}
+
+/**
+ * A table whose rows are as tall as their words need, at the largest size that keeps it inside the
+ * body. Columns of figures are right-aligned, so their digits line up.
+ */
+function comparison(s: SlideBuilder, ctx: DeckContext, slide: Extract<Slide, { layout: "comparison" }>): void {
+  const grid = [[slide.row_header, ...slide.columns], ...slide.rows.map((r) => [r.label, ...r.cells])];
+  const figures = slide.columns.map((_, c) => {
+    const cells = slide.rows.map((r) => r.cells[c] ?? "").filter((v) => v.trim());
+    return cells.length > 0 && cells.every(isFigure);
+  });
+  const margin = 0.15;
+  const longestLabel = Math.max(...grid.map((row) => textWidth(row[0]!, 18, true)));
+  const first = Math.min(3.6, Math.max(2.4, longestLabel / SLACK + 2 * margin));
+  const rest = (RIGHT - LEFT - first) / slide.columns.length;
+  const widths = [first, ...slide.columns.map(() => rest)];
+  const room = BODY_BOTTOM - BODY_TOP;
+  const least = Math.min(0.8, room / grid.length);
+  const heights = (size: number) =>
+    grid.map((cells, r) => Math.max(least, ...cells.map((c, i) => textHeight(c || " ", size, widths[i]! - 2 * margin, r === 0 || i === 0) + 0.16)));
+  const sizes = [18, 16, 15, 14, 13, 12];
+  const size = sizes.find((sz) => heights(sz).reduce((a, b) => a + b, 0) <= room) ?? sizes[sizes.length - 1]!;
+  const rowHeights = heights(size);
+  const cell = (text: string, color: string, bold: boolean, right: boolean) =>
+    para([run(text || " ", { size, color, bold, lang: ctx.lang })], { align: right ? "r" : "l" });
+  s.table(
+    { x: LEFT, y: BODY_TOP },
+    widths,
+    grid.map((cells, r) => ({
+      cells: cells.map((c, i) => cell(c, r === 0 ? COLORS.paper : COLORS.ink, r === 0 || i === 0, i > 0 && figures[i - 1]!)),
+      fill: r === 0 ? COLORS.night : r % 2 === 1 ? COLORS.card : COLORS.paper,
+      height: rowHeights[r]!,
+    })),
+  );
+}
+
+/** A table cell that is a figure ("31 808", "21,88 km²", "98,7%", "€12.5 bn"), not words. */
+export function isFigure(text: string): boolean {
+  return /^[-+−±~≈]?\s?[$€£¥]?\s?\d[\d\s.,  ]*\s?[^\s\d]{0,5}$/u.test(text.trim());
 }
 
 /** Bars from the slide's numbers: columns for short labels (years, names), horizontal bars for long ones. */
@@ -579,77 +659,125 @@ function chart(s: SlideBuilder, ctx: DeckContext, slide: Extract<Slide, { layout
   const values = slide.points.map((p) => p.value);
   const max = Math.max(...values) || 1;
   const unit = slide.unit ? ` ${slide.unit}` : "";
-  if (slide.unit) s.text({ x: 0.6, y: 1.8, w: 12.1, h: 0.4 }, [para([run(slide.unit, { size: 16, color: COLORS.secondary, lang: ctx.lang })])], { anchor: "ctr" });
+  const shown = slide.points.map((p) => ctx.number(p.value));
+  if (slide.unit) s.text({ x: LEFT, y: BODY_TOP, w: RIGHT - LEFT, h: 0.35 }, [para([run(slide.unit, { size: 16, color: COLORS.secondary, lang: ctx.lang })])], { anchor: "ctr" });
   const columns = slide.points.every((p) => p.label.length <= 10);
   if (columns) {
     const left = 0.9, width = 11.5, base = 5.7, tall = 3.0;
     const slot = width / slide.points.length;
     const barWidth = Math.min(1.3, slot * 0.6);
-    const labelSize = Math.min(...slide.points.map((p) => fitSize([p.label], { w: slot - 0.1, h: 0.5 }, [16, 15, 14, 13, 12])));
+    // Every value on one line, all at one size, so long numbers never wrap into their bar.
+    const valueSize = fitEach(shown.map((v) => [v]), { w: slot - 0.1, h: 0.45 }, [18, 16, 15, 14, 13, 12, 11], true);
+    const labelSize = fitEach(slide.points.map((p) => [p.label]), { w: slot - 0.1, h: 0.5 }, [16, 15, 14, 13, 12]);
     slide.points.forEach((p, i) => {
       const centre = left + slot * (i + 0.5);
       const h = Math.max(0.03, (p.value / max) * tall);
-      s.shape("rect", { x: centre - barWidth / 2, y: base - h, w: barWidth, h }, COLORS.orange, { descr: `${p.label}: ${ctx.number(p.value)}${unit}` });
-      s.text({ x: centre - slot / 2, y: base - h - 0.5, w: slot, h: 0.45 }, [para([run(ctx.number(p.value), { size: 18, bold: true, color: COLORS.ink, lang: ctx.lang })], { align: "ctr" })], { anchor: "b" });
+      s.shape("rect", { x: centre - barWidth / 2, y: base - h, w: barWidth, h }, COLORS.orange, { descr: `${p.label}: ${shown[i]}${unit}` });
+      s.text({ x: centre - slot / 2, y: base - h - 0.5, w: slot, h: 0.45 }, [para([run(shown[i]!, { size: valueSize, bold: true, color: COLORS.ink, lang: ctx.lang })], { align: "ctr" })], { anchor: "b" });
       s.text({ x: centre - slot / 2 + 0.05, y: base + 0.1, w: slot - 0.1, h: 0.5 }, [para([run(p.label, { size: labelSize, color: COLORS.secondary, lang: ctx.lang })], { align: "ctr" })]);
     });
     s.shape("rect", { x: left, y: base, w: width, h: 0.03 }, COLORS.line);
   } else {
     const top = 2.35, height = 3.6;
     const row = Math.min(0.62, height / slide.points.length);
-    const labelWidth = 3.5, barLeft = 4.3, barMax = 7.0;
-    const labelSize = Math.min(...slide.points.map((p) => fitSize([p.label], { w: labelWidth, h: row }, [18, 16, 15, 14, 13, 12])));
+    const labelWidth = 3.5, barLeft = 4.3;
+    const labelSize = fitEach(slide.points.map((p) => [p.label]), { w: labelWidth, h: row }, [18, 16, 15, 14, 13, 12]);
+    // The longest bar leaves room for its number inside the right margin.
+    const valueWidth = Math.max(...shown.map((v) => textWidth(v, 16, true))) / SLACK + 0.1;
+    const barMax = Math.min(7.0, RIGHT - barLeft - 0.12 - valueWidth);
     slide.points.forEach((p, i) => {
       const y = top + i * row;
       const w = Math.max(0.03, (p.value / max) * barMax);
-      s.text({ x: 0.6, y, w: labelWidth, h: row }, [para([run(p.label, { size: labelSize, color: COLORS.ink, lang: ctx.lang })], { align: "r" })], { anchor: "ctr" });
-      s.shape("rect", { x: barLeft, y: y + row * 0.18, w, h: row * 0.64 }, COLORS.orange, { descr: `${p.label}: ${ctx.number(p.value)}${unit}` });
-      s.text({ x: barLeft + w + 0.12, y, w: 1.8, h: row }, [para([run(ctx.number(p.value), { size: 16, bold: true, color: COLORS.ink, lang: ctx.lang })])], { anchor: "ctr" });
+      s.text({ x: LEFT, y, w: labelWidth, h: row }, [para([run(p.label, { size: labelSize, color: COLORS.ink, lang: ctx.lang })], { align: "r" })], { anchor: "ctr" });
+      s.shape("rect", { x: barLeft, y: y + row * 0.18, w, h: row * 0.64 }, COLORS.orange, { descr: `${p.label}: ${shown[i]}${unit}` });
+      s.text({ x: barLeft + w + 0.12, y, w: valueWidth, h: row }, [para([run(shown[i]!, { size: 16, bold: true, color: COLORS.ink, lang: ctx.lang })])], { anchor: "ctr" });
     });
   }
-  if (slide.note) s.text({ x: 0.6, y: 6.15, w: 12.1, h: 0.4 }, [para([run(slide.note, { size: 14, color: COLORS.secondary, lang: ctx.lang })])], { anchor: "ctr" });
+  if (slide.note) {
+    const box = { x: LEFT, y: 6.1, w: RIGHT - LEFT, h: 0.42 };
+    s.text(box, [para([run(slide.note, { size: fitSize([slide.note], box, [14, 13, 12, 11]), color: COLORS.secondary, lang: ctx.lang })])], { anchor: "ctr" });
+  }
 }
 
 // ------------------------------------------------------------------ text
 
-/**
- * The largest size whose text fits the box, estimated from its length: Arial averages about half
- * an em per character (a little more in bold); lines wrap at words. Never below the last size.
- */
-export function fitSize(texts: string[], box: { w: number; h: number }, sizes: number[], bold = false, paragraphGap = 0.5): number {
-  const factor = bold ? 0.56 : 0.52;
-  for (const size of sizes) {
-    const perLine = Math.max(1, Math.floor((box.w * 72) / (size * factor)));
-    const lines = texts.reduce((sum, text) => sum + wrappedLines(text, perLine), 0);
-    const needed = lines * size * 1.2 + Math.max(0, texts.length - 1) * size * paragraphGap;
-    if (needed <= box.h * 72) return size;
+/** Arial's widths by code point, in thousandths of an em (`fontWidths.ts`). */
+const WIDTHS = (() => {
+  const regular = new Map<number, number>();
+  const bold = new Map<number, number>();
+  for (const [start, r, b] of WIDTH_RANGES) {
+    r.forEach((w, i) => regular.set(start + i, w));
+    b.forEach((w, i) => bold.set(start + i, w));
   }
-  return sizes[sizes.length - 1]!;
+  return { regular, bold };
+})();
+
+/** Single line height as a share of the size (Arial in PowerPoint and Keynote). */
+const LINE = 1.2;
+/** The share of a box's width text may fill: viewers set the same words a little differently. */
+const SLACK = 0.95;
+/** Space above a capital in a line, as a share of the size (Arial: ascent 0.905 em, capitals and quote marks 0.716 em). */
+const CAP_GAP = 0.19;
+
+/** The width of one line of text in Arial at a size in points, in inches. */
+export function textWidth(text: string, size: number, bold = false): number {
+  const table = bold ? WIDTHS.bold : WIDTHS.regular;
+  let units = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0)!;
+    // Not in the table: a CJK character is an em wide; anything else gets a generous average.
+    units += table.get(code) ?? (code >= 0x2e80 ? 1000 : 650);
+  }
+  return (units / 1000) * (size / 72);
 }
 
-export function wrappedLines(text: string, perLine: number): number {
+/** Lines the text takes in a box this wide (inches), wrapped at spaces; a word longer than a line breaks inside it. */
+export function linesAt(text: string, size: number, width: number, bold = false): number {
+  const room = width * SLACK;
+  const space = textWidth(" ", size, bold);
   let lines = 1;
   let current = 0;
   for (const word of text.split(/\s+/).filter(Boolean)) {
-    const length = word.length;
+    const w = textWidth(word, size, bold);
     if (current === 0) {
-      current = length;
-    } else if (current + 1 + length <= perLine) {
-      current += 1 + length;
+      current = w;
+    } else if (current + space + w <= room) {
+      current += space + w;
     } else {
       lines++;
-      current = length;
+      current = w;
     }
-    while (current > perLine) {
+    while (current > room) {
       lines++;
-      current -= perLine;
+      current -= room;
     }
   }
   return lines;
 }
 
+/** The height of the text wrapped in a box this wide, in inches. */
+function textHeight(text: string, size: number, width: number, bold = false): number {
+  return (linesAt(text, size, width, bold) * size * LINE) / 72;
+}
+
+/** The largest size at which the paragraphs fit the box, measured with Arial's widths. Never below the last size. */
+export function fitSize(texts: string[], box: { w: number; h: number }, sizes: number[], bold = false, paragraphGap = 0.5): number {
+  for (const size of sizes) {
+    const lines = texts.reduce((sum, text) => sum + linesAt(text, size, box.w, bold), 0);
+    const needed = lines * size * LINE + Math.max(0, texts.length - 1) * size * paragraphGap;
+    if (needed <= box.h * 72) return size;
+  }
+  return sizes[sizes.length - 1]!;
+}
+
+/** One size for boxes side by side (cards, columns): the largest at which each box's text fits its own box. */
+export function fitEach(texts: string[][], box: { w: number; h: number }, sizes: number[], bold = false, paragraphGap = 0.5): number {
+  if (!texts.length) return sizes[0]!;
+  return Math.min(...texts.map((t) => fitSize(t, box, sizes, bold, paragraphGap)));
+}
+
 function para(runs: string[], o: { align?: "l" | "ctr" | "r"; bullet?: string; spaceBefore?: number; lineSpacing?: number } = {}): string {
-  const attrs = o.bullet ? ` marL="${emu(0.42)}" indent="-${emu(0.42)}"` : "";
+  const attrs = o.bullet ? ` marL="${emu(BULLET_INDENT)}" indent="-${emu(BULLET_INDENT)}"` : "";
   const parts: string[] = [];
   if (o.lineSpacing) parts.push(`<a:lnSpc><a:spcPct val="${o.lineSpacing * 1000}"/></a:lnSpc>`);
   if (o.spaceBefore) parts.push(`<a:spcBef><a:spcPts val="${Math.round(o.spaceBefore * 100)}"/></a:spcBef>`);
