@@ -1,5 +1,8 @@
 window.DODDY_I18N = {
   " Doddy starts on iPhone; we'll tell you if Android comes later.": " Doddyはまず iPhoneで始まります。Androidが後から提供されることになったら、お知らせします。",
+  "Allow": "許可する",
+  "Analytics choice": "アナリティクスの選択",
+  "Can we count your visit with Google Analytics? It sets cookies. Nothing loads from Google unless you say yes, and you can change your mind at the bottom of any page.": "あなたの訪問をGoogle Analyticsで計測してもいいですか？Cookieが設定されます。許可しない限りGoogleからは何も読み込まれず、どのページでも下のほうから選び直せます。",
   "Close menu": "メニューを閉じる",
   "Copy the link from the address bar": "アドレスバーからリンクをコピー",
   "Doddy isn't on this iPhone yet. Join early access above to hear when it's ready.": "このiPhoneにはまだDoddyが入っていません。上の「早期アクセスに参加」から登録すると、準備ができたときにお知らせします。",
@@ -8,6 +11,7 @@ window.DODDY_I18N = {
   "Long day.": "長い一日だった。",
   "Menu": "メニュー",
   "Nearly done for the day.": "今日はもうすぐ終わり。",
+  "No thanks": "いいえ、結構です",
   "Pick one.": "ひとつ選んで。",
   "Sending…": "送信中…",
   "Still here.": "まだここにいるよ。",

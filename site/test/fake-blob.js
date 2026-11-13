@@ -8,8 +8,9 @@ export class BlobError extends Error {}
 export class BlobNotFoundError extends BlobError {}
 export class BlobPreconditionFailedError extends BlobError {}
 
-export const store = new Map();  // pathname -> { body, etag }
-export const hooks = { beforePut: null };  // set by a test to change the store between a read and put()
+export const store = new Map();  // pathname -> { body, etag, uploadedAt? }
+// Set by a test: beforePut to change the store between a read and put(), beforeGet to make reads fail.
+export const hooks = { beforePut: null, beforeGet: null };
 let version = 0;
 
 export const blob = {
@@ -17,6 +18,7 @@ export const blob = {
   BlobNotFoundError,
   BlobPreconditionFailedError,
   async get(pathname) {
+    await hooks.beforeGet?.(pathname);
     const entry = store.get(pathname);
     if (!entry) return null;
     return { statusCode: 200, stream: new Response(entry.body).body, blob: { pathname, etag: entry.etag } };
@@ -35,14 +37,17 @@ export const blob = {
       throw new BlobError("This blob already exists");
     }
     const etag = `"v${++version}"`;
-    store.set(pathname, { body, etag });
+    // Every put is a new upload, as on the real service (list() reports when each blob was last written).
+    store.set(pathname, { body, etag, uploadedAt: new Date() });
     return { pathname, etag };
   },
-  async del(pathname) {
-    store.delete(pathname);
+  async del(pathnames) {
+    for (const pathname of [pathnames].flat()) store.delete(pathname);
   },
   async list({ prefix = "" } = {}) {
-    const blobs = [...store.keys()].filter((p) => p.startsWith(prefix)).map((pathname) => ({ pathname }));
+    const blobs = [...store.entries()]
+      .filter(([p]) => p.startsWith(prefix))
+      .map(([pathname, entry]) => ({ pathname, uploadedAt: entry.uploadedAt ?? new Date() }));
     return { blobs, cursor: undefined, hasMore: false };
   },
 };
@@ -52,6 +57,7 @@ mock.module("@vercel/blob", { namedExports: blob });
 export function reset() {
   store.clear();
   hooks.beforePut = null;
+  hooks.beforeGet = null;
 }
 
 // A request as the browser would send it from this site.
