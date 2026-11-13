@@ -23,6 +23,7 @@ The iPhone keeps the signed link in its Messages thread and on the voice card an
 - Changing or losing the key makes the stored files unreadable (they read as missing); they are deleted within a week anyway.
 - The memory key now covers files too, and file links stay signed with `DODDY_SESSION_SIGNING_KEY`. If keys are split per purpose (proposal `2026-11-12-account-and-device-tokens`), files can get their own key: each row carries its `key_version`, and a link's signature is checked on every open.
 - Links made before the deploy stop opening (they say "expired"); the files stay listed and downloadable in the app and on Doddy Web.
+- **Rollback** is not clean for files: the earlier code reads `name` and `body` as plain text, so it would list encrypted files with an empty name and serve their ciphertext, and it doesn't accept the new links. After a rollback, delete the encrypted rows (`DELETE FROM doddy_backend.documents WHERE key_version IS NOT NULL`, as the backend's role); they are a week's files at most. The two new columns can stay.
 - The sandbox policy is new on the file itself. That Safari on an iPhone still previews a deck, a Word file, a spreadsheet and a PDF with Quick Look under it has **not been checked on a device**.
 
 ## Evidence
