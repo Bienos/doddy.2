@@ -25587,6 +25587,17 @@
         }
       }
     },
+    "Doddy's server didn't confirm deleting your messaging data, so nothing was changed. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie potwierdził usunięcia Twoich danych wiadomości, więc nic nie zmieniono. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Doddy's server didn't confirm the item is gone, so it isn't shown as deleted. Pull down to check again.": {
       "extractionState": "manual",
       "localizations": {
@@ -89808,6 +89819,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这台 iPhone 没有设置密码或面容 ID，所以 Doddy 无法锁定。"
+          }
+        }
+      }
+    },
+    "This iPhone has no sign-in for Doddy's messaging server, so nothing was deleted from here. If you reinstalled the app, delete your Doddy account in Settings to remove what the server holds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie ma logowania do serwera wiadomości Doddy’ego, więc stąd nic nie usunięto. Jeśli aplikacja była instalowana od nowa, usuń konto Doddy w Ustawieniach, żeby usunąć to, co trzyma serwer."
           }
         }
       }
