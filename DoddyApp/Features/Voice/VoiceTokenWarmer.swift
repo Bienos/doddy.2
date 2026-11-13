@@ -150,5 +150,7 @@ final class VoiceTokenWarmer {
     /// Sign-out, account change, Pause all, consent withdrawn: nothing held survives.
     func clear() {
         supply.clear()
+        // The account ids that came with those tokens go with them (decision 2026-11-12-voice-conversations-per-account).
+        VoiceTokenUserIDs.shared.forget()
     }
 }
