@@ -54,8 +54,9 @@ struct CallCasesView: View {
             }
         }) { item in
             if let model {
+                // "Who and why" first (decision 2026-11-13-calls-one-field-brief); the full editor is one tap from it.
                 NavigationStack {
-                    CallBriefEditorView(list: model, draft: item.draft, replacing: nil) { saved in
+                    CallBriefStartView(list: model, base: item.draft) { saved in
                         preparedCase = saved
                         editor = nil
                     }

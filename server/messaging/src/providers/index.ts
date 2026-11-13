@@ -9,6 +9,7 @@ import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { callsAvailable } from "../routes/twilioVoice.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
 import type { TaskCallDeps } from "../taskCalls/context.js";
+import { ClaudeBriefDrafter } from "../taskCalls/drafter.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
 import type { ErrandDeps } from "../errands/context.js";
 import { ClaudeErrandResearcher } from "../errands/researcher.js";
@@ -69,6 +70,8 @@ export function providersFrom(config: Config) {
     settings: config.taskCallSettings,
     // Optional: points at the answer and writes the card's summary (Anthropic only; ADR-504).
     writer: config.anthropicApiKey ? new ClaudeResultWriter(config.anthropicApiKey) : undefined,
+    // Optional: proposes a brief from the user's one sentence; code checks every field (decision 2026-11-13-calls-one-field-brief).
+    drafter: config.anthropicApiKey ? new ClaudeBriefDrafter(config.anthropicApiKey) : undefined,
     liveActivity: push ? {
       update: async (token, env, state, end) => { await push.sendLiveActivity({ deviceToken: token, environment: env }, state, end); },
     } : undefined,
