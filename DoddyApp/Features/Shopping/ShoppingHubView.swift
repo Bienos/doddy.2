@@ -2,19 +2,25 @@ import DoddyCore
 import SwiftUI
 
 // Shopping in one place (owner, 11 Nov 2026: "skończ co już mamy"; docs/strategy/SKLEP_PROPOZYCJA_2026-11.md).
-// Nothing here is a new capability: it gathers what already existed on three screens.
-//   - "Find me this" (docs/implementation/SHOPPING.md 1), until now only by voice: the words and what matters
-//     most are typed here, and the same yes card as a typed task shows exactly what goes to Doddy's server.
-//   - The shopping tasks already handed over, with their state; a tap opens the result and its picks.
-//   - Watched prices (SHOPPING_WATCH.md), the same section as on Tasks.
-//   - "Cheapest this week" (the leaflets), opened from here as from Home's menu.
+// Redesigned 13 Nov 2026 (owner: "najtaniej w tym tygodniu … trzeba złączyć", "te jedzeniowe oddzielnie, ciuchowe i inne
+// oddzielnie", "wyszukujesz, porównujesz, … ustawienia cen, szukania okazji"): two worlds under one orange hero.
+//   - Groceries: "Cheapest this week" (the leaflets, the basket, my shops), which left Home's menu and lives here.
+//   - Everything else: a category (electronics, home, fashion, other) that changes what "what matters most" offers,
+//     "Find me this" (docs/implementation/SHOPPING.md 1), the searches already handed over, comparing offers in
+//     Shopify shops, "Check this" for a product link, and price alerts (SHOPPING_WATCH.md).
 // Every price shown is one the server confirmed on a shop's own page; this screen writes none itself.
 
 struct ShoppingHubView: View {
+    /// The two worlds the owner asked to keep apart.
+    enum World: String { case groceries, products }
+    /// What kind of thing is wanted; only the suggestions under "What matters most?" change with it.
+    enum Category: String, CaseIterable { case electronics, home, fashion, other }
+
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.dynamicTypeSize) private var textSize
     private let model = ErrandsModel.shared
     private let watches = WatchModel.shared
+    @AppStorage("shopping.world") private var worldRaw = World.products.rawValue
+    @State private var category: Category = .electronics
     @State private var words = ""
     /// What matters most, in the order it was tapped.
     @State private var priorities: [String] = []
@@ -37,6 +43,7 @@ struct ShoppingHubView: View {
     private var router: ShortcutRouter { .shared }
     private var scope: ReleaseScope { ReleaseScopeStore.current }
     private var shoppingTasks: [StoredErrand] { model.errands.filter { $0.draft.kind == .shopping } }
+    private var world: World { World(rawValue: worldRaw) ?? .products }
 
     var body: some View {
         NavigationStack {
@@ -47,28 +54,34 @@ struct ShoppingHubView: View {
                     if !model.isServerConfigured {
                         Label("Doddy's server isn't set up in this build, so tasks can't run yet.", systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
-                            .tasksCard()
+                            .doddyCard()
                     }
-                    if scope.shows(.errands) {
-                        findCard
-                        if !shoppingTasks.isEmpty { searches }
+                    switch world {
+                    case .groceries:
+                        if scope.shows(.deals) { leafletsCard }
+                        groceriesHints
+                    case .products:
+                        if scope.shows(.errands) {
+                            findCard
+                            if !shoppingTasks.isEmpty { searches }
+                        }
+                        if scope.shows(.shopifyShopping) { shopifyLink }
+                        if scope.shows(.priceWatch) {
+                            DoddySectionTitle(title: "Price alerts")
+                            WatchesSection()
+                            if watches.watches.isEmpty && watches.loadProblem == nil && watches.message == nil { watchHint }
+                            checkThisCard.id(Self.checkThisCardID)
+                        }
+                        howItWorks
                     }
-                    if scope.shows(.priceWatch) {
-                        checkThisCard.id(Self.checkThisCardID)
-                        WatchesSection()
-                        if watches.watches.isEmpty && watches.loadProblem == nil && watches.message == nil { watchHint }
-                    }
-                    if scope.shows(.deals) { leafletsLink }
-                    if scope.shows(.shopifyShopping) { shopifyLink }
-                    howItWorks
                 }
                 .padding(.horizontal, 16)
+                .padding(.top, 8)
                 .padding(.bottom, 32)
                 .readableColumn()
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(Theme.canvas)
-            .foregroundStyle(Theme.ink)
+            .doddyScreen()
             .navigationTitle("Shopping")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -92,6 +105,7 @@ struct ShoppingHubView: View {
                 guard shared != nil, let taken = router.takePriceCheckLink() else { return }
                 link = taken
                 linkName = ""
+                worldRaw = World.products.rawValue
                 scrollToCheckThis = true
             }
             .onChange(of: scrollToCheckThis) { _, go in
@@ -114,30 +128,39 @@ struct ShoppingHubView: View {
     // MARK: What this screen is
 
     private var hero: some View {
-        let layout = textSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-                                                  : AnyLayout(HStackLayout(alignment: .bottom, spacing: 12))
-        return layout {
-            WholeDoddyView(pose: .kneelingInspect, height: 112)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("What are you looking for?")
-                    .font(.title2.weight(.bold))
-                    .accessibilityAddTraits(.isHeader)
-                Text("I look through shops in Poland and bring back up to three picks, each with a price I read on the shop's own page. You buy in the shop; I never buy anything.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+        DoddyHero(title: world == .groceries ? NSLocalizedString("What's on the list?", comment: "") : NSLocalizedString("What are you looking for?", comment: ""),
+                  subtitle: world == .groceries
+                    ? NSLocalizedString("Food and everyday things: where each is cheapest in this week's leaflets.", comment: "")
+                    : NSLocalizedString("I look through shops in Poland, compare and bring back up to three picks, each with a price I read on the shop's own page. You buy in the shop; I never buy anything.", comment: ""),
+                  pose: world == .groceries ? .reachingHigh : .kneelingInspect) {
+            HStack(spacing: 8) {
+                DoddyChip(title: "Groceries", systemImage: "cart", isSelected: world == .groceries, onOrange: true) {
+                    worldRaw = World.groceries.rawValue
+                }
+                .accessibilityIdentifier("shopping.tab.groceries")
+                DoddyChip(title: "Everything else", systemImage: "bag", isSelected: world == .products, onOrange: true) {
+                    worldRaw = World.products.rawValue
+                }
+                .accessibilityIdentifier("shopping.tab.products")
             }
-            Spacer(minLength: 0)
         }
-        .padding(.top, 8)
     }
 
     // MARK: Find me this
 
     private var findCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Find me this").font(.headline).accessibilityAddTraits(.isHeader)
-            TextField("Find me this", text: $words, prompt: Text("For example: a quiet 45 cm dishwasher under 2000 zł"), axis: .vertical)
+            Text("Find me this").font(.system(.title3, design: .rounded, weight: .bold)).accessibilityAddTraits(.isHeader)
+            DoddyChipRow {
+                ForEach(Category.allCases, id: \.self) { kind in
+                    DoddyChip(title: Self.title(of: kind), systemImage: Self.symbol(of: kind), isSelected: category == kind) {
+                        category = kind
+                        // A chosen suggestion of another category stays: it is the person's own order.
+                    }
+                    .accessibilityIdentifier("shopping.category.\(kind.rawValue)")
+                }
+            }
+            TextField("Find me this", text: $words, prompt: Text(verbatim: Self.example(of: category)), axis: .vertical)
                 .lineLimit(2...5)
                 .focused($typing)
                 .padding(12)
@@ -158,7 +181,7 @@ struct ShoppingHubView: View {
             } label: {
                 Label("Find it", systemImage: "magnifyingglass")
             }
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(DoddyInkButtonStyle())
             .disabled(words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !model.isServerConfigured || model.isHandingOver)
             .accessibilityIdentifier("shopping.find")
             if let note {
@@ -173,7 +196,7 @@ struct ShoppingHubView: View {
                 .foregroundStyle(Theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .tasksCard()
+        .doddyCard()
     }
 
     /// "What matters most?": tap in the order that matters. The number on a chip is its place.
@@ -221,19 +244,58 @@ struct ShoppingHubView: View {
 
     /// The suggestions, then whatever the person added themselves (so it can be tapped back out).
     private var choices: [String] {
-        let own = priorities.filter { chosen in !Self.suggestions.contains { $0.lowercased() == chosen.lowercased() } }
-        return Self.suggestions + own
+        let own = priorities.filter { chosen in !suggestions.contains { $0.lowercased() == chosen.lowercased() } }
+        return suggestions + own
     }
 
-    private static var suggestions: [String] {
-        [
-            NSLocalizedString("Price", comment: "a shopping priority"),
-            NSLocalizedString("Quality", comment: "a shopping priority"),
-            NSLocalizedString("Fast delivery", comment: "a shopping priority"),
-            NSLocalizedString("Good reviews", comment: "a shopping priority"),
-            NSLocalizedString("Warranty", comment: "a shopping priority"),
-            NSLocalizedString("Brand", comment: "a shopping priority"),
-        ]
+    /// The suggestions for the chosen category; the person's own words are added after them.
+    private var suggestions: [String] { Self.suggestions(for: category) }
+
+    private static func suggestions(for kind: Category) -> [String] {
+        let price = NSLocalizedString("Price", comment: "a shopping priority")
+        let reviews = NSLocalizedString("Good reviews", comment: "a shopping priority")
+        let delivery = NSLocalizedString("Fast delivery", comment: "a shopping priority")
+        switch kind {
+        case .electronics:
+            return [price, NSLocalizedString("Quality", comment: "a shopping priority"), NSLocalizedString("Warranty", comment: "a shopping priority"),
+                    reviews, delivery, NSLocalizedString("Brand", comment: "a shopping priority")]
+        case .home:
+            return [price, NSLocalizedString("Quality", comment: "a shopping priority"), NSLocalizedString("Size that fits", comment: "a shopping priority"),
+                    NSLocalizedString("Quiet", comment: "a shopping priority"), reviews, delivery]
+        case .fashion:
+            return [price, NSLocalizedString("My size in stock", comment: "a shopping priority"), NSLocalizedString("Material", comment: "a shopping priority"),
+                    NSLocalizedString("Free returns", comment: "a shopping priority"), NSLocalizedString("Brand", comment: "a shopping priority"), delivery]
+        case .other:
+            return [price, NSLocalizedString("Quality", comment: "a shopping priority"), delivery, reviews,
+                    NSLocalizedString("Warranty", comment: "a shopping priority"), NSLocalizedString("Brand", comment: "a shopping priority")]
+        }
+    }
+
+    private static func title(of kind: Category) -> String {
+        switch kind {
+        case .electronics: NSLocalizedString("Electronics", comment: "a shopping category")
+        case .home: NSLocalizedString("Home and garden", comment: "a shopping category")
+        case .fashion: NSLocalizedString("Fashion", comment: "a shopping category")
+        case .other: NSLocalizedString("Other", comment: "a shopping category")
+        }
+    }
+
+    private static func symbol(of kind: Category) -> String {
+        switch kind {
+        case .electronics: "headphones"
+        case .home: "sofa"
+        case .fashion: "tshirt"
+        case .other: "shippingbox"
+        }
+    }
+
+    private static func example(of kind: Category) -> String {
+        switch kind {
+        case .electronics: NSLocalizedString("For example: a quiet 45 cm dishwasher under 2000 zł", comment: "")
+        case .home: NSLocalizedString("For example: an armchair for a small living room, grey, up to 1200 zł", comment: "")
+        case .fashion: NSLocalizedString("For example: a waterproof winter jacket, men's L, up to 600 zł", comment: "")
+        case .other: NSLocalizedString("For example: a gift for a 10-year-old who likes science, up to 200 zł", comment: "")
+        }
     }
 
     private func addOwnPriority() {
@@ -288,7 +350,7 @@ struct ShoppingHubView: View {
 
     private var searches: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Your searches").font(.title3.weight(.bold)).accessibilityAddTraits(.isHeader)
+            DoddySectionTitle(title: "Your searches")
             VStack(spacing: 0) {
                 ForEach(Array(shoppingTasks.enumerated()), id: \.element.id) { index, errand in
                     if index > 0 { Divider().overlay(Theme.separator) }
@@ -299,8 +361,7 @@ struct ShoppingHubView: View {
                     .accessibilityIdentifier("shopping.search")
                 }
             }
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
-            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.quietSurface))
         }
     }
 
@@ -314,7 +375,7 @@ struct ShoppingHubView: View {
 
     private var checkThisCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Check this").font(.headline).accessibilityAddTraits(.isHeader)
+            Text("Check this").font(.system(.title3, design: .rounded, weight: .bold)).accessibilityAddTraits(.isHeader)
             Text("Paste the link to a product you're looking at in a shop. Doddy's server reads the page and shows its price; then you can ask Doddy to watch it.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.secondaryText)
@@ -348,7 +409,7 @@ struct ShoppingHubView: View {
             } label: {
                 Label("Check this page", systemImage: "magnifyingglass")
             }
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(DoddyInkButtonStyle())
             .disabled(pastedPage == nil || !model.isServerConfigured)
             .accessibilityIdentifier("shopping.checkThis")
             Text("Nothing is sent until you tap “Check the page” on the next card. Some shops don't let Doddy's server read their pages; then Doddy tells you it couldn't read a price.")
@@ -356,7 +417,7 @@ struct ShoppingHubView: View {
                 .foregroundStyle(Theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .tasksCard()
+        .doddyCard()
     }
 
     // MARK: Watching a price
@@ -369,32 +430,48 @@ struct ShoppingHubView: View {
                 .font(.footnote).foregroundStyle(Theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .tasksCard()
+        .doddyCard()
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("shopping.watchHint")
     }
 
-    // MARK: The leaflets
+    // MARK: Groceries
 
-    private var leafletsLink: some View {
+    /// "Cheapest this week" (SHOPPING.md 2), which until 13 Nov 2026 had its own row on Home's menu.
+    private var leafletsCard: some View {
         Button { showDeals = true } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "cart").font(.title3).foregroundStyle(Theme.accentText).accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Cheapest this week").font(.subheadline.weight(.semibold))
-                    Text("Groceries and everyday things: where each is cheapest in this week's leaflets.")
-                        .font(.footnote).foregroundStyle(Theme.secondaryText)
-                        .multilineTextAlignment(.leading)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 12) {
+                    DoddySymbolTile(systemImage: "cart.fill", size: 48)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Cheapest this week").font(.system(.title3, design: .rounded, weight: .bold))
+                        Text("This week's leaflets, read for you").font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryText)
+                        .accessibilityHidden(true)
                 }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryText)
-                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Where each thing is cheapest, with the shop and the price", systemImage: "tag")
+                    Label("Your basket: the shop where all of it costs least", systemImage: "basket")
+                    Label("Your shops on the map, and a reminder for a later price", systemImage: "mappin.and.ellipse")
+                }
+                .font(.subheadline)
+                .foregroundStyle(Theme.ink)
+                .multilineTextAlignment(.leading)
             }
             .contentShape(Rectangle())
-            .tasksCard()
+            .doddyCard(padding: 18, cornerRadius: 26)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DoddyTapStyle())
         .accessibilityIdentifier("shopping.leaflets")
+    }
+
+    private var groceriesHints: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            DoddyFootnote(text: NSLocalizedString("By voice too: “where is butter cheapest this week?” or “compare my basket”.", comment: ""), systemImage: "waveform")
+            DoddyFootnote(text: NSLocalizedString("Prices come from the chains' own leaflets for this week. Doddy buys nothing; you shop as usual.", comment: ""))
+        }
     }
 
     // MARK: Shopify shops
@@ -402,10 +479,10 @@ struct ShoppingHubView: View {
     private var shopifyLink: some View {
         Button { showShopify = true } label: {
             HStack(spacing: 12) {
-                Image(systemName: "bag").font(.title3).foregroundStyle(Theme.accentText).accessibilityHidden(true)
+                DoddySymbolTile(systemImage: "chart.bar.xaxis", size: 44)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Shopify shops").font(.subheadline.weight(.semibold))
-                    Text("Search products in Shopify shops and prepare a cart at the shop. Doddy takes no payment.")
+                    Text("Compare offers in Shopify shops").font(.headline)
+                    Text("Search, see every shop's price side by side with the cheapest marked, and prepare a cart at the shop. Doddy takes no payment.")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                         .multilineTextAlignment(.leading)
                 }
@@ -414,9 +491,9 @@ struct ShoppingHubView: View {
                     .accessibilityHidden(true)
             }
             .contentShape(Rectangle())
-            .tasksCard()
+            .doddyCard()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DoddyTapStyle())
         .accessibilityIdentifier("shopping.shopify")
     }
 
@@ -424,7 +501,7 @@ struct ShoppingHubView: View {
 
     private var howItWorks: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("How it works").font(.headline).accessibilityAddTraits(.isHeader)
+            Text("How it works").font(.system(.headline, design: .rounded)).accessibilityAddTraits(.isHeader)
             Label("You say what you need and what matters most. By voice works too: “find me a quiet dishwasher”.", systemImage: "1.circle")
             Label("Doddy looks for offers and reads each shop's own page. A price he couldn't confirm there isn't shown, and he says so.", systemImage: "2.circle")
             Label("You get up to three picks with the reason for each, and you can ask Doddy to watch a price.", systemImage: "3.circle")
@@ -432,6 +509,6 @@ struct ShoppingHubView: View {
         }
         .font(.footnote)
         .fixedSize(horizontal: false, vertical: true)
-        .tasksCard()
+        .doddyCard()
     }
 }

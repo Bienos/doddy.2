@@ -136,9 +136,7 @@ struct HomeView: View {
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: $showShopping) { ShoppingHubView() }
             .sheet(isPresented: $showFood) { FoodView() }
-            .sheet(isPresented: $showPolandPack) {
-                PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
-            }
+            .sheet(isPresented: $showPolandPack) { PolandPackView() }
             .sheet(isPresented: $showTrips, onDismiss: { TripsModel.shared.reload() }) { TripsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
@@ -304,16 +302,10 @@ struct HomeView: View {
             // The "Doddy is an AI, not a person." header left this menu on 11 Nov 2026 (owner: "nie chcę używać słowa AI
             // w ogóle w mówieniu o Dodim … usuń tam Dodi AI"); asked directly, Doddy still says what he is (DOD-03).
             Section {
-                // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
-                // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
-                // MemoryJourneyTests). Settings, which leads to Doddy's memory too (ADR-633), heads the menu.
-                if scope.shows(.deals) {
-                    Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
-                        .accessibilityIdentifier("home.deals")
-                }
                 // Shopping in one place (owner, 11 Nov 2026): typing "Find me this", the searches handed over and
-                // watched prices. Shown when tasks are, because that is what a search is. "Cheapest this week"
-                // keeps its own row above: UI tests and Home's leaflet card open it directly.
+                // watched prices. Shown when tasks are, because that is what a search is. "Cheapest this week" left this
+                // menu on 13 Nov 2026 (owner: "trzeba złączyć"): it is Shopping › Groceries; Home's leaflet card and
+                // "What I can do" still open it directly.
                 if scope.shows(.errands) {
                     Button { showShopping = true } label: { Label("Shopping", systemImage: "bag") }
                         .accessibilityIdentifier("home.shopping")
@@ -321,10 +313,11 @@ struct HomeView: View {
                 // The food-delivery apps the owner adds to (11 Nov 2026): one row each, opened from here, nothing sent.
                 Button { showFood = true } label: { Label("Food", systemImage: "fork.knife") }
                     .accessibilityIdentifier("home.food")
-                // Poland Pack reads official local data only when opened; no startup request.
+                // My city (was Poland Pack, "Polska na co dzień", until 13 Nov 2026): the weather, warnings, air and NBP
+                // rates, read from official sources only when opened; no startup request.
                 Button { showPolandPack = true } label: {
-                    Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
-                          systemImage: "mappin.and.ellipse")
+                    Label(NotificationLanguage.current == .polish ? "Moje miasto" : "My city",
+                          systemImage: "building.2")
                 }
                 .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.

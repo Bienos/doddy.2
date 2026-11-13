@@ -97,7 +97,10 @@ final class ScreenAtlasTests: XCTestCase {
         visit("2-home-07-files") { app in self.tap(app.buttons["home.files"], app, 10) && self.see(app.buttons["files.recordings"]) }
         visit("2-home-08-today") { app in self.menu(app, ["home.today"]) }
         visit("2-home-09-tasks") { app in self.menu(app, ["home.tasks"]) && self.see(app.navigationBars["Tasks"]) }
-        visit("2-home-10-cheapest-this-week") { app in self.menu(app, ["home.deals"]) }
+        // "Cheapest this week" left Home's menu on 13 Nov 2026: it is Shopping › Groceries.
+        visit("2-home-10-cheapest-this-week") { app in
+            self.menu(app, ["home.shopping", "shopping.tab.groceries", "shopping.leaflets"])
+        }
         visit("2-home-11-translate") { app in self.menu(app, ["home.translate"]) && self.see(app.buttons["translator.start"]) }
         // The focus start screen: stop the running one from its screen, then "Start another".
         visit("2-home-12-focus", extra: ["-screenFixture", "running:focus"]) { app in

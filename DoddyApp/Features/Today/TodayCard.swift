@@ -14,6 +14,8 @@ struct TodayCard: View {
     var showsDoddy = false
 
     @State private var model = TodayModel()
+    /// The reminder being changed, or a new one being added (owner, 13 Nov 2026: "zero edycji").
+    @State private var editing: ReminderEditTarget?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -67,6 +69,18 @@ struct TodayCard: View {
         // A container keeps its own identifier only as an element; otherwise SwiftUI copies it onto
         // every child and the Open Settings button would lose `today.openSettings`. Not `home.today`,
         // which is the ••• menu's item.
+        .sheet(item: $editing) { target in
+            ReminderEditSheet(target: target) { title, due in
+                switch target {
+                case .add: await model.add(title: title, due: due)
+                case .edit(let reminder): await model.edit(reminder, title: title, due: due)
+                }
+            } complete: { reminder in
+                await model.complete(reminder)
+            } delete: { reminder in
+                await model.delete(reminder)
+            }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("today.card")
     }
@@ -112,6 +126,12 @@ struct TodayCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("today.summary")
                 }
+                if showsDoddy, glance?.remindersOn == true {
+                    Text("Your calendar and reminders on this iPhone. Tap a reminder to change it, or add one.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -141,7 +161,7 @@ struct TodayCard: View {
                 .foregroundStyle(Theme.secondaryText)
                 .accessibilityIdentifier("today.notice")
         }
-        if glance.remindersOn, !glance.reminders.isEmpty || model.reminderNotice != nil {
+        if glance.remindersOn {
             remindersCard(glance)
         }
         if !glance.tomorrow.isEmpty {
@@ -306,7 +326,21 @@ struct TodayCard: View {
     private func remindersCard(_ glance: TodayGlance) -> some View {
         card {
             VStack(alignment: .leading, spacing: 8) {
-                sectionTitle(Text("Reminders"))
+                HStack(alignment: .firstTextBaseline) {
+                    sectionTitle(Text("Reminders"))
+                    Spacer(minLength: 8)
+                    Button { editing = .add } label: { Label("Add", systemImage: "plus.circle.fill") }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accentText)
+                        .frame(minHeight: 44)
+                        .accessibilityLabel(Text("Add a reminder"))
+                        .accessibilityIdentifier("today.addReminder")
+                }
+                if glance.reminders.isEmpty {
+                    Text("Nothing due today.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                }
                 ForEach(glance.reminders) { reminder in
                     reminderRow(reminder)
                 }
@@ -358,19 +392,38 @@ struct TodayCard: View {
             .disabled(busy)
             .accessibilityLabel(String(format: NSLocalizedString("Mark as done: %@", comment: "Today: ticks off a reminder in Reminders"), reminder.title))
             .accessibilityIdentifier("today.tick")
-            VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: reminder.title)
-                    .fixedSize(horizontal: false, vertical: true)
-                if TodayAgenda.isOverdue(reminder, now: .now, calendar: .current) {
-                    Text("Overdue").font(.footnote).foregroundStyle(Theme.error)
-                } else if reminder.dueHasTime, let due = reminder.due {
-                    Text(verbatim: String(format: NSLocalizedString("Due %@", comment: ""), clock(due)))
-                        .font(.footnote)
+            Button { editing = .edit(reminder) } label: {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: reminder.title)
+                            .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if TodayAgenda.isOverdue(reminder, now: .now, calendar: .current) {
+                            Text("Overdue").font(.footnote).foregroundStyle(Theme.error)
+                        } else if reminder.dueHasTime, let due = reminder.due {
+                            Text(verbatim: String(format: NSLocalizedString("Due %@", comment: ""), clock(due)))
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "pencil")
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(Theme.secondaryText)
+                        .accessibilityHidden(true)
                 }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
-            .accessibilityElement(children: .combine)
-            Spacer(minLength: 0)
+            .buttonStyle(.plain)
+            .disabled(busy)
+            .accessibilityHint(Text("Change or delete this reminder"))
+            .accessibilityIdentifier("today.editReminder")
+            .contextMenu {
+                Button { editing = .edit(reminder) } label: { Label("Change", systemImage: "pencil") }
+                Button(role: .destructive) { Task { await model.delete(reminder) } } label: { Label("Delete", systemImage: "trash") }
+            }
         }
     }
 

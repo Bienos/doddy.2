@@ -3,8 +3,10 @@ import SwiftUI
 
 // Following (ADR-656): Home › Following. A row of what the person follows across the top, like a
 // row of stories, and under it the publishers' stories as cards: who wrote it, when, the picture,
-// the headline and a line of summary, and three quiet actions (open, save, share). Doddy adds no
-// words of his own; the one AI line is the disclosure that none was used.
+// the headline and a line of summary, and quiet actions (open, save, share). Doddy adds no words of his
+// own to a card. Since 13 Nov 2026 (owner: redesign in Doddy's colours, "z jakich źródeł", an AI summary on
+// a tap): an orange hero with Add and Sources (`RadarSourcesSheet`), and "AI summary" on each card, which
+// opens `StorySummarySheet`; only that sheet shows words written by an AI, and it says so.
 
 struct FollowingView: View {
     @Environment(\.dismiss) private var dismiss
@@ -12,6 +14,9 @@ struct FollowingView: View {
     private let model = FollowingModel.shared
     @State private var showAdd = false
     @State private var showManage = false
+    @State private var showSources = false
+    /// The story whose AI summary is open.
+    @State private var summaryFor: NewsCard?
     /// The follow whose "tell me when" is being changed.
     @State private var alertFor: NewsFollow?
     private let polish = FollowingModel.polish
@@ -20,6 +25,19 @@ struct FollowingView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
+                    DoddyHero(title: "On my radar",
+                              subtitle: "Fresh stories from known publishers about what you follow. Tap AI summary on a story for the gist in a few lines.",
+                              pose: .bellyReading) {
+                        HStack(spacing: 8) {
+                            DoddyChip(title: "Add", systemImage: "plus", onOrange: true) { showAdd = true }
+                                .disabled(model.follows.isFull)
+                                .accessibilityIdentifier("following.hero.add")
+                            DoddyChip(title: "Sources", systemImage: "newspaper", onOrange: true) { showSources = true }
+                                .accessibilityIdentifier("following.sources")
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
                     followsRow
                         .padding(.vertical, 12)
                     Divider()
@@ -61,12 +79,13 @@ struct FollowingView: View {
                                       flags: model.flaggedWords(on: card),
                                       isSaved: model.savedStoryIDs.contains(card.id),
                                       open: { if let link = card.link { openURL(link) } },
-                                      save: { Task { await model.save(card) } })
-                                .padding(.bottom, 24)
+                                      save: { Task { await model.save(card) } },
+                                      summarize: { summaryFor = card })
+                                .padding(.bottom, 16)
                         }
                     }
                     if model.fetchedAt != nil, !model.cards.isEmpty {
-                        Text("Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.")
+                        Text("Headlines, summaries and pictures on the cards are the publishers' own, from their public feeds; the link opens the full story. An AI summary is written only when you tap for one, and is marked as AI. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(16)
@@ -80,7 +99,7 @@ struct FollowingView: View {
                     }
                 }
             }
-            .background(Theme.canvas)
+            .doddyScreen()
             .navigationTitle("On my radar")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -94,6 +113,10 @@ struct FollowingView: View {
             .sheet(isPresented: $showAdd, onDismiss: { Task { await model.refresh() } }) { RadarAddSheet(model: model) }
             .sheet(isPresented: $showManage, onDismiss: { Task { await model.refresh() } }) { ManageFollowsSheet(model: model) }
             .sheet(item: $alertFor) { follow in RadarAlertSheet(model: model, follow: follow) }
+            .sheet(isPresented: $showSources, onDismiss: { Task { await model.refresh() } }) {
+                RadarSourcesSheet(model: model, addOwn: { showAdd = true })
+            }
+            .sheet(item: $summaryFor) { card in StorySummarySheet(card: card, model: model) }
         }
     }
 
@@ -188,6 +211,7 @@ private struct StoryCard: View {
     let isSaved: Bool
     let open: () -> Void
     let save: () -> Void
+    let summarize: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -217,6 +241,7 @@ private struct StoryCard: View {
                 picture
             }
             .buttonStyle(.plain)
+            .padding(.horizontal, 16)
             .accessibilityLabel(Text("Open the full story"))
 
             VStack(alignment: .leading, spacing: 6) {
@@ -240,6 +265,19 @@ private struct StoryCard: View {
             .padding(.horizontal, 16)
 
             HStack(spacing: 22) {
+                // The one labelled action: an AI summary, asked for only on this tap (StorySummarySheet).
+                Button(action: summarize) {
+                    Label("AI summary", systemImage: "sparkles")
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Theme.inkOnOrange)
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 34)
+                        .background(Theme.orangeCue, in: Capsule())
+                        .frame(minHeight: 44)
+                }
+                .disabled(card.link == nil)
+                .accessibilityIdentifier("following.summary")
                 Button(action: open) { Label("Open", systemImage: "arrow.up.right.square") }
                     .disabled(card.link == nil)
                     .accessibilityIdentifier("following.open")
@@ -265,7 +303,7 @@ private struct StoryCard: View {
     /// Only https pictures are asked for, straight from the publisher's address, with nothing added.
     @ViewBuilder
     private var picture: some View {
-        let shape = RoundedRectangle(cornerRadius: 0)
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         ZStack {
             Theme.quietSurface
             if let image = card.image {
