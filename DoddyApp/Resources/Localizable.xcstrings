@@ -32224,6 +32224,17 @@
         }
       }
     },
+    "Getting the page ready…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotowuję stronę…"
+          }
+        }
+      }
+    },
     "Give it a name and at least one word of two or more letters.": {
       "extractionState": "manual",
       "localizations": {
