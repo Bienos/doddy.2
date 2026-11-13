@@ -1,5 +1,8 @@
 window.DODDY_I18N = {
   " Doddy starts on iPhone; we'll tell you if Android comes later.": "Doddy działa najpierw na iPhonie; damy Ci znać, jeśli wersja na Androida pojawi się później.",
+  "Allow": "Zezwól",
+  "Analytics choice": "Zgoda na analitykę",
+  "Can we count your visit with Google Analytics? It sets cookies. Nothing loads from Google unless you say yes, and you can change your mind at the bottom of any page.": "Czy możemy policzyć Twoją wizytę w Google Analytics? Ustawia ono pliki cookie. Nic z Google się nie ładuje, dopóki się nie zgodzisz, a zdanie zmienisz na dole każdej strony.",
   "Close menu": "Zamknij menu",
   "Copy the link from the address bar": "Skopiuj link z paska adresu",
   "Doddy isn't on this iPhone yet. Join early access above to hear when it's ready.": "Doddy nie działa jeszcze na tym iPhonie. Zapisz się na wczesny dostęp powyżej, żeby dowiedzieć się, kiedy będzie gotowy.",
@@ -8,6 +11,7 @@ window.DODDY_I18N = {
   "Long day.": "Długi dzień.",
   "Menu": "Menu",
   "Nearly done for the day.": "Prawie koniec dnia.",
+  "No thanks": "Nie, dziękuję",
   "Pick one.": "Wybierz jedną.",
   "Sending…": "Wysyłanie…",
   "Still here.": "Nadal tu.",

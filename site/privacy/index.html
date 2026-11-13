@@ -322,7 +322,7 @@
             <li><strong>Hosting:</strong> the site runs on Vercel, which keeps its own server logs. <span class="ph" data-ph="R5">[OWNER: Vercel log retention]</span></li>
             <li><strong>Waitlist:</strong> if you join, we store your email, the page you signed up on, the version of the sign-up wording you saw, the time, and your answers to the optional questions (which phone you have, where you heard about Doddy, what you'd like Doddy to do). It is kept in private storage at Vercel in Frankfurt, one file per email named by a hash. Only the owner can read it. We use it only to tell you when early access opens, and we delete it when you ask. <span class="ph" data-ph="R4">[OWNER: how long waitlist emails are kept]</span></li>
             <li><strong>Vercel Web Analytics</strong> counts page views without cookies. Vercel recognises a visit by a hash of the request, which it discards after 24 hours, and keeps the page, referrer, country, device and browser type.</li>
-            <li><strong>Google Analytics</strong> measures visits on every page, including this one, and sets cookies (<code>_ga</code>, <code>_ga_*</code>). It runs without asking first. <span class="ph" data-ph="B2">[OWNER/LAWYER: consent for analytics cookies for visitors in the EU]</span></li>
+            <li><strong>Google Analytics</strong> measures visits and sets cookies (<code>_ga</code>, <code>_ga_*</code>), but only after you choose Allow in the site's analytics banner. Until you choose, or if you choose No thanks, nothing from Google Analytics loads. Your choice is kept in your browser on this device, not in a cookie, and "Analytics choices" at the bottom of every page changes it. <span class="ph" data-ph="B2">[OWNER/LAWYER: consent for analytics cookies for visitors in the EU]</span></li>
             <li><strong>Google Fonts:</strong> the site's two fonts load from Google, which sends your IP address to Google when a page opens.</li>
             <li><strong>Links</strong> to Telegram, TikTok and Instagram open those sites; we send them nothing.</li>
           </ul>
@@ -446,7 +446,7 @@
       </div>
       <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
       <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>
-      <p>Google Analytics also measures visits and sets cookies.</p>
+      <p data-ga-note hidden>If you allow it, Google Analytics also measures visits and sets cookies. <button type="button" class="foot-choice" data-analytics-choices>Analytics choices</button></p>
       <p>© 2026 Doddy</p>
     </div>
   </footer>
