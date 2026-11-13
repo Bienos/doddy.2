@@ -27,6 +27,8 @@ struct ShoppingHubView: View {
     @State private var words = ""
     /// The person's own pick of where the words go; nil lets the code decide.
     @State private var place: ShoppingRoute.Place?
+    /// Where the chip says the words go: `route.place` once the words have settled (`settlesRoute`, ShoppingMotion.swift).
+    @State private var shownPlace: ShoppingRoute.Place = .nothing
     /// What matters most, in the order it was tapped.
     @State private var priorities: [String] = []
     /// A priority of the person's own, being typed.
@@ -169,9 +171,7 @@ struct ShoppingHubView: View {
             TextField("What do you need?", text: $words, prompt: Text("Milk, butter, coffee, or a quiet 45 cm dishwasher under 2000 zł"), axis: .vertical)
                 .lineLimit(2...5)
                 .focused($typing)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.canvas))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
+                .shoppingFieldChrome(focused: typing)
                 .onChange(of: words) { _, new in
                     if !new.isEmpty { note = nil }
                     if new.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { place = nil }
@@ -184,17 +184,17 @@ struct ShoppingHubView: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             fromListButton
-            if route.place != .nothing {
+            if shownPlace != .nothing {
                 whereItGoes(route)
             }
-            if !route.online.isEmpty {
+            if !route.online.isEmpty, shownPlace == .online || shownPlace == .both {
                 prioritiesPicker
             }
             Button {
                 typing = false
                 go(route)
             } label: {
-                goLabel(route.place)
+                goLabel(shownPlace)
             }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(!canGo(route))
@@ -212,30 +212,15 @@ struct ShoppingHubView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .tasksCard()
+        .settlesRoute(route.place, typing: typing, shown: $shownPlace)
     }
 
     /// Where the words go, said before the tap, with a way to pick the other place.
     private func whereItGoes(_ route: ShoppingRoute) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Group {
-                switch route.place {
-                case .leaflets:
-                    Label("This week's leaflets: prices right away.", systemImage: "newspaper")
-                case .online:
-                    Label("Online shops: Doddy compares offers in the background, after your yes.", systemImage: "magnifyingglass")
-                case .both:
-                    Label("This week's leaflets now; then online shops, if you want.", systemImage: "arrow.triangle.branch")
-                case .link:
-                    Label("A product link: Doddy can read its price.", systemImage: "link")
-                case .nothing:
-                    EmptyView()
-                }
-            }
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(Theme.ink)
-            .fixedSize(horizontal: false, vertical: true)
+            ShoppingRouteChip(place: shownPlace, online: route.online)
             Spacer(minLength: 4)
-            if route.place != .link, scope.shows(.errands), scope.shows(.deals) {
+            if shownPlace != .link, scope.shows(.errands), scope.shows(.deals) {
                 Menu {
                     Button("Let Doddy decide") { place = nil }
                     Button("Only this week's leaflets") { place = .leaflets }
@@ -259,7 +244,9 @@ struct ShoppingHubView: View {
     }
 
     private func canGo(_ route: ShoppingRoute) -> Bool {
-        switch route.place {
+        // Only once the chip says where the words go: the card says it before the tap.
+        guard shownPlace == route.place else { return false }
+        return switch route.place {
         case .nothing: false
         case .link: true
         case .leaflets, .both: DealsModel.shared.phase != .checking
@@ -358,6 +345,7 @@ struct ShoppingHubView: View {
                     .accessibilityIdentifier("shopping.priority")
                 }
             }
+            .choiceMotion(priorities)
             if priorities.count < ErrandDraft.maxPriorities {
                 TextField("Something else", text: $ownPriority, prompt: Text("Something else, e.g. white, made in the EU"))
                     .font(.subheadline)
