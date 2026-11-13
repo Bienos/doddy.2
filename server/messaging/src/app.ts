@@ -95,6 +95,8 @@ export interface Deps {
   verifyDailyCap?: number;
   /** Account, verification, text and call caps and the countries whose numbers are allowed (ADR-702, ADR-704). Defaults: DEFAULT_ABUSE_LIMITS. */
   limits?: Partial<AbuseLimits>;
+  /** The clock call-back routes are read by (they are dated by the task-call dial's clock). Default: the system clock. */
+  now?: () => Date;
   /** Calls Doddy places for the user (ADR-500). Needs `cipher` and `publicBaseUrl` too. */
   taskCalls?: TaskCallDeps;
   /** Where task-call log lines go (tests capture them); default: the request logger. */
