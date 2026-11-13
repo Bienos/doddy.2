@@ -4,7 +4,7 @@ import { DocumentLinks } from "../src/documents.js";
 import { ProviderError } from "../src/errors.js";
 import { DECK_PLAN_STEP, DECK_WRITE_STEP, DEMO_ARTICLE_TEXT, demoDeck, MockWikimedia } from "../src/decks/demo.js";
 import { DeckMaker, readBack, writeRequest } from "../src/decks/maker.js";
-import { escape, fitSize, renderDeck, slideText, wrappedLines } from "../src/decks/render.js";
+import { escape, fitEach, fitSize, isFigure, linesAt, renderDeck, slideText, textWidth } from "../src/decks/render.js";
 import {
   articleText, dataText, type DeckImage, freeLicence, gatherResearch, imageKind, plainText, type ResearchPack, webSources, wellFormed, WikimediaClient,
 } from "../src/decks/research.js";
@@ -253,11 +253,101 @@ test("render: Polish text and characters XML can't hold", () => {
   assert.equal(escape("a\u0000b￾c"), "abc");
 });
 
+/** Every box on a slide as inches: shapes, text, pictures and tables. */
+function boxes(xml: string): { name: string; x: number; y: number; w: number; h: number }[] {
+  const inch = 914_400;
+  return [...xml.matchAll(/name="([^"]*)"[\s\S]*?<a:off x="(\d+)" y="(-?\d+)"\/><a:ext cx="(\d+)" cy="(\d+)"\/>/g)].map((m) => ({
+    name: m[1]!, x: Number(m[2]) / inch, y: Number(m[3]) / inch, w: Number(m[4]) / inch, h: Number(m[5]) / inch,
+  })).filter((b) => b.name); // the slide's own group has no name and no size
+}
+
+/** The longest text every layout allows (DECK_LIMITS), in Polish. */
+function longestDeck(): Deck {
+  const fill = (n: number, words: string) => `${words} `.repeat(Math.ceil(n / (words.length + 1))).slice(0, n).trim();
+  const s1 = ["s1"];
+  const notes = "n";
+  const slides = [
+    { layout: "bullets", title: fill(70, "Bardzo długi tytuł slajdu"), points: Array.from({ length: 5 }, () => fill(130, "Długi punkt o historii miasta")), sources: s1, notes },
+    { layout: "bullets", title: "Karty", points: Array.from({ length: 3 }, () => fill(90, "WIELKIE LITERY ZAJMUJĄ WIĘCEJ")), sources: s1, notes },
+    { layout: "two_column", title: "Kolumny", left: { heading: fill(40, "Długi nagłówek"), points: Array.from({ length: 4 }, () => fill(110, "Punkt lewej kolumny")) }, right: { heading: "Krótki", points: ["Jeden"] }, sources: s1, notes },
+    { layout: "stats", title: "Liczby", items: [{ value: "31 808", label: "mieszkańców" }, { value: "1 234 567 zł", label: fill(60, "Etykieta drugiej liczby") }, { value: "98,7%", label: "udział" }], context: fill(200, "Kontekst pod kartami"), sources: s1, notes },
+    { layout: "timeline", title: "Daty", events: Array.from({ length: 6 }, (_, i) => ({ when: i ? `${1300 + i * 100}` : "XIV–XV wiek", what: fill(90, "Opis wydarzenia na osi czasu") })), sources: s1, notes },
+    { layout: "comparison", title: "Tabela", row_header: "Miasto", columns: ["Mieszkańcy", fill(30, "Druga kolumna opisowa"), "Powierzchnia"], rows: Array.from({ length: 6 }, (_, i) => ({ label: i ? fill(30, `Wiersz ${i} z etykietą`) : "Iława", cells: ["31 808", fill(50, "Długa komórka tabeli z tekstem"), "21,88 km²"] })), sources: s1, notes },
+    { layout: "chart", title: "Wykres", unit: "mln zł", points: Array.from({ length: 8 }, (_, i) => ({ label: fill(24, `Kategoria wydatków ${i}`), value: 123_456_789 * (i + 1) })), note: fill(140, "Uwaga do wykresu"), sources: s1, notes },
+    { layout: "chart", title: "Kolumny", unit: "", points: Array.from({ length: 8 }, (_, i) => ({ label: `${2010 + i}`, value: 12_345_678.9 * (i + 1) })), note: "", sources: s1, notes },
+    { layout: "quote", title: "Cytat", quote: fill(280, "Bardzo długi cytat ze źródła o mieście"), attribution: fill(80, "Autor cytatu, tytuł książki"), sources: s1, notes },
+    { layout: "image", title: "Zdjęcie", image: "i1", caption: fill(120, "Bardzo długi podpis do zdjęcia"), points: Array.from({ length: 3 }, () => fill(130, "Punkt pod zdjęciem")), sources: s1, notes },
+  ];
+  return {
+    ...checkDeck(goodDeck(), PACK).deck!,
+    language: "pl", title: fill(80, "Najdłuższy tytuł prezentacji"), subtitle: fill(140, "Długi podtytuł"),
+    slides: slides as Deck["slides"], takeaways: Array.from({ length: 5 }, () => fill(120, "Wniosek z całej prezentacji o mieście")),
+  };
+}
+
+test("layout: the longest text every layout allows stays on the slide, and the body ends above the source line", () => {
+  const tall: DeckImage = { ...IMAGE, width: 800, height: 1200 };
+  const made = renderDeck(longestDeck(), { ...PACK, images: [tall] }, new Date("2026-11-10T12:00:00Z"));
+  const parts = unzip(made.bytes);
+  for (let n = 2; n <= made.slideCount; n++) {
+    const xml = parts.get(`ppt/slides/slide${n}.xml`)!.toString();
+    for (const b of boxes(xml)) {
+      assert.ok(b.x >= 0.59 && b.x + b.w <= 12.71 && b.y >= 0.5 && b.y + b.h <= 7.3, `slide ${n}: ${b.name} at ${JSON.stringify(b)} leaves the margins`);
+    }
+  }
+  // The table: rows as tall as their words, the whole of it inside the body (it used to run over the source line).
+  const table = parts.get(`ppt/slides/slide8.xml`)!.toString();
+  const frame = boxes(table).find((b) => b.name.startsWith("Table"))!;
+  assert.ok(frame.y + frame.h <= 6.4 + 1e-6, `table ends at ${frame.y + frame.h}`);
+  const rows = [...table.matchAll(/<a:tr h="(\d+)">/g)].reduce((sum, m) => sum + Number(m[1]), 0);
+  assert.equal(rows, Math.round(frame.h * 914_400));
+  // Figures right-aligned, words left.
+  assert.match(table, /algn="r"[^>]*>(?:(?!<\/a:p>).)*31 808/);
+  assert.match(table, /algn="l"[^>]*>(?:(?!<\/a:p>).)*Iława/);
+  // A tall picture beside words is not squeezed into a wide box.
+  const picture = boxes(parts.get(`ppt/slides/slide12.xml`)!.toString()).find((b) => b.name.startsWith("Picture"))!;
+  assert.ok(picture.w < 4, `picture box ${picture.w} in wide`);
+  assert.equal(picture.y, 1.95, "the picture's top is level with the words beside it");
+});
+
+test("layout: values side by side share one size; the quote's attribution follows it", () => {
+  const made = renderDeck(longestDeck(), PACK, new Date("2026-11-10T12:00:00Z"));
+  const parts = unzip(made.bytes);
+  const sizeOf = (xml: string, text: string) => Number(new RegExp(`sz="(\\d+)"[^>]*>(?:(?!</a:r>).)*<a:t>${text}</a:t>`).exec(xml)![1]);
+  const stats = parts.get("ppt/slides/slide6.xml")!.toString();
+  const values = ["31 808", "1 234 567 zł", "98,7%"].map((v) => sizeOf(stats, v));
+  assert.equal(new Set(values).size, 1, `values at ${values.join(", ")}`);
+  const quote = boxes(parts.get("ppt/slides/slide11.xml")!.toString()).filter((b) => b.x === 1.9);
+  assert.equal(quote.length, 2);
+  assert.ok(quote[0]!.y + quote[0]!.h <= quote[1]!.y, "the attribution sits under the quote");
+  assert.ok(quote[1]!.y + quote[1]!.h <= 6.4 + 1e-6);
+});
+
 test("text fitting: long text gets a smaller size, short text the largest", () => {
   assert.equal(fitSize(["Short"], { w: 12, h: 1 }, [36, 28, 20]), 36);
   assert.equal(fitSize(["word ".repeat(80)], { w: 12, h: 1 }, [36, 28, 20]), 20);
-  assert.equal(wrappedLines("aaaa bbbb cccc", 9), 2);
-  assert.equal(wrappedLines("x".repeat(25), 10), 3);
+  // Boxes side by side share the size the longest text needs.
+  const box = { w: 3, h: 1 };
+  assert.equal(fitEach([["31 808"], ["1 234 567 zł"]], box, [66, 48, 34], true), Math.min(fitSize(["31 808"], box, [66, 48, 34], true), fitSize(["1 234 567 zł"], box, [66, 48, 34], true)));
+  assert.ok(fitSize(["31 808"], box, [66, 48, 34], true) > fitEach([["31 808"], ["1 234 567 zł"]], box, [66, 48, 34], true));
+});
+
+test("text measuring: Arial's own widths, so capitals and narrow letters aren't guessed", () => {
+  // Arial: 'H' is 722 thousandths of an em, 'i' 222, a digit 556; at 72 pt an em is an inch.
+  assert.equal(textWidth("H", 72), 0.722);
+  assert.equal(textWidth("i", 72), 0.222);
+  assert.equal(textWidth("0123456789", 72), 5.56);
+  assert.ok(textWidth("Ł", 72, true) > textWidth("Ł", 72), "bold is wider");
+  assert.ok(textWidth("WARSZAWA", 20) > textWidth("iławskiej", 20) * 1.3, "capitals take more room than narrow letters");
+  // Wrapped at spaces, within 95% of the width: viewers set the same words a little differently.
+  assert.equal(linesAt("Iława", 20, 10), 1);
+  assert.equal(linesAt("aaaa bbbb cccc", 72, 5), 2);
+  assert.equal(linesAt("x".repeat(30), 72, 5), 4, "a word longer than the line breaks inside it");
+});
+
+test("table cells: figures are right-aligned, words are not", () => {
+  for (const figure of ["31 808", "21,88 km²", "98,7%", "€12.5 bn", "1 234 567 zł", "-3,5", "2021"]) assert.ok(isFigure(figure), figure);
+  for (const words of ["Iława", "ok. 30 tys.", "brak danych", "2011–2021", "12 mln zł rocznie", ""]) assert.ok(!isFigure(words), words);
 });
 
 // ------------------------------------------------------------------ research
