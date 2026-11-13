@@ -7,50 +7,42 @@ import UIKit
 /// rest of today with the free time between events, reminders due with a tick, and the first few
 /// things tomorrow. In Home's Today sheet with Doddy and the date, and in the morning check-in under
 /// its own heading. `TodayModel` reads and writes; this view only shows.
+///
+/// In Doddy's colours since 13 Nov 2026 (owner: "zero edycji … nie wiadomo o co tu chodzi"): the page
+/// says what it is, and things can be changed here. "Add" puts a reminder in Reminders; a tap on a
+/// reminder's words opens it to change or delete; a tap on an event opens Apple's event editor (or the
+/// Calendar app, for a calendar Doddy can't change). Nothing shows as changed until it's read back.
 struct TodayCard: View {
     /// Opens Settings, where Connections is.
     let openSettings: () -> Void
-    /// The sheet shows Doddy and the date; the morning check-in has its own heading and picture.
+    /// The sheet shows the page header with Doddy; the morning check-in has its own heading and picture.
     var showsDoddy = false
 
     @State private var model = TodayModel()
+    @State private var editingEvent: EditableCalendarEvent?
+    @State private var reminderSheet: TodayReminderTarget?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openURL) private var openURL
     @ScaledMetric(relativeTo: .subheadline) private var timeColumn: CGFloat = 56
 
     private var language: NotificationLanguage { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             header
             switch model.content {
             case .loading:
-                card { ProgressView().frame(maxWidth: .infinity) }
+                ProgressView().frame(maxWidth: .infinity, minHeight: 60).doddyCard()
             case .notConnected:
-                card {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("See today's events and reminders here: turn on Calendar or Reminders in Settings, Connections. They're read on this iPhone only.")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Button("Open Settings", action: openSettings)
-                            .buttonStyle(SecondaryButtonStyle())
-                            .accessibilityIdentifier("today.openSettings")
-                    }
-                }
+                setupCard(
+                    Text("See today's events and reminders here: turn on Calendar or Reminders in Settings, Connections. They're read on this iPhone only."),
+                    identifier: "today.openSettings")
             case .paused:
-                card {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Connections are paused, so Doddy isn't reading your calendar or reminders. Turn them back on in Settings, Connections.")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Button("Open Settings", action: openSettings)
-                            .buttonStyle(SecondaryButtonStyle())
-                            .accessibilityIdentifier("today.openSettings.paused")
-                    }
-                }
+                setupCard(
+                    Text("Connections are paused, so Doddy isn't reading your calendar or reminders. Turn them back on in Settings, Connections."),
+                    identifier: "today.openSettings.paused")
             case .glance(let glance):
                 glanceView(glance)
             }
@@ -64,6 +56,18 @@ struct TodayCard: View {
         // VoiceOver hears a receipt where it appears, not only when it finds it.
         .onChange(of: model.notice) { _, new in announce(new) }
         .onChange(of: model.reminderNotice) { _, new in announce(new) }
+        .sheet(item: $editingEvent) { editable in
+            CalendarEventEditor(editable: editable) { outcome in
+                editingEvent = nil
+                Task { await model.eventEditorFinished(outcome) }
+            }
+            .ignoresSafeArea()
+            // Its own Cancel and Done close it, so Calendar is read again every time.
+            .interactiveDismissDisabled()
+        }
+        .sheet(item: $reminderSheet) { target in
+            TodayReminderEditor(target: target, model: model)
+        }
         // A container keeps its own identifier only as an element; otherwise SwiftUI copies it onto
         // every child and the Open Settings button would lose `today.openSettings`. Not `home.today`,
         // which is the ••• menu's item.
@@ -82,29 +86,24 @@ struct TodayCard: View {
     }
 
     /// Doddy reads the calendar when there's something on, and sits back when there's nothing left.
-    private var pose: String {
-        if let glance, !glance.isEmpty { "WholeDoddy_belly_reading" } else { "WholeDoddy_crosslegged" }
+    private var pose: IslandPose {
+        if let glance, !glance.isEmpty { .bellyReading } else { .crosslegged }
     }
 
+    @ViewBuilder
     private var header: some View {
-        let layout = textSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-            : AnyLayout(HStackLayout(alignment: .bottom, spacing: 12))
-        return layout {
-            if showsDoddy {
-                UploadedCharacterView(assetName: pose, height: 96)
-                    .accessibilityHidden(true)
-            }
+        if showsDoddy {
+            DoddyPageHeader(
+                title: "Today",
+                subtitle: "Your day: events from Calendar and reminders from Reminders on this iPhone.",
+                pose: pose)
+            dayLine
+        } else {
             VStack(alignment: .leading, spacing: 4) {
-                if showsDoddy {
-                    Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
-                        .font(.title2.weight(.bold))
-                        .accessibilityAddTraits(.isHeader)
-                } else {
-                    Text("Today")
-                        .font(.headline)
-                        .accessibilityAddTraits(.isHeader)
-                }
+                Text("Today")
+                    .font(.headline)
+                    .foregroundStyle(Theme.ink)
+                    .accessibilityAddTraits(.isHeader)
                 if let glance {
                     Text(verbatim: summary(glance))
                         .font(.subheadline)
@@ -113,19 +112,84 @@ struct TodayCard: View {
                         .accessibilityIdentifier("today.summary")
                 }
             }
-            Spacer(minLength: 0)
         }
-        .padding(.top, showsDoddy ? 8 : 0)
+    }
+
+    /// The date and the line about the day, under the page header.
+    private var dayLine: some View {
+        HStack(alignment: .top, spacing: 12) {
+            DoddyIconBadge(systemName: "sun.max", size: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
+                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                if let glance {
+                    Text(verbatim: summary(glance))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("today.summary")
+                }
+            }
+        }
+        .doddyCard(padding: 14)
+        .accessibilityElement(children: .combine)
     }
 
     private func summary(_ glance: TodayGlance) -> String {
         TodayGlanceText.summary(glance, nextTime: glance.nextUp.map { clock($0.start) }, language)
     }
 
+    private func setupCard(_ text: Text, identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            text
+                .font(.subheadline)
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Open Settings", action: openSettings)
+                .buttonStyle(DoddyAccentButtonStyle())
+                .accessibilityIdentifier(identifier)
+        }
+        .doddyCard()
+    }
+
     // MARK: The day
 
     @ViewBuilder
     private func glanceView(_ glance: TodayGlance) -> some View {
+        if glance.calendarOn {
+            calendarSection(glance)
+        }
+        if glance.remindersOn {
+            remindersSection(glance)
+        }
+        if !glance.tomorrow.isEmpty {
+            tomorrowSection(glance)
+        }
+        if !glance.calendarOn || !glance.remindersOn {
+            partlyOff(glance)
+        }
+        DoddyFinePrint(text: Text("Read from and saved to Calendar and Reminders on this iPhone. Nothing here goes to Doddy's server; Open in Maps hands the place to Apple Maps."))
+    }
+
+    private func hasEventsLeft(_ glance: TodayGlance) -> Bool {
+        !glance.allDay.isEmpty || !glance.onNow.isEmpty || glance.nextUp != nil || !glance.later.isEmpty
+    }
+
+    // MARK: Calendar
+
+    @ViewBuilder
+    private func calendarSection(_ glance: TodayGlance) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            DoddySectionTitle(title: "Calendar")
+            Text("Tap an event to change or delete it.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        if let notice = model.notice {
+            DoddyNotice(text: Text(verbatim: notice))
+                .accessibilityIdentifier("today.notice")
+        }
         if !glance.allDay.isEmpty {
             allDayStrip(glance.allDay)
         }
@@ -135,51 +199,36 @@ struct TodayCard: View {
         if !glance.later.isEmpty {
             laterCard(glance)
         }
-        if let notice = model.notice {
-            Text(notice)
-                .font(.footnote)
+        if !hasEventsLeft(glance) {
+            Text("Nothing more in Calendar today.")
+                .font(.subheadline)
                 .foregroundStyle(Theme.secondaryText)
-                .accessibilityIdentifier("today.notice")
+                .doddyCard()
         }
-        if glance.remindersOn, !glance.reminders.isEmpty || model.reminderNotice != nil {
-            remindersCard(glance)
-        }
-        if !glance.tomorrow.isEmpty {
-            tomorrowCard(glance)
-        }
-        if !glance.calendarOn || !glance.remindersOn {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(glance.calendarOn ? "Reminders are off for Doddy, so they aren't shown here." : "Calendar is off for Doddy, so events aren't shown here.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 4)
-                Button("Settings", action: openSettings)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.accentText)
-                    .frame(minHeight: 44)
-                    .accessibilityIdentifier("today.openSettings.partial")
-            }
-        }
-        Label("Read from Calendar and Reminders on this iPhone. Nothing here is sent anywhere.", systemImage: "lock")
-            .font(.footnote)
-            .foregroundStyle(Theme.secondaryText)
     }
 
-    /// Today's all-day events as small tags under the header.
+    /// Today's all-day events as tags.
     private func allDayStrip(_ events: [CalendarEventSummary]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             ForEach(events, id: \.rowID) { event in
-                Label {
-                    Text(verbatim: event.title)
-                } icon: {
-                    Image(systemName: "calendar").foregroundStyle(Theme.orangeCue)
+                Button { openEvent(event) } label: {
+                    Label {
+                        Text(verbatim: event.title)
+                            .multilineTextAlignment(.leading)
+                    } icon: {
+                        Image(systemName: "calendar")
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 44)
+                    .background(Theme.quietSurface, in: Capsule())
+                    .overlay { Capsule().strokeBorder(Theme.separator, lineWidth: 1) }
+                    .contentShape(Capsule())
                 }
-                .font(.footnote.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Capsule().strokeBorder(Theme.separator, lineWidth: 1))
+                .buttonStyle(.plain)
                 .accessibilityLabel(String(format: NSLocalizedString("All day: %@", comment: "Today: an all-day event"), event.title))
+                .accessibilityHint("Opens the event to change or delete it")
             }
         }
     }
@@ -188,27 +237,33 @@ struct TodayCard: View {
     private func nowAndNext(_ glance: TodayGlance) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(glance.onNow, id: \.rowID) { event in
-                VStack(alignment: .leading, spacing: 4) {
-                    eyebrow(NSLocalizedString("On now", comment: "Today: an event that has started"))
-                    Text(verbatim: event.title).font(.headline)
-                    Text(verbatim: String(format: NSLocalizedString("Until %@", comment: "Today: when an event on now ends"), clock(event.end)))
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(Theme.secondaryText)
+                Button { openEvent(event) } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        eyebrow(NSLocalizedString("On now", comment: "Today: an event that has started"))
+                        Text(verbatim: event.title)
+                            .font(.headline)
+                            .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.leading)
+                        Text(verbatim: String(format: NSLocalizedString("Until %@", comment: "Today: when an event on now ends"), clock(event.end)))
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
+                .accessibilityHint("Opens the event to change or delete it")
             }
             if let free = glance.freeBeforeNext {
                 freeRow(free)
             }
             if let next = glance.nextUp {
-                if !glance.onNow.isEmpty { Divider() }
+                if !glance.onNow.isEmpty { Divider().overlay(Theme.separator) }
                 nextUp(next)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.orangeCue.opacity(0.6), lineWidth: 1.5))
+        .doddyCard(accent: true)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("today.next")
     }
@@ -216,21 +271,28 @@ struct TodayCard: View {
     private func nextUp(_ event: CalendarEventSummary) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                VStack(alignment: .leading, spacing: 6) {
-                    // The time to go counts down by the minute while the screen is open.
-                    TimelineView(.everyMinute) { context in
-                        eyebrow(NSLocalizedString("Next up", comment: "Today: the next event") + " · "
-                                + TodayGlanceText.status(NextUpStatus.of(event, at: context.date), endTime: clock(event.end), language))
+                Button { openEvent(event) } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        // The time to go counts down by the minute while the screen is open.
+                        TimelineView(.everyMinute) { context in
+                            eyebrow(NSLocalizedString("Next up", comment: "Today: the next event") + " · "
+                                    + TodayGlanceText.status(NextUpStatus.of(event, at: context.date), endTime: clock(event.end), language))
+                        }
+                        Text(verbatim: event.title)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(verbatim: "\(clock(event.start))–\(clock(event.end))")
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(Theme.secondaryText)
                     }
-                    Text(verbatim: event.title)
-                        .font(.title3.weight(.semibold))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(verbatim: "\(clock(event.start))–\(clock(event.end))")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(Theme.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
-                Spacer(minLength: 8)
+                .accessibilityHint("Opens the event to change or delete it")
                 nudgeMenu(event)
             }
             if let nudge = model.nudge(for: event) {
@@ -260,30 +322,37 @@ struct TodayCard: View {
 
     /// The rest of today after the next event, with the free time between.
     private func laterCard(_ glance: TodayGlance) -> some View {
-        card {
-            VStack(alignment: .leading, spacing: 12) {
-                sectionTitle(Text("Later today"))
-                ForEach(glance.later, id: \.rowID) { item in
-                    switch item {
-                    case .event(let event): eventRow(event)
-                    case .free(let slot): freeRow(slot)
-                    }
-                }
-                if glance.moreLater > 0 {
-                    Text(verbatim: String(format: NSLocalizedString("And %lld more in Calendar.", comment: ""), glance.moreLater))
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Later today")
+                .font(.system(.headline, design: .rounded, weight: .bold))
+                .foregroundStyle(Theme.ink)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(glance.later, id: \.rowID) { item in
+                switch item {
+                case .event(let event): eventRow(event)
+                case .free(let slot): freeRow(slot)
                 }
             }
+            if glance.moreLater > 0 {
+                Text(verbatim: String(format: NSLocalizedString("And %lld more in Calendar.", comment: ""), glance.moreLater))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         }
+        .doddyCard()
     }
 
     private func eventRow(_ event: CalendarEventSummary) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            timeAndTitle(time: clock(event.start), title: event.title) {
-                if let nudge = model.nudge(for: event) { nudgeLine(nudge, event: event) }
+            Button { openEvent(event) } label: {
+                timeAndTitle(time: clock(event.start), title: event.title) {
+                    if let nudge = model.nudge(for: event) { nudgeLine(nudge, event: event) }
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            Spacer(minLength: 8)
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the event to change or delete it")
             if event.start > .now {
                 nudgeMenu(event)
             }
@@ -301,12 +370,54 @@ struct TodayCard: View {
         .padding(.vertical, 2)
     }
 
+    /// Apple's editor for an event in a calendar Doddy may change; otherwise the Calendar app at that
+    /// time, with a line saying why.
+    private func openEvent(_ event: CalendarEventSummary) {
+        switch CalendarEventEditing.find(event) {
+        case .editable(let editable):
+            editingEvent = editable
+        case .readOnly:
+            openInCalendar(event, why: NSLocalizedString("This calendar can't be changed from Doddy, so the event opened in the Calendar app.", comment: ""))
+        case .notAllowed:
+            openInCalendar(event, why: NSLocalizedString("Doddy doesn't have full access to Calendar, so the event opened in the Calendar app. To change events here, allow Full Access in iPhone Settings, Privacy, Calendars.", comment: ""))
+        case .notFound:
+            let model = self.model
+            Task { await model.eventGone(event) }
+        }
+    }
+
+    private func openInCalendar(_ event: CalendarEventSummary, why: String) {
+        let model = self.model
+        let didNotOpen = NSLocalizedString("The Calendar app didn't open. Open it yourself to change this event.", comment: "")
+        guard let url = CalendarAppLink.url(at: event.start) else {
+            model.say(didNotOpen)
+            return
+        }
+        openURL(url) { accepted in
+            Task { @MainActor in model.say(accepted ? why : didNotOpen) }
+        }
+    }
+
     // MARK: Reminders
 
-    private func remindersCard(_ glance: TodayGlance) -> some View {
-        card {
-            VStack(alignment: .leading, spacing: 8) {
-                sectionTitle(Text("Reminders"))
+    private func remindersSection(_ glance: TodayGlance) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                DoddySectionTitle(title: "Reminders") {
+                    addReminderButton
+                }
+                Text("Tap the circle to tick one off, or the words to change it.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                if glance.reminders.isEmpty {
+                    Text("Nothing due today.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                        .frame(minHeight: 44, alignment: .leading)
+                }
                 ForEach(glance.reminders) { reminder in
                     reminderRow(reminder)
                 }
@@ -316,24 +427,48 @@ struct TodayCard: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
                 if let notice = model.reminderNotice {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(notice)
-                            .font(.footnote)
-                            .foregroundStyle(Theme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("today.reminderNotice")
-                        Spacer(minLength: 4)
-                        if model.undoable != nil {
-                            Button("Undo") { Task { await model.undoTick() } }
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(Theme.accentText)
-                                .frame(minHeight: 44)
-                                .accessibilityIdentifier("today.undo")
-                        }
-                    }
+                    reminderNoticeRow(notice)
                 }
             }
+            .doddyCard(padding: 12)
         }
+    }
+
+    private var addReminderButton: some View {
+        Button {
+            reminderSheet = .add
+        } label: {
+            Label("Add", systemImage: "plus")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.inkOnOrange)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 36)
+                .background(Theme.orangeCue, in: Capsule())
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add a reminder")
+        .accessibilityIdentifier("today.addReminder")
+    }
+
+    private func reminderNoticeRow(_ notice: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(verbatim: notice)
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("today.reminderNotice")
+            Spacer(minLength: 4)
+            if model.undoable != nil {
+                Button("Undo") { Task { await model.undoTick() } }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.accentText)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("today.undo")
+            }
+        }
+        .padding(.top, 4)
     }
 
     private func reminderRow(_ reminder: ReminderSummary) -> some View {
@@ -358,44 +493,70 @@ struct TodayCard: View {
             .disabled(busy)
             .accessibilityLabel(String(format: NSLocalizedString("Mark as done: %@", comment: "Today: ticks off a reminder in Reminders"), reminder.title))
             .accessibilityIdentifier("today.tick")
-            VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: reminder.title)
-                    .fixedSize(horizontal: false, vertical: true)
-                if TodayAgenda.isOverdue(reminder, now: .now, calendar: .current) {
-                    Text("Overdue").font(.footnote).foregroundStyle(Theme.error)
-                } else if reminder.dueHasTime, let due = reminder.due {
-                    Text(verbatim: String(format: NSLocalizedString("Due %@", comment: ""), clock(due)))
-                        .font(.footnote)
+            Button {
+                edit(id: reminder.id, title: reminder.title)
+            } label: {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: reminder.title)
+                            .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        reminderDue(reminder)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(Theme.secondaryText)
+                        .accessibilityHidden(true)
                 }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(busy)
             .accessibilityElement(children: .combine)
-            Spacer(minLength: 0)
+            .accessibilityHint("Opens it to change or delete")
+            .accessibilityIdentifier("today.reminder")
+        }
+    }
+
+    @ViewBuilder
+    private func reminderDue(_ reminder: ReminderSummary) -> some View {
+        if TodayAgenda.isOverdue(reminder, now: .now, calendar: .current) {
+            Label("Overdue", systemImage: "exclamationmark.circle")
+                .font(.footnote)
+                .foregroundStyle(Theme.error)
+        } else if reminder.dueHasTime, let due = reminder.due {
+            Text(verbatim: String(format: NSLocalizedString("Due %@", comment: ""), clock(due)))
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+    }
+
+    /// Reads the reminder again and opens the sheet with it as Reminders has it now.
+    private func edit(id: String, title: String) {
+        let model = self.model
+        Task {
+            if let found = await model.reminderToEdit(id: id, title: title) {
+                reminderSheet = .edit(found)
+            }
         }
     }
 
     // MARK: Tomorrow
 
-    private func tomorrowCard(_ glance: TodayGlance) -> some View {
+    private func tomorrowSection(_ glance: TodayGlance) -> some View {
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
-        return card {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline) {
-                    sectionTitle(Text("Tomorrow"))
-                    Spacer(minLength: 8)
-                    Text(tomorrow, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
+        return VStack(alignment: .leading, spacing: 10) {
+            DoddySectionTitle(title: "Tomorrow") {
+                Text(tomorrow, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            VStack(alignment: .leading, spacing: 6) {
                 ForEach(glance.tomorrow, id: \.rowID) { item in
-                    switch item {
-                    case .event(let event):
-                        timeAndTitle(time: event.allDay ? NSLocalizedString("All day", comment: "") : clock(event.start), title: event.title) {}
-                    case .reminder(let reminder):
-                        timeAndTitle(
-                            time: reminder.dueHasTime ? reminder.due.map { clock($0) } ?? "" : NSLocalizedString("Reminder", comment: "Today: a reminder due tomorrow without a time"),
-                            title: reminder.title) {}
-                    }
+                    tomorrowRow(item)
                 }
                 if glance.moreTomorrow > 0 {
                     Text(verbatim: String(format: NSLocalizedString("And %lld more tomorrow.", comment: ""), glance.moreTomorrow))
@@ -403,9 +564,52 @@ struct TodayCard: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
             }
+            .doddyCard(padding: 14)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("today.tomorrow")
+    }
+
+    @ViewBuilder
+    private func tomorrowRow(_ item: TomorrowItem) -> some View {
+        switch item {
+        case .event(let event):
+            Button { openEvent(event) } label: {
+                timeAndTitle(time: event.allDay ? NSLocalizedString("All day", comment: "") : clock(event.start), title: event.title) {}
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the event to change or delete it")
+        case .reminder(let reminder):
+            Button { edit(id: reminder.id, title: reminder.title) } label: {
+                timeAndTitle(
+                    time: reminder.dueHasTime ? reminder.due.map { clock($0) } ?? "" : NSLocalizedString("Reminder", comment: "Today: a reminder due tomorrow without a time"),
+                    title: reminder.title) {}
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens it to change or delete")
+        }
+    }
+
+    // MARK: Partly off
+
+    private func partlyOff(_ glance: TodayGlance) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(glance.calendarOn ? "Reminders are off for Doddy, so they aren't shown here." : "Calendar is off for Doddy, so events aren't shown here.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
+            Button("Settings", action: openSettings)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.accentText)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("today.openSettings.partial")
+        }
+        .padding(.horizontal, 4)
     }
 
     // MARK: Pieces
@@ -423,17 +627,13 @@ struct TodayCard: View {
                 .frame(minWidth: textSize.isAccessibilitySize ? nil : timeColumn, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: title)
+                    .foregroundStyle(Theme.ink)
+                    .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                 extra()
             }
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private func sectionTitle(_ title: Text) -> some View {
-        title
-            .font(.headline)
-            .accessibilityAddTraits(.isHeader)
     }
 
     private func eyebrow(_ text: String) -> some View {
@@ -447,15 +647,6 @@ struct TodayCard: View {
         }
     }
 
-    /// The same card as the rest of the new screens (Cheapest this week).
-    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
-            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
-    }
-
     private func clock(_ date: Date) -> String {
         date.formatted(date: .omitted, time: .shortened)
     }
@@ -463,7 +654,7 @@ struct TodayCard: View {
     // MARK: Nudges
 
     private func nudgeLine(_ nudge: ScheduledNudge, event: CalendarEventSummary) -> some View {
-        Text(nudgeText(nudge, event: event))
+        Text(verbatim: nudgeText(nudge, event: event))
             .font(.footnote)
             .foregroundStyle(nudge.fits(event) == false ? Theme.error : Theme.secondaryText)
     }
@@ -471,14 +662,14 @@ struct TodayCard: View {
     private func nudgeText(_ nudge: ScheduledNudge, event: CalendarEventSummary) -> String {
         let time = nudge.fireAt?.formatted(date: .omitted, time: .shortened) ?? "?"
         return nudge.fits(event) == false
-            ? "Nudge at \(time), the old time: the event moved. Set it again."
-            : "Nudge at \(time)"
+            ? String(format: NSLocalizedString("Nudge at %@, the old time: the event moved. Set it again.", comment: ""), time)
+            : String(format: NSLocalizedString("Nudge at %@", comment: ""), time)
     }
 
     private func nudgeMenu(_ event: CalendarEventSummary) -> some View {
         Menu {
             ForEach(EventNudgePlan.leadMinuteOptions, id: \.self) { minutes in
-                Button(minutes == 60 ? "1 hour before" : "\(minutes) minutes before") {
+                Button(nudgeChoice(minutes)) {
                     Task { await model.setNudge(for: event, leadMinutes: minutes) }
                 }
             }
@@ -494,6 +685,12 @@ struct TodayCard: View {
                 .accessibilityLabel(String(format: NSLocalizedString("Nudge before %@", comment: ""), event.title))
         }
         .accessibilityIdentifier("today.nudge")
+    }
+
+    private func nudgeChoice(_ minutes: Int) -> String {
+        minutes == 60
+            ? NSLocalizedString("1 hour before", comment: "Today: a nudge's lead time")
+            : String(format: NSLocalizedString("%lld minutes before", comment: "Today: a nudge's lead time"), minutes)
     }
 }
 

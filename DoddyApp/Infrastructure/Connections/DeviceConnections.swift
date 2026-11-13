@@ -605,6 +605,26 @@ final class DeviceConnections {
         return eventStore.calendarItem(withIdentifier: before.id) == nil ? .verified : .unconfirmed
     }
 
+    /// Today's edit sheet (owner, 13 Nov 2026): a new title, notes and due (or none) for exactly the open
+    /// reminder the sheet read, in one save. Its title, due and notes must still be as the sheet read them,
+    /// or nothing is written. An alarm set for the old due moves with it, or goes when the due is cleared.
+    /// Then it's read back: verified only when Reminders shows all three as asked (`ReminderEdit`).
+    func editReminder(_ before: ReminderSnapshot, _ edit: ReminderEdit) throws -> ChangeOutcome {
+        guard access(for: .reminders) == .granted else { throw ReminderStoreError.notAllowed }
+        guard let reminder = eventStore.calendarItem(withIdentifier: before.id) as? EKReminder,
+              !reminder.isCompleted, (reminder.title ?? "") == before.title,
+              EventChange.sameDue(Self.snapshot(reminder).due, before.due),
+              (reminder.notes ?? "") == (before.notes ?? "") else {
+            return .changedElsewhere
+        }
+        if edit.movesDue(from: before) { moveDue(of: reminder, from: before.due, to: edit.due) }
+        reminder.title = edit.title
+        reminder.notes = edit.notes
+        try eventStore.save(reminder, commit: true)
+        guard let back = eventStore.calendarItem(withIdentifier: before.id) as? EKReminder else { return .unconfirmed }
+        return edit.confirms(Self.snapshot(back)) ? .verified : .unconfirmed
+    }
+
     /// The reminder as Reminders has it now (for Undo's starting point), or nil.
     func reminderSnapshot(id: String) -> ReminderSnapshot? {
         guard access(for: .reminders) == .granted,

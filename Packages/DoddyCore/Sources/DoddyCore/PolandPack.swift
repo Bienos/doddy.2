@@ -3,7 +3,8 @@ import Foundation
 import FoundationNetworking
 #endif
 
-/// Poland Pack: official read-only data only. No app login, personal data, or payments.
+/// Poland Pack ("My city" on screen since 13 Nov 2026): official read-only data only. No app login,
+/// personal data, or payments.
 public enum PolandCity: String, CaseIterable, Identifiable, Sendable {
     case warszawa, krakow, gdansk, wroclaw, poznan
 
@@ -136,6 +137,12 @@ public struct PolandAirIndex: Sendable, Equatable {
     public let value: Int
     public let station: String
 
+    /// The Polish air quality index has six steps, 0 (very good) to 5 (very bad). My city draws all six
+    /// and marks this one, with the step's name beside it, so colour is never the only sign.
+    public static let steps = 6
+    /// This reading's place on the scale, 0 ... `steps - 1`.
+    public var step: Int { min(max(value, 0), Self.steps - 1) }
+
     public static func parse(_ data: Data, station: String) throws -> PolandAirIndex? {
         guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let index = response["AqIndex"] as? [String: Any] else {
@@ -164,6 +171,18 @@ public struct PolandExchangeRate: Decodable, Equatable, Sendable {
     public func pln(for amount: Double) -> Double? {
         guard amount.isFinite, amount > 0, amount <= 1_000_000, let entry = latest else { return nil }
         return (amount * entry.mid * 100).rounded() / 100
+    }
+}
+
+/// The amount typed in My city's currency card: up to seven digits, then up to two decimals after a comma
+/// or a dot ("100", "12,50", "0.5"). Anything else is no amount, and the card says so; it never becomes 0.
+public enum PolandAmount {
+    public static func parse(_ text: String) -> Double? {
+        let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned.range(of: #"^[0-9]{1,7}([,.][0-9]{1,2})?$"#, options: .regularExpression) != nil,
+              let value = Double(cleaned.replacingOccurrences(of: ",", with: ".")), value.isFinite, value > 0
+        else { return nil }
+        return value
     }
 }
 

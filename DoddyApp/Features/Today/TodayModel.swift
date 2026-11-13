@@ -7,6 +7,10 @@ import Observation
 /// a tick to complete a reminder. Read only when the matching switch in Settings → Connections is on
 /// and iOS allows it. Nothing here is sent anywhere; the next event's place goes to Apple Maps only
 /// when the person taps Open in Maps.
+///
+/// Since 13 Nov 2026 (owner: "zero edycji") a reminder can be added, changed or deleted here, and an
+/// event opens in Apple's event editor. Every write goes to Reminders or Calendar with a commit, is read
+/// back, and then the list is read again; a line says "added", "saved" or "deleted" only from that read.
 @MainActor
 @Observable
 final class TodayModel {
@@ -178,6 +182,216 @@ final class TodayModel {
             }
         } catch {
             reminderNotice = String(format: NSLocalizedString("“%@” wasn't put back. %@", comment: ""), done.title, UserFacingError.message(for: error))
+        }
+        await refresh()
+    }
+
+    // MARK: Adding, changing and deleting a reminder (owner, 13 Nov 2026)
+
+    enum ReminderSaveResult: Equatable {
+        /// Written and read back, or nothing needed writing: the sheet closes and the list says what happened.
+        case done
+        /// Nothing was written, or it couldn't be told: the sheet stays open with what was typed.
+        case problem(String)
+    }
+
+    /// Reminders is on in Settings › Connections and iOS gives Doddy full access.
+    var canWriteReminders: Bool { !paused && isOn(.reminders) }
+
+    private enum Checked {
+        case ok(title: String, notes: String?)
+        case problem(String)
+    }
+
+    private func check(title: String, notes: String, original: String?) -> Checked {
+        let cleanTitle: String
+        switch ReminderForm.checkTitle(title) {
+        case .ok(let value):
+            cleanTitle = value
+        case .empty:
+            return .problem(NSLocalizedString("Write what to remember first.", comment: "Today: a reminder without a title"))
+        case .tooLong:
+            return .problem(String(format: NSLocalizedString("Keep the title under %lld characters.", comment: ""), ReminderDetails.maxTitleLength))
+        }
+        switch ReminderForm.checkNotes(notes, original: original) {
+        case .ok(let value):
+            return .ok(title: cleanTitle, notes: value)
+        case .tooLong:
+            return .problem(String(format: NSLocalizedString("Keep the notes under %lld characters.", comment: ""), ReminderDetails.maxReplacedNotesLength))
+        }
+    }
+
+    /// Adds one to the default Reminders list through `ReminderAction.add`: it looks first (so Save again
+    /// never makes a second copy), writes, and says "added" only when Reminders reads it back.
+    func addReminder(title: String, notes: String, due: Date?, hasTime: Bool) async -> ReminderSaveResult {
+        guard canWriteReminders else {
+            return .problem(NSLocalizedString("Reminders are off for Doddy, so nothing was added. Turn them on in Settings, Connections.", comment: ""))
+        }
+        let draft: ReminderDraft
+        switch check(title: title, notes: notes, original: nil) {
+        case .ok(let cleanTitle, let cleanNotes):
+            let dueValue = due.map { ReminderForm.due(from: $0, hasTime: hasTime, calendar: .current) }
+            draft = ReminderDraft(title: cleanTitle, due: dueValue, notes: cleanNotes)
+        case .problem(let text):
+            return .problem(text)
+        }
+        undoable = nil
+        switch await ReminderAction.add(draft, to: devices, now: .now) {
+        case .added(let receipt):
+            reminderNotice = String(format: NSLocalizedString("Added to Reminders: %@. Checked there.", comment: ""), receipt.title)
+            await refresh()
+            return .done
+        case .alreadyThere(let receipt):
+            reminderNotice = String(format: NSLocalizedString("“%@” was already in Reminders, so nothing new was added.", comment: ""), receipt.title)
+            await refresh()
+            return .done
+        case .notAdded(.notAllowed):
+            return .problem(NSLocalizedString("iOS doesn't let Doddy use Reminders, so nothing was added. Allow Full Access in iPhone Settings, Privacy, Reminders.", comment: ""))
+        case .notAdded(.couldNotCheck):
+            return .problem(NSLocalizedString("Reminders couldn't be read just now, so nothing was added. Try again.", comment: ""))
+        case .notAdded(.saveFailed(let why)):
+            return .problem(String(format: NSLocalizedString("It wasn't added. %@", comment: ""), why))
+        case .unknown:
+            await refresh()
+            return .problem(NSLocalizedString("Reminders didn't confirm it. Look in Reminders before trying again; Save again won't make a second copy.", comment: ""))
+        case .needsClarification:
+            return .problem(NSLocalizedString("That time has already passed. Pick a later time, or turn the time off.", comment: ""))
+        }
+    }
+
+    /// The reminder as Reminders has it now, for the edit sheet. Nil, with a line saying so, when it's
+    /// gone or already done.
+    func reminderToEdit(id: String, title: String) async -> ReminderSnapshot? {
+        guard canWriteReminders else {
+            reminderNotice = NSLocalizedString("Reminders are off for Doddy, so nothing can be changed here. Turn them on in Settings, Connections.", comment: "")
+            return nil
+        }
+        guard let found = devices.reminderSnapshot(id: id), !found.isCompleted else {
+            reminderNotice = String(format: NSLocalizedString("“%@” is no longer open in Reminders. This is how your list is now.", comment: ""), title)
+            await refresh()
+            return nil
+        }
+        return found
+    }
+
+    /// A new title, notes and due for exactly the reminder the sheet read (`DeviceConnections.editReminder`):
+    /// one save, read back, then the list is read again.
+    func saveReminder(_ before: ReminderSnapshot, title: String, notes: String, due: ReminderDue?) async -> ReminderSaveResult {
+        guard canWriteReminders else {
+            return .problem(NSLocalizedString("Reminders are off for Doddy, so nothing was changed. Turn them on in Settings, Connections.", comment: ""))
+        }
+        guard !busyReminders.contains(before.id) else {
+            return .problem(NSLocalizedString("Doddy is still writing this reminder. Try again in a moment.", comment: ""))
+        }
+        let edit: ReminderEdit
+        switch check(title: title, notes: notes, original: before.notes) {
+        case .ok(let cleanTitle, let cleanNotes):
+            edit = ReminderEdit(title: cleanTitle, notes: cleanNotes, due: due)
+        case .problem(let text):
+            return .problem(text)
+        }
+        if edit.changesNothing(before) { return .done }
+        busyReminders.insert(before.id)
+        defer { busyReminders.remove(before.id) }
+        undoable = nil
+        let outcome: DeviceConnections.ChangeOutcome
+        do {
+            outcome = try devices.editReminder(before, edit)
+        } catch {
+            // A throw doesn't prove nothing was written: look once more before saying so.
+            if let now = devices.reminderSnapshot(id: before.id), edit.confirms(now) {
+                outcome = .verified
+            } else {
+                return .problem(String(format: NSLocalizedString("It wasn't saved. %@", comment: ""), UserFacingError.message(for: error)))
+            }
+        }
+        switch outcome {
+        case .verified:
+            reminderNotice = String(format: NSLocalizedString("Saved in Reminders: %@. Checked there.", comment: ""), edit.title)
+            await refresh()
+            return .done
+        case .changedElsewhere:
+            await refresh()
+            return .problem(String(format: NSLocalizedString("“%@” changed in Reminders since you opened it, so nothing was saved. Close this and open it again.", comment: ""), before.title))
+        case .unconfirmed:
+            reminderNotice = String(format: NSLocalizedString("Reminders took the change to “%@” but didn't show it afterwards. Check it there.", comment: ""), edit.title)
+            await refresh()
+            return .done
+        }
+    }
+
+    /// Deletes exactly the reminder the sheet read, if it still looks so; "deleted" only when Reminders no
+    /// longer has it.
+    func deleteReminder(_ before: ReminderSnapshot) async -> ReminderSaveResult {
+        guard canWriteReminders else {
+            return .problem(NSLocalizedString("Reminders are off for Doddy, so nothing was deleted. Turn them on in Settings, Connections.", comment: ""))
+        }
+        guard !busyReminders.contains(before.id) else {
+            return .problem(NSLocalizedString("Doddy is still writing this reminder. Try again in a moment.", comment: ""))
+        }
+        busyReminders.insert(before.id)
+        defer { busyReminders.remove(before.id) }
+        undoable = nil
+        let outcome: DeviceConnections.ChangeOutcome
+        do {
+            outcome = try devices.deleteReminder(before)
+        } catch {
+            return .problem(String(format: NSLocalizedString("It wasn't deleted. %@", comment: ""), UserFacingError.message(for: error)))
+        }
+        switch outcome {
+        case .verified:
+            reminderNotice = String(format: NSLocalizedString("Deleted from Reminders: %@. Checked there.", comment: ""), before.title)
+            await refresh()
+            return .done
+        case .changedElsewhere:
+            await refresh()
+            return .problem(String(format: NSLocalizedString("“%@” changed in Reminders since you opened it, so it wasn't deleted. Close this and open it again.", comment: ""), before.title))
+        case .unconfirmed:
+            reminderNotice = String(format: NSLocalizedString("Reminders still shows “%@”. Check it there.", comment: ""), before.title)
+            await refresh()
+            return .done
+        }
+    }
+
+    // MARK: Events: Apple's editor, or the Calendar app
+
+    /// A line under Calendar on the screen (why an event opened in the Calendar app, for one).
+    func say(_ text: String) {
+        notice = text
+    }
+
+    /// The event wasn't in Calendar as the screen showed it.
+    func eventGone(_ event: CalendarEventSummary) async {
+        notice = String(format: NSLocalizedString("“%@” changed in Calendar, so it didn't open. This is how your day is now.", comment: ""), event.title)
+        await refresh()
+    }
+
+    /// Apple's editor closed: say what Calendar shows now, take a nudge off an event that moved or went,
+    /// and read the day again.
+    func eventEditorFinished(_ outcome: CalendarEditorOutcome) async {
+        switch outcome {
+        case .cancelled:
+            break
+        case .saved(let title, let confirmed, let previousID, let moved):
+            var line = confirmed
+                ? String(format: NSLocalizedString("Saved in Calendar: %@. Checked there.", comment: ""), title)
+                : String(format: NSLocalizedString("Calendar didn't show “%@” as saved afterwards. Check it there.", comment: ""), title)
+            if confirmed, moved, let old = nudges.first(where: { $0.eventID == previousID }) {
+                if await devices.cancelNudge(id: old.id) {
+                    line += " " + NSLocalizedString("Its nudge was for the old time, so it was removed. Set it again with the bell.", comment: "")
+                }
+            }
+            notice = line
+        case .deleted(let title, let confirmed, let id):
+            var line = confirmed
+                ? String(format: NSLocalizedString("Deleted from Calendar: %@. Checked there.", comment: ""), title)
+                : String(format: NSLocalizedString("Calendar still shows “%@”. Check it there.", comment: ""), title)
+            if confirmed, let old = nudges.first(where: { $0.eventID == id }) {
+                if await devices.cancelNudge(id: old.id) {
+                    line += " " + NSLocalizedString("Its nudge was removed too.", comment: "")
+                }
+            }
+            notice = line
         }
         await refresh()
     }

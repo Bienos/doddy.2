@@ -81,6 +81,29 @@ final class PolandPackTests: XCTestCase {
         XCTAssertNil(PolandOpenData.exchangeRateURL("../../secret"))
     }
 
+    func testAirIndexStepIsItsPlaceOnTheSixStepScale() throws {
+        XCTAssertEqual(PolandAirIndex.steps, 6)
+        let good = Data(#"{"AqIndex":{"Wartość indeksu":1,"Nazwa kategorii indeksu":"Dobry"}}"#.utf8)
+        XCTAssertEqual(try PolandAirIndex.parse(good, station: "Warszawa")?.step, 1)
+        let veryBad = Data(#"{"AqIndex":{"Wartość indeksu":5,"Nazwa kategorii indeksu":"Bardzo zły"}}"#.utf8)
+        XCTAssertEqual(try PolandAirIndex.parse(veryBad, station: "Kraków")?.step, 5)
+        XCTAssertEqual(PolandAirIndex(category: "?", value: 9, station: "x").step, 5)
+        XCTAssertEqual(PolandAirIndex(category: "?", value: -3, station: "x").step, 0)
+    }
+
+    func testTypedAmountIsAnAmountOrNothingNeverZero() {
+        XCTAssertEqual(PolandAmount.parse("100"), 100)
+        XCTAssertEqual(PolandAmount.parse(" 12,50 "), 12.5)
+        XCTAssertEqual(PolandAmount.parse("0.5"), 0.5)
+        XCTAssertNil(PolandAmount.parse(""))
+        XCTAssertNil(PolandAmount.parse("0"))
+        XCTAssertNil(PolandAmount.parse("12,345"))
+        XCTAssertNil(PolandAmount.parse("12345678"))
+        XCTAssertNil(PolandAmount.parse("-5"))
+        XCTAssertNil(PolandAmount.parse("1e3"))
+        XCTAssertNil(PolandAmount.parse("sto"))
+    }
+
     func testInPostTracksOnlyExplicitValidNumbers() throws {
         let number = "873234987612340872938732"
         let url = try XCTUnwrap(PolandParcel.trackingURL(number: number))
