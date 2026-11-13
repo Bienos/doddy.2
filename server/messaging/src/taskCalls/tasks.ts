@@ -41,13 +41,15 @@ const plus = (d: Date, millis: number) => new Date(d.getTime() + millis);
 /** Strict. The shared parts are checked again per place by the brief schema (compileCase). */
 export const taskSchema = z.strictObject({
   /** "book": each place may accept exactly the booking on the card (decision 2026-11-12-book-agent). */
-  kind: z.enum(["ask", "book"]),
+  kind: z.enum(["ask", "book", "order"]),
   places: z.array(z.unknown()).min(1).max(MAX_PLACES),
   principal: z.unknown(),
   goal: z.unknown(),
   /** "ask" only; a booking's question is built from `booking`. */
   question: z.unknown().optional(),
   booking: z.unknown().optional(),
+  /** "order": exactly the food order on the card (decision 2026-11-12-food-by-phone); one place only. */
+  order: z.unknown().optional(),
   facts: z.array(z.unknown()).max(5).optional(),
   maxDurationSecs: z.number().int().optional(),
   /** "Text me the result": a text to the person's own verified number when the task ends. */
@@ -62,7 +64,7 @@ export function taskDigest(ctx: TaskCallContext, kind: TaskKind, textResult: boo
   return hmacSha256(ctx.cipher.derivedKey("call-task-digest"),
     canonicalJson({ format: 1, kind, textResult, cases: caseDigests.map((d) => d.toString("hex")) }));
 }
-export type TaskKind = "ask" | "book";
+export type TaskKind = "ask" | "book" | "order";
 
 function refuse(status: Refusal["status"], error: string): { refusal: Refusal } {
   return { refusal: { status, error } as Refusal };
@@ -75,10 +77,12 @@ export async function createTask(ctx: TaskCallContext, accountId: string, body: 
   const parsed = taskSchema.safeParse(body);
   if (!parsed.success) return { refusal: { status: 400, error: "invalid_request", fields: parsed.error.issues.map((i) => i.path.join(".")) } as Refusal };
   const t = parsed.data;
+  // An order goes to one place: a second restaurant is a new card, so Doddy can never order twice.
+  if (t.kind === "order" && t.places.length !== 1) return { refusal: { status: 400, error: "invalid_request", fields: ["places"] } as Refusal };
   const compiled: CompiledCase[] = [];
   for (const [i, callee] of t.places.entries()) {
     const brief = { kind: t.kind, callee, principal: t.principal, goal: t.goal, facts: t.facts ?? [],
-      ...(t.question === undefined ? {} : { question: t.question }), ...(t.booking === undefined ? {} : { booking: t.booking }),
+      ...(t.question === undefined ? {} : { question: t.question }), ...(t.booking === undefined ? {} : { booking: t.booking }), ...(t.order === undefined ? {} : { order: t.order }),
       ...(t.maxDurationSecs === undefined ? {} : { maxDurationSecs: t.maxDurationSecs }) };
     const r = await compileCase(ctx, accountId, brief, `places.${i}.`);
     if ("refusal" in r) return r;
@@ -183,7 +187,8 @@ const STOPS = new Set(["taken_over", "stopped", "not_placed", "voice_unavailable
 
 /**
  * What the place's call means for the task. A yes needs the model's yes and a quote from the transcript.
- * A booking's yes also needs Doddy to have said the approved confirmation sentence (decision 2026-11-12-book-agent).
+ * A booking's or order's yes also needs Doddy to have said the approved confirmation sentence (decisions
+ * 2026-11-12-book-agent, 2026-11-12-food-by-phone); `bookingConfirmed` is that check for both.
  */
 export function answerOf(result: CallResult, writer: WriterOutput | undefined, kind: TaskKind = "ask"): Answer | "stop" {
   if (STOPS.has(result.outcome)) return "stop";
@@ -193,8 +198,8 @@ export function answerOf(result: CallResult, writer: WriterOutput | undefined, k
   if (result.warnings.some((w) => w.kind === "possible_other_booking")) return "unclear";
   const confirmed = kind === "ask" || result.bookingConfirmed === true;
   if (writer?.answer === "yes" && result.quote && result.confidence !== "low" && result.warnings.length === 0 && confirmed) return "yes";
-  // Doddy said yes to a booking the model can't confirm: the person must read it, never "no" and never the next place.
-  if (kind === "book" && result.bookingConfirmed) return "unclear";
+  // Doddy said yes to a booking or order the model can't confirm: the person must read it, never "no" and never the next place.
+  if (kind !== "ask" && result.bookingConfirmed) return "unclear";
   if (writer?.answer === "no") return "no";
   return "unclear";
 }
@@ -256,6 +261,9 @@ async function finishTask(c: Q, ctx: TaskCallContext, task: TaskRow, outcome: Ta
       ctx.log("call task: result text over the daily cap", { taskId: task.id });
     }
   }
+  // An order's brief holds the delivery address and the courier's phone: nothing needs them once the task is over (the result
+  // is saved on the phone), so they go now rather than when the app acknowledges the result (decision 2026-11-12-food-by-phone).
+  if (task.kind === "order") await purgePayload(c, task.account_id, x.caseId, "finished", "processed", now);
   ctx.log("call task finished", { taskId: task.id, outcome });
   return true;
 }
@@ -287,17 +295,23 @@ async function resultText(c: Q, ctx: TaskCallContext, task: TaskRow, outcome: Ta
   let text: string;
   switch (outcome) {
     case "yes":
-      text = task.kind === "book"
+      text = task.kind === "order"
+        ? `Doddy: ${placeName} przyjmuje zamówienie: „${quote}”. Szczegóły w aplikacji Doddy.`
+        : task.kind === "book"
         ? `Doddy: ${placeName} potwierdza rezerwację: „${quote}”. Szczegóły w aplikacji Doddy.`
         : `Doddy: ${placeName} odpowiada: „${quote}”. Szczegóły w aplikacji Doddy.`;
       break;
     case "unclear":
-      text = task.kind === "book"
+      text = task.kind === "order"
+        ? `Doddy: rozmowa z ${placeName} się odbyła, ale nie wiem na pewno, czy zamówienie jest przyjęte. Sprawdź zapis w aplikacji Doddy i zadzwoń do nich, zanim zamówisz gdzie indziej.`
+        : task.kind === "book"
         ? `Doddy: rozmowa z ${placeName} się odbyła, ale nie wiem na pewno, czy rezerwacja jest przyjęta. Sprawdź zapis w aplikacji Doddy.`
         : `Doddy: rozmowa z ${placeName} się odbyła, ale odpowiedź nie jest jasna. Sprawdź ją w aplikacji Doddy.`;
       break;
     case "none":
-      text = task.kind === "book"
+      text = task.kind === "order"
+        ? `Doddy: ${placeName}: zamówienie nie zostało przyjęte. Szczegóły w aplikacji Doddy.`
+        : task.kind === "book"
         ? (task.places === 1 ? `Doddy: ${placeName}: nie udało się zarezerwować. Szczegóły w aplikacji Doddy.`
           : `Doddy: w żadnym z ${task.places} miejsc nie udało się zarezerwować. Szczegóły w aplikacji Doddy.`)
         : task.places === 1
