@@ -112,6 +112,7 @@ final class ShortcutRouter {
         isRecordingsPresented = false
         isCallRecapsPresented = false
         isMessagesRequested = false
+        isRadarRequested = false
         priceCheckLink = nil
         translatorPreset = nil
         talkToDoddyOpened = false
@@ -281,6 +282,18 @@ final class ShortcutRouter {
         guard !isVoicePresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isMessagesRequested = true
+    }
+
+    /// A radar push was tapped (decision 2026-11-13-radar-fixes): Home opens On my radar, where "Doddy spotted" lists what
+    /// the server found. Navigation only: it starts nothing and sends nothing. Home takes it once (its `.onChange`, the
+    /// change described in the decision; until it is in, the tap opens Doddy and nothing more).
+    var isRadarRequested = false
+
+    func radarOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in radarOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isRadarRequested = true
     }
 
     /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and

@@ -16,8 +16,20 @@ describe("what a tap on a push opens", () => {
     assert.deepEqual(Object.keys(pushData("errand-result:abc")!), ["kind"]);
   });
 
+  it("a radar story's push opens On my radar, by kind only (decision 2026-11-13-radar-fixes)", () => {
+    const key = "radar:6f1c2a9e-0000-4000-8000-000000000000:7a2d3b0f-0000-4000-8000-000000000000";
+    assert.deepEqual(pushData(key), { kind: "radar" });
+    // Never the alert, the follow, the story or the words.
+    assert.deepEqual(Object.keys(pushData(key)!), ["kind"]);
+    // A radar push doesn't wake the app: the list is read when On my radar opens.
+    assert.deepEqual(alertPayload({ title: "Doddy", body: "x" }, { kind: "radar" }), {
+      aps: { alert: { title: "Doddy", body: "x" }, sound: "default" }, doddy: { kind: "radar" },
+    });
+  });
+
   it("every other push carries nothing extra", () => {
-    for (const key of [undefined, "", "news:2026-11-05", "call-results", "xcall-result:1", "xerrand-result:1", "file-watches"]) {
+    for (const key of [undefined, "", "news:2026-11-05", "call-results", "xcall-result:1", "xerrand-result:1", "file-watches",
+      "radars:1", "xradar:1"]) {
       assert.equal(pushData(key), undefined, String(key));
     }
   });

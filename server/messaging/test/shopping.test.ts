@@ -365,6 +365,12 @@ class FakeShoppingApi implements ShoppingModelApi {
 
 const usage = { input_tokens: 1000, output_tokens: 200 };
 const toolUse = (id: string, name: string, input: object) => ({ type: "tool_use", id, name, input });
+/** Server-tool results as they come back inside the model's message: a web search's list, a fetched page with its text. */
+const searchResults = (...urls: string[]) => ({ type: "web_search_tool_result", tool_use_id: "ws", content: urls.map((url) => ({ type: "web_search_result", url, title: "t" })) });
+const fetchedPage = (url: string, text: string) => ({
+  type: "web_fetch_tool_result", tool_use_id: "wf",
+  content: { type: "web_fetch_result", url, content: { type: "document", source: { type: "text", media_type: "text/plain", data: text }, title: "t" } },
+});
 const fakeSource = (offers: RawOffer[] | "not_set_up"): OfferSource & { queries: string[] } => {
   const queries: string[] = [];
   return {
@@ -393,7 +399,8 @@ describe("the shopping runner", () => {
     const fetcher = fakeFetcher({ "https://www.mediaexpert.pl/p/45": html(1899) });
     const api = new FakeShoppingApi([
       () => ({ content: [{ type: "text", text: "Szukam." }, toolUse("t1", "find_offers", { query: "zmywarka do zabudowy 45 cm cicha" })], stop_reason: "tool_use", usage }),
-      () => ({ content: [toolUse("t2", "check_offer_page", { url: "https://www.mediaexpert.pl/p/45" }), toolUse("t3", "check_offer_page", { url: "https://blocked.example/p" })], stop_reason: "tool_use", usage }),
+      // blocked.example/p came from a web search result in the same message, so check_offer_page may read it.
+      () => ({ content: [searchResults("https://blocked.example/p"), toolUse("t2", "check_offer_page", { url: "https://www.mediaexpert.pl/p/45" }), toolUse("t3", "check_offer_page", { url: "https://blocked.example/p" })], stop_reason: "tool_use", usage }),
       () => ({ content: [{ type: "text", text: "o1 najcichsza, o2 najtańsza." }], stop_reason: "end_turn", usage }),
     ], { kind: "ok", usage, card: sampleCard({ picks: [{ role: "best", offerId: "o1", why: "Najcichsza.", tradeoff: null }, { role: "cheapest", offerId: "o2", why: "Najtańsza.", tradeoff: null }] }) });
     const out = await runShopping(api, { offers: source, fetcher }, task, control());
@@ -459,6 +466,63 @@ describe("the shopping runner", () => {
     // The model was told the listed price is only a lead.
     const first = api.calls[1]!.at(-1)!.content as unknown as Array<{ content: string }>;
     assert.match(first[0]!.content, /leads only, never shown to the person/u);
+  });
+
+  test("check_offer_page reads only addresses this run's own results named; an unseen query is dropped before the fetch", async () => {
+    const source = fakeSource([{ title: "Zmywarka 45 cm 42 dB", shop: "Media Expert", priceText: "1 949,00 zł", link: "https://www.mediaexpert.pl/p/45" }]);
+    const fetcher = fakeFetcher({});
+    const asked = [
+      "https://www.mediaexpert.pl/p/45",                       // a find_offers listing
+      "https://www.mediaexpert.pl/p/45?q=cicha+zmywarka+jana",   // the same page with a query nobody showed it: dropped
+      "https://www.x-kom.pl/p/9/",                             // a web_search result (trailing slash aside)
+      "https://www.euro.com.pl/p/1#opinie",                    // a page web_fetch read (fragment dropped)
+      "https://www.neonet.pl/p/7?variant=2",                   // a link on that page, with the query it had there
+      "https://collector.example/c?d=szukam-cichej-zmywarki",  // never seen: nothing is fetched
+      "https://www.mediaexpert.pl/p/46",                       // a seen site, an unseen page
+      "http://www.mediaexpert.pl/p/45",                        // the seen page on another scheme
+      "not a url",
+    ];
+    const api = new FakeShoppingApi([
+      () => ({ content: [toolUse("t1", "find_offers", { query: "zmywarka 45 cm" })], stop_reason: "tool_use", usage }),
+      () => ({
+        content: [
+          searchResults("https://www.x-kom.pl/p/9"),
+          fetchedPage("https://www.euro.com.pl/p/1", "Porównaj: https://www.neonet.pl/p/7?variant=2, albo inne."),
+          ...asked.map((url, i) => toolUse(`c${i}`, "check_offer_page", { url })),
+        ],
+        stop_reason: "tool_use", usage,
+      }),
+      () => ({ content: [{ type: "text", text: "Nic potwierdzonego." }], stop_reason: "end_turn", usage }),
+    ], { kind: "unparsed" });
+    const out = await runShopping(api, { offers: source, fetcher }, task, control());
+    assert.equal(out.kind, "done");
+    assert.deepEqual(fetcher.urls, [
+      "https://www.mediaexpert.pl/p/45",
+      "https://www.mediaexpert.pl/p/45",
+      "https://www.x-kom.pl/p/9/",
+      "https://www.euro.com.pl/p/1",
+      "https://www.neonet.pl/p/7?variant=2",
+    ], "only seen pages, the unseen query stripped, nothing for the rest");
+    assert.equal(fetcher.urls.some((u) => u.includes("collector.example") || u.includes("jana")), false);
+    assert.equal(out.fetches, 5, "refused addresses aren't counted as page reads");
+    const results = api.calls[2]!.at(-1)!.content as unknown as Array<{ tool_use_id: string; is_error?: boolean; content: string }>;
+    for (const i of [5, 6, 7, 8]) {
+      assert.equal(results[i]!.is_error, true, asked[i]);
+      assert.match(results[i]!.content, /^Not read: check_offer_page reads only an address that appeared in this task's own/u, asked[i]);
+    }
+  });
+
+  test("a page check's own result (where the shop's page ended up) can be checked again", async () => {
+    const source = fakeSource([{ title: "Zmywarka", shop: "Media Expert", priceText: "1 949,00 zł", link: "https://www.mediaexpert.pl/p/45" }]);
+    const fetcher = fakeFetcher({ "https://www.mediaexpert.pl/p/45": html(1899) });
+    const api = new FakeShoppingApi([
+      () => ({ content: [toolUse("t1", "find_offers", { query: "zmywarka" }), toolUse("t2", "check_offer_page", { url: "https://collector.example/x" })], stop_reason: "tool_use", usage }),
+      () => ({ content: [toolUse("t3", "check_offer_page", { url: "https://www.mediaexpert.pl/p/45" })], stop_reason: "tool_use", usage }),
+      () => ({ content: [{ type: "text", text: "o1." }], stop_reason: "end_turn", usage }),
+    ], { kind: "ok", usage, card: sampleCard({ picks: [{ role: "best", offerId: "o1", why: "Najcichsza.", tradeoff: null }], budget: { amount: null }, offerNotes: [] }) });
+    const out = await runShopping(api, { offers: source, fetcher }, task, control());
+    assert.equal(out.kind, "done");
+    assert.deepEqual(fetcher.urls, ["https://www.mediaexpert.pl/p/45"], "an address the model wrote before any result named it is never fetched");
   });
 
   test("the premium model runs for the listed accounts only", async () => {

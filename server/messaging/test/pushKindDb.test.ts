@@ -23,11 +23,14 @@ describe("a call's push carries its kind (real Postgres)", { skip: dbSkip }, () 
     const due = new Date(Date.now() - 3600_000);
     await enqueue(db, made.accountId, ["push"], "Doddy skończył rozmowę. Odpowiedź czeka w aplikacji.", due, "call-result:attempt-1", { cipher: testCipher });
     await enqueue(db, made.accountId, ["push"], "Gotowe. Wynik czeka w Wiadomościach.", due, "errand-result:e-1", { cipher: testCipher });
+    // The radar worker's key (news/radar.ts): a tap opens On my radar (decision 2026-11-13-radar-fixes).
+    await enqueue(db, made.accountId, ["push"], "Na radarze · CPK: „Budowa CPK ruszyła” (TVN24)", due, "radar:alert-1:hit-1", { cipher: testCipher });
     await dispatchDue(db, { push: base.push, cipher: testCipher });
 
     const byBody = new Map(base.push.sent.map((p) => [p.body, p.data]));
     assert.deepEqual(byBody.get("Doddy skończył rozmowę. Odpowiedź czeka w aplikacji."), { kind: "call-result" });
     assert.deepEqual(byBody.get("Gotowe. Wynik czeka w Wiadomościach."), { kind: "errand-result" });
-    assert.equal(base.push.sent.length, 2);
+    assert.deepEqual(byBody.get("Na radarze · CPK: „Budowa CPK ruszyła” (TVN24)"), { kind: "radar" });
+    assert.equal(base.push.sent.length, 3);
   });
 });

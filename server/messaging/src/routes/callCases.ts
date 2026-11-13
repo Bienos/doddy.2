@@ -6,6 +6,7 @@ import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { ackResult, cancelCase, getCase, listCases, setLiveActivityToken } from "../taskCalls/cases.js";
 import type { TaskCallContext } from "../taskCalls/context.js";
+import { checkDraft, draftRequestSchema, drafterErrorCode, readNumbers } from "../taskCalls/draft.js";
 import { approve, caseOwnedBy, createCase, endCall, latestAttempt, liveView, type DialOutcome, type Refusal } from "../taskCalls/service.js";
 import { CALL_ZONE, DAY_END_MINUTES, DAY_START_MINUTES, clockText } from "../taskCalls/hours.js";
 import { startTakeover } from "../taskCalls/takeover.js";
@@ -77,6 +78,39 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
     const r = await createCase(c, principal(req).accountId, req.body);
     if ("refusal" in r) return refusal(reply, r.refusal);
     return reply.code(201).send(r.preview);
+  });
+
+  // "Who and why" in one field (decision 2026-11-13-calls-one-field-brief): a model proposes the brief's words from the
+  // user's sentence, code checks every field (taskCalls/draft.ts), and the reply is a draft for the editor. Nothing is
+  // stored and nothing is dialled: the card the user approves is still made by POST /v1/call-cases from what the
+  // editor sends. The number comes from the user's words (or, in the app, their picked contact), never the model.
+  // Logs carry codes and counts, never the words.
+  app.post("/v1/call-cases/draft", { preHandler: auth, config: { rateLimit: { max: 20, timeWindow: "1 hour" } } }, async (req, reply) => {
+    const c = configured(reply);
+    const body = c && parse(draftRequestSchema, req.body, reply);
+    if (!c || !body) return;
+    if (c.settings.killSwitch) return reply.code(503).send({ error: "calls_disabled" });
+    if (!c.drafter) return reply.code(503).send({ error: "drafter_not_configured" });
+    // Only someone who could make the call gets a draft (the model costs money).
+    const { rows } = await c.db.query<{ e164: string }>("SELECT e164 FROM phone_numbers WHERE account_id = $1", [principal(req).accountId]);
+    if (!rows[0]) return reply.code(409).send({ error: "no_verified_phone" });
+    const numbers = readNumbers(body.text, { own: rows[0].e164, doddy: c.config.fromNumber });
+    if (numbers.refusal) {
+      c.log("call brief draft refused", { reason: numbers.refusal });
+      return reply.code(400).send({ error: "brief_refused", field: "text", reason: numbers.refusal });
+    }
+    let proposal;
+    try {
+      proposal = await c.drafter.draft({ text: numbers.redacted, contactName: body.contactName });
+    } catch (err) {
+      c.log("call brief draft failed", { error: drafterErrorCode(err) });
+      return reply.code(502).send({ error: "draft_failed" });
+    }
+    const draft = checkDraft(proposal, { text: body.text, contactName: body.contactName, phone: numbers.phone, phoneDropped: numbers.phoneDropped });
+    c.log("call brief drafted", {
+      missing: draft.missing, dropped: draft.dropped.map((d) => `${d.field}:${d.reason}`), facts: draft.facts.length,
+    });
+    return draft;
   });
 
   app.get("/v1/call-cases", { preHandler: auth }, async (req, reply) => {

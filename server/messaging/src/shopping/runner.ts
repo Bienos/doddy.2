@@ -17,6 +17,7 @@ import { formatMoney } from "./money.js";
 import { OfferRegistry, type OfferSource, type RegisteredOffer } from "./offers.js";
 import type { AffiliateLinks } from "./affiliate.js";
 import { checkOfferPage, type PageFetcher } from "./pagecheck.js";
+import { SeenPages } from "./seen.js";
 
 type Block = { type: string; [key: string]: unknown };
 export type ShoppingTurn = { role: "user"; content: string | Block[] } | { role: "assistant"; content: Block[] };
@@ -58,7 +59,7 @@ The task arrives as data: the person's own words ("words"), Doddy's one-line bri
 
 Your tools:
 - find_offers: searches Google Shopping in Poland and returns leads: offers with ids (o1, o2, …), shop, price as listed and a link. Use short product queries in Polish, e.g. "zmywarka do zabudowy 45 cm cicha". Two to five queries are usually enough. A listed price is NOT confirmed and is never shown to the person: a lead tells you what exists and where.
-- check_offer_page: reads one shop's own product page and confirms its price from the shop's published product data. Only an offer confirmed this way (evidence "shop_page") can be recommended or shown with a price. Google's links usually point to Google, not to the shop, so find the shop's own product page first (web_search for the product with the shop's name, or a link on a page you read) and check that. It upgrades or adds an offer with an id. It may answer that the shop blocks automated reading or publishes no price: then that offer stays unconfirmed.
+- check_offer_page: reads one shop's own product page and confirms its price from the shop's published product data. Only an offer confirmed this way (evidence "shop_page") can be recommended or shown with a price. Google's links usually point to Google, not to the shop, so find the shop's own product page first (web_search for the product with the shop's name, or a link on a page you read) and check that. It reads only an address that appeared in this task's own results (find_offers, web_search or web_fetch), exactly as it appeared; any other address is refused. It upgrades or adds an offer with an id. It may answer that the shop blocks automated reading or publishes no price: then that offer stays unconfirmed.
 - web_search and web_fetch: for specifications, sizes, noise levels, energy class, reviews and catches, and to find shops' own product pages. A price you see this way is only a note: only confirmed offers with an id count.
 
 How to work:
@@ -86,10 +87,10 @@ export const SHOPPING_TOOLS = [
   },
   {
     name: "check_offer_page",
-    description: "Read one shop's own product page (https) and confirm its price from the shop's published product data. Returns the offer with an id and evidence 'shop_page', or why it couldn't (blocked, not allowed, no published price).",
+    description: "Read one shop's own product page (https) and confirm its price from the shop's published product data. Only an address that appeared in this task's own find_offers, web_search or web_fetch results can be read; any other is refused. Returns the offer with an id and evidence 'shop_page', or why it couldn't (blocked, not allowed, no published price).",
     input_schema: {
       type: "object",
-      properties: { url: { type: "string", description: "The https address of the shop's product page." } },
+      properties: { url: { type: "string", description: "The https address of the shop's product page, as it appeared in this task's results." } },
       required: ["url"], additionalProperties: false,
     },
     strict: true,
@@ -123,6 +124,8 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
   const log = control.log ?? (() => {});
   const usage = emptyUsage();
   const registry = new OfferRegistry();
+  // The only addresses check_offer_page may read: those this run's own results named.
+  const seenPages = new SeenPages();
   const maxSearches = tools.maxOfferSearches ?? 8;
   const maxChecks = tools.maxPageChecks ?? 15;
   let offerSearches = 0;
@@ -182,14 +185,19 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
       const seenAt = now();
       const found = r.offers.flatMap((raw) => registry.addListing(raw, seenAt) ?? []);
       const unique = [...new Map(found.map((o) => [o.id, o])).values()];
+      for (const o of unique) seenPages.add(o.url);
       return reply(JSON.stringify({
         offers: unique.map((o) => offerLine(o, task.language)),
         note: unique.length ? "Prices as Google Shopping lists them now: leads only, never shown to the person. check_offer_page on a shop's own page confirms a price; only confirmed offers can be recommended." : "No offers with a readable price.",
       }));
     }
     if (b.name === "check_offer_page") {
-      const url = typeof input.url === "string" ? input.url.trim() : "";
-      if (!url) return reply("A url is needed.", true);
+      const asked = typeof input.url === "string" ? input.url.trim() : "";
+      if (!asked) return reply("A url is needed.", true);
+      // Nothing is fetched (not even robots.txt) for an address this run's results never named; a query that wasn't
+      // seen with that page is dropped.
+      const url = seenPages.resolve(asked);
+      if (!url) return reply("Not read: check_offer_page reads only an address that appeared in this task's own find_offers, web_search or web_fetch results. Find the shop's product page with web_search first.", true);
       if (pageChecks >= maxChecks) return reply(`The page check limit for this task (${maxChecks}) is reached.`, true);
       pageChecks++;
       const r = await checkOfferPage(url, tools.fetcher, signal);
@@ -197,6 +205,7 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
       if (r.offer.availability === "out_of_stock") return reply("The page says it is out of stock; not added as an offer.", true);
       const o = registry.addShopPage(r.offer, url, now());
       if (!o) return reply("Too many offers registered for this task.", true);
+      seenPages.add(o.url); // where the shop's page ended up (a redirect the shop chose) is a result of this run too
       return reply(JSON.stringify({ offer: offerLine(o, task.language), ...(r.offer.availability ? { availability: r.offer.availability } : {}) }));
     }
     return reply(`There is no tool called ${String(b.name)}.`, true);
@@ -231,6 +240,7 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
     requests++;
     const m = r.ok;
     addUsage(usage, m.usage);
+    seenPages.addFromResults(m.content);
     reportedSearches += m.usage?.server_tool_use?.web_search_requests ?? 0;
     reportedFetches += m.usage?.server_tool_use?.web_fetch_requests ?? 0;
     const counted = countToolUses(m.content);

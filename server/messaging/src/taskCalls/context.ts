@@ -8,6 +8,7 @@ import type { TaskTelephony, TaskVoice } from "../providers/taskCalls.js";
 import type { PushSender } from "../providers/types.js";
 import { checkAgentSafety, type AgentProblem } from "./agentSafety.js";
 import { TASK_AGENT_SPEC, TASK_BOOK_AGENT_SPEC, TASK_ORDER_AGENT_SPEC, type TaskAgentSpec } from "./agentSpec.js";
+import type { BriefDrafter } from "./draft.js";
 import { caseKeys, type CaseKeys } from "./payload.js";
 import type { SayVoice } from "./twiml.js";
 
@@ -29,6 +30,8 @@ export interface TaskCallDeps {
   config: TaskCallConfig;
   settings: TaskCallSettings;
   writer?: ResultWriter;
+  /** Optional: proposes a brief from the user's one sentence (decision 2026-11-13-calls-one-field-brief). Anthropic only. */
+  drafter?: BriefDrafter;
   liveActivity?: LiveActivityPusher;
   /** The daily caps on texts (SMS_DAILY_PER_ACCOUNT / SMS_DAILY_PER_SERVER) for a task's result text. Absent: the defaults. */
   smsCaps?: { perAccount: number; perServer: number };
@@ -47,6 +50,7 @@ export interface TaskCallContext {
   publicBaseUrl: string;
   push?: PushSender;
   writer?: ResultWriter;
+  drafter?: BriefDrafter;
   liveActivity?: LiveActivityPusher;
   smsCaps?: { perAccount: number; perServer: number };
   now: () => Date;
@@ -73,7 +77,7 @@ export function taskCallContext(
   const orderDrift = orderAgentId ? new DriftCache(deps.voice, orderAgentId, now, log, TASK_ORDER_AGENT_SPEC) : DriftCache.notConfigured(deps.voice, now, log);
   return {
     db, cipher, keys: caseKeys(cipher), telephony: deps.telephony, voice: deps.voice, config: deps.config,
-    settings: deps.settings, publicBaseUrl, push, writer: deps.writer, liveActivity: deps.liveActivity, smsCaps: deps.smsCaps, now,
+    settings: deps.settings, publicBaseUrl, push, writer: deps.writer, drafter: deps.drafter, liveActivity: deps.liveActivity, smsCaps: deps.smsCaps, now,
     say: { voice: deps.settings.sayVoice, language: "pl-PL" },
     drift,
     driftFor: (kind) => (kind === "order" ? orderDrift : kind === "book" ? bookDrift : drift),
