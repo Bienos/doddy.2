@@ -1,7 +1,11 @@
 import ActivityKit
 import AppIntents
+import DoddyCore
 import Foundation
 import os
+#if canImport(UIKit) && !DODDY_WIDGET_EXTENSION
+import UIKit
+#endif
 
 /// Lets the Live Activity buttons reach the running conversation. These intents must run in the
 /// app's process (the app is alive because it is in a conversation with background audio),
@@ -64,10 +68,12 @@ struct EndDoddyConversationIntent: LiveActivityIntent {
     }
 }
 
-/// "Mute" / "Unmute" in the Dynamic Island / Lock Screen. Does nothing when no conversation is
-/// running in this process; the island then shows its stale state and only End is offered.
-struct ToggleDoddyMuteIntent: LiveActivityIntent {
-    static let title: LocalizedStringResource = "Mute or unmute Doddy"
+/// "Mute" in the Dynamic Island / Lock Screen. Open on a locked iPhone: anyone may silence Doddy.
+/// It only ever mutes (`IslandMute`): when the island already shows him muted it does nothing. Does
+/// nothing when no conversation is running in this process; the island then shows its stale state and
+/// only End is offered.
+struct MuteDoddyIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Mute Doddy"
     static let isDiscoverable = false
 
     #if compiler(>=6.4)
@@ -80,9 +86,71 @@ struct ToggleDoddyMuteIntent: LiveActivityIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        let handler = VoiceActivityActions.shared.toggleMute
-        IslandIntentLog.performed("Mute/Unmute", handled: handler != nil)
-        await handler?()
+        await IslandMuteButton.press(.mute)
         return .result()
+    }
+}
+
+/// "Unmute" in the Dynamic Island / Lock Screen. Starts Doddy listening again, so iOS asks for Face ID
+/// or the passcode first on a locked iPhone (`IslandMute.needsUnlockedIPhone`), the way a widget's list
+/// tick does; the app checks again that the iPhone is unlocked when it runs. It only ever unmutes.
+struct UnmuteDoddyIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Unmute Doddy"
+    static let isDiscoverable = false
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    #if compiler(>=6.4)
+    /// See `EndDoddyConversationIntent.allowedExecutionTargets` (ADR-131).
+    @available(iOS 27.0, *)
+    static var allowedExecutionTargets: IntentExecutionTargets { .main }
+    #endif
+
+    init() {}
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        await IslandMuteButton.press(.unmute)
+        return .result()
+    }
+}
+
+/// What both island buttons do in the app's process: read what the island shows, ask `IslandMute`,
+/// and flip the conversation's mute only when it says so. The log line names the button and the
+/// outcome, nothing from the conversation.
+@MainActor
+enum IslandMuteButton {
+    static func press(_ button: IslandMute.Button) async {
+        let handler = VoiceActivityActions.shared.toggleMute
+        let decision = IslandMute.decide(button, shownMuted: shownMuted, iPhoneUnlocked: ProtectedData.isAvailable)
+        let name = button == .mute ? "Mute" : "Unmute"
+        switch decision {
+        case .toggle:
+            IslandIntentLog.performed(name, handled: handler != nil)
+            await handler?()
+        case .nothing:
+            IslandIntentLog.performed("\(name) (already so)", handled: handler != nil)
+        case .refusedLocked:
+            // The microphone stays off; the island keeps showing Muted and Unmute.
+            IslandIntentLog.performed("\(name) refused: iPhone locked", handled: handler != nil)
+        }
+    }
+
+    /// What the conversation's island shows now, or nil when this process has none running.
+    private static var shownMuted: Bool? {
+        Activity<DoddyVoiceAttributes>.activities.first { !$0.content.state.isEnded }?.content.state.isMuted
+    }
+}
+
+/// Whether iOS says the iPhone's protected data can be read now, which is false while the iPhone is
+/// locked (it has a passcode). Only the app can ask; anywhere else it answers false, so nothing that
+/// needs an unlocked iPhone goes ahead there.
+@MainActor
+enum ProtectedData {
+    static var isAvailable: Bool {
+        #if canImport(UIKit) && !DODDY_WIDGET_EXTENSION
+        UIApplication.shared.isProtectedDataAvailable
+        #else
+        false
+        #endif
     }
 }

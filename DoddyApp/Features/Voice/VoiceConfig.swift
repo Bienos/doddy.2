@@ -26,6 +26,8 @@ enum VoiceConfig {
     /// since then ElevenLabs refuses this connection (`directAgentRefused`). On by default in Debug;
     /// Release and TestFlight builds compile this to `false` and always need a DODDY voice account.
     static let directAgentID = "agent_0501m4et27vyeawrwqfdxxfszfa6"
+    /// The translator-only agent's id (decision 2026-11-12-translator-agent), for the same Debug connection.
+    static let translatorDirectAgentID = "agent_8901m787fgppedy9kkvg7memny34"
     static var directVoiceEnabled: Bool { UserDefaults.standard.object(forKey: directVoiceKey) as? Bool ?? true }
 
     /// The agent refused the developer connection (its authentication is on): the Debug switch
@@ -35,6 +37,7 @@ enum VoiceConfig {
     static func directAgentRefused() { UserDefaults.standard.set(false, forKey: directVoiceKey) }
     #else
     static let directAgentID = ""
+    static let translatorDirectAgentID = ""
     static var directVoiceEnabled: Bool { false }
     static func directAgentRefused() {}
     #endif

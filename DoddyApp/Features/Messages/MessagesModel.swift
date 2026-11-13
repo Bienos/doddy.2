@@ -320,6 +320,9 @@ final class MessagesModel {
         deleteFailed = false
         do {
             try await repository.deleteAll()
+            // The files Doddy made until now are not offered here again; the server keeps each until its own
+            // deletion date (decision 2026-11-12-deleted-files-stay-gone).
+            FilesShownSinceStore.conversationDeleted()
             messages = []
             proposals = [:]
             planAsks = [:]

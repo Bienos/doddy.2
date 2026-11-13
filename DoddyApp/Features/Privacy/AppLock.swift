@@ -204,6 +204,10 @@ struct AppLockToggle: View {
                 if await AppLock.shared.unlock(reason: NSLocalizedString("Change Doddy's lock", comment: "")) {
                     lockOn = wanted
                     message = nil
+                    // The lock covers what reaches outside the app too (ADR-723): the widgets are rewritten
+                    // locked or unlocked now, and Siri's list phrases get the lists' names, or lose them.
+                    WidgetSync.shared.refresh()
+                    DoddyShortcuts.updateAppShortcutParameters()
                 } else {
                     message = AppLock.shared.problem ?? NSLocalizedString("Not changed: Face ID didn't confirm it.", comment: "")
                 }

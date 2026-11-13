@@ -7,7 +7,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { ErrandEffort } from "../config.js";
-import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, withMaxUses, type BudgetLeft, type ResearchBudget } from "./budget.js";
+import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, WEB_FETCH_MAX_CONTENT_TOKENS, withMaxUses, type BudgetLeft, type ResearchBudget } from "./budget.js";
 import { buildResult } from "./card.js";
 import { CardOutput, type ErrandResult, type FailureCode } from "./schema.js";
 
@@ -345,9 +345,9 @@ export function apiErrorDetail(err: unknown): { errorType?: string; at?: string 
 export const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 export const RESEARCH_TOOLS = [
   // The tools as defined; `max_uses` comes from the errand's research budget (budget.ts, ADR-702), which narrows
-  // ADR-570's "no cap on look-ups": an owner who wants none sets the limits to 0.
+  // ADR-570's "no cap on look-ups": an owner who wants none sets the limits to 0. A fetched page is capped in size.
   { type: "web_search_20260209", name: "web_search" },
-  { type: "web_fetch_20260209", name: "web_fetch" },
+  { type: "web_fetch_20260209", name: "web_fetch", max_content_tokens: WEB_FETCH_MAX_CONTENT_TOKENS },
 ] as const;
 
 /** Claude through the Anthropic SDK: streamed research, then the card through structured output. */
