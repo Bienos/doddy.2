@@ -50,6 +50,9 @@ enum LaunchWork {
     /// Right after the first screen: cheap, local, and read by screens the user can open at once.
     static func afterFirstScreen(store: MemoryStore) async {
         await timed("Early jobs") {
+            // A transcript or history made for the share sheet by an earlier run, never deleted because the app
+            // was closed first, goes now.
+            TemporaryShareFiles.removeAll()
             await store.learning?.reload()
             await SystemNoteNotifications.registerCategory()
             ShoppingModeController.shared.reattach()

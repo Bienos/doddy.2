@@ -145,15 +145,15 @@ final class CallsModel {
         clearExport()
         await run {
             let data = try await client.phoneHistory()
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent("Doddy phone and text history.json")
-            try data.write(to: url, options: [.atomic, .completeFileProtection])
-            self.historyFile = url
+            // In the share folder (readable only while the iPhone is unlocked), where a launch also sweeps it.
+            self.historyFile = try TemporaryShareFiles.write(
+                data, title: "Doddy phone and text history", fileExtension: "json", fallback: "Doddy history")
         }
     }
 
     /// The export holds the phone number and the waiting notes: it isn't left behind.
     func clearExport() {
-        if let file = historyFile { try? FileManager.default.removeItem(at: file) }
+        if let file = historyFile { TemporaryShareFiles.remove(file) }
         historyFile = nil
     }
 

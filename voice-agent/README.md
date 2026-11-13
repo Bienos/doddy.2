@@ -78,6 +78,8 @@ The app's routing is `VoiceToolRequest.parse` and `CloudToolName` in DoddyCore. 
 
 ## Changes to the live main agent, 20 Oct to 10 Nov 2026 (newest first)
 
+**Not yet applied to the live agent (13 Nov 2026, decision `2026-11-13-file-being-made-island-note`):** one sentence of the `make_document` description (`tool_2101m5f15tckfy0v74g5gyaqm3td`): "a card with Open and Share is on the user's screen at once" became "nothing waits on the user's screen and they don't tap anything … without asking them to tap or open anything"; and the `make_document` line under "# Claude" in `instructions.md`. Why: the owner asked for a report by voice and Doddy told the owner to tap a card mid-conversation. An app build with `MadeFileStart` already answers the tool with its own words (no card, no tap; no promise of Messages in a private conversation), so the live sentence is the only place left that still mentions the card. Apply both only on the owner's instruction: update the tool's description exactly as `voice_agent_spec.py elevenlabs` renders it, merge the prompt line in the live prompt's own style, read back, `compare`.
+
 **Not yet applied to the live agent (12 Nov 2026, decision `2026-11-12-food-by-voice`):** a new client tool `open_food_app` (`ask: tap`, `not_synced`) and one "Food delivery" line in `instructions.md`. Create the tool exactly as `voice_agent_spec.py elevenlabs` renders it, attach it, and merge one line in the live prompt's own style into its tools section; only on the owner's instruction (OWNER_QUEUE). Not tested by voice.
 
 **Applied to the live agent 10 Nov 2026, about 07:15 UTC (`call_me_now`, decision `2026-11-10-call-me-now-by-voice`, #305; owner on 10 Nov: "daj to już żeby działało", after the 9 Nov go-ahead for the call tools).**

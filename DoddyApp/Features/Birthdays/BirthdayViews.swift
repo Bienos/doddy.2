@@ -76,7 +76,7 @@ struct BirthdaysView: View {
                         ForEach(contacts) { contact in
                             Toggle(isOn: binding(contact)) {
                                 VStack(alignment: .leading) {
-                                    Text(contact.name)
+                                    Text(verbatim: contact.name)
                                     Text(dayText(contact)).font(.caption).foregroundStyle(Theme.secondaryText)
                                 }
                             }

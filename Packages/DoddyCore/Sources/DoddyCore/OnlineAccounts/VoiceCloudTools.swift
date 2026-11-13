@@ -18,6 +18,8 @@ extension VoiceToolRequest {
 extension VoiceToolReply {
     /// A successful read or write. Demo servers say so, so demo data is never presented as the user's.
     public static func cloudResult(_ result: RunResult) -> String {
+        // A file still being made: the phone's own words, with no card or tap in them (owner, 13 Nov 2026).
+        if let started = MadeFileStart.voiceReply(result) { return started }
         let text = cloudData(result.text)
         guard result.mode == .mock else { return text }
         return "DEMO DATA from a test server, not the user's real account. Tell the user it is demo data. \(text)"
