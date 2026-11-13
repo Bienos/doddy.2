@@ -388,6 +388,17 @@
         }
       }
     },
+    "%lld feeds looked through on the last refresh.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanały przejrzane przy ostatnim odświeżeniu: %lld."
+          }
+        }
+      }
+    },
     "%lld for %@ each": {
       "extractionState": "manual",
       "localizations": {
@@ -1821,6 +1832,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "A mate in your pocket"
+          }
+        }
+      }
+    },
+    "A name for the row at the top, and the words a story must mention.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa do paska na górze i słowa, które muszą paść w artykule."
           }
         }
       }
@@ -3742,6 +3764,17 @@
         }
       }
     },
+    "AI summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streszczenie AI"
+          }
+        }
+      }
+    },
     "ALARM": {
       "extractionState": "manual",
       "localizations": {
@@ -4821,6 +4854,17 @@
         }
       }
     },
+    "Add sources": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj źródła"
+          }
+        }
+      }
+    },
     "Add the shortcut once. Shortcuts shows it first, and you tap Add Shortcut.": {
       "extractionState": "manual",
       "localizations": {
@@ -5226,17 +5270,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加到 Doddy 的清单"
-          }
-        }
-      }
-    },
-    "Add to radar": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dodaj do radaru"
           }
         }
       }
@@ -6226,6 +6259,17 @@
         }
       }
     },
+    "All": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko"
+          }
+        }
+      }
+    },
     "All day": {
       "extractionState": "manual",
       "localizations": {
@@ -6989,6 +7033,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kwota, np. 100"
+          }
+        }
+      }
+    },
+    "An AI summary is written only when you tap a story: Doddy's server then reads that article from the publisher's site and sends its text to Anthropic, whose Claude Haiku writes the summary. It can contain mistakes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streszczenie AI powstaje tylko wtedy, gdy stukniesz artykuł: serwer Doddy’ego czyta go wtedy ze strony wydawcy i wysyła jego tekst do Anthropic, gdzie Claude Haiku pisze streszczenie. Może zawierać błędy."
           }
         }
       }
@@ -25771,6 +25826,28 @@
         }
       }
     },
+    "Doddy's list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista Doddy’ego"
+          }
+        }
+      }
+    },
+    "Doddy's list couldn't be loaded. Close this and open it again to try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać listy Doddy’ego. Zamknij to okno i otwórz je ponownie, żeby spróbować jeszcze raz."
+          }
+        }
+      }
+    },
     "Doddy's memory": {
       "extractionState": "manual",
       "localizations": {
@@ -26080,6 +26157,28 @@
         }
       }
     },
+    "Doddy's server couldn't load this article right now. Try again later, or read it on the publisher's site.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie mógł teraz wczytać tego artykułu. Spróbuj później albo przeczytaj go na stronie wydawcy."
+          }
+        }
+      }
+    },
+    "Doddy's server couldn't read this article, so there's no summary.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie mógł przeczytać tego artykułu, więc nie ma streszczenia."
+          }
+        }
+      }
+    },
     "Doddy's server couldn't write a recap. Nothing was saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -26283,6 +26382,17 @@
         }
       }
     },
+    "Doddy's server has written all the summaries it can today. The full article still opens below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego napisał już dziś wszystkie streszczenia, na jakie może sobie pozwolić. Cały artykuł nadal otworzysz poniżej."
+          }
+        }
+      }
+    },
     "Doddy's server is placing this call.": {
       "extractionState": "manual",
       "localizations": {
@@ -26290,6 +26400,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego wykonuje teraz to połączenie."
+          }
+        }
+      }
+    },
+    "Doddy's server is reading the article…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego czyta artykuł…"
           }
         }
       }
@@ -26415,6 +26536,17 @@
         }
       }
     },
+    "Doddy's server only reads secure public web addresses (https), and this story's isn't one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego czyta tylko bezpieczne, publiczne adresy (https), a adres tego artykułu taki nie jest."
+          }
+        }
+      }
+    },
     "Doddy's server reads each shop's page a few times a day while a watch is on. It only tells you; it never buys anything.": {
       "extractionState": "manual",
       "localizations": {
@@ -26422,6 +26554,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego czyta stronę każdego sklepu kilka razy dziennie, dopóki pilnowanie trwa. Tylko daje znać; niczego nie kupuje."
+          }
+        }
+      }
+    },
+    "Doddy's server reads only public feeds, as a polite automated reader. What you follow is kept on this iPhone and goes to your Doddy server with each refresh; the server keeps it only if you let it check a follow for you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server reads only public feeds, as a polite automated reader. What you follow is kept on this iPad and goes to your Doddy server with each refresh; the server keeps it only if you let it check a follow for you."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server reads only public feeds, as a polite automated reader. What you follow is kept on this iPhone and goes to your Doddy server with each refresh; the server keeps it only if you let it check a follow for you."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego czyta tylko publiczne kanały, jako uprzejmy automatyczny czytelnik. To, co śledzisz, zostaje na tym iPadzie i trafia na twój serwer Doddy’ego przy każdym odświeżeniu; serwer zatrzymuje to tylko wtedy, gdy pozwolisz mu coś dla ciebie sprawdzać."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego czyta tylko publiczne kanały, jako uprzejmy automatyczny czytelnik. To, co śledzisz, zostaje na tym iPhonie i trafia na twój serwer Doddy’ego przy każdym odświeżeniu; serwer zatrzymuje to tylko wtedy, gdy pozwolisz mu coś dla ciebie sprawdzać."
+                }
+              }
+            }
           }
         }
       }
@@ -26437,6 +26610,17 @@
         }
       }
     },
+    "Doddy's server reads the public news feeds of the publishers below. Follow a topic, look for your own words in all of them, or add your own feed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego czyta publiczne kanały wiadomości wydawców z listy poniżej. Śledź temat, szukaj w nich wszystkich własnych słów albo dodaj własny kanał."
+          }
+        }
+      }
+    },
     "Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.": {
       "extractionState": "manual",
       "localizations": {
@@ -26444,6 +26628,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje. Nic, co Cię identyfikuje, nie trafia do sklepów; Rossmann dostaje nazwy rzeczy jako wyszukiwanie."
+          }
+        }
+      }
+    },
+    "Doddy's server reads these publishers' public feeds when you open or refresh On my radar. Their stories from the last two days show up there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego czyta publiczne kanały tych wydawców, gdy otwierasz albo odświeżasz Na radarze. Ich artykuły z ostatnich dwóch dni pojawiają się właśnie tam."
           }
         }
       }
@@ -28452,6 +28647,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jedna płatność, najwyżej"
+          }
+        }
+      }
+    },
+    "Each topic with the publishers whose public feeds Doddy's server reads for it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdy temat razem z wydawcami, których publiczne kanały czyta dla niego serwer Doddy’ego."
           }
         }
       }
@@ -31884,6 +32090,17 @@
         }
       }
     },
+    "Follow something": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledź coś"
+          }
+        }
+      }
+    },
     "Follow these words": {
       "extractionState": "manual",
       "localizations": {
@@ -31891,6 +32108,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Śledź te słowa"
+          }
+        }
+      }
+    },
+    "Following": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledzisz"
           }
         }
       }
@@ -33780,43 +34008,13 @@
         }
       }
     },
-    "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it.": {
+    "Headlines, descriptions and pictures on these cards are the publishers' own, from their public feeds. No AI picks, orders or rewrites them.": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPad and is sent with each refresh to your Doddy server, which keeps none of it."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Headlines, summaries and pictures are the publishers' own, from their public feeds; the link opens the full story. No AI wrote or picked anything here. What you follow stays on this iPhone and is sent with each refresh to your Doddy server, which keeps none of it."
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Nagłówki, streszczenia i zdjęcia pochodzą od wydawców, z ich publicznych kanałów; link otwiera cały artykuł. Żadna AI niczego tu nie napisała ani nie wybrała. To, co śledzisz, zostaje na tym iPadzie i jest wysyłane przy każdym odświeżeniu do Twojego serwera Doddy’ego, który nic z tego nie zachowuje."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Nagłówki, streszczenia i zdjęcia pochodzą od wydawców, z ich publicznych kanałów; link otwiera cały artykuł. Żadna AI niczego tu nie napisała ani nie wybrała. To, co śledzisz, zostaje na tym iPhonie i jest wysyłane przy każdym odświeżeniu do Twojego serwera Doddy’ego, który nic z tego nie zachowuje."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagłówki, opisy i zdjęcia na tych kartach pochodzą od wydawców, z ich publicznych kanałów. Żadne AI ich nie wybiera, nie układa ani nie przerabia."
           }
         }
       }
@@ -43494,6 +43692,17 @@
         }
       }
     },
+    "Looked for in every publisher's feed on this list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukane w kanałach wszystkich wydawców z tej listy."
+          }
+        }
+      }
+    },
     "Looking at your screen…": {
       "extractionState": "manual",
       "localizations": {
@@ -49953,6 +50162,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To nie jest prawdziwa obniżka: w ostatnich 30 dniach kosztowało tyle samo lub mniej."
+          }
+        }
+      }
+    },
+    "Not answering right now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz nie odpowiada"
           }
         }
       }
@@ -59617,6 +59837,28 @@
         }
       }
     },
+    "Opens the story with a short AI summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera artykuł z krótkim streszczeniem AI"
+          }
+        }
+      }
+    },
+    "Opens this topic to follow it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera ten temat, żeby go śledzić"
+          }
+        }
+      }
+    },
     "Operation: %@ · %@": {
       "extractionState": "manual",
       "localizations": {
@@ -60658,6 +60900,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minął"
+          }
+        }
+      }
+    },
+    "Paste a feed's address, for example a blog or a local paper. Doddy's server reads it from there, https only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej adres kanału, na przykład bloga albo lokalnej gazety. Serwer Doddy’ego czyta go stamtąd, tylko przez https."
           }
         }
       }
@@ -61825,6 +62078,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择时间…"
+          }
+        }
+      }
+    },
+    "Pick a topic below: you see the newest stories of the publishers listed under it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz temat poniżej: zobaczysz najnowsze artykuły wydawców wymienionych pod nim."
           }
         }
       }
@@ -64716,6 +64980,17 @@
         }
       }
     },
+    "Read the full article": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytaj cały artykuł"
+          }
+        }
+      }
+    },
     "Read your events for today, tomorrow, the week, or a day you name": {
       "extractionState": "manual",
       "localizations": {
@@ -64863,6 +65138,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在读取照片…"
+          }
+        }
+      }
+    },
+    "Reading the publishers' feeds…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytam kanały wydawców…"
           }
         }
       }
@@ -71036,6 +71322,17 @@
         }
       }
     },
+    "Save to your notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz w notatkach"
+          }
+        }
+      }
+    },
     "Save your parking spot here?": {
       "extractionState": "manual",
       "localizations": {
@@ -72185,6 +72482,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已保存到你的记忆，但无法从这个清单中移除。轻点“放弃”来移除它。"
+          }
+        }
+      }
+    },
+    "Saved to your notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano w notatkach"
           }
         }
       }
@@ -77479,6 +77787,17 @@
         }
       }
     },
+    "Shows every source Doddy can read for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazuje wszystkie źródła, które Doddy może dla ciebie czytać"
+          }
+        }
+      }
+    },
     "Shows only this follow's stories": {
       "extractionState": "manual",
       "localizations": {
@@ -77486,6 +77805,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokazuje tylko artykuły dla tej pozycji"
+          }
+        }
+      }
+    },
+    "Shows the stories of everything you follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazuje artykuły ze wszystkiego, co śledzisz"
           }
         }
       }
@@ -81177,6 +81507,17 @@
         }
       }
     },
+    "Story": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Artykuł"
+          }
+        }
+      }
+    },
     "Straight from your note": {
       "extractionState": "manual",
       "localizations": {
@@ -81530,6 +81871,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅为建议。在你轻点之前，什么都不会改变。"
+          }
+        }
+      }
+    },
+    "Summaries aren't set up on Doddy's server yet, so none was written. The full article still opens below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streszczenia nie są jeszcze włączone na serwerze Doddy’ego, więc żadne nie powstało. Cały artykuł nadal otworzysz poniżej."
+          }
+        }
+      }
+    },
+    "Summaries need a Doddy messaging server, and none is connected in this build yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streszczenia potrzebują serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony."
           }
         }
       }
@@ -87632,6 +87995,17 @@
         }
       }
     },
+    "The newest stories from the publishers you follow. Tap a story for a short summary.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najnowsze artykuły od wydawców, których śledzisz. Stuknij artykuł, żeby zobaczyć krótkie streszczenie."
+          }
+        }
+      }
+    },
     "The note couldn't be confirmed. Check your notes.": {
       "extractionState": "manual",
       "localizations": {
@@ -88966,6 +89340,39 @@
         }
       }
     },
+    "The publisher asks automated readers and AI not to use this page, so Doddy didn't.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wydawca prosi automatycznych czytelników i AI, żeby nie korzystali z tej strony, więc Doddy tego nie zrobił."
+          }
+        }
+      }
+    },
+    "The publisher's site didn't let Doddy's server in (a sign-in or a bot check), so there's no summary.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strona wydawcy nie wpuściła serwera Doddy’ego (logowanie albo sprawdzanie botów), więc nie ma streszczenia."
+          }
+        }
+      }
+    },
+    "The publishers show after the first refresh.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wydawcy pojawią się po pierwszym odświeżeniu."
+          }
+        }
+      }
+    },
     "The question asks Doddy to agree to, book or pay for something. Doddy only asks; rephrase it as a question.": {
       "extractionState": "manual",
       "localizations": {
@@ -89601,6 +90008,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Proponowanego cytatu nie było dosłownie w zapisie, więc został pominięty."
+          }
+        }
+      }
+    },
+    "The summary couldn't be written this time. Try again in a moment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tym razem nie udało się napisać streszczenia. Spróbuj za chwilę."
           }
         }
       }
@@ -90595,6 +91013,17 @@
         }
       }
     },
+    "There isn't enough article text on that page to summarise. It may be a video, a live page or a teaser.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tej stronie jest za mało tekstu artykułu, żeby go streścić. Może to być wideo, relacja na żywo albo zapowiedź."
+          }
+        }
+      }
+    },
     "There's no text or web link here that Doddy can keep. Nothing was saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -91220,6 +91649,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "This article is behind the publisher's paywall, so Doddy didn't summarise it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten artykuł jest za płatną barierą wydawcy, więc Doddy go nie streścił."
           }
         }
       }
@@ -94267,6 +94707,17 @@
         }
       }
     },
+    "This story has no web address, so there's nothing for Doddy's server to read.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten artykuł nie ma adresu w sieci, więc serwer Doddy’ego nie ma czego przeczytać."
+          }
+        }
+      }
+    },
     "This takes up to half a minute.": {
       "extractionState": "manual",
       "localizations": {
@@ -94521,6 +94972,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trzy rzeczy, jedno stuknięcie. Odznacz, aby pominąć."
+          }
+        }
+      }
+    },
+    "Three ways to follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trzy sposoby śledzenia"
           }
         }
       }
@@ -95764,6 +96226,47 @@
         }
       }
     },
+    "To write this summary, your Doddy server read the article from the publisher's site and sent its text to Anthropic (Claude Haiku). Only the story's address and headline left this iPhone, never what you follow. A summary is kept on the server for up to 6 hours, linked to nobody, so the same story isn't summarised twice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To write this summary, your Doddy server read the article from the publisher's site and sent its text to Anthropic (Claude Haiku). Only the story's address and headline left this iPad, never what you follow. A summary is kept on the server for up to 6 hours, linked to nobody, so the same story isn't summarised twice."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To write this summary, your Doddy server read the article from the publisher's site and sent its text to Anthropic (Claude Haiku). Only the story's address and headline left this iPhone, never what you follow. A summary is kept on the server for up to 6 hours, linked to nobody, so the same story isn't summarised twice."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Żeby napisać to streszczenie, twój serwer Doddy’ego przeczytał artykuł ze strony wydawcy i wysłał jego tekst do Anthropic (Claude Haiku). Z tego iPada wyszły tylko adres i nagłówek artykułu, nigdy to, co śledzisz. Streszczenie zostaje na serwerze do 6 godzin, niepowiązane z nikim, żeby ten sam artykuł nie był streszczany dwa razy."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Żeby napisać to streszczenie, twój serwer Doddy’ego przeczytał artykuł ze strony wydawcy i wysłał jego tekst do Anthropic (Claude Haiku). Z tego iPhone’a wyszły tylko adres i nagłówek artykułu, nigdy to, co śledzisz. Streszczenie zostaje na serwerze do 6 godzin, niepowiązane z nikim, żeby ten sam artykuł nie był streszczany dwa razy."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Today": {
       "extractionState": "manual",
       "localizations": {
@@ -96279,17 +96782,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "工具"
-          }
-        }
-      }
-    },
-    "Topic · %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Temat · %@"
           }
         }
       }
@@ -98178,13 +98670,24 @@
         }
       }
     },
-    "Type a topic, a name or a few words, or paste the address of an RSS or Atom feed.": {
+    "Type a name or a few words. Doddy looks for them in the stories of every publisher on this list.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wpisz temat, nazwę lub kilka słów albo wklej adres kanału RSS lub Atom."
+            "value": "Wpisz nazwę albo kilka słów. Doddy szuka ich w artykułach wszystkich wydawców z tej listy."
+          }
+        }
+      }
+    },
+    "Type a name or a few words. Doddy's server searches news sources for them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz nazwę albo kilka słów. Serwer Doddy’ego szuka ich w źródłach wiadomości."
           }
         }
       }
@@ -102602,17 +103105,6 @@
         }
       }
     },
-    "What to follow": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Co śledzić"
-          }
-        }
-      }
-    },
     "What to remember": {
       "extractionState": "manual",
       "localizations": {
@@ -103088,6 +103580,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co śledzisz"
+          }
+        }
+      }
+    },
+    "What you follow stays on this iPhone and goes to your Doddy server with each refresh, which keeps none of it. It is never sent to Anthropic.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you follow stays on this iPad and goes to your Doddy server with each refresh, which keeps none of it. It is never sent to Anthropic."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you follow stays on this iPhone and goes to your Doddy server with each refresh, which keeps none of it. It is never sent to Anthropic."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To, co śledzisz, zostaje na tym iPadzie i trafia na twój serwer Doddy’ego przy każdym odświeżeniu, a serwer niczego z tego nie zatrzymuje. Nigdy nie trafia do Anthropic."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To, co śledzisz, zostaje na tym iPhonie i trafia na twój serwer Doddy’ego przy każdym odświeżeniu, a serwer niczego z tego nie zatrzymuje. Nigdy nie trafia do Anthropic."
+                }
+              }
+            }
           }
         }
       }
@@ -104228,6 +104761,17 @@
         }
       }
     },
+    "Where its stories come from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skąd są artykuły"
+          }
+        }
+      }
+    },
     "Where should I bring this back?": {
       "extractionState": "manual",
       "localizations": {
@@ -104533,6 +105077,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kto ma urodziny w tym tygodniu?"
+          }
+        }
+      }
+    },
+    "Why it matters": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dlaczego to ważne"
           }
         }
       }
@@ -105668,6 +106223,17 @@
         }
       }
     },
+    "Written by AI (%@) from the article. It may contain mistakes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisane przez AI (%@) na podstawie artykułu. Może zawierać błędy."
+          }
+        }
+      }
+    },
     "Written by Claude on Doddy's server.": {
       "extractionState": "manual",
       "localizations": {
@@ -106530,6 +107096,39 @@
         }
       }
     },
+    "You follow ten things already. Remove one first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledzisz już dziesięć rzeczy. Najpierw usuń jedną."
+          }
+        }
+      }
+    },
+    "You follow ten things already. Remove one in Edit to add another.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledzisz już dziesięć rzeczy. Usuń jedną w Edytuj, żeby dodać kolejną."
+          }
+        }
+      }
+    },
+    "You follow this topic": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śledzisz ten temat"
+          }
+        }
+      }
+    },
     "You get a notification and a text with the answer.": {
       "extractionState": "manual",
       "localizations": {
@@ -107157,13 +107756,13 @@
         }
       }
     },
-    "You're not following anything. Add a topic or your own words above.": {
+    "You're not following anything yet. Tap Add sources to pick a topic, your own words or your own feed.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nic nie śledzisz. Dodaj temat albo własne słowa powyżej."
+            "value": "Jeszcze niczego nie śledzisz. Stuknij Dodaj źródła i wybierz temat, własne słowa albo własny kanał."
           }
         }
       }
@@ -107337,6 +107936,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzisiejsze sprawdzenia gazetek się skończyły. Jutro możesz sprawdzić znowu."
+          }
+        }
+      }
+    },
+    "You've used today's summaries. They're back tomorrow; the full article still opens below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje dzisiejsze streszczenia się skończyły. Wrócą jutro; cały artykuł nadal otworzysz poniżej."
           }
         }
       }
@@ -108752,6 +109362,17 @@
         }
       }
     },
+    "Your news": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje wiadomości"
+          }
+        }
+      }
+    },
     "Your note": {
       "extractionState": "manual",
       "localizations": {
@@ -109300,6 +109921,17 @@
         }
       }
     },
+    "Your own RSS or Atom feed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój własny kanał RSS lub Atom"
+          }
+        }
+      }
+    },
     "Your own feed": {
       "extractionState": "manual",
       "localizations": {
@@ -109307,6 +109939,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój własny kanał"
+          }
+        }
+      }
+    },
+    "Your own words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje własne słowa"
+          }
+        }
+      }
+    },
+    "Your own words: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje własne słowa: %@"
           }
         }
       }
