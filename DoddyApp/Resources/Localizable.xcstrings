@@ -21414,6 +21414,17 @@
         }
       }
     },
+    "Doddy couldn't fill this in just now, so most fields are empty. Fill them in yourself; nothing was dialled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł teraz tego uzupełnić, więc większość pól jest pusta. Wypełnij je samodzielnie; nic nie zostało wybrane."
+          }
+        }
+      }
+    },
     "Doddy couldn't finish a task.": {
       "extractionState": "manual",
       "localizations": {
@@ -22155,6 +22166,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "此专注模式下的 Doddy"
+          }
+        }
+      }
+    },
+    "Doddy filled this in from what you wrote. Check every field: the card shows exactly this, and nothing is dialled until you approve it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy uzupełnił to na podstawie Twoich słów. Sprawdź każde pole: karta pokaże dokładnie to, a nic nie jest wybierane, dopóki jej nie zatwierdzisz."
           }
         }
       }
@@ -23269,6 +23291,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 最后听到你说"
+          }
+        }
+      }
+    },
+    "Doddy left out a name you didn't write. Type who Doddy calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pominął nazwę, której nie było w Twoim tekście. Wpisz, do kogo Doddy dzwoni."
+          }
+        }
+      }
+    },
+    "Doddy left out something that can't go on a call card. Check the fields below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pominął coś, co nie może trafić na kartę rozmowy. Sprawdź pola poniżej."
           }
         }
       }
@@ -24508,6 +24552,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy mówi:"
+          }
+        }
+      }
+    },
+    "Doddy says: w imieniu %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy mówi: w imieniu %@"
           }
         }
       }
@@ -25792,6 +25847,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego przeszukuje źródła wiadomości pod kątem tych słów."
+          }
+        }
+      }
+    },
+    "Doddy's server sends these words to Claude (Anthropic) to fill in the fields, with phone numbers taken out first, and doesn't keep them. A contact's number stays on this iPhone until you prepare the card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server sends these words to Claude (Anthropic) to fill in the fields, with phone numbers taken out first, and doesn't keep them. A contact's number stays on this iPad until you prepare the card."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server sends these words to Claude (Anthropic) to fill in the fields, with phone numbers taken out first, and doesn't keep them. A contact's number stays on this iPhone until you prepare the card."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego wysyła te słowa do Claude’a (Anthropic), żeby uzupełnić pola, wcześniej usuwa z nich numery telefonów i ich nie przechowuje. Numer z kontaktu zostaje na tym iPadzie, dopóki nie przygotujesz karty."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego wysyła te słowa do Claude’a (Anthropic), żeby uzupełnić pola, wcześniej usuwa z nich numery telefonów i ich nie przechowuje. Numer z kontaktu zostaje na tym iPhonie, dopóki nie przygotujesz karty."
+                }
+              }
+            }
           }
         }
       }
@@ -29899,6 +29995,17 @@
         }
       }
     },
+    "Facts Doddy may say: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacje, które Doddy może podać: %lld"
+          }
+        }
+      }
+    },
     "Failed": {
       "extractionState": "manual",
       "localizations": {
@@ -30046,6 +30153,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pliki"
+          }
+        }
+      }
+    },
+    "Fill in every field myself": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wypełnij wszystkie pola samodzielnie"
+          }
+        }
+      }
+    },
+    "Filling in the fields…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzupełnianie pól…"
           }
         }
       }
@@ -31269,6 +31398,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na przykład: cicha zmywarka 45 cm do 2000 zł"
+          }
+        }
+      }
+    },
+    "For example: call the hairdresser Anna on Długa, 600 100 200, and ask if they have a free slot on Saturday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na przykład: zadzwoń do fryzjera Anna na Długiej, 600 100 200, i zapytaj, czy mają wolne w sobotę"
           }
         }
       }
@@ -39970,6 +40110,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opuść udostępnioną listę"
+          }
+        }
+      }
+    },
+    "Leave your PESEL out of this field. If Doddy really needs it, add it on the next screen as a fact marked PESEL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie wpisuj tu numeru PESEL. Jeśli Doddy naprawdę go potrzebuje, dodaj go na następnym ekranie jako informację oznaczoną jako PESEL."
           }
         }
       }
@@ -88019,6 +88170,17 @@
         }
       }
     },
+    "There's more than one phone number in what you wrote. Type the one Doddy should call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W Twoim tekście jest więcej niż jeden numer telefonu. Wpisz ten, pod który Doddy ma zadzwonić."
+          }
+        }
+      }
+    },
     "There's no text or web link here that Doddy can keep. Nothing was saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -101697,6 +101859,17 @@
         }
       }
     },
+    "Who and why": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do kogo i po co"
+          }
+        }
+      }
+    },
     "Whose birthday is this week?": {
       "extractionState": "manual",
       "localizations": {
@@ -102606,6 +102779,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najpierw wpisz, czym Doddy ma się zająć."
+          }
+        }
+      }
+    },
+    "Write who Doddy calls and what to ask, with their number unless you pick a contact. Doddy fills in the rest; you check every field next, and nothing is dialled until you approve the card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisz, do kogo Doddy ma zadzwonić i o co zapytać, razem z numerem, chyba że wybierzesz kontakt. Resztę uzupełni Doddy; potem sprawdzisz każde pole, a nic nie jest wybierane, dopóki nie zatwierdzisz karty."
           }
         }
       }
