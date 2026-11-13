@@ -1,10 +1,75 @@
 import DoddyCore
 import SwiftUI
 
-// On my radar (owner, 10 Nov 2026; decision 2026-11-10-radar-alerts): one sheet to add anything ("bitcoin",
-// "CPK", "Tesla", a feed address), the tapped follow's sources and "tell me when", and the stories Doddy's
-// server spotted. Nothing here is written by an AI: headlines and publishers are the feeds' own. A server check
-// is offered only behind its own switch, and said to be on only when the server's answer lists it.
+// On my radar (owner, 10 Nov 2026; decision 2026-11-10-radar-alerts; redesigned 13 Nov 2026): the Sources list,
+// which shows every publisher Doddy's server can read, by topic, and the three ways to follow (owner, 13 Nov:
+// "trzeba też wiedzieć z jakich źródeł można podłączyć to, żeby to się działo, a nie tak to randomowo pokazuje");
+// the follow form with "tell me when"; the tapped follow's sources; and the stories Doddy's server spotted. Nothing
+// here is written by an AI: headlines and publishers are the feeds' own. A server check is offered only behind its
+// own switch, and said to be on only when the server's answer lists it.
+
+/// The icon for each kind of follow, shared by the chips, the detail card and the edit list.
+enum RadarFollowKind {
+    static func icon(_ follow: NewsFollow) -> String {
+        switch follow {
+        case .topic: "newspaper"
+        case .words: "text.magnifyingglass"
+        case .feed: "dot.radiowaves.up.forward"
+        }
+    }
+}
+
+/// One publisher and the host its feed is read from, with whether it answered on the last refresh when known.
+private struct PublisherRow: View {
+    let name: String
+    var domain: String?
+    /// nil before the first refresh; false when it didn't answer this time.
+    var answered: Bool?
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            statusIcon
+            VStack(alignment: .leading, spacing: 1) {
+                Text(verbatim: name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                if let domain {
+                    Text(verbatim: domain)
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                if answered == false {
+                    Text("Not answering right now")
+                        .font(.caption)
+                        .foregroundStyle(Theme.error)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var statusIcon: some View {
+        switch answered {
+        case true?:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.footnote)
+                .foregroundStyle(Theme.confirmed)
+                .accessibilityLabel(Text("Answered"))
+        case false?:
+            Image(systemName: "exclamationmark.circle")
+                .font(.footnote)
+                .foregroundStyle(Theme.error)
+                .accessibilityHidden(true)
+        case nil:
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityHidden(true)
+        }
+    }
+}
 
 /// The tapped follow: where its stories come from, how Doddy tells about it, and an honest empty state.
 struct FollowDetail: View {
@@ -15,23 +80,22 @@ struct FollowDetail: View {
 
     var body: some View {
         let alert = model.alert(for: follow)
-        VStack(alignment: .leading, spacing: 8) {
-            Text(verbatim: follow.label)
-                .font(.headline)
-                .foregroundStyle(Theme.ink)
-                .accessibilityAddTraits(.isHeader)
-            if let line = model.sourcesLine(for: follow) {
-                Label { Text(verbatim: line) } icon: { Image(systemName: "dot.radiowaves.left.and.right") }
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                DoddyIconBadge(systemName: RadarFollowKind.icon(follow), size: 40)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: follow.label)
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                        .accessibilityAddTraits(.isHeader)
+                    kindLine
+                }
             }
-            if !follow.keywords.isEmpty {
-                Label {
-                    Text(String(format: NSLocalizedString("Stories that mention: %@", comment: ""), follow.keywords.joined(separator: ", ")))
-                } icon: { Image(systemName: "text.magnifyingglass") }
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-            }
+            Text("Where its stories come from")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.secondaryText)
+            sources
+            Divider().overlay(Theme.separator)
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Label { Text(verbatim: alert.summary(polish: polish)) } icon: {
                     Image(systemName: alert.serverChecks ? "bell.badge" : "eye")
@@ -41,17 +105,72 @@ struct FollowDetail: View {
                 Spacer(minLength: 0)
                 Button("Tell me…", action: tellMe)
                     .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                    .frame(minHeight: 44)
                     .accessibilityIdentifier("radar.tellMe")
             }
             if model.fetchedAt != nil, !model.isLoading, model.problem == nil, model.visibleCards.isEmpty {
-                Text(String(format: NSLocalizedString("Nothing from the last two days for %@. Pull down to look again.", comment: ""), follow.label))
+                Text(verbatim: String(format: NSLocalizedString("Nothing from the last two days for %@. Pull down to look again.", comment: ""), follow.label))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
                     .accessibilityIdentifier("radar.nothing")
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
+        .doddyCard(accent: true)
+    }
+
+    @ViewBuilder
+    private var kindLine: some View {
+        switch follow {
+        case .topic:
+            Text("A topic from Doddy's list").font(.footnote).foregroundStyle(Theme.secondaryText)
+        case .words(_, let keywords):
+            Text(verbatim: String(format: NSLocalizedString("Your own words: %@", comment: ""), keywords.joined(separator: ", ")))
+                .font(.footnote).foregroundStyle(Theme.secondaryText)
+        case .feed:
+            Text("Your own feed").font(.footnote).foregroundStyle(Theme.secondaryText)
+        }
+    }
+
+    /// The publishers, from the last refresh (with whether each answered) or, before one, from the catalog.
+    @ViewBuilder
+    private var sources: some View {
+        let report = model.report(for: follow)
+        switch follow {
+        case .topic:
+            let publishers = model.catalogTopic(for: follow)?.publisherList ?? []
+            let reported = report?.sources ?? []
+            if publishers.isEmpty && reported.isEmpty {
+                Text("The publishers show after the first refresh.").font(.footnote).foregroundStyle(Theme.secondaryText)
+            } else if publishers.isEmpty {
+                ForEach(reported, id: \.name) { source in
+                    PublisherRow(name: source.name, answered: source.ok)
+                }
+            } else {
+                ForEach(publishers, id: \.name) { publisher in
+                    PublisherRow(name: publisher.name, domain: publisher.domain,
+                                 answered: reported.first(where: { $0.name == publisher.name })?.ok)
+                }
+            }
+        case .words:
+            if model.keywordSearch {
+                Text("Doddy's server searches news sources for these words.").font(.footnote).foregroundStyle(Theme.ink)
+            } else {
+                Text("Doddy looks for these words, with their Polish and English endings, in every publisher's feed it reads.")
+                    .font(.footnote).foregroundStyle(Theme.ink)
+                if let searched = report?.searchedFeeds {
+                    Text(verbatim: String(format: NSLocalizedString("%lld feeds looked through on the last refresh.", comment: ""), Int64(searched)))
+                        .font(.caption).foregroundStyle(Theme.secondaryText)
+                }
+            }
+        case .feed(_, let url, let keywords):
+            PublisherRow(name: report?.sources.first?.name ?? (URL(string: url)?.host ?? url),
+                         domain: URL(string: url)?.host, answered: report?.sources.first?.ok)
+            if !keywords.isEmpty {
+                Text(verbatim: String(format: NSLocalizedString("Stories that mention: %@", comment: ""), keywords.joined(separator: ", ")))
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
+        }
     }
 }
 
@@ -67,10 +186,13 @@ struct SpottedList: View {
         let hits = Array(model.spotted(for: follow).prefix(10))
         if !hits.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Doddy spotted")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.secondaryText)
-                    .accessibilityAddTraits(.isHeader)
+                HStack(spacing: 10) {
+                    DoddyIconBadge(systemName: "bell", size: 32)
+                    Text("Doddy spotted")
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                        .accessibilityAddTraits(.isHeader)
+                }
                 ForEach(hits) { hit in
                     Button { open(hit) } label: {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -89,6 +211,8 @@ struct SpottedList: View {
                             }
                             Spacer(minLength: 0)
                         }
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .disabled(hit.link == nil)
@@ -100,11 +224,7 @@ struct SpottedList: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .doddyCard()
             .task(id: hits.map(\.id)) {
                 // Seen once they have been on screen for a moment.
                 try? await Task.sleep(for: .seconds(2))
@@ -114,7 +234,7 @@ struct SpottedList: View {
     }
 }
 
-/// "Tell me when" and how: shared by the add sheet and a follow's own sheet. The server switch is the only
+/// "Tell me when" and how: shared by the follow form and a follow's own sheet. The server switch is the only
 /// way to have Doddy's server check a follow, and its footer says what it keeps.
 struct RadarAlertFields: View {
     @Binding var wordsText: String
@@ -153,6 +273,7 @@ struct RadarAlertFields: View {
             }
             if how != .app && !serverOff {
                 Toggle("Let Doddy's server check this for you", isOn: $serverChecks)
+                    .tint(Theme.orangeCue)
                     .accessibilityIdentifier("radar.serverChecks")
             }
         } header: {
@@ -197,15 +318,293 @@ enum RadarClock {
     }
 }
 
-/// Add to the radar: type anything; Doddy offers the catalog topic it points at, the words themselves, or the
-/// person's own feed; then optionally "tell me when" and how.
+// MARK: - Sources: what can be followed
+
+/// Add sources (13 Nov 2026): every publisher Doddy's server can read, on its shelves, and the three ways to follow.
+/// Typing offers the topic the words point at, the words themselves, or the person's own feed. Picking anything
+/// opens the follow form (RadarFollowForm), which shows where its stories will come from before it is added.
 struct RadarAddSheet: View {
     @Environment(\.dismiss) private var dismiss
     let model: FollowingModel
     @State private var typed = ""
-    @State private var picked: RadarChoice?
-    @State private var name = ""
-    @State private var keywordsText = ""
+    @State private var chosen: RadarChoice?
+    @State private var showForm = false
+    @FocusState private var typing: Bool
+    private let polish = FollowingModel.polish
+
+    private var choices: [RadarChoice] {
+        RadarSuggest.choices(for: typed, catalog: model.catalog, following: model.follows, polish: polish)
+    }
+
+    private var shelves: [NewsCatalogShelf] {
+        NewsCatalogShelves.group(model.catalog, polish: polish)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    DoddyPageHeader(eyebrow: "On my radar", title: "Sources",
+                                    subtitle: "Doddy's server reads the public news feeds of the publishers below. Follow a topic, look for your own words in all of them, or add your own feed.")
+                    waysCard
+                    typeSection
+                    catalogSection
+                    DoddyFinePrint(text: Text("Doddy's server reads only public feeds, as a polite automated reader. What you follow is kept on this iPhone and goes to your Doddy server with each refresh; the server keeps it only if you let it check a follow for you."))
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 32)
+                .frame(maxWidth: 640, alignment: .leading)
+                .frame(maxWidth: .infinity)
+            }
+            .background(Theme.canvas.ignoresSafeArea())
+            .scrollDismissesKeyboard(.interactively)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
+            .navigationDestination(isPresented: $showForm) {
+                if let chosen {
+                    RadarFollowForm(model: model, choice: chosen, finish: { dismiss() })
+                }
+            }
+            .task { await model.loadCatalog() }
+            .task { await model.loadRadar() }
+        }
+    }
+
+    private func pick(_ choice: RadarChoice) {
+        chosen = choice
+        typing = false
+        showForm = true
+    }
+
+    // MARK: The three ways
+
+    @ViewBuilder
+    private var waysCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Three ways to follow")
+                .font(.headline)
+                .foregroundStyle(Theme.ink)
+                .accessibilityAddTraits(.isHeader)
+            WayRow(systemImage: "newspaper", title: "A topic from Doddy's list",
+                   subtitle: "Pick a topic below: you see the newest stories of the publishers listed under it.")
+            if model.keywordSearch {
+                WayRow(systemImage: "text.magnifyingglass", title: "Your own words",
+                       subtitle: "Type a name or a few words. Doddy's server searches news sources for them.")
+            } else {
+                WayRow(systemImage: "text.magnifyingglass", title: "Your own words",
+                       subtitle: "Type a name or a few words. Doddy looks for them in the stories of every publisher on this list.")
+            }
+            WayRow(systemImage: "dot.radiowaves.up.forward", title: "Your own RSS or Atom feed",
+                   subtitle: "Paste a feed's address, for example a blog or a local paper. Doddy's server reads it from there, https only.")
+        }
+        .doddyCard()
+    }
+
+    // MARK: Typing
+
+    private var typeSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            DoddySectionTitle(title: "Follow something")
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityHidden(true)
+                TextField("Bitcoin, CPK, Tesla or a feed address", text: $typed)
+                    .focused($typing)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.done)
+                    .foregroundStyle(Theme.ink)
+                    .accessibilityIdentifier("radar.typed")
+            }
+            .doddyField()
+            if model.follows.isFull {
+                DoddyNotice(text: Text("You follow ten things already. Remove one in Edit to add another."))
+            }
+            ForEach(choices) { choice in
+                Button { pick(choice) } label: {
+                    ChoiceCard(choice: choice, keywordSearch: model.keywordSearch, catalog: model.catalog)
+                }
+                .buttonStyle(.plain)
+                .disabled(model.follows.isFull)
+                .accessibilityIdentifier("radar.choice")
+            }
+        }
+    }
+
+    // MARK: Doddy's list
+
+    @ViewBuilder
+    private var catalogSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DoddySectionTitle(title: "Doddy's list")
+            Text("Each topic with the publishers whose public feeds Doddy's server reads for it.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            if !model.isServerConfigured {
+                DoddyNotice(text: Text("On my radar needs a Doddy messaging server, and none is connected in this build yet."))
+            } else if model.catalog.isEmpty, model.catalogFailed {
+                DoddyNotice(text: Text("Doddy's list couldn't be loaded. Close this and open it again to try again."), isProblem: true)
+            } else if model.catalog.isEmpty {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Loading topics…").font(.subheadline).foregroundStyle(Theme.secondaryText)
+                }
+            }
+            ForEach(shelves) { shelf in
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(verbatim: shelf.label)
+                        .textCase(.uppercase)
+                        .font(.caption.weight(.semibold))
+                        .tracking(1.2)
+                        .foregroundStyle(Theme.secondaryText)
+                        .padding(.top, 4)
+                        .accessibilityAddTraits(.isHeader)
+                    ForEach(shelf.topics) { topic in
+                        let followed = model.isFollowing(topicID: topic.id)
+                        Button {
+                            pick(.topic(id: topic.id, label: topic.label, sources: topic.sources ?? []))
+                        } label: {
+                            TopicSourceCard(topic: topic, isFollowed: followed)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(followed || model.follows.isFull)
+                        .accessibilityHint(followed ? Text("You follow this topic") : Text("Opens this topic to follow it"))
+                        .accessibilityIdentifier("radar.topic")
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// One way to follow, in the three-ways card.
+private struct WayRow: View {
+    let systemImage: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            DoddyIconBadge(systemName: systemImage, size: 34)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                Text(subtitle).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A catalog topic with every publisher that feeds it and the host Doddy's server reads it from.
+private struct TopicSourceCard: View {
+    let topic: NewsCatalogTopic
+    let isFollowed: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: topic.label)
+                    .font(.headline)
+                    .foregroundStyle(Theme.ink)
+                Spacer(minLength: 8)
+                if isFollowed {
+                    Label("Following", systemImage: "checkmark")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.confirmed)
+                } else {
+                    Label("Follow", systemImage: "plus")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.inkOnOrange)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Theme.orangeCue, in: Capsule())
+                }
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(topic.publisherList, id: \.name) { publisher in
+                    PublisherRow(name: publisher.name, domain: publisher.domain)
+                }
+            }
+        }
+        .doddyCard(padding: 14)
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+}
+
+/// One way to follow what was typed: a topic with its publishers, the words, or the person's own feed.
+private struct ChoiceCard: View {
+    let choice: RadarChoice
+    let keywordSearch: Bool
+    let catalog: [NewsCatalogTopic]
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            DoddyIconBadge(systemName: icon, size: 36)
+            VStack(alignment: .leading, spacing: 3) {
+                details
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityHidden(true)
+        }
+        .doddyCard(padding: 14)
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    private var icon: String {
+        switch choice {
+        case .topic: "newspaper"
+        case .words: "text.magnifyingglass"
+        case .feed: "dot.radiowaves.up.forward"
+        }
+    }
+
+    @ViewBuilder
+    private var details: some View {
+        switch choice {
+        case .topic(let id, let label, let sources):
+            Text(verbatim: label).font(.headline).foregroundStyle(Theme.ink)
+            Text("A topic from Doddy's list").font(.caption).foregroundStyle(Theme.secondaryText)
+            let names = catalog.first(where: { $0.id == id })?.publisherList.map(\.name) ?? sources
+            if !names.isEmpty {
+                Text(verbatim: names.joined(separator: ", ")).font(.footnote).foregroundStyle(Theme.ink)
+            }
+        case .words(_, let keywords):
+            Text("Follow these words").font(.headline).foregroundStyle(Theme.ink)
+            Text(verbatim: String(format: NSLocalizedString("Stories that mention: %@", comment: ""), keywords.joined(separator: ", ")))
+                .font(.footnote).foregroundStyle(Theme.ink)
+            if keywordSearch {
+                Text("Doddy's server searches news sources for these words.").font(.caption).foregroundStyle(Theme.secondaryText)
+            } else {
+                Text("Looked for in every publisher's feed on this list.").font(.caption).foregroundStyle(Theme.secondaryText)
+            }
+        case .feed(let url):
+            Text("Your own feed").font(.headline).foregroundStyle(Theme.ink)
+            Text(verbatim: url).font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(2)
+        }
+    }
+}
+
+// MARK: - The follow form
+
+/// What was picked, before it is added: where its stories come from, its name and words, a check of an own feed,
+/// and "tell me when". Add keeps it on this iPhone (and, behind the switch, on Doddy's server).
+struct RadarFollowForm: View {
+    let model: FollowingModel
+    let choice: RadarChoice
+    /// Closes the whole Sources sheet once the follow was added.
+    let finish: () -> Void
+    @State private var name: String
+    @State private var keywordsText: String
     @State private var feedLine: String?
     @State private var feedOK = false
     @State private var checking = false
@@ -215,19 +614,29 @@ struct RadarAddSheet: View {
     @State private var serverChecks = false
     @State private var note: String?
     @State private var saving = false
-    @FocusState private var typing: Bool
-    private let polish = FollowingModel.polish
 
-    private var choices: [RadarChoice] {
-        RadarSuggest.choices(for: typed, catalog: model.catalog, following: model.follows, polish: polish)
+    init(model: FollowingModel, choice: RadarChoice, finish: @escaping () -> Void) {
+        self.model = model
+        self.choice = choice
+        self.finish = finish
+        switch choice {
+        case .topic(_, let label, _):
+            _name = State(initialValue: label)
+            _keywordsText = State(initialValue: "")
+        case .words(let label, let keywords):
+            _name = State(initialValue: label)
+            _keywordsText = State(initialValue: keywords.joined(separator: ", "))
+        case .feed(let url):
+            _name = State(initialValue: URL(string: url)?.host ?? "")
+            _keywordsText = State(initialValue: "")
+        }
     }
 
     private var follow: NewsFollow? {
-        switch picked {
-        case .topic(let id, let label, _)?: .topic(id: id, label: label)
-        case .words?: NewsFollowList.words(name: name, keywordsText: keywordsText)
-        case .feed(let url)?: feedOK ? NewsFollowList.feed(name: name, url: url, keywordsText: keywordsText) : nil
-        case nil: nil
+        switch choice {
+        case .topic(let id, let label, _): .topic(id: id, label: label)
+        case .words: NewsFollowList.words(name: name, keywordsText: keywordsText)
+        case .feed(let url): feedOK ? NewsFollowList.feed(name: name, url: url, keywordsText: keywordsText) : nil
         }
     }
 
@@ -248,123 +657,115 @@ struct RadarAddSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Bitcoin, CPK, Tesla or a feed address", text: $typed)
-                        .focused($typing)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.done)
-                        .accessibilityIdentifier("radar.typed")
-                } footer: {
-                    Text("Type a topic, a name or a few words, or paste the address of an RSS or Atom feed.")
-                }
-                if !choices.isEmpty || picked != nil {
-                    Section("What to follow") {
-                        ForEach(choicesShown) { choice in
-                            Button { pick(choice) } label: { ChoiceRow(choice: choice, picked: picked?.id == choice.id, keywordSearch: model.keywordSearch) }
-                                .buttonStyle(.plain)
-                                .accessibilityAddTraits(picked?.id == choice.id ? .isSelected : [])
-                        }
-                    }
-                }
-                if case .words? = picked {
-                    Section {
-                        TextField("Name, e.g. CPK", text: $name)
-                        TextField("Words to look for, comma separated", text: $keywordsText)
-                            .textInputAutocapitalization(.never)
-                    } header: {
-                        Text("My own words")
-                    } footer: {
-                        if model.keywordSearch {
-                            Text("Doddy's server searches news sources for these words.")
-                        } else {
-                            Text("Doddy looks for these words, with their Polish and English endings, in every publisher's feed it reads.")
-                        }
-                    }
-                }
-                if case .feed(let url)? = picked {
-                    Section {
-                        Button {
-                            Task { await check(url) }
-                        } label: {
-                            HStack {
-                                Text(feedOK ? "Checked" : "Check this feed")
-                                Spacer()
-                                if checking { ProgressView() }
-                                else if feedOK { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.confirmed) }
-                            }
-                        }
-                        .disabled(checking || feedOK)
-                        if let feedLine { Text(verbatim: feedLine).font(.footnote).foregroundStyle(feedOK ? Theme.secondaryText : Theme.error) }
-                        if feedOK {
-                            TextField("Name, e.g. CPK", text: $name)
-                            TextField("Words to look for, comma separated", text: $keywordsText)
-                                .textInputAutocapitalization(.never)
-                        }
-                    } header: {
-                        Text("Your own feed")
-                    } footer: {
-                        Text("Doddy's server reads the feed from its address, https only, and never a private network. Leave the words empty to see everything from it.")
-                    }
-                }
-                if follow != nil {
-                    RadarAlertFields(wordsText: $wordsText, how: $how, time: $time, serverChecks: $serverChecks, model: model, problem: problem)
-                }
-                Section("Topics") {
-                    if model.availableTopics.isEmpty, model.catalog.isEmpty {
-                        Text("Loading topics…").foregroundStyle(Theme.secondaryText)
-                    }
-                    ForEach(model.availableTopics) { topic in
-                        let choice = RadarChoice.topic(id: topic.id, label: topic.label, sources: topic.sources ?? [])
-                        Button { pick(choice) } label: { ChoiceRow(choice: choice, picked: picked?.id == choice.id, keywordSearch: model.keywordSearch) }
-                            .buttonStyle(.plain)
-                    }
-                }
-                if let note {
-                    Section { Label(note, systemImage: "info.circle") }
-                }
+        Form {
+            sourcesSection
+            if case .words = choice { wordsSection }
+            if case .feed(let url) = choice { feedSection(url) }
+            if follow != nil {
+                RadarAlertFields(wordsText: $wordsText, how: $how, time: $time, serverChecks: $serverChecks, model: model, problem: problem)
             }
-            .scrollContentBackground(.hidden)
-            .background(Theme.canvas)
-            .navigationTitle("Add to radar")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { Task { await add() } }
-                        .disabled(!canAdd)
-                        .accessibilityIdentifier("radar.add")
-                }
+            if let note {
+                Section { Label(note, systemImage: "info.circle") }
             }
-            .task { await model.loadCatalog() }
-            .task { await model.loadRadar() }
-            .onAppear { typing = true }
-            .onChange(of: typed) { _, _ in
-                let first = choices.first
-                picked = first
-                name = String(typed.trimmingCharacters(in: .whitespacesAndNewlines).prefix(60))
-                keywordsText = typed.trimmingCharacters(in: .whitespacesAndNewlines)
-                feedOK = false
-                feedLine = nil
-                if case .feed(let url)? = first { name = URL(string: url)?.host ?? "" ; keywordsText = "" }
-                note = nil
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvas)
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Add") { Task { await add() } }
+                    .disabled(!canAdd)
+                    .accessibilityIdentifier("radar.add")
             }
+        }
+        .task {
+            if case .feed(let url) = choice, !feedOK { await check(url) }
         }
     }
 
-    /// The suggestions, plus a topic picked from the list below if it isn't one of them.
-    private var choicesShown: [RadarChoice] {
-        var list = choices
-        if let picked, !list.contains(where: { $0.id == picked.id }) { list.insert(picked, at: 0) }
-        return list
+    private var title: Text {
+        switch choice {
+        case .topic(_, let label, _): Text(verbatim: label)
+        case .words: Text("My own words")
+        case .feed: Text("Your own feed")
+        }
     }
 
-    private func pick(_ choice: RadarChoice) {
-        picked = choice
-        note = nil
-        if case .feed(let url) = choice, !feedOK { Task { await check(url) } }
+    // MARK: Where its stories come from
+
+    @ViewBuilder
+    private var sourcesSection: some View {
+        switch choice {
+        case .topic(let id, _, let sources):
+            Section {
+                let publishers = model.catalog.first(where: { $0.id == id })?.publisherList
+                    ?? sources.map { NewsCatalogTopic.Publisher(name: $0, domain: nil) }
+                ForEach(publishers, id: \.name) { publisher in
+                    PublisherRow(name: publisher.name, domain: publisher.domain)
+                }
+            } header: {
+                Text("Where its stories come from")
+            } footer: {
+                Text("Doddy's server reads these publishers' public feeds when you open or refresh On my radar. Their stories from the last two days show up there.")
+            }
+        case .words:
+            Section {
+                if model.keywordSearch {
+                    Text("Doddy's server searches news sources for these words.")
+                } else {
+                    Text("Doddy looks for these words, with their Polish and English endings, in every publisher's feed it reads.")
+                }
+            } header: {
+                Text("Where its stories come from")
+            }
+        case .feed:
+            EmptyView()
+        }
+    }
+
+    private var wordsSection: some View {
+        Section {
+            TextField("Name, e.g. CPK", text: $name)
+            TextField("Words to look for, comma separated", text: $keywordsText)
+                .textInputAutocapitalization(.never)
+        } header: {
+            Text("My own words")
+        } footer: {
+            Text("A name for the row at the top, and the words a story must mention.")
+        }
+    }
+
+    private func feedSection(_ url: String) -> some View {
+        Section {
+            Text(verbatim: url).font(.footnote).foregroundStyle(Theme.secondaryText)
+            Button {
+                Task { await check(url) }
+            } label: {
+                HStack {
+                    Text(feedOK ? "Checked" : "Check this feed")
+                    Spacer()
+                    if checking {
+                        ProgressView()
+                    } else if feedOK {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.confirmed)
+                    }
+                }
+            }
+            .disabled(checking || feedOK)
+            if let feedLine {
+                Text(verbatim: feedLine).font(.footnote).foregroundStyle(feedOK ? Theme.secondaryText : Theme.error)
+            }
+            if feedOK {
+                TextField("Name, e.g. CPK", text: $name)
+                TextField("Words to look for, comma separated", text: $keywordsText)
+                    .textInputAutocapitalization(.never)
+            }
+        } header: {
+            Text("Your own feed")
+        } footer: {
+            Text("Doddy's server reads the feed from its address, https only, and never a private network. Leave the words empty to see everything from it.")
+        }
     }
 
     private func check(_ url: String) async {
@@ -383,56 +784,20 @@ struct RadarAddSheet: View {
 
     private func add() async {
         guard let follow, let alert else {
-            if case .words? = picked { note = NSLocalizedString("Give it a name and at least one word of two or more letters.", comment: "") }
+            if case .words = choice { note = NSLocalizedString("Give it a name and at least one word of two or more letters.", comment: "") }
             return
         }
         saving = true
         defer { saving = false }
         switch await model.addToRadar(follow, alert: alert) {
         case .added:
-            dismiss()
+            finish()
         case .addedHereOnly(let why):
             model.message = String(format: NSLocalizedString("Added; it shows here only. %@", comment: ""), why)
-            dismiss()
+            finish()
         case .notAdded(let why):
             note = why
         }
-    }
-}
-
-/// One way to follow what was typed: a topic with its publishers, the words, or the person's own feed.
-private struct ChoiceRow: View {
-    let choice: RadarChoice
-    let picked: Bool
-    let keywordSearch: Bool
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: picked ? "largecircle.fill.circle" : "circle")
-                .foregroundStyle(picked ? Theme.accentText : Theme.secondaryText)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                switch choice {
-                case .topic(_, let label, let sources):
-                    Text(verbatim: label).foregroundStyle(Theme.ink)
-                    if sources.isEmpty {
-                        Text("A topic from Doddy's list").font(.caption).foregroundStyle(Theme.secondaryText)
-                    } else {
-                        Text(String(format: NSLocalizedString("Topic · %@", comment: ""), sources.joined(separator: ", ")))
-                            .font(.caption).foregroundStyle(Theme.secondaryText)
-                    }
-                case .words(_, let keywords):
-                    Text("Follow these words").foregroundStyle(Theme.ink)
-                    Text(String(format: NSLocalizedString("Stories that mention: %@", comment: ""), keywords.joined(separator: ", ")))
-                        .font(.caption).foregroundStyle(Theme.secondaryText)
-                case .feed(let url):
-                    Text("Your own feed").foregroundStyle(Theme.ink)
-                    Text(verbatim: url).font(.caption).foregroundStyle(Theme.secondaryText).lineLimit(1)
-                }
-            }
-            Spacer(minLength: 0)
-        }
-        .contentShape(Rectangle())
     }
 }
 

@@ -48,3 +48,33 @@ export async function reserveWriter(db: Db, accountId: string, caps: NewsWriterC
     return "account_cap";
   });
 }
+
+// ---------- story summaries (On my radar, 13 Nov 2026) ----------
+
+/** Daily caps on the AI summaries of stories a person taps: the same three kinds as the digests', counted apart. */
+export type NewsSummaryCaps = NewsWriterCaps;
+
+/** One summary is one short Claude Haiku request (about 5,000 tokens in, a few hundred out). A person reading the
+ * news taps a few stories a day; 30 leaves room without letting one account spend the server's day. Each can be set
+ * (`NEWS_SUMMARY_DAILY_*`). */
+export const DEFAULT_NEWS_SUMMARY_CAPS: Required<NewsSummaryCaps> = {
+  perAccount: 30, perServer: 2000, newAccountPool: DEFAULT_NEW_ACCOUNT_POOL.news_summary, newAccountHours: DEFAULT_NEW_ACCOUNT_HOURS,
+};
+
+/**
+ * Reserves one story summary for the account on `now`'s UTC day, or says which cap stopped it. Taken only once the
+ * article was read and is about to go to the model, so a page that couldn't be read costs the person nothing; a
+ * model that then fails still counts (as a failed digest does). Counts only: no address, story or account id is kept.
+ */
+export async function reserveSummary(db: Db, accountId: string, caps: NewsSummaryCaps | undefined, now: Date): Promise<WriterReservation> {
+  const limits = { ...DEFAULT_NEWS_SUMMARY_CAPS, ...caps };
+  const day = utcDay(now);
+  return inTransaction(db, async (c) => {
+    const slots = await takeServerSlots(c, "news_summary", accountId,
+      { perServer: limits.perServer, newAccountPool: limits.newAccountPool, newAccountHours: limits.newAccountHours }, day);
+    if (!slots.ok) return slots.reason;
+    if (await takeCounter(c, "news_summary_account", sha256(accountId).toString("hex"), limits.perAccount, day)) return "ok";
+    await slots.giveBack();
+    return "account_cap";
+  });
+}

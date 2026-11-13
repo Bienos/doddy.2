@@ -216,6 +216,20 @@ final class DataFlowTests: XCTestCase {
         XCTAssertFalse(row("messagingServer", state).what.contains("the texts you send Doddy's number"))
     }
 
+    /// 13 Nov 2026: a story's AI summary sends its address to the server and its text to Anthropic, only on a tap.
+    func testStorySummariesNameAnthropicAndNeverTheFollows() {
+        XCTAssertFalse(row("storySummaries", base).isActive)
+        var state = base
+        state.messagingServerSet = true
+        let summaries = row("storySummaries", state)
+        XCTAssertTrue(summaries.isActive)
+        XCTAssertTrue(summaries.destination.contains("Anthropic"))
+        XCTAssertTrue(summaries.what.contains("Claude Haiku"))
+        XCTAssertTrue(summaries.what.contains("Never what you follow"))
+        XCTAssertEqual(summaries.when, "Only when you tap a story in On my radar.")
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (summaries of stories you tap in On my radar)"))
+    }
+
     func testNewsWriterIsNamedOnlyAsTheServerReportsIt() {
         var state = base
         state.messagingServerSet = true
@@ -305,7 +319,7 @@ final class DataFlowSummaryTests: XCTestCase {
         // ElevenLabs is the only voice (9 Nov 2026): nothing names OpenAI for voice.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "ElevenLabs (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
+            "ElevenLabs (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (summaries of stories you tap in On my radar); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
         XCTAssertTrue(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("OpenAI (while talking)"))
         var state = everything

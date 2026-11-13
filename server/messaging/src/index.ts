@@ -33,7 +33,7 @@ app.log.info({
   doddyAccounts: !!config.supabaseUrl, anonymousAccounts: config.anonymousAccounts,
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
   calls: calls.inbound, outboundCalls: calls.outbound,
-  newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
+  newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search, newsSummaries: !!providers.news.summaries.summarizer,
   twilioDeleteAfterMinutes: providers.deleteAfterMinutes,
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,

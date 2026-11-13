@@ -8,6 +8,7 @@ import { ElevenLabsTaskClient, TwilioCallClient } from "./taskCalls.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { callsAvailable } from "../routes/twilioVoice.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
+import { ClaudeArticleSummarizer, SummaryCache } from "../news/summary.js";
 import type { TaskCallDeps } from "../taskCalls/context.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
 import type { ErrandDeps } from "../errands/context.js";
@@ -197,6 +198,12 @@ export function providersFrom(config: Config) {
       writer: config.anthropicApiKey ? new ClaudeDigestWriter(config.anthropicApiKey)
         : config.openaiApiKey ? new OpenAIDigestWriter(config.openaiApiKey, { model: config.openaiModel })
         : undefined,
+      // The AI summary of a story tapped in On my radar (13 Nov 2026): Claude Haiku only, so only with an Anthropic key
+      // (an OpenAI key alone answers 503 not_configured). Pages through the same polite fetcher as shop pages.
+      summaries: {
+        summarizer: config.anthropicApiKey ? new ClaudeArticleSummarizer(config.anthropicApiKey) : undefined,
+        pages: fetcher, caps: config.newsSummaryCaps, cache: new SummaryCache(),
+      },
     },
   };
 }

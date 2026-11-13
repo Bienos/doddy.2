@@ -9,6 +9,7 @@ import type { NewsItem } from "./feeds.js";
 import { shortlist, type TopicItems } from "./rank.js";
 import { localDate, nextRunAt } from "./schedule.js";
 import { cached, searchQuery, type FeedSource, type NewsSearch } from "./sources.js";
+import type { NewsSummaryDeps } from "./summary.js";
 import { reserveWriter, type NewsWriterCaps } from "./usage.js";
 import { shorten, validateLines, type DigestWriter } from "./writer.js";
 
@@ -22,6 +23,8 @@ export interface NewsDeps {
   smsCaps?: { perAccount: number; perServer: number };
   /** Digests the writer may write per UTC day: per account, for the server, for new accounts. Default DEFAULT_NEWS_WRITER_CAPS. */
   writerCaps?: NewsWriterCaps;
+  /** The AI summary of a story the person taps (POST /v1/news/summary, src/news/summary.ts). Absent: 503 not_configured. */
+  summaries?: NewsSummaryDeps;
 }
 
 export const MAX_TOPICS = 10;

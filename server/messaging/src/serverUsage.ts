@@ -4,10 +4,11 @@
 import type pg from "pg";
 
 /** Features with a server-wide cap. `accounts`, `sms` and `outbound_calls` are the abuse caps of ADR-702 and ADR-704;
- * `news` counts digests the AI writer is asked to write (migration 030). */
-export type CappedFeature = "assistant" | "deals" | "errands" | "studio" | "news" | "accounts" | "sms" | "outbound_calls";
+ * `news` counts digests the AI writer is asked to write (migration 030); `news_summary` the summaries of stories a
+ * person taps in On my radar (migration 033). */
+export type CappedFeature = "assistant" | "deals" | "errands" | "studio" | "news" | "news_summary" | "accounts" | "sms" | "outbound_calls";
 /** The part of a paid feature's cap that accounts still "new" share (ADR-702). Counted inside the feature's own total. */
-export type NewAccountPool = "assistant_new" | "deals_new" | "errands_new" | "studio_new" | "news_new";
+export type NewAccountPool = "assistant_new" | "deals_new" | "errands_new" | "studio_new" | "news_new" | "news_summary_new";
 type Q = Pick<pg.PoolClient, "query"> | pg.Pool;
 
 /** Today in UTC as the database counts it, or the day in parameter `n` (YYYY-MM-DD, for a fixed clock). */
@@ -44,7 +45,8 @@ export const DEFAULT_NEW_ACCOUNT_HOURS = 24;
 /** Per UTC day, for all new accounts together, inside the feature's server-wide cap. */
 // Studio (ADR-740) pays for a model, web searches and a code container for every job, so its pool is closed: 0.
 // News: digests written by the AI writer (manual, scheduled and radar summaries); past a cap they are plain headlines.
-export const DEFAULT_NEW_ACCOUNT_POOL = { assistant: 200, deals: 200, errands: 10, studio: 0, news: 50 } as const;
+// News summaries: one short Claude Haiku summary of one article a person tapped (On my radar, 13 Nov 2026).
+export const DEFAULT_NEW_ACCOUNT_POOL = { assistant: 200, deals: 200, errands: 10, studio: 0, news: 50, news_summary: 200 } as const;
 
 type PoolFeature = keyof typeof DEFAULT_NEW_ACCOUNT_POOL;
 

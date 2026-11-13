@@ -1,7 +1,7 @@
 import type { DealsSettings } from "./deals/types.js";
 import { DEFAULT_RESEARCH_BUDGET, type ResearchBudget } from "./errands/budget.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES, parseCountryCodes } from "./phoneCountries.js";
-import { DEFAULT_NEWS_WRITER_CAPS, type NewsWriterCaps } from "./news/usage.js";
+import { DEFAULT_NEWS_SUMMARY_CAPS, DEFAULT_NEWS_WRITER_CAPS, type NewsSummaryCaps, type NewsWriterCaps } from "./news/usage.js";
 import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "./serverUsage.js";
 import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
 import { parseSearchShops, type SearchShop } from "./deals/further.js";
@@ -104,6 +104,11 @@ const schema = z.object({
   NEWS_WRITER_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(DEFAULT_NEWS_WRITER_CAPS.perAccount),
   NEWS_WRITER_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(DEFAULT_NEWS_WRITER_CAPS.perServer),
   NEWS_WRITER_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(100000).default(DEFAULT_NEW_ACCOUNT_POOL.news),
+  // AI summaries of stories a person taps in On my radar (POST /v1/news/summary, Claude Haiku, ANTHROPIC_API_KEY): per
+  // account, for the server, and for new accounts together, per UTC day. Past a cap the app says so; nothing is written.
+  NEWS_SUMMARY_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(DEFAULT_NEWS_SUMMARY_CAPS.perAccount),
+  NEWS_SUMMARY_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(DEFAULT_NEWS_SUMMARY_CAPS.perServer),
+  NEWS_SUMMARY_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(100000).default(DEFAULT_NEW_ACCOUNT_POOL.news_summary),
   // Replies to the user's texts (ADR-753) use ANTHROPIC_API_KEY, with this model (owner decision 7).
   TEXT_REPLY_MODEL: optional, // default claude-opus-5-5
   // Hours after a message or call is final before its record is deleted at Twilio (ADR-753).
@@ -448,6 +453,8 @@ export interface Config {
   gnewsApiKey?: string;
   /** Daily caps on digests by the AI writer (NEWS_WRITER_DAILY_*). */
   newsWriterCaps: Required<NewsWriterCaps>;
+  /** Daily caps on the AI summaries of tapped stories (NEWS_SUMMARY_DAILY_*). */
+  newsSummaryCaps: Required<NewsSummaryCaps>;
   textReplyModel?: string;
   twilioRecordDeleteAfterHours: number;
   /**
@@ -550,6 +557,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     newsWriterCaps: {
       perAccount: e.NEWS_WRITER_DAILY_PER_ACCOUNT, perServer: e.NEWS_WRITER_DAILY_PER_SERVER,
       newAccountPool: e.NEWS_WRITER_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
+    },
+    newsSummaryCaps: {
+      perAccount: e.NEWS_SUMMARY_DAILY_PER_ACCOUNT, perServer: e.NEWS_SUMMARY_DAILY_PER_SERVER,
+      newAccountPool: e.NEWS_SUMMARY_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
     },
     textReplyModel: e.TEXT_REPLY_MODEL,
     twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,

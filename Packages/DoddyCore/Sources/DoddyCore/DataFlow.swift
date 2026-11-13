@@ -296,6 +296,15 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "Web research and code execution at Anthropic aren't zero-retention, so Anthropic keeps that work under its normal retention. The server keeps the job and the files, encrypted, until you delete them in Studio. The notification has no words from the job."
                     : "No messaging server is set, so Studio can't make anything."),
+            // 13 Nov 2026: On my radar's AI summary of a story, on a tap (POST /v1/news/summary, Claude Haiku).
+            DataFlowRow(
+                id: "storySummaries", destination: "Your Doddy messaging server and Anthropic (summaries of stories in On my radar)",
+                what: "The web address and headline of a story you tap in On my radar, and the language to write in. Doddy's server reads that article from the publisher's site, as a polite automated reader that follows the site's rules, and sends its text to Anthropic, whose Claude Haiku writes a short summary. Never what you follow, your saved notes or anything else about you.",
+                when: "Only when you tap a story in On my radar.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "The server keeps a summary in its memory for up to 6 hours, linked to nobody, so the same story isn't summarised twice, and counts how many summaries each account asks for a day (only the count). Nothing about the story is written to its logs."
+                    : "No messaging server is set, so no story is summarised."),
             // 9 Nov 2026: "tell me when the file is done", a notification when a file Doddy is making is ready.
             DataFlowRow(
                 id: "fileReady", destination: "Your Doddy messaging server and Apple (one notification)",
@@ -420,6 +429,8 @@ public enum DataFlow {
         if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
         // ADR-740: Claude researches and makes what you ask Studio for.
         if active.contains("studio") { parts.append("Anthropic (Studio)") }
+        // 13 Nov 2026: Claude Haiku summarises a story the person taps in On my radar.
+        if active.contains("storySummaries") { parts.append("Anthropic (summaries of stories you tap in On my radar)") }
         // ADR-504: Claude reads a call's transcript to write its answer card.
         if active.contains("callCases") { parts.append("Anthropic (the answer card of calls Doddy places for you)") }
         // SHOPPING.md: item names and leaflet pages, for leaflets that are only pictures.
@@ -445,6 +456,7 @@ public enum DataFlow {
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "studio": "Anthropic (Studio, through your messaging server)",
+        "storySummaries": "Anthropic (summaries of stories you tap in On my radar, through your messaging server)",
         "fileReady": "Apple (a notification that a file is ready, through your messaging server)",
         "callCases": "Twilio, ElevenLabs and Anthropic (calls Doddy places for you, through your messaging server)",
         "updates": "Apple and Twilio (notifications and texts from Doddy, through your messaging server)",

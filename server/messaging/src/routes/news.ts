@@ -5,13 +5,14 @@ import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
 import { usableChannels } from "../outbox.js";
-import { CATALOG, catalogById } from "../news/catalog.js";
+import { catalogById, catalogTopics } from "../news/catalog.js";
 import { buildDigest, gatherItems, MAX_FEEDS, MAX_TOPICS, type FollowedTopic, type FollowSources } from "../news/digest.js";
 import { buildFeed, FEED_LIMIT } from "../news/feed.js";
-import { parseFeed } from "../news/feeds.js";
+import { MAX_URL_CHARS, parseFeed } from "../news/feeds.js";
 import { httpsFeedUrl } from "../news/radar.js";
 import { checkUrl, safeFetchText, UnsafeUrlError } from "../news/safeFetch.js";
 import { isValidTimeZone, nextRunAt } from "../news/schedule.js";
+import { summarizeArticle } from "../news/summary.js";
 
 const keyword = z.string().trim().min(2).max(40);
 const topic = z.union([
@@ -43,6 +44,13 @@ const feedBody = z.object({
   follows: z.array(follow).min(1).max(MAX_TOPICS),
   limit: z.number().int().min(1).max(FEED_LIMIT).default(FEED_LIMIT),
 });
+// One story to summarise: its address (https, checked again in summarizeArticle), the card's headline as a hint, and
+// the language to write in. Nothing else, and nothing of what the person follows.
+const summaryBody = z.object({
+  url: z.string().trim().min(1).max(MAX_URL_CHARS),
+  title: z.string().trim().max(300).optional(),
+  language: z.enum(["en", "pl"]).default("en"),
+});
 
 export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
@@ -51,8 +59,9 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
 
   app.get("/v1/news/catalog", { preHandler: auth }, async (req) => {
     const lang = (req.query as { lang?: string }).lang === "pl" ? "pl" : "en";
-    // `sources`: the publishers behind each topic, so the person sees where its stories come from.
-    return { topics: CATALOG.map((t) => ({ id: t.id, label: t.label[lang], sources: [...new Set(t.feeds.map((f) => f.name))] })) };
+    // `sources`: the publishers behind each topic, so the person sees where its stories come from. Since 13 Nov 2026
+    // also each publisher's feed host (`publishers`) and the topic's shelf (`group`, `groupLabel`) for the Sources list.
+    return { topics: catalogTopics(lang) };
   });
 
   app.get("/v1/news/settings", { preHandler: auth }, async (req) => {
@@ -177,6 +186,24 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
         cards: cards.filter((c) => c.follows.includes(t.label)).length,
       })),
     };
+  });
+
+  // The AI summary of one story the person tapped (On my radar, 13 Nov 2026; src/news/summary.ts). Only the story's
+  // address, the card's headline and the language come from the app, never its follows. Claude Haiku writes it from
+  // the article's own text, read by the polite fetcher. Errors say what happened: 422 unreadable (with why), 429
+  // limit_reached (the person's or the server's day), 503 not_configured (no Anthropic key), 502 summary_failed.
+  app.post("/v1/news/summary", { preHandler: auth, config: { rateLimit: { max: 60, timeWindow: "1 hour" } } }, async (req, reply) => {
+    const body = parse(summaryBody, req.body, reply);
+    if (!body) return;
+    const r = await summarizeArticle(db, news?.summaries, principal(req).accountId, body);
+    switch (r.kind) {
+      case "ok": return r.summary;
+      case "not_configured": return reply.code(503).send({ error: "not_configured" });
+      case "unsafe_url": return reply.code(400).send({ error: "unsafe_url" });
+      case "unreadable": return reply.code(422).send({ error: "unreadable", reason: r.reason });
+      case "limit_reached": return reply.code(429).send({ error: "limit_reached", scope: r.scope === "account_cap" ? "account" : "server" });
+      case "failed": return reply.code(502).send({ error: "summary_failed" });
+    }
   });
 
   app.get("/v1/news/digests", { preHandler: auth }, async (req) => {

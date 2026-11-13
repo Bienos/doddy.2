@@ -4,15 +4,75 @@ import Foundation
 // once a day Doddy sends a short message with the most relevant stories.
 
 public struct NewsCatalogTopic: Equatable, Sendable, Decodable, Identifiable {
+    /// One publisher whose public feed Doddy's server reads for the topic, and the host it reads it from.
+    public struct Publisher: Equatable, Sendable, Decodable, Hashable {
+        public let name: String
+        /// "feeds.bbci.co.uk"; nil when an older server named only the publisher.
+        public let domain: String?
+
+        public init(name: String, domain: String?) {
+            self.name = name
+            self.domain = domain
+        }
+    }
+
     public let id: String
     public let label: String
     /// The publishers behind the topic (10 Nov 2026); older servers leave it out.
     public let sources: [String]?
+    /// The topic's shelf in the Sources list ("news", "tech", "money", "life") and its name in the asked language
+    /// (13 Nov 2026); older servers leave them out.
+    public let group: String?
+    public let groupLabel: String?
+    /// Each publisher with the host its feed is read from (13 Nov 2026); older servers leave it out.
+    public let publishers: [Publisher]?
 
-    public init(id: String, label: String, sources: [String]? = nil) {
+    public init(id: String, label: String, sources: [String]? = nil, group: String? = nil, groupLabel: String? = nil,
+                publishers: [Publisher]? = nil) {
         self.id = id
         self.label = label
         self.sources = sources
+        self.group = group
+        self.groupLabel = groupLabel
+        self.publishers = publishers
+    }
+
+    /// The publishers to show: with their hosts when the server gave them, else by name only.
+    public var publisherList: [Publisher] {
+        if let publishers, !publishers.isEmpty { return publishers }
+        return (sources ?? []).map { Publisher(name: $0, domain: nil) }
+    }
+}
+
+/// One shelf of the Sources list: a group of catalog topics ("Money": Business & markets, Crypto).
+public struct NewsCatalogShelf: Equatable, Sendable, Identifiable {
+    public let id: String
+    public let label: String
+    public let topics: [NewsCatalogTopic]
+
+    public init(id: String, label: String, topics: [NewsCatalogTopic]) {
+        self.id = id
+        self.label = label
+        self.topics = topics
+    }
+}
+
+public enum NewsCatalogShelves {
+    /// The topics on their shelves, in the order the server lists them; topics from a server that sends no shelves
+    /// share one, so nothing is left out.
+    public static func group(_ topics: [NewsCatalogTopic], polish: Bool) -> [NewsCatalogShelf] {
+        var order: [String] = []
+        var labels: [String: String] = [:]
+        var byShelf: [String: [NewsCatalogTopic]] = [:]
+        for topic in topics {
+            let id = topic.group ?? "topics"
+            if byShelf[id] == nil {
+                order.append(id)
+                labels[id] = topic.groupLabel ?? (polish ? "Tematy" : "Topics")
+            }
+            byShelf[id, default: []].append(topic)
+        }
+        return order.map { NewsCatalogShelf(id: $0, label: labels[$0] ?? $0, topics: byShelf[$0] ?? []) }
     }
 }
 

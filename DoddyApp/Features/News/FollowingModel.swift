@@ -5,7 +5,11 @@ import Observation
 // Following (ADR-656), "On my radar" since 10 Nov 2026: what the person follows and the stories behind it,
 // right now. The follows live in this iPhone's defaults; each refresh sends them to Doddy's server, which
 // fetches the publishers' feeds through its shared cache and keeps nothing about the person. Every card is a
-// publisher's own headline, summary, picture and link. Nothing on a card is written or chosen by an AI.
+// publisher's own headline, description, picture and link. Nothing on a card is written or chosen by an AI.
+//
+// The AI summary (owner, 13 Nov 2026): only when the person taps a story, its address and headline go to Doddy's
+// server, which reads the article and has Claude Haiku summarise it (`POST /v1/news/summary`). A summary is shown
+// only from the server's answer; otherwise the sheet says why there is none.
 //
 // Alerts (decision 2026-11-10-radar-alerts): "tell me when" words and how to be told are kept on this iPhone
 // too. Only for a follow where the person turned on "Let Doddy's server check this for you" does the server
@@ -20,6 +24,8 @@ protocol FollowingBackend: Sendable {
     func radarState() async throws -> RadarServerState
     func saveRadar(_ request: RadarAlertsRequest) async throws -> RadarServerState
     func markRadarSeen(ids: [String]) async throws -> Int
+    /// The AI summary of one story (13 Nov 2026): only its address, headline and the app's language are sent.
+    func newsSummary(_ request: NewsSummaryRequest) async throws -> NewsSummaryOutcome
 }
 
 extension DoddyServerClient: FollowingBackend {}
@@ -341,9 +347,96 @@ final class FollowingModel {
         await loadRadar()
     }
 
+    /// The last try to load Doddy's list failed, so the Sources list says so instead of loading forever.
+    private(set) var catalogFailed = false
+
     func loadCatalog() async {
         guard let backend, catalog.isEmpty else { return }
-        catalog = (try? await backend.newsCatalog(language: language)) ?? []
+        catalogFailed = false
+        do {
+            catalog = try await backend.newsCatalog(language: language)
+        } catch {
+            catalogFailed = true
+        }
+    }
+
+    /// The catalog topic a topic follow stands for, once the catalog is loaded.
+    func catalogTopic(for follow: NewsFollow) -> NewsCatalogTopic? {
+        guard let id = follow.catalogID else { return nil }
+        return catalog.first { $0.id == id }
+    }
+
+    func isFollowing(topicID: String) -> Bool {
+        follows.follows.contains { $0.id == "topic:\(topicID)" }
+    }
+
+    // MARK: The AI summary of a story
+
+    enum SummaryState: Equatable {
+        case loading
+        /// Written by the server's model; shown with its label.
+        case ready(NewsSummary)
+        /// There is no summary, and asking again won't change that soon; the words say why.
+        case unavailable(String)
+        /// Something went wrong on the way; asking again may work.
+        case failed(String)
+    }
+
+    /// Summaries the server wrote in this session, by card id, so opening a story again doesn't ask again.
+    private(set) var summaries: [String: NewsSummary] = [:]
+
+    /// Asks Doddy's server for the story's summary. Only its address, its headline and the app's language are sent.
+    func summary(for card: NewsCard) async -> SummaryState {
+        if let kept = summaries[card.id] { return .ready(kept) }
+        guard card.link != nil else {
+            return .unavailable(NSLocalizedString("This story has no web address, so there's nothing for Doddy's server to read.", comment: ""))
+        }
+        guard let backend else {
+            return .unavailable(NSLocalizedString("Summaries need a Doddy messaging server, and none is connected in this build yet.", comment: ""))
+        }
+        do {
+            switch try await backend.newsSummary(NewsSummaryRequest(card: card, language: language)) {
+            case .summary(let summary):
+                summaries[card.id] = summary
+                return .ready(summary)
+            case .unreadable(let reason):
+                return .unavailable(Self.unreadableText(reason))
+            case .limitReached(let serverWide):
+                return .unavailable(serverWide
+                    ? NSLocalizedString("Doddy's server has written all the summaries it can today. The full article still opens below.", comment: "")
+                    : NSLocalizedString("You've used today's summaries. They're back tomorrow; the full article still opens below.", comment: ""))
+            case .notConfigured:
+                return .unavailable(NSLocalizedString("Summaries aren't set up on Doddy's server yet, so none was written. The full article still opens below.", comment: ""))
+            }
+        } catch ServerError.unsafeURL {
+            return .unavailable(NSLocalizedString("Doddy's server only reads secure public web addresses (https), and this story's isn't one.", comment: ""))
+        } catch {
+            return .failed(Self.summaryErrorText(error))
+        }
+    }
+
+    static func unreadableText(_ reason: NewsSummaryUnreadable?) -> String {
+        switch reason {
+        case .paywall?:
+            return NSLocalizedString("This article is behind the publisher's paywall, so Doddy didn't summarise it.", comment: "")
+        case .blocked?:
+            return NSLocalizedString("The publisher's site didn't let Doddy's server in (a sign-in or a bot check), so there's no summary.", comment: "")
+        case .notAllowed?:
+            return NSLocalizedString("The publisher asks automated readers and AI not to use this page, so Doddy didn't.", comment: "")
+        case .unreachable?:
+            return NSLocalizedString("Doddy's server couldn't load this article right now. Try again later, or read it on the publisher's site.", comment: "")
+        case .notArticle?, .tooShort?:
+            return NSLocalizedString("There isn't enough article text on that page to summarise. It may be a video, a live page or a teaser.", comment: "")
+        case nil:
+            return NSLocalizedString("Doddy's server couldn't read this article, so there's no summary.", comment: "")
+        }
+    }
+
+    static func summaryErrorText(_ error: any Error) -> String {
+        if case .providerUnavailable? = error as? ServerError {
+            return NSLocalizedString("The summary couldn't be written this time. Try again in a moment.", comment: "")
+        }
+        return UpdatesModel.text(for: error)
     }
 
     // MARK: Keeping a story
