@@ -6,7 +6,9 @@ import Foundation
 // iPhone app asks them through `AppLock` and holds the requests (`ShortcutRouter`).
 //
 // With the lock off nothing here changes anything: `allows` is true for every entry, no request
-// is held and no cover is shown.
+// is held and no cover is shown. The same goes for what reaches outside the app: widgets, list
+// lookups from Shortcuts and Siri (below), the island's Unmute (`IslandMute`) and voice tools on a
+// locked iPhone (`ProtectedDataPolicy`).
 
 /// Every way into Doddy that shows saved notes, or starts something that uses them, or opens a
 /// screen over the Face ID cover. The policy decides each one separately, and `AppLockPolicy`
@@ -83,6 +85,52 @@ public enum AppLockPolicy {
     public static func coverShown(lockOn: Bool, sceneIsActive: Bool) -> Bool {
         lockOn && !sceneIsActive
     }
+
+    /// Home and Lock Screen widgets (ADR-219) are seen by whoever holds the iPhone, with no Face ID.
+    /// With the lock on they say "Doddy is locked" and show nothing of the person's: the app writes a
+    /// locked snapshot (`WidgetSnapshot.make(appLockOn:)`), and a tick from a widget drawn earlier
+    /// changes nothing (`WidgetTick.locked`). Decided on the switch, not on whether Doddy is unlocked
+    /// this minute, because a widget stays on screen long after.
+    public static func widgetsShowContent(lockOn: Bool) -> Bool { !lockOn }
+
+    /// What Shortcuts and Siri get when they look Doddy's lists up to fill in a list (ADR-226).
+    /// With the lock off, the lists as they are. With it on, no name is ever suggested: iOS keeps the
+    /// suggested names for Siri's list phrases and shows them in Shortcuts, outside Doddy's lock. While
+    /// Doddy is locked, a name typed or said, or a list a shortcut already holds, comes back under a
+    /// neutral name only, so the list intent still runs and answers `lockedAnswer`.
+    public static func listLookup(_ lookup: AppLockListLookup, lockOn: Bool, isLocked: Bool) -> AppLockListAnswer {
+        switch lookup {
+        case .suggestions:
+            return lockOn || isLocked ? .nothing : .lists
+        case .byName, .byID:
+            return isLocked ? .lockedPlaceholder : .lists
+        }
+    }
+
+    /// The identifier of the neutral list a lookup by name answers while Doddy is locked. No list has it,
+    /// so a shortcut that kept it finds no list after the unlock and says so.
+    public static let lockedListID = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+}
+
+/// The ways Shortcuts and Siri look Doddy's lists up (ADR-226).
+public enum AppLockListLookup: CaseIterable, Sendable {
+    /// The lists offered in a picker, and the names iOS keeps for Siri's list phrases.
+    case suggestions
+    /// The lists whose name matches what the person typed or said.
+    case byName
+    /// The lists a shortcut already holds, by identifier.
+    case byID
+}
+
+/// What a list lookup may answer (`AppLockPolicy.listLookup`).
+public enum AppLockListAnswer: Equatable, Sendable {
+    /// The lists as they are.
+    case lists
+    /// No list at all.
+    case nothing
+    /// A list under a neutral name ("Doddy is locked") and nothing of the person's: for a lookup by
+    /// identifier, one per identifier asked for; for a lookup by name, one with `lockedListID`.
+    case lockedPlaceholder
 }
 
 /// Requests that arrived while Doddy was locked, kept to be carried out after the unlock (ADR-723).

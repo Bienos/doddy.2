@@ -94,7 +94,11 @@ struct MessagesView: View {
             }
             .confirmationDialog("Delete this conversation?", isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Delete conversation", role: .destructive) {
-                    Task { await model.deleteConversation() }
+                    Task {
+                        await model.deleteConversation()
+                        // The files made until now go with it (decision 2026-11-12-deleted-files-stay-gone).
+                        await files.refresh(clearingDownloads: false)
+                    }
                 }
             } message: {
                 Text("It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.")
@@ -289,7 +293,7 @@ struct MessagesView: View {
         if case .ready(let list) = files.load { ready = list.documents.count } else { ready = 0 }
         return ThreadEnd(
             messages: model.messages.count,
-            files: ready + LocalMadeFilesStore.shared.files.count,
+            files: ready + localFiles.count,
             finishedTasks: ErrandsModel.shared.errands.filter { $0.state.isFinished }.count,
             calls: calls.count,
             sending: model.isSending,
@@ -409,7 +413,8 @@ struct MessagesView: View {
     /// Files Doddy made on this iPhone in a voice conversation and kept for a week (the deck from `make_presentation`).
     /// On the iPhone only: they need neither Ask Doddy nor the server.
     private var localFiles: [LocalMadeFile] {
-        LocalMadeFiles.shown(LocalMadeFilesStore.shared.files, now: Date())
+        LocalMadeFiles.shown(
+            FilesShownSince.visible(LocalMadeFilesStore.shared.files, since: FilesShownSinceStore.since), now: Date())
     }
 
     /// The thread with the files Doddy made that have no bubble of their own, each at the time it was made.

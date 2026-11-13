@@ -7,7 +7,9 @@ import type { AddressInfo } from "node:net";
 import { after, before, describe, test } from "node:test";
 import { DEFAULT_ERRAND_SETTINGS } from "../src/config.js";
 import type { Db } from "../src/db.js";
-import { DEFAULT_RESEARCH_BUDGET, WEB_USES_PER_REQUEST, type BudgetLeft, type ResearchBudget } from "../src/errands/budget.js";
+import { DEFAULT_RESEARCH_BUDGET, WEB_FETCH_MAX_CONTENT_TOKENS, WEB_USES_PER_REQUEST, type BudgetLeft, type ResearchBudget } from "../src/errands/budget.js";
+import { AnthropicStudioApi } from "../src/studio/model.js";
+import { MODEL_MIXES } from "../src/studio/models.js";
 import {
   AnthropicErrandApi, apiErrorDetail, runResearch, type CardReply, type ErrandModelApi, type ErrandResearcher, type ResearchControl, type ResearchMessage, type ResearchTurn,
 } from "../src/errands/researcher.js";
@@ -174,6 +176,25 @@ describe("the request to Anthropic carries the budget (ADR-702)", () => {
       .research([{ role: "user", content: "x" }], new AbortController().signal, { searches: 3, outputTokens: 12_000 }));
     assert.equal(lowered!.max_tokens, 12_000);
     assert.deepEqual(webToolsFor("claude-haiku-5-5", budget({ maxSearches: 3, maxFetches: 2 })).map((t) => [t.name, (t as { max_uses?: number }).max_uses]), [["web_search", 3], ["web_fetch", 2]]);
+  });
+
+  test("every web fetch the servers send caps how much of a page it brings in (max_content_tokens), on every model", async () => {
+    const fetchTool = (b: { tools?: Array<Record<string, unknown>> }) => tools(b).find((t) => t.name === "web_fetch")!;
+    const [errand] = await sentBodies((baseURL) => new AnthropicErrandApi("test-key", { baseURL }).research(turn, new AbortController().signal));
+    const [unlimited] = await sentBodies((baseURL) => new AnthropicErrandApi("test-key", { baseURL, budget: budget() }).research(turn, new AbortController().signal));
+    const shopping = [];
+    for (const model of ["claude-haiku-5-5", "claude-sonnet-5-5"]) {
+      const [r] = await sentBodies((baseURL) => new AnthropicShoppingApi("test-key", { baseURL, model }).research([{ role: "user", content: "x" }], new AbortController().signal));
+      shopping.push(r!);
+    }
+    const studio = new AnthropicStudioApi("test-key", {
+      models: MODEL_MIXES.cheap!, modelLabel: "x", skills: [], maxSearches: 5, maxFetches: 5, blockedDomains: [], taskBudgetTokens: 20_000,
+    }).researchTools().find((t) => t.name === "web_fetch")!;
+    for (const t of [fetchTool(errand!), fetchTool(unlimited!), ...shopping.map(fetchTool), studio as Record<string, unknown>]) {
+      assert.equal(t.max_content_tokens, WEB_FETCH_MAX_CONTENT_TOKENS, String(t.type));
+    }
+    assert.ok(WEB_FETCH_MAX_CONTENT_TOKENS >= 5_000 && WEB_FETCH_MAX_CONTENT_TOKENS <= 50_000);
+    for (const b of [errand!, ...shopping]) assert.equal(tools(b).find((t) => t.name === "web_search")!.max_content_tokens, undefined, "search has no such field");
   });
 
   // Regression, 12 Nov 2026: the live shopping errand of 11 Nov (Haiku 5.5) failed with a 400 on its second request.
