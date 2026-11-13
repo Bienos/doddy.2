@@ -189,6 +189,8 @@ export function answerOf(result: CallResult, writer: WriterOutput | undefined, k
   if (STOPS.has(result.outcome)) return "stop";
   if (NOT_REACHED.has(result.outcome)) return "none";
   if (result.outcome !== "answered") return "unclear";
+  // Doddy may have agreed to another time or price there: the person reads it; never "no", never the next place.
+  if (result.warnings.some((w) => w.kind === "possible_other_booking")) return "unclear";
   const confirmed = kind === "ask" || result.bookingConfirmed === true;
   if (writer?.answer === "yes" && result.quote && result.confidence !== "low" && result.warnings.length === 0 && confirmed) return "yes";
   // Doddy said yes to a booking the model can't confirm: the person must read it, never "no" and never the next place.

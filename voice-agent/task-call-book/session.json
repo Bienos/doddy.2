@@ -12,7 +12,7 @@
     "doddy_question": "the booking question (server-built from the booking)",
     "doddy_principal": "the user's first name in the genitive",
     "doddy_callee": "who is being called",
-    "doddy_goal": "the goal in one sentence",
+    "doddy_goal": "not in the prompt since 12 Nov 2026: a fixed server-built sentence, never the person's goal, kept only for live prompts that still name it",
     "doddy_booking": "the approved booking: name, day, time, service or number of people (server-built)",
     "doddy_booking_confirm_line": "the one sentence that accepts exactly that booking (server-built)",
     "doddy_facts": "only the facts the user ticked, one per line",
@@ -41,7 +41,7 @@
       "doddy_question": "Czy mogą Państwo zarezerwować stolik dla 2 osób w piątek 14 listopada o 19:00 na nazwisko Anna Kowalska?",
       "doddy_principal": "Anny",
       "doddy_callee": "Trattoria Demo",
-      "doddy_goal": "Zarezerwować stolik na kolację.",
+      "doddy_goal": "Zarezerwować dokładnie to, co opisano poniżej.",
       "doddy_booking": "- Co: stolik dla 2 osób\n- Kiedy: piątek 14 listopada 2026, 19:00\n- Na nazwisko: Anna Kowalska",
       "doddy_booking_confirm_line": "Dobrze, proszę o rezerwację: stolik dla 2 osób, piątek 14 listopada, 19:00, na nazwisko Anna Kowalska.",
       "doddy_facts": "(brak: nie podawaj żadnych informacji o osobie, w imieniu której dzwonisz)",
@@ -62,7 +62,8 @@
     },
     "post_call_webhook": "/webhooks/elevenlabs/post-call",
     "not_in_prompt": [
-      "doddy_attempt"
+      "doddy_attempt",
+      "doddy_goal"
     ]
   }
 }
