@@ -147,6 +147,11 @@ switches, approvals or receipts. For testing it is the free Supabase project `do
 
 * Schema `doddy_backend`, created by the migration `doddy_backend_schema`. The server creates its tables there at
   startup. The public API roles (`anon`, `authenticated`) have no access and the schema is not exposed by the Data API.
+  Since decision `2026-11-12-backend-schema-not-exposed` every start also turns on row level security (no policies,
+  not forced) on each of its tables and takes back anything `anon` or `authenticated` hold on them
+  (`SCHEMA_GUARDS` in `backend/src/store.ts`). This works because the role `doddy_backend` owns the tables (read on
+  12 Nov 2026): an owner isn't held to row level security unless it is forced. Keep it the owner; any other role
+  without `BYPASSRLS` sees no rows.
 * Login role `doddy_backend` (no other rights, 10 connections at most), through the **session pooler**:
   `postgresql://doddy_backend.sliondswemhneuzehpoq:<password>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres`.
   The direct host `db.<ref>.supabase.co` is IPv6 only on the free plan, which Render can't reach.
