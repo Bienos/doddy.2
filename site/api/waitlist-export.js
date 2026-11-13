@@ -1,6 +1,7 @@
 // GET /api/waitlist-export — download every waitlist signup as a CSV that opens in Excel or Google Sheets.
-// Protected by HTTP Basic auth: any username, password = WAITLIST_ADMIN_PASSWORD (a Vercel environment variable).
-import { isAdmin, readAll, refuse } from "./_waitlist-store.js";
+// Protected by HTTP Basic auth: any username, password = WAITLIST_ADMIN_PASSWORD (a Vercel environment variable),
+// with a limited number of attempts per address (see _waitlist-store.js).
+import { admit, readAll } from "./_waitlist-store.js";
 
 // CSV cell: quote it, and neutralise anything a spreadsheet would run as a formula.
 function cell(value) {
@@ -10,7 +11,8 @@ function cell(value) {
 }
 
 export async function GET(request) {
-  if (!isAdmin(request)) return refuse(request, "export", true);
+  const refused = await admit(request, "export", true);
+  if (refused) return refused;
 
   const records = await readAll();
   const PHONE = { iphone: "iPhone", android: "Android", other: "Something else" };

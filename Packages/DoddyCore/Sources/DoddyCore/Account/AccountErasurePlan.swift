@@ -68,6 +68,23 @@ public enum AccountErasurePlan {
         }
     }
 
+    /// Settings › Messaging › Delete: one `DELETE /v1/account` with the token this iPhone keeps, and what to tell the
+    /// person. "Deleted" only for a 204 (DOD-08); with no token, the server can still hold an account this iPhone no
+    /// longer has the key to (after a reinstall), so it is "nothing was deleted from here", never "deleted".
+    public enum SettingsDelete: Equatable, Sendable {
+        case deleted
+        case nothingKept
+        case notConfirmed
+
+        public init(_ attempt: Attempt) {
+            switch attempt {
+            case .deleted: self = .deleted
+            case .noToken: self = .nothingKept
+            case .refused, .failed: self = .notConfirmed
+            }
+        }
+    }
+
     // MARK: Doddy's backend (ADR-674)
 
     /// Before the backend is asked to erase (`ServerAccountErasure`), after the app tried to make or renew a session.

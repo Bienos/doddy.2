@@ -719,6 +719,17 @@
         }
       }
     },
+    "%lld of them are private. They are added as private, and Face ID asks before their words show.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatnych z nich: %lld. Zostaną dodane jako prywatne, a Face ID zapyta, zanim pokażą swoje słowa."
+          }
+        }
+      }
+    },
     "%lld of these give different numbers for the same thing. Check which one is current; nothing was changed.": {
       "extractionState": "manual",
       "localizations": {
@@ -9672,6 +9683,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "回到问题"
+          }
+        }
+      }
+    },
+    "Back up Doddy's notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrób kopię zapasową notatek z Doddy’ego"
           }
         }
       }
@@ -25587,6 +25609,17 @@
         }
       }
     },
+    "Doddy's server didn't confirm deleting your messaging data, so nothing was changed. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie potwierdził usunięcia Twoich danych wiadomości, więc nic nie zmieniono. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Doddy's server didn't confirm the item is gone, so it isn't shown as deleted. Pull down to check again.": {
       "extractionState": "manual",
       "localizations": {
@@ -29364,6 +29397,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已过期"
+          }
+        }
+      }
+    },
+    "Export Doddy's notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyeksportuj notatki z Doddy’ego"
           }
         }
       }
@@ -36219,6 +36263,28 @@
         }
       }
     },
+    "It lands in Messages in a minute or two.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Za minutę lub dwie trafi do Wiadomości."
+          }
+        }
+      }
+    },
+    "It lands in Messages when it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy będzie gotowe, trafi do Wiadomości."
+          }
+        }
+      }
+    },
     "It may not have gone back. Check it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -36355,17 +36421,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, a na ekranie blokady zobaczysz, ile czasu zostało."
-          }
-        }
-      }
-    },
-    "It takes a minute or two. It also lands in Messages and in Files when it's ready.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To zajmie minutę lub dwie. Gdy będzie gotowe, trafi też do Wiadomości i do Plików."
           }
         }
       }
@@ -36710,6 +36765,17 @@
         }
       }
     },
+    "It's in Messages and in Files too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest też w Wiadomościach i w Plikach."
+          }
+        }
+      }
+    },
     "It's not known whether Doddy's server wrote the recap. Nothing was saved; try again if you want.": {
       "extractionState": "manual",
       "localizations": {
@@ -36927,17 +36993,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "项目"
-          }
-        }
-      }
-    },
-    "Its button is in Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jego przycisk jest w Doddym"
           }
         }
       }
@@ -43439,6 +43494,28 @@
         }
       }
     },
+    "Making your PDF": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robię PDF"
+          }
+        }
+      }
+    },
+    "Making your deck": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robię prezentację"
+          }
+        }
+      }
+    },
     "Making your document": {
       "extractionState": "manual",
       "localizations": {
@@ -43446,6 +43523,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Robię Twój dokument"
+          }
+        }
+      }
+    },
+    "Making your spreadsheet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robię arkusz"
+          }
+        }
+      }
+    },
+    "Making your text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piszę tekst"
           }
         }
       }
@@ -49304,6 +49403,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie powstał"
+          }
+        }
+      }
+    },
+    "Not made: Face ID didn't confirm it. Private notes can't go into a file without it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zrobiono pliku: Face ID tego nie potwierdził. Prywatne notatki nie trafią do pliku bez tego."
           }
         }
       }
@@ -57054,6 +57164,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz inFakt i zaloguj się."
+          }
+        }
+      }
+    },
+    "Open it from the transcript when it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy będzie gotowe, otwórz to z zapisu rozmowy."
           }
         }
       }
@@ -79757,6 +79878,17 @@
         }
       }
     },
+    "Takes a minute or two": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zajmie minutę lub dwie"
+          }
+        }
+      }
+    },
     "Taking over needs a verified Polish phone number.": {
       "extractionState": "manual",
       "localizations": {
@@ -84764,6 +84896,17 @@
         }
       }
     },
+    "The list of private notes in that file is damaged, so nothing from it was added.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista prywatnych notatek w tym pliku jest uszkodzona, więc nic z niego nie zostało dodane."
+          }
+        }
+      }
+    },
     "The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -89167,6 +89310,17 @@
         }
       }
     },
+    "This conversation is private, so it isn't kept in Messages. Open it here when it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta rozmowa jest prywatna, więc plik nie trafi do Wiadomości. Otwórz go tutaj, gdy będzie gotowy."
+          }
+        }
+      }
+    },
     "This conversation is saved on this iPhone until you delete it. Your question, a photo or file you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo or file is not kept on this iPhone or the server; only a file's name stays in this conversation. A copy of this conversation, without photos or files, is kept encrypted on Doddy's server so you can read it in Doddy Web.": {
       "extractionState": "manual",
       "localizations": {
@@ -89808,6 +89962,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这台 iPhone 没有设置密码或面容 ID，所以 Doddy 无法锁定。"
+          }
+        }
+      }
+    },
+    "This iPhone has no sign-in for Doddy's messaging server, so nothing was deleted from here. If you reinstalled the app, delete your Doddy account in Settings to remove what the server holds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie ma logowania do serwera wiadomości Doddy’ego, więc stąd nic nie usunięto. Jeśli aplikacja była instalowana od nowa, usuń konto Doddy w Ustawieniach, żeby usunąć to, co trzyma serwer."
           }
         }
       }

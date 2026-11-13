@@ -125,6 +125,8 @@ enum RestoreCopy {
             return "Note \(position) in that file repeats another one with different text, so nothing from it was added."
         case .unreadableCorrection(let position):
             return "Correction \(position) in that file is damaged, so nothing from it was added."
+        case .unreadablePrivateMarks:
+            return NSLocalizedString("The list of private notes in that file is damaged, so nothing from it was added.", comment: "")
         }
     }
 }
@@ -154,7 +156,8 @@ struct ProfileTextExport: Transferable {
     }
 }
 
-/// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared.
+/// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared. With private notes in it,
+/// Face ID is asked first and the file says which notes are private (`PrivateExportGate`).
 struct MarkdownFileExport: Transferable {
     let records: [MemoryRecord]
     let lists: [DoddyList]
@@ -162,13 +165,32 @@ struct MarkdownFileExport: Transferable {
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText) { export in
-            Data(MarkdownExport.markdown(export.records, lists: export.lists, corrections: export.corrections, exportedAt: Date()).utf8)
+            let marked = try await PrivateExportGate.markedIDs(for: export.records + export.lists.map(\.record))
+            return Data(MarkdownExport.markdown(
+                export.records, lists: export.lists, corrections: export.corrections, privateIDs: marked, exportedAt: Date()).utf8)
         }
         .suggestedFileName("doddy-memories.md")
     }
 }
 
-/// JSON export file for the share sheet (format: `MemoryExport.json`).
+/// The notes as plain text for the share sheet (`MemoryExport.plainText`). Built when shared, with the same Face ID
+/// question as the other exports when private notes are in it.
+struct PlainTextExport: Transferable {
+    let records: [MemoryRecord]
+    let lists: [DoddyList]
+    let corrections: [MemoryCorrection]
+
+    static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation(exporting: { (export: PlainTextExport) async throws -> String in
+            let marked = try await PrivateExportGate.markedIDs(for: export.records + export.lists.map(\.record))
+            return MemoryExport.plainText(
+                export.records, lists: export.lists, corrections: export.corrections, privateIDs: marked, exportedAt: Date())
+        })
+    }
+}
+
+/// JSON export file for the share sheet (format: `MemoryExport.json`). With private notes in it, Face ID is asked
+/// first and the file names them, so a restore marks them private again (`PrivateExportGate`).
 struct JSONExport: Transferable {
     let records: [MemoryRecord]
     /// List items (ADR-216); their lists are among `records`.
@@ -177,7 +199,9 @@ struct JSONExport: Transferable {
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: .json) { export in
-            try MemoryExport.json(export.records, listItems: export.listItems, corrections: export.corrections, exportedAt: Date())
+            let marked = try await PrivateExportGate.markedIDs(for: export.records)
+            return try MemoryExport.json(
+                export.records, listItems: export.listItems, corrections: export.corrections, privateIDs: marked, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
     }
