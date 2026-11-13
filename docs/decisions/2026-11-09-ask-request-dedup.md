@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Decided by:** proposal, owner approval pending (research item 10, `Doddy-optimization-research-2026-11-09`)
-- **Status:** proposed (code on the branch, not merged or deployed)
+- **Status:** proposed. The code is in the pull request that carries this file (carried onto `main` of 13 Nov from `claude/amazing-bardeen-9dkkui`, commit `70bc7034`); merging it is the owner's yes. Not deployed: `doddy` on Render is deployed by hand.
 - **Replaces:** none
 
 ## Why
@@ -23,4 +23,6 @@
 - Chat (`/v1/web/chat`) has no request id and is unchanged. Voice is untouched.
 
 ## Evidence
+13 Nov 2026, on `main` `89c38a5f` plus this change: `npm run typecheck` and `ask-dedup.test.ts` with `assist.test.ts` (31 tests, 0 failures); the whole backend suite result is in the pull request.
+
 `backend/test/ask-dedup.test.ts`: replay costs no generation and no quota; cross-account isolation; mismatched content refused; in-flight duplicates share one generation and the same error; failures, refusals, malformed answers and quota refusals are not cached; TTL, per-account and total caps; account deletion drops answers. Not run: a multi-instance deployment or a real phone retry.
