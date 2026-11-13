@@ -4,7 +4,8 @@ import SwiftUI
 // On my radar (owner, 10 Nov 2026; decision 2026-11-10-radar-alerts): one sheet to add anything ("bitcoin",
 // "CPK", "Tesla", a feed address), the tapped follow's sources and "tell me when", and the stories Doddy's
 // server spotted. Nothing here is written by an AI: headlines and publishers are the feeds' own. A server check
-// is offered only behind its own switch, and said to be on only when the server's answer lists it.
+// is offered only behind its own switch, and said to be on only when the server's answer lists it. Since 13 Nov 2026
+// (decision 2026-11-13-radar-fixes) "tell me when" is offered at all only once the server said it checks follows.
 
 /// The tapped follow: where its stories come from, how Doddy tells about it, and an honest empty state.
 struct FollowDetail: View {
@@ -15,6 +16,7 @@ struct FollowDetail: View {
 
     var body: some View {
         let alert = model.alert(for: follow)
+        let availability = model.alertsAvailability
         VStack(alignment: .leading, spacing: 8) {
             Text(verbatim: follow.label)
                 .font(.headline)
@@ -32,16 +34,21 @@ struct FollowDetail: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Label { Text(verbatim: alert.summary(polish: polish)) } icon: {
-                    Image(systemName: alert.serverChecks ? "bell.badge" : "eye")
+            // "Tell me…" only when Doddy's server said it checks follows, or when this follow already has something to
+            // change (owner's review, 12 Nov 2026: with alerts off on the server it opened a sheet whose only choice was
+            // "Here only"). The rule and its line are DoddyCore `RadarTellMe`; no answer from the server is not a yes.
+            if let line = RadarTellMe.line(alert, availability, polish: polish) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Label { Text(verbatim: line) } icon: {
+                        Image(systemName: alert.serverChecks && availability != .off ? "bell.badge" : "eye")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.ink)
+                    Spacer(minLength: 0)
+                    Button("Tell me…", action: tellMe)
+                        .font(.footnote.weight(.semibold))
+                        .accessibilityIdentifier("radar.tellMe")
                 }
-                .font(.footnote)
-                .foregroundStyle(Theme.ink)
-                Spacer(minLength: 0)
-                Button("Tell me…", action: tellMe)
-                    .font(.footnote.weight(.semibold))
-                    .accessibilityIdentifier("radar.tellMe")
             }
             if model.fetchedAt != nil, !model.isLoading, model.problem == nil, model.visibleCards.isEmpty {
                 Text(String(format: NSLocalizedString("Nothing from the last two days for %@. Pull down to look again.", comment: ""), follow.label))
@@ -124,7 +131,8 @@ struct RadarAlertFields: View {
     let model: FollowingModel
     let problem: RadarAlertProblem?
 
-    private var serverOff: Bool { model.radar?.available == false }
+    /// Only "here": Doddy's server didn't say it checks follows (it said no, or hasn't answered). DoddyCore `RadarTellMe`.
+    private var serverOff: Bool { !RadarTellMe.offersServerChecks(model.alertsAvailability) }
 
     var body: some View {
         Section {
@@ -148,7 +156,7 @@ struct RadarAlertFields: View {
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("radar.how")
             }
-            if how == .daily {
+            if how == .daily && !serverOff {
                 DatePicker("At", selection: $time, displayedComponents: .hourAndMinute)
             }
             if how != .app && !serverOff {
@@ -160,9 +168,17 @@ struct RadarAlertFields: View {
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
                 if how == .app || serverOff {
-                    Text("Shown on this screen when you open it. Nothing about this follow is kept on Doddy's server.")
-                    if serverOff {
+                    // With no answer, a check the server already has is left as it is (RadarTellMe.kept): not "nothing kept".
+                    if how == .app || model.alertsAvailability == .off {
+                        Text("Shown on this screen when you open it. Nothing about this follow is kept on Doddy's server.")
+                    }
+                    switch RadarTellMe.hereOnlyReason(model.alertsAvailability) {
+                    case .serverDoesNotCheck?:
                         Text("Doddy's server doesn't check follows for anyone yet, so this one shows here only.")
+                    case .noAnswer?:
+                        Text("Doddy's server hasn't answered yet, so only the words can be changed now.")
+                    case nil:
+                        EmptyView()
                     }
                 } else {
                     Text("Doddy's server keeps this follow: its name, its words or feed address, the words above, how and when to tell you, and your time zone. It reads the publishers' feeds about every 20 minutes and sends a notification: as it happens outside quiet hours (21:00–8:00) and at most 8 a day, or once a day at your time. Turning it off deletes it from the server.")
@@ -232,7 +248,10 @@ struct RadarAddSheet: View {
     }
 
     private var alert: RadarAlert? {
-        follow.map { RadarAlert(followID: $0.id, words: NewsTopic.keywords(from: wordsText), how: serverChecks ? how : .app, dailyTime: RadarClock.text(time)) }
+        follow.map {
+            RadarTellMe.kept(RadarAlert(followID: $0.id, words: NewsTopic.keywords(from: wordsText), how: serverChecks ? how : .app,
+                                        dailyTime: RadarClock.text(time)), model.alertsAvailability)
+        }
     }
 
     private var problem: RadarAlertProblem? {
@@ -240,8 +259,11 @@ struct RadarAddSheet: View {
         return RadarAlert(followID: follow.id, words: NewsTopic.keywords(from: wordsText), how: how, dailyTime: RadarClock.text(time)).problem(for: follow)
     }
 
-    /// The server doesn't check follows: whatever was picked, the follow is kept here only (the picker is hidden).
-    private var hereOnly: Bool { how == .app || model.radar?.available == false }
+    /// "Tell me when" is offered only once Doddy's server said it checks follows (decision 2026-11-13-radar-fixes).
+    private var offersAlerts: Bool { RadarTellMe.offersServerChecks(model.alertsAvailability) }
+
+    /// The server doesn't check follows: whatever was picked, the follow is kept here only (the fields are hidden).
+    private var hereOnly: Bool { how == .app || !offersAlerts }
 
     private var canAdd: Bool {
         follow != nil && !saving && !model.follows.isFull && (hereOnly || (serverChecks && problem == nil))
@@ -309,7 +331,8 @@ struct RadarAddSheet: View {
                         Text("Doddy's server reads the feed from its address, https only, and never a private network. Leave the words empty to see everything from it.")
                     }
                 }
-                if follow != nil {
+                // Hidden while Doddy's server doesn't check follows (owner's review, 12 Nov 2026): its only choice was "Here only".
+                if follow != nil, offersAlerts {
                     RadarAlertFields(wordsText: $wordsText, how: $how, time: $time, serverChecks: $serverChecks, model: model, problem: problem)
                 }
                 Section("Topics") {
@@ -458,8 +481,10 @@ struct RadarAlertSheet: View {
         _serverChecks = State(initialValue: alert.serverChecks)
     }
 
+    /// Once the server said it checks nothing, saving keeps the alert here only (DoddyCore `RadarTellMe.kept`).
     private var draft: RadarAlert {
-        RadarAlert(followID: follow.id, words: NewsTopic.keywords(from: wordsText), how: serverChecks ? how : .app, dailyTime: RadarClock.text(time))
+        RadarTellMe.kept(RadarAlert(followID: follow.id, words: NewsTopic.keywords(from: wordsText), how: serverChecks ? how : .app,
+                                    dailyTime: RadarClock.text(time)), model.alertsAvailability)
     }
 
     private var problem: RadarAlertProblem? {
@@ -488,7 +513,7 @@ struct RadarAlertSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .disabled(saving || (how != .app && model.radar?.available != false && (!serverChecks || problem != nil)))
+                        .disabled(saving || (how != .app && RadarTellMe.offersServerChecks(model.alertsAvailability) && (!serverChecks || problem != nil)))
                         .accessibilityIdentifier("radar.saveAlert")
                 }
             }
