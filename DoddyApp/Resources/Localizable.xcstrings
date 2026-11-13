@@ -36230,6 +36230,28 @@
         }
       }
     },
+    "It lands in Messages in a minute or two.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Za minutę lub dwie trafi do Wiadomości."
+          }
+        }
+      }
+    },
+    "It lands in Messages when it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy będzie gotowe, trafi do Wiadomości."
+          }
+        }
+      }
+    },
     "It may not have gone back. Check it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -36366,17 +36388,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, a na ekranie blokady zobaczysz, ile czasu zostało."
-          }
-        }
-      }
-    },
-    "It takes a minute or two. It also lands in Messages and in Files when it's ready.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To zajmie minutę lub dwie. Gdy będzie gotowe, trafi też do Wiadomości i do Plików."
           }
         }
       }
@@ -36721,6 +36732,17 @@
         }
       }
     },
+    "It's in Messages and in Files too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest też w Wiadomościach i w Plikach."
+          }
+        }
+      }
+    },
     "It's not known whether Doddy's server wrote the recap. Nothing was saved; try again if you want.": {
       "extractionState": "manual",
       "localizations": {
@@ -36938,17 +36960,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "项目"
-          }
-        }
-      }
-    },
-    "Its button is in Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jego przycisk jest w Doddym"
           }
         }
       }
@@ -43450,6 +43461,28 @@
         }
       }
     },
+    "Making your PDF": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robię PDF"
+          }
+        }
+      }
+    },
+    "Making your deck": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robię prezentację"
+          }
+        }
+      }
+    },
     "Making your document": {
       "extractionState": "manual",
       "localizations": {
@@ -43457,6 +43490,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Robię Twój dokument"
+          }
+        }
+      }
+    },
+    "Making your spreadsheet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robię arkusz"
+          }
+        }
+      }
+    },
+    "Making your text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piszę tekst"
           }
         }
       }
@@ -57065,6 +57120,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz inFakt i zaloguj się."
+          }
+        }
+      }
+    },
+    "Open it from the transcript when it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy będzie gotowe, otwórz to z zapisu rozmowy."
           }
         }
       }
@@ -79768,6 +79834,17 @@
         }
       }
     },
+    "Takes a minute or two": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zajmie minutę lub dwie"
+          }
+        }
+      }
+    },
     "Taking over needs a verified Polish phone number.": {
       "extractionState": "manual",
       "localizations": {
@@ -89174,6 +89251,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To potwierdzenie wygaśnie za %lld s."
+          }
+        }
+      }
+    },
+    "This conversation is private, so it isn't kept in Messages. Open it here when it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta rozmowa jest prywatna, więc plik nie trafi do Wiadomości. Otwórz go tutaj, gdy będzie gotowy."
           }
         }
       }
