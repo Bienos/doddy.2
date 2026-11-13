@@ -1206,5 +1206,6 @@
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "这段对话已从这部 iPhone 中删除，但 Doddy 的服务器尚未确认其 Doddy Web 副本已删除。在确认之前，它可能仍会显示在网页上。",
   "Food": "美食",
   "Opens the app if you have it, or the website. Doddy doesn't see or place the order.": "如果你装了应用就打开应用，否则打开网站。Doddy 不会查看或下单。",
-  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。"
+  "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do.": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。",
+  "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads. Logbook counts how you use Doddy, never your words; its row below says where the counts go.": "根据你当前的设置，你的信息会去向哪里。不会出售任何内容，也没有广告。Logbook 只统计你使用 Doddy 的次数，从不记录你的话；下方的 Logbook 一行说明这些统计会去向哪里。"
 }
