@@ -1,4 +1,5 @@
 import { buildApp } from "./app.js";
+import { dealWatchContextFor } from "./deals/dealWatches.js";
 import { JakdojadePartnerClient } from "./integrations/jakdojade.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
@@ -45,6 +46,7 @@ app.log.info({
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   radarAlerts: config.radarAlertsEnabled,
   leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,
+  dealWatches: config.dealWatchSettings.enabled && config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled && !!providers.cipher,
   deliveries: config.uberDirect ? config.uberDirect.mode : false,
   ceidg: !!providers.ceidg,
   jakdojade: !!config.jakdojade,
@@ -63,10 +65,11 @@ if (config.runWorkerInWeb) {
   const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
   const fileWatchCtx = fileWatchContext(db, { origin: config.documentsOrigin }, providers.cipher, providers.push, log);
   const radarCtx = radarContext(db, config.radarAlertsEnabled, providers.news, providers.push, providers.cipher, config.quietHours);
-  const catalogCtx = catalogContext(db, providers.deals);
+  const dealWatchCtx = dealWatchContextFor({ db, ...providers, quietHours: config.quietHours }, log);
+  const catalogCtx = catalogContext(db, providers.deals, dealWatchCtx);
   workerDone = runWorkerLoop(db, {
     ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, radar: radarCtx,
-    catalog: catalogCtx,
+    catalog: catalogCtx, dealWatches: dealWatchCtx,
     scheduledCalls: scheduledCallsFrom(config, providers),
   }, () => stopping);
 }

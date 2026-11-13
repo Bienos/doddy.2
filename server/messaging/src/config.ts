@@ -260,6 +260,21 @@ const schema = z.object({
   DEALS_CATALOG_EVERY_HOURS: z.coerce.number().int().min(1).max(48).default(6),
   // Pages sent to the reader per chain per scan; the rest wait for the next scan. 0: only the chains' own data.
   DEALS_CATALOG_MAX_PAGES: z.coerce.number().int().min(0).max(400).default(160),
+  // The scans' daily token budget (13 Nov 2026; decision 2026-11-13-leaflet-results-and-deal-watches): input plus output
+  // tokens per Warsaw day, per chain and for all chains together. Past it, the pages wait for the next day; a page
+  // already read is never read again for the same leaflet. 0: no new page is read.
+  DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN: z.coerce.number().int().min(0).max(50_000_000).default(1_500_000),
+  DEALS_CATALOG_DAILY_TOKENS: z.coerce.number().int().min(0).max(200_000_000).default(6_000_000),
+  // Deal watches (13 Nov 2026, same decision): "let me know when butter is under 5 zł", checked in code against the
+  // catalog after its scans, at most once a day per watch, with no page read. "0" (the default) answers 503
+  // deal_watches_disabled and checks nothing; "1" also needs MEMORY_ENCRYPTION_KEY and DEALS_CATALOG_ENABLED=1.
+  DEAL_WATCHES_ENABLED: z.enum(["0", "1"]).default("0"),
+  DEAL_WATCHES_MAX_PER_ACCOUNT: z.coerce.number().int().min(1).max(50).default(10),
+  DEAL_WATCHES_MAX_PER_SERVER: z.coerce.number().int().min(1).max(1_000_000).default(5000),
+  // Pushes from deal watches per account in any 24 hours; past it, matches are shown in the app only.
+  DEAL_WATCHES_PUSHES_PER_DAY: z.coerce.number().int().min(0).max(20).default(3),
+  // How long a watch lasts; it is deleted, with what it found, when it ends.
+  DEAL_WATCHES_DAYS: z.coerce.number().int().min(1).max(365).default(60),
   DEALS_SCREEN_PAGES: z.coerce.number().int().min(0).max(200).default(120),
   DEALS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   DEALS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
@@ -394,6 +409,13 @@ export interface ShoppingSettings {
 /** Price watches: `enabled` is the env switch only; the cipher and the fetcher are checked where wired. */
 export interface WatchSettings { enabled: boolean; maxOpen: number; checkHours: number }
 
+/** Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): `enabled` is the env switch only; the cipher and
+ * the catalog are checked where wired. */
+export interface DealWatchSettings { enabled: boolean; maxPerAccount: number; maxPerServer: number; pushesPerDay: number; days: number }
+
+/** Settings for an injected deal-watch context without its own (tests): on, 10 an account, 3 pushes a day, 60 days. */
+export const DEFAULT_DEAL_WATCH_SETTINGS: DealWatchSettings = { enabled: true, maxPerAccount: 10, maxPerServer: 5000, pushesPerDay: 3, days: 60 };
+
 /** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
 export interface AssistantSettings {
   enabled: boolean; model: string; effort: "low" | "medium" | "high"; dailyPerAccount: number; dailyPerServer: number;
@@ -485,6 +507,8 @@ export interface Config {
   /** CEIDG (ADR-685): only with a token; the base is checked to be CEIDG's own host when the client is made. */
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
+  /** Deal watches against the leaflet catalog (DEAL_WATCHES_ENABLED, off by default). */
+  dealWatchSettings: DealWatchSettings;
   /** On my radar alerts (RADAR_ALERTS_ENABLED, off by default): routes store alerts and the worker checks them. */
   radarAlertsEnabled: boolean;
   /** Uber Direct (decision 2026-11-12-uber-direct-deliveries): only when enabled and all three credentials are set. */
@@ -636,7 +660,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES, screenPages: e.DEALS_SCREEN_PAGES,
       dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
       dailyForNewAccounts: e.DEALS_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
-      catalog: { enabled: e.DEALS_CATALOG_ENABLED === "1", everyHours: e.DEALS_CATALOG_EVERY_HOURS, maxPagesPerChain: e.DEALS_CATALOG_MAX_PAGES },
+      catalog: {
+        enabled: e.DEALS_CATALOG_ENABLED === "1", everyHours: e.DEALS_CATALOG_EVERY_HOURS, maxPagesPerChain: e.DEALS_CATALOG_MAX_PAGES,
+        dailyTokensPerChain: e.DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN, dailyTokens: e.DEALS_CATALOG_DAILY_TOKENS,
+      },
+    },
+    dealWatchSettings: {
+      enabled: e.DEAL_WATCHES_ENABLED === "1", maxPerAccount: e.DEAL_WATCHES_MAX_PER_ACCOUNT, maxPerServer: e.DEAL_WATCHES_MAX_PER_SERVER,
+      pushesPerDay: e.DEAL_WATCHES_PUSHES_PER_DAY, days: e.DEAL_WATCHES_DAYS,
     },
     dealsSearchShops: e.DEALS_SEARCH_SHOPS,
     ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,

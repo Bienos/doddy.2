@@ -14,8 +14,9 @@
 //     the carousel "Promocje z gazetki" (7 products on 30 Oct). The leaflet itself is a 20-page PDF flipbook on
 //     heyzine.com, not the shop's host, so it isn't read: the carousel is only part of the leaflet.
 //   /kategoria/promocje-4949: the online shop's promotions, first page only ("Pozycje od 1 do 56 ze 11177"). Its
-//     tiles carry no dates. On 30 Oct this page was 3.8 MB, over the fetcher's 3 MB cap, so the service's
-//     fetcher answers `too_large` and the read says so; the leaflet page was 2.4 MB.
+//     tiles carry no dates. On 30 Oct this page was 3.8 MB (3.9 MB on 13 Nov), over the fetcher's 3 MB cap, so every
+//     read said `some_pages_failed`; since 13 Nov 2026 both pages are asked for with a cap of NATURA_MAX_BYTES (the
+//     leaflet page was 2.4 MB).
 // Every page also carries a site-wide "Nie zapomnij o:" carousel (forms with a `product-…-popup` class): not part
 // of either list, so skipped. A tile whose price depends on a variant (a "from" price) is skipped.
 // The shop's tooltips are not read: on 30 Oct a blank label on 50 products carried "Drugi produkt za 50% ceny".
@@ -33,6 +34,8 @@ export const NATURA_HOSTS = ["drogerienatura.pl", "www.drogerienatura.pl"] as co
 const ORIGIN = "https://drogerienatura.pl";
 export const NATURA_LEAFLET = `${ORIGIN}/gazetka-promocyjna`;
 export const NATURA_PROMOTIONS = `${ORIGIN}/kategoria/promocje-4949`;
+/** Natura's two pages are server-rendered HTML of 2.4 and 3.9 MB (13 Nov 2026); this cap leaves them room to grow. */
+export const NATURA_MAX_BYTES = 6 * 1024 * 1024;
 
 // ---------- text ----------
 
@@ -339,7 +342,7 @@ export const natura: ChainAdapter = {
     const seen = new Set<string>();
     const fresh = (products: DataProduct[]) => products.filter((p) => !seen.has(p.url) && seen.add(p.url));
 
-    const leafletPage = await fetchOfficial(ctx, NATURA_LEAFLET, NATURA_HOSTS, "text/html");
+    const leafletPage = await fetchOfficial(ctx, NATURA_LEAFLET, NATURA_HOSTS, "text/html", { maxBytes: NATURA_MAX_BYTES });
     if (!leafletPage.ok) failures.push(leafletPage.read);
     else {
       const l = parseNaturaLeaflet(leafletPage.body.toString("utf8"), ctx.today);
@@ -361,7 +364,7 @@ export const natura: ChainAdapter = {
     // Once the shop has said no, nothing more is asked of it in this request.
     if (failures.some((f) => f.kind === "blocked") || ctx.signal.aborted) failures.push({ kind: "failed", reason: "not_asked" });
     else {
-      const listPage = await fetchOfficial(ctx, NATURA_PROMOTIONS, NATURA_HOSTS, "text/html");
+      const listPage = await fetchOfficial(ctx, NATURA_PROMOTIONS, NATURA_HOSTS, "text/html", { maxBytes: NATURA_MAX_BYTES });
       if (!listPage.ok) failures.push(listPage.read);
       else {
         const list = parseNaturaPromotions(listPage.body.toString("utf8"));

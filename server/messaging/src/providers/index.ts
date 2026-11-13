@@ -175,6 +175,8 @@ export function providersFrom(config: Config) {
     // ADR-685: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.
     ceidg: config.ceidg ? new CeidgClient(config.ceidg) : undefined,
     watches,
+    // Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): checked against the leaflet catalog, in code.
+    dealWatches: { settings: config.dealWatchSettings },
     // Uber Direct (decision 2026-11-12-uber-direct-deliveries): only when enabled and configured.
     deliveries: config.uberDirect
       ? { provider: new UberDirectClient(config.uberDirect), mode: config.uberDirect.mode, limits: config.uberDirect.limits }

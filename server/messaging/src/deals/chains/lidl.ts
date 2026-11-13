@@ -15,6 +15,9 @@ export const LIDL_HOSTS = ["www.lidl.pl", "endpoints.leaflets.schwarz", "imgprox
 const LISTING = "https://www.lidl.pl/c/nasze-gazetki/s10008614";
 const flyerApi = (slug: string) => `https://endpoints.leaflets.schwarz/v4/flyer?flyer_identifier=${encodeURIComponent(slug)}&region_id=0`;
 const MAX_LEAFLETS = 4;
+/** The catalog reads every current leaflet (13 Nov 2026: the list had five without alcohol, the toy catalogue fifth),
+ * spread over its scans; a search still takes the first four. */
+export const LIDL_CATALOG_MAX_LEAFLETS = 8;
 const ALCOHOL = /alkohol|\bwin[ao]?\b|\bpiw[ao]?\b/i;
 
 export interface ListedFlyer { slug: string; name: string; title: string; section: string }
@@ -86,10 +89,14 @@ export function parseFlyer(json: unknown, slug: string, today: string): LeafletR
   const productPage = new Map<string, number>();
   for (const p of Array.isArray(f.pages) ? f.pages : []) {
     if (!isObject(p) || typeof p.number !== "number" || !Number.isInteger(p.number) || p.number < 1 || p.number > 1000) continue;
-    // `zoom` is 1420 × 2400 (about 4,400 visual tokens, inside Claude's limit); `image` is half that.
-    const img = officialUrl(p.zoom, LIDL_HOSTS) ?? officialUrl(p.image, LIDL_HOSTS);
+    // `zoom` is 1420 × 2400 (about 4,400 visual tokens, inside Claude's limit); `image` is half that, kept as the
+    // smaller rendition a catalog scan falls back to when `zoom` is too large to fetch or send (13 Nov 2026).
+    const zoom = officialUrl(p.zoom, LIDL_HOSTS);
+    const small = officialUrl(p.image, LIDL_HOSTS);
+    const img = zoom ?? small;
     const text = [str(p.altText), str(p.keyWords)].filter(Boolean).join(" ").slice(0, 4000);
-    if (img) pages.push({ number: p.number, imageUrl: img.toString(), url: pageUrl(p.number), ...(text ? { text } : {}) });
+    const smaller = zoom && small && small.toString() !== zoom.toString() ? { smallerImageUrl: small.toString() } : {};
+    if (img) pages.push({ number: p.number, imageUrl: img.toString(), url: pageUrl(p.number), ...(text ? { text } : {}), ...smaller });
     for (const l of Array.isArray(p.links) ? p.links : []) {
       if (isObject(l) && l.displayType === "product" && typeof l.id === "string") productPage.set(l.id, p.number);
     }
@@ -131,7 +138,7 @@ export const lidl: ChainAdapter = {
     if (!listing.ok) return listing.read;
     const flyers = parseOverview(listing.body.toString("utf8"))
       .filter((f) => !ALCOHOL.test(f.section) && !ALCOHOL.test(f.name))
-      .slice(0, MAX_LEAFLETS);
+      .slice(0, ctx.forCatalog ? LIDL_CATALOG_MAX_LEAFLETS : MAX_LEAFLETS);
     if (flyers.length === 0) return { kind: "no_leaflet" };
     const results = await mapLimit(flyers, 2, async (f) => {
       const r = await fetchOfficial(ctx, flyerApi(f.slug), LIDL_HOSTS, "application/json");

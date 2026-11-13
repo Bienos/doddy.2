@@ -1,0 +1,60 @@
+# Leaflet results match brands and models, every catalog page is read in time within a daily budget, and deal watches are answered from the catalog
+
+- **Date:** 2026-11-13
+- **Decided by:** owner: "leaflet results — popraw je, one muszą mieć lepsze, muszą też mieć to drugie … to musi być dobrze zrobione" (13 Nov 2026), after the review `docs/strategy/PRZEGLAD_APLIKACJI_2026-11-12.md` 1.4 to 1.6 ("słuchawki Apple" found nothing; "daj znać, gdy masło będzie poniżej 5 zł" from the catalog). The lists, defaults and limits below are the implementation's proposal.
+- **Status:** proposed in this pull request; deal watches stay off until the owner sets `DEAL_WATCHES_ENABLED=1` (owner queue)
+- **Replaces:** nothing. Extends `2026-11-12-leaflet-catalog`.
+
+## Why
+
+The live server's own log lines (doddy-messaging on Render, "leaflet catalog scanned", read on 13 Nov 2026; counts only):
+
+| Scan (UTC) | Chain | Wanted | Known | Read | Tokens in / out | Reasons |
+|---|---|---|---|---|---|---|
+| 12 Nov 11:16 | Lidl | 290 | 0 | 160 | 705,120 / 94,642 | `pages_over_cap` |
+| 12 Nov 21:35 | Lidl | 291 | 63 | 159 | 700,713 / 90,028 | `image_failed,pages_over_cap` |
+| 13 Nov 05:45 | Lidl | 291 | 222 | 69 | 304,083 / 23,084 | complete |
+| 12 Nov 11:24 | E.Leclerc | 120 | 0 | 120 | 271,014 / 251,286 | `page_cap` (every scan) |
+| 12 Nov 21:33 | Biedronka | 101 | 93 | 6 | 16,122 / 1,948 | `image_failed` |
+| 13 Nov 05:45 | Biedronka | 101 | 99 | 0 | 0 / 0 | `image_failed,pages_unreadable` |
+| every scan | Natura | 0 | 0 | 0 | 0 | `leaflet_in_part,some_pages_failed` |
+
+- **Lidl:** the cap took the front 160 pages each scan; between the first two scans one of the four leaflets on lidl.pl's list was replaced, so 97 pages read in the first scan were no longer wanted. The list had five leaflets without alcohol on 13 Nov (the toy catalogue fifth); a search takes four.
+- **E.Leclerc:** the adapter cuts its nine leaflets at 120 pages (a search's screening limit), so the catalog never had the rest.
+- **Biedronka:** fetched from here on 13 Nov, 71 of 101 page images came cold as a 6,192,317-byte PNG (over the fetcher's 3 MB cap) and the same page as a 0.2 MB WebP on the next request (Cloudflare Polish, `cf-polished: ok, orig_size=6192317`). A search already asks twice; a scan asked once, so cold pages failed. One page (the opening hours, `GODZINY_OTWARCIA_…png`, 1996 × 3248) is a 25,946,100-byte PNG its host refuses to convert (`cf-polished: input_too_large`); the leaflet API's desktop set uses the same address and the host has no resizing endpoint (404), so no smaller rendition exists.
+- **Natura:** its promotions page was 3,929,948 bytes on 13 Nov, over the 3 MB cap, so every read said `some_pages_failed`.
+- **Matching:** `matchScore` requires the item's first word, so "słuchawki Apple" never matched "Apple AirPods 4", and "pieluchy" never matched "Pampers Active Baby 4". The other way round, "kawa mielona Lavazza" matched "Kawa mielona Jacobs" as the item (2 of 3 words).
+
+## Decision
+
+1. **Brands and models** (`server/messaging/src/deals/brands.ts`): a hand-written list of 182 marks (160 brands and their models) for the Polish market, each with the thing it is (a category id from `categories.ts`, now 176 categories, which gains 18 non-food things grocery leaflets carry: headphones, speakers, phones, tablets, laptops, smartwatches, consoles, TVs, blocks, dolls, toy cars, coffee machines, kettles, vacuum cleaners, electric shavers, drills). Names match product words like the matcher's (the same word, or the same stem in a word at least as long: "Pampersy", "Lavazzy", "Milki"; never a shorter word or a shared start: "milk" is not Milka, "legowisko" is not Lego); inflections whose stem moves are names of their own ("Żywca"). In a search (`makeJudge`, `service.ts`):
+   - an item that names a brand matches a product that names it and is the same thing even without the item's words ("Apple AirPods 4" for "słuchawki Apple"): `match: "brand"`;
+   - an item that names the thing matches a product named only by a brand or model of it ("AirPods 4" for "słuchawki", "Pampers …" for "pieluchy", "Lavazza …" for "kawa"): `match: "brand"`;
+   - **an item that names a brand never gets a product that doesn't name it as the item**: the same thing of another brand goes to `similar` (`match: "similar"`, "podobne, ale nie to samo"), never to the offers or the basket. This also changes "kawa mielona Lavazza": Jacobs is now similar, not the item;
+   - a product's own clear words decide what it is ("Ciastka Milka" are biscuits); a brand's thing is used only when the words don't say it ("Finish tabletki": dishwasher tablets, not a tablet);
+   - a product's own words rank before a brand match among the candidates; each offer says how it matched.
+2. **Every page, eventually** (`catalog.ts`): a scan sends the reader pages never tried before pages that failed once, pages of running leaflets before those starting later, then leaflet and page order, up to `DEALS_CATALOG_MAX_PAGES` (160) and the **day's token budget** (input plus output tokens per Warsaw day): `DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN` (1,500,000) and `DEALS_CATALOG_DAILY_TOKENS` (6,000,000), booked per page in `leaflet_catalog_tokens` (migration 037). A page that doesn't fit waits for the pages in flight before it is left for the next scan. A page read for a leaflet version is never read again (as before). For the catalog only, Lidl gives up to 8 leaflets and E.Leclerc up to 600 pages (`ChainContext.forCatalog`); a search keeps 4 and 120.
+3. **Image failures:** a page image over the size cap is asked for once more after 2 s, then in the chain's smaller rendition when it publishes one (Lidl's 1200 px `image` beside its 2400 px `zoom`, `LeafletPage.smallerImageUrl`). Each snapshot records the pages it is missing and why (`missing: [{leaflet, page, why, gaveUp?}]`, why one of `not_read_yet`, `image_too_large`, `image_failed`, `image_refused`, `read_failed`; the last failure is kept in `leaflet_page_reads.failure`, migration 037). The scan log adds `pagesOverBudget`, `missing` (counts by why) and the tokens left. Natura's two pages are asked for with a 6 MB cap (`FetchPageOptions.maxBytes`, at most 8 MB for one page).
+4. **"When read"** (new optional fields, backward compatible): every offer and promotion carries `leafletRead {readAt, validFrom?, validTo?, complete}` (the catalog's read of its page, or this search's own read) and every offer `match`; a chain answered from the catalog carries `readAt` and `complete` on its row. DoddyCore decodes them (`DealOffer.match`, `DealOffer.leafletRead`, `DealPromotion.leafletRead`, `DealsChainReport.readAt`/`complete`), dropping a value that doesn't read.
+5. **Deal watches** (`src/deals/dealWatches.ts`, `src/routes/dealWatches.ts`, fixture `schemas/fixtures/deal_watch_v1.json`): `POST /v1/deal-watches {item, maxPriceMinor?, chains?, language}`, `GET /v1/deal-watches`, `GET /v1/deal-watches/{id}/offers`, `DELETE /v1/deal-watches/{id}`; device token, strict bodies, `503 deal_watches_disabled` unless `DEAL_WATCHES_ENABLED=1` (default `0`), `MEMORY_ENCRYPTION_KEY` and the catalog are on.
+   - **Kept:** the item's words encrypted (associated data `{account}:deal-watch:{id}`, rotated by `scripts/reencrypt.mjs`), the price in grosze, the chains, the push's language, the account; per found offer only a 16-byte keyed hash (HMAC under a key derived from `MEMORY_ENCRYPTION_KEY`), its last day and when it was told. Deleted when the watch ends (`DEAL_WATCHES_DAYS`, 60), on DELETE, and with the account (`ON DELETE CASCADE`).
+   - **Checked** in code, after a catalog pass that scanned a chain the watch covers, at most once a day per watch (claimed with `SKIP LOCKED`): the item itself (words or brand), never a similar product; only offers with `check` false; at or under the price. No page read and no model. What already matches when the watch is made is returned at once and never pushed.
+   - **Told:** one push per new offer at most (idempotency key `deal-watch:{watch}:{offer}`), one per watch per check (the rest are shown in the app), `DEAL_WATCHES_PUSHES_PER_DAY` (3) per account in 24 hours, held in quiet hours (21:00 to 08:00 Europe/Warsaw, the leaflets' country) and shown in the app only if more than a day late. The push says "Coś, czego pilnujesz w gazetkach, jest w promocji." / "Something you're watching is on offer in a leaflet." and carries `{"doddy": {"kind": "deal-watch"}}` only (`ServerPushKind.dealWatch`, `opensShopping`).
+   - **Caps:** `DEAL_WATCHES_MAX_PER_ACCOUNT` (10), `DEAL_WATCHES_MAX_PER_SERVER` (5000), counted under an advisory lock; routes 30 an hour (create), 600 (reads), 240 (delete) per device.
+   - **No approval digest:** nothing is bought, sent or read outside on the person's behalf; the one effect is a push to the person's own device, which making the watch asks for (as On my radar's alerts). The watch as stored is returned, so the app shows what was saved.
+
+## Consequences
+
+- "słuchawki Apple", "AirPods", "pieluchy", "kawa", "klocki" now find brand-named products in the catalog; an item naming a brand is no longer answered with another brand as if it were it. A brand missing from the list matches by words only, as before. The pick model (when it runs) still filters.
+- **Cost:** never more than the budget per day; at the 12 Nov rate (about 5,000 tokens a page, Claude Haiku 5.5 at $0.10 and $0.50 per million) the 6 million cap is at most about $1.50 a day, and a normal day, with most pages known, far less. The first scan after deploy reads Lidl's fifth leaflet and E.Leclerc's pages past 120, spread over days if the budget asks.
+- **Biedronka:** cold pages are read on the second request; the opening-hours page stays missing (too large, no smaller rendition), so Biedronka reads as "read in part" (`pages` 100 of 101) and "nothing matched" isn't claimed there.
+- **Natura** stays "read in part": its leaflet is a PDF on heyzine.com, not read.
+- **Privacy:** the catalog still holds nothing about any person. A deal watch holds the item's words encrypted, a price and chains; the push names nothing. The privacy policy doesn't mention deal watches yet (owner queue).
+- **Constitution:** DOD-02 (prices only from a chain's data or a read page, parsed by code) unchanged; the brand list and the matching are code, a model proposes nothing new. A push is queued once per key; nothing is claimed done that wasn't (the watch is returned as stored).
+- **Watch:** a brand in the list whose name is also a common word in a product name (Velvet, Finish, Always) can make a product a brand match; the words' own category wins when clear, and the pick model filters when it runs.
+
+## Evidence
+
+- Ran: `npx tsc --noEmit -p .` and `npm test` in `server/messaging` against a disposable Postgres 16 (results in the pull request); `make test-core` (DoddyCore, Swift 6.1.2 on Linux); `scripts/ci.sh --only checks`.
+- Read: Render's logs of `doddy-messaging` (12 and 13 Nov, the table above); Biedronka's leaflet API and its 101 page images, Lidl's leaflet list and Natura's two pages, fetched from this session as DoddyBot (sizes and headers above).
+- Not run: a real scan with the new order and budget (needs a deploy, the owner's step); no real leaflet page was read with the brand list; the app's screens for `match`, `leafletRead` and deal watches don't exist yet (another pull request).

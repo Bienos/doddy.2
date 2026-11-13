@@ -407,16 +407,25 @@ public struct DealsChainReport: Codable, Equatable, Sendable {
     /// Only when the leaflet was read in part (`checked` or `failed`); nil when it was read whole or
     /// the server is older. A value that doesn't make sense (read not below of) is dropped.
     public let pages: Pages?
+    /// For a chain answered from the server's leaflet catalog (13 Nov 2026): when the catalog last read it ("Przeczytane
+    /// dziś o 6:45"), as sent. Nil for a chain read live for this answer (read at `checkedAt`) or from an older server.
+    public let readAt: String?
+    /// With `readAt`: whether the catalog read all of the chain's current leaflets. False: a cheaper offer may be on a
+    /// page not read ("gazetka przeczytana w części").
+    public let complete: Bool?
 
-    public init(chain: DealsChain, status: Status, leaflet: Leaflet? = nil, leafletUrl: String? = nil, pages: Pages? = nil) {
+    public init(chain: DealsChain, status: Status, leaflet: Leaflet? = nil, leafletUrl: String? = nil, pages: Pages? = nil,
+                readAt: String? = nil, complete: Bool? = nil) {
         self.chain = chain
         self.status = status
         self.leaflet = leaflet
         self.leafletUrl = leafletUrl
         self.pages = pages
+        self.readAt = readAt
+        self.complete = complete
     }
 
-    private enum CodingKeys: String, CodingKey { case chain, status, leaflet, leafletUrl, pages }
+    private enum CodingKeys: String, CodingKey { case chain, status, leaflet, leafletUrl, pages, readAt, complete }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -426,6 +435,41 @@ public struct DealsChainReport: Codable, Equatable, Sendable {
         leafletUrl = try c.decodeIfPresent(String.self, forKey: .leafletUrl)
         let pages = try? c.decodeIfPresent(Pages.self, forKey: .pages)
         self.pages = pages.flatMap { $0.read >= 0 && $0.read < $0.of ? $0 : nil }
+        // 13 Nov 2026: a value that doesn't read is dropped, never trusted.
+        readAt = ((try? c.decodeIfPresent(String.self, forKey: .readAt)) ?? nil).flatMap { ServerDates.parse($0) != nil ? $0 : nil }
+        complete = (try? c.decodeIfPresent(Bool.self, forKey: .complete)) ?? nil
+    }
+
+    /// When the catalog read the chain, when the server said so.
+    public var readDate: Date? { readAt.flatMap(ServerDates.parse) }
+    /// The server said its catalog read only part of this chain's leaflets.
+    public var readInPart: Bool { complete == false || pages != nil }
+}
+
+/// When an offer's or a promotion's source was read (13 Nov 2026): the leaflet catalog's read of its page (or this
+/// search's own read), the leaflet's own dates, and whether the chain's current leaflets were read whole. Nil from a
+/// server older than it, or when the server sent something that doesn't read.
+public struct DealsLeafletRead: Codable, Equatable, Sendable {
+    /// ISO time, as sent.
+    public let readAt: String
+    public let validFrom: DealDay?
+    public let validTo: DealDay?
+    /// False: some of the chain's pages weren't read, so a cheaper offer may be on them.
+    public let complete: Bool
+
+    public init(readAt: String, validFrom: DealDay? = nil, validTo: DealDay? = nil, complete: Bool) {
+        self.readAt = readAt
+        self.validFrom = validFrom
+        self.validTo = validTo
+        self.complete = complete
+    }
+
+    public var readDate: Date? { ServerDates.parse(readAt) }
+
+    /// Decodes the field tolerantly: absent, or anything that isn't a readable time with a yes/no, is nil.
+    static func decode<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> DealsLeafletRead? {
+        guard let read = (try? c.decodeIfPresent(DealsLeafletRead.self, forKey: key)) ?? nil, read.readDate != nil else { return nil }
+        return read
     }
 }
 
@@ -476,9 +520,11 @@ public struct DealPromotion: Codable, Equatable, Sendable {
     public let validFrom: DealDay?
     public let validTo: DealDay?
     public let source: DealOffer.Source
+    /// When its page was read (13 Nov 2026); nil from an older server.
+    public let leafletRead: DealsLeafletRead?
 
     public init(chain: DealsChain, text: String, mechanic: String, conditions: [String] = [], flags: [DealOffer.Flag] = [],
-                validFrom: DealDay? = nil, validTo: DealDay? = nil, source: DealOffer.Source) {
+                validFrom: DealDay? = nil, validTo: DealDay? = nil, source: DealOffer.Source, leafletRead: DealsLeafletRead? = nil) {
         self.chain = chain
         self.text = text
         self.mechanic = mechanic
@@ -487,9 +533,10 @@ public struct DealPromotion: Codable, Equatable, Sendable {
         self.validFrom = validFrom
         self.validTo = validTo
         self.source = source
+        self.leafletRead = leafletRead
     }
 
-    private enum CodingKeys: String, CodingKey { case chain, text, mechanic, conditions, flags, validFrom, validTo, source }
+    private enum CodingKeys: String, CodingKey { case chain, text, mechanic, conditions, flags, validFrom, validTo, source, leafletRead }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -501,6 +548,7 @@ public struct DealPromotion: Codable, Equatable, Sendable {
         validFrom = try c.decodeIfPresent(DealDay.self, forKey: .validFrom)
         validTo = try c.decodeIfPresent(DealDay.self, forKey: .validTo)
         source = try c.decode(DealOffer.Source.self, forKey: .source)
+        leafletRead = DealsLeafletRead.decode(c, .leafletRead)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -513,6 +561,7 @@ public struct DealPromotion: Codable, Equatable, Sendable {
         try c.encodeIfPresent(validFrom, forKey: .validFrom)
         try c.encodeIfPresent(validTo, forKey: .validTo)
         try c.encode(source, forKey: .source)
+        try c.encodeIfPresent(leafletRead, forKey: .leafletRead)
     }
 }
 
@@ -642,10 +691,39 @@ public struct DealOffer: Codable, Equatable, Sendable {
     /// At most this many per customer.
     public let limit: Int?
 
+    /// How the server's code matched the offer to the item (13 Nov 2026).
+    public enum Match: String, Codable, Sendable, CaseIterable {
+        /// Its own words name the item.
+        case exact
+        /// Through its brand or model: it names the brand the item names and is the same thing, or it is named only by a
+        /// brand or model of the thing the item names ("Apple AirPods 4" for "słuchawki").
+        case brand
+        /// Not the item: the same kind of thing of another brand, or a substitute ("podobne, ale nie to samo"). Only in
+        /// `DealsItemResult.similar`.
+        case similar
+        case unknown
+
+        public init(from decoder: any Decoder) throws {
+            self = Match(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
+        }
+    }
+
+    /// Nil from a server older than 13 Nov 2026.
+    public let match: Match?
+    /// When the page or the chain's data it came from was read, the leaflet's dates, and whether the chain was read
+    /// whole (13 Nov 2026). Nil from an older server.
+    public let leafletRead: DealsLeafletRead?
+
+    /// The server said it isn't the item ("podobne, ale nie to samo").
+    public var isSimilarOnly: Bool { match == .similar }
+
     public init(chain: DealsChain, product: String, price: Money, size: Size? = nil, unitPrice: UnitPrice? = nil,
                 regularPrice: Money? = nil, lowest30d: Money? = nil, conditions: [String] = [], validFrom: DealDay? = nil,
                 validTo: DealDay? = nil, source: Source, readBy: ReadBy = .leafletData, ean: String? = nil, check: Bool = false,
-                flags: [Flag] = [], effective: Effective? = nil, cut: Int? = nil, limit: Int? = nil, buyUrl: String? = nil) {
+                flags: [Flag] = [], effective: Effective? = nil, cut: Int? = nil, limit: Int? = nil, buyUrl: String? = nil,
+                match: Match? = nil, leafletRead: DealsLeafletRead? = nil) {
+        self.match = match
+        self.leafletRead = leafletRead
         self.buyUrl = buyUrl
         self.flags = flags
         self.effective = effective
@@ -669,7 +747,7 @@ public struct DealOffer: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case chain, product, price, size, unitPrice, regularPrice, lowest30d, conditions, validFrom, validTo, source, readBy, ean, check
-        case flags, effective, cut, limit, buyUrl
+        case flags, effective, cut, limit, buyUrl, match, leafletRead
     }
 
     private struct CutValue: Codable { let percent: Int }
@@ -700,6 +778,8 @@ public struct DealOffer: Codable, Equatable, Sendable {
         try c.encodeIfPresent(cut.map { CutValue(percent: $0) }, forKey: .cut)
         try c.encodeIfPresent(limit, forKey: .limit)
         try c.encodeIfPresent(buyUrl, forKey: .buyUrl)
+        try c.encodeIfPresent(match, forKey: .match)
+        try c.encodeIfPresent(leafletRead, forKey: .leafletRead)
     }
 
     public init(from decoder: any Decoder) throws {
@@ -730,6 +810,9 @@ public struct DealOffer: Codable, Equatable, Sendable {
         self.cut = cut.flatMap { (1...99).contains($0.percent) ? $0.percent : nil }
         let limit = (try? c.decodeIfPresent(Int.self, forKey: .limit)) ?? nil
         self.limit = limit.flatMap { $0 >= 1 && $0 <= 999 ? $0 : nil }
+        // 13 Nov 2026: absent from an older server; a value this app doesn't know is `.unknown`, never `.exact`.
+        match = (try? c.decodeIfPresent(Match.self, forKey: .match)) ?? nil
+        leafletRead = DealsLeafletRead.decode(c, .leafletRead)
     }
 
     /// The price is for a mechanic over several pieces ("2+1", "drugi za"), not for one bought alone.

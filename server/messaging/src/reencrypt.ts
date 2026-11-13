@@ -18,6 +18,7 @@ import { fileAad, jobAad, resultAad as studioResultAad } from "./studio/context.
 import { payloadAad as callCaseAad } from "./taskCalls/payload.js";
 import { inputAad, liveAad, resultAad as callResultAad } from "./taskCalls/service.js";
 import { contentAad as watchAad } from "./watches/context.js";
+import { wordsAad as dealWatchAad } from "./deals/dealWatches.js";
 
 type Row = Record<string, unknown> & { account_id: string };
 const s = (v: unknown) => String(v);
@@ -71,6 +72,8 @@ export const ENCRYPTED_COLUMNS: EncryptedColumn[] = [
     aad: (r) => recapAad(r.account_id, s(r.call_id)) },
   { table: "deliveries", column: "payload_ciphertext", version: "payload_key_version", key: ["id"], account: "t.account_id",
     aad: (r) => deliveryAad(r.account_id, s(r.id)) },
+  { table: "deal_watches", column: "words_ciphertext", version: "key_version", key: ["id"], account: "t.account_id",
+    aad: (r) => dealWatchAad(r.account_id, s(r.id)) },
 ];
 
 export interface ColumnReport {

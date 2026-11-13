@@ -1,4 +1,5 @@
 import { loadConfig } from "./config.js";
+import { dealWatchContextFor } from "./deals/dealWatches.js";
 import { createPool, migrateOrExit } from "./db.js";
 import { providersFrom, scheduledCallsFrom } from "./providers/index.js";
 import { taskCallContext } from "./taskCalls/context.js";
@@ -22,11 +23,12 @@ const errandCtx = errandContext(db, errands, cipher, push, log);
 const studioCtx = studioContext(db, studio, cipher, push, log);
 const watchCtx = watchContext(db, watches, cipher, push, log);
 const radarCtx = radarContext(db, config.radarAlertsEnabled, news, push, cipher, config.quietHours);
-const catalogCtx = catalogContext(db, providers.deals);
+const dealWatchCtx = dealWatchContextFor({ db, ...providers, quietHours: config.quietHours }, log);
+const catalogCtx = catalogContext(db, providers.deals, dealWatchCtx);
 log("worker started", {
   push: !!push, sms: !!sms, scheduledCalls: !!scheduledCalls, taskCalls: !!taskCtx, killSwitch: config.taskCallSettings.killSwitch,
   errands: !!errandCtx?.enabled, studio: !!studioCtx?.enabled, watches: !!watchCtx?.enabled, radarAlerts: !!radarCtx,
-  leafletCatalog: !!catalogCtx,
+  leafletCatalog: !!catalogCtx, dealWatches: !!dealWatchCtx?.enabled,
 });
 
 let stopping = false;
@@ -35,7 +37,7 @@ process.on("SIGINT", () => { stopping = true; });
 
 await runWorkerLoop(db, {
   push, sms, phoneAgentVoice, phoneAgentId, cipher, news, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, limits,
-  deleter, taskDeleter, deleteAfterMinutes, scheduledCalls, radar: radarCtx, catalog: catalogCtx,
+  deleter, taskDeleter, deleteAfterMinutes, scheduledCalls, radar: radarCtx, catalog: catalogCtx, dealWatches: dealWatchCtx,
 }, () => stopping);
 push?.close();
 await db.end();

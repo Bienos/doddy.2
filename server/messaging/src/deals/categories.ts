@@ -13,7 +13,7 @@
 // several match, the longest phrase wins: "masło do ciała" is cosmetics, "masło" alone is butter.
 import { normalize, stem, wordSimilarity } from "./match.js";
 
-export type CategoryGroup = "food" | "drink" | "household" | "cosmetics" | "baby" | "pet";
+export type CategoryGroup = "food" | "drink" | "household" | "cosmetics" | "baby" | "pet" | "electronics" | "toys" | "appliances" | "tools";
 
 export interface Category {
   id: string;
@@ -201,6 +201,26 @@ const ROWS: Row[] = [
   ["cat_food", "pet_food", "pet", "karma dla kota|karma dla kotow|karma mokra dla kota|karma sucha dla kota|saszetki dla kota|przysmaki dla kota"],
   ["pet_food", "pet_food", "pet", "karma", true],
   ["cat_litter", "pet_care", "pet", "zwirek|zwirek dla kota|podloze dla kota"],
+  // ----- non-food things grocery leaflets carry on their middle pages (13 Nov 2026: "słuchawki Apple" found nothing).
+  // What a brand or model is (AirPods: headphones) lives in brands.ts; these are the things themselves.
+  ["headphones", "audio", "electronics", "sluchawki|sluchawki bezprzewodowe|sluchawki douszne|sluchawki nauszne|sluchawki bluetooth|earbuds"],
+  ["speakers", "audio", "electronics", "glosnik|glosniki|glosnik bluetooth|glosnik przenosny|soundbar"],
+  ["phones", "phones", "electronics", "smartfon|smartfony|telefon|telefon komorkowy"],
+  ["tablets", "computers", "electronics", "tablet|tablety"],
+  ["laptops", "computers", "electronics", "laptop|laptopy|notebook"],
+  ["smartwatches", "wearables", "electronics", "smartwatch|smartwatche|smartband|opaska sportowa|zegarek sportowy"],
+  ["consoles", "gaming", "electronics", "konsola|konsola do gier|kontroler do gier|gra na konsole"],
+  ["tv", "tv", "electronics", "telewizor|telewizory|smart tv"],
+  ["blocks", "toys", "toys", "klocki|zestaw klockow|klocki konstrukcyjne"],
+  ["dolls", "toys", "toys", "lalka|lalki|domek dla lalek"],
+  ["toy_cars", "toys", "toys", "samochodzik|resorak|resoraki|tor samochodowy"],
+  ["toys", "toys", "toys", "zabawka|zabawki", true],
+  ["coffee_machine", "kitchen_appliances", "appliances", "ekspres do kawy|ekspres cisnieniowy|ekspres przelewowy|ekspres kolbowy"],
+  ["kettle", "kitchen_appliances", "appliances", "czajnik|czajnik elektryczny"],
+  ["vacuum", "cleaning_appliances", "appliances", "odkurzacz|odkurzacz pionowy|robot sprzatajacy|robot odkurzajacy"],
+  ["electric_shaver", "shaving", "appliances", "golarka|golarka elektryczna|trymer|maszynka do strzyzenia"],
+  ["drills", "tools", "tools", "wiertarka|wkretarka|wiertarko wkretarka|wiertarka udarowa"],
+  ["tools", "tools", "tools", "elektronarzedzia|narzedzia", true],
 ];
 
 interface Compiled extends Category { phrases: { length: number; words: { raw: string; stem: string }[] }[] }
@@ -222,6 +242,12 @@ const SIMILAR = 0.6;
  * diminutive before a shared start: "kasza" isn't "kaszka", "szampon" isn't "szampan"), then the longest phrase;
  * on a tie, the earlier in the list. */
 export function categoryOf(text: string): Category | undefined {
+  return categoryMatch(text)?.category;
+}
+
+/** `categoryOf` with how closely its phrase matched (1: the same words; 0.9: the same stems; below: a diminutive or a
+ * shared start), so brands.ts can tell a product's own clear word from a guess. */
+export function categoryMatch(text: string): { category: Category; quality: number } | undefined {
   const words = normalize(text).split(" ").filter(Boolean).map((raw) => ({ raw, stem: stem(raw) }));
   if (!words.length) return undefined;
   let found: Category | undefined;
@@ -237,7 +263,7 @@ export function categoryOf(text: string): Category | undefined {
       }
     }
   }
-  return found;
+  return found ? { category: found, quality: bestQuality } : undefined;
 }
 
 /** How a product's category stands to a query's: the same thing, a similar one (a substitute), another kind of
