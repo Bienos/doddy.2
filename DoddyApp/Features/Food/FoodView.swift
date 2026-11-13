@@ -8,7 +8,9 @@ import SwiftUI
 /// pastes them in its search: the apps publish no search address Doddy could fill in (decision 2026-11-11-food-button),
 /// and Doddy reads no menus, prices or delivery times from them, so it never says which is nearest or cheapest.
 /// Doddy places no order and logs in to nothing; ordering for the person needs a wallet or card the owner hasn't
-/// decided on yet (docs/OWNER_QUEUE.md).
+/// decided on yet (docs/OWNER_QUEUE.md). Below the question, "Near you" (`FoodNearbySection`) lists the restaurants,
+/// cafés and bakeries Apple Maps finds for the dish near a typed address; that is Apple Maps' list of places, not a
+/// list of what the delivery apps offer or charge.
 struct FoodView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
@@ -44,6 +46,8 @@ struct FoodView: View {
                             }
                         }
                     }
+                    // Places near the person's typed address, from Apple Maps (decision 2026-11-13-food-search-nearby).
+                    FoodNearbySection(dish: looking)
                     DoddySectionTitle(title: looking == nil ? NSLocalizedString("Delivery apps", comment: "")
                                                             : String(format: NSLocalizedString("Where to look for “%@”", comment: ""), looking ?? ""))
                     ForEach(FoodApps.all) { app in
