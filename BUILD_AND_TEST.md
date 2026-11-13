@@ -140,8 +140,11 @@ exact release in the script (2.46.0), downloaded from its GitHub release and unp
 checksum in the script. To move it, change `version` and `sha256` together in a pull request of their own; the checks
 group tests the installer with a stand-in download (`scripts/test_install_xcodegen.sh`). Render's builds of `backend/`
 and `server/messaging/` run `npm ci --ignore-scripts` (none of their locked packages has an install script; if one
-gains one, remove the flag for that service), while `web/`, whose build tool esbuild has an install script, installs
-as before. `web/` tests run on Vitest 4.1.12.
+gains one, remove the flag for that service; `scripts/check_render_install_scripts.py`, in the checks group, fails
+when a folder installed with the flag has a locked package with an install script, or a lifecycle script of its own),
+while `web/`, whose build tool esbuild has an install script, installs as before. The same group fails when a tracked
+file downloads something and hands it straight to a shell (`scripts/check_no_pipe_to_shell.py`): download to a file,
+check its SHA-256, then run it, as `scripts/install_xcodegen.sh` does. `web/` tests run on Vitest 4.1.12.
 
 The Ubuntu 24.04 checks/Swift/Node/messaging jobs install the same dependency packages through
 `scripts/ci_install_ubuntu_packages.sh`. If the default apt sources fail, it retries
