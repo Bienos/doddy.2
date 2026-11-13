@@ -65,7 +65,7 @@ struct DealsView: View {
                     searchButton
                     switch model.phase {
                     case .checking:
-                        checkingCard
+                        LeafletsCheckingCard(asked: model.lastRequest?.leafletsAsked ?? [])
                     case .failed(let message):
                         card {
                             Label(message, systemImage: "exclamationmark.triangle")
@@ -80,6 +80,7 @@ struct DealsView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 32)
+                .leafletPhaseMotion(model.phase)
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.canvas)
@@ -126,8 +127,7 @@ struct DealsView: View {
     /// Doddy with the leaflets and what this screen does, in one line.
     private var hero: some View {
         HStack(alignment: .bottom, spacing: 12) {
-            UploadedCharacterView(assetName: "WholeDoddy_kneeling_inspect", height: 104)
-                .accessibilityHidden(true)
+            DealsHeroDoddy(nothingFound: model.phase == .idle && model.lastResult?.foundNothing == true)
             VStack(alignment: .leading, spacing: 6) {
                 Text("What do you need?")
                     .font(.title2.weight(.bold))
@@ -246,18 +246,6 @@ struct DealsView: View {
         return String(format: NSLocalizedString("%lld shops' leaflets", comment: "how many chains a check reads"), read)
     }
 
-    private var checkingCard: some View {
-        card {
-            HStack(spacing: 12) {
-                ProgressView()
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Reading the leaflets…").font(.headline)
-                    Text("This takes up to half a minute.").font(.footnote).foregroundStyle(Theme.secondaryText)
-                }
-            }
-        }
-    }
-
     /// A few things people often buy, in the reader's language.
     private var examples: [String] {
         language == .polish
@@ -349,13 +337,20 @@ struct DealsView: View {
                     .foregroundStyle(Theme.error)
                     .accessibilityIdentifier("deals.mostNotRead")
             }
+            LeafletsReadLine(read: result.chainsRead, notRead: result.chainsNotRead)
             if let checked = result.checkedDate {
                 Text(String(format: NSLocalizedString("Read %@. Prices are the leaflets'; in the shop they can differ.", comment: ""), DateText.full(checked)))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
             }
-            // The tabs count only the kind picked on an item's card ("kawa" → "mielona").
-            BasketTabsView(result: result.narrowed(to: kinds), quantities: model.lastQuantities, programs: programs,
-                           headers: result.items.indices.map { header(result.items[$0], index: $0) })
+            if result.foundNothing {
+                // Nothing at all for any item: one friendly card with the next step (DealsStates.swift).
+                NothingFoundCard(items: result.items.indices.map { header(result.items[$0], index: $0) },
+                                 onlineBelow: !ShoppingRoute.onlineNext(result, also: online).isEmpty) { showShops = true }
+            } else {
+                // The tabs count only the kind picked on an item's card ("kawa" → "mielona").
+                BasketTabsView(result: result.narrowed(to: kinds), quantities: model.lastQuantities, programs: programs,
+                               headers: result.items.indices.map { header(result.items[$0], index: $0) })
+            }
         }
         OnlineNextCard(things: ShoppingRoute.onlineNext(result, also: online), priorities: onlinePriorities)
         notes(result)

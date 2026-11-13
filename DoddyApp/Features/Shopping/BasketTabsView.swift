@@ -16,6 +16,13 @@ import SwiftUI
 // the app or card, how many to take, the limit, the deposit, the days (trading Sundays and holidays).
 // Until 13 Nov 2026 the shops were a separate "Basket" screen behind a button, and the answer listed each item's
 // best value per kg; that pick and its reason are on the item's card now.
+// The look and motion (13 Nov 2026, owner: "graficznie i animacyjnie, kreatywnie, ale … łatwe do ogarnięcia"): the
+// tabs are one control whose ink pill slides to the picked tab, with each tab's total under its name
+// (`BasketTabPicker`); the content crossfades and moves a few points in the direction of the change, with a light
+// selection haptic; rows arrive one after another; the cheapest price and each plan's total carry an orange marker;
+// shops are badges and the leaflet's conditions are chips with an icon each (`DealChip`); "Missing" is a dashed note,
+// not an error; two shops' saving is one line in Doddy's hand ("You save PLN 3.20 in two shops", `savingsLine`) whose
+// marker draws once. Under Reduce Motion nothing slides: the tab changes at once and rows only fade in.
 
 struct BasketTabsView: View {
     let result: DealsResult
@@ -26,6 +33,9 @@ struct BasketTabsView: View {
     /// The user's own minimum for a second shop, in grosze (ADR-664), stored on this iPhone.
     @AppStorage(PreferenceKey.dealsMinimumSaving) private var storedMinimum = 0
     @State private var picked: BasketTabs.Tab?
+    /// The last tab change went to a later tab: the new content comes in from the trailing side.
+    @State private var forward = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let language = NotificationLanguage.current
     private static let minimums = [0, 500, 1_000, 2_000, 3_000]
 
@@ -35,13 +45,15 @@ struct BasketTabsView: View {
         let shown = picked.flatMap { tabs.tabs.contains($0) ? $0 : nil } ?? tabs.firstTab
         VStack(alignment: .leading, spacing: 12) {
             if tabs.tabs.count > 1 {
-                tabPicker(tabs.tabs, shown: shown)
+                BasketTabPicker(tabs: tabs.tabs, shown: shown, totals: totals(tabs)) { tab in
+                    select(tab, among: tabs.tabs, from: shown)
+                }
+                .sensoryFeedback(.selection, trigger: picked)
             }
-            switch shown {
-            case .oneShop?: oneShop(tabs, today: today)
-            case .twoShops?: twoShops(tabs, today: today)
-            case .eachItem?: eachItem(tabs)
-            case nil: EmptyView()
+            ZStack(alignment: .topLeading) {
+                content(shown, tabs: tabs, today: today)
+                    .id(shown)
+                    .transition(contentTransition)
             }
             if tabs.oneShop != nil, result.items.count > 1 {
                 minimumPicker
@@ -60,34 +72,39 @@ struct BasketTabsView: View {
 
     // MARK: The tabs
 
-    /// Chips that wrap, so the three names fit at any text size (a segmented control cuts them).
-    private func tabPicker(_ tabs: [BasketTabs.Tab], shown: BasketTabs.Tab?) -> some View {
-        ChipFlow(spacing: 8) {
-            ForEach(tabs, id: \.self) { tab in
-                let on = tab == shown
-                Button { picked = tab } label: {
-                    title(tab)
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 14).padding(.vertical, 8)
-                        .frame(minHeight: 36)
-                        .foregroundStyle(on ? Theme.inkOnOrange : Theme.ink)
-                        .background(Capsule().fill(on ? Theme.orangeCue : Theme.canvas))
-                        .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: on ? 0 : 1))
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(on ? [.isSelected] : [])
-                .accessibilityIdentifier("deals.tab.\(tab.rawValue)")
-            }
+    private func select(_ tab: BasketTabs.Tab, among all: [BasketTabs.Tab], from current: BasketTabs.Tab?) {
+        guard tab != current else { return }
+        let from = current.flatMap { all.firstIndex(of: $0) } ?? 0
+        forward = (all.firstIndex(of: tab) ?? 0) >= from
+        withAnimation(ShoppingMotion.change(reduceMotion)) { picked = tab }
+    }
+
+    /// The new tab's content moves in a few points from the side the picked tab is on, and fades; the old one fades.
+    /// Under Reduce Motion the change has no animation at all (`select`), so this never plays.
+    private var contentTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        let shift: CGFloat = forward ? 28 : -28
+        return .asymmetric(insertion: AnyTransition.offset(x: shift).combined(with: .opacity), removal: .opacity)
+    }
+
+    /// Each tab's total, from its plan: "41,94 zł", or with the coverage when the plan lacks items ("38,10 zł · 5 of 6").
+    private func totals(_ tabs: BasketTabs) -> [BasketTabs.Tab: String] {
+        var out: [BasketTabs.Tab: String] = [:]
+        for tab in tabs.tabs {
+            guard let plan = tabs.plan(for: tab) else { continue }
+            let total = PlanRow.totalText(plan, language)
+            out[tab] = plan.coversAll ? total : "\(total) · \(plan.coverage(language))"
         }
+        return out
     }
 
     @ViewBuilder
-    private func title(_ tab: BasketTabs.Tab) -> some View {
-        switch tab {
-        case .oneShop: Text("One shop")
-        case .twoShops: Text("Two shops")
-        case .eachItem: Text("Each item separately")
+    private func content(_ shown: BasketTabs.Tab?, tabs: BasketTabs, today: DealDay?) -> some View {
+        switch shown {
+        case .oneShop?: oneShop(tabs, today: today)
+        case .twoShops?: twoShops(tabs, today: today)
+        case .eachItem?: eachItem(tabs, today: today)
+        case nil: EmptyView()
         }
     }
 
@@ -97,10 +114,11 @@ struct BasketTabsView: View {
     private func oneShop(_ tabs: BasketTabs, today: DealDay?) -> some View {
         if let plan = tabs.oneShop {
             VStack(alignment: .leading, spacing: 12) {
-                PlanRow(plan: plan, language: language)
+                PlanRow(plan: plan, language: language, today: today)
                     .accessibilityIdentifier("basket.oneShop")
                 if let why = noSecondShopText(tabs.noSecondShop) {
-                    Text(why).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    Label(why, systemImage: "info.circle")
+                        .font(.footnote).foregroundStyle(Theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 ChecklistRows(sections: DealsChecklist.sections(plan, today: today))
@@ -131,16 +149,9 @@ struct BasketTabsView: View {
     private func twoShops(_ tabs: BasketTabs, today: DealDay?) -> some View {
         if let pair = tabs.twoShops {
             VStack(alignment: .leading, spacing: 12) {
-                PlanRow(plan: pair, language: language)
+                gain(tabs, pair: pair)
+                PlanRow(plan: pair, language: language, today: today)
                     .accessibilityIdentifier("basket.twoShops")
-                if let savings = tabs.savings, savings.minor > 0 {
-                    Text(String(format: NSLocalizedString("Saves %@ against one shop. Worth it if you pass both anyway.", comment: ""), savings.text(language)))
-                        .font(Theme.hand(.body)).foregroundStyle(Theme.ink)
-                } else if let single = tabs.oneShop, pair.covered > single.covered {
-                    Text(String(format: NSLocalizedString("Two shops have %@ items; one shop has %@.", comment: "two coverages such as 3 of 3"),
-                                pair.coverage(language), single.coverage(language)))
-                        .font(Theme.hand(.body)).foregroundStyle(Theme.ink)
-                }
                 ChecklistRows(sections: DealsChecklist.sections(pair, today: today))
                 ShareLink(item: listsText(pair, today: today)) {
                     Label("Share the two lists", systemImage: "square.and.arrow.up")
@@ -149,6 +160,19 @@ struct BasketTabsView: View {
                 .accessibilityIdentifier("basket.share")
             }
             .tasksCard()
+        }
+    }
+
+    /// What the second shop gains, first: the saving in Doddy's hand, or more items.
+    @ViewBuilder
+    private func gain(_ tabs: BasketTabs, pair: BasketPlan) -> some View {
+        if let line = tabs.savingsLine(language) {
+            SavingsLine(text: line)
+        } else if case .moreItems? = tabs.secondShopGain, let single = tabs.oneShop {
+            Text(String(format: NSLocalizedString("Two shops have %@ items; one shop has %@.", comment: "two coverages such as 3 of 3"),
+                        pair.coverage(language), single.coverage(language)))
+                .font(Theme.hand(.body)).foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -173,29 +197,23 @@ struct BasketTabsView: View {
 
     // MARK: Each item separately
 
-    private func eachItem(_ tabs: BasketTabs) -> some View {
+    private func eachItem(_ tabs: BasketTabs, today: DealDay?) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             if let all = tabs.everything, tabs.eachItem.count > 1 {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("Everything at its cheapest").font(.headline)
-                        Spacer(minLength: 8)
-                        Text(verbatim: PlanRow.totalText(all, language)).font(.title3.weight(.heavy))
-                    }
-                    Text(verbatim: "\(all.chains.map(\.name).joined(separator: " + ")) · \(all.coverage(language))")
-                        .font(.footnote).foregroundStyle(all.coversAll ? Theme.secondaryText : Theme.error)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("basket.everything")
+                EverythingHeader(plan: all, language: language)
             }
             VStack(spacing: 0) {
                 ForEach(Array(tabs.eachItem.enumerated()), id: \.element.itemIndex) { position, row in
-                    if position > 0 { Divider().overlay(Theme.separator) }
-                    NavigationLink(value: DealsItemPage(index: row.itemIndex)) {
-                        itemRow(row)
+                    VStack(spacing: 0) {
+                        if position > 0 { Divider().overlay(Theme.separator) }
+                        NavigationLink(value: DealsItemPage(index: row.itemIndex)) {
+                            EachItemRow(row: row, header: header(row), emptyWords: emptyWords(row), language: language, today: today)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(sentence(row, today: today)))
+                        .accessibilityIdentifier("deals.item.\(row.itemIndex)")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("deals.item.\(row.itemIndex)")
+                    .arrivesInOrder(position)
                 }
             }
             .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.quietSurface))
@@ -203,58 +221,41 @@ struct BasketTabsView: View {
         }
     }
 
-    /// One item: its name, the cheapest line's product, shop and condition, the other shops in one line, the price.
-    private func itemRow(_ row: BasketTabs.ItemRow) -> some View {
-        let item = row.itemIndex < result.items.count ? result.items[row.itemIndex] : nil
-        return HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(verbatim: header(row)).font(.headline)
-                if let line = row.cheapest {
-                    Text(verbatim: line.offer.product).font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(2)
-                    HStack(spacing: 6) {
-                        Text(verbatim: line.chain.name)
-                            .font(.caption.weight(.bold))
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Capsule().fill(Theme.orangeCue.opacity(0.18)))
-                        if line.needsChecking {
-                            Text("Check the leaflet").font(.caption.weight(.semibold)).foregroundStyle(Theme.error)
-                        } else if !line.conditions.isEmpty {
-                            Text(verbatim: line.conditions.joined(separator: " · "))
-                                .font(.caption.weight(.semibold)).foregroundStyle(Theme.accentText).lineLimit(1)
-                        }
-                    }
-                    if let others = row.othersText(language) {
-                        Text(String(format: NSLocalizedString("Other shops: %@", comment: "other shops' prices for one item, in one line"), others))
-                            .font(.caption).foregroundStyle(Theme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                } else if let item, !item.promotions.isEmpty {
-                    Text("A promotion without a printed price").font(.footnote).foregroundStyle(Theme.secondaryText)
-                } else if let item, !item.offers.isEmpty {
-                    Text("Only prices that aren't counted here. Tap for details.").font(.footnote).foregroundStyle(Theme.secondaryText)
-                } else {
-                    Text("Not in the leaflets that were read.").font(.footnote).foregroundStyle(Theme.secondaryText)
-                }
-            }
-            Spacer(minLength: 8)
-            if let line = row.cheapest {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(verbatim: PlanRow.lineText(line, language)).font(.title3.weight(.heavy))
-                    if line.quantity > 1 {
-                        Text(verbatim: "×\(line.quantity)").font(.caption).foregroundStyle(Theme.secondaryText)
-                    }
-                }
-            }
-            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryText)
-                .accessibilityHidden(true)
-        }
-        .padding(14)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-    }
-
     private func header(_ row: BasketTabs.ItemRow) -> String {
         row.itemIndex < headers.count ? headers[row.itemIndex] : row.query
+    }
+
+    /// What a row with no counted price says instead: a promotion without a price, only prices that aren't counted, or
+    /// nothing in the leaflets that were read.
+    private func emptyWords(_ row: BasketTabs.ItemRow) -> String {
+        let item = row.itemIndex < result.items.count ? result.items[row.itemIndex] : nil
+        if let item, !item.promotions.isEmpty {
+            return NSLocalizedString("A promotion without a printed price", comment: "")
+        }
+        if let item, !item.offers.isEmpty {
+            return NSLocalizedString("Only prices that aren't counted here. Tap for details.", comment: "")
+        }
+        return NSLocalizedString("Not in the leaflets that were read.", comment: "")
+    }
+
+    /// A row for VoiceOver in one sentence: "masło: cheapest at Biedronka, 4,99 zł. For 2. Masło Extra 200 g. With the
+    /// Moja Biedronka app, until Sat 15 Nov. Other shops: Lidl 5,49 zł."
+    private func sentence(_ row: BasketTabs.ItemRow, today: DealDay?) -> String {
+        let name = header(row)
+        guard let line = row.cheapest else { return "\(name). \(emptyWords(row))" }
+        var parts = [String(format: NSLocalizedString("%@: cheapest at %@, %@.", comment: "an item, a shop, the price for the quantity asked"),
+                            name, line.chain.name, PlanRow.lineText(line, language))]
+        if line.quantity > 1 {
+            parts.append(String(format: NSLocalizedString("For %lld.", comment: "how many pieces a price is for"), line.quantity))
+        }
+        parts.append("\(line.offer.product).")
+        if line.needsChecking { parts.append(NSLocalizedString("Check the leaflet", comment: "") + ".") }
+        let chips = DealChip.chips(for: line.offer, today: today).map { DealChipView.words($0) }
+        if !chips.isEmpty { parts.append(chips.joined(separator: ", ") + ".") }
+        if let others = row.othersText(language) {
+            parts.append(String(format: NSLocalizedString("Other shops: %@", comment: "other shops' prices for one item, in one line"), others))
+        }
+        return parts.joined(separator: " ")
     }
 
     // MARK: Sharing
@@ -275,51 +276,189 @@ struct BasketTabsView: View {
     }
 }
 
-/// One plan: the shops, the total, how many items it covers, each line with its conditions and notes, and what it lacks.
-private struct PlanRow: View {
+// MARK: - Parts
+
+/// Two shops' saving in one line, in Doddy's hand, with an orange marker that draws once under it and an arrow that
+/// bounces once. The amount is `BasketTabs.savingsLine`'s, from the solver. Under Reduce Motion both are still.
+private struct SavingsLine: View {
+    let text: String
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var noticed = false
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.title3)
+                .foregroundStyle(Theme.orangeCue)
+                .symbolEffect(.bounce, value: noticed)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                PriceMark(text: text, font: Theme.hand(.title3), delay: 0.25, alignment: .leading)
+                Text("Compared with one shop. Worth it if you pass both anyway.")
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("basket.savings")
+        .task {
+            guard !reduceMotion, !noticed else { return }
+            try? await Task.sleep(for: .milliseconds(350))
+            noticed = true
+        }
+    }
+}
+
+/// "Everything at its cheapest": the total, marked, and the shops that takes, as badges.
+private struct EverythingHeader: View {
     let plan: BasketPlan
     let language: NotificationLanguage
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(plan.chains.map(\.name).joined(separator: " + ")).font(.headline).foregroundStyle(Theme.ink)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("Everything at its cheapest").font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
-                Text(Self.totalText(plan, language)).font(.title2.weight(.heavy)).foregroundStyle(Theme.ink)
+                PriceMark(text: PlanRow.totalText(plan, language))
+                    .layoutPriority(1)
             }
-            Text(plan.coverage(language)).font(.footnote).foregroundStyle(plan.coversAll ? Theme.secondaryText : Theme.error)
-            ForEach(Array(plan.lines.enumerated()), id: \.offset) { _, line in
-                HStack(alignment: .firstTextBaseline) {
-                    Text(verbatim: line.quantity > 1 ? "\(line.query) ×\(line.quantity)" : line.query).foregroundStyle(Theme.ink)
-                    if plan.chains.count > 1 {
-                        Text(line.chain.name).font(.footnote).foregroundStyle(Theme.secondaryText)
+            ChipFlow(spacing: 6) {
+                ForEach(Array(plan.chains.enumerated()), id: \.offset) { index, chain in
+                    ShopBadge(name: chain.name, style: index == 0 ? 0 : 1)
+                }
+            }
+            Text(String(format: NSLocalizedString("%@ items", comment: "a coverage such as 5 of 6"), plan.coverage(language)))
+                .font(.footnote).foregroundStyle(Theme.secondaryText)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("basket.everything")
+    }
+}
+
+/// One item of "Each item separately": its name and cheapest price, the product, the shop and the leaflet's conditions
+/// as chips, and the other shops in one line. At accessibility text sizes the price goes under the name.
+private struct EachItemRow: View {
+    let row: BasketTabs.ItemRow
+    let header: String
+    let emptyWords: String
+    let language: NotificationLanguage
+    let today: DealDay?
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                nameAndPrice
+                details
+            }
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryText)
+                .accessibilityHidden(true)
+        }
+        .padding(14)
+        .contentShape(Rectangle())
+    }
+
+    private var nameAndPrice: some View {
+        let large = textSize.isAccessibilitySize
+        let layout = large ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                           : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 8))
+        return layout {
+            Text(verbatim: header).font(.headline).foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            if !large { Spacer(minLength: 8) }
+            if let line = row.cheapest {
+                VStack(alignment: large ? .leading : .trailing, spacing: 2) {
+                    PriceMark(text: PlanRow.lineText(line, language), alignment: large ? .leading : .trailing)
+                    if line.quantity > 1 {
+                        Text(verbatim: "×\(line.quantity)").font(.caption).foregroundStyle(Theme.secondaryText)
                     }
-                    Spacer(minLength: 8)
-                    Text(Self.lineText(line, language)).foregroundStyle(Theme.ink)
                 }
-                .font(.subheadline)
-                if !line.conditions.isEmpty {
-                    Text(line.conditions.joined(separator: " · ")).font(.footnote).foregroundStyle(Theme.accentText)
+                .layoutPriority(1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var details: some View {
+        if let line = row.cheapest {
+            Text(verbatim: line.offer.product).font(.footnote).foregroundStyle(Theme.secondaryText)
+                .lineLimit(2)
+            ChipFlow(spacing: 6) {
+                ShopBadge(name: line.chain.name)
+                if line.needsChecking {
+                    ShoppingChip(text: NSLocalizedString("Check the leaflet", comment: ""), symbol: "exclamationmark.circle", tint: Theme.error)
                 }
-                ForEach(Array(notes(line).enumerated()), id: \.offset) { _, note in
-                    Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
+                ForEach(Array(DealChip.chips(for: line.offer, today: today).enumerated()), id: \.offset) { _, chip in
+                    DealChipView(chip: chip)
                 }
+            }
+            if let others = row.othersText(language) {
+                Text(String(format: NSLocalizedString("Other shops: %@", comment: "other shops' prices for one item, in one line"), others))
+                    .font(.caption).foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        } else {
+            Text(verbatim: emptyWords).font(.footnote).foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// One plan: the shops as badges and the marked total, how many items it covers, each line with its shop (in a pair),
+/// its conditions as chips and its notes, and what it lacks.
+private struct PlanRow: View {
+    let plan: BasketPlan
+    let language: NotificationLanguage
+    var today: DealDay?
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+            Text(String(format: NSLocalizedString("%@ items", comment: "a coverage such as 5 of 6"), plan.coverage(language)))
+                .font(.footnote).foregroundStyle(Theme.secondaryText)
+            Divider().overlay(Theme.separator)
+            ForEach(Array(plan.lines.enumerated()), id: \.offset) { index, line in
+                PlanLineRow(line: line, shopStyle: style(of: line.chain), showsShop: plan.chains.count > 1,
+                            language: language, today: today)
+                    .arrivesInOrder(index)
             }
             if !plan.missing.isEmpty {
-                Text(String(format: NSLocalizedString("Missing: %@", comment: "items no shop in this plan has"), plan.missing.joined(separator: ", ")))
-                    .font(.footnote.weight(.semibold)).foregroundStyle(Theme.error)
+                MissingNote(items: plan.missing)
             }
             if plan.needsChecking {
                 Label("Some prices couldn't be confirmed by Doddy. Check the leaflet.", systemImage: "exclamationmark.circle")
                     .font(.footnote).foregroundStyle(Theme.error)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .accessibilityElement(children: .combine)
     }
 
+    private var header: some View {
+        let large = textSize.isAccessibilitySize
+        let layout = large ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                           : AnyLayout(HStackLayout(alignment: .center, spacing: 8))
+        return layout {
+            ChipFlow(spacing: 6) {
+                ForEach(Array(plan.chains.enumerated()), id: \.offset) { index, chain in
+                    ShopBadge(name: chain.name, style: index == 0 ? 0 : 1, large: true)
+                }
+            }
+            PriceMark(text: Self.totalText(plan, language), font: .title2.weight(.heavy), alignment: large ? .leading : .trailing)
+                .layoutPriority(1)
+        }
+    }
+
+    /// The first shop of a plan is the orange badge, the second the outlined one.
+    private func style(of chain: DealsChain) -> Int {
+        (plan.chains.firstIndex(of: chain) ?? 0) == 0 ? 0 : 1
+    }
+
     /// "at least 41,94 zł" when a price beyond a limit isn't printed.
     static func totalText(_ plan: BasketPlan, _ language: NotificationLanguage) -> String {
-        plan.lines.contains { $0.cost.isLowerBound }
+        plan.totalIsLowerBound
             ? String(format: NSLocalizedString("at least %@", comment: "a basket total"), plan.total.text(language))
             : plan.total.text(language)
     }
@@ -330,8 +469,51 @@ private struct PlanRow: View {
             ? String(format: NSLocalizedString("at least %@", comment: "a basket total"), line.total.text(language))
             : line.total.text(language)
     }
+}
 
-    private func notes(_ line: BasketPlan.Line) -> [String] {
+/// One line of a plan: the item and how many, its total, its shop's badge in a pair, its conditions as chips (the
+/// days are in "Before you go"), and what its price needs.
+private struct PlanLineRow: View {
+    let line: BasketPlan.Line
+    let shopStyle: Int
+    let showsShop: Bool
+    let language: NotificationLanguage
+    let today: DealDay?
+
+    var body: some View {
+        let chips = DealChip.chips(for: line.offer, today: today).filter { !$0.isDay }
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: line.quantity > 1 ? "\(line.query) ×\(line.quantity)" : line.query)
+                    .foregroundStyle(Theme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Text(verbatim: PlanRow.lineText(line, language))
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.ink)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
+            }
+            .font(.subheadline)
+            if showsShop || !chips.isEmpty {
+                ChipFlow(spacing: 6) {
+                    if showsShop {
+                        ShopBadge(name: line.chain.name, style: shopStyle)
+                    }
+                    ForEach(Array(chips.enumerated()), id: \.offset) { _, chip in
+                        DealChipView(chip: chip)
+                    }
+                }
+            }
+            ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
+                Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var notes: [String] {
         line.cost.notes.compactMap { note -> String? in
             switch note {
             case .groups: nil
@@ -355,14 +537,20 @@ private struct ChecklistRows: View {
     var body: some View {
         if !sections.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Before you go").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                Label("Before you go", systemImage: "checklist")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
                 ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
                     if sections.count > 1 {
                         Text(section.chain.name).font(.footnote.weight(.semibold)).foregroundStyle(Theme.ink)
+                            .padding(.top, 2)
                     }
                     ForEach(Array(section.entries.enumerated()), id: \.offset) { _, entry in
-                        Label(ChecklistText.text(entry), systemImage: "checklist")
-                            .font(.footnote).foregroundStyle(Theme.ink)
+                        Label {
+                            Text(ChecklistText.text(entry)).fixedSize(horizontal: false, vertical: true)
+                        } icon: {
+                            Image(systemName: "circle.fill").font(.system(size: 5)).foregroundStyle(Theme.orangeCue)
+                        }
+                        .font(.footnote).foregroundStyle(Theme.ink)
                     }
                 }
             }
