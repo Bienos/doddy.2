@@ -255,8 +255,8 @@ export async function buildApp(
     account: accountEraser,
     accountLinker,
     documents: documentLinks ? { links: documentLinks, store } : null,
-    // Health asks the database and names the running commit (Render sets RENDER_GIT_COMMIT).
-    health: { ping: () => store.ping(), commit: process.env.RENDER_GIT_COMMIT?.slice(0, 12) || null },
+    // Health asks the database and answers with its status only; the running commit is in the start log.
+    health: { ping: () => store.ping() },
     appReturnUrl: config.appReturnUrl,
     maxBodyBytes: config.limits.maxBodyBytes,
     trustProxy: config.trustProxy,

@@ -13,7 +13,7 @@ type Routes = Parameters<typeof fakeServer>[0];
 function renderAt(path: string, routes: Routes, language: Language = "en") {
   const server = fakeServer({
     "GET /v1/web/session": { body: fixture("web/session-current") },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     ...routes,
   });
   render(

@@ -30,9 +30,11 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Price watches | `/v1/watches…` (below) |
 | Studio (ADR-740) | `POST /v1/studio` · `POST /v1/studio/:id/{approve,cancel}` · `GET /v1/studio` · `GET/DELETE /v1/studio/:id` · `GET /v1/studio/:id/files/:name` (below) |
 | News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` · `POST /v1/news/feed` (the stories behind the follows sent with the request, as cards, nothing stored; ADR-656) · `GET/PUT /v1/news/radar`, `POST /v1/news/radar/seen` (alerts the person opted into; `RADAR_ALERTS_ENABLED`) |
-| Health | `GET /healthz`: `{ok: true}` after a `SELECT 1` on the database, `503 {ok: false}` when that fails |
+| Health | `GET /healthz`: `{ok: true}` after a `SELECT 1` on the database, `503 {ok: false}` when that fails. Status only: no version, configuration or counts (Render's health check reads the status code) |
 
 All `/v1` routes except account creation and sign-in need `Authorization: Bearer <deviceToken>`.
+
+Every response, errors and 404s included, carries `Strict-Transport-Security: max-age=31536000` and `X-Content-Type-Options: nosniff` (`SECURITY_HEADERS`, an `onSend` hook in `src/app.ts`; `test/securityHeaders.test.ts`).
 
 ## Rules built in
 - SMS goes out only to a **verified** number with **explicit in-app consent** and no STOP since. Consent is re-checked when the message is actually sent.

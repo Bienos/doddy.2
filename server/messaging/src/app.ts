@@ -161,6 +161,16 @@ export const DEVICE_ROUTE_LIMIT = { max: 3600, timeWindow: "1 hour" } as const;
 
 const hookList = (hooks: unknown): unknown[] => (Array.isArray(hooks) ? hooks : hooks ? [hooks] : []);
 
+/**
+ * Sent with every response, errors and "not found" included: HTTPS only for a year once a browser has seen
+ * the server (Render serves it over HTTPS only), and no guessing a body's type from its bytes. The backend
+ * sends the same nosniff on every answer and the same HSTS on Doddy Web's pages.
+ */
+export const SECURITY_HEADERS = {
+  "strict-transport-security": "max-age=31536000",
+  "x-content-type-options": "nosniff",
+} as const;
+
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
     // Render terminates TLS and appends to X-Forwarded-For. Trusting a fixed number of hops reads
@@ -179,6 +189,11 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
         'req.headers["x-doddy-tool-secret"]', 'req.headers["x-doddy-session"]', 'req.headers["elevenlabs-signature"]'],
       serializers: { req: requestLogFields },
     },
+  });
+  // First, on the root instance, so every route, the 404 answer and the error handler's answers get them.
+  app.addHook("onSend", async (_req, reply, payload) => {
+    reply.headers(SECURITY_HEADERS);
+    return payload;
   });
   // Added before the rate limiter, whose own onRoute hook then sees the limit set here.
   app.addHook("onRoute", (route) => {

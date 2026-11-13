@@ -13,7 +13,7 @@ vi.mock("../src/logbook/config.js", () => ({ LOGBOOK_ENABLED: true, IPHONE_SENDS
 function renderLogbook(path = "/logbook") {
   fakeServer({
     "GET /v1/web/session": { body: fixture("web/session-current") },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     "GET /v1/web/logbook": { body: fixture("web/logbook-off") },
   });
   render(
