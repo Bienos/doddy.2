@@ -42,8 +42,9 @@ A reference such as `op://doddy-prod/openai-api/credential` names a vault, an it
 |---|---|---|---|---|
 | `ELEVENLABS_API_KEY` | `elevenlabs-api` | `vercel:doddy-voice-token`, `render:doddy-messaging` | yes | yes |
 | `OPENAI_API_KEY` | `openai-api` | `vercel:doddy-voice-token`, `vercel:doddy-gateway`, `render:doddy-messaging` | yes | yes |
-| `DODDY_SESSION_SIGNING_KEY` | `voice-token-session-signing-key` | `vercel:doddy-voice-token` | **no**: changing it signs everyone out and changes the Apple ids the server derives from it | yes |
+| `DODDY_SESSION_SIGNING_KEY` | `voice-token-session-signing-key` | `vercel:doddy-voice-token` | **no**: changing it signs everyone out and changes the Apple ids the server derives from it and the ids under which each account's voice conversations are recorded | yes |
 | `UPSTASH_REDIS_REST_TOKEN` | `upstash-voice-token` | `vercel:doddy-voice-token` | yes | no |
+| `CRON_SECRET` | `voice-token-cron-secret` | `vercel:doddy-voice-token` | yes | no |
 | `UPSTASH_REDIS_REST_TOKEN` | `upstash-gateway` | `vercel:doddy-gateway` | yes | no |
 | `GATEWAY_TOKEN_SECRET` | `gateway-token-secret` | `vercel:doddy-gateway` | **no**: changing it signs every device out of the typed assistant | yes |
 | `GATEWAY_INVITE_CODES` | `gateway-invite-codes` | `vercel:doddy-gateway` | yes | no |
