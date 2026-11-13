@@ -263,6 +263,13 @@ final class CallTaskTests: XCTestCase {
         XCTAssertNotNil(reason(try parse(args(extra: ["order_name": "Anna Kowalska"]))), "some order fields but not all")
     }
 
+    func testQuantitiesAsDigitStringsAreAccepted() throws {
+        // The voice agent's tool arrays hold strings only, so the tool declares the quantities as strings.
+        guard case .callPlaces(let draft) = try parse(order(["order_item_quantities": ["2", "1"]])) else { return XCTFail("parsed") }
+        XCTAssertEqual(draft.order?.lines.map(\.quantity), [2, 1])
+        XCTAssertNotNil(reason(try parse(order(["order_item_quantities": ["two", "1"]]))))
+    }
+
     func testAnOrderGoesToExactlyOnePlace() throws {
         XCTAssertTrue(try XCTUnwrap(reason(try parse(order(["place_names": ["A", "B"], "place_phones": ["22 123 45 61", "22 123 45 62"]]))))
             .contains("exactly one place"))
