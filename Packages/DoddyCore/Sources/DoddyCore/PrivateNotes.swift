@@ -48,6 +48,24 @@ public struct PrivateNotes: Equatable, Sendable {
     /// What a private note shows in place of its words until Face ID.
     public static let hiddenText = "Private note"
 
+    /// A restore marks the notes it brings back as private **before** it adds them, so no screen, widget or server
+    /// copy ever sees one as an ordinary note. `newlyMarked` is what this step added to the set, for
+    /// `settlingAfterRestore`. A note that was already private is not new.
+    public static func markingBeforeRestore(stored: String?, incoming: Set<UUID>) -> (stored: String, newlyMarked: Set<UUID>) {
+        var notes = PrivateNotes(stored: stored)
+        let fresh = incoming.subtracting(notes.ids)
+        for id in fresh { notes.set(id, isPrivate: true) }
+        return (notes.stored, fresh)
+    }
+
+    /// After the restore: a mark this restore made for a note that was not added after all is taken back; every
+    /// other mark stays.
+    public static func settlingAfterRestore(stored: String?, newlyMarked: Set<UUID>, added: Set<UUID>) -> String {
+        var notes = PrivateNotes(stored: stored)
+        for id in newlyMarked.subtracting(added) { notes.set(id, isPrivate: false) }
+        return notes.stored
+    }
+
     /// True when the app should ask again: the lock is on and it was away long enough (or never unlocked).
     public static func needsUnlock(lockOn: Bool, unlockedAt: Date?, backgroundSince: Date?, now: Date) -> Bool {
         guard lockOn else { return false }
@@ -70,5 +88,37 @@ public struct ShareableRecallService: RecallService {
 
     public func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
         PrivateNotes(ids: privateIDs()).shareable(try await base.recall(question, limit: limit))
+    }
+}
+
+/// Putting notes into a file (the exports in Settings and the encrypted backup) when some of them are private
+/// (ADR-310). A private note's words show only after Face ID, so they go into a file only after it too, and the
+/// file says which notes are private so a restore can mark them again (`MemoryExport.json(privateIDs:)`). Without
+/// the check nothing is made: a backup that left a note out quietly would still say it was complete (DOD-08).
+public enum PrivateNotesExport {
+    public struct Check: Equatable, Sendable {
+        /// The private notes (and lists) among the ones going into the file.
+        public let privateIDs: Set<UUID>
+
+        /// Whether Face ID (or the passcode) has to confirm before the file is made.
+        public var needsFaceID: Bool { !privateIDs.isEmpty }
+    }
+
+    public enum Outcome: Equatable, Sendable {
+        /// Make the file; `marked` are the notes to name as private in it.
+        case go(marked: Set<UUID>)
+        /// Make nothing.
+        case stop
+    }
+
+    /// `records` are everything going into the file: notes and the records of lists.
+    public static func check(records: [MemoryRecord], privateNotes: PrivateNotes) -> Check {
+        Check(privateIDs: Set(records.map(\.id)).intersection(privateNotes.ids))
+    }
+
+    /// `faceIDConfirmed` is whether the check passed, or the notes' words were already unlocked this session.
+    public static func outcome(for check: Check, faceIDConfirmed: Bool) -> Outcome {
+        guard check.needsFaceID else { return .go(marked: []) }
+        return faceIDConfirmed ? .go(marked: check.privateIDs) : .stop
     }
 }
