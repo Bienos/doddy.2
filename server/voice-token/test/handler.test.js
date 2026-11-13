@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { conversationIdentity } from "../src/conversations.js";
 import { handleTokenRequest } from "../src/handler.js";
+import { fakeConversationStore } from "./conversation-fakes.js";
 
 const USER_ID = "opaque-account-id";
 const ENV = {
@@ -13,6 +15,8 @@ const ENV = {
 function store({ allowed = true, limit = undefined } = {}) {
   const calls = [];
   return {
+    // Every token is tied to its account (test/conversations.test.js covers that in full).
+    ...fakeConversationStore(),
     calls,
     async hitLimits(userId, perUserLimit, globalLimit, now, perUserDailyLimit) {
       calls.push({ userId, perUserLimit, globalLimit, now, perUserDailyLimit });
@@ -50,7 +54,8 @@ async function run(req, options = {}) {
 test("valid DODDY session exchanges only a short-lived provider credential and never logs secrets", async () => {
   const { response, body, logs, calls } = await run(request(null));
   assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "provider-credential" });
+  // The token, and the keyed user id the app gives ElevenLabs as the conversation's user: nothing else.
+  assert.deepEqual(body, { token: "provider-credential", userId: conversationIdentity(ENV, USER_ID).userId });
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(calls[0].url, "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=agent_test");
   assert.equal(calls[0].init.headers["xi-api-key"], "elevenlabs-server-secret");
@@ -116,7 +121,7 @@ test("missing provider configuration and shared storage fail closed", async () =
   assert.deepEqual(missingProvider.body, { error: "server_not_configured" });
   assert.equal(missingProvider.calls.length, 0);
   const storeUnavailable = await run(request(null), {
-    authStore: { async hitLimits() { throw new Error("store unreachable"); } },
+    authStore: { ...store(), async hitLimits() { throw new Error("store unreachable"); } },
   });
   assert.equal(storeUnavailable.response.status, 503);
   assert.deepEqual(storeUnavailable.body, { error: "server_not_configured" });
@@ -191,7 +196,7 @@ const TRANSLATOR_ID = "agent_8901m787fgppedy9kkvg7memny34";
 test("a translator request gets a token for the translator-only agent, by default with no setting on Vercel", async () => {
   const { response, body, calls, logs } = await run(request({ agent: "translator" }));
   assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "provider-credential" });
+  assert.deepEqual(body, { token: "provider-credential", userId: conversationIdentity(ENV, USER_ID).userId });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${TRANSLATOR_ID}`);
   assert.equal(calls[0].init.headers["xi-api-key"], "elevenlabs-server-secret");
