@@ -8324,6 +8324,17 @@
         }
       }
     },
+    "Apple Maps didn't find that address. Add the street number and the city.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy Apple nie znalazły tego adresu. Dopisz numer domu i miasto."
+          }
+        }
+      }
+    },
     "Apple Maps didn't find that place.": {
       "extractionState": "manual",
       "localizations": {
@@ -8331,6 +8342,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mapy Apple nie znalazły tego miejsca."
+          }
+        }
+      }
+    },
+    "Apple Maps found no restaurants, cafés or bakeries for “%@” within %lld km. Try another word, or a restaurant's name.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy Apple nie znalazły restauracji, kawiarni ani piekarni dla „%@” w promieniu %lld km. Spróbuj innego słowa albo nazwy restauracji."
           }
         }
       }
@@ -9900,6 +9922,17 @@
         }
       }
     },
+    "Bakery": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piekarnia"
+          }
+        }
+      }
+    },
     "Balanced": {
       "extractionState": "manual",
       "localizations": {
@@ -10746,6 +10779,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "意思相近"
+          }
+        }
+      }
+    },
+    "Café": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kawiarnia"
           }
         }
       }
@@ -13489,6 +13533,17 @@
         }
       }
     },
+    "Clear the address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyczyść adres"
+          }
+        }
+      }
+    },
     "Clear the notes": {
       "extractionState": "manual",
       "localizations": {
@@ -15670,6 +15725,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skopiowane, wklej w wyszukiwarce"
+          }
+        }
+      }
+    },
+    "Copies “%@” to paste into the app's search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiuje „%@”, żeby wkleić to w wyszukiwarkę aplikacji."
           }
         }
       }
@@ -19136,6 +19202,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usuwanie…"
+          }
+        }
+      }
+    },
+    "Deliver to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres dostawy"
+          }
+        }
+      }
+    },
+    "Delivery address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres dostawy"
           }
         }
       }
@@ -30730,6 +30818,17 @@
         }
       }
     },
+    "Find places near this address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź miejsca blisko tego adresu"
+          }
+        }
+      }
+    },
     "Find shops near me": {
       "extractionState": "manual",
       "localizations": {
@@ -38379,6 +38478,17 @@
         }
       }
     },
+    "Keep it to one short line: a dish or a restaurant's name.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz krótko, w jednej linii: danie albo nazwę restauracji."
+          }
+        }
+      }
+    },
     "Keep on Doddy's server": {
       "extractionState": "manual",
       "localizations": {
@@ -38801,6 +38911,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Przechowywane w Doddym na tym iPhonie i w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe nie trafiają do eksportu; może je zawierać zaszyfrowana kopia zapasowa. Usunięcie tutaj nie kasuje wyeksportowanych plików ani starszych kopii."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Kept on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept on this iPad only."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept on this iPhone only."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostaje tylko na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostaje tylko na tym iPhonie."
                 }
               }
             }
@@ -44158,6 +44309,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Piszę tekst"
+          }
+        }
+      }
+    },
+    "Maps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy"
           }
         }
       }
@@ -56624,6 +56786,17 @@
         }
       }
     },
+    "Open %@ in Apple Maps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz %@ w Mapach Apple"
+          }
+        }
+      }
+    },
     "Open %@: activate its coupons and scan it at the till.": {
       "extractionState": "manual",
       "localizations": {
@@ -59124,6 +59297,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "排序"
+          }
+        }
+      }
+    },
+    "Order from %@ in a delivery app": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamów w aplikacji z dostawą: %@"
+          }
+        }
+      }
+    },
+    "Order in…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamów w…"
           }
         }
       }
@@ -68017,6 +68212,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powtórzenia w zapasie to ile jeszcze dałoby się zrobić. Bez tego Doddy niczego nie podnosi."
+          }
+        }
+      }
+    },
+    "Restaurant": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restauracja"
           }
         }
       }
@@ -80141,6 +80347,17 @@
         }
       }
     },
+    "Street, number, city": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ulica, numer, miasto"
+          }
+        }
+      }
+    },
     "Strength": {
       "extractionState": "manual",
       "localizations": {
@@ -82007,6 +82224,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "该地址没有返回新闻订阅源。请在网站上查找 RSS 或 Atom 链接。"
+          }
+        }
+      }
+    },
+    "That address is too long. Street, number and city are enough.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten adres jest za długi. Wystarczą ulica, numer i miasto."
           }
         }
       }
@@ -85231,6 +85459,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ten dzień jest za daleko w przyszłości (najwyżej jutro)."
+          }
+        }
+      }
+    },
+    "The dish and the address go to Apple Maps for the search; nothing goes to Doddy's server. The address stays on this iPhone until you clear it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The dish and the address go to Apple Maps for the search; nothing goes to Doddy's server. The address stays on this iPad until you clear it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The dish and the address go to Apple Maps for the search; nothing goes to Doddy's server. The address stays on this iPhone until you clear it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Danie i adres trafiają do Map Apple, żeby wyszukać miejsca; nic nie trafia na serwer Doddy’ego. Adres zostaje na tym iPadzie, dopóki go nie wyczyścisz."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Danie i adres trafiają do Map Apple, żeby wyszukać miejsca; nic nie trafia na serwer Doddy’ego. Adres zostaje na tym iPhonie, dopóki go nie wyczyścisz."
+                }
+              }
+            }
           }
         }
       }
@@ -96953,6 +97222,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisz kwotę, aby potwierdzić"
+          }
+        }
+      }
+    },
+    "Type your delivery address first, so Doddy knows where to look.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw wpisz adres dostawy, żeby Doddy wiedział, gdzie szukać."
           }
         }
       }
@@ -110695,6 +110975,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "“%@”的到期时间现在是 %@。"
+          }
+        }
+      }
+    },
+    "“%@” near %@, nearest first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@” w pobliżu: %@, od najbliższych."
           }
         }
       }
