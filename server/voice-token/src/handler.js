@@ -9,6 +9,10 @@
 
 const ELEVENLABS_TOKEN_URL = "https://api.elevenlabs.io/v1/convai/conversation/token";
 const UPSTREAM_TIMEOUT_MS = 10_000;
+// The translator-only agent "Doddy 6 · Tłumacz": no tools at all (owner, 12 Nov 2026, decision
+// 2026-11-12-translator-agent). Its id is public, like the main agent's (the repo's docs name both), so
+// it is the default here and nothing has to be set on Vercel; ELEVENLABS_TRANSLATOR_AGENT_ID overrides it.
+const DEFAULT_TRANSLATOR_AGENT_ID = "agent_8901m787fgppedy9kkvg7memny34";
 import {
   authenticateVoiceSession, DEFAULT_TOKENS_PER_DAY, limitSetting, sessionStoreFromEnv, VoiceAuthStoreUnavailable,
 } from "./voice-auth.js";
@@ -21,6 +25,7 @@ const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
  * @typedef {object} Env
  * @property {string} [ELEVENLABS_API_KEY]  server-only secret
  * @property {string} [ELEVENLABS_AGENT_ID] the authenticated Doddy agent
+ * @property {string} [ELEVENLABS_TRANSLATOR_AGENT_ID] the authenticated translator-only agent; defaults to DEFAULT_TRANSLATOR_AGENT_ID
  * @property {string} [DODDY_TOKENS_PER_HOUR] per DODDY account; default 30
  * @property {string} [DODDY_TOKENS_PER_DAY] per DODDY account per UTC day; default 150
  * @property {string} [DODDY_GLOBAL_TOKENS_PER_HOUR] global shared limit; default 100
@@ -53,7 +58,10 @@ export async function handleTokenRequest(request, env, deps = {}) {
   if (requested === null) {
     return finish(400, "unknown_provider");
   }
-  const { provider } = requested;
+  if (requested.agent === null) {
+    return finish(400, "unknown_agent");
+  }
+  const { provider, agent } = requested;
 
   let store;
   let session;
@@ -78,7 +86,9 @@ export async function handleTokenRequest(request, env, deps = {}) {
   const perHour = limitSetting(env.DODDY_TOKENS_PER_HOUR, DEFAULT_TOKENS_PER_HOUR);
   const perDay = limitSetting(env.DODDY_TOKENS_PER_DAY, DEFAULT_TOKENS_PER_DAY);
   const globalPerHour = limitSetting(env.DODDY_GLOBAL_TOKENS_PER_HOUR, DEFAULT_GLOBAL_TOKENS_PER_HOUR);
-  const providerConfigured = Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_AGENT_ID);
+  // Which agent this conversation talks to: the main one (no body, as ever), or the translator-only one.
+  const agentId = agent === "translator" ? (env.ELEVENLABS_TRANSLATOR_AGENT_ID || DEFAULT_TRANSLATOR_AGENT_ID) : env.ELEVENLABS_AGENT_ID;
+  const providerConfigured = Boolean(env.ELEVENLABS_API_KEY && agentId);
   if (!providerConfigured || perHour === null || perDay === null || globalPerHour === null || !store.hitLimits) {
     return finish(500, "server_not_configured", { provider });
   }
@@ -94,18 +104,18 @@ export async function handleTokenRequest(request, env, deps = {}) {
     return finish(429, "rate_limited", { provider, limit: decision.limit }, undefined, { "retry-after": String(decision.retryAfterSeconds) });
   }
 
-  return elevenLabsToken(env, fetchImpl, finish);
+  return elevenLabsToken(env, agentId, agent, fetchImpl, finish);
 }
 
-async function elevenLabsToken(env, fetchImpl, finish) {
+async function elevenLabsToken(env, agentId, agent, fetchImpl, finish) {
   const url = new URL(ELEVENLABS_TOKEN_URL);
-  url.searchParams.set("agent_id", env.ELEVENLABS_AGENT_ID);
+  url.searchParams.set("agent_id", agentId);
 
   const upstream = await callUpstream(fetchImpl, url, {
     method: "GET",
     headers: { "xi-api-key": env.ELEVENLABS_API_KEY },
   });
-  if (upstream.failed) return finish(upstream.status, upstream.error, { provider: "elevenlabs" });
+  if (upstream.failed) return finish(upstream.status, upstream.error, { provider: "elevenlabs", agent });
 
   const response = upstream.response;
   if (!response.ok) {
@@ -113,15 +123,16 @@ async function elevenLabsToken(env, fetchImpl, finish) {
     const status = response.status === 429 ? 503 : 502;
     return finish(status, response.status === 429 ? "voice_busy" : "upstream_failed", {
       provider: "elevenlabs",
+      agent,
       upstreamStatus: response.status,
     });
   }
 
   const token = await response.json().then((body) => body?.token, () => undefined);
   if (typeof token !== "string" || token.length === 0) {
-    return finish(502, "upstream_bad_response", { provider: "elevenlabs", upstreamStatus: response.status });
+    return finish(502, "upstream_bad_response", { provider: "elevenlabs", agent, upstreamStatus: response.status });
   }
-  return finish(200, null, { provider: "elevenlabs" }, { token });
+  return finish(200, null, { provider: "elevenlabs", agent }, { token });
 }
 
 async function callUpstream(fetchImpl, url, init) {
@@ -135,16 +146,18 @@ async function callUpstream(fetchImpl, url, init) {
 }
 
 /**
- * `{provider: "elevenlabs"}` (no body, or a body that names it), or null when the body names
- * anything else or isn't JSON: a build from before 9 Nov 2026 that asks for `{provider: "openai"}`,
- * or from before ADR-549 for `{provider: "picovoice"}`, gets a 400.
+ * `{provider: "elevenlabs", agent: "main"}` (no body, or a body that names it), `agent: "translator"` for
+ * `{"agent": "translator"}`, `agent: null` for any other agent name (a 400), or null when the body names
+ * another provider or isn't JSON: a build from before 9 Nov 2026 that asks for `{provider: "openai"}`,
+ * or from before ADR-549 for `{provider: "picovoice"}`, gets a 400. A build from before 12 Nov 2026 sends no
+ * body and gets the main agent, which is also what a translator start gets from a server that predates this.
  * @param {Request} request
  */
 async function requestedProvider(request) {
   const declaredLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(declaredLength) && declaredLength > 4_096) return null;
   const reader = request.body?.getReader();
-  if (!reader) return { provider: "elevenlabs" };
+  if (!reader) return { provider: "elevenlabs", agent: "main" };
   const chunks = [];
   let size = 0;
   try {
@@ -157,7 +170,7 @@ async function requestedProvider(request) {
     }
   } catch { return null; }
   const text = new TextDecoder().decode(concat(chunks, size));
-  if (text.trim() === "") return { provider: "elevenlabs" };
+  if (text.trim() === "") return { provider: "elevenlabs", agent: "main" };
   let body;
   try {
     body = JSON.parse(text);
@@ -166,7 +179,9 @@ async function requestedProvider(request) {
   }
   const provider = body?.provider ?? "elevenlabs";
   if (provider !== "elevenlabs") return null;
-  return { provider };
+  const agent = body?.agent ?? "main";
+  if (agent !== "main" && agent !== "translator") return { provider, agent: null };
+  return { provider, agent };
 }
 
 function concat(chunks, size) {

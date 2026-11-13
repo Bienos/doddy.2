@@ -4,6 +4,7 @@ import type pg from "pg";
 import { DEFAULT_ABUSE_LIMITS } from "./config.js";
 import { returnCounter, takeCounter } from "./dailyCounters.js";
 import { sha256, type TextCipher } from "./crypto.js";
+import { isDeployed } from "./deployment.js";
 import { log } from "./log.js";
 import type { Db } from "./db.js";
 import { scheduleDeletion } from "./providerRecords.js";
@@ -57,7 +58,10 @@ export class IdempotencyConflict extends Error {
 /** Associated data binding an encrypted message body to its account and row. */
 export const bodyAad = (accountId: string, messageId: string) => `${accountId}:outbound:${messageId}`;
 
-/** Production without MEMORY_ENCRYPTION_KEY: a text would be stored in plain text, so nothing is queued (ADR-706). */
+/**
+ * A deployed server without MEMORY_ENCRYPTION_KEY: a text would be stored in plain text, so nothing is queued (ADR-706).
+ * Such a server doesn't start at all (loadConfig); this is the second line, for anything built without loadConfig.
+ */
 export class EncryptionNotConfigured extends Error {
   constructor() { super("not_configured"); }
 }
@@ -67,8 +71,11 @@ export class SmsDailyLimit extends Error {
   constructor(readonly scope: "account" | "server") { super("daily_limit"); }
 }
 
-/** Render sets NODE_ENV=production for a Node service. Read at the time of the call so a test can switch it. */
-export const isProduction = () => process.env.NODE_ENV === "production";
+/**
+ * A deployed server (deployment.ts: NODE_ENV=production, RENDER set, or a public PUBLIC_BASE_URL). Read at the time of
+ * the call so a test can switch it.
+ */
+export const isProduction = () => isDeployed(process.env);
 
 export interface EnqueueOptions {
   /** What the idempotency key is bound to (defaults to the body). */
@@ -94,7 +101,7 @@ export async function enqueue(
   db: Queryable, accountId: string, channels: Channel[], body: string, sendAt: Date, idempotencyKey: string,
   opts: EnqueueOptions = {},
 ): Promise<QueuedMessage[]> {
-  // Fail closed (ADR-706): outside production a missing key still stores plain text, so tests and local runs work.
+  // Fail closed (ADR-706): only a local run or a test (not deployed) stores plain text without a key.
   if (!opts.cipher && isProduction()) throw new EncryptionNotConfigured();
   const payloadHash = sha256(opts.fingerprint ?? body);
   const out: QueuedMessage[] = [];

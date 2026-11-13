@@ -1,0 +1,2 @@
+Docs only: seven proposals for the owner, each a `docs/decisions/2026-11-12-*.md` file with "What the owner decides": voice conversations deleted with the account, account and device tokens, fair voice and chat budgets, one token per server, privacy defaults, staging for Doddy Beta, agent tooling. Owner queue rows 54 to 60. Nothing implemented; no live service changed.
+Ran: `scripts/ci.sh --only checks`. Not run: any server, app build or console.

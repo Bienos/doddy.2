@@ -176,7 +176,7 @@ export const EL_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response><Connec
   + '<Stream url="wss://api.elevenlabs.io/v1/convai/conversation/twilio?agent_id=agent_task_test">'
   + '<Parameter name="conversation_id" value="conv_live_1"/></Stream></Connect></Response>';
 
-const TASK_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call/instructions.md", import.meta.url), "utf8").trim();
+export const TASK_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call/instructions.md", import.meta.url), "utf8").trim();
 export const BOOK_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call-book/instructions.md", import.meta.url), "utf8").trim();
 
 /** The live agent as the spec says it must be (shape read from a real agent on 2026-10-18). */

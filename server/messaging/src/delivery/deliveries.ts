@@ -51,7 +51,7 @@ export function deliveryCard(p: Omit<DeliveryPayload, "card">): DeliveryCard {
   };
 }
 
-const payloadAad = (accountId: string, id: string) => `${accountId}:delivery:${id}`;
+export const payloadAad = (accountId: string, id: string) => `${accountId}:delivery:${id}`;
 
 export const sealPayload = (cipher: TextCipher, accountId: string, id: string, p: DeliveryPayload) =>
   cipher.encrypt(JSON.stringify(p), payloadAad(accountId, id));

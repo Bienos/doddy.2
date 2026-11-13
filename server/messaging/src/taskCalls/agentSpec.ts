@@ -4,7 +4,7 @@
 // server/messaging, so the expected values live here.
 export const TASK_AGENT_SPEC = {
   /** sha256 of voice-agent/task-call/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454",
+  promptSha256: "0f2c05bcc3090802ae6ad0656c8f69ba6af9c6bdbfa8f63596088b8b1a25099a",
   firstMessage: "{{doddy_opening_line}}",
   language: "pl",
   systemTools: ["end_call", "voicemail_detection"] as readonly string[],
@@ -21,7 +21,23 @@ export const TASK_AGENT_SPEC = {
 export const TASK_BOOK_AGENT_SPEC = {
   ...TASK_AGENT_SPEC,
   /** sha256 of voice-agent/task-call-book/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4",
+  promptSha256: "e8ee34fef4e6ef97eb75bcf7c3ddf054f9fd0919f7b34abe4bf7e563cd01d03c",
 } as const;
+
+/**
+ * Prompts the drift check still accepts while the owner hasn't synced a live agent: for a spec's prompt hash, the
+ * hashes of the instructions.md it replaced. Only the owner changes the live agents (CLAUDE.md), so without this a
+ * deploy of a new prompt would stop every call until the sync. Keyed by the new hash, so another agent's spec never
+ * inherits an entry. Each entry goes once the live agent has the new prompt.
+ *
+ * 12 Nov 2026 (OWNER_QUEUE 52): {{doddy_goal}} was taken out of both prompts. The server now sends `doddy_goal` as a
+ * fixed sentence (payload.ts), so the old prompts get no goal text either while they are still live.
+ */
+export const SYNC_PENDING_PROMPTS: Readonly<Record<string, readonly string[]>> = {
+  // task-call, main before 12 Nov 2026
+  [TASK_AGENT_SPEC.promptSha256]: ["129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454"],
+  // task-call-book, main before 12 Nov 2026
+  [TASK_BOOK_AGENT_SPEC.promptSha256]: ["422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4"],
+};
 
 export type TaskAgentSpec = { readonly promptSha256: string } & Omit<typeof TASK_AGENT_SPEC, "promptSha256">;

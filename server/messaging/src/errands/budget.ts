@@ -62,6 +62,14 @@ export type WebTool = { readonly type: string; readonly name: string };
  */
 export const WEB_USES_PER_REQUEST = 20;
 
+/**
+ * The most of one fetched page (or PDF) a web fetch brings into the conversation, in tokens (12 Nov 2026). Every
+ * web_fetch definition sends it: errands, shopping and Studio. Without it one long document can fill a request, and
+ * each later request of the run pays for it again. About 15,000 words: a long article, a report's chapters, a product
+ * page with its specification. A constant, so the tools stay byte for byte the same on every request of one run.
+ */
+export const WEB_FETCH_MAX_CONTENT_TOKENS = 20_000;
+
 /** The web tools with a fixed `max_uses`: the errand's limit, at most `WEB_USES_PER_REQUEST`; none when the limit is 0
  * (no limit). The same for every request of one errand, whatever was used already. */
 export function withMaxUses(tools: readonly WebTool[], b: ResearchBudget): Array<WebTool & { max_uses?: number }> {
