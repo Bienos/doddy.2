@@ -173,8 +173,14 @@ tests primary success, download/install failures, fallback failure and cleanup.
 - Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
   Release-only error shows up before Xcode Cloud archives.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
-  is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths) and
-  doesn't carry the owner's `owner-approved` label. Adding the label reruns it.
+  is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths: also
+  dependency manifests and lockfiles, CI scripts and the `Makefile`, agent settings, skills and prompts,
+  nested `CLAUDE.md`/`AGENTS.md`, `site/api/`, `server/voice-token/` and `.env.op` files) and doesn't carry
+  the `owner-approved` label. Adding the label reruns it. The guard script runs from the default branch,
+  never from the pull request, so a change to the list applies from the next pull request after it merges;
+  the job has a read-only token and no secrets, and only fetches the pull request's merge commit to list its
+  files. `.github/CODEOWNERS` names the owner for the same paths. To try the list locally:
+  `git diff --name-only origin/main... | scripts/check_sensitive_paths.sh`.
 - `Vercel blocked status` (`.github/workflows/vercel-blocked-status.yml`, decision
   `2026-11-09-vercel-blocked-status`): an old Vercel account still connected to the repository marks every push
   "Account is blocked."; on `claude/…` branches, which the live team doesn't build (ADR-498), this replaces that
