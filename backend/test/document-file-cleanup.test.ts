@@ -16,7 +16,9 @@ import { type Rig, run, start } from "./toolsRig.js";
  */
 
 const ID_A = DEV_IDENTITIES[USER_A]!;
-const doc = (title: string) => ({ kind: "doc", title, request: "Write it" });
+// A Word file (made with Anthropic's docx skill, so it leaves copies there), asked for completely enough to be
+// made at once (decision 2026-11-10-files-ask-for-details: who it is for).
+const doc = (title: string) => ({ kind: "doc", title, request: "Write it for the team" });
 
 let rig: Rig | undefined;
 afterEach(async () => {
@@ -177,18 +179,23 @@ test("a deletion that fails stays owed with the person's id, the hourly sweep re
   assert.ok(line && !line.includes("file_a") && !line.includes(ID_A), "the log has counts only");
 });
 
-test("a failure that keeps happening is kept, visible as failed, and given up on after the usual number of tries", async () => {
+test("a failure that keeps happening is kept, visible as failed, retried with no last try, and reported stuck once", async () => {
   const api = fakeAnthropic({ deleteAnswers: { file_a: 429 } });
   rig = await start({}, { claude: api.provider });
   assert.equal((await run(rig, "make_document", doc("Plan"))).status, 200);
   await rig.tools.settle();
-  for (let i = 0; i < CLEANUP_RETRY.maxTries + 3; i++) {
-    rig.clock.advance(DOCUMENT_TIMEOUT_MS + 2 * 60_000);
+  // The try right after the job is the first failure; each sweep a day later (past the longest back-off) is one more.
+  const sweeps = CLEANUP_RETRY.stuckAfter + 2;
+  for (let i = 0; i < sweeps; i++) {
+    rig.clock.advance(CLEANUP_RETRY.maxDelayMs + DOCUMENT_TIMEOUT_MS + 2 * 60_000);
     await rig.tools.sweepAbandoned();
   }
   const [row] = await owed(rig);
   assert.equal(row?.state, "failed", "never silently dropped");
-  assert.equal(row?.attempts, CLEANUP_RETRY.maxTries);
+  assert.equal(row?.attempts, sweeps + 1, "every sweep tried again: there is no last try");
+  const stuck = rig.logs.filter((l) => l.includes("cleanup_stuck"));
+  assert.equal(stuck.length, 1, "reported stuck once");
+  assert.ok(stuck[0]!.includes(ANTHROPIC_FILE_CLEANUP) && !stuck[0]!.includes("file_a") && !stuck[0]!.includes(ID_A), "kind and counts, never an id");
 });
 
 test("a process that died mid-job leaves the ids owed, and the next process's sweep deletes them", async () => {

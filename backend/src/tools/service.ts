@@ -1405,19 +1405,26 @@ export class CloudToolsService {
     return {
       track: (fileId) => this.store.queueCleanup(fileId, userId, ANTHROPIC_FILE_CLEANUP, this.now()),
       confirmed: (fileId) => this.store.finishCleanup(fileId),
-      failed: (fileId) => this.store.failCleanup(fileId, "remote_cleanup_failed"),
+      failed: (fileId) => this.failDocumentFile(fileId),
     };
+  }
+
+  /** One failed deletion at Anthropic: tried again later (CLEANUP_RETRY), reported once if it gets stuck. */
+  private async failDocumentFile(fileId: string): Promise<void> {
+    const failure = await this.store.failCleanup(fileId, "remote_cleanup_failed", this.now());
+    if (failure?.stuckNow) this.deps.log?.(stuckCleanupLine(failure));
   }
 
   /**
    * Deletes the copies still owed at Anthropic. Only rows older than a document job can run
-   * (`DOCUMENT_TIMEOUT_MS`, plus a minute), so a job still working is never raced. Logs counts only.
+   * (`DOCUMENT_TIMEOUT_MS`, plus a minute), so a job still working is never raced; a failed one comes
+   * back when due, with no last try (CLEANUP_RETRY). Logs counts only.
    */
   private async sweepDocumentFiles(): Promise<void> {
     const claude = this.deps.claude;
     if (!claude?.isConfigured()) return;
-    const due = await this.store.cleanupsToRetry(
-      [ANTHROPIC_FILE_CLEANUP], this.now() - DOCUMENT_TIMEOUT_MS - 60_000, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    const now = this.now();
+    const due = await this.store.cleanupsToRetry([ANTHROPIC_FILE_CLEANUP], now, CLEANUP_RETRY.perSweep, now - DOCUMENT_TIMEOUT_MS - 60_000);
     let removed = 0;
     for (const { connectionId } of due) {
       let result: "removed" | "failed";
@@ -1430,7 +1437,7 @@ export class CloudToolsService {
         await this.store.finishCleanup(connectionId);
         removed++;
       } else {
-        await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+        await this.failDocumentFile(connectionId);
       }
     }
     if (due.length > 0) this.deps.log?.({ level: due.length > removed ? "warn" : "info", event: "document_files_swept", due: due.length, removed, failed: due.length - removed });

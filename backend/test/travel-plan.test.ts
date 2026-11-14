@@ -120,6 +120,7 @@ class Scripted implements ClaudeProvider {
   isConfigured() { return true; }
   async ask(): Promise<{ text: string }> { throw new Error("unused"); }
   async makeDocument(): Promise<never> { throw new Error("unused"); }
+  async deleteFile(): Promise<"removed" | "failed"> { return "removed"; }
   async structured(input: StructuredInput) { this.calls.push(input); return { value: this.answer, usage: { inputTokens: 1, outputTokens: 1 } }; }
 }
 
