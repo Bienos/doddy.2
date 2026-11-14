@@ -46,7 +46,7 @@ final class AskFirstTests: XCTestCase {
         }
     }
 
-    func testLooksAndDoddysOwnSmallActionsRunAtOnceAndEveryOtherChangeNeedsATap() {
+    func testLooksAndDoddysOwnSmallActionsRunAtOnceAndEveryOtherChangeShowsACard() {
         let range = VoiceTimeRange(start: t0, end: t0.addingTimeInterval(86_400))
         let list = ListVoiceRequest(list: "Shopping", items: ["milk"])
         // Decision 2026-11-11-asked-for-runs-at-once: the user asked, so Doddy looks, or does his own
@@ -89,23 +89,35 @@ final class AskFirstTests: XCTestCase {
             XCTAssertEqual(AskFirst.need(for: request, polish: true), .runsNow, "\(request): the same in Polish")
         }
         // Taking something away, anything outside Doddy's own lists and timers, paid background work
-        // and every write through an online account still wait for a tap on a card (DOD-07).
-        let tapOnly: [VoiceToolRequest] = [
-            removeMilk,
-            .parkingSpot(.clear),
+        // and every write through an online account still show a card with the exact change first (DOD-07).
+        // The tools' own payload cards and the server's write cards: their spoken yes is the voice controller's,
+        // by the tool's tier (`SpokenConfirmation`), never the ledger's.
+        let ownOrServerCard: [VoiceToolRequest] = [
             .parkingSpot(.save(note: nil)),
             .saveMemory(text: "x"),
             .runShortcut(name: "Home"),
-            .handOverErrand(ErrandDraft(words: "find a flight", brief: "A flight to Rome", title: "Rome")),
             .cloudTool(CloudToolCall(name: CloudToolName.draftEmail, arguments: [:])),
             .cloudTool(CloudToolCall(name: CloudToolName.sendEmail, arguments: [:])),
         ]
-        for request in tapOnly {
+        for request in ownOrServerCard {
             let need = AskFirst.need(for: request)
             XCTAssertNotEqual(need, .nothingRuns, "\(request)")
             XCTAssertNotEqual(need, .runsNow, "\(request)")
             XCTAssertTrue(AskFirst.needsTap(need), "\(request)")
             XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: request, polish: true)), "\(request): the same in Polish")
+        }
+        // The cards made here take a tap or the user's own spoken yes (decision 2026-11-14-spoken-yes-and-fewer-cards).
+        let yesOrTap: [VoiceToolRequest] = [
+            removeMilk,
+            .parkingSpot(.clear),
+            .handOverErrand(ErrandDraft(words: "find a flight", brief: "A flight to Rome", title: "Rome")),
+        ]
+        for request in yesOrTap {
+            for polish in [false, true] {
+                let need = AskFirst.need(for: request, polish: polish)
+                guard case .yesFirst = need else { return XCTFail("\(request): \(need)") }
+                XCTAssertFalse(AskFirst.needsTap(need), "\(request)")
+            }
         }
         XCTAssertEqual(AskFirst.need(for: .unsupported(name: "x")), .nothingRuns)
         XCTAssertEqual(AskFirst.need(for: .invalid(name: "x", reason: "y")), .nothingRuns)
@@ -130,12 +142,13 @@ final class AskFirstTests: XCTestCase {
         XCTAssertTrue(AskFirst.publicLookups.isDisjoint(with: AskFirst.ownLooks))
         XCTAssertTrue(AskFirst.publicLookups.isDisjoint(with: AskFirst.ownSmallActions))
         XCTAssertTrue(AskFirst.ownLooks.isDisjoint(with: AskFirst.ownSmallActions))
-        // A write through an online account keeps the server's card and a tap; so does taking something off a list.
+        // A write through an online account keeps the server's card; so does taking something off a list, where a
+        // spoken yes answers it too (decision 2026-11-14-spoken-yes-and-fewer-cards).
         let draft = AskFirst.need(for: .cloudTool(CloudToolCall(name: CloudToolName.draftEmail, arguments: [:])))
         XCTAssertEqual(draft, .serverCard(isWrite: true))
         XCTAssertTrue(AskFirst.needsTap(draft))
-        XCTAssertFalse(AskFirst.needsTap(AskFirst.need(for: addMilk)), "adding to one of Doddy's lists is undone in one step")
-        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: removeMilk)))
+        XCTAssertEqual(AskFirst.need(for: addMilk), .runsNow, "adding to one of Doddy's lists is undone in one step")
+        guard case .yesFirst = AskFirst.need(for: removeMilk) else { return XCTFail("taking milk off the list shows its card") }
     }
 
     /// The rule itself (decision 2026-11-11-asked-for-runs-at-once), pinned name by name: a tool that
@@ -156,16 +169,18 @@ final class AskFirstTests: XCTestCase {
         XCTAssertEqual(AskFirst.need(for: .parkingSpot(.find)), .runsNow)
 
         // The spec the live agent is built from says `runs_now` for exactly the tools the app runs at
-        // once, and `tap` for every other one. Nothing is left that a spoken yes could answer.
+        // once, `tap` for money and bookings, and `yes_or_tap` for every other card (decision
+        // 2026-11-14-spoken-yes-and-fewer-cards).
         let spec = try repoSpec()
         XCTAssertFalse(spec.isEmpty)
         for tool in spec {
             XCTAssertEqual(AskFirst.runsAtOnce(tool.name), tool.ask == .runsNow, "\(tool.name): tools.json says \(String(describing: tool.ask))")
             XCTAssertEqual(tool.ask == .runsNow, !tool.confirmOnScreen, "\(tool.name): runs_now and confirm_on_screen")
+            XCTAssertEqual(tool.ask, ConfirmationTiers.specAsk(for: tool.name), tool.name)
         }
-        XCTAssertEqual(Set(spec.compactMap(\.ask)), [.runsNow, .tap])
+        XCTAssertEqual(Set(spec.compactMap(\.ask)), [.runsNow, .tap, .yesOrTap])
         XCTAssertEqual(spec.filter { $0.ask == nil }.map(\.name), [])
-        XCTAssertEqual(spec.filter { $0.ask == .yesOrTap }.map(\.name), [], "no tool is yes_or_tap any more")
+        XCTAssertEqual(Set(spec.filter { $0.ask == .tap }.map(\.name)), ["pay_for_page", "book_flight", "call_places"])
         let specRunsNow = Set(spec.filter { $0.ask == .runsNow }.map(\.name))
         XCTAssertEqual(
             specRunsNow,
@@ -194,8 +209,8 @@ final class AskFirstTests: XCTestCase {
         for name in ["save_memory", "create_calendar_event", "delete_calendar_event", "send_email", "hand_over_errand",
                      "make_something", "call_places", "remove_from_list"] {
             XCTAssertNotNil(ToolCatalog.descriptor(name), "\(name) is a tool the app has")
-            XCTAssertFalse(AskFirst.runsAtOnce(name), "\(name) still needs a tap")
-            XCTAssertEqual(spec.first { $0.name == name }?.ask, .tap, name)
+            XCTAssertFalse(AskFirst.runsAtOnce(name), "\(name) still shows its card")
+            XCTAssertEqual(spec.first { $0.name == name }?.ask, name == "call_places" ? .tap : .yesOrTap, name)
             XCTAssertNotEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name)
         }
     }
@@ -223,14 +238,14 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testTheCardShowsTheExactChange() {
-        // Taking something away keeps its card: a tap on exactly what goes.
+        // Taking something away keeps its card, with exactly what goes; a tap or a spoken yes answers it.
         let items = ListVoiceRequest(list: "Shopping", items: ["2 milk", "eggs"])
-        guard case .tapFirst(let card) = AskFirst.need(for: .removeFromList(items)) else {
-            return XCTFail("removing from a list needs a tap on a card")
+        guard case .yesFirst(let card) = AskFirst.need(for: .removeFromList(items)) else {
+            return XCTFail("removing from a list shows a card")
         }
         XCTAssertEqual(card, AskCard(title: "Remove from Shopping?", lines: ["2 milk", "eggs"], confirmLabel: "Remove"))
-        guard case .tapFirst(let forget) = AskFirst.need(for: .parkingSpot(.clear)) else {
-            return XCTFail("forgetting the parking spot needs a tap on a card")
+        guard case .yesFirst(let forget) = AskFirst.need(for: .parkingSpot(.clear)) else {
+            return XCTFail("forgetting the parking spot shows a card")
         }
         XCTAssertEqual(forget, AskCard(title: "Forget your parking spot?", lines: ["The one spot kept on this iPhone is removed."], confirmLabel: "Forget it"))
         // Adding to the same list, and looking through the notes, have no card any more (11 Nov 2026).
@@ -276,11 +291,18 @@ final class AskFirstTests: XCTestCase {
         XCTAssertFalse(ledger.mayRun("c1", request: more, at: t0))
     }
 
-    func testASpokenYesNeverApprovesAChange() {
+    func testASpokenYesNeverApprovesAnAskThatNeedsATap() {
+        // The ledger's own contract: an ask made with needsTap (a tap-only tool, or any change once text from outside
+        // is in the conversation) is never answered by words.
         var ledger = AskLedger()
-        ledger.asked("c1", request: removeMilk, needsTap: AskFirst.needsTap(AskFirst.need(for: removeMilk)), at: t0)
+        ledger.asked("c1", request: removeMilk, needsTap: true, at: t0)
         XCTAssertEqual(ledger.answer(.userSaid("yes"), for: "c1", at: t0.addingTimeInterval(1)), .stillWaiting)
         XCTAssertFalse(ledger.mayRun("c1", request: removeMilk, at: t0.addingTimeInterval(2)))
+        // Since 14 Nov 2026 taking milk off the list asks without needsTap, so the user's own yes answers it.
+        var spoken = AskLedger()
+        spoken.asked("c2", request: removeMilk, needsTap: AskFirst.needsTap(AskFirst.need(for: removeMilk)), at: t0)
+        XCTAssertEqual(spoken.answer(.userSaid("yes"), for: "c2", at: t0.addingTimeInterval(2)), .granted)
+        XCTAssertTrue(spoken.mayRun("c2", request: removeMilk, at: t0.addingTimeInterval(3)))
     }
 
     func testASpokenYesApprovesARead() {

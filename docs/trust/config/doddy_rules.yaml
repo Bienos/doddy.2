@@ -73,21 +73,32 @@ action_policy:
       first_look_in_a_conversation: [look_at_screen]
       on_a_shared_list_unless_the_user_just_said_every_item: [add_to_list, check_off]
     reads: run_at_once_when_the_user_asked
-    changes: tap_on_card_with_exact_payload
+    # Change (owner, 2026-11-14: "„Tak” głosem na wszystko"; decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md):
+    # every change still shows a card with the exact payload first, and a tap or the user's own short spoken yes runs it
+    # (ConfirmationTiers and SpokenConfirmation in Packages/DoddyCore/Sources/DoddyCore/ConfirmationTier.swift; the voice
+    # controller's spokenAnswer). The yes is SpokenYes's strict list with its vetoes, from the user's side of the
+    # conversation only, said at least one second after the card appeared and within its 120 s; one yes runs that one
+    # payload once, and a changed card needs a new one. Money and bookings, a tool nobody classified, a card that waits
+    # for the person to choose something, and every change once outside text has been seen take a tap only. Replaces
+    # "changes: tap_on_card_with_exact_payload" and the tap only for hand_over_errand and make_something below.
+    # Tools that the decision runs at once without a card still show it until a later change.
+    changes: card_with_exact_payload_then_a_tap_or_the_users_spoken_yes
+    tap_only: [pay_for_page, book_flight, call_places, unclassified_tool, card_waiting_for_a_choice, any_change_after_outside_text]
+    spoken_yes_counts: {said_by: the_user, earliest_after_card_seconds: 1, latest_after_card_seconds: 120, strict_phrases_with_vetoes: true}
     one_yes_covers: one_action
     # ADR-570 (owner, 2026-10-21), changed by ADR-716 and ADR-702: handing a task over (hand_over_errand)
-    # is a tap on its card, never a spoken yes. The tap covers the web searches and page fetches of that one
-    # task on the server, within the per-task research budget; the worker has no other tool; the task's text
-    # carries no links.
-    # ADR-584 (renumbered ADR-740; Studio S0, 22 Oct 2026, tap-only here to match ADR-716): the tap on a
-    # make_something card covers that one job's web searches and page fetches (capped by max_uses on the
-    # server) and making its files in Anthropic's container with Doddy's skills, within the server's per-job
-    # and daily dollar caps; the worker has no other tool (pinned by check_forbidden_capabilities.sh).
+    # is one yes on its card. The yes covers the web searches and page fetches of that one task on the server,
+    # within the per-task research budget; the worker has no other tool; the task's text carries no links.
+    # ADR-584 (renumbered ADR-740; Studio S0, 22 Oct 2026): the yes on a make_something card covers that one job's
+    # web searches and page fetches (capped by max_uses on the server) and making its files in Anthropic's container
+    # with Doddy's skills, within the server's per-job and daily dollar caps; the worker has no other tool (pinned by
+    # check_forbidden_capabilities.sh). Both were a tap only (ADR-716, ADR-742) until 2026-11-14; since then a spoken
+    # yes answers them too, and a tap only once outside text has been seen (changes above).
     one_tap_also_covers: [errand_lookups_of_that_errand, studio_job_lookups_and_files_of_that_job]
-    tap_only_even_though_it_reads: [hand_over_errand, make_something]
+    tap_only_even_though_it_reads: []
     no_answer_unclear_timeout_or_no: do_nothing_and_say_so
     content_from_email_web_documents_or_tools_is_permission: false
-    enforced_by: [backend/src/tools/askFirst.ts, Packages/DoddyCore/Sources/DoddyCore/AskFirst.swift, Packages/DoddyCore/Sources/DoddyCore/OutsideContent.swift, scripts/check_forbidden_capabilities.sh, scripts/voice_agent_spec.py]
+    enforced_by: [backend/src/tools/askFirst.ts, Packages/DoddyCore/Sources/DoddyCore/AskFirst.swift, Packages/DoddyCore/Sources/DoddyCore/OutsideContent.swift, Packages/DoddyCore/Sources/DoddyCore/ConfirmationTier.swift, DoddyApp/Features/Voice/VoiceSessionController.swift, scripts/check_forbidden_capabilities.sh, scripts/voice_agent_spec.py]
 memory_policy:
   ephemeral_context_default: true
   explicit_long_term_memory_opt_in_default: true

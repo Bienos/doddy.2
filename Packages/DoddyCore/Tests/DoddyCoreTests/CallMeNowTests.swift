@@ -144,7 +144,8 @@ final class CallMeNowTests: XCTestCase {
         let parameters = try XCTUnwrap(tool["parameters"] as? [String: Any])
         XCTAssertEqual((parameters["properties"] as? [String: Any])?.count, 0)
         let x = try XCTUnwrap(tool["x_doddy"] as? [String: Any])
-        XCTAssertEqual(x["ask"] as? String, "tap")
+        // A card the person's own spoken yes or a tap answers (decision 2026-11-14-spoken-yes-and-fewer-cards).
+        XCTAssertEqual(x["ask"] as? String, "yes_or_tap")
         XCTAssertEqual(x["confirm_on_screen"] as? Bool, true)
         let later = try XCTUnwrap(tools.first { $0["name"] as? String == VoiceToolName.callMeLater })
         XCTAssertTrue((later["description"] as? String ?? "").contains("use call_me_now"))

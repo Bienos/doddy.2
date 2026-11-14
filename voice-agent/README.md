@@ -60,7 +60,9 @@ adding one adapter, not rewriting the app or the agent.
 
 ## Tools at a glance (`tools.json`)
 
-Every tool asks first (ASK-01, `x_doddy.ask`): a read, or a request to Claude, waits for a spoken yes or a tap; anything that changes or opens something needs a tap on a card. Sums, conversions, web, news and place lookups, weather, Wikipedia and the translator run at once (ADR-575, ADR-619).
+Every tool asks first (ASK-01, `x_doddy.ask`). `runs_now`: looks, reads, public lookups, the translator and Doddy's own small actions run at once (ADR-575, ADR-619, decision `2026-11-11-asked-for-runs-at-once`). `yes_or_tap` (64 tools since 14 Nov 2026, decision `2026-11-14-spoken-yes-and-fewer-cards`): a card with the exact payload that the person's own spoken yes or a tap answers; the app asks for a tap instead once outside text is in the conversation. `tap` (3 tools): money and bookings, `pay_for_page`, `book_flight`, `call_places`.
+
+**Not applied to the live agent (14 Nov 2026):** only `x_doddy.ask` changed in `tools.json` (Doddy's own field, never sent to ElevenLabs). The tool descriptions' "Ask: tap only." tags, the forced pre-tool speech and the prompt's "A spoken yes is not enough there" are unchanged here and on the live agent; changing them is step 3 of the decision, after a TestFlight build with the app's half, and only on the owner's word. Until then the agent still asks people to tap, and the app also runs a card on their spoken yes.
 
 | What | Tools | Who does the work |
 |---|---|---|

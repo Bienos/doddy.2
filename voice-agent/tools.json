@@ -26,7 +26,7 @@
         },
         "required": ["text"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9401m4et17pfe598c1wmvdhpwhcv"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9401m4et17pfe598c1wmvdhpwhcv"}
     },
     {
       "type": "function",
@@ -79,7 +79,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8401m4f2xxyre6ps328h08jvj11y"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8401m4f2xxyre6ps328h08jvj11y"}
     },
     {
       "type": "function",
@@ -97,7 +97,7 @@
         },
         "required": ["title"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9901m4f2xyn1exfrx6as0kek55rk"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9901m4f2xyn1exfrx6as0kek55rk"}
     },
     {
       "type": "function",
@@ -118,7 +118,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3801m4m3zx3kfh8bzrf55j0qh541"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3801m4m3zx3kfh8bzrf55j0qh541"}
     },
     {
       "type": "function",
@@ -141,7 +141,7 @@
         },
         "required": ["title"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8901m4m3zy2verh9ssjb9kyrv2rc"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8901m4m3zy2verh9ssjb9kyrv2rc"}
     },
     {
       "type": "function",
@@ -155,7 +155,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5501m4mf3h7cf9vtm3j2hrwnby39"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5501m4mf3h7cf9vtm3j2hrwnby39"}
     },
     {
       "type": "function",
@@ -168,7 +168,7 @@
         },
         "required": ["title"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1801m4mf3j0xfefs440sf2gp3ebm"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1801m4mf3j0xfefs440sf2gp3ebm"}
     },
     {
       "type": "function",
@@ -179,7 +179,7 @@
         "properties": {},
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6501m4n80qyqee09pksxpdztmy18"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6501m4n80qyqee09pksxpdztmy18"}
     },
     {
       "type": "function",
@@ -193,7 +193,7 @@
         },
         "required": ["from", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_8601m4n8q9x6eyjvf1a40p8ktj62"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_8601m4n8q9x6eyjvf1a40p8ktj62"}
     },
     {
       "type": "function",
@@ -207,7 +207,7 @@
         },
         "required": ["due_by", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_3901m4n8qapwe24s7y6fk8dm3r6e"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_3901m4n8qapwe24s7y6fk8dm3r6e"}
     },
     {
       "type": "function",
@@ -227,7 +227,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7401m4k84jjgf1ctk26vj03kextq"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7401m4k84jjgf1ctk26vj03kextq"}
     },
     {
       "type": "function",
@@ -311,7 +311,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8601m4gj35c6enz912e0zhax003f"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8601m4gj35c6enz912e0zhax003f"}
     },
     {
       "type": "function",
@@ -326,7 +326,7 @@
         },
         "required": ["time"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2701m4mf3jrre9ts0cksqvg7e2s5"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2701m4mf3jrre9ts0cksqvg7e2s5"}
     },
     {
       "type": "function",
@@ -444,7 +444,7 @@
         },
         "required": ["time"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7901m4n8qcz5f22r1ahkr926kqqm"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7901m4n8qcz5f22r1ahkr926kqqm"}
     },
     {
       "type": "function",
@@ -457,7 +457,7 @@
         },
         "required": ["steps"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_3001m4knv27zfw09afmn7sjamfcp"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_3001m4knv27zfw09afmn7sjamfcp"}
     },
     {
       "type": "function",
@@ -472,7 +472,7 @@
         },
         "required": ["place"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6101m4gj36nbe1tv5mpj73rzbqsa"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6101m4gj36nbe1tv5mpj73rzbqsa"}
     },
     {
       "type": "function",
@@ -487,7 +487,7 @@
         },
         "required": ["app"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
     },
     {
       "type": "function",
@@ -501,7 +501,7 @@
         },
         "required": ["action"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_8001m4nf3xc5e2asz2rxpya9f102"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_8001m4nf3xc5e2asz2rxpya9f102"}
     },
     {
       "type": "function",
@@ -517,7 +517,7 @@
         },
         "required": ["place", "arrive_by"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4801m4nyams5ff79cbnt0j8vweds"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4801m4nyams5ff79cbnt0j8vweds"}
     },
     {
       "type": "function",
@@ -530,7 +530,7 @@
         },
         "required": ["name"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1601m4gj37f5etbres37pgtvrq3c"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1601m4gj37f5etbres37pgtvrq3c"}
     },
     {
       "type": "function",
@@ -545,7 +545,7 @@
         },
         "required": ["to", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m4gj38k8fmwbr3gy4qz3wygw"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m4gj38k8fmwbr3gy4qz3wygw"}
     },
     {
       "type": "function",
@@ -561,7 +561,7 @@
         },
         "required": ["to", "amount"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5701m57c1717fmebcs14kbrjqmdq"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5701m57c1717fmebcs14kbrjqmdq"}
     },
     {
       "type": "function",
@@ -601,7 +601,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9301m6bqvywnfmv93krv5jhdpd7b"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9301m6bqvywnfmv93krv5jhdpd7b"}
     },
     {
       "type": "function",
@@ -616,7 +616,7 @@
         },
         "required": ["title", "slides"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_9601m5em00c3f66tbpag9f27kf4h"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_9601m5em00c3f66tbpag9f27kf4h"}
     },
     {
       "type": "function",
@@ -708,14 +708,14 @@
         },
         "required": ["action", "name"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9101m626b83yfsyr5d68zckqjnqd"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9101m626b83yfsyr5d68zckqjnqd"}
     },
     {
       "type": "function",
       "name": "open_camera",
       "description": "Open Doddy's camera on the user's screen, when they ask to take a photo or open the camera. The app shows a card and the camera opens only after the user taps Open camera. A photo the user keeps goes into a new note that they check and save themselves; you never see it. The result starts with 'opened' (the camera is open), 'declined' or 'unavailable'. Before this tool runs, say only one short line, for example 'Tap the card to open the camera.' (Polish: 'Stuknij kartę, żeby otworzyć aparat.'). Never say a photo was taken or saved. If the app doesn't know this tool, use run_shortcut with \"Doddy Camera\" as before.",
       "parameters": {"type": "object", "properties": {}},
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3501m5ewmn09fmw9n8j15kx7x8n7"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3501m5ewmn09fmw9n8j15kx7x8n7"}
     },
     {
       "type": "function",
@@ -743,14 +743,14 @@
         },
         "required": ["time", "reason"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6901m57key8nftdsvny3qd3n5kr7"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6901m57key8nftdsvny3qd3n5kr7"}
     },
     {
       "type": "function",
       "name": "call_me_now",
       "description": "Ring the user's own phone now from Doddy's own number, the one they verified in Doddy's Settings. Use it only when the user asks Doddy to call them now, for example 'call me', 'zadzwoń do mnie teraz' or 'ring my phone'. It can never call anyone else; for a call at a later time use call_me_later. When the user answers, they talk to Doddy on Doddy's phone line. The card shows the last digits of the number; nothing is placed until the user taps. Before this tool runs, say only one short line, for example 'Confirm on screen and I'll ring you.' The result starts with 'requested' (the phone is being rung; not answered yet), 'declined', 'failed' (no call was placed; the reason follows) or 'unknown'. Never say the call connected. After 'unknown', never call this tool again unless the user asks.",
       "parameters": {"type": "object", "properties": {}, "required": []},
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1301m724k8bfegwr7kaextr677tv"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1301m724k8bfegwr7kaextr677tv"}
     },
     {
       "type": "function",
@@ -885,7 +885,7 @@
         },
         "required": ["lost"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4201m6f4xwztfs08n8r4ht6nf0ka"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4201m6f4xwztfs08n8r4ht6nf0ka"}
     },
     {
       "type": "function",
@@ -927,7 +927,7 @@
         },
         "required": ["to", "subject", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5301m4hqrqqkf248sss9jewnp0xb"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5301m4hqrqqkf248sss9jewnp0xb"}
     },
     {
       "type": "function",
@@ -941,7 +941,7 @@
         },
         "required": ["query", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m4nt0dfmecabw665gm7xqwcs"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m4nt0dfmecabw665gm7xqwcs"}
     },
     {
       "type": "function",
@@ -956,7 +956,7 @@
         },
         "required": ["to", "subject", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7301m57dqmkzfvmsxearchyn4c6m"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7301m57dqmkzfvmsxearchyn4c6m"}
     },
     {
       "type": "function",
@@ -970,7 +970,7 @@
         },
         "required": ["query", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4701m57dqn2ze1xvry4vm5fhcf3s"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4701m57dqn2ze1xvry4vm5fhcf3s"}
     },
     {
       "type": "function",
@@ -985,7 +985,7 @@
         },
         "required": ["query", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1901m57dqngse1s8wswsk4eg88xt"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1901m57dqngse1s8wswsk4eg88xt"}
     },
     {
       "type": "function",
@@ -999,7 +999,7 @@
         },
         "required": ["query", "change"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2001m57dqp2rej89hbxb7maszfp1"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2001m57dqp2rej89hbxb7maszfp1"}
     },
     {
       "type": "function",
@@ -1012,7 +1012,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6001m57dqpj0fp5s7z0rhpfgwpjy"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6001m57dqpj0fp5s7z0rhpfgwpjy"}
     },
     {
       "type": "function",
@@ -1039,7 +1039,7 @@
         },
         "required": ["name", "text"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1601m57dqs0re2ybww8ce271q74s"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1601m57dqs0re2ybww8ce271q74s"}
     },
     {
       "type": "function",
@@ -1080,7 +1080,7 @@
         },
         "required": ["query", "title"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3301m57dqshyfs69y2eagj4dba7a"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3301m57dqshyfs69y2eagj4dba7a"}
     },
     {
       "type": "function",
@@ -1094,7 +1094,7 @@
         },
         "required": ["query", "text"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1101m57dqt1efxhtxs22ydn87kmz"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1101m57dqt1efxhtxs22ydn87kmz"}
     },
     {
       "type": "function",
@@ -1107,7 +1107,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8601m57dqtgyfwxr87vwgjze398b"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8601m57dqtgyfwxr87vwgjze398b"}
     },
     {
       "type": "function",
@@ -1149,7 +1149,7 @@
         },
         "required": ["to", "subject", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9501m4nyarbhfx8sjxt8jdg88nja"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9501m4nyarbhfx8sjxt8jdg88nja"}
     },
     {
       "type": "function",
@@ -1193,7 +1193,7 @@
         },
         "required": ["title", "start", "end"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3901m57dqw4ne95sc731gxqfmtj4"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3901m57dqw4ne95sc731gxqfmtj4"}
     },
     {
       "type": "function",
@@ -1210,7 +1210,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1301m57dqwssfre9dbx3cthnnnvh"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1301m57dqwssfre9dbx3cthnnnvh"}
     },
     {
       "type": "function",
@@ -1224,7 +1224,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2101m57dqy2cfgdaqj6a38a6w4kq"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2101m57dqy2cfgdaqj6a38a6w4kq"}
     },
     {
       "type": "function",
@@ -1239,7 +1239,7 @@
         },
         "required": ["title", "start", "answer"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5301m57dqyjkfqtt2wsa27h0z0c4"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5301m57dqyjkfqtt2wsa27h0z0c4"}
     },
     {
       "type": "function",
@@ -1255,7 +1255,7 @@
         },
         "required": ["title", "start", "end"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0501m57dqhphfraajhtdzfnd6etr"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0501m57dqhphfraajhtdzfnd6etr"}
     },
     {
       "type": "function",
@@ -1272,7 +1272,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0401m57dqj49fac9zr89xbb8hd8c"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0401m57dqj49fac9zr89xbb8hd8c"}
     },
     {
       "type": "function",
@@ -1286,7 +1286,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1001m57dqjkffd3865w082fzby63"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1001m57dqjkffd3865w082fzby63"}
     },
     {
       "type": "function",
@@ -1301,7 +1301,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5601m57dqk0yeq58hn348611prwh"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5601m57dqk0yeq58hn348611prwh"}
     },
     {
       "type": "function",
@@ -1315,7 +1315,7 @@
         },
         "required": ["title", "start"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8201m57dqkevfj0tshnvdspg4apv"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8201m57dqkevfj0tshnvdspg4apv"}
     },
     {
       "type": "function",
@@ -1330,7 +1330,7 @@
         },
         "required": ["to", "subject", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6901m57dqm15fkst9d4x2any41g7"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6901m57dqm15fkst9d4x2any41g7"}
     },
     {
       "type": "function",
@@ -1344,7 +1344,7 @@
         },
         "required": ["query", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0701m57dqmfxfp8950hf5hve0s2j"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0701m57dqmfxfp8950hf5hve0s2j"}
     },
     {
       "type": "function",
@@ -1359,7 +1359,7 @@
         },
         "required": ["query", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2501m57dqmyyf6y8n2tkdm60wmb8"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2501m57dqmyyf6y8n2tkdm60wmb8"}
     },
     {
       "type": "function",
@@ -1373,7 +1373,7 @@
         },
         "required": ["query", "to_folder"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5901m57dqncxfqtteyqvehaysrbn"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5901m57dqncxfqtteyqvehaysrbn"}
     },
     {
       "type": "function",
@@ -1387,7 +1387,7 @@
         },
         "required": ["query", "mark"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9801m57dqnvbemhvc4r9fz6ztahd"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9801m57dqnvbemhvc4r9fz6ztahd"}
     },
     {
       "type": "function",
@@ -1416,7 +1416,7 @@
         },
         "required": ["content"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0601m4hqrttmeph8vwj3kha18fgb"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0601m4hqrttmeph8vwj3kha18fgb"}
     },
     {
       "type": "function",
@@ -1429,7 +1429,7 @@
         },
         "required": ["task_id"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7101m4nf40ase7bsx8qa68ty4eh4"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7101m4nf40ase7bsx8qa68ty4eh4"}
     },
     {
       "type": "function",
@@ -1444,7 +1444,7 @@
         },
         "required": ["task_id", "due"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0401m4nf41j9ex08e5ksevh06rht"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0401m4nf41j9ex08e5ksevh06rht"}
     },
     {
       "type": "function",
@@ -1458,7 +1458,7 @@
         },
         "required": ["task_id", "content"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4501m57dqp9gfj2th5yjbs3ssg7k"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4501m57dqp9gfj2th5yjbs3ssg7k"}
     },
     {
       "type": "function",
@@ -1852,7 +1852,7 @@
         },
         "required": ["list", "dish", "items"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9201m4nf430kezd9s0fpxznfkppr"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9201m4nf430kezd9s0fpxznfkppr"}
     },
     {
       "type": "function",
@@ -1893,7 +1893,7 @@
         },
         "required": ["list", "items"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9701m4kvef75fpyszf66w6fqpf0t"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9701m4kvef75fpyszf66w6fqpf0t"}
     },
     {
       "type": "function",
@@ -1908,7 +1908,7 @@
         },
         "required": ["name"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4201m4kveg9ke36tmg4qx8tzq8zq"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4201m4kveg9ke36tmg4qx8tzq8zq"}
     },
     {
       "type": "function",
@@ -1926,7 +1926,7 @@
         },
         "required": ["words", "brief", "title"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0401m5y4xbkmegkaydf5p0sjfqqn"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0401m5y4xbkmegkaydf5p0sjfqqn"}
     },
     {
       "type": "function",
@@ -1958,7 +1958,7 @@
         },
         "required": ["topic"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
     },
     {
       "type": "function",

@@ -48,6 +48,17 @@ import Foundation
 // has reached the conversation; `make_document` always; `look_at_screen` for the first look; `add_to_list` and
 // `check_off` on a shared list unless the user just said the items. It can only add a card, never remove one.
 //
+// A fifth change, 14 Nov 2026 (owner: "co chwilę trzeba coś potwierdzać … karty potwierdzenia lepiej nie cb to mówi a
+// nie potrzebuje kliknięcia zawsze", then "„Tak” głosem na wszystko"; decision 2026-11-14-spoken-yes-and-fewer-cards):
+// a card is still shown before every change, with the exact payload, but the person's own short spoken yes runs it as
+// a tap would, except for money and bookings (`ConfirmationTiers.tapOnly`), a tool nobody classified, and every change
+// once text from outside is in the conversation. That replaces "a spoken yes is not enough there" above, ADR-716's tap
+// for a handed-over task and ADR-742's tap for a Studio job. The cards made here (removing from a list, forgetting the
+// parking spot, a task handed over, a Studio job, opening a food app) are `.yesFirst`, and `need(for:in:)` turns them
+// back into `.tapFirst` once text from outside has been seen. The payload cards of the tools' own flows and the
+// server's write cards take the same yes in the voice controller (`SpokenConfirmation`). DOD-07 holds: the yes is
+// bound to exactly the payload on the card, used once, and only the person's own transcribed words count.
+//
 // This file is the rule as code, so it is tested on Linux: which ask each tool needs (`AskFirst`),
 // what counts as a spoken yes (`SpokenYes`), and the one check the app makes before running a
 // tool (`AskLedger.mayRun`).
@@ -72,15 +83,16 @@ public enum AskFirst {
     public enum Need: Equatable, Sendable {
         /// Nothing runs and nothing is read (an unclear, unknown or incomplete call).
         case nothingRuns
-        /// Reads and other actions that change nothing: the app shows this card and runs the tool
-        /// only after a tap, or the user's own spoken yes said after the card appeared.
+        /// A change with no card of its own (list items, forgetting the parking spot, a task handed over, a Studio
+        /// job, opening a food app): this card shows exactly what will happen, and a tap or the user's own spoken yes
+        /// said after the card appeared runs it (decision 2026-11-14-spoken-yes-and-fewer-cards).
         case yesFirst(AskCard)
-        /// A change with no card of its own (list items, clearing the parking spot): this card
-        /// shows the exact change, and only a tap runs it. Also a task handed over to Doddy's
-        /// server (ADR-716) and a trip's travel time, which reads where the iPhone is (ADR-718).
+        /// The same card where only a tap runs it: one of the cards above once text from outside is in the
+        /// conversation, and the session rule's cards (`need(for:in:)`, OutsideContent.swift).
         case tapFirst(AskCard)
         /// The tool's own flow shows the exact payload on a card and changes something only on a
-        /// tap (notes, calendar, reminders, alarms, timers, messages, shortcuts, Maps, plans).
+        /// tap or, unless the tool is tap only, a spoken yes (notes, calendar, reminders, alarms, timers, messages,
+        /// shortcuts, Maps, plans; `SpokenConfirmation` in the voice controller).
         case ownPayloadCard
         /// Online accounts: Doddy's server makes the card and a single-use approval
         /// (backend/src/tools/askFirst.ts). A read runs on a tap or a spoken yes; a write on a tap only.
@@ -161,27 +173,28 @@ public enum AskFirst {
         // still hears the AI translator disclosure first.
         case .startTranslator, .stopTranslator:
             return .runsNow
+        // Each of these shows its card with exactly what will happen, and a tap or the user's own spoken yes said after
+        // the card appeared runs it (decision 2026-11-14-spoken-yes-and-fewer-cards, replacing ADR-716's and ADR-742's
+        // tap only). Once text from outside is in the conversation, `need(for:in:)` makes each a tap again.
         case .handOverErrand(let draft):
-            // Reads the web and changes nothing on the iPhone (ADR-570), but the text goes to a server
-            // that opens what it names, and a spoken "yes" could be anything the microphone heard, so
-            // only a tap starts it (ADR-716). The card shows whose each text is, in full.
-            return .tapFirst(ErrandAsk.handOverCard(draft, polish: polish))
+            // Reads the web and changes nothing on the iPhone (ADR-570); the text goes to a server that opens what it
+            // names, so the card shows whose each text is, in full.
+            return .yesFirst(ErrandAsk.handOverCard(draft, polish: polish))
         case .makeSomething(let job):
-            // ADR-740: web research and files made in Anthropic's container, paid from Doddy's account.
-            // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
-            // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
-            return .tapFirst(StudioAsk.card(job))
-        // Opening a food app hands the person over to it (decision 2026-11-12-food-by-voice): a tap on the card
-        // naming the app and the search, never on its own. Nothing is ordered here.
+            // ADR-740: web research and files made in Anthropic's container, paid from Doddy's account within the
+            // server's limits; it sends the user's words to Anthropic. The card shows the whole job.
+            return .yesFirst(StudioAsk.card(job))
+        // Opening a food app hands the person over to it (decision 2026-11-12-food-by-voice): the card names the app
+        // and the search. Nothing is ordered here.
         case .openFoodApp(let handoff):
-            return .tapFirst(handoff.card(polish: polish))
-        // Taking something away keeps its card: a tap on exactly what goes.
+            return .yesFirst(handoff.card(polish: polish))
+        // Taking something away keeps its card, with exactly what goes.
         case .removeFromList(let request):
-            return .tapFirst(AskCard(
+            return .yesFirst(AskCard(
                 title: say("Remove from \(request.list)?", "Usunąć z listy „\(request.list)”?"),
                 lines: request.items, confirmLabel: say("Remove", "Usuń")))
         case .parkingSpot(.clear):
-            return .tapFirst(AskCard(
+            return .yesFirst(AskCard(
                 title: say("Forget your parking spot?", "Zapomnieć miejsce parkowania?"),
                 lines: [say("The one spot kept on this iPhone is removed.", "Jedyne miejsce zapisane na tym iPhonie zostanie usunięte.")],
                 confirmLabel: say("Forget it", "Zapomnij")))
@@ -218,7 +231,9 @@ public enum AskFirst {
         }
     }
 
-    /// True when only a tap may say yes (anything that changes something).
+    /// True when only a tap may answer the card made here (`.tapFirst`). A payload card of the tool's own flow and the
+    /// server's write card say true here as well: the voice controller lets their spoken yes through only where the
+    /// tool's tier allows it (`ConfirmationTiers`, `SpokenConfirmation`), never through `AskLedger`.
     public static func needsTap(_ need: Need) -> Bool {
         switch need {
         case .tapFirst, .ownPayloadCard, .serverCard(isWrite: true): true

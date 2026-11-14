@@ -146,12 +146,13 @@ final class PreTapRepliesTests: XCTestCase {
         XCTAssertTrue(ledger.mayRun("c1", request: request, at: Date(timeIntervalSince1970: 1_800_000_005)))
     }
 
-    func testTheSpecStillSaysTapForTheTrip() throws {
+    func testTheSpecStillShowsACardForTheTrip() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let spec = try RealtimeToolCatalog.decode(Data(contentsOf: root.appendingPathComponent("voice-agent/tools.json")))
         let tool = try XCTUnwrap(spec.first { $0.name == VoiceToolName.remindWhenToLeave })
-        XCTAssertEqual(tool.ask, .tap)
+        XCTAssertEqual(tool.ask, .yesOrTap, "the card, answered by a tap or a spoken yes (decision 2026-11-14-spoken-yes-and-fewer-cards)")
+        XCTAssertTrue(tool.confirmOnScreen)
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.remindWhenToLeave)?.approval, .card)
     }
 }

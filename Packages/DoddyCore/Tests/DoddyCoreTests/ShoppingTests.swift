@@ -138,8 +138,9 @@ final class ShoppingTests: XCTestCase {
     func testTheShoppingCardShowsThePrioritiesAndSaysNothingIsBought() throws {
         let draft = try fixtureDraft()
         let need = AskFirst.need(for: .handOverErrand(draft))
-        // ADR-716: a tap, with the words, Doddy's note and the title each labelled as whose they are.
-        XCTAssertEqual(need, .tapFirst(AskCard(
+        // ADR-716's card, with the words, Doddy's note and the title each labelled as whose they are; a tap or the
+        // person's own spoken yes answers it since decision 2026-11-14-spoken-yes-and-fewer-cards.
+        XCTAssertEqual(need, .yesFirst(AskCard(
             title: "Hand this to Doddy?",
             lines: [
                 "Your words, as Doddy will pass them on: \u{201C}\(draft.words)\u{201D}",
@@ -151,7 +152,7 @@ final class ShoppingTests: XCTestCase {
                 "Nothing is bought, ordered or sent.",
             ],
             confirmLabel: "Yes, go")))
-        XCTAssertTrue(AskFirst.needsTap(need), "a spoken yes can't start it")
+        XCTAssertFalse(AskFirst.needsTap(need), "the person's own spoken yes after the card starts it")
         let none = ErrandAsk.handOverCard(ErrandDraft(words: "w", brief: "b", title: "t", kind: .shopping))
         XCTAssertFalse(none.lines.contains { $0.hasPrefix("What matters most") }, "no priorities, no line")
         // A research card ends the same way as before.

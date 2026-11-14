@@ -360,11 +360,12 @@ final class StudioTests: XCTestCase {
         XCTAssertTrue(StudioDeleteRule.confirmation(nil, language: .polish) == "Usunięto.")
     }
 
-    // MARK: Ask first (ASK-01, ADR-740, tap only by ADR-742) and the voice tool
+    // MARK: Ask first (ASK-01, ADR-740; a spoken yes or a tap since decision 2026-11-14-spoken-yes-and-fewer-cards,
+    // replacing ADR-742's tap only) and the voice tool
 
-    func testTheCardShowsTheWholeJobWhereItGoesAndNeedsATap() {
+    func testTheCardShowsTheWholeJobWhereItGoesAndTakesAYesOrATap() {
         let need = AskFirst.need(for: .makeSomething(fullJob))
-        XCTAssertEqual(need, .tapFirst(AskCard(
+        XCTAssertEqual(need, .yesFirst(AskCard(
             title: "Make this with Doddy?",
             lines: [
                 "Research “Heat pumps \"in\" Poland\\2026” on the web and make a research brief (PDF) and an infographic.",
@@ -376,7 +377,12 @@ final class StudioTests: XCTestCase {
                 "It takes a few minutes. Nothing is published or sent anywhere.",
             ],
             confirmLabel: "Allow", declineLabel: "Not now")))
-        XCTAssertTrue(AskFirst.needsTap(need), "it spends money: a spoken yes cannot start it (ADR-742)")
+        XCTAssertFalse(AskFirst.needsTap(need), "the person's own spoken yes after the card starts it (owner, 14 Nov 2026)")
+        var afterAPage = OutsideContentSession()
+        afterAPage.noteRun(of: "web_search")
+        guard case .tapFirst = AskFirst.need(for: .makeSomething(fullJob), in: afterAPage) else {
+            return XCTFail("once text from the web is in the conversation, only a tap starts a job")
+        }
         let polish = StudioAsk.card(job)
         XCTAssertEqual(polish.title, "Przygotować to z Doddym?")
         XCTAssertEqual(polish.lines.first, "Doddy poszuka w sieci informacji o „Pompy ciepła w polskich domach” i przygotuje raport (PDF) oraz infografikę.")
@@ -390,13 +396,15 @@ final class StudioTests: XCTestCase {
         XCTAssertFalse(AskFirst.publicLookups.contains(VoiceToolName.makeSomething), "never runs without asking")
     }
 
-    func testOneTapRunsTheJobOnceAndOnlyThatJob() {
+    func testOneYesRunsTheJobOnceAndOnlyThatJob() {
         var ledger = AskLedger()
         let now = Date(timeIntervalSince1970: 1_792_000_000)
         let request = VoiceToolRequest.makeSomething(job)
         ledger.asked("c0", request: request, needsTap: AskFirst.needsTap(AskFirst.need(for: request)), at: now)
-        XCTAssertNotEqual(ledger.answer(.userSaid("tak"), for: "c0", at: now.addingTimeInterval(2)), .granted, "a spoken yes does not start a Studio job")
-        XCTAssertFalse(ledger.mayRun("c0", request: request, at: now.addingTimeInterval(3)))
+        XCTAssertEqual(ledger.answer(.userSaid("tak, ale krócej"), for: "c0", at: now.addingTimeInterval(2)), .stillWaiting, "a yes with a but is no yes")
+        XCTAssertEqual(ledger.answer(.userSaid("tak"), for: "c0", at: now.addingTimeInterval(2)), .granted)
+        XCTAssertTrue(ledger.mayRun("c0", request: request, at: now.addingTimeInterval(3)))
+        XCTAssertFalse(ledger.mayRun("c0", request: request, at: now.addingTimeInterval(4)), "once")
         ledger.asked("c1", request: request, needsTap: AskFirst.needsTap(AskFirst.need(for: request)), at: now)
         XCTAssertEqual(ledger.answer(.tapped, for: "c1", at: now.addingTimeInterval(2)), .granted)
         XCTAssertFalse(ledger.mayRun("c1", request: .makeSomething(StudioJob(topic: heat + " i fotowoltaika")), at: now.addingTimeInterval(3)))

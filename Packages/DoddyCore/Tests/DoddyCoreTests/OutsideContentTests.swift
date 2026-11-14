@@ -335,8 +335,15 @@ final class OutsideContentTests: XCTestCase {
         ]
         for request in asking {
             for sessionToTry in [OutsideContentSession(), session, afterEmail()] {
-                XCTAssertEqual(AskFirst.need(for: request, in: sessionToTry, listIsShared: true),
-                               AskFirst.need(for: request), "\(request)")
+                let inSession = AskFirst.need(for: request, in: sessionToTry, listIsShared: true)
+                let baseline = AskFirst.need(for: request)
+                if case .yesFirst(let card) = baseline, sessionToTry.outsideContentSeen {
+                    // Heavier, never lighter: the same card, which a spoken yes no longer answers
+                    // (decision 2026-11-14-spoken-yes-and-fewer-cards).
+                    XCTAssertEqual(inSession, .tapFirst(card), "\(request)")
+                } else {
+                    XCTAssertEqual(inSession, baseline, "\(request)")
+                }
             }
         }
     }

@@ -240,7 +240,7 @@ struct LearnedView: View {
         } header: {
             Text("Routines")
         } footer: {
-            Text("In a conversation, ask for one by name and Doddy shows one card with these steps. Every step still needs your tap, every time. A routine you don't use for 90 days is taken off below.")
+            Text("In a conversation, ask for one by name and Doddy shows one card with these steps. Every step still needs your yes, every time. A routine you don't use for 90 days is taken off below.")
         }
     }
 
