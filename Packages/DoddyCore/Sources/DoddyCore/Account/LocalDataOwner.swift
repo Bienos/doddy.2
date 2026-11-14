@@ -62,6 +62,13 @@ public enum LocalDataOwner {
         normalized(defaults.string(forKey: ownerKey))
     }
 
+    /// Forgets whose data this iPhone holds. Only "Erase everything on this iPhone" calls it, and only after every store
+    /// was read back as empty (`DeviceErasure`): while anything may be left, the record stays, so what is left is never
+    /// handed to whoever signs in next. The signed-in account then takes the empty iPhone over with `claim`.
+    public static func forgetOwner(in defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: ownerKey)
+    }
+
     /// After a sign-in, and at launch while signed in. When no owner is recorded the account takes the data
     /// over at once, before anything is awaited, so a launch's first uploads already find it. Only when another
     /// account is recorded is `localDataIsEmpty` asked; the app counts a store it can't read as not empty.

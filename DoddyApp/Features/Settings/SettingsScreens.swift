@@ -253,16 +253,12 @@ struct WaysSettingsView: View {
 struct MemoriesSettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
-    @State private var confirmDeleteAll = false
     @State private var choosingRestoreFile = false
     @State private var restorePlan: MemoryRestorePlan?
     /// List items from the same file (ADR-216), put back after their lists.
     @State private var restoreItems: [ListItem] = []
     @State private var restoreMessage: String?
     @State private var restoreFailed = false
-    @State private var deleteError: String?
-
-    private var environment: AppEnvironment { store.environment }
 
     var body: some View {
         Form {
@@ -316,28 +312,9 @@ struct MemoriesSettingsView: View {
                     Label(restoreMessage, systemImage: restoreFailed ? "exclamationmark.triangle" : "checkmark.circle")
                         .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
                 }
-                Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
-                    .disabled(!hasSavedAnything)
-                    .accessibilityIdentifier("settings.deleteAll")
-                    // On the row that opens it, so on iPad its popover points here (ADR-437).
-                    .confirmationDialog(
-                        deleteAllTitle,
-                        isPresented: $confirmDeleteAll, titleVisibility: .visible
-                    ) {
-                        Button("Delete all", role: .destructive) { Task { await deleteAll() } }
-                        Button("Cancel", role: .cancel) {}
-                    } message: {
-                        // The full consequences stay at the point of decision (ADR-580 rule 5).
-                        Text("This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.")
-                            + Text(verbatim: " ")
-                            + Text("Every recording, with its audio and its words, is removed too.")
-                            + Text(verbatim: " ")
-                            + Text("Your parcel list and your inFakt key are removed too.")
-                    }
-                if let deleteError {
-                    Label(deleteError, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(Theme.error)
-                }
+                // One erase through every store Doddy keeps something in (`EraseThisIPhone`, DoddyCore `DeviceErasure`): it
+                // replaces "Delete all memories", which left remembered conversations, About you, files Doddy made and more.
+                EraseThisIPhoneRow()
             } footer: {
                 Text(memoriesWhereText)
             }
@@ -371,78 +348,8 @@ struct MemoriesSettingsView: View {
         return text
     }
 
-    /// Lists are memories too: they are exported and deleted with the notes (DOD-06).
+    /// Lists are memories too: they are exported with the notes (DOD-06).
     private var hasSavedAnything: Bool { !store.memories.isEmpty || !store.lists.isEmpty }
-
-    /// Names everything Delete all removes, notes and lists, never notes alone.
-    private var deleteAllTitle: String {
-        String(
-            format: NSLocalizedString("Delete all %lld notes and %lld lists?", comment: ""),
-            store.memories.count, store.lists.count)
-    }
-
-    /// Stops sharing the user's own shared lists first (their iCloud copy is deleted for everyone),
-    /// then deletes on this iPhone, then empties the server copy if Memory on calls is on and
-    /// waits for the server's answer. Whatever couldn't be undone outside this iPhone is said
-    /// plainly, never covered by "deleted" (DOD-06/11).
-    private func deleteAll() async {
-        let stillShared = await SharedListsController.shared.stopAllOwnedShares()
-        let stillSharedNames = stillShared.compactMap { store.list(id: $0)?.name }
-        do {
-            try await store.deleteAll()
-            // Everything Doddy learned and the counts of corrections go with the notes (ADR-440).
-            try await store.learning?.deleteAll()
-            // Calls Doddy made for the user: cards, answers and transcripts on this iPhone (ADR-500).
-            try await environment.callCaseRepository.deleteAll()
-            // Tasks handed to Doddy (ADR-570): words and results kept on this iPhone.
-            try await environment.errandRepository.deleteAll()
-            // Studio (ADR-740): the topics and the opened copies kept here. The items stay on
-            // Doddy's server until they are deleted in Studio (said below).
-            StudioModel.shared.forgetLocal()
-            // The typed conversation with Doddy (ADR-585): messages kept on this iPhone. The files Doddy made until
-            // now are not offered again (decision 2026-11-12-deleted-files-stay-gone).
-            try await environment.messageThreadRepository.deleteAll()
-            FilesShownSinceStore.conversationDeleted()
-            // Recordings (ADR-588): their audio and words, on this iPhone only. One being made is
-            // stopped and saved first, then goes with the rest.
-            await RecordingCoordinator.shared.stop()
-            try await environment.recordingRepository?.deleteAll()
-            environment.recordingFiles.removeAll()
-            UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
-            // The parcel numbers (ADR-641) are on this iPhone only.
-            ParcelsModel.forgetStoredList()
-        } catch {
-            deleteError = UserFacingError.message(for: error)
-            return
-        }
-        var problems: [String] = []
-        // Keys pasted in for the person's own accounts (ADR-640) are in the Keychain, not in the database,
-        // so a failure to remove one is said plainly and does not stop the rest.
-        if !AccountKeyStore.removeAll() {
-            problems.append(NSLocalizedString("Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).", comment: ""))
-        }
-        // The invoice draft kept between conversations (ADR-678) is a file of its own.
-        if VoiceSessionController.invoiceDraftFile?.remove() == false {
-            problems.append(NSLocalizedString("The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again.", comment: ""))
-        }
-        if !stillShared.isEmpty {
-            problems.append(String(
-                format: NSLocalizedString("Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.", comment: ""),
-                stillShared.count, stillSharedNames.joined(separator: ", ")))
-        }
-        do {
-            try await MemoryCopySync.shared.uploadNow([])
-        } catch {
-            problems.append(String(
-                format: NSLocalizedString("The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.", comment: ""),
-                UpdatesModel.text(for: error)))
-        }
-        // Studio (ADR-740): its items are kept on Doddy's server, not on this iPhone; said, never covered by "deleted".
-        if !StudioModel.shared.items.isEmpty {
-            problems.append(NSLocalizedString("What Doddy made in Studio stays on Doddy's server until you delete it in Studio.", comment: ""))
-        }
-        deleteError = problems.isEmpty ? nil : problems.joined(separator: " ")
-    }
 
     /// Reads and checks the chosen file and works out what it would add. Nothing is written
     /// until the user confirms (ADR-178).

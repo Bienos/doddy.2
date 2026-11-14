@@ -94,7 +94,10 @@ inpost_client=DoddyApp/Infrastructure/Network/InPostTrackingClient.swift
 vat_register_client=DoddyApp/Infrastructure/Network/VatRegisterClient.swift
 # The Keychain: the files that hold a token or key. AccountKeyStore (ADR-640) holds keys the person pasted in.
 keychain_only='import Security|SecItem(Add|Update|Delete|CopyMatching)|kSecClass'
-keychain_files='^(DoddyApp/Infrastructure/(Network/KeychainCredentialStore|Server/ServerKeychainStore|DeviceSession|KeychainSessionStore|AccountKeyStore)|DoddyApp/Features/Voice/VoiceAuthSession)\.swift:'
+keychain_files='^(DoddyApp/Infrastructure/(Network/KeychainCredentialStore|Server/ServerKeychainStore|DeviceSession|KeychainSessionStore|AccountKeyStore)|DoddyApp/Features/Voice/VoiceAuthSession|DoddyApp/Features/Privacy/DeviceKeychainEraser)\.swift:'
+# "Erase everything on this iPhone" lists the service names Doddy has items under and deletes them. It holds no token or key
+# and may never read a value: no kSecReturnData, no kSecValueData, no SecItemAdd or SecItemUpdate.
+keychain_eraser=DoddyApp/Features/Privacy/DeviceKeychainEraser.swift
 account_key_store=DoddyApp/Infrastructure/AccountKeyStore.swift
 # The one file that will put the inFakt key in a header. It does not exist yet (ADR-640): until a sandbox call
 # has settled how inFakt takes an invoice, nothing in the app reads the key or talks to inFakt.
@@ -183,6 +186,10 @@ fi
 # The Keychain only where a token or key already lives (ADR-640).
 if grep -RInE --include='*.swift' "$keychain_only" "${dirs[@]}" | code_only | grep -vE "$keychain_files"; then
   echo "FAIL: Keychain code outside the files that hold a token or key (see keychain_files in this script)." >&2; status=1
+fi
+# The eraser only lists service names and deletes by service name (decision 2026-11-14-erase-everything-on-this-iphone).
+if [ -f "$keychain_eraser" ] && grep -nE 'kSecReturnData|kSecValueData|SecItemAdd|SecItemUpdate' "$keychain_eraser" | code_only; then
+  echo "FAIL: $keychain_eraser may only list services and delete them; it may not read, add or change a Keychain value." >&2; status=1
 fi
 # A key the person pasted in is never read by a screen or anything else: only the inFakt client (not built yet),
 # which is the only place that may put it in a request. Its masked state is all a screen sees.

@@ -85,6 +85,23 @@ final class LocalMadeFilesStore {
         return true
     }
 
+    /// "Erase everything on this iPhone": the index is rewritten empty, then every file's folder goes. False when the index
+    /// couldn't be rewritten, so nothing is claimed gone. The list changes only after that, as in `remove`.
+    @discardableResult
+    func removeAll() -> Bool {
+        guard saveIndex([]) else {
+            problem = NSLocalizedString("The file couldn't be deleted; it is still kept.", comment: "Messages: a made file could not be deleted")
+            return false
+        }
+        let old = files
+        files = []
+        if let directory {
+            for file in old { try? FileManager.default.removeItem(at: directory.appendingPathComponent(file.id.uuidString, isDirectory: true)) }
+        }
+        problem = nil
+        return true
+    }
+
     private func removeExpired(now: Date) {
         for old in LocalMadeFiles.expired(files, now: now) { remove(old.id) }
     }

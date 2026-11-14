@@ -41,6 +41,18 @@ final class SpotlightSync {
         }
     }
 
+    /// "Erase everything on this iPhone": everything Doddy put in iPhone search, not only the notes' domain. Throws when
+    /// iOS refused. iOS has no way to read the index back, so the call finishing without an error is the confirmation.
+    func removeEverything() async throws {
+        lastSignature = nil
+        let batch = SpotlightBatch(index: index, items: [])
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+            batch.index.deleteAllSearchableItems { error in
+                if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+            }
+        }
+    }
+
     /// The note or list a Spotlight result stands for.
     static func memoryID(from activity: NSUserActivity) -> UUID? {
         guard activity.activityType == CSSearchableItemActionType,
