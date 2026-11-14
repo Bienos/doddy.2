@@ -23731,13 +23731,13 @@
         }
       }
     },
-    "Doddy keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap or say yes on its card.": {
+    "Doddy keeps listening if you leave the app, until you tap End. Notes, reminders and list items are saved when you ask, with Undo; anything that sends, deletes, calls, pays or changes your calendar shows a card first.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy słucha dalej, nawet gdy wyjdziesz z aplikacji, aż stukniesz Zakończ. Nic nie jest zapisywane, wysyłane ani otwierane, dopóki nie stukniesz albo nie powiesz „tak” na jego karcie."
+            "value": "Doddy słucha dalej, nawet gdy wyjdziesz z aplikacji, aż stukniesz Zakończ. Notatki, przypomnienia i pozycje list zapisuje, gdy o to poprosisz, i można je cofnąć; wszystko, co wysyła, usuwa, dzwoni, płaci albo zmienia kalendarz, najpierw pokazuje kartę."
           }
         }
       }
@@ -95022,13 +95022,13 @@
         }
       }
     },
-    "To add or change a reminder, only after you say yes or tap.": {
+    "To add a reminder when you ask, with Undo, and to change one only after you say yes or tap.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Żeby dodać lub zmienić przypomnienie, tylko po Twoim „tak” albo stuknięciu."
+            "value": "Żeby dodać przypomnienie, gdy o to poprosisz, z możliwością cofnięcia, a zmienić je dopiero po Twoim „tak” albo stuknięciu."
           }
         }
       }

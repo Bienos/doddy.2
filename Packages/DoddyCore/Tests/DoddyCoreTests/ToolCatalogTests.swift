@@ -75,17 +75,22 @@ final class ToolCatalogTests: XCTestCase {
         // changes no data and starts and stops at once since ADR-619 (owner, 24 Oct 2026); and text_me,
         // which can reach only the user's own verified number, while Texts from Doddy is on (owner,
         // 9 Nov 2026, decision 2026-11-09-restaurant-calls-one-tap).
+        // Since 14 Nov 2026 (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards) also Doddy's own changes with
+        // Undo and the drafts and hand-overs that change nothing (`AskFirst.ownChangesAtOnce`).
         let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval != .card && $0.approval != .serverApproval }.map(\.name))
         XCTAssertEqual(withoutCard, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
             "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap",
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
+            "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
+            "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation",
         ])
-        XCTAssertEqual(withoutCard, AskFirst.ownSmallActions.union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]))
+        XCTAssertEqual(withoutCard, AskFirst.ownSmallActions.union(AskFirst.ownChangesAtOnce)
+            .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]))
         for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name) }
         // What takes something away, reaches past Doddy's own lists and timers, or starts paid
         // background work keeps its card.
-        for name in [VoiceToolName.removeFromList, VoiceToolName.parkingSpot, VoiceToolName.saveMemory, VoiceToolName.createList,
+        for name in [VoiceToolName.removeFromList, VoiceToolName.parkingSpot, VoiceToolName.undoLast, VoiceToolName.createList,
                      VoiceToolName.createCalendarEvent, VoiceToolName.deleteCalendarEvent, VoiceToolName.setTimer, VoiceToolName.setAlarm,
                      VoiceToolName.remindWhenToLeave, VoiceToolName.handOverErrand, VoiceToolName.makeSomething, VoiceToolName.callPlaces] {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .card, name)
@@ -103,10 +108,10 @@ final class ToolCatalogTests: XCTestCase {
         let runsNow = Set(ToolCatalog.all.filter { $0.approval == .runsNow }.map(\.name))
         XCTAssertEqual(runsNow, Set(ToolCatalog.all.map(\.name).filter(AskFirst.runsAtOnce)), "the catalog and AskFirst.runsAtOnce name the same tools")
         XCTAssertEqual(runsNow,
-                       AskFirst.publicLookups.union(AskFirst.ownLooks).union(AskFirst.ownSmallActions)
+                       AskFirst.publicLookups.union(AskFirst.ownLooks).union(AskFirst.ownSmallActions).union(AskFirst.ownChangesAtOnce)
                            .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe])
                            .union(CloudToolName.all.subtracting(CloudToolName.writes)),
-                       "public lookups, looks at the user's own things, Doddy's own small actions, every read through Doddy's server, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
+                       "public lookups, looks at the user's own things, Doddy's own small actions and own changes with Undo or that change nothing (step 2b), every read through Doddy's server, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
         XCTAssertEqual(AskFirst.publicLookups, ["calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
                                                 "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
         for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }
@@ -143,15 +148,18 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertEqual(serverApproved, CloudToolName.writes)
     }
 
-    func testHandoffsShowACardExceptOpeningThePlanScreen() {
-        // A handoff sends something out of the app or to Doddy's server, so it shows a card. The one
-        // exception since 11 Nov 2026: `open_training_plan` only opens Doddy's own screen, which the
-        // person closes again (`AskFirst.ownSmallActions`).
+    func testHandoffsShowACardExceptOpeningThePlanScreenAndDoddysOwnDrafts() {
+        // A handoff sends something out of the app or to Doddy's server, so it shows a card. The exceptions:
+        // `open_training_plan` only opens Doddy's own screen (since 11 Nov 2026, `AskFirst.ownSmallActions`), and since
+        // 14 Nov 2026 the drafts and hand-overs that change nothing anywhere (`AskFirst.ownChangesAtOnce`, step 2b).
         let handoffs = ToolCatalog.all.filter { $0.effect == .handoff }
+        let atOnce: Set<String> = AskFirst.ownChangesAtOnce.union([VoiceToolName.openTrainingPlan])
         for tool in handoffs {
-            XCTAssertEqual(tool.approval, tool.name == VoiceToolName.openTrainingPlan ? .runsNow : .card, tool.name)
+            XCTAssertEqual(tool.approval, atOnce.contains(tool.name) ? .runsNow : .card, tool.name)
         }
-        XCTAssertEqual(Set(handoffs.filter { $0.approval == .runsNow }.map(\.name)), [VoiceToolName.openTrainingPlan])
+        XCTAssertEqual(Set(handoffs.filter { $0.approval == .runsNow }.map(\.name)),
+                       [VoiceToolName.openTrainingPlan, "open_map", "open_food_app", "draft_message", "draft_blik_transfer",
+                        "make_presentation", "open_camera", "lost_wallet"])
         for name in [VoiceToolName.handOverErrand, VoiceToolName.makeSomething] {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .handoff, name)
             XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .card, name)

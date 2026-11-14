@@ -93,21 +93,21 @@ public enum ToolCatalog {
         // Notes and lists (ADR-216). Since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once) looking, adding and
         // ticking off run at once; saving a note, a new list and removing items keep their cards.
         .init(VoiceToolName.searchMemories, .lookup, .runsNow),
-        .init(VoiceToolName.saveMemory, .localChange, .card),
+        .init(VoiceToolName.saveMemory, .localChange, .runsNow),
         .init(VoiceToolName.remindAboutNote, .localChange, .card),
         .init(VoiceToolName.readList, .lookup, .runsNow),
         .init(VoiceToolName.addToList, .localChange, .runsNow),
         .init(VoiceToolName.checkOff, .localChange, .runsNow),
         .init(VoiceToolName.removeFromList, .localChange, .card),
         .init(VoiceToolName.createList, .localChange, .card),
-        .init(VoiceToolName.addIngredients, .localChange, .card),
+        .init(VoiceToolName.addIngredients, .localChange, .runsNow),
         // One row on this iPhone, a category only (ADR-440).
         .init(VoiceToolName.noteCapabilityGap, .localChange, .runsNow),
         // Calendar and Reminders.
         .init(VoiceToolName.readCalendar, .lookup, .runsNow),
         .init(VoiceToolName.findFreeTime, .lookup, .runsNow),
         .init(VoiceToolName.createCalendarEvent, .localChange, .card),
-        .init(VoiceToolName.createReminder, .localChange, .card),
+        .init(VoiceToolName.createReminder, .localChange, .runsNow),
         .init(VoiceToolName.changeCalendarEvent, .localChange, .card),
         .init(VoiceToolName.changeReminder, .localChange, .card),
         .init(VoiceToolName.deleteCalendarEvent, .localChange, .card),
@@ -152,13 +152,13 @@ public enum ToolCatalog {
         .init(VoiceToolName.convertUnits, .lookup, .runsNow),
         .init(VoiceToolName.convertCurrency, .lookup, .runsNow),
         // Another app opens with it filled in; nothing is sent by Doddy.
-        .init(VoiceToolName.openMap, .handoff, .card),
+        .init(VoiceToolName.openMap, .handoff, .runsNow),
         // A food delivery app opens on the card's tap; the person orders there (decision 2026-11-12-food-by-voice).
-        .init(VoiceToolName.openFoodApp, .handoff, .card),
+        .init(VoiceToolName.openFoodApp, .handoff, .runsNow),
         .init(VoiceToolName.runShortcut, .handoff, .card),
-        .init(VoiceToolName.draftMessage, .handoff, .card),
+        .init(VoiceToolName.draftMessage, .handoff, .runsNow),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
-        .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
+        .init(VoiceToolName.draftBlikTransfer, .handoff, .runsNow),
         // Sent by Doddy, so the card shows the exact text and the tap approves exactly that
         // text; the server checks the same approval hash (ADR-750 U2).
         // Decision 2026-11-09-restaurant-calls-one-tap (owner, 9 Nov 2026): to the user's own verified number only,
@@ -171,11 +171,11 @@ public enum ToolCatalog {
         .init(VoiceToolName.callMeNow, .placeCall, .card),
         .init(VoiceToolName.callPlaces, .placeCall, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
-        .init(VoiceToolName.makePresentation, .handoff, .card),
+        .init(VoiceToolName.makePresentation, .handoff, .runsNow),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
-        .init(VoiceToolName.openCamera, .handoff, .card),
+        .init(VoiceToolName.openCamera, .handoff, .runsNow),
         // "I lost my wallet" (ADR-692): the official steps on a card; each page or number opens only on a tap.
-        .init(VoiceToolName.lostWallet, .handoff, .card),
+        .init(VoiceToolName.lostWallet, .handoff, .runsNow),
         // A light, outlet, fan or scene in HomeKit, after a card naming the exact accessory.
         .init(VoiceToolName.controlHome, .localChange, .card),
         // A task handed over (ADR-570): web research on Doddy's server that changes nothing on the
@@ -199,7 +199,7 @@ public enum ToolCatalog {
         .init(VoiceToolName.stopTranslator, .session, .runsNow),
         .init(VoiceToolName.proposePlan, .session, .card),
         // An invoice draft on the card (ADR-677): nothing leaves the iPhone; issuing is the card's tap.
-        .init(VoiceToolName.draftInvoice, .session, .card),
+        .init(VoiceToolName.draftInvoice, .session, .runsNow),
     ]
 
     /// From `CloudToolName`: a write is an account write behind the server's approval, the rest are reads.

@@ -84,6 +84,8 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
   await q("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, 'google', 1)", [userId]);
   // ADR-819: another iPhone signed in to this account.
   await q("INSERT INTO device_joins (device_user_id, user_id, provider, created_at) VALUES ($1, $2, 'google', 1)", [uuid(5), userId]);
+  // Decision 2026-11-12-account-and-device-tokens (c): the account's cut-off for tokens that name no iPhone goes with it.
+  await q("INSERT INTO device_cutoffs (user_id, valid_after) VALUES ($1, 1)", [userId]);
   // Decision 2026-11-08-required-account: a Doddy account that took over this person's earlier iPhone data.
   await q("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, 1)", [uuid(6), userId]);
   // A link code this person's iPhone asked for and hasn't used yet.

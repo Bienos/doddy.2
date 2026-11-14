@@ -520,6 +520,7 @@ test("guests ask from their own daily pool: they can't use up the owner's questi
   assert.equal((await rig.post(fresh(), { token: owner.token })).body.error.code, "quota_exceeded");
   assert.equal(await rig.store.usage("service:ask", "day:2026-10-22"), 3);
   assert.equal(await rig.store.usage("service:ask:guest", "day:2026-10-22"), 2);
+  assert.equal(await rig.store.usage("service:web_chat", "day:2026-10-22"), 0, "the browser chat's pool is not touched by Ask Doddy");
   assert.equal(claude.calls.length, 5);
 });
 

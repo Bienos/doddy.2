@@ -6,6 +6,7 @@ import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
 import { type AuthenticatedUser, requireFullAccess, type SessionVerifier } from "./auth.js";
 import { clientAddress } from "./clientAddress.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
+import type { AccountSessionIssuer } from "./accountSession.js";
 import type { DeviceSessionIssuer } from "./deviceSession.js";
 import { type DocumentLinks, serveDocument } from "./documents.js";
 import { issuedAtOf, requestCredential } from "./requestCredential.js";
@@ -40,6 +41,11 @@ export interface HttpDeps {
   verifier: SessionVerifier;
   /** Beta device sign-in (ADR-563). Absent: `POST /v1/session/device` is not found. */
   deviceSessions?: DeviceSessionIssuer | null;
+  /**
+   * The Doddy account's Supabase token exchanged once for the backend's own session on this iPhone (decision
+   * 2026-11-12-one-token-per-server). Absent: `POST /v1/session/account` is not found.
+   */
+  accountSessions?: AccountSessionIssuer | null;
   /** Files Claude made (ADR-564), opened by signed link. Absent: `GET /v1/documents/…` is not found. */
   documents?: { links: DocumentLinks; store: Store } | null;
   /** Doddy Web (ADR-600): its routes, its cookie sessions and its pages. Absent: none of them exist. */
@@ -197,6 +203,15 @@ export function createHandler(deps: HttpDeps) {
         route = key;
         const body = await readJson(req, deps.maxBodyBytes);
         const issued = await deps.deviceSessions.issue(body, now(), clientAddress(req, deps.trustProxy ?? false));
+        status = 200;
+        return send(res, 200, issued);
+      }
+      // The one place a Supabase token is exchanged for the backend's own session on this iPhone (accountSession.ts). The
+      // Supabase token is in the Authorization header, the iPhone's device id in the body; nothing of either is logged.
+      if (key === "POST /v1/session/account" && deps.accountSessions) {
+        route = key;
+        const body = await readJson(req, deps.maxBodyBytes);
+        const issued = await deps.accountSessions.issue(header(req, "authorization"), body, now(), clientAddress(req, deps.trustProxy ?? false));
         status = 200;
         return send(res, 200, issued);
       }

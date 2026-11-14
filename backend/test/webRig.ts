@@ -4,10 +4,12 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier } from "../src/auth.js";
+import { AssistService } from "../src/assist.js";
+import { AnyOfSessionVerifier, DevSessionVerifier, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, TokenFloors } from "../src/auth.js";
+import { DAY_MS, DEVICE_JOIN_DAYS, DeviceRegistry } from "../src/devices.js";
 import { DeviceSessionIssuer } from "../src/deviceSession.js";
 import { defaultRegistry } from "../src/capabilities.js";
-import { testLimits } from "../src/config.js";
+import { type Limits, testLimits } from "../src/config.js";
 import { DocumentLinks, DocumentSeal } from "../src/documents.js";
 import { createHandler } from "../src/http.js";
 import { MockCalendarProvider } from "../src/providers/mock.js";
@@ -46,6 +48,8 @@ export interface WebRig {
   tools: CloudToolsService;
   /** Kept notes and conversations (ADR-603), keyed with a throwaway test key unless the rig was started with `memoryKey: null`. */
   memory: MemoryService;
+  /** The stored iPhones, when the rig was started with `storedDevices`. */
+  registry: DeviceRegistry | null;
   clock: Clock;
   logs: string[];
   distDir: string;
@@ -71,8 +75,10 @@ export async function startWeb(
     memoryKey?: Buffer | null;
     /** What one person can keep (default: the real caps). */
     memoryLimits?: { conversations: number; bytes: number };
-    /** Chat's daily caps (the same counters as Ask Doddy). Default: the test limits. */
-    askLimits?: { userDailyAsk: number; serviceDailyAsk: number };
+    /** The caps the chat and Ask Doddy count against: one person's daily total is shared, the browser chat has its own server-wide pool (`serviceDailyWebChat`). Default: the test limits. */
+    askLimits?: Partial<Pick<Limits, "userDailyAsk" | "serviceDailyAsk" | "serviceDailyWebChat">>;
+    /** Also serves Ask Doddy on the iPhone (`POST /v1/assist`, ADR-587), answered by this provider, under the same limits as the chat. Absent: not served. */
+    assist?: ClaudeProvider;
     /** `false`: the chat reads kept notes and conversations only, as before ADR-604. Default: it reads the account too, as the server does. */
     chatAccount?: boolean;
     origin?: string;
@@ -93,6 +99,11 @@ export async function startWeb(
     };
     /** Real device sign-in (`POST /v1/session/device`, ADR-563) with this key, `open` sign-up: the first device owns the server. */
     devices?: Buffer;
+    /**
+     * With `devices`: wired as the server wires it, so iPhones are stored, listed and revoked and joins expire (decision
+     * 2026-11-12-account-and-device-tokens, part c). `joinDays`: DODDY_DEVICE_JOIN_DAYS. Absent: iPhones are not stored, as before.
+     */
+    storedDevices?: { joinDays?: number };
     /** The owner panel (decision 2026-11-09-usage-counts-on-by-default): these accounts see it. Absent: no panel. */
     owner?: { accounts: string[]; directory?: UserDirectory | null };
   } = {},
@@ -115,8 +126,11 @@ export async function startWeb(
     log: (line) => logs.push(JSON.stringify(line)),
   });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
-  const verifier = o.verifier ?? (o.devices ? new AnyOfSessionVerifier([new DevSessionVerifier(), new SignedSessionVerifier(o.devices)]) : new DevSessionVerifier());
-  const deviceSessions = o.devices ? new DeviceSessionIssuer(o.devices, { signup: "open", inviteCodes: [], store }) : null;
+  const joinMs = (o.storedDevices?.joinDays ?? DEVICE_JOIN_DAYS) * DAY_MS;
+  const registry = o.devices && o.storedDevices ? new DeviceRegistry(store, { joinMs, log: (line) => logs.push(JSON.stringify(line)) }) : null;
+  const signed = o.devices ? (registry ? new RevocableSessionVerifier(new SignedSessionVerifier(o.devices), new TokenFloors(store), registry) : new SignedSessionVerifier(o.devices)) : null;
+  const verifier = o.verifier ?? (signed ? new AnyOfSessionVerifier([new DevSessionVerifier(), signed]) : new DevSessionVerifier());
+  const deviceSessions = o.devices ? new DeviceSessionIssuer(o.devices, { signup: "open", inviteCodes: [], store, ...(registry ? { devices: registry, joinMs } : {}) }) : null;
 
   const distDir = mkdtempSync(join(tmpdir(), "doddy-web-dist-"));
   if (o.withDist !== false) {
@@ -136,7 +150,7 @@ export async function startWeb(
     memory,
     store,
     claude: o.chatClaude === undefined ? new MockClaudeProvider() : o.chatClaude,
-    limits: o.askLimits ?? testLimits(),
+    limits: testLimits(o.askLimits),
     ...(o.chatAccount === false ? {} : { account: new AccountContext({ store, memory, tools }) }),
     now: clock.now,
     log: (line) => logs.push(JSON.stringify(line)),
@@ -159,7 +173,7 @@ export async function startWeb(
           signup: o.social.signup ?? false,
           secretKey: o.social.deleteUser ? "sb_secret_test_key_456" : null,
         },
-        { appScheme: "doddy-dev", trustProxy: o.trustProxy ?? false, postJson: o.social.postJson, fetchJson: o.social.fetchJson, log: (line) => logs.push(JSON.stringify(line)) },
+        { appScheme: "doddy-dev", trustProxy: o.trustProxy ?? false, postJson: o.social.postJson, fetchJson: o.social.fetchJson, log: (line) => logs.push(JSON.stringify(line)), ...(registry ? { joinMs } : {}) },
       )
     : null;
   const account = new AccountEraser({
@@ -173,9 +187,10 @@ export async function startWeb(
     service,
     tools,
     verifier,
-    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread, social, account, deviceSessions, o.owner ? new OwnerPanel(store, o.owner.accounts, o.owner.directory ?? null) : null), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
+    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread, social, account, deviceSessions, o.owner ? new OwnerPanel(store, o.owner.accounts, o.owner.directory ?? null) : null, registry), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
     documents: { links: documentLinks, store },
     deviceSessions,
+    ...(o.assist ? { assist: new AssistService({ store, claude: o.assist, limits: testLimits(o.askLimits), now: clock.now, log: (line) => logs.push(JSON.stringify(line)) }) } : {}),
     appReturnUrl: common.appReturnUrl,
     maxBodyBytes: 8 * 1024,
     now: () => new Date(clock.ms),
@@ -192,6 +207,7 @@ export async function startWeb(
     store,
     tools,
     memory,
+    registry,
     clock,
     logs,
     distDir,

@@ -597,9 +597,9 @@ test("chat reads only the caller's own memory", async () => {
   assert.match(claude.calls[0]!.user, /4711/);
 });
 
-test("chat shares Ask Doddy's daily cap, taken before anything is read", async () => {
+test("chat shares each person's daily total with Ask Doddy, taken before anything is read", async () => {
   const claude = new Recording();
-  rig = await startWeb({ chatClaude: claude, askLimits: { userDailyAsk: 2, serviceDailyAsk: 100 } });
+  rig = await startWeb({ chatClaude: claude, askLimits: { userDailyAsk: 2 } });
   await withMemory(rig);
   assert.equal((await ask(rig, "When is Anna's birthday?")).status, 200);
   assert.equal((await ask(rig, "When is Anna's birthday?")).status, 200);
@@ -717,7 +717,7 @@ test("searching and downloading are rate limited per person, so one account can'
 
 test("a chat question that can't be answered spends nothing: no model, or (without the account) no key or nothing kept", async () => {
   const claude = new Recording();
-  rig = await startWeb({ chatClaude: claude, memoryKey: null, chatAccount: false, askLimits: { userDailyAsk: 1, serviceDailyAsk: 100 } });
+  rig = await startWeb({ chatClaude: claude, memoryKey: null, chatAccount: false, askLimits: { userDailyAsk: 1 } });
   await turnOn(rig);
   const first = await ask(rig, "When is Anna's birthday?");
   assert.equal(first.status, 503, first.text);
@@ -727,7 +727,7 @@ test("a chat question that can't be answered spends nothing: no model, or (witho
   assert.equal(claude.calls.length, 0);
   await rig.close();
 
-  rig = await startWeb({ chatClaude: claude, chatAccount: false, askLimits: { userDailyAsk: 1, serviceDailyAsk: 100 } });
+  rig = await startWeb({ chatClaude: claude, chatAccount: false, askLimits: { userDailyAsk: 1 } });
   assert.equal((await ask(rig, "hello there")).status, 403, "nothing kept");
   await turnOn(rig);
   await putNotes(rig, [note(1, "Anna's birthday is 14 March")]);
@@ -736,7 +736,7 @@ test("a chat question that can't be answered spends nothing: no model, or (witho
 
   // With the account, no memory key means the notes part says "not set up", and the rest still answers.
   const recording = new Recording();
-  rig = await startWeb({ chatClaude: recording, memoryKey: null, askLimits: { userDailyAsk: 1, serviceDailyAsk: 100 } });
+  rig = await startWeb({ chatClaude: recording, memoryKey: null, askLimits: { userDailyAsk: 1 } });
   const answered = await ask(rig, "Which apps do I have?");
   assert.equal(answered.status, 200, answered.text);
   assert.match(recording.calls[0]!.user, /NOTES: keeping them on Doddy's server isn't set up on this server/);

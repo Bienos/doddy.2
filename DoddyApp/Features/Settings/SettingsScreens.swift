@@ -257,6 +257,8 @@ struct MemoriesSettingsView: View {
     @State private var restorePlan: MemoryRestorePlan?
     /// List items from the same file (ADR-216), put back after their lists.
     @State private var restoreItems: [ListItem] = []
+    /// The notes of `restorePlan` the file names as private (ADR-310): marked before they are added.
+    @State private var restorePrivateIDs: Set<UUID> = []
     @State private var restoreMessage: String?
     @State private var restoreFailed = false
 
@@ -273,8 +275,10 @@ struct MemoriesSettingsView: View {
                     Label("Export as JSON", systemImage: "square.and.arrow.up")
                 }
                 .disabled(!hasSavedAnything)
+                // Built when shared, and with private notes in it Face ID is asked first and the text names them
+                // (`PlainTextExport`, `PrivateExportGate`): the same as the JSON and Markdown rows.
                 ShareLink(
-                    item: MemoryExport.plainText(store.memories, lists: store.lists, corrections: store.corrections, exportedAt: .now),
+                    item: PlainTextExport(records: store.memories, lists: store.lists, corrections: store.corrections),
                     preview: SharePreview("Doddy memories (text)")
                 ) {
                     Label("Export as text", systemImage: "doc.plaintext")
@@ -368,10 +372,13 @@ struct MemoriesSettingsView: View {
             let plan = MemoryRestore.plan(
                 file.records, corrections: file.corrections, existing: store.memories + store.lists.map(\.record),
                 exportedAt: file.exportedAt)
+            // Read now, so a file whose list of private notes is damaged is refused before anything is offered.
+            let marked = try MemoryRestore.privateIDs(data, adding: plan)
             if plan.isEmpty {
                 restoreFailed = false
                 restoreMessage = RestoreCopy.nothingToAdd(plan)
             } else {
+                restorePrivateIDs = marked
                 restorePlan = plan
             }
         } catch {
@@ -382,8 +389,12 @@ struct MemoriesSettingsView: View {
 
     private func restore(_ plan: MemoryRestorePlan) async {
         restorePlan = nil
+        let marked = restorePrivateIDs
+        restorePrivateIDs = []
         do {
-            let added = try await store.restore(plan.toAdd, corrections: plan.corrections, listItems: restoreItems)
+            // The private notes are marked, and the mark read back, before they are added (`MemoryStore.restore`).
+            let added = try await store.restore(
+                plan.toAdd, corrections: plan.corrections, listItems: restoreItems, privateIDs: marked)
             restoreItems = []
             restoreFailed = false
             restoreMessage = added.count == 1 ? "Added 1 note from the export." : "Added \(added.count) notes from the export."

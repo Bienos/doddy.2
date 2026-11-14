@@ -4,6 +4,7 @@ import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
 import { isDeviceHook, rateLimitKey } from "./auth.js";
 import type { AccountVerifier } from "./doddyAccount.js";
+import { deviceTokenPolicy, type DeviceTokenPolicy } from "./deviceTokens.js";
 import type { AbuseLimits } from "./config.js";
 import type { Db } from "./db.js";
 import type { TextCipher } from "./crypto.js";
@@ -73,6 +74,8 @@ export interface Deps {
   accounts?: AccountVerifier | null;
   /** ANONYMOUS_ACCOUNTS: `POST /v1/accounts` makes an account without a sign-in. Absent or false: 403 sign_in_required. */
   anonymousAccounts?: boolean;
+  /** DEVICE_TOKEN_*: how long a device token of a Doddy account lives (decision 2026-11-12-account-and-device-tokens, part d). Defaults: 60 days idle, 180 absolute, on. */
+  deviceTokens?: Partial<DeviceTokenPolicy>;
   push?: PushSender;
   sms?: SmsSender;
   verifier?: PhoneVerifier;
@@ -202,6 +205,8 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
       serializers: { req: requestLogFields },
     },
   });
+  // Read by the device-token check of every signed-in route and by the rate limiter's key (src/auth.ts), so they judge a token alike.
+  app.decorate("deviceTokenPolicy", deviceTokenPolicy(deps.deviceTokens));
   // First, on the root instance, so every route, the 404 answer and the error handler's answers get them.
   app.addHook("onSend", async (_req, reply, payload) => {
     reply.headers(SECURITY_HEADERS);

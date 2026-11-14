@@ -3,9 +3,11 @@ import { AccountEraser } from "./account.js";
 import { type AssistReply, AssistService } from "./assist.js";
 import { ASK_DEDUP, RequestOnce } from "./idempotency.js";
 import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
+import { AccountSessionIssuer } from "./accountSession.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
+import { DAY_MS, DEVICE_KEPT_DAYS, DeviceRegistry } from "./devices.js";
 import { DeviceSessionIssuer } from "./deviceSession.js";
 import { DOCUMENT_STALE_AFTER_MS, DocumentLinks, DocumentSeal } from "./documents.js";
 import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider } from "./tools/claude.js";
@@ -78,18 +80,23 @@ export async function buildApp(
   // A person's cut-off second (ADR-709): deleting the account ends every token issued before it, for
   // any verifier this server builds. A verifier handed in by a test is used as it is.
   const floors = new TokenFloors(store);
+  // The iPhones that signed in with their device id (decision 2026-11-12-account-and-device-tokens, c): stored, listed and
+  // revoked, and a join to another account that expires. A revoke or an ended join refuses that iPhone's tokens like the
+  // cut-off above does, so every verifier this server builds for device tokens takes it.
+  const joinMs = config.deviceJoinDays * DAY_MS;
+  const devices = new DeviceRegistry(store, { joinMs, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   // Decision 2026-11-08-required-account: one Supabase verifier (one key cache) for every sign-in check,
   // and a Doddy account that took over an iPhone's earlier data works on that data.
   const supabase = config.authMode === "supabase" && config.supabaseUrl
     ? new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl, ...(overrides.supabaseFetchJson ? { fetchJson: overrides.supabaseFetchJson } : {}) })
     : null;
   const verifier: SessionVerifier =
-    overrides.verifier ?? new RevocableSessionVerifier(new LinkedAccountVerifier(sessionVerifier(config, supabase), store, floors), floors);
+    overrides.verifier ?? new RevocableSessionVerifier(new LinkedAccountVerifier(sessionVerifier(config, supabase), store, floors), floors, devices);
   const accountLinker = new AccountLinker({
     store,
     accounts: supabase,
     // The iPhone's own device session (valid and not cut off, ADR-709) starts a link and can undo it.
-    devices: config.sessionSigningKey ? new RevocableSessionVerifier(new SignedSessionVerifier(config.sessionSigningKey), floors) : null,
+    devices: config.signingKeys ? new RevocableSessionVerifier(new SignedSessionVerifier(config.signingKeys), floors, devices) : null,
     floors,
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
@@ -125,8 +132,8 @@ export async function buildApp(
   // Claude (ADR-564): live only with an Anthropic key; mock mode uses offline demo text.
   const claude =
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude, undefined, undefined, usageDeps) : null) : new MockClaudeProvider();
-  // Document links are signed with the session key; without one, make_document says "not set up".
-  const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
+  // Document links are signed with their own key, derived from the session key (signingKeys.ts); without one, make_document says "not set up".
+  const documentLinks = config.signingKeys ? new DocumentLinks(config.signingKeys, config.publicBaseUrl) : null;
   // Files are kept only encrypted, with the memory key (decision 2026-11-12-documents-at-rest); without it, "not set up" too.
   store.sealDocumentsWith(config.memoryKey ? new DocumentSeal(new MemoryCipher(config.memoryKey)) : null);
   // Booking emails are read by the small chat model (DODDY_CHAT_MODEL) when the server has one.
@@ -161,13 +168,31 @@ export async function buildApp(
   // invite codes, and a signing key (config checks both). Whether the first caller may claim a server
   // with no owner yet (ADR-707) and the invite limits (ADR-709) come from config.
   const deviceSessions =
-    (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
-      ? new DeviceSessionIssuer(config.sessionSigningKey, {
+    (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.signingKeys && config.identifierKey
+      ? new DeviceSessionIssuer(config.signingKeys, {
           signup: config.deviceSignup,
           inviteCodes: config.deviceInviteCodes,
           store,
+          identifierKey: config.identifierKey,
           ownerClaim: config.ownerClaim,
           inviteLimits: config.inviteLimits,
+          devices,
+          joinMs,
+          log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
+        })
+      : null;
+  // The Doddy account's Supabase token exchanged once for this server's own session on an iPhone (decision
+  // 2026-11-12-one-token-per-server): where the server checks Supabase tokens and has a session key to sign with. The session
+  // is checked by the verifier above, next to the Supabase token, which this does not stop accepting anywhere.
+  const accountSessions =
+    supabase && config.signingKeys && config.identifierKey
+      ? new AccountSessionIssuer({
+          accounts: supabase,
+          keys: config.signingKeys,
+          identifierKey: config.identifierKey,
+          store,
+          floors,
+          devices,
           log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
         })
       : null;
@@ -234,7 +259,7 @@ export async function buildApp(
   // Apple and Google on the web (ADR-818): only with the Supabase project's URL and publishable key.
   const social =
     config.web?.social && webAuth
-      ? new SocialSignIn(store, webAuth, config.web.social, { appScheme: appScheme(config.appReturnUrl), trustProxy: config.web.trustProxy, log })
+      ? new SocialSignIn(store, webAuth, config.web.social, { appScheme: appScheme(config.appReturnUrl), trustProxy: config.web.trustProxy, joinMs, log })
       : null;
   // The owner panel (decision 2026-11-09-usage-counts-on-by-default): only with DODDY_OWNER_ACCOUNTS set. The
   // accounts' emails and sign-in dates come from Supabase's admin API, with the secret key, when it is set.
@@ -245,7 +270,7 @@ export async function buildApp(
     config.web && webAuth
       ? {
           auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions, ownerPanel),
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions, ownerPanel, devices),
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;
@@ -262,6 +287,7 @@ export async function buildApp(
     ...(shopify ? { shopifyLimiter: new UsageLimiter(store, config.limits) } : {}),
     verifier,
     deviceSessions,
+    accountSessions,
     web,
     assist,
     account: accountEraser,
@@ -295,6 +321,8 @@ export async function buildApp(
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => store.pruneOwnerAudit(Date.now() - OWNER_AUDIT_KEPT_DAYS * 86_400_000))
       .then(() => store.pruneTokenFloors(Date.now()))
+      .then(() => store.pruneDeviceCutoffs(Date.now()))
+      .then(() => store.pruneDevices(Date.now() - DEVICE_KEPT_DAYS * DAY_MS))
       .then(() => store.pruneAccountLinkCodes(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
@@ -325,10 +353,10 @@ export async function buildApp(
 /** Which sign-ins this server accepts (ADR-526). */
 export function sessionVerifier(config: Config, prebuilt: SupabaseSessionVerifier | null = null): SessionVerifier {
   if (config.authMode === "dev") return new DevSessionVerifier();
-  if (config.authMode === "signed") return new SignedSessionVerifier(config.sessionSigningKey!);
+  if (config.authMode === "signed") return new SignedSessionVerifier(config.signingKeys!);
   const supabase = prebuilt ?? new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
   // Development only (config enforces it): the owner's minted token still works next to Supabase.
-  return config.sessionSigningKey ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.sessionSigningKey), supabase]) : supabase;
+  return config.signingKeys ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.signingKeys), supabase]) : supabase;
 }
 
 /** The iPhone's own URL scheme, where its Apple or Google sign-in sheet ends (ADR-818): DODDY_APP_RETURN_URL's when it is a doddy scheme. */

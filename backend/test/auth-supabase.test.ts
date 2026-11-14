@@ -217,10 +217,10 @@ test("config: production live mode needs Supabase sign-in, and never takes owner
   assert.ok(problems({ ...live, DODDY_AUTH_MODE: "signed", DODDY_SESSION_SIGNING_KEY: KEY, DODDY_ENV: "production" }).some((p) => p.includes("production")));
   const prod = loadConfig({ ...live, DODDY_ENV: "production", DATABASE_URL: "postgres://u:p@db.example.com:5432/postgres", DODDY_SESSION_SIGNING_KEY: KEY });
   assert.equal(prod.authMode, "supabase");
-  assert.equal(prod.sessionSigningKey, null, "owner tokens are off in production");
+  assert.equal(prod.signingKeys, null, "owner tokens are off in production");
   assert.ok(!(sessionVerifier(prod) instanceof AnyOfSessionVerifier));
   const dev = loadConfig({ ...live, DODDY_SESSION_SIGNING_KEY: KEY });
-  assert.ok(dev.sessionSigningKey);
+  assert.ok(dev.signingKeys);
   assert.ok(sessionVerifier(dev) instanceof AnyOfSessionVerifier);
   assert.ok(problems({ ...live, DODDY_SESSION_SIGNING_KEY: "short" }).some((p) => p.includes("DODDY_SESSION_SIGNING_KEY")));
 });

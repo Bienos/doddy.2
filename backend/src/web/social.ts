@@ -4,6 +4,7 @@ import { SupabaseSessionVerifier, type FetchJson } from "../auth.js";
 import { clientAddress, clientKey } from "../clientAddress.js";
 import type { WebSocialSettings } from "../config.js";
 import { AppError } from "../errors.js";
+import { DAY_MS, DEVICE_JOIN_DAYS } from "../devices.js";
 import { type Store, SUPABASE_AUTH_CLEANUP as SUPABASE_AUTH, type WebIdentityRow } from "../store.js";
 import type { WebSessionView } from "./contracts.js";
 import { readCookie, type WebAuth, type WebSessionContext } from "./sessions.js";
@@ -136,6 +137,8 @@ export class SocialSignIn {
       postJson?: PostJson;
       fetchJson?: FetchJson;
       timeoutMs?: number;
+      /** How long an iPhone's join lasts without a new sign-in, in milliseconds (DODDY_DEVICE_JOIN_DAYS). Default 90 days. */
+      joinMs?: number;
       log?: (line: Record<string, unknown>) => void;
     },
   ) {
@@ -400,7 +403,7 @@ export class SocialSignIn {
     if (typeof b.code !== "string" || !STATE.test(b.code) || Object.keys(b).length !== 2) throw new AppError("invalid_request");
     const device = deviceUserId(b.deviceId);
     if (!device) throw new AppError("invalid_request");
-    await this.assertThisDevice(callerUserId, device);
+    await this.assertThisDevice(callerUserId, device, now);
     const pending = await this.store.consumePendingLink(stateHash(`join:${b.code}`), callerUserId, now.getTime(), "join");
     const provider = pending ? this.provider(pending.provider) : null;
     const owner = pending ? await this.store.webIdentityOwner(pending.identity_id) : null;
@@ -411,24 +414,47 @@ export class SocialSignIn {
       this.log({ event: "device_join", provider, result: "own" });
       return { result: "own", provider };
     }
-    await this.store.setDeviceJoin(device, owner, provider, now.getTime());
+    // The sign-in it was made with is kept, so unlinking that sign-in ends this join; signing in again with the same one renews it.
+    await this.store.setDeviceJoin(device, owner, provider, now.getTime(), pending.identity_id);
     this.log({ event: "device_join", provider, result: "joined" });
     return { result: "joined", provider };
   }
 
-  /** Which account this iPhone uses (ADR-819): its own, or one it joined with Google or Apple. */
-  async deviceAccount(callerUserId: string, body: unknown, deviceUserId: (deviceId: unknown) => string | null): Promise<{ joined: { provider: SocialProvider; since: string } | null }> {
+  /**
+   * Which account this iPhone uses (ADR-819): its own, or one it joined with Google or Apple, with when that began and when
+   * it ends unless the iPhone signs in with the same Google or Apple again.
+   */
+  async deviceAccount(
+    callerUserId: string,
+    body: unknown,
+    deviceUserId: (deviceId: unknown) => string | null,
+    now: Date,
+  ): Promise<{ joined: { provider: SocialProvider; since: string; expiresAt: string } | null }> {
     const device = this.deviceFrom(body, deviceUserId);
-    await this.assertThisDevice(callerUserId, device);
-    const joined = await this.store.deviceJoin(device);
+    await this.assertThisDevice(callerUserId, device, now);
+    const joined = await this.store.deviceJoin(device, this.joinNotBefore(now));
     const provider = joined ? this.provider(joined.provider) ?? "google" : null;
-    return { joined: joined && provider ? { provider, since: new Date(joined.created_at).toISOString() } : null };
+    return {
+      joined:
+        joined && provider
+          ? { provider, since: new Date(Number(joined.created_at)).toISOString(), expiresAt: new Date(Number(joined.renewed_at) + this.joinMs).toISOString() }
+          : null,
+    };
+  }
+
+  private get joinMs(): number {
+    return this.o.joinMs ?? DEVICE_JOIN_DAYS * DAY_MS;
+  }
+
+  /** A join last made before this (a time in ms) has ended. */
+  private joinNotBefore(now: Date): number {
+    return now.getTime() - this.joinMs;
   }
 
   /** Back to the iPhone's own account (ADR-819). Neither account is changed. */
-  async leave(callerUserId: string, body: unknown, deviceUserId: (deviceId: unknown) => string | null): Promise<{ left: boolean }> {
+  async leave(callerUserId: string, body: unknown, deviceUserId: (deviceId: unknown) => string | null, now: Date): Promise<{ left: boolean }> {
     const device = this.deviceFrom(body, deviceUserId);
-    await this.assertThisDevice(callerUserId, device);
+    await this.assertThisDevice(callerUserId, device, now);
     const left = await this.store.removeDeviceJoin(device);
     this.log({ event: "device_join", result: left ? "left" : "not_joined" });
     return { left };
@@ -442,9 +468,9 @@ export class SocialSignIn {
   }
 
   /** The caller's session is this device's: its own account, or the account it uses now. */
-  private async assertThisDevice(callerUserId: string, device: string): Promise<void> {
+  private async assertThisDevice(callerUserId: string, device: string, now: Date): Promise<void> {
     if (callerUserId === device) return;
-    if ((await this.store.deviceJoin(device))?.user_id === callerUserId) return;
+    if ((await this.store.deviceJoin(device, this.joinNotBefore(now)))?.user_id === callerUserId) return;
     throw new AppError("unauthenticated", { message: "This iPhone's session doesn't match. Sign in again." });
   }
 
@@ -461,8 +487,9 @@ export class SocialSignIn {
     return (await this.store.webIdentities(userId)).map(identityView).filter((v): v is IdentityView => v !== null);
   }
 
-  async unlink(userId: string, identityId: string): Promise<void> {
-    if (!UUID.test(identityId) || !(await this.store.unlinkWebIdentity(userId, identityId))) throw new AppError("not_found");
+  /** Unlinks one of the account's sign-ins. Every iPhone that joined the account with it stops using the account in the same step. */
+  async unlink(userId: string, identityId: string, now: Date): Promise<void> {
+    if (!UUID.test(identityId) || !(await this.store.unlinkWebIdentity(userId, identityId, now.getTime()))) throw new AppError("not_found");
   }
 
   // ---------------------------------------------------------------- helpers

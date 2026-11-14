@@ -81,10 +81,10 @@ final class PhotosAndCameraTests: XCTestCase {
         let camera = VoiceToolRequest.parse(name: VoiceToolName.openCamera, parametersJSON: Data("{}".utf8))
         XCTAssertEqual(camera, .openCamera)
         XCTAssertEqual(VoiceConnection.serving(VoiceToolName.openCamera), .camera)
-        XCTAssertEqual(AskFirst.need(for: camera), .ownPayloadCard, "the camera opens only from its card's tap")
+        XCTAssertEqual(AskFirst.need(for: camera), .runsNow, "opens when asked while Doddy is on screen (step 2b); its card otherwise")
         XCTAssertTrue(ConnectionPause.applies(to: camera))
         if case .refuse = CarProfile.decision(for: camera) {} else { XCTFail("not while driving") }
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.openCamera)?.approval, .card)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.openCamera)?.approval, .runsNow)
         XCTAssertTrue(VoiceToolReply.cameraOpened.contains("Never say a photo was taken or saved"))
     }
 }

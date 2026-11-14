@@ -612,7 +612,7 @@ struct VoiceView: View {
     /// (owner, 10 Nov 2026), but nobody should find out late that the microphone stays on.
     private var listeningNotice: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Doddy keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap or say yes on its card.",
+            Label("Doddy keeps listening if you leave the app, until you tap End. Notes, reminders and list items are saved when you ask, with Undo; anything that sends, deletes, calls, pays or changes your calendar shows a card first.",
                   systemImage: "waveform")
                 .font(.footnote)
             HStack(spacing: 16) {

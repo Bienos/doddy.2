@@ -15,7 +15,10 @@ what remains open. **No GDPR, AI Act or App Store compliance has been assessed o
   endpoint that takes a connection ID. The adapter passes both `userId` and `connectedAccountId` to Composio.
 - Session mechanisms: `dev` (two fixed loopback identities; config refuses it unless mock mode + loopback host +
   non-production) and `signed` (HMAC-SHA256 tokens with expiry — default 7 days, max 30 — minted by the owner with
-  `npm run session:mint`). Signed tokens cannot be revoked one by one; rotating `DODDY_SESSION_SIGNING_KEY` revokes all.
+  `npm run session:mint`). Signed tokens cannot be revoked one by one; dropping a signing key (removing it from both
+  `DODDY_SESSION_SIGNING_KEY` and `DODDY_SESSION_SIGNING_KEY_PREVIOUS`) revokes every token it made. Each job (sessions,
+  file links) has its own key derived from it, and a rotation keeps the old tokens alive until the previous key is removed
+  (`docs/integrations/DEPLOY_RENDER.md`, "Rotating the signing key").
   **Production live mode is refused** until a vetted app sign-in (e.g. Sign in with Apple) replaces `signed`.
 
 Tests: `backend/test/api-boundaries.test.ts` (unauthenticated on every route, cross-user status/read/complete/disconnect,

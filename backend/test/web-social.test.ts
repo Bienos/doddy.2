@@ -500,7 +500,7 @@ test("config: Apple and Google on the web need SUPABASE_URL and the publishable 
     projectUrl: "https://abcdefghijklmnopqrst.supabase.co",
     publishableKey: "sb_publishable_qvClrOM9aE-OZvFGZ54x",
     providers: ["google", "apple"],
-    signup: true,
+    signup: false,
     secretKey: null,
   });
   assert.deepEqual(
@@ -693,6 +693,49 @@ test("with DODDY_WEB_SIGNUP=off an unlinked Google account opens nothing, as bef
   assert.equal((await r.call("POST", "/v1/web/signup", { body: {}, browser: true })).status, 404);
 });
 
+test("with sign-up off, a person with no Doddy account is told kindly where to start, and nothing is made", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: false });
+  for (const [provider, sub] of [["google", GOOGLE_PERSON], ["apple", OTHER_PERSON]] as const) {
+    const s = await start(r, `provider=${provider}`);
+    const done = await callback(r, `code=${supabase.issueCode(s.location, sub)}`, s.state);
+    // Not an error page and not an error code in the address: the sign-in page's own answer, which
+    // the page words (web/src/i18n/messages.ts, signIn.result.not_linked) with the way forward.
+    assert.equal(done.location, `/sign-in?signin=not_linked&provider=${provider}`);
+    assert.equal(cookieValue(done.setCookie, COOKIE), null, "no session");
+    assert.equal(cookieValue(done.setCookie, SIGNUP_COOKIE), null, "no sign-up to finish");
+    assert.equal(await r.store.webIdentityOwner(sub), null, "no account was made");
+    assert.equal(await r.store.linkedUserOf(sub), null);
+  }
+  assert.ok(r.logs.some((line) => line.includes('"event":"web_social_signin"') && line.includes('"result":"not_linked"')));
+  assert.ok(!r.logs.some((line) => line.includes('"event":"web_signup"')));
+});
+
+test("with sign-up off, a sign-up begun while it was open can't be finished", async () => {
+  const { rig: r } = await socialRig({ signup: false });
+  // What an earlier "open" server would have left in the person's browser.
+  const code = "S".repeat(43);
+  const codeHash = createHash("sha256").update(`doddy-web-oauth:v1:signup:${code}`).digest("hex");
+  await r.store.createPendingSignup({ codeHash, identityId: GOOGLE_PERSON, provider: "google", now: r.clock.ms, ttlMs: PENDING_SIGNUP_TTL_MS });
+  const pressed = await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: { cookie: `${SIGNUP_COOKIE}=${code}`, "user-agent": CHROME_MAC } });
+  assert.equal(pressed.status, 404, pressed.text);
+  assert.equal(pressed.body.error.message, "That sign-in has expired. Choose Continue with Google or Apple again.");
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+});
+
+test("with sign-up off, an account that already exists still signs in on the web", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: false });
+  // One linked on purpose from the iPhone's code, one the iPhone took over by signing in itself.
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON, USER_A);
+  assert.equal(await r.store.linkAccount(OTHER_PERSON, DEV_IDENTITIES[USER_B]!, r.clock.ms), "linked");
+  for (const sub of [GOOGLE_PERSON, OTHER_PERSON]) {
+    const done = await googleSignIn(r, supabase, sub);
+    assert.equal(done.location, "/", sub);
+    const session = cookieValue(done.setCookie, COOKIE);
+    assert.ok(session, done.setCookie);
+    assert.equal((await r.call("GET", "/v1/web/session", { cookie: session })).status, 200);
+  }
+});
+
 test("new accounts are limited per address an hour", async () => {
   const { rig: r, supabase } = await socialRig({ signup: true });
   for (let i = 0; i < SIGNUP_LIMITS.perClientPerHour; i++) {
@@ -777,10 +820,11 @@ test("SupabaseUserRemover: removed, already gone, refused, unreachable", async (
   assert.equal(await new SupabaseUserRemover(PROJECT, "sb_secret_x", answer(200)).remove("../../etc", signal), "failed");
 });
 
-test("config: sign-up is open by default with Supabase set, can be switched off, and the secret key is checked", () => {
+test("config: web sign-up is off unless DODDY_WEB_SIGNUP=open, and the secret key is checked", () => {
   const base = { DODDY_WEB_ORIGIN: "https://app.doddy.lol", SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEY: "sb_publishable_qvClrOM9aE-OZvFGZ54x" };
-  assert.equal(loadConfig(base).web!.social!.signup, true);
+  assert.equal(loadConfig(base).web!.social!.signup, false, "nothing set: off");
   assert.equal(loadConfig({ ...base, DODDY_WEB_SIGNUP: "off" }).web!.social!.signup, false);
+  assert.equal(loadConfig({ ...base, DODDY_WEB_SIGNUP: "open" }).web!.social!.signup, true);
   assert.equal(loadConfig(base).web!.social!.secretKey, null);
   assert.equal(loadConfig({ ...base, SUPABASE_SECRET_KEY: "sb_secret_abcdefghijklmnop" }).web!.social!.secretKey, "sb_secret_abcdefghijklmnop");
   assert.throws(() => loadConfig({ ...base, SUPABASE_SECRET_KEY: "not-a-key" }), /SUPABASE_SECRET_KEY/);

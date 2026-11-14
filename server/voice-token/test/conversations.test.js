@@ -81,6 +81,8 @@ function authStore() {
     },
     async getSession(id) { return sessions.get(id) ?? null; },
     async deleteAccount(userId) { let n = 0; for (const [id, s] of sessions) if (s.userId === userId) { sessions.delete(id); n += 1; } return n; },
+    // Deleting the account's conversations also ends its voice sessions (test/account-session.test.js).
+    async revokeUserSessions(userId) { let n = 0; for (const [id, s] of sessions) if (s.userId === userId) { sessions.delete(id); n += 1; } return n; },
     async getAppleToken() { return null; },
   };
 }

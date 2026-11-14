@@ -1,8 +1,8 @@
 # The account's Supabase token is exchanged once per server for that server's own token; signed taps are a separate option
 
 - **Date:** 2026-11-12
-- **Decided by:** proposal, owner approval pending
-- **Status:** proposed — waiting for the owner. Nothing in the app or the servers is changed by this file.
+- **Decided by:** the owner, 14 Nov 2026: build the exchange per server as recommended, as separate server and app pull requests; signed taps stay a proposal
+- **Status:** approved, in progress. It needed the per-purpose keys of `2026-11-12-account-and-device-tokens`, which are merged (#475, #480). The voice server's exchange action and the backend's `POST /v1/session/account` are built as separate server pull requests first (each accepts both tokens for one release); the app half comes after them. Signed taps are not built.
 - **Replaces:** nothing. Builds on `2026-11-08-required-account` and on how the messaging server already signs in (`POST /v1/accounts/sign-in`).
 
 ## Why
