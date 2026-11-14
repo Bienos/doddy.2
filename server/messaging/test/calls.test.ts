@@ -134,6 +134,18 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
       { status: "failed", error_code: "elevenlabs_503" });
   });
 
+  test("a call to Doddy's number opens in the language of the caller's number: Polish for +48, English otherwise", async () => {
+    await user("+48500000024", { pin: "258025", inbound: true });
+    await user("+44700900024", { pin: "258025", inbound: true });
+    const polish = await dial("+48500000024");
+    assert.equal(polish.twiml, CONNECT_TWIML);
+    assert.deepEqual([polish.variables!.doddy_direction, polish.variables!.doddy_call_reason, polish.variables!.doddy_call_opening],
+      ["inbound", "none", "Cześć, tu Doddy, asystent AI. W czym mogę pomóc?"]);
+    const english = await dial("+44700900024");
+    assert.equal(english.twiml, CONNECT_TWIML);
+    assert.equal(english.variables!.doddy_call_opening, "Hi, this is Doddy, an AI assistant. How can I help?");
+  });
+
   test("call status only moves forward, and a finished call ends its session", async () => {
     const { accountId } = await user("+48500000022", { pin: "258025", inbound: true });
     const status = async (sid: string) => (await db.query("SELECT status FROM calls WHERE call_sid = $1", [sid])).rows[0].status;
@@ -405,9 +417,9 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     const agent = registrar.calls.at(-1)!;
     assert.deepEqual([agent.direction, agent.from, agent.to, agent.variables.doddy_direction],
       ["outbound", DODDY_NUMBER, "+48500000007", "outbound"]);
-    // "Call me now" has no reason: the plain opening, which says Doddy is an AI.
+    // "Call me now" has no reason: the plain opening, which says Doddy is an AI, in Polish for a Polish number.
     assert.deepEqual([agent.variables.doddy_call_reason, agent.variables.doddy_call_opening],
-      ["none", "Hi, this is Doddy, an AI assistant. How can I help?"]);
+      ["none", "Cześć, tu Doddy, asystent AI. W czym mogę pomóc?"]);
     const s = agent.variables.secret__doddy_session!;
     assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s)).json(), { status: "verified" });
 

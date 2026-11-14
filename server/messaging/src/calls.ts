@@ -46,14 +46,23 @@ export const lang = (v: string | null | undefined): Language => (v === "pl" ? "p
 /**
  * The phone agent's first sentence (its first message is exactly this variable). Written here, not
  * by the model, and it always says Doddy is an AI (DOD-03). On a scheduled call it says the
- * reason the user approved, word for word.
+ * reason the user approved, word for word. The Polish line without a reason is the one the live
+ * agent spoke as its fixed first message until 14 Nov 2026, so Polish callers hear no change.
  */
 export function callOpening(reason: string | undefined, language: Language): string {
-  if (reason === undefined) return "Hi, this is Doddy, an AI assistant. How can I help?";
+  if (reason === undefined) {
+    return language === "pl" ? "Cześć, tu Doddy, asystent AI. W czym mogę pomóc?" : "Hi, this is Doddy, an AI assistant. How can I help?";
+  }
   return language === "pl"
     ? `Cześć, tu Doddy, asystent AI. Dzwonię zgodnie z Twoją prośbą w sprawie: ${reason}`
     : `Hi, this is Doddy, an AI assistant. You asked me to call you about this: ${reason}`;
 }
+
+/**
+ * The language of the first sentence when a scheduled call doesn't name one: Polish for a Polish number (+48), the
+ * phone agent's default language, and English for any other. The agent switches with the caller after that.
+ */
+export const numberLanguage = (e164: string): Language => (e164.startsWith("+48") ? "pl" : "en");
 
 export function sameSecret(expected: string, given: string | undefined): boolean {
   if (!given) return false;
@@ -65,7 +74,7 @@ export function sameSecret(expected: string, given: string | undefined): boolean
 /** Creates the per-call capability and returns the variables for a recognised caller. */
 export async function openSession(
   db: Db, accountId: string, callId: string, direction: CallVariables["doddy_direction"],
-  purpose?: { reason: string; language: Language },
+  purpose?: { reason: string; language: Language }, language: Language = "en",
 ): Promise<CallVariables> {
   const token = randomBytes(32).toString("base64url");
   await db.query(
@@ -82,7 +91,7 @@ export async function openSession(
     doddy_pin: rows[0]?.pin_set ? "set" : "not_set",
     doddy_direction: direction,
     doddy_call_reason: purpose?.reason ?? "none",
-    doddy_call_opening: callOpening(purpose?.reason, purpose?.language ?? "en"),
+    doddy_call_opening: callOpening(purpose?.reason, purpose?.language ?? language),
   };
 }
 

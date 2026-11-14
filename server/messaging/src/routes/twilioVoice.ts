@@ -3,7 +3,7 @@ import type { FastifyBaseLogger, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import type { Deps } from "../app.js";
 import { callbackDecision, forwardDoneTwiml, forwardTwiml } from "../callbacks.js";
-import { openSession } from "../calls.js";
+import { numberLanguage, openSession } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { inTransaction, type Db } from "../db.js";
 import { scheduleDeletion } from "../providerRecords.js";
@@ -55,7 +55,9 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
     try {
       // A scheduled call says its approved reason first (ADR-754); "Call me now" has none.
       const purpose = call.direction === "outbound" ? await scheduledPurpose(db, deps.cipher, call.callId) : undefined;
-      const variables = await openSession(db, call.accountId, call.callId, call.direction, purpose);
+      // Without a scheduled call's language, the user's own number picks the first sentence's language.
+      const language = numberLanguage(call.direction === "inbound" ? call.from : call.to);
+      const variables = await openSession(db, call.accountId, call.callId, call.direction, purpose, language);
       const outcome = await deps.registrar!.register({
         from: call.from, to: call.to, direction: call.direction, variables: { ...variables },
       });
