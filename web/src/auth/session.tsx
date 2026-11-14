@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api/client.js";
 import type { WebSessionView } from "../api/schemas.js";
-import { clearThreads } from "../chat/threads.js";
+import { adoptLegacyChats, clearThreads } from "../chat/threads.js";
 
 /**
  * Whether this browser is signed in (ADR-600). The page learns it only by asking the server:
@@ -55,6 +55,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const session = await api.signIn(code);
     setState({ status: "signedIn", session });
   }, []);
+
+  // Chats an older version left in localStorage (which outlives the tab) are moved into the tab, or
+  // deleted, as soon as the sign-in is known, on whatever page this is, not only when the chat is opened.
+  const signedInId = state.status === "signedIn" ? state.session.id : null;
+  useEffect(() => {
+    if (signedInId) adoptLegacyChats(signedInId);
+  }, [signedInId]);
 
   const signedIn = useCallback((session: WebSessionView) => setState({ status: "signedIn", session }), []);
   const deleted = useCallback((complete: boolean) => {

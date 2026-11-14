@@ -60,6 +60,9 @@ class ScriptedClaude implements ClaudeProvider {
   async ask(): Promise<{ text: string }> {
     throw new Error("not used");
   }
+  async deleteFile(): Promise<"removed"> {
+    return "removed";
+  }
   async makeDocument(): Promise<never> {
     throw new Error("not used");
   }

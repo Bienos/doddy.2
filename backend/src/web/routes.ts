@@ -349,14 +349,17 @@ export class WebRoutes {
       ...(memory ? memoryRoutes(memory) : []),
       ...(thread ? threadRoutes(thread) : []),
       // ---------------------------------------------------------------- Owner panel (decision 2026-11-09-usage-counts-on-by-default)
-      // Only the accounts in DODDY_OWNER_ACCOUNTS; anyone else is told there is nothing here.
+      // Only the accounts in DODDY_OWNER_ACCOUNTS; anyone else is told there is nothing here. A browser
+      // only (never the iPhone's session), within OWNER_FRESH_MS of signing in, and each use recorded
+      // before it is shown (`OwnerPanel.open`, decision 2026-11-14-owner-panel-fresh-sign-in).
       ...(owner
         ? ([
             {
+              // Whether to show the menu's "Admin" link. It holds no data, so it needs no fresh sign-in.
               method: "GET",
               pattern: /^\/v1\/web\/owner$/,
               template: "GET /v1/web/owner",
-              access: "either",
+              access: "browser",
               run: async ({ caller }) => {
                 await owner.requireOwner(caller!.userId);
                 return { status: 200, body: { owner: true } };
@@ -366,9 +369,9 @@ export class WebRoutes {
               method: "GET",
               pattern: /^\/v1\/web\/owner\/overview$/,
               template: "GET /v1/web/owner/overview",
-              access: "either",
+              access: "browser",
               run: async ({ caller, query, now }) => {
-                await owner.requireOwner(caller!.userId);
+                await owner.open(caller!, "overview", null, now);
                 return { status: 200, body: await owner.overview(now, OwnerPanel.period(query.get("days") ?? undefined)) };
               },
             },
@@ -376,9 +379,9 @@ export class WebRoutes {
               method: "GET",
               pattern: /^\/v1\/web\/owner\/accounts$/,
               template: "GET /v1/web/owner/accounts",
-              access: "either",
+              access: "browser",
               run: async ({ caller, query, now }) => {
-                await owner.requireOwner(caller!.userId);
+                await owner.open(caller!, "accounts", null, now);
                 return { status: 200, body: await owner.accounts(now, OwnerPanel.period(query.get("days") ?? undefined)) };
               },
             },
@@ -386,9 +389,9 @@ export class WebRoutes {
               method: "GET",
               pattern: /^\/v1\/web\/owner\/accounts\/([A-Za-z0-9-]{1,64})\/logbook$/,
               template: "GET /v1/web/owner/accounts/:id/logbook",
-              access: "either",
+              access: "browser",
               run: async ({ caller, params, now }) => {
-                await owner.requireOwner(caller!.userId);
+                await owner.open(caller!, "account_logbook", params[0]!, now);
                 return { status: 200, body: await owner.accountLogbook(params[0]!, now) };
               },
             },

@@ -98,10 +98,12 @@ describe("signing in", () => {
   });
 
   test("a session that ended while the page was closed takes this browser's chats with it", async () => {
+    window.sessionStorage.setItem("doddy.web.chats.v1", JSON.stringify({ owner: "someone", threads: [] }));
     window.localStorage.setItem("doddy.web.chats.v1", JSON.stringify({ owner: "someone", threads: [] }));
     fakeServer({ "GET /v1/web/session": signedOut });
     renderApp("/", "en");
     expect(await screen.findByRole("heading", { name: "Sign in to Doddy" })).toBeInTheDocument();
+    expect(window.sessionStorage.getItem("doddy.web.chats.v1")).toBeNull();
     expect(window.localStorage.getItem("doddy.web.chats.v1")).toBeNull();
   });
 
