@@ -8,7 +8,9 @@ import { AccountLinker } from "../src/accountLinks.js";
 import { type AuthenticatedUser, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, TokenFloors } from "../src/auth.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { testLimits } from "../src/config.js";
+import { DocumentSeal } from "../src/documents.js";
 import { AppError } from "../src/errors.js";
+import { MemoryCipher } from "../src/memory/crypto.js";
 import { createHandler } from "../src/http.js";
 import { MockCalendarProvider } from "../src/providers/mock.js";
 import { requestCredential } from "../src/requestCredential.js";
@@ -134,6 +136,8 @@ test("a request let in just before the account is deleted can't write the person
 test("each kind of write a request makes for a deleted person is refused, and only for that person and that request", async () => {
   const store = await Store.memory();
   stores.push(store);
+  // Files are kept only encrypted: with a key, so the documents write below reaches the cut-off check.
+  store.sealDocumentsWith(new DocumentSeal(new MemoryCipher(Buffer.alloc(32, 6))));
   const now = Date.parse("2026-11-12T10:00:00Z");
   await store.eraseUser(USER, now);
   const floor = await store.tokenFloor(USER);

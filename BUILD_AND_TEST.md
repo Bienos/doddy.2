@@ -96,7 +96,7 @@ swallows network failures; it cannot establish that a connection was prepared or
 
 Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
 `DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
-SQL files, 001 to 038 on 13 Nov 2026, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
+SQL files, 001 to 039 on 14 Nov 2026, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
 or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
 the same commit.
 
@@ -184,7 +184,11 @@ tests primary success, download/install failures, fallback failure and cleanup.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
   2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
   `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution
-  changes it, and each Mac run keeps what it resolved as the `app-package-resolved` artifact. To move versions
+  changes it, and each Mac run keeps what it resolved as the `app-package-resolved` artifact. Xcode Cloud's resolve
+  call also passes `-onlyUsePackageVersionsFromResolvedFile`, so it fetches only the pinned versions and fails when
+  the file is out of date (`DODDY_PACKAGES_FREE=1` in the workflow lifts that for one build; not tried on Xcode Cloud
+  yet, `docs/implementation/XCODE_CLOUD.md`). `Packages/DoddyCore/Package.resolved` (committed) pins the package's
+  own dependencies for its tests; Xcode Cloud's script deletes its copy of it before resolving. To move versions
   later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
   `docs/decisions/2026-11-07-reproducible-app-builds.md`).
 - The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a
@@ -310,7 +314,7 @@ It began on 9 Oct as a read-only Google Calendar view, which a Debug build still
 cd backend
 npm ci                    # installs the pinned versions from package-lock.json
 npm run typecheck         # type-checks against the installed @composio/core declarations
-npm test                  # builds, then 649 offline tests (8 Nov 2026, about 15 minutes here); no secrets, no network
+npm test                  # builds, then 860 offline tests (14 Nov 2026, about 9 minutes here); no secrets, no network
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
 ```
 `scripts/ci.sh --only backend` runs the same install, type-check and tests.
@@ -335,7 +339,9 @@ Without the backend you can drive the same flow with curl, e.g.
    `<public URL>/v1/oauth/verify` (recommended).
 3. `cp backend/.env.example backend/.env.local`, fill it in (`DODDY_MODE=live`, `DODDY_AUTH_MODE=signed`,
    `DODDY_SESSION_SIGNING_KEY=$(openssl rand -base64 32)`, Composio values). The server **refuses to start** if
-   anything is missing; it never falls back to demo data.
+   anything is missing; it never falls back to demo data. Files Doddy makes, kept memory and the Messages copy are
+   stored encrypted and need `DODDY_MEMORY_KEY=$(openssl rand -base64 32)`; without it they say "not set up"
+   (decision `2026-11-12-documents-at-rest`).
 4. `npm run build && npm run start:env`; mint a device token with
    `node --env-file=.env.local dist/src/mintSession.js` and paste it in the app.
 5. Connect from the app, read tomorrow, then optionally `npm run live-check` (read-only; prints counts only; it

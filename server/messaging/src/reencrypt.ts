@@ -19,6 +19,7 @@ import { payloadAad as callCaseAad } from "./taskCalls/payload.js";
 import { inputAad, liveAad, resultAad as callResultAad } from "./taskCalls/service.js";
 import { contentAad as watchAad } from "./watches/context.js";
 import { wordsAad as dealWatchAad } from "./deals/dealWatches.js";
+import { optOutAad, optOutHash } from "./contactTexts.js";
 
 type Row = Record<string, unknown> & { account_id: string };
 const s = (v: unknown) => String(v);
@@ -34,6 +35,12 @@ export interface EncryptedColumn {
   account: string;
   join?: string;
   aad(row: Row): string;
+  /**
+   * A keyed hash on the same row that must move to the new key with it (`column`, from the opened plaintext). It is
+   * the row's primary key (`key` names only it); a row already holding the new hash (written under the new key during
+   * the rotation) is the same number, so it is replaced.
+   */
+  rehash?: { column: string; value(cipher: TextCipher, plain: Buffer): Buffer };
 }
 
 /** Every encrypted column of the schema, with the associated data the server binds it to (test/reencrypt.test.ts). */
@@ -74,6 +81,9 @@ export const ENCRYPTED_COLUMNS: EncryptedColumn[] = [
     aad: (r) => deliveryAad(r.account_id, s(r.id)) },
   { table: "deal_watches", column: "words_ciphertext", version: "key_version", key: ["id"], account: "t.account_id",
     aad: (r) => dealWatchAad(r.account_id, s(r.id)) },
+  // A contact's STOP, kept for no account: re-hashed under the new key so it is never forgotten (src/contactTexts.ts).
+  { table: "contact_text_opt_outs", column: "number_ciphertext", version: "key_version", key: ["number_hash"], account: "NULL",
+    aad: () => optOutAad, rehash: { column: "number_hash", value: (cipher, plain) => optOutHash(cipher, plain.toString("utf8")) } },
 ];
 
 export interface ColumnReport {
@@ -188,6 +198,7 @@ function openRow(cipher: TextCipher, blob: Buffer, aad: string, version: number 
 }
 
 async function rewrite(tx: pg.PoolClient, cipher: TextCipher, c: EncryptedColumn, row: Row, aad: string, plain: Buffer, keyWhere: string) {
+  if (c.rehash) return rewriteRehashed(tx, cipher, c, row, aad, plain);
   const keys = c.key.map((k) => row[k]);
   const sealed = cipher.encryptBytes(plain, aad);
   const n = keys.length;
@@ -199,6 +210,24 @@ async function rewrite(tx: pg.PoolClient, cipher: TextCipher, c: EncryptedColumn
   const { rows: [back] } = await tx.query<Record<string, unknown>>(
     `SELECT ${c.column} AS ct${c.version ? `, ${c.version} AS v` : ""} FROM ${c.table} WHERE ${keyWhere}`, keys);
   const ok = back && (!c.version || Number(back.v) === cipher.keyVersion)
+    && cipher.decryptBytes(back.ct as Buffer, aad, cipher.keyVersion).equals(plain);
+  if (!ok) throw new Error(`${c.table}.${c.column}: read-back after rewriting differs; this batch was rolled back`);
+}
+
+/** `rewrite` for a row whose primary key is a keyed hash of its plaintext: the hash moves to the new key as well. */
+async function rewriteRehashed(tx: pg.PoolClient, cipher: TextCipher, c: EncryptedColumn, row: Row, aad: string, plain: Buffer) {
+  const r = c.rehash!;
+  const oldHash = row[r.column] as Buffer;
+  const newHash = r.value(cipher, plain);
+  const sealed = cipher.encryptBytes(plain, aad);
+  if (!newHash.equals(oldHash)) await tx.query(`DELETE FROM ${c.table} WHERE ${r.column} = $1`, [newHash]);
+  const { rowCount } = await tx.query(
+    `UPDATE ${c.table} SET ${r.column} = $2, ${c.column} = $3, ${c.version} = $4 WHERE ${r.column} = $1`,
+    [oldHash, newHash, sealed, cipher.keyVersion]);
+  if (rowCount !== 1) throw new Error(`${c.table}.${c.column}: a row changed while it was rewritten`);
+  const { rows: [back] } = await tx.query<Record<string, unknown>>(
+    `SELECT ${c.column} AS ct, ${c.version} AS v FROM ${c.table} WHERE ${r.column} = $1`, [newHash]);
+  const ok = back && Number(back.v) === cipher.keyVersion
     && cipher.decryptBytes(back.ct as Buffer, aad, cipher.keyVersion).equals(plain);
   if (!ok) throw new Error(`${c.table}.${c.column}: read-back after rewriting differs; this batch was rolled back`);
 }

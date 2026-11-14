@@ -16,7 +16,8 @@ import { MockWebSearchProvider, type WebSearchProvider } from "../src/tools/webs
 import { type ClaudeProvider, isClaudeTool, MockClaudeProvider } from "../src/tools/claude.js";
 import type { TravelReader } from "../src/travel/reader.js";
 import type { FlightSearch } from "../src/travel/kiwi.js";
-import { DocumentLinks } from "../src/documents.js";
+import { DocumentLinks, DocumentSeal } from "../src/documents.js";
+import { MemoryCipher } from "../src/memory/crypto.js";
 import type { DuffelClient } from "../src/flights/duffel.js";
 import type { KiwiClient } from "../src/flights/kiwi.js";
 import { Clock, USER_A } from "./helpers.js";
@@ -36,6 +37,8 @@ export interface Rig {
 
 /** Signing key for the test document links (ADR-564). Never a real key. */
 export const TEST_LINK_KEY = Buffer.alloc(32, 7);
+/** The key documents are encrypted with in tests (decision 2026-11-12-documents-at-rest). Never a real key. */
+export const TEST_DOCUMENT_KEY = Buffer.alloc(32, 6);
 
 export async function start(
   limits: Parameters<typeof testLimits>[0] = {},
@@ -43,12 +46,15 @@ export async function start(
     webSearch?: WebSearchProvider | null;
     claude?: ClaudeProvider | null;
     documentLinks?: boolean;
+    /** The key files are encrypted with. `null`: none, so making files says "not set up", as on a server without DODDY_MEMORY_KEY. */
+    documentKey?: Buffer | null;
     travelReader?: TravelReader;
     flightSearch?: FlightSearch;
     flights?: { kiwi: KiwiClient | null; duffel: DuffelClient | null; bookingEnabled: boolean; bookingWaitMs?: number } | null;
   } = {},
 ): Promise<Rig> {
   const store = await Store.memory();
+  store.sealDocumentsWith(o.documentKey === null ? null : new DocumentSeal(new MemoryCipher(o.documentKey ?? TEST_DOCUMENT_KEY)));
   const clock = new Clock(Date.parse("2026-10-10T10:00:00Z"));
   const provider = new MockToolsProvider();
   const logs: string[] = [];

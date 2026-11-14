@@ -196,6 +196,17 @@
         }
       }
     },
+    "%@ more than the lowest": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ więcej niż najniższa"
+          }
+        }
+      }
+    },
     "%@ over your budget": {
       "extractionState": "manual",
       "localizations": {
@@ -14196,6 +14207,17 @@
         }
       }
     },
+    "Compare": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porównaj"
+          }
+        }
+      }
+    },
     "Compare flights to Rome for a week next month, under 2000 zł": {
       "extractionState": "manual",
       "localizations": {
@@ -14203,6 +14225,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Porównaj loty do Rzymu na tydzień w przyszłym miesiącu, do 2000 zł"
+          }
+        }
+      }
+    },
+    "Compare the picks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porównaj propozycje"
+          }
+        }
+      }
+    },
+    "Compare the picks side by side": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porównaj propozycje obok siebie"
           }
         }
       }
@@ -19161,6 +19205,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adres dostawy"
+          }
+        }
+      }
+    },
+    "Delivery": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostawa"
           }
         }
       }
@@ -35957,6 +36012,17 @@
         }
       }
     },
+    "In short": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krótko"
+          }
+        }
+      }
+    },
     "In the Health app, tap your picture, then Apps, then Doddy, and turn off what Doddy may read. Doddy can't change that for you.": {
       "extractionState": "manual",
       "localizations": {
@@ -43741,6 +43807,17 @@
         }
       }
     },
+    "Lowest price of these picks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najniższa cena z tych propozycji"
+          }
+        }
+      }
+    },
     "Lunch with Alex": {
       "extractionState": "manual",
       "localizations": {
@@ -50532,6 +50609,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie ma w przeczytanych gazetkach."
+          }
+        }
+      }
+    },
+    "Not in the result": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma w wyniku"
           }
         }
       }
@@ -63029,6 +63117,17 @@
         }
       }
     },
+    "Price from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena z"
+          }
+        }
+      }
+    },
     "Price on the page now": {
       "extractionState": "manual",
       "localizations": {
@@ -63069,6 +63168,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ceny i godziny są z Kiwi.com, odczytane o %@. Mogą się zmienić przed rezerwacją; cena dotyczy całej grupy, z bagażem podanym wyżej."
+          }
+        }
+      }
+    },
+    "Prices can change after the time they were checked. A price from the Google Shopping list wasn't checked on the shop's page, so it can't be watched. Doddy never buys: “Buy at” opens the shop's page in Safari.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny mogą się zmienić po czasie, w którym je sprawdzono. Ceny z listy Google Shopping nie sprawdzono na stronie sklepu, więc nie da się jej pilnować. Doddy niczego nie kupuje: „Kup w” otwiera stronę sklepu w Safari."
           }
         }
       }
@@ -75872,6 +75982,17 @@
         }
       }
     },
+    "Shop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sklep"
+          }
+        }
+      }
+    },
     "Shopping": {
       "extractionState": "manual",
       "localizations": {
@@ -77050,6 +77171,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokazuje, co Doddy może robić z: %@."
+          }
+        }
+      }
+    },
+    "Side by side, as Doddy's server registered them. The lowest price is marked only when the prices can be compared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obok siebie, tak jak zarejestrował je serwer Doddy. Najniższa cena jest zaznaczona tylko wtedy, gdy ceny da się porównać."
           }
         }
       }
@@ -90159,6 +90291,17 @@
         }
       }
     },
+    "These prices are in different currencies, so Doddy doesn't mark the lowest.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te ceny są w różnych walutach, więc Doddy nie zaznacza najniższej."
+          }
+        }
+      }
+    },
     "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken.": {
       "extractionState": "manual",
       "localizations": {
@@ -93021,6 +93164,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odtworzysz to, gdy skończysz rozmowę z Doddym."
+          }
+        }
+      }
+    },
+    "This price came from a list, not the shop's page, so Doddy can't watch it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta cena pochodzi z listy, a nie ze strony sklepu, więc Doddy nie może jej pilnować."
           }
         }
       }
@@ -103928,6 +104082,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dlaczego to ważne"
+          }
+        }
+      }
+    },
+    "Why this one": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dlaczego ta"
           }
         }
       }

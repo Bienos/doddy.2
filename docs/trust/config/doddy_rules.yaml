@@ -102,6 +102,15 @@ contact_policy:
   allowlist: numbers_verified_in_app
   allowlist_max_numbers: 1
   text_recipients: allowlist_only
+  # Owner, 9 Nov 2026 (decision docs/decisions/2026-11-09-texts-to-contacts.md): Doddy may also text one of the user's
+  # iPhone contacts from its own number, one tap per text on a card with the contact, the number and the exact text
+  # (approval: exact_payload_hash), no signature added, at most 50 a day per account. The number is read by the app
+  # from the contact card, never given by the model. Step 1 (these lines and DoddyCore ContactText) is the rule;
+  # until the server route lands, text_recipients above is still what the server enforces.
+  contact_text_recipients: iphone_contacts_number_read_by_app
+  contact_text_approval: tap_on_card_with_contact_number_and_exact_text
+  contact_text_signature: none
+  contact_texts_per_account_day: 50
   call_recipients: allowlist_only
   approval: exact_payload_hash
   unknown_inbound_calls: fixed_message_no_ai

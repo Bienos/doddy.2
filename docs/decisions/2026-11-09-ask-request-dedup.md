@@ -1,8 +1,8 @@
 # Ask Doddy answers a repeated request id once, from memory, for ten minutes
 
 - **Date:** 2026-11-09
-- **Decided by:** proposal, owner approval pending (research item 10, `Doddy-optimization-research-2026-11-09`)
-- **Status:** proposed. The code is in the pull request that carries this file (carried onto `main` of 13 Nov from `claude/amazing-bardeen-9dkkui`, commit `70bc7034`); merging it is the owner's yes. Not deployed: `doddy` on Render is deployed by hand.
+- **Decided by:** owner, 13 Nov 2026: "Scal" on #429, which carried the proposal (research item 10, `Doddy-optimization-research-2026-11-09`) onto `main`; and, 14 Nov 2026, "Ogarnij ten render sam albo co zrobić" for the deploy
+- **Status:** applied in #429 (carried onto `main` of 13 Nov from `claude/amazing-bardeen-9dkkui`, commit `70bc7034`). Deployed on `doddy` (Render, by hand) on 14 Nov 2026: deploy `dep-dbrvaidg1s2s73do2ru0` of `1ceb1d8b`, live 05:45:52 UTC. After it `/v1/health` and Doddy Web answered 200 and the logs held no error or warning. Not seen: a real repeated request on the live service.
 - **Replaces:** none
 
 ## Why

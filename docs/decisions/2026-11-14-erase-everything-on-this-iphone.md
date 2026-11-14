@@ -28,7 +28,7 @@
 - Spotlight can't be read back; iOS's confirmation of the delete is what counts.
 - Alarms and timers Doddy set are cancelled by the erase; the confirmation names them.
 - The capability guard (`scripts/check_forbidden_capabilities.sh`) allows one more Keychain file, which may only list services and delete them (it may not read, add or change a value).
-- Owner questions: `docs/OWNER_QUEUE.md` row 95.
+- Owner questions: `docs/OWNER_QUEUE.md` row 98.
 
 ## Evidence
 - DoddyCore on Linux (Swift 6.1.3): `DeviceErasureTests`, `FolderErasureTests`, `DevicePreferencesErasureTests`, `DeviceStoreInventoryTests`, `LocalDataOwnerTests`; counts in the pull request.

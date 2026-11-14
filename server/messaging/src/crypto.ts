@@ -118,6 +118,16 @@ export class TextCipher {
   derivedKey(purpose: string): Buffer {
     return Buffer.from(hkdfSync("sha256", this.key, Buffer.alloc(0), `doddy:${purpose}`, 32));
   }
+
+  /**
+   * `derivedKey` under every key this cipher holds, the current one first. For the one keyed hash that must survive a
+   * rotation, a contact's STOP (src/contactTexts.ts): while both keys are set a lookup tries both, and
+   * scripts/reencrypt.mjs re-hashes those rows under the new key.
+   */
+  derivedKeys(purpose: string): Buffer[] {
+    return [this.key, ...(this.previous ? [this.previous.key] : [])]
+      .map((k) => Buffer.from(hkdfSync("sha256", k, Buffer.alloc(0), `doddy:${purpose}`, 32)));
+  }
 }
 
 /** The settings `cipherFrom` reads (Config's names). */

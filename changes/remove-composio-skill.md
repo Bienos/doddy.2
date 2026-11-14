@@ -1,2 +1,0 @@
-Agents: the Composio skill (`.claude/skills/composio`, `.agents/skills/composio/`, its entry in `skills-lock.json`) is removed, as `docs/decisions/2026-11-12-agent-tooling.md` recommended and the owner asked for (13 Nov 2026). The backend still uses Composio through the pinned `@composio/core` package. Docs and agent files only.
-Ran: `scripts/ci.sh --only checks`. A check against lines that pipe a download into a shell is a pull request of its own.

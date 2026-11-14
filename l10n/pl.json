@@ -3682,5 +3682,20 @@
   "Delete my account and erase this iPhone": "Usuń moje konto i wymaż ten iPhone",
   "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes and everything else on this iPhone stay, unless you also erase this iPhone.": "Serwer Doddy’ego usuwa to, co dla Ciebie przechowuje, dane wiadomości i logowanie, a także odłącza konta online. Notatki i wszystko inne na tym iPhonie zostają, chyba że wymażesz też ten iPhone.",
   "Your Doddy account was deleted and this iPhone is signed out.": "Konto Doddy’ego zostało usunięte, a ten iPhone jest wylogowany.",
-  "The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. Erasing everything on this iPhone removes it too; or use Delete my training log below.": "Dziennik zostaje na tym iPhonie, we własnym pliku poza iCloud i kopiami zapasowymi. Nic nie jest wysyłane na serwer Doddy’ego ani do AI. Wymazanie wszystkiego z tego iPhone’a usuwa go też; możesz też użyć poniżej „Usuń mój dziennik treningowy”."
+  "The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. Erasing everything on this iPhone removes it too; or use Delete my training log below.": "Dziennik zostaje na tym iPhonie, we własnym pliku poza iCloud i kopiami zapasowymi. Nic nie jest wysyłane na serwer Doddy’ego ani do AI. Wymazanie wszystkiego z tego iPhone’a usuwa go też; możesz też użyć poniżej „Usuń mój dziennik treningowy”.",
+  "Compare": "Porównaj",
+  "Compare the picks": "Porównaj propozycje",
+  "Compare the picks side by side": "Porównaj propozycje obok siebie",
+  "Side by side, as Doddy's server registered them. The lowest price is marked only when the prices can be compared.": "Obok siebie, tak jak zarejestrował je serwer Doddy. Najniższa cena jest zaznaczona tylko wtedy, gdy ceny da się porównać.",
+  "These prices are in different currencies, so Doddy doesn't mark the lowest.": "Te ceny są w różnych walutach, więc Doddy nie zaznacza najniższej.",
+  "Prices can change after the time they were checked. A price from the Google Shopping list wasn't checked on the shop's page, so it can't be watched. Doddy never buys: “Buy at” opens the shop's page in Safari.": "Ceny mogą się zmienić po czasie, w którym je sprawdzono. Ceny z listy Google Shopping nie sprawdzono na stronie sklepu, więc nie da się jej pilnować. Doddy niczego nie kupuje: „Kup w” otwiera stronę sklepu w Safari.",
+  "Lowest price of these picks": "Najniższa cena z tych propozycji",
+  "%@ more than the lowest": "%@ więcej niż najniższa",
+  "Shop": "Sklep",
+  "Price from": "Cena z",
+  "Delivery": "Dostawa",
+  "Not in the result": "Nie ma w wyniku",
+  "In short": "Krótko",
+  "Why this one": "Dlaczego ta",
+  "This price came from a list, not the shop's page, so Doddy can't watch it.": "Ta cena pochodzi z listy, a nie ze strony sklepu, więc Doddy nie może jej pilnować."
 }

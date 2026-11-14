@@ -29,6 +29,7 @@
       "user_input_audio_format": "ulaw_8000"
     },
     "max_duration_seconds": 300,
+    "tts_as_read": {"model_id": "eleven_v4_turbo", "voice_id": "jGk1sjruA9wQTyWDbhL9", "speed": 1.0, "stability": 0.5, "note": "Read from the live agent on 10 Nov 2026 (agtvrsn_7501m6egft9sf7yrwn3xwqvkxk2w, read only); the setup script sets no voice. The live agent differs from this file in three places, kept here as designed until the owner decides (voice-agent/README.md, Phone agent): first message (live: a fixed Polish sentence instead of {{doddy_call_opening}}), language (live: pl) and max_duration_seconds (live: 600)."},
     "secret_variables": {
       "secret__doddy_session": "Per-call session id; only ever placed in tool headers, never shown to the model"
     },

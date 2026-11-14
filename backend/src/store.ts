@@ -1,7 +1,9 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { ConnectionReason, ConnectionStatus, Receipt } from "./contracts.js";
 import { type Database, type DatabaseOptions, openDatabase, type Queryable, SCHEMA } from "./db.js";
+import type { DocumentSeal } from "./documents.js";
 import { AppError } from "./errors.js";
+import { SEAL_OVERHEAD } from "./memory/crypto.js";
 import { requestCredential } from "./requestCredential.js";
 
 /**
@@ -479,6 +481,11 @@ export const SCHEMA_SQL = `
     received_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
+  -- Documents encrypted at rest (decision 2026-11-12-documents-at-rest). A row with a key_version holds its file
+  -- encrypted in body and its name in name_ciphertext, with name left empty. NULL: a row written before, in plain
+  -- text, until the hourly sweep encrypts it (Store.sealPlaintextDocuments) or its week is over.
+  ALTER TABLE documents ADD COLUMN IF NOT EXISTS key_version SMALLINT;
+  ALTER TABLE documents ADD COLUMN IF NOT EXISTS name_ciphertext BYTEA;
   -- One row each time the owner panel showed something (web/owner.ts). Ids, a word for what was
   -- opened and a time only: no email, name, count, word or credential, and no column that could hold one.
   -- The ids are opaque and the rows are pruned after a year (OWNER_AUDIT_KEPT_DAYS). Account erasure does not
@@ -628,8 +635,29 @@ export interface DocumentRow {
   created_at: number;
 }
 
+/** A `documents` row as stored: `key_version` set means `name_ciphertext` and `body` are encrypted. */
+interface StoredDocumentRow extends DocumentRow {
+  key_version: number | null;
+  name_ciphertext: Buffer | null;
+}
+
+const bytes = (value: unknown): Buffer | null => (value === null || value === undefined ? null : Buffer.from(value as Uint8Array));
+
 export class Store {
   private constructor(readonly db: Database) {}
+
+  /** Encrypts documents' names and files (decision 2026-11-12-documents-at-rest). Null: no files are made or read. */
+  private documentSeal: DocumentSeal | null = null;
+
+  /** Set once at start with the memory key (DODDY_MEMORY_KEY). Without it the server makes no files. */
+  sealDocumentsWith(seal: DocumentSeal | null): void {
+    this.documentSeal = seal;
+  }
+
+  /** Whether files can be made here: only encrypted, so only with the key. */
+  get keepsDocuments(): boolean {
+    return this.documentSeal !== null;
+  }
 
   /** One round trip to the database, for `GET /v1/health`. Throws when the database doesn't answer. */
   async ping(): Promise<void> {
@@ -1261,21 +1289,34 @@ export class Store {
 
   // ------------------------------------------------------------ documents (ADR-564)
 
-  /** A new document while Claude works on it. Returns its unguessable ID (144 random bits). */
+  /** The seal, or "not set up": a document's name and file are never written in plain text. */
+  private requireDocumentSeal(): DocumentSeal {
+    if (!this.documentSeal) throw new AppError("live_not_configured", { message: "Making files isn't set up on this server." });
+    return this.documentSeal;
+  }
+
+  /** A new document while Claude works on it, its name encrypted. Returns its unguessable ID (144 random bits). */
   async startDocument(userId: string, name: string, mime: string, now: number): Promise<string> {
+    const seal = this.requireDocumentSeal();
     const id = randomBytes(18).toString("base64url");
     await this.db.transaction(async (tx) => {
       await this.refuseIfCutOff(tx, userId);
       await tx.query(
-        "INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'working', $3, $4, NULL, $5)",
-        [id, userId, name, mime, now],
+        `INSERT INTO documents (id, user_id, status, name, mime, body, created_at, key_version, name_ciphertext)
+         VALUES ($1, $2, 'working', '', $3, NULL, $4, $5, $6)`,
+        [id, userId, mime, now, seal.keyVersion, seal.sealName(userId, id, name)],
       );
     });
     return id;
   }
 
-  async finishDocument(id: string, name: string, mime: string, body: Buffer): Promise<void> {
-    await this.db.query("UPDATE documents SET status = 'ready', name = $2, mime = $3, body = $4 WHERE id = $1", [id, name, mime, body]);
+  /** The finished file, encrypted with its name. Only the row's own account's: another account's ID changes nothing. */
+  async finishDocument(userId: string, id: string, name: string, mime: string, body: Buffer): Promise<void> {
+    const seal = this.requireDocumentSeal();
+    await this.db.query(
+      "UPDATE documents SET status = 'ready', name = '', mime = $3, body = $4, key_version = $5, name_ciphertext = $6 WHERE id = $1 AND user_id = $2",
+      [id, userId, mime, seal.sealFile(userId, id, body), seal.keyVersion, seal.sealName(userId, id, name)],
+    );
   }
 
   async failDocument(id: string): Promise<void> {
@@ -1290,32 +1331,111 @@ export class Store {
     return (await this.db.query("UPDATE documents SET status = 'failed', body = NULL WHERE status = 'working' AND created_at < $1", [now - olderThanMs])).rowCount;
   }
 
-  async getDocument(id: string): Promise<DocumentRow | null> {
-    const row = await this.one<DocumentRow>(this.db, "SELECT id, user_id, status, name, mime, body, created_at FROM documents WHERE id = $1", [id]);
-    if (!row) return null;
-    return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
+  /**
+   * One document by its ID, decrypted. `file: false` leaves the file out (`body` is null), for a status
+   * check. A row that can't be decrypted here (no key, another key, altered) reads as missing.
+   */
+  async getDocument(id: string, options: { file?: boolean } = {}): Promise<DocumentRow | null> {
+    const body = options.file === false ? "NULL::bytea AS body" : "body";
+    const row = await this.one<StoredDocumentRow>(
+      this.db,
+      `SELECT id, user_id, status, name, mime, ${body}, created_at, key_version, name_ciphertext FROM documents WHERE id = $1`,
+      [id],
+    );
+    return row ? this.openDocument(row) : null;
   }
 
-  /** The user's own documents, newest first, without their files (ADR-600). */
+  /** The user's own documents, newest first, without their files (ADR-600). Rows that can't be decrypted here are left out. */
   async listDocuments(userId: string, limit: number): Promise<DocumentSummaryRow[]> {
-    return (
-      await this.db.query<DocumentSummaryRow>(
-        `SELECT id, status, name, mime, octet_length(body) AS size, created_at FROM documents
-         WHERE user_id = $1 ORDER BY created_at DESC, id LIMIT $2`,
+    const rows = (
+      await this.db.query<Omit<StoredDocumentRow, "body" | "user_id"> & { size: number | null }>(
+        `SELECT id, status, name, mime, created_at, key_version, name_ciphertext,
+                CASE WHEN key_version IS NULL THEN octet_length(body) ELSE octet_length(body) - ${SEAL_OVERHEAD} END AS size
+         FROM documents WHERE user_id = $1 ORDER BY created_at DESC, id LIMIT $2`,
         [userId, limit],
       )
     ).rows;
+    const out: DocumentSummaryRow[] = [];
+    for (const row of rows) {
+      const name = this.documentName({ ...row, user_id: userId });
+      if (name !== null) out.push({ id: row.id, status: row.status, name, mime: row.mime, size: row.size, created_at: row.created_at });
+    }
+    return out;
   }
 
   /** One document, only when it belongs to `userId`; another user's ID reads as missing (the filter is in the query). */
   async getOwnDocument(userId: string, id: string): Promise<DocumentRow | null> {
-    const row = await this.one<DocumentRow>(
+    const row = await this.one<StoredDocumentRow>(
       this.db,
-      "SELECT id, user_id, status, name, mime, body, created_at FROM documents WHERE id = $1 AND user_id = $2",
+      "SELECT id, user_id, status, name, mime, body, created_at, key_version, name_ciphertext FROM documents WHERE id = $1 AND user_id = $2",
       [id, userId],
     );
-    if (!row) return null;
-    return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
+    return row ? this.openDocument(row) : null;
+  }
+
+  /**
+   * Encrypts documents written in plain text before decision 2026-11-12-documents-at-rest, one row at a
+   * time (a file can be megabytes). Idempotent: only rows without a key_version are touched, and each
+   * update checks that again, so a second run, or two servers at once, change nothing twice. Rows still
+   * "working" are left to their job (an older server may still finish them) until they are failed or
+   * ready. Without the key it does nothing. Returns how many rows it encrypted.
+   */
+  async sealPlaintextDocuments(): Promise<number> {
+    const seal = this.documentSeal;
+    if (!seal) return 0;
+    let sealed = 0;
+    for (;;) {
+      const ids = (
+        await this.db.query<{ id: string }>("SELECT id FROM documents WHERE key_version IS NULL AND status <> 'working' ORDER BY created_at, id LIMIT 50")
+      ).rows;
+      let changed = 0;
+      for (const { id } of ids) {
+        const row = await this.one<StoredDocumentRow>(
+          this.db,
+          "SELECT id, user_id, status, name, mime, body, created_at, key_version, name_ciphertext FROM documents WHERE id = $1 AND key_version IS NULL",
+          [id],
+        );
+        if (!row) continue;
+        const file = bytes(row.body);
+        changed += (
+          await this.db.query(
+            "UPDATE documents SET name = '', name_ciphertext = $2, body = $3, key_version = $4 WHERE id = $1 AND key_version IS NULL AND status <> 'working'",
+            [id, seal.sealName(row.user_id, id, row.name), file ? seal.sealFile(row.user_id, id, file) : null, seal.keyVersion],
+          )
+        ).rowCount;
+      }
+      sealed += changed;
+      // Fewer than a full batch, or a batch that changed nothing (another server got there first): done for now.
+      if (ids.length < 50 || changed === 0) return sealed;
+    }
+  }
+
+  /** A stored row as callers see it: the name and file decrypted, or null when this server can't decrypt them. */
+  private openDocument(row: StoredDocumentRow): DocumentRow | null {
+    const name = this.documentName(row);
+    if (name === null) return null;
+    const stored = bytes(row.body);
+    let body: Buffer | null = stored;
+    if (stored && row.key_version !== null) {
+      try {
+        body = this.documentSeal!.openFile(row.user_id, row.id, stored);
+      } catch {
+        return null;
+      }
+    }
+    return { id: row.id, user_id: row.user_id, status: row.status, name, mime: row.mime, body, created_at: row.created_at };
+  }
+
+  /** The plain name: as stored for an older plain-text row, else decrypted; null when it can't be. */
+  private documentName(row: Pick<StoredDocumentRow, "id" | "user_id" | "name" | "key_version" | "name_ciphertext">): string | null {
+    if (row.key_version === null) return row.name;
+    const blob = bytes(row.name_ciphertext);
+    if (!this.documentSeal || !blob) return null;
+    try {
+      return this.documentSeal.openName(row.user_id, row.id, blob);
+    } catch {
+      return null;
+    }
   }
 
   /** Documents older than a week go. Separate from `prune` so its counts stay as they were. */
@@ -1485,6 +1605,22 @@ export class Store {
       )
     ).rows;
     return rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) }));
+  }
+
+  /**
+   * One page of one user's kept notes, in the same order as `memoryNoteRows`, and how many notes
+   * the user keeps in all. The user filter is in both queries; only the page's ciphertext leaves the database.
+   * The id breaks ties, so pages never overlap or skip a note that shares a capture time.
+   */
+  async memoryNoteRowsPage(userId: string, limit: number, offset: number): Promise<{ rows: MemoryNoteRow[]; total: number }> {
+    const [page, count] = await Promise.all([
+      this.db.query<MemoryNoteRow>(
+        "SELECT note_id, key_version, ciphertext, captured_at, received_at FROM memory_notes WHERE user_id = $1 ORDER BY captured_at DESC NULLS LAST, note_id LIMIT $2 OFFSET $3",
+        [userId, limit, offset],
+      ),
+      this.one<{ n: string }>(this.db, "SELECT count(*) AS n FROM memory_notes WHERE user_id = $1", [userId]),
+    ]);
+    return { rows: page.rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) })), total: Number(count?.n ?? 0) };
   }
 
   /**
