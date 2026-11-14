@@ -1,0 +1,3 @@
+Admin › Growth: tasks that worked out per account each week (Logbook's done less undone, which still includes look-ups, opened apps and cards shown), with not sure, didn't work, undone and said no beside it; value in week 4 on the join cohorts; cohorts from each account's first task that worked out. Decision `2026-11-14-tasks-that-worked-out`.
+Ran: backend type-check and tests, web type-check and tests, `npm run fixtures:owner`. Not run: the live site or any iPhone.
+Needs a deploy of `doddy` (the owner's step on Render) to show. Counting only changes confirmed by read-back needs a new Logbook count from the iPhone: a separate pull request, server first.
