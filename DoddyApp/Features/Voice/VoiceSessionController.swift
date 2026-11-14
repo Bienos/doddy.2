@@ -331,6 +331,10 @@ final class VoiceSessionController {
     private(set) var permissionRequest: PermissionRequest? { didSet { syncIsland() } }
     /// Connections the user said Not now to in this conversation: not asked for again.
     private var declinedPermissions: Set<VoiceConnection> = []
+    /// DOD-07: whether text from outside (an email, a page, the screen, Wikipedia) has reached this conversation, and
+    /// what the user said last. After it has, the few tools that run at once and could carry it out ask for a tap
+    /// (`AskFirst.need(for:in:)`). A new value for every conversation: reset where one starts and where it ends.
+    private var outsideContent = OutsideContentSession()
     /// The searches of Contacts this conversation made for a text, email or BLIK draft, before any
     /// card: at most `ContactSearchBudget.perConversation` (ADR-717).
     private var contactSearches = ContactSearchBudget()
@@ -714,6 +718,7 @@ final class VoiceSessionController {
         connectionNeeded = nil
         permissionRequest = nil
         declinedPermissions = []
+        outsideContent = OutsideContentSession()
         contactSearches = ContactSearchBudget()
         callsAsReceived = [:]
         presentationReady = nil
@@ -951,7 +956,11 @@ final class VoiceSessionController {
         // own tools are also counted in `handle` and `reply`, once per call id.
         config.onAgentToolRequest = { event in
             let id = event.toolCallId, name = event.toolName
-            Task { @MainActor in ref.value?.turnFeedback.toolStarted(id: id, name: name) }
+            Task { @MainActor in
+                ref.value?.turnFeedback.toolStarted(id: id, name: name)
+                // Wikipedia and the weather are read by ElevenLabs: the app can't see the result, only that it was asked for.
+                ref.value?.outsideContent.noteRunByProvider(name)
+            }
         }
         config.onAgentToolResponse = { event in
             let id = event.toolCallId
@@ -1358,6 +1367,7 @@ final class VoiceSessionController {
         askLedger.clear()
         contactCard = nil
         parkingCard = nil
+        outsideContent = OutsideContentSession()
         connectionNeeded = nil
         // A call held for the permission sheet goes with its conversation (ADR-566).
         permissionRequest = nil
@@ -2036,6 +2046,38 @@ final class VoiceSessionController {
         return nil
     }
 
+    /// DOD-07, on top of `AskFirst.need(for:)`: once text from outside has reached this conversation, the few tools that
+    /// could carry it out of the phone (a text, a file or a question to Claude with material, a look at the screen,
+    /// items on a shared list) ask for a tap too, and `make_document` and the first look always do
+    /// (`AskFirst.need(for:in:listIsShared:)`). True when it showed that card and the call stops here; false when the
+    /// session rule adds nothing, or the user already tapped for exactly this call, and the baseline check follows.
+    private func asksBecauseOfOutsideContent(_ call: ClientToolCallEvent, request: VoiceToolRequest) async -> Bool {
+        let onSharedList = await targetsSharedList(request)
+        let need = AskFirst.need(for: request, in: outsideContent, listIsShared: onSharedList, polish: Self.cardsInPolish)
+        guard need != AskFirst.need(for: request, polish: Self.cardsInPolish), case .tapFirst(let card) = need else { return false }
+        guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
+            askLedger.asked(call.toolCallId, request: request, needsTap: true, at: Date())
+            propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: true, toolName: call.toolName, parameters: call.parametersData),
+                    toolCallID: call.toolCallId)
+            return true
+        }
+        return false
+    }
+
+    /// True when `request` adds to or ticks items on a list that other people are on. Their changes sync to everyone
+    /// on the list, so the call asks first unless the user just said the items (`AskFirst.need(for:in:listIsShared:)`).
+    /// A list that isn't found, or named by several, changes nothing, so it is not shared for this purpose.
+    private func targetsSharedList(_ request: VoiceToolRequest) async -> Bool {
+        let name: String
+        switch request {
+        case .addToList(let list), .checkOff(let list): name = list.list
+        default: return false
+        }
+        await store.reload()
+        guard case .one(let list) = ListMatch.list(named: name, in: store.lists) else { return false }
+        return SharedListsController.shared.isShared(list.id) != nil
+    }
+
     /// L1: the user asked, so the items go straight on, read back, with a receipt and Undo.
     private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
         guard await mayTryAgain(toolCallID, app: .memories) else { return }
@@ -2660,6 +2702,8 @@ final class VoiceSessionController {
             return
         }
         lines.append(Line(fromUser: fromUser, text: text))
+        // The user's own words (not Doddy's, not a tool's): what a tool that works on their list may be matched to.
+        if fromUser { outsideContent.userSaid(text) }
         // The island opens up again when Doddy starts answering this (ADR-577).
         if fromUser { islandExpansion.userSpoke() }
         if !fromUser, checkInNeedsBriefing {
@@ -2947,6 +2991,7 @@ final class VoiceSessionController {
         // ASK-01 (ADR-483) as it stands since 11 Nov 2026: a change with no card of its own waits here for the
         // user's tap for exactly this call. Tools with a payload card of their own (and the server's writes)
         // ask through that card. What the user asked to see or start of their own runs at once (`.runsNow`).
+        if await asksBecauseOfOutsideContent(call, request: request) { return }
         switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
         case .yesFirst(let card), .tapFirst(let card):
             guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
@@ -2961,6 +3006,9 @@ final class VoiceSessionController {
             // actions (decision 2026-11-11-asked-for-runs-at-once) runs at once.
             break
         }
+        // From here the tool runs. One that brings in text from outside marks the conversation before its result can
+        // reach the agent; a look at the screen that runs here was tapped for, or follows one that was.
+        if AskFirst.need(for: request) != .nothingRuns { outsideContent.noteRun(of: call.toolName) }
         switch request {
         case .searchMemories(let query):
             // "#car": exactly the notes with that tag (ADR-333). Private notes stay out.
