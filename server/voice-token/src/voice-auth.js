@@ -43,6 +43,12 @@ const HOUR_SECONDS = 3_600;
 const DAY_SECONDS = 86_400;
 /** Voice tokens per account per UTC day, on top of the hourly limit (ADR-712). */
 export const DEFAULT_TOKENS_PER_DAY = 150;
+/**
+ * How long the day of an account's first token is kept after its latest token (decision
+ * 2026-11-12-voice-token-fair-share). Every issued token starts the time again, so an account in use never loses it; one
+ * that has not asked for a token for six months does, and counts as new again if it comes back.
+ */
+const FIRST_SEEN_SECONDS = 180 * DAY_SECONDS;
 
 // Sign-ins per caller address (ADR-712). Counted only for sign-ins that carry a valid Apple token,
 // so junk can't use up the allowance of a shared address, and only on sign-in, never on refresh.
@@ -179,20 +185,56 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
      * limit, checked and counted in one step. Only a token that is actually issued is counted, so a
      * refused request never uses up the global budget (an account at its own limit can't starve
      * the others, ADR-671) and a refusal for a full global budget never uses up the account's own
-     * allowance (ADR-712). `limit` says which one refused: user_hour, user_day or global.
+     * allowance (ADR-712). `limit` says which one refused: user_hour, user_day or global, or one of the four below.
+     *
+     * `rules` adds the rules of decision 2026-11-12-voice-token-fair-share to the same step (none
+     * when it is left out, which is the three limits above and nothing else; see `limitRules`):
+     *  - `globalPerDay`: a daily ceiling for the whole service (`global_day`);
+     *  - `newAccounts`: for an account's first `days` days, `perAccountPerDay` tokens of its own a day
+     *    (`new_account_day`) and a pool of `poolPerDay` tokens a day shared by all new accounts
+     *    (`new_pool`). An account is new when the day of its first token is after the days the rules
+     *    started in (the day they first ran and `days` more: everyone first seen then counts as
+     *    established, so the people already using Doddy when this ships stay where they are) and
+     *    fewer than `days` days ago. The day of the first token is one key per account holding only
+     *    that day, written when a token is issued; the day the rules first ran is one key, set once;
+     *  - `fairShare`: once `budgetPercent` percent of the hour's service-wide budget is used, an
+     *    account that already had `tokensPerHour` tokens that hour is refused (`fair_share`).
      */
-    async hitLimits(userId, perUserLimit, globalLimit, nowMs, perUserDailyLimit = DEFAULT_TOKENS_PER_DAY) {
+    async hitLimits(userId, perUserLimit, globalLimit, nowMs, perUserDailyLimit = DEFAULT_TOKENS_PER_DAY, rules = {}) {
       if (!Number.isSafeInteger(perUserDailyLimit) || perUserDailyLimit < 1) throw new VoiceAuthStoreUnavailable();
+      const extra = limitRules(rules);
       const hourWindow = Math.floor(nowMs / (HOUR_SECONDS * 1_000));
       const dayWindow = Math.floor(nowMs / (DAY_SECONDS * 1_000));
+      // Refusal codes: 1 user_hour, 2 user_day, 3 global, 4 new_account_day, 5 new_pool, 6 global_day, 7 fair_share.
+      // Every check comes before the first INCR, so a refused request changes no counter and writes nothing about the account. Only the very first request ever also sets the start day, once.
       const script = `
         local hour = tonumber(redis.call('GET', KEYS[1]) or '0')
         local day = tonumber(redis.call('GET', KEYS[2]) or '0')
         local global = tonumber(redis.call('GET', KEYS[3]) or '0')
+        local globalDay = tonumber(redis.call('GET', KEYS[4]) or '0')
+        local pool = tonumber(redis.call('GET', KEYS[5]) or '0')
+        local today = tonumber(ARGV[12])
+        local newDays = tonumber(ARGV[7])
+        local firstDay = today
+        local isNew = 0
+        if newDays > 0 then
+          local started = redis.call('GET', KEYS[7])
+          if not started then
+            redis.call('SET', KEYS[7], ARGV[12], 'NX')
+            started = ARGV[12]
+          end
+          local seen = redis.call('GET', KEYS[6])
+          if seen then firstDay = tonumber(seen) or today end
+          if firstDay > (tonumber(started) or today) + newDays and today - firstDay < newDays then isNew = 1 end
+        end
         local refused = 0
         if hour >= tonumber(ARGV[3]) then refused = 1
         elseif day >= tonumber(ARGV[4]) then refused = 2
-        elseif global >= tonumber(ARGV[5]) then refused = 3 end
+        elseif isNew == 1 and day >= tonumber(ARGV[8]) then refused = 4
+        elseif isNew == 1 and pool >= tonumber(ARGV[9]) then refused = 5
+        elseif global >= tonumber(ARGV[5]) then refused = 3
+        elseif tonumber(ARGV[6]) > 0 and globalDay >= tonumber(ARGV[6]) then refused = 6
+        elseif tonumber(ARGV[10]) > 0 and global * 100 >= tonumber(ARGV[5]) * tonumber(ARGV[10]) and hour >= tonumber(ARGV[11]) then refused = 7 end
         if refused == 0 then
           hour = redis.call('INCR', KEYS[1])
           if hour == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
@@ -200,20 +242,36 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
           if day == 1 then redis.call('EXPIRE', KEYS[2], ARGV[2]) end
           global = redis.call('INCR', KEYS[3])
           if global == 1 then redis.call('EXPIRE', KEYS[3], ARGV[1]) end
+          if tonumber(ARGV[6]) > 0 then
+            globalDay = redis.call('INCR', KEYS[4])
+            if globalDay == 1 then redis.call('EXPIRE', KEYS[4], ARGV[2]) end
+          end
+          if newDays > 0 then
+            redis.call('SET', KEYS[6], tostring(firstDay), 'EX', ARGV[13])
+            if isNew == 1 then
+              pool = redis.call('INCR', KEYS[5])
+              if pool == 1 then redis.call('EXPIRE', KEYS[5], ARGV[2]) end
+            end
+          end
         end
-        return {refused, hour, day, global}
+        return {refused, hour, day, global, globalDay, isNew, pool}
       `;
       const counts = await evalScript(script, [
         key("limit-user", `${userId}:${hourWindow}`), key("limit-user-day", `${userId}:${dayWindow}`),
-        key("limit-global", String(hourWindow)),
-      ], [HOUR_SECONDS + 60, DAY_SECONDS + 3_600, perUserLimit, perUserDailyLimit, globalLimit]);
-      if (!Array.isArray(counts) || counts.length !== 4) throw new VoiceAuthStoreUnavailable();
-      const [refused, perUserCount, dailyCount, globalCount] = counts.map(Number);
-      if (![refused, perUserCount, dailyCount, globalCount].every(Number.isSafeInteger)) throw new VoiceAuthStoreUnavailable();
-      const limit = [null, "user_hour", "user_day", "global"][refused];
+        key("limit-global", String(hourWindow)), key("limit-global-day", String(dayWindow)),
+        key("limit-new-pool", String(dayWindow)), key("first-seen", userId), `${STORE_PREFIX}fair-share-started`,
+      ], [HOUR_SECONDS + 60, DAY_SECONDS + 3_600, perUserLimit, perUserDailyLimit, globalLimit,
+        extra.globalPerDay, extra.newDays, extra.newPerAccountPerDay, extra.newPoolPerDay,
+        extra.fairSharePercent, extra.fairShareTokens, dayWindow, FIRST_SEEN_SECONDS]);
+      if (!Array.isArray(counts) || counts.length !== 7) throw new VoiceAuthStoreUnavailable();
+      const [refused, perUserCount, dailyCount, globalCount, globalDayCount, isNew, newPoolCount] = counts.map(Number);
+      if (![refused, perUserCount, dailyCount, globalCount, globalDayCount, isNew, newPoolCount].every(Number.isSafeInteger)) throw new VoiceAuthStoreUnavailable();
+      const limit = [null, "user_hour", "user_day", "global", "new_account_day", "new_pool", "global_day", "fair_share"][refused];
       if (limit === undefined) throw new VoiceAuthStoreUnavailable();
-      return { allowed: refused === 0, limit, perUserCount, dailyCount, globalCount,
-        retryAfterSeconds: secondsUntilWindowEnds(nowMs, limit === "user_day" ? DAY_SECONDS : HOUR_SECONDS) };
+      // What a refusal is waiting for: the account's own day, the new accounts' day and the service's day end at UTC midnight, the rest with the hour.
+      const waitsForTheDay = ["user_day", "new_account_day", "new_pool", "global_day"].includes(limit);
+      return { allowed: refused === 0, limit, perUserCount, dailyCount, globalCount, globalDayCount, newPoolCount, newAccount: isNew === 1,
+        retryAfterSeconds: secondsUntilWindowEnds(nowMs, waitsForTheDay ? DAY_SECONDS : HOUR_SECONDS) };
     },
 
     /**
@@ -898,6 +956,26 @@ export function limitSetting(raw, fallback) {
   if (raw === undefined || raw === null || String(raw).trim() === "") return fallback;
   const text = String(raw).trim();
   return /^[1-9][0-9]*$/.test(text) && Number(text) <= 10_000 ? Number(text) : null;
+}
+
+/**
+ * The optional rules of `hitLimits` as the numbers its script takes, 0 for a rule that is not given. Anything that is not
+ * a whole number of at least 1 (and for the fair-share line a percentage of 100 at most) is an unusable setting:
+ * the store reports itself unavailable, as for a bad daily limit, before anything is counted.
+ */
+function limitRules(rules) {
+  const { globalPerDay, newAccounts, fairShare } = rules ?? {};
+  const whole = (value, max = Infinity) => Number.isSafeInteger(value) && value >= 1 && value <= max;
+  if (globalPerDay !== undefined && !whole(globalPerDay)) throw new VoiceAuthStoreUnavailable();
+  if (newAccounts !== undefined && !(whole(newAccounts?.days) && whole(newAccounts.perAccountPerDay) && whole(newAccounts.poolPerDay))) {
+    throw new VoiceAuthStoreUnavailable();
+  }
+  if (fairShare !== undefined && !(whole(fairShare?.budgetPercent, 100) && whole(fairShare.tokensPerHour))) throw new VoiceAuthStoreUnavailable();
+  return {
+    globalPerDay: globalPerDay ?? 0,
+    newDays: newAccounts?.days ?? 0, newPerAccountPerDay: newAccounts?.perAccountPerDay ?? 0, newPoolPerDay: newAccounts?.poolPerDay ?? 0,
+    fairSharePercent: fairShare?.budgetPercent ?? 0, fairShareTokens: fairShare?.tokensPerHour ?? 0,
+  };
 }
 
 /** The sign-in limits per caller address, or null when a setting is invalid. */

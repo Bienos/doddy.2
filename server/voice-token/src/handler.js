@@ -28,6 +28,15 @@ import {
 
 const DEFAULT_TOKENS_PER_HOUR = 30;
 const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
+// Decision 2026-11-12-voice-token-fair-share. A new account has 10 tokens a day of its own and shares a pool of 100 a day
+// with all the other new accounts, for its first 7 days. Once half of the hour's budget for everyone is used, an account
+// that already had 10 tokens that hour is refused. 600 a day is the ceiling for the whole service.
+const DEFAULT_GLOBAL_TOKENS_PER_DAY = 600;
+const DEFAULT_NEW_ACCOUNT_DAYS = 7;
+const DEFAULT_NEW_ACCOUNT_POOL_PER_DAY = 100;
+const DEFAULT_NEW_ACCOUNT_TOKENS_PER_DAY = 10;
+const DEFAULT_FAIR_SHARE_BUDGET_PERCENT = 50;
+const DEFAULT_FAIR_SHARE_TOKENS_PER_HOUR = 10;
 
 /**
  * @typedef {object} Env
@@ -40,6 +49,12 @@ const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
  * @property {string} [DODDY_TOKENS_PER_HOUR] per DODDY account; default 30
  * @property {string} [DODDY_TOKENS_PER_DAY] per DODDY account per UTC day; default 150
  * @property {string} [DODDY_GLOBAL_TOKENS_PER_HOUR] global shared limit; default 100
+ * @property {string} [DODDY_GLOBAL_TOKENS_PER_DAY] the whole service per UTC day; default 600
+ * @property {string} [DODDY_NEW_ACCOUNT_DAYS] how many days an account counts as new; default 7
+ * @property {string} [DODDY_NEW_ACCOUNT_POOL_PER_DAY] the pool all new accounts share per UTC day; default 100
+ * @property {string} [DODDY_NEW_ACCOUNT_TOKENS_PER_DAY] a new account's own limit per UTC day; default 10
+ * @property {string} [DODDY_FAIR_SHARE_BUDGET_PERCENT] the share of the hour's budget (1 to 100) after which the fair share applies; default 50
+ * @property {string} [DODDY_FAIR_SHARE_TOKENS_PER_HOUR] tokens an account may have had in an hour once that share is used; default 10
  */
 
 /**
@@ -97,29 +112,45 @@ export async function handleTokenRequest(request, env, deps = {}) {
   const perHour = limitSetting(env.DODDY_TOKENS_PER_HOUR, DEFAULT_TOKENS_PER_HOUR);
   const perDay = limitSetting(env.DODDY_TOKENS_PER_DAY, DEFAULT_TOKENS_PER_DAY);
   const globalPerHour = limitSetting(env.DODDY_GLOBAL_TOKENS_PER_HOUR, DEFAULT_GLOBAL_TOKENS_PER_HOUR);
+  const rules = fairShareRules(env);
   // Which agent this conversation talks to: the main one (no body, as ever), or the translator-only one.
   const agentId = agent === "translator" ? (env.ELEVENLABS_TRANSLATOR_AGENT_ID || DEFAULT_TRANSLATOR_AGENT_ID) : env.ELEVENLABS_AGENT_ID;
   const providerConfigured = Boolean(env.ELEVENLABS_API_KEY && agentId);
   // Without the key that makes the account's hashes, or a store that can record, a conversation could not be
   // deleted later, so none is started.
   const identity = conversationIdentity(env, userId);
-  if (!providerConfigured || perHour === null || perDay === null || globalPerHour === null || !store.hitLimits
+  if (!providerConfigured || perHour === null || perDay === null || globalPerHour === null || rules === null || !store.hitLimits
       || !identity || typeof store.recordConversation !== "function") {
     return finish(500, "server_not_configured", { provider });
   }
 
   let decision;
   try {
-    decision = await store.hitLimits(userId, perHour, globalPerHour, now(), perDay);
+    decision = await store.hitLimits(userId, perHour, globalPerHour, now(), perDay, rules);
   } catch {
     return finish(503, "server_not_configured", { provider });
   }
   if (!decision.allowed) {
-    // `limit` (which of the three said no) is a fixed word, never an id.
+    // `limit` (which limit said no) is a fixed word, never an id.
     return finish(429, "rate_limited", { provider, limit: decision.limit }, undefined, { "retry-after": String(decision.retryAfterSeconds) });
   }
 
   return elevenLabsToken(env, agentId, agent, fetchImpl, finish, { store, identity, now });
+}
+
+/**
+ * The settings of the new-account pool, the fair share and the daily ceiling, or null when one is set to something that is
+ * not a whole number (so a typo fails closed, like the other limits). The percentage is 1 to 100.
+ */
+function fairShareRules(env) {
+  const globalPerDay = limitSetting(env.DODDY_GLOBAL_TOKENS_PER_DAY, DEFAULT_GLOBAL_TOKENS_PER_DAY);
+  const days = limitSetting(env.DODDY_NEW_ACCOUNT_DAYS, DEFAULT_NEW_ACCOUNT_DAYS);
+  const poolPerDay = limitSetting(env.DODDY_NEW_ACCOUNT_POOL_PER_DAY, DEFAULT_NEW_ACCOUNT_POOL_PER_DAY);
+  const perAccountPerDay = limitSetting(env.DODDY_NEW_ACCOUNT_TOKENS_PER_DAY, DEFAULT_NEW_ACCOUNT_TOKENS_PER_DAY);
+  const budgetPercent = limitSetting(env.DODDY_FAIR_SHARE_BUDGET_PERCENT, DEFAULT_FAIR_SHARE_BUDGET_PERCENT);
+  const tokensPerHour = limitSetting(env.DODDY_FAIR_SHARE_TOKENS_PER_HOUR, DEFAULT_FAIR_SHARE_TOKENS_PER_HOUR);
+  if ([globalPerDay, days, poolPerDay, perAccountPerDay, budgetPercent, tokensPerHour].includes(null) || budgetPercent > 100) return null;
+  return { globalPerDay, newAccounts: { days, perAccountPerDay, poolPerDay }, fairShare: { budgetPercent, tokensPerHour } };
 }
 
 async function elevenLabsToken(env, agentId, agent, fetchImpl, finish, { store, identity, now }) {

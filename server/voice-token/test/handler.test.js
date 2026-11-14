@@ -14,12 +14,15 @@ const ENV = {
 
 function store({ allowed = true, limit = undefined } = {}) {
   const calls = [];
+  const rules = [];
   return {
     // Every token is tied to its account (test/conversations.test.js covers that in full).
     ...fakeConversationStore(),
     calls,
-    async hitLimits(userId, perUserLimit, globalLimit, now, perUserDailyLimit) {
+    rules,
+    async hitLimits(userId, perUserLimit, globalLimit, now, perUserDailyLimit, newRules) {
       calls.push({ userId, perUserLimit, globalLimit, now, perUserDailyLimit });
+      rules.push(newRules);
       return { allowed, limit, retryAfterSeconds: 120 };
     },
     async getSession() { return { userId: USER_ID, sessionId: "session-1" }; },
@@ -257,4 +260,78 @@ test("the translator agent also needs a Doddy account session", async () => {
   assert.equal(response.status, 401);
   assert.deepEqual(body, { error: "session_expired" });
   assert.equal(calls.length, 0);
+});
+
+// Decision 2026-11-12-voice-token-fair-share: a pool for new accounts, a fair share per account and a daily ceiling for the
+// service. The rules themselves are tested in test/fair-share.test.js; here, that the settings reach the store.
+const DEFAULT_RULES = {
+  globalPerDay: 600,
+  newAccounts: { days: 7, perAccountPerDay: 10, poolPerDay: 100 },
+  fairShare: { budgetPercent: 50, tokensPerHour: 10 },
+};
+
+test("the new-account pool, the fair share and the daily ceiling have defaults, so nothing has to be set on the host", async () => {
+  const authStore = store();
+  const { response } = await run(request(null), { authStore });
+  assert.equal(response.status, 200);
+  assert.deepEqual(authStore.rules, [DEFAULT_RULES]);
+});
+
+test("each of the new settings can be set, and reaches the store as a number", async () => {
+  const authStore = store();
+  await run(request(null), {
+    authStore,
+    environment: {
+      ...ENV,
+      DODDY_GLOBAL_TOKENS_PER_DAY: "900",
+      DODDY_NEW_ACCOUNT_DAYS: "3",
+      DODDY_NEW_ACCOUNT_POOL_PER_DAY: "40",
+      DODDY_NEW_ACCOUNT_TOKENS_PER_DAY: "4",
+      DODDY_FAIR_SHARE_BUDGET_PERCENT: "60",
+      DODDY_FAIR_SHARE_TOKENS_PER_HOUR: "8",
+    },
+  });
+  assert.deepEqual(authStore.rules, [{
+    globalPerDay: 900,
+    newAccounts: { days: 3, perAccountPerDay: 4, poolPerDay: 40 },
+    fairShare: { budgetPercent: 60, tokensPerHour: 8 },
+  }]);
+  // The line at the whole hourly budget is allowed (it makes the hour's budget alone decide).
+  const whole = store();
+  await run(request(null), { authStore: whole, environment: { ...ENV, DODDY_FAIR_SHARE_BUDGET_PERCENT: "100" } });
+  assert.equal(whole.rules[0].fairShare.budgetPercent, 100);
+});
+
+test("a bad value in any of the new settings fails closed before anything is counted or sent", async () => {
+  const names = [
+    "DODDY_GLOBAL_TOKENS_PER_DAY", "DODDY_NEW_ACCOUNT_DAYS", "DODDY_NEW_ACCOUNT_POOL_PER_DAY",
+    "DODDY_NEW_ACCOUNT_TOKENS_PER_DAY", "DODDY_FAIR_SHARE_BUDGET_PERCENT", "DODDY_FAIR_SHARE_TOKENS_PER_HOUR",
+  ];
+  for (const name of names) {
+    const values = ["many", "0", "-3", "1.5", "10001", "1e2"];
+    if (name === "DODDY_FAIR_SHARE_BUDGET_PERCENT") values.push("101");
+    for (const bad of values) {
+      const authStore = store();
+      const { response, body, calls } = await run(request(null), { authStore, environment: { ...ENV, [name]: bad } });
+      assert.equal(response.status, 500, `${name}=${bad}`);
+      assert.deepEqual(body, { error: "server_not_configured" });
+      assert.equal(calls.length, 0);
+      assert.equal(authStore.calls.length, 0, "nothing is counted against anyone");
+    }
+  }
+});
+
+test("a refusal for a new-account limit, the fair share or the daily ceiling looks to the app like any other: rate_limited with Retry-After", async () => {
+  for (const limit of ["new_account_day", "new_pool", "global_day", "fair_share"]) {
+    const { response, body, logs, calls } = await run(request(null), { authStore: store({ allowed: false, limit }) });
+    assert.equal(response.status, 429, limit);
+    assert.deepEqual(body, { error: "rate_limited" });
+    assert.equal(response.headers.get("retry-after"), "120");
+    assert.equal(logs[0].limit, limit, "the log names the limit as a fixed word");
+    assert.equal(calls.length, 0, "no provider request is made");
+    const logged = JSON.stringify(logs);
+    for (const secret of [USER_ID, "doddysession", "elevenlabs-server-secret", ENV.DODDY_SESSION_SIGNING_KEY]) {
+      assert.ok(!logged.includes(secret), `log leaked ${secret}`);
+    }
+  }
 });
