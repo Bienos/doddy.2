@@ -756,8 +756,8 @@ final class DeviceConnections {
     /// Undo of a timer Doddy started (step 2c): AlarmKit's first (ADR-650), only while it still counts down; else the
     /// notification timer with this exact identifier, only while iOS still has it waiting. Read back after either.
     private func stopTimer(_ identifier: String) async -> UndoResult {
-        let rung = TimerRinger.stop(identifier)
-        switch rung {
+        let inAlarmKit = TimerRinger.stop(identifier)
+        switch inAlarmKit {
         case .stopped: return .undone
         case .notConfirmed: return .notSure
         case .notStopped(let reason): return .notDone(reason)
@@ -767,7 +767,7 @@ final class DeviceConnections {
         let center = UNUserNotificationCenter.current()
         guard await center.pendingNotificationRequests().contains(where: { $0.identifier == identifier }) else {
             // Neither has it: gone (it rang, or the person stopped it), unless AlarmKit couldn't be read.
-            return rung == .unreadable ? .notDone(ActivityUndo.timersUnreadable) : .leftAlone
+            return inAlarmKit == .unreadable ? .notDone(ActivityUndo.timersUnreadable) : .leftAlone
         }
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
         let still = await center.pendingNotificationRequests().contains { $0.identifier == identifier }
