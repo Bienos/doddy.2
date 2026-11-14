@@ -1,6 +1,6 @@
 {
   "format": "doddy-voice-session/1",
-  "note": "Session settings in provider-neutral terms, with how each maps to ElevenLabs (live now; OpenAI Realtime was removed from the app on 9 Nov 2026). Values under 'elevenlabs' mirror the live agent as read on 2026-10-09.",
+  "note": "Session settings in provider-neutral terms, with how each maps to ElevenLabs (live now; OpenAI Realtime was removed from the app on 9 Nov 2026). Values under 'elevenlabs' mirror the live agent as read on 2026-11-10 (version agtvrsn_7801m72q3h4te4r87vq8xm1m3fyr, read only); before that this block still held the values read on 2026-10-09, and the model, voice, temperature, turn timeout, speed and stability had changed on the live agent since (the model to gpt-6-luna by 24 Oct at the latest).",
   "first_message": {
     "en": "{{opening_line}}",
     "pl": "{{opening_line}}",
@@ -116,12 +116,13 @@
   },
   "elevenlabs": {
     "agent_id": "agent_0501m4et27vyeawrwqfdxxfszfa6",
-    "llm": "gemini-3.5-flash",
-    "temperature": 0.5,
+    "llm": "gpt-6-luna",
+    "backup_llm": "default",
+    "temperature": 0.7,
     "timezone": "Europe/Warsaw",
-    "turn": {"turn_eagerness": "eager", "speculative_turn": true, "turn_model": "turn_v3", "turn_timeout": 7},
+    "turn": {"turn_eagerness": "eager", "speculative_turn": true, "turn_model": "turn_v3", "turn_timeout": 10, "soft_timeout": {"timeout_seconds": 3, "message": "No…", "max_per_generation": 1, "disable_until_first_user_message": true}, "interruption_ignore_terms": ["mhm", "aha", "ok", "okej", "no", "jasne", "tak", "spoko", "dobra", "super", "rozumiem", "yhm"], "interruption_ignore_term_languages": ["pl"]},
     "language_presets": "One preset per language in 'languages' besides the agent's own Polish (88 since 12 Nov 2026, version agtvrsn_8101m783vmeae5h8rn6wz8xwjpbx), each overriding only the first message ({{opening_line}}) and the soft timeout (ADR-212, decision 2026-11-12-translator-more-languages). The built-in language_detection tool (only_at_conversation_start false) switches between them at any point in a conversation.",
-    "tts": {"model_id": "eleven_v4_turbo", "voice_id": "oDULUm0GMltHA6mVZkWh", "speed": 1.0, "stability": 0.5},
+    "tts": {"model_id": "eleven_v4_turbo", "voice_id": "jGk1sjruA9wQTyWDbhL9", "speed": 1.05, "stability": 0.4, "similarity_boost": 0.75, "optimize_streaming_latency": 3, "expressive_mode": true, "audio_tags": ["laughs", "sighs", "slow", "excited"], "voice_note": "The 9 Oct pick (ADR-051) was oDULUm0GMltHA6mVZkWh; all four Doddy agents spoke with jGk1sjruA9wQTyWDbhL9 when read on 10 Nov 2026. No decision in the repo records the change."},
     "client_overrides": {"tts": ["voice_id", "speed", "stability"], "agent": ["language"], "note": "Settings, Voice and personality (VoiceStyle, ADR-105); only changed values are sent"},
     "asr": {"provider": "scribe_realtime", "quality": "high"},
     "vad": {"background_voice_detection": true},

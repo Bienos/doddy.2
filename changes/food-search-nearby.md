@@ -1,3 +1,0 @@
-Home › Food gets "Near you" under #416's hero: once you've said what you feel like, type your delivery address and Apple Maps lists the restaurants, cafés and bakeries for it within 10 km, nearest first, each with Order in… (copies the name, opens the delivery app), Call them (only a listed plain number) and Maps. No location permission; the address stays on the iPhone until cleared; no prices, ordering or paying, and the screen says so.
-Decision `2026-11-13-food-search-nearby`. DoddyCore `FoodSearch` + `FoodSearchTests`; the privacy page's Apple Maps row names Food.
-Ran: `scripts/check_forbidden_capabilities.sh`, the catalog check; the rest is CI on this pull request. Not seen on a device.

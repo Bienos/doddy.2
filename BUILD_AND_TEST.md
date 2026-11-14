@@ -310,7 +310,7 @@ It began on 9 Oct as a read-only Google Calendar view, which a Debug build still
 cd backend
 npm ci                    # installs the pinned versions from package-lock.json
 npm run typecheck         # type-checks against the installed @composio/core declarations
-npm test                  # builds, then 649 offline tests (8 Nov 2026, about 15 minutes here); no secrets, no network
+npm test                  # builds, then 860 offline tests (14 Nov 2026, about 9 minutes here); no secrets, no network
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
 ```
 `scripts/ci.sh --only backend` runs the same install, type-check and tests.
