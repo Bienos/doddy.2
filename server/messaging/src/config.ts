@@ -195,6 +195,10 @@ const schema = z.object({
   // Twilio's own voice for the short fixed lines (apology, goodbye, "przekazuję rozmowę").
   TASK_CALL_SAY_VOICE: z.string().regex(/^[A-Za-z0-9.\-]{1,40}$/).default("Polly.Ewa"),
 
+  // Texts to the user's contacts from Doddy's number (decision docs/decisions/2026-11-09-texts-to-contacts.md):
+  // one tap per text, at most 50 a day per account. Off by default: "0" answers 503 contact_texts_off and queues nothing.
+  CONTACT_TEXTS_ENABLED: z.enum(["0", "1"]).default("0"),
+
   // Errands (ADR-570, docs/implementation/ERRANDS.md): Doddy researches a task in the background.
   // Off by default ("0" refuses new errands and starts no queued one); "1" runs them when
   // ANTHROPIC_API_KEY and MEMORY_ENCRYPTION_KEY are set too.
@@ -514,6 +518,8 @@ export interface Config {
   elevenLabsWebhookSecret?: string;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
+  /** Texts to the user's contacts (decision 2026-11-09-texts-to-contacts); off unless CONTACT_TEXTS_ENABLED=1. */
+  contactTextsEnabled: boolean;
   shoppingSettings: ShoppingSettings;
   dealsSettings: DealsSettings;
   /** "Search further" under a leaflet answer (ADR-666). */
@@ -651,6 +657,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       blockedNumbers: e.TASK_CALL_BLOCKED_NUMBERS,
       transcriptPhoneNumbers: e.CALL_TRANSCRIPT_PHONE_NUMBERS,
     },
+    contactTextsEnabled: e.CONTACT_TEXTS_ENABLED === "1",
     errandSettings: {
       enabled: e.ERRANDS_ENABLED === "1",
       model: e.ERRANDS_MODEL,

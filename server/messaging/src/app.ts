@@ -133,6 +133,8 @@ export interface Deps {
   dealWatches?: { settings: DealWatchSettings; now?: () => Date };
   /** Deliveries through Uber Direct (decision 2026-11-12-uber-direct-deliveries): off unless configured and enabled. Needs `cipher` too. */
   deliveries?: DeliveryDeps;
+  /** Texts to the user's contacts (decision 2026-11-09-texts-to-contacts). Off unless true; needs `sms` and `cipher` too. */
+  contactTexts?: boolean;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
   watchLog?: (msg: string, extra?: object) => void;
   /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
