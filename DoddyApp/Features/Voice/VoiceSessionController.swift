@@ -4051,7 +4051,7 @@ final class VoiceSessionController {
     /// the card waits for the person to choose something on it (`SpokenConfirmation`). Anything else leaves the card
     /// up for a tap. Only the user's own transcribed words reach here; the agent's, a tool's or a page's never do.
     private func spokenAnswer(_ text: String) async {
-        guard let action = pendingAction, let shownAt = pendingShownAt, let tier = tier(of: action) else { return }
+        guard let action = pendingAction, let shownAt = pendingShownAt, let tier = confirmationTier(of: action) else { return }
         let now = Date()
         guard SpokenConfirmation.runs(text, tier: tier, cardShownAt: shownAt, now: now, waitsForAChoice: action.waitsForAChoice) else { return }
         switch action {
@@ -4075,7 +4075,7 @@ final class VoiceSessionController {
 
     /// How the card's call is confirmed now, from the call as it came in and what this conversation has seen; nil when
     /// the call isn't known (its words then never run it).
-    private func tier(of action: PendingAction) -> ConfirmationTier? {
+    private func confirmationTier(of action: PendingAction) -> ConfirmationTier? {
         guard let call = callsAsReceived[action.toolCallID] else { return nil }
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parameters)
         return ConfirmationTiers.tier(for: request, toolName: call.toolName, outsideContentSeen: outsideContent.outsideContentSeen)
@@ -4083,7 +4083,7 @@ final class VoiceSessionController {
 
     /// The card now up takes the person's own spoken yes, so its header asks for a yes, not a tap.
     var pendingTakesSpokenYes: Bool {
-        guard let action = pendingAction, let tier = tier(of: action), tier.acceptsSpokenYes, !action.waitsForAChoice else { return false }
+        guard let action = pendingAction, let tier = confirmationTier(of: action), tier.acceptsSpokenYes, !action.waitsForAChoice else { return false }
         if case .ask(_, _, true, _, _) = action { return false }
         return true
     }
