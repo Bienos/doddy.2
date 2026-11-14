@@ -569,7 +569,11 @@
         0,
         0,
         0
-      ]
+      ],
+      "w4": {
+        "eligible": 0,
+        "kept": 0
+      }
     },
     {
       "week": "2026-09-07",
@@ -582,7 +586,11 @@
         0,
         0,
         0
-      ]
+      ],
+      "w4": {
+        "eligible": 0,
+        "kept": 0
+      }
     },
     {
       "week": "2026-09-14",
@@ -594,7 +602,11 @@
         0,
         0,
         0
-      ]
+      ],
+      "w4": {
+        "eligible": 0,
+        "kept": 0
+      }
     },
     {
       "week": "2026-09-21",
@@ -605,7 +617,11 @@
         0,
         0,
         0
-      ]
+      ],
+      "w4": {
+        "eligible": 0,
+        "kept": 0
+      }
     },
     {
       "week": "2026-09-28",
@@ -615,7 +631,11 @@
         1,
         1,
         1
-      ]
+      ],
+      "w4": {
+        "eligible": 0,
+        "kept": 0
+      }
     },
     {
       "week": "2026-10-05",
@@ -624,7 +644,11 @@
         0,
         0,
         0
-      ]
+      ],
+      "w4": {
+        "eligible": 0,
+        "kept": 0
+      }
     },
     {
       "week": "2026-10-12",
@@ -632,14 +656,216 @@
       "active": [
         2,
         2
-      ]
+      ],
+      "w4": {
+        "eligible": 0,
+        "kept": 0
+      }
     },
     {
       "week": "2026-10-19",
       "size": 1,
       "active": [
         0
-      ]
+      ],
+      "w4": {
+        "eligible": 0,
+        "kept": 0
+      }
     }
-  ]
+  ],
+  "value": {
+    "weeks": [
+      {
+        "week": "2026-08-31",
+        "active": 0,
+        "withWorkedOut": 0,
+        "workedOut": 0,
+        "outcomes": {
+          "done": 0,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      {
+        "week": "2026-09-07",
+        "active": 0,
+        "withWorkedOut": 0,
+        "workedOut": 0,
+        "outcomes": {
+          "done": 0,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      {
+        "week": "2026-09-14",
+        "active": 0,
+        "withWorkedOut": 0,
+        "workedOut": 0,
+        "outcomes": {
+          "done": 0,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      {
+        "week": "2026-09-21",
+        "active": 0,
+        "withWorkedOut": 0,
+        "workedOut": 0,
+        "outcomes": {
+          "done": 0,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      {
+        "week": "2026-09-28",
+        "active": 1,
+        "withWorkedOut": 1,
+        "workedOut": 17,
+        "outcomes": {
+          "done": 17,
+          "declined": 2,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        }
+      },
+      {
+        "week": "2026-10-05",
+        "active": 1,
+        "withWorkedOut": 1,
+        "workedOut": 31,
+        "outcomes": {
+          "done": 31,
+          "declined": 2,
+          "unsure": 2,
+          "failed": 3,
+          "undone": 0
+        }
+      },
+      {
+        "week": "2026-10-12",
+        "active": 3,
+        "withWorkedOut": 3,
+        "workedOut": 59,
+        "outcomes": {
+          "done": 59,
+          "declined": 2,
+          "unsure": 3,
+          "failed": 4,
+          "undone": 0
+        }
+      },
+      {
+        "week": "2026-10-19",
+        "active": 3,
+        "withWorkedOut": 3,
+        "workedOut": 13,
+        "outcomes": {
+          "done": 13,
+          "declined": 4,
+          "unsure": 1,
+          "failed": 0,
+          "undone": 0
+        }
+      }
+    ],
+    "firstTaskCohorts": [
+      {
+        "week": "2026-08-31",
+        "size": 0,
+        "active": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "week": "2026-09-07",
+        "size": 0,
+        "active": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "week": "2026-09-14",
+        "size": 0,
+        "active": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "week": "2026-09-21",
+        "size": 0,
+        "active": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "week": "2026-09-28",
+        "size": 1,
+        "active": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "week": "2026-10-05",
+        "size": 0,
+        "active": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "week": "2026-10-12",
+        "size": 2,
+        "active": [
+          2,
+          2
+        ]
+      },
+      {
+        "week": "2026-10-19",
+        "size": 0,
+        "active": [
+          0
+        ]
+      }
+    ]
+  }
 }

@@ -1,5 +1,5 @@
 import type { MessageKey } from "../i18n/messages.js";
-import { type OwnerAccount, type OwnerOverview, type Outcomes, toolRows } from "../owner/schema.js";
+import { type OwnerAccount, type OwnerOverview, type Outcomes, toolRows, type ValueWeek } from "../owner/schema.js";
 
 /**
  * The admin dashboard's rules, with no screen in them (decision 2026-11-09-usage-counts-on-by-default):
@@ -134,4 +134,38 @@ export function insights(overview: OwnerOverview, accounts: OwnerAccount[]): Ins
 /** What share of a cohort was active k weeks after joining, 0 to 100, or null when nobody joined. */
 export function retention(size: number, active: number): number | null {
   return size > 0 ? Math.round((active / size) * 100) : null;
+}
+
+/**
+ * One week's row of "Tasks that worked out" (decision 2026-11-14-tasks-that-worked-out). `perAccount` is
+ * per account that used Doddy that week, to one decimal. The guardrails are shares 0 to 100: not sure and
+ * didn't work of the tries that ran (said no never ran), undone of the done ones, said no of everything
+ * Doddy asked. Every share is null when there is nothing to divide by, never a made-up 0.
+ */
+export interface ValueRow {
+  week: string;
+  active: number;
+  workedOut: number;
+  perAccount: number | null;
+  withWorkedOut: number | null;
+  notSure: number | null;
+  failed: number | null;
+  undone: number | null;
+  declined: number | null;
+}
+
+export function valueRow(w: ValueWeek): ValueRow {
+  const { done, declined, unsure, failed, undone } = w.outcomes;
+  const ran = done + unsure + failed;
+  return {
+    week: w.week,
+    active: w.active,
+    workedOut: w.workedOut,
+    perAccount: w.active > 0 ? Math.round((w.workedOut / w.active) * 10) / 10 : null,
+    withWorkedOut: retention(w.active, w.withWorkedOut),
+    notSure: retention(ran, unsure),
+    failed: retention(ran, failed),
+    undone: retention(done, undone),
+    declined: retention(ran + declined, declined),
+  };
 }

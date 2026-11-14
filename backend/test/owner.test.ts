@@ -369,10 +369,78 @@ test("activation: of the accounts that joined in the period, how many used Doddy
   assert.deepEqual(o.cohorts.map((c: { week: string }) => c.week), ["2026-08-31", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19"]);
   const week = (monday: string) => o.cohorts.find((c: { week: string }) => c.week === monday);
   // Joined the week of the 19th: A and D. A used Doddy that week; D didn't.
-  assert.deepEqual(week("2026-10-19"), { week: "2026-10-19", size: 2, active: [1] });
+  // Nobody here joined 28 days ago, so no one's week-4 window has closed yet.
+  assert.deepEqual(week("2026-10-19"), { week: "2026-10-19", size: 2, active: [1], w4: { eligible: 0, kept: 0 } });
   // Joined the week of 28 Sep: B and C. B used it that week and again three weeks later; C never after joining.
-  assert.deepEqual(week("2026-09-28"), { week: "2026-09-28", size: 2, active: [1, 0, 0, 1] });
-  assert.deepEqual(week("2026-10-05"), { week: "2026-10-05", size: 0, active: [0, 0, 0] });
+  assert.deepEqual(week("2026-09-28"), { week: "2026-09-28", size: 2, active: [1, 0, 0, 1], w4: { eligible: 0, kept: 0 } });
+  assert.deepEqual(week("2026-10-05"), { week: "2026-10-05", size: 0, active: [0, 0, 0], w4: { eligible: 0, kept: 0 } });
+});
+
+// Tasks that worked out (decision 2026-11-14-tasks-that-worked-out).
+const U5 = "00000000-0000-4000-8000-0000000000c5";
+const outcome = (over: Partial<Record<"done" | "declined" | "unsure" | "failed" | "undone", number>>) => ({ done: 0, declined: 0, unsure: 0, failed: 0, undone: 0, ...over });
+const worked = (date: string, done = 1) => day(date, 1, { save_memory: outcome({ done }) });
+
+test("each week: tasks that worked out (done less undone), the accounts behind them, and every result beside them; no account list needed", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(null) } });
+  // Today (Thursday 22 Oct): 4 done, of which 1 undone, so 3 worked out; not sure, didn't work and said no stay out of it.
+  await send(rig, USER_A, day(iso(0), 2, {
+    create_reminder: outcome({ done: 3, undone: 1 }),
+    web_search: outcome({ done: 1 }),
+    send_email: outcome({ unsure: 1 }),
+    read_calendar: outcome({ failed: 1 }),
+    set_timer: outcome({ declined: 2 }),
+  }));
+  // B used Doddy this week with no tool at all, and last week had two tasks that worked out.
+  await send(rig, USER_B, day("2026-10-20", 1), worked("2026-10-13", 2));
+
+  const o = (await ownerGet(rig, "/v1/web/owner/overview?days=7")).body;
+  assert.equal(o.value.weeks.length, 8);
+  assert.deepEqual(o.value.weeks.map((w: { week: string }) => w.week), ["2026-08-31", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19"]);
+  assert.deepEqual(o.value.weeks[7], { week: "2026-10-19", active: 2, withWorkedOut: 1, workedOut: 3, outcomes: { done: 4, declined: 2, unsure: 1, failed: 1, undone: 1 } });
+  assert.deepEqual(o.value.weeks[6], { week: "2026-10-12", active: 1, withWorkedOut: 1, workedOut: 2, outcomes: outcome({ done: 2 }) });
+  assert.deepEqual(o.value.weeks[0], { week: "2026-08-31", active: 0, withWorkedOut: 0, workedOut: 0, outcomes: outcome({}) });
+  assert.deepEqual(o.cohorts, [], "the join cohorts still need the account list");
+});
+
+test("value in week 4: only accounts whose days 22 to 28 after joining are over count, and only a task that worked out on one of those days keeps them", async () => {
+  const users = [
+    person(U3, "c@example.com", "2026-09-14T09:00:00Z"), // days 22-28: 5 to 11 Oct; worked out on the 8th: kept
+    person(U4, "d@example.com", "2026-09-15T09:00:00Z"), // days 22-28: 6 to 12 Oct; worked out on day 21 and day 29 only: not kept
+    person(U5, "e@example.com", "2026-09-16T09:00:00Z"), // nothing at all: not kept
+    person(ID_A, "a@example.com", "2026-09-26T09:00:00Z"), // window ends 23 Oct, after today: not counted, though it worked out
+    person(ID_B, "b@example.com", "2026-09-25T09:00:00Z"), // window ends today, so day 28 isn't over: not counted
+  ];
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(users) } });
+  await sendFor(rig, U3, worked("2026-10-08"));
+  await sendFor(rig, U4, worked("2026-10-05"), worked("2026-10-13"));
+  await send(rig, USER_A, worked("2026-10-20"));
+  await send(rig, USER_B, worked("2026-10-18"));
+
+  const o = (await ownerGet(rig, "/v1/web/owner/overview?days=30")).body;
+  const week = (monday: string) => o.cohorts.find((c: { week: string }) => c.week === monday);
+  assert.deepEqual(week("2026-09-14").w4, { eligible: 3, kept: 1 });
+  assert.deepEqual(week("2026-09-21").w4, { eligible: 0, kept: 0 });
+  assert.equal(week("2026-09-21").size, 2);
+});
+
+test("retention from the first task that worked out, found as far back as Logbook keeps, with undone tasks not counting", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(null) } });
+  // U3: a failed try on the 29th, the first task that worked out on 30 Sep, then again in the next week and three weeks on.
+  await sendFor(rig, U3, day("2026-09-29", 1, { web_search: outcome({ failed: 1 }) }), worked("2026-09-30"), worked("2026-10-08"), worked("2026-10-20"));
+  // U4: on the 13th two done and both undone (nothing worked out); the first one is the 14th.
+  await sendFor(rig, U4, day("2026-10-13", 1, { add_to_list: outcome({ done: 2, undone: 2 }) }), worked("2026-10-14"));
+  // U5: its first was in July, long before these 8 weeks, so it starts no cohort here.
+  await sendFor(rig, U5, worked("2026-07-01"), worked("2026-10-21"));
+
+  const o = (await ownerGet(rig, "/v1/web/owner/overview?days=30")).body;
+  const cohorts = o.value.firstTaskCohorts;
+  assert.equal(cohorts.length, 8);
+  const week = (monday: string) => cohorts.find((c: { week: string }) => c.week === monday);
+  assert.deepEqual(week("2026-09-28"), { week: "2026-09-28", size: 1, active: [1, 1, 0, 1] });
+  assert.deepEqual(week("2026-10-12"), { week: "2026-10-12", size: 1, active: [1, 0] });
+  assert.deepEqual(week("2026-10-19"), { week: "2026-10-19", size: 0, active: [0] });
+  assert.equal(cohorts.reduce((sum: number, c: { size: number }) => sum + c.size, 0), 2);
 });
 
 test("no cohorts or activation without Supabase's account list, because nobody's join date is known", async () => {
