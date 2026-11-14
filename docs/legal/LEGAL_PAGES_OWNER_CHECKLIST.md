@@ -36,7 +36,7 @@ Every gap is a visible `<span class="ph" data-ph="ID">` on the page: `[OWNER: â€
 - [ ] Remove the draft banner (`.legal-draft`) and `<meta name="robots" content="noindex">` from all four pages, then decide on `sitemap.xml` (`site/README.md`, "Legal pages").
 
 ### Age
-- [ ] **A1** Minimum age. T `#eligibility`; P `#children`. The app has no age gate, no children's mode and no parental controls (searched `DoddyApp` and `Packages`). Decide together with the App Store age rating (AI chat, user content, contacts).
+- [ ] **A1** Minimum age. T `#eligibility`; P `#children`. The app has no age gate, no children's mode and no parental controls (searched `DoddyApp` and `Packages`). Decide together with the App Store age rating (AI chat, user content, contacts). **Owner choice 14 Nov 2026: 16.** The policy draft now says "meant for people aged 16 or over"; still to do: the same line in the terms and an App Store age rating that matches, checked with a lawyer.
 
 ### Governing law, liability, notice
 - [ ] **L1** Governing law. T `#law`.
