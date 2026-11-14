@@ -3,6 +3,7 @@ import { z } from "zod";
 import { SignedSessionVerifier } from "./auth.js";
 import { clientKey } from "./clientAddress.js";
 import type { OwnerClaim } from "./config.js";
+import { DAY_MS, DEVICE_JOIN_DAYS, type DeviceSignIns } from "./devices.js";
 import { AppError } from "./errors.js";
 import type { SigningKeys } from "./signingKeys.js";
 
@@ -87,8 +88,11 @@ export interface DeviceOwnerStore {
    * without it nothing is written and an empty server answers null (ADR-707).
    */
   claimDeviceOwner(userId: string, now: number, allowClaim: boolean): Promise<string | null>;
-  /** ADR-819: the account this iPhone chose to use instead of its own (Google or Apple on the iPhone). */
-  deviceJoin?(deviceUserId: string): Promise<{ user_id: string } | null>;
+  /**
+   * ADR-819: the account this iPhone chose to use instead of its own (Google or Apple on the iPhone). A join last made
+   * before `notBefore` (a time in ms) has ended, so it answers null.
+   */
+  deviceJoin?(deviceUserId: string, notBefore?: number): Promise<{ user_id: string } | null>;
   /** Decision 2026-11-08-required-account: true once a Doddy account took over this device's data. */
   isLinkedUser?(userId: string): Promise<boolean>;
   reserveUsage(checks: readonly { counter: string; period: string; limit: number }[], units: number): Promise<boolean>;
@@ -128,6 +132,13 @@ export class DeviceSessionIssuer {
        */
       ownerClaim?: OwnerClaim;
       ttlSeconds?: number;
+      /**
+       * Stored iPhones (`devices.ts`): each sign-in is recorded, a revoked iPhone is refused, and the token names its row.
+       * Left out, nothing is stored and tokens are made as before (tests and tools that build an issuer by hand).
+       */
+      devices?: DeviceSignIns;
+      /** How long a join lasts without a new sign-in, in milliseconds (DODDY_DEVICE_JOIN_DAYS). Default 90 days. */
+      joinMs?: number;
       guestLimits?: GuestLimits;
       inviteLimits?: InviteLimits;
       /** Operational log: names and counts only, never a device, a user or an address. */
@@ -155,9 +166,13 @@ export class DeviceSessionIssuer {
     if (await this.options.store.isLinkedUser?.(userId)) {
       throw new AppError("account_conflict", { message: "This iPhone's data now belongs to a Doddy account. Sign in with Apple, Google or email." });
     }
-    // ADR-819: an iPhone that signed in to an account with Google or Apple keeps getting that account.
-    const joined = await this.options.store.deviceJoin?.(userId);
-    if (joined) return this.mint(joined.user_id, now);
+    // Decision 2026-11-12-account-and-device-tokens (c): a revoked iPhone is not let in again by signing in, whatever else is
+    // true of it. Looked at before anything is counted, so it uses up no invite code and no guest place.
+    await this.options.devices?.assertNotRevoked(userId);
+    // ADR-819: an iPhone that signed in to an account with Google or Apple keeps getting that account, until the join ends
+    // (unlinked, left, or not renewed in DODDY_DEVICE_JOIN_DAYS): then it is its own account's again.
+    const joined = await this.options.store.deviceJoin?.(userId, now.getTime() - (this.options.joinMs ?? DEVICE_JOIN_DAYS * DAY_MS));
+    if (joined) return this.mint(joined.user_id, now, undefined, userId);
     const code = parsed.data.inviteCode?.trim() ?? "";
     // A valid code that has no room left (ADR-709): what to say if nothing else lets this iPhone in.
     let full: AppError | null = null;
@@ -284,13 +299,18 @@ export class DeviceSessionIssuer {
     return matched;
   }
 
-  private async mint(userId: string, now: Date, scope?: "ask"): Promise<DeviceSessionResponse> {
+  /**
+   * `userId`: the account the token is for. `deviceUserId`: the iPhone asking, when it is not that account's own (a join).
+   * With stored iPhones the iPhone's row is made or found first, and the token names it.
+   */
+  private async mint(userId: string, now: Date, scope?: "ask", deviceUserId: string = userId): Promise<DeviceSessionResponse> {
     const ttl = this.options.ttlSeconds ?? DEVICE_SESSION_TTL_SECONDS;
+    const deviceId = await this.options.devices?.signedIn(deviceUserId, now.getTime());
     // A token is never dated before the moment this person's earlier tokens were cut off (ADR-709), so
     // signing in again right after deleting the account works even within the same second.
     const floor = await this.options.store.tokenFloor(userId);
     const issuedAt = new Date(Math.max(Math.floor(now.getTime() / 1000), floor) * 1000);
-    const token = this.signer.mint(userId, issuedAt, ttl, scope);
+    const token = this.signer.mint(userId, issuedAt, ttl, scope, deviceId);
     const expiresAt = new Date(issuedAt.getTime() + ttl * 1000).toISOString();
     return { token, expiresAt, access: scope ?? "full" };
   }

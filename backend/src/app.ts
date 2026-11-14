@@ -6,6 +6,7 @@ import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
+import { DAY_MS, DEVICE_KEPT_DAYS, DeviceRegistry } from "./devices.js";
 import { DeviceSessionIssuer } from "./deviceSession.js";
 import { DOCUMENT_STALE_AFTER_MS, DocumentLinks, DocumentSeal } from "./documents.js";
 import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider } from "./tools/claude.js";
@@ -78,18 +79,23 @@ export async function buildApp(
   // A person's cut-off second (ADR-709): deleting the account ends every token issued before it, for
   // any verifier this server builds. A verifier handed in by a test is used as it is.
   const floors = new TokenFloors(store);
+  // The iPhones that signed in with their device id (decision 2026-11-12-account-and-device-tokens, c): stored, listed and
+  // revoked, and a join to another account that expires. A revoke or an ended join refuses that iPhone's tokens like the
+  // cut-off above does, so every verifier this server builds for device tokens takes it.
+  const joinMs = config.deviceJoinDays * DAY_MS;
+  const devices = new DeviceRegistry(store, { joinMs, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   // Decision 2026-11-08-required-account: one Supabase verifier (one key cache) for every sign-in check,
   // and a Doddy account that took over an iPhone's earlier data works on that data.
   const supabase = config.authMode === "supabase" && config.supabaseUrl
     ? new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl, ...(overrides.supabaseFetchJson ? { fetchJson: overrides.supabaseFetchJson } : {}) })
     : null;
   const verifier: SessionVerifier =
-    overrides.verifier ?? new RevocableSessionVerifier(new LinkedAccountVerifier(sessionVerifier(config, supabase), store, floors), floors);
+    overrides.verifier ?? new RevocableSessionVerifier(new LinkedAccountVerifier(sessionVerifier(config, supabase), store, floors), floors, devices);
   const accountLinker = new AccountLinker({
     store,
     accounts: supabase,
     // The iPhone's own device session (valid and not cut off, ADR-709) starts a link and can undo it.
-    devices: config.signingKeys ? new RevocableSessionVerifier(new SignedSessionVerifier(config.signingKeys), floors) : null,
+    devices: config.signingKeys ? new RevocableSessionVerifier(new SignedSessionVerifier(config.signingKeys), floors, devices) : null,
     floors,
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
@@ -169,6 +175,8 @@ export async function buildApp(
           identifierKey: config.identifierKey,
           ownerClaim: config.ownerClaim,
           inviteLimits: config.inviteLimits,
+          devices,
+          joinMs,
           log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
         })
       : null;
@@ -235,7 +243,7 @@ export async function buildApp(
   // Apple and Google on the web (ADR-818): only with the Supabase project's URL and publishable key.
   const social =
     config.web?.social && webAuth
-      ? new SocialSignIn(store, webAuth, config.web.social, { appScheme: appScheme(config.appReturnUrl), trustProxy: config.web.trustProxy, log })
+      ? new SocialSignIn(store, webAuth, config.web.social, { appScheme: appScheme(config.appReturnUrl), trustProxy: config.web.trustProxy, joinMs, log })
       : null;
   // The owner panel (decision 2026-11-09-usage-counts-on-by-default): only with DODDY_OWNER_ACCOUNTS set. The
   // accounts' emails and sign-in dates come from Supabase's admin API, with the secret key, when it is set.
@@ -246,7 +254,7 @@ export async function buildApp(
     config.web && webAuth
       ? {
           auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions, ownerPanel),
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions, ownerPanel, devices),
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;
@@ -296,6 +304,8 @@ export async function buildApp(
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => store.pruneOwnerAudit(Date.now() - OWNER_AUDIT_KEPT_DAYS * 86_400_000))
       .then(() => store.pruneTokenFloors(Date.now()))
+      .then(() => store.pruneDeviceCutoffs(Date.now()))
+      .then(() => store.pruneDevices(Date.now() - DEVICE_KEPT_DAYS * DAY_MS))
       .then(() => store.pruneAccountLinkCodes(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again

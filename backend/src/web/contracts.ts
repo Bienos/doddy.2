@@ -40,6 +40,30 @@ export type WebSessionView = z.infer<typeof WebSessionViewSchema>;
 export const CurrentSessionSchema = z.object({ session: WebSessionViewSchema }).strict();
 export const SessionListSchema = z.object({ sessions: z.array(WebSessionViewSchema) }).strict();
 
+/**
+ * An iPhone of the account (decision 2026-11-12-account-and-device-tokens, part c). `id` is the stored row's own random
+ * id, the one a revoke names: never the device id the iPhone keeps. Times are ISO strings.
+ */
+export const DeviceViewSchema = z
+  .object({
+    id: z.string().uuid(),
+    /** A short name, when the iPhone has told the server one. The app sends none yet, so it is null. */
+    label: z.string().nullable(),
+    firstSeenAt: z.string(),
+    /** Written at most about once an hour. */
+    lastSeenAt: z.string(),
+    /** True for the iPhone that asked. Always false when a browser asks. */
+    current: z.boolean(),
+    /** How it uses this account: null for the iPhone's own account, else the Apple or Google sign-in it joined with and when that join ends unless it signs in again. */
+    joined: z.object({ provider: z.enum(["google", "apple"]), since: z.string(), expiresAt: z.string() }).strict().nullable(),
+    /** When it was revoked, or null. A revoked iPhone's tokens no longer work. */
+    revokedAt: z.string().nullable(),
+  })
+  .strict();
+export type DeviceView = z.infer<typeof DeviceViewSchema>;
+export const DeviceListSchema = z.object({ devices: z.array(DeviceViewSchema) }).strict();
+export const DeviceRevocationSchema = z.object({ revoked: z.literal(true), revokedAt: z.string() }).strict();
+
 export const DocumentKind = z.enum(["deck", "doc", "spreadsheet", "pdf", "text", "file"]);
 /**
  * `working`: Claude is still making it. `interrupted`: it was being made when the server stopped,

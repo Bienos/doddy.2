@@ -13,6 +13,7 @@ import type { WebAuth, WebSessionContext } from "./sessions.js";
 import { LINK_REAUTH_MS, type SocialSignIn } from "./social.js";
 import type { AccountEraser } from "../account.js";
 import { OwnerPanel } from "./owner.js";
+import type { DeviceRegistry } from "../devices.js";
 
 /**
  * The `/v1/web/…` routes (ADR-600). Each route says who may call it:
@@ -28,6 +29,8 @@ export type Access = "public" | "phone" | "either" | "browser" | "device";
 
 export interface WebCaller {
   userId: string;
+  /** The stored iPhone's row (`devices.ts`) behind an iPhone's own token, when it names one. Null for a browser and for an earlier token. */
+  deviceId: string | null;
   /** Set when the caller is a browser session. */
   session: WebSessionContext | null;
 }
@@ -81,6 +84,8 @@ export class WebRoutes {
     devices?: { userIdFor(deviceId: unknown): string | null } | null,
     /** The owner panel (decision 2026-11-09-usage-counts-on-by-default). Without it those routes don't exist. */
     owner?: OwnerPanel | null,
+    /** The iPhones that signed in with their device id, listed and revoked here (decision 2026-11-12-account-and-device-tokens, c). Without it those routes don't exist. */
+    deviceList?: DeviceRegistry | null,
   ) {
     this.routes = [
       {
@@ -135,6 +140,28 @@ export class WebRoutes {
           return { status: 200, body: { signedOut: true }, ...(self ? { setCookie: this.auth.clearCookie() } : {}) };
         },
       },
+      // ---------------------------------------------------------------- iPhones of the account (decision 2026-11-12-account-and-device-tokens, c)
+      ...(deviceList
+        ? ([
+            {
+              // The iPhones that use this account now. Only the account's own: a person never sees another's.
+              method: "GET",
+              pattern: /^\/v1\/web\/devices$/,
+              template: "GET /v1/web/devices",
+              access: "either",
+              run: async ({ caller, now }) => ({ status: 200, body: { devices: await deviceList.list(caller!.userId, caller!.deviceId, now) } }),
+            },
+            {
+              // Ends one iPhone's tokens at once. The answer says it was done only after the store confirmed it; an id that is
+              // unknown or belongs to another account is the same plain 404.
+              method: "DELETE",
+              pattern: /^\/v1\/web\/devices\/([0-9a-f-]{36})$/,
+              template: "DELETE /v1/web/devices/:id",
+              access: "either",
+              run: async ({ caller, params, now }) => ({ status: 200, body: await deviceList.revoke(caller!.userId, params[0]!, now) }),
+            },
+          ] satisfies Route[])
+        : []),
       {
         method: "GET",
         pattern: /^\/v1\/web\/documents$/,
@@ -281,14 +308,14 @@ export class WebRoutes {
                     pattern: /^\/v1\/web\/device-account$/,
                     template: "POST /v1/web/device-account",
                     access: "device",
-                    run: async ({ caller, body }) => ({ status: 200, body: await social.deviceAccount(caller!.userId, body, (id) => devices.userIdFor(id)) }),
+                    run: async ({ caller, body, now }) => ({ status: 200, body: await social.deviceAccount(caller!.userId, body, (id) => devices.userIdFor(id), now) }),
                   },
                   {
                     method: "POST",
                     pattern: /^\/v1\/web\/device-account\/leave$/,
                     template: "POST /v1/web/device-account/leave",
                     access: "device",
-                    run: async ({ caller, body }) => ({ status: 200, body: await social.leave(caller!.userId, body, (id) => devices.userIdFor(id)) }),
+                    run: async ({ caller, body, now }) => ({ status: 200, body: await social.leave(caller!.userId, body, (id) => devices.userIdFor(id), now) }),
                   },
                 ] satisfies Route[])
               : []),
@@ -306,7 +333,7 @@ export class WebRoutes {
               access: "either",
               run: async ({ caller, params, now }) => {
                 social.assertMayChange(caller!.session, now);
-                await social.unlink(caller!.userId, params[0]!);
+                await social.unlink(caller!.userId, params[0]!, now);
                 return { status: 200, body: { unlinked: true } };
               },
             },
@@ -454,7 +481,7 @@ export class WebRoutes {
       // A guest iPhone (ADR-587) can't open the web workspace: it has Ask Doddy only. It may still
       // sign in to an account it proves with Google or Apple (`device`, ADR-819).
       if (access !== "device") requireFullAccess(user);
-      return { userId: user.userId, session: null };
+      return { userId: user.userId, deviceId: user.deviceId ?? null, session: null };
     }
     if (access === "phone" || access === "device") throw new AppError("unauthenticated");
     const session = await this.auth.fromCookie(req, now);
@@ -463,7 +490,7 @@ export class WebRoutes {
       if (this.auth.hasCookie(req)) res.setHeader("set-cookie", this.auth.clearCookie());
       throw new AppError("unauthenticated", { message: "You're signed out. Get a sign-in code on your iPhone." });
     }
-    return { userId: session.userId, session };
+    return { userId: session.userId, deviceId: null, session };
   }
 }
 

@@ -22,6 +22,11 @@ export interface AuthenticatedUser {
    * nothing else. Absent: the full API.
    */
   scope?: "ask";
+  /**
+   * The stored iPhone (`devices.ts`) a device-session token was made for. Only a `ds1` token made since iPhones
+   * are stored carries one; an earlier token, a browser session and an account's own token have none.
+   */
+  deviceId?: string;
 }
 
 /**
@@ -68,6 +73,11 @@ interface SessionClaims {
   exp: number;
   /** Only on a guest's token (ADR-587). Signed with the rest, so it can't be removed. */
   scp?: "ask";
+  /**
+   * Only on a token made for a stored iPhone (`devices.ts`): which one, so a revoke can end that iPhone's tokens and
+   * no one else's. A random id, not the device id the iPhone keeps. Signed with the rest, so it can't be removed or changed.
+   */
+  dev?: string;
 }
 
 const b64url = (data: Buffer | string) => Buffer.from(data).toString("base64url");
@@ -86,10 +96,16 @@ export class SignedSessionVerifier implements SessionVerifier {
     this.keys = keyringOf(keys).for("session");
   }
 
-  mint(userId: string, now: Date, ttlSeconds: number, scope?: "ask"): string {
+  /**
+   * `deviceId`: the stored iPhone's id (`devices.ts`), added to the claims only when given. How the token is signed
+   * is not touched: the claims are what they were, plus this one when it exists, and a token made without it is
+   * byte for byte what it was before.
+   */
+  mint(userId: string, now: Date, ttlSeconds: number, scope?: "ask", deviceId?: string): string {
     if (!UUID.test(userId)) throw new Error("userId must be a UUID");
+    if (deviceId !== undefined && !UUID.test(deviceId)) throw new Error("deviceId must be a UUID");
     const iat = Math.floor(now.getTime() / 1000);
-    const claims: SessionClaims = { v: 1, sub: userId, iat, exp: iat + ttlSeconds, ...(scope ? { scp: scope } : {}) };
+    const claims: SessionClaims = { v: 1, sub: userId, iat, exp: iat + ttlSeconds, ...(scope ? { scp: scope } : {}), ...(deviceId ? { dev: deviceId } : {}) };
     const payload = b64url(JSON.stringify(claims));
     return `ds1.${payload}.${this.keys.sign(message(payload))}`;
   }
@@ -113,7 +129,7 @@ export class SignedSessionVerifier implements SessionVerifier {
     if (!isClaims(claims)) return null;
     const nowSeconds = Math.floor(now.getTime() / 1000);
     if (claims.exp <= nowSeconds || claims.iat > nowSeconds + 60) return null;
-    return claims.scp ? { userId: claims.sub, scope: claims.scp } : { userId: claims.sub };
+    return { userId: claims.sub, ...(claims.scp ? { scope: claims.scp } : {}), ...(claims.dev ? { deviceId: claims.dev } : {}) };
   }
 }
 
@@ -129,7 +145,8 @@ function isClaims(value: unknown): value is SessionClaims {
     UUID.test(c.sub) &&
     Number.isInteger(c.iat) &&
     Number.isInteger(c.exp) &&
-    (c.scp === undefined || c.scp === "ask")
+    (c.scp === undefined || c.scp === "ask") &&
+    (c.dev === undefined || (typeof c.dev === "string" && UUID.test(c.dev)))
   );
 }
 
@@ -398,11 +415,23 @@ export class TokenFloors {
 }
 
 /**
+ * What a device-session token still needs once iPhones are stored (`devices.ts`), beyond its person's cut-off: its
+ * iPhone is not revoked, and an account it signs in to by a join is still the one that iPhone joins.
+ */
+export interface DeviceTokenGate {
+  /** `issuedAt`: the token's `iat`, in seconds. False: refuse it. Throws when it can't be checked right now. */
+  allows(user: AuthenticatedUser, issuedAt: number, nowMs: number): Promise<boolean>;
+}
+
+/**
  * Refuses a device-session token dated before its person's cut-off second. Deleting the account sets the
  * cut-off (`Store.eraseUser`), so a token minted before the deletion stops working at once, and one
  * minted by a later sign-in (dated at or after the cut-off) works. Only `ds1` tokens are covered: an
  * owner-minted or device token is the one that lasts 30 days. A Supabase access token (an hour) is
  * Supabase's to end.
+ *
+ * With `devices` it also ends one iPhone's tokens at once, the way the cut-off ends a person's: a token that names a
+ * revoked iPhone, or an account that iPhone no longer joins, is refused on the next request (`DeviceRegistry.allows`).
  *
  * A signing key that is no longer held (neither current nor previous, `signingKeys.ts`) still revokes every
  * token made with it at once. A device's user ID follows the identifier key, not the signing keys (see
@@ -413,6 +442,7 @@ export class RevocableSessionVerifier implements SessionVerifier {
   constructor(
     private readonly inner: SessionVerifier,
     private readonly floors: TokenFloors,
+    private readonly devices?: DeviceTokenGate,
   ) {}
 
   async verify(header: string | undefined, now: Date): Promise<AuthenticatedUser | null> {
@@ -421,12 +451,12 @@ export class RevocableSessionVerifier implements SessionVerifier {
     const issuedAt = sessionTokenIssuedAt(header);
     if (issuedAt === undefined) return user; // not a device-session token
     if (issuedAt === null) return null;
-    let floor: number;
     try {
-      floor = await this.floors.floorOf(user.userId, now.getTime());
+      if (issuedAt < (await this.floors.floorOf(user.userId, now.getTime()))) return null;
+      if (this.devices && !(await this.devices.allows(user, issuedAt, now.getTime()))) return null;
     } catch {
       throw new AppError("provider_unavailable", { message: "Doddy couldn't check your sign-in right now. Try again shortly." });
     }
-    return issuedAt < floor ? null : user;
+    return user;
   }
 }
