@@ -22,5 +22,7 @@ Settings › Language (ADR-459) saved the choice in the app's own `AppleLanguage
 
 ## Evidence
 - `python3 -I tools/build_strings_catalog.py --check`: PASS (the old footer's line removed from nine tables, three new lines in each).
-- DoddyCore `AppLanguageTests` (four new tests) and `DoddyTests/ScreenLanguageTests` (six, hosted): written, **not run here** (no Swift toolchain in this session). The hosted Mac job runs both.
+- `make test-core` with Swift 6.1.2 on Linux (the version of CI's `core` job): 3,519 tests, 0 failures, 2 skipped; `AppLanguageTests` 14 of 14, four of them new.
+- `scripts/ci.sh --only checks`: every check PASS; "Studio skills: renderers on samples" NOT RUN (reportlab and matplotlib missing here), unrelated.
+- The app code (`ScreenLanguage`, the Settings page, `RootView`, `DoddyApp`) and the hosted `DoddyTests/ScreenLanguageTests` (six tests, including one that draws `Text("Settings")` and compares it with "Ustawienia"): **not compiled here** (no iOS SDK on Linux). The hosted Mac job compiles and runs them.
 - Not seen on a device.
