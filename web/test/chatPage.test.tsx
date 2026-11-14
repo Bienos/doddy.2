@@ -6,7 +6,7 @@ import { App } from "../src/App.js";
 import { SessionProvider } from "../src/auth/session.js";
 import { blocks } from "../src/chat/RichText.js";
 import { suggestionsFor } from "../src/chat/suggestions.js";
-import { dayGroup, loadThreads, MAX_THREADS, saveThreads, type Thread, titleFor } from "../src/chat/threads.js";
+import { adoptLegacyChats, clearThreads, dayGroup, loadThreads, MAX_THREADS, saveThreads, type Thread, titleFor } from "../src/chat/threads.js";
 import { I18nProvider } from "../src/i18n/i18n.js";
 import type { Language } from "../src/i18n/messages.js";
 import { ChatContext } from "../src/memory/schema.js";
@@ -14,7 +14,7 @@ import { fakeServer, fixture } from "./fakeServer.js";
 
 /**
  * The chat (ADR-604): ChatGPT's layout in Doddy's colours, wired to POST /v1/web/chat. Every
- * answer is the server's (here, its own fixtures); the list of chats lives in this browser only.
+ * answer is the server's (here, its own fixtures); the list of chats lives in this tab only (sessionStorage).
  */
 
 type Routes = Parameters<typeof fakeServer>[0];
@@ -27,7 +27,7 @@ const reply = (text: string, sources: unknown[] = []) => ({ body: { text, source
 function renderAt(path: string, routes: Routes, language: Language = "en") {
   const server = fakeServer({
     "GET /v1/web/session": { body: fixture("web/session-current") },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     "GET /v1/web/chat/context": { body: context() },
     ...routes,
   });
@@ -59,7 +59,7 @@ describe("an empty chat", () => {
     await waitFor(() => expect(offered.getAllByRole("button").map((b) => b.textContent)).toEqual(["What's in my notes for this week?", "What did we talk about last time?", "Which apps do I have connected?", "What do you know about my account?"]));
     const nav = screen.getByRole("navigation", { name: "Workspace" });
     expect(within(nav).getByRole("link", { name: "Chat" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByText(/Chats are kept only in this browser/)).toBeInTheDocument();
+    expect(screen.getByText(/Chats are kept only in this tab, never on Doddy's server\. Closing the tab or signing out deletes them\./)).toBeInTheDocument();
   });
 
   test("“What I can see” lists each part in words, from what the server says", async () => {
@@ -250,23 +250,60 @@ describe("the list of chats", () => {
     expect(await screen.findByText("Gmail and Notion.")).toBeInTheDocument();
   });
 
-  test("chats are kept in this browser for this sign-in, and come back on the next visit", async () => {
+  test("chats are kept in this tab for this sign-in, and come back when the page is reloaded", async () => {
     renderAt("/chat", { "POST /v1/web/chat": reply("Kept.") });
     await say("Remember this chat");
     await screen.findByText("Kept.");
-    await waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).toContain("Remember this chat"));
-    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY)!) as { owner: string; threads: Thread[] };
+    await waitFor(() => expect(window.sessionStorage.getItem(STORAGE_KEY)).toContain("Remember this chat"));
+    const saved = JSON.parse(window.sessionStorage.getItem(STORAGE_KEY)!) as { owner: string; threads: Thread[] };
     expect(saved.owner).toBe(SESSION_ID);
     expect(saved.threads[0]?.turns.map((t) => t.role)).toEqual(["user", "doddy"]);
     expect(loadThreads(SESSION_ID)[0]?.title).toBe("Remember this chat");
   });
 
+  test("nothing of a chat reaches localStorage, which outlives the tab: not the questions, the answers or the notes cited", async () => {
+    const note = { kind: "note", id: "n1", text: "Tomek's door code is 4471", capturedAt: null };
+    renderAt("/chat", { "POST /v1/web/chat": reply("The code is in your note.", [note]) });
+    await say("What is the door code?");
+    await screen.findByText("The code is in your note.");
+    await waitFor(() => expect(window.sessionStorage.getItem(STORAGE_KEY)).toContain("4471"));
+    const everything = JSON.stringify(Object.fromEntries(Object.keys(window.localStorage).map((k) => [k, window.localStorage.getItem(k)])));
+    for (const word of ["door code", "4471", "The code is in your note", "n1"]) expect(everything).not.toContain(word);
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
   test("another sign-in's chats are deleted, never shown", async () => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ owner: "someone-else", threads: [{ id: "t1", title: "Their secret", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Their secret", at: 1 }] }] }));
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ owner: "someone-else", threads: [{ id: "t1", title: "Their secret", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Their secret", at: 1 }] }] }));
     renderAt("/chat", {});
     await screen.findByRole("heading", { level: 1, name: "Chat with Doddy" });
     expect(screen.queryByText("Their secret")).toBeNull();
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  test("chats an older version left in localStorage move into this tab for the same sign-in, and are gone from localStorage", async () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ owner: SESSION_ID, threads: [{ id: "old", title: "Left behind", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Left behind", at: 1 }] }] }));
+    renderAt("/chat", {});
+    const list = await screen.findByRole("complementary", { name: "Your chats" });
+    expect(await within(list).findByRole("button", { name: "Left behind" })).toBeInTheDocument();
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toContain("Left behind");
+  });
+
+  test("another sign-in's older chats in localStorage are deleted without being shown or moved", async () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ owner: "someone-else", threads: [{ id: "t1", title: "Their old secret", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Their old secret", at: 1 }] }] }));
+    renderAt("/chat", {});
+    await screen.findByRole("heading", { level: 1, name: "Chat with Doddy" });
+    expect(screen.queryByText("Their old secret")).toBeNull();
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  test("older chats leave localStorage as soon as this sign-in is known, on any page, not only when the chat is opened", async () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ owner: SESSION_ID, threads: [{ id: "t1", title: "Left on disk", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Left on disk", at: 1 }] }] }));
+    renderAt("/documents", { "GET /v1/web/documents": { body: fixture("web/documents-ready") } });
+    await screen.findByRole("navigation", { name: "Workspace" });
+    await waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull());
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toContain("Left on disk");
   });
 
   test("one chat can be deleted, or all of them after a confirmation", async () => {
@@ -287,16 +324,18 @@ describe("the list of chats", () => {
     await userEvent.click(within(list).getByRole("button", { name: "Delete" }));
     expect(within(list).queryByRole("button", { name: "Second chat" })).toBeNull();
     expect(screen.getByText("Your chats will show up here.")).toBeInTheDocument();
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 
-  test("signing out deletes the chats kept in this browser", async () => {
+  test("signing out deletes the chats kept in this tab", async () => {
     renderAt("/chat", { "POST /v1/web/chat": reply("Bye."), "DELETE /v1/web/session": { body: { signedOut: true } } });
     await say("Something private");
     await screen.findByText("Bye.");
-    await waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull());
+    await waitFor(() => expect(window.sessionStorage.getItem(STORAGE_KEY)).not.toBeNull());
     await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
     expect(await screen.findByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 });
@@ -344,5 +383,26 @@ describe("the pieces", () => {
       throw new DOMException("blocked", "SecurityError");
     });
     expect(saveThreads("me", [thread(1)])).toBe(false);
+  });
+
+  test("clearing removes the chats from the tab and anything an older version left in localStorage", () => {
+    window.sessionStorage.setItem(STORAGE_KEY, "{}");
+    window.localStorage.setItem(STORAGE_KEY, "{}");
+    clearThreads();
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  test("adopting older chats keeps this tab's own copy of a chat, adds the rest, and always empties localStorage", () => {
+    const thread = (id: string, title: string): Thread => ({ id, title, createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: title, at: 1 }] });
+    saveThreads("me", [thread("same", "Newer in the tab")]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ owner: "me", threads: [thread("same", "Older in storage"), thread("only-old", "Only before")] }));
+    adoptLegacyChats("me");
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(loadThreads("me").map((t) => `${t.id}:${t.title}`).sort()).toEqual(["only-old:Only before", "same:Newer in the tab"]);
+
+    window.localStorage.setItem(STORAGE_KEY, "not json");
+    adoptLegacyChats("me");
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 });

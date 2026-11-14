@@ -45,6 +45,10 @@ function ask(over: Record<string, unknown> = {}): Record<string, unknown> {
   };
 }
 
+/** A new request id each time, as the app sends: the server now answers a repeated id once (decision 2026-11-09-ask-request-dedup). */
+let requestCounter = 0;
+const fresh = (over: Record<string, unknown> = {}) => ask({ requestId: `00000000-0000-4000-8000-${String(++requestCounter).padStart(12, "0")}`, ...over });
+
 /** A Claude stand-in: records what it was given and answers with `reply`. */
 class ScriptedClaude implements ClaudeProvider {
   readonly mode = "live" as const;
@@ -55,6 +59,9 @@ class ScriptedClaude implements ClaudeProvider {
   }
   async ask(): Promise<{ text: string }> {
     throw new Error("not used");
+  }
+  async deleteFile(): Promise<"removed"> {
+    return "removed";
   }
   async makeDocument(): Promise<never> {
     throw new Error("not used");
@@ -199,8 +206,8 @@ test("the app's shared request fixture is accepted as it is, and its reply match
 
 test("an error reply has exactly the shape the app reads: code, message, correlation ID", async () => {
   rig = await start({ claude: new ScriptedClaude(() => ({ value: { answer: "x" }, usage: { inputTokens: 1, outputTokens: 1 } })), limits: { userDailyAsk: 1 } });
-  await rig.post(ask());
-  const res = await rig.post(ask());
+  await rig.post(fresh());
+  const res = await rig.post(fresh());
   assert.equal(res.status, 429);
   assert.deepEqual(Object.keys(res.body), ["error"]);
   assert.deepEqual(Object.keys(res.body.error).sort(), ["code", "correlationId", "message"]);
@@ -306,13 +313,13 @@ test("not set up: a server without an Anthropic key says so, and nothing is coun
 test("daily caps: per user, and for the whole service, before Claude runs", async () => {
   const claude = new ScriptedClaude(() => ({ value: { answer: "ok" }, usage: { inputTokens: 1, outputTokens: 1 } }));
   rig = await start({ claude, limits: { userDailyAsk: 2, serviceDailyAsk: 3 } });
-  assert.equal((await rig.post(ask())).status, 200);
-  assert.equal((await rig.post(ask())).status, 200);
-  const third = await rig.post(ask());
+  assert.equal((await rig.post(fresh())).status, 200);
+  assert.equal((await rig.post(fresh())).status, 200);
+  const third = await rig.post(fresh());
   assert.equal(third.status, 429);
   assert.equal(third.body.error.code, "quota_exceeded");
-  assert.equal((await rig.post(ask(), { token: USER_B })).status, 200);
-  const serviceFull = await rig.post(ask(), { token: USER_B });
+  assert.equal((await rig.post(fresh(), { token: USER_B })).status, 200);
+  const serviceFull = await rig.post(fresh(), { token: USER_B });
   assert.equal(serviceFull.body.error.code, "quota_exceeded");
   assert.equal(claude.calls.length, 3);
 });
@@ -503,14 +510,14 @@ test("guests ask from their own daily pool: they can't use up the owner's questi
   assert.ok(guests.every((g) => g.access === "ask"));
 
   // Three fresh guests (anyone can make one) stop at the guests' pool of two...
-  assert.equal((await rig.post(ask(), { token: guests[0].token })).status, 200);
-  assert.equal((await rig.post(ask(), { token: guests[1].token })).status, 200);
-  const guestFull = await rig.post(ask(), { token: guests[2].token });
+  assert.equal((await rig.post(fresh(), { token: guests[0].token })).status, 200);
+  assert.equal((await rig.post(fresh(), { token: guests[1].token })).status, 200);
+  const guestFull = await rig.post(fresh(), { token: guests[2].token });
   assert.equal(guestFull.status, 429);
   assert.equal(guestFull.body.error.code, "quota_exceeded");
   // ...and the owner still has all three of the server's questions.
-  for (let i = 0; i < 3; i += 1) assert.equal((await rig.post(ask(), { token: owner.token })).status, 200);
-  assert.equal((await rig.post(ask(), { token: owner.token })).body.error.code, "quota_exceeded");
+  for (let i = 0; i < 3; i += 1) assert.equal((await rig.post(fresh(), { token: owner.token })).status, 200);
+  assert.equal((await rig.post(fresh(), { token: owner.token })).body.error.code, "quota_exceeded");
   assert.equal(await rig.store.usage("service:ask", "day:2026-10-22"), 3);
   assert.equal(await rig.store.usage("service:ask:guest", "day:2026-10-22"), 2);
   assert.equal(claude.calls.length, 5);

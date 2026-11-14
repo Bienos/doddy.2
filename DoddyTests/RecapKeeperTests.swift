@@ -101,6 +101,157 @@ final class RecapKeeperTests: XCTestCase {
 
     // MARK: - Conversations with Doddy (step 3a)
 
+    @MainActor
+    func testTurningRememberingOffDuringGenerationPreventsDurableRecap() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let outcome = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                        isPrivate: false, store: store, defaults: defaults) { _, _, _ in
+            await Task.yield()
+            RecapKeeper.setRemember(false, defaults: self.defaults)
+            return Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        XCTAssertEqual(outcome, .skipped(.switchedOff))
+        XCTAssertTrue(store.memories.isEmpty)
+        XCTAssertTrue(RecapKeeper.ledger(defaults).keys.isEmpty)
+    }
+
+    @MainActor
+    func testAnOffOnCycleWithTheSameTimestampDoesNotReviveAnOldRecap() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        let enabledAt = start.addingTimeInterval(-60)
+        RecapKeeper.setRemember(true, defaults: defaults, now: enabledAt)
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let outcome = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                        isPrivate: false, store: store, defaults: defaults) { _, _, _ in
+            RecapKeeper.setRemember(false, defaults: self.defaults, now: enabledAt)
+            RecapKeeper.setRemember(true, defaults: self.defaults, now: enabledAt)
+            return Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        XCTAssertEqual(outcome, .skipped(.switchedOff))
+        XCTAssertTrue(store.memories.isEmpty)
+    }
+
+    @MainActor
+    func testInjectedRecapIsSavedOnceAfterReadBack() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let write: @MainActor (RecapWriter, [RecapModelIO.Line], String) async throws -> Data = { _, _, _ in
+            Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        let saved = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                      isPrivate: false, store: store, defaults: defaults, write: write)
+        XCTAssertEqual(saved, .saved)
+        XCTAssertEqual(store.memories.count, 1)
+        XCTAssertEqual(store.memories.first?.source, .conversationRecap)
+        let again = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                      isPrivate: false, store: store, defaults: defaults, write: write)
+        XCTAssertEqual(again, .notNew)
+        XCTAssertEqual(store.memories.count, 1)
+    }
+
+    @MainActor
+    func testASavedRecapIsLinkedToItsConversation() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let conversation = UUID()
+        let outcome = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                        isPrivate: false, conversationID: conversation, store: store,
+                                                        defaults: defaults) { _, _, _ in
+            Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        XCTAssertEqual(outcome, .saved)
+        XCTAssertEqual(RecapKeeper.links(defaults).memoryID(for: conversation), store.memories.first?.id)
+    }
+
+    @MainActor
+    func testDeletingTheConversationWhileTheRecapIsWrittenSavesNothing() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let conversation = UUID()
+        let outcome = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                        isPrivate: false, conversationID: conversation, store: store,
+                                                        defaults: defaults) { _, _, _ in
+            RecapKeeper.updateLinks(self.defaults) { $0.tombstoning([conversation]) }
+            return Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        XCTAssertEqual(outcome, .sourceDeleted)
+        XCTAssertTrue(store.memories.isEmpty)
+        XCTAssertNil(RecapKeeper.links(defaults).memoryID(for: conversation))
+        XCTAssertTrue(RecapKeeper.ledger(defaults).keys.isEmpty, "Not marked: nothing was saved")
+    }
+
+    @MainActor
+    func testRevokingServerRecapConsentDuringGenerationPreventsSave() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let outcome = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                        isPrivate: false, store: store, defaults: defaults,
+                                                        onDeviceAvailable: false) { writer, _, _ in
+            XCTAssertEqual(writer, .server)
+            self.defaults.set(false, forKey: RecapSettings.serverWriterKey)
+            return Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        XCTAssertEqual(outcome, .skipped(.noWriter))
+        XCTAssertTrue(store.memories.isEmpty)
+        XCTAssertTrue(RecapKeeper.ledger(defaults).keys.isEmpty)
+    }
+
+    @MainActor
+    private final class RecapGate {
+        var waiting: CheckedContinuation<Void, Never>?
+        var entered: CheckedContinuation<Void, Never>?
+        var didEnter = false
+        func write() async -> Data {
+            didEnter = true
+            entered?.resume(); entered = nil
+            await withCheckedContinuation { waiting = $0 }
+            return Data(#"{"discussed":["Wybór muzyki"],"agreed":[],"to_do":[]}"#.utf8)
+        }
+        func waitForWriter() async {
+            if didEnter { return }
+            await withCheckedContinuation { entered = $0 }
+        }
+        func resume() { waiting?.resume(); waiting = nil }
+    }
+
+    @MainActor
+    func testConcurrentRecapsDoNotDuplicateTheSameConversation() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let start = Date()
+        RecapKeeper.setRemember(true, defaults: defaults, now: start.addingTimeInterval(-60))
+        defaults.set(true, forKey: RecapSettings.serverWriterKey)
+        let gate = RecapGate()
+        let first = Task { @MainActor in
+            await RecapKeeper.recapConversation(lines: self.lines(100), startedAt: start, endedAt: start,
+                                               isPrivate: false, store: store, defaults: self.defaults) { _, _, _ in
+                await gate.write()
+            }
+        }
+        await gate.waitForWriter()
+        let duplicate = await RecapKeeper.recapConversation(lines: lines(100), startedAt: start, endedAt: start,
+                                                          isPrivate: false, store: store, defaults: defaults) { _, _, _ in
+            XCTFail("Duplicate extraction must not even run the writer")
+            return Data()
+        }
+        gate.resume()
+        let saved = await first.value
+        XCTAssertEqual(duplicate, .notNew)
+        XCTAssertEqual(saved, .saved)
+        XCTAssertEqual(store.memories.count, 1)
+    }
+
     private func lines(_ words: Int) -> [RecapModelIO.Line] {
         [.init(speaker: .person, text: Array(repeating: "słowo", count: words).joined(separator: " ")),
          .init(speaker: .doddy, text: "Jasne.")]
@@ -141,5 +292,73 @@ final class RecapKeeperTests: XCTestCase {
     func testTheModelsAnswerIsTakenFromAroundItsJSON() {
         XCTAssertEqual(OnDeviceRecapWriter.json(in: "```json\n{\"discussed\": []}\n```"), "{\"discussed\": []}")
         XCTAssertEqual(OnDeviceRecapWriter.json(in: "no json"), "no json")
+    }
+
+    // MARK: - Recordings (step 4)
+
+    private func recording(language: String = "pl-PL") -> Recording {
+        Recording(id: UUID(), origin: .app, phase: .saved, languageCode: language, startedAt: Date().addingTimeInterval(-600),
+                  endedAt: Date().addingTimeInterval(-60), durationMilliseconds: 540_000, transcription: .done)
+    }
+
+    private func segments(words: Int) -> [TranscriptSegment] {
+        [TranscriptSegment(index: 0, startMilliseconds: 0, endMilliseconds: 5_000,
+                           text: Array(repeating: "słowo", count: words).joined(separator: " "))]
+    }
+
+    @MainActor
+    func testARecordingsWordsBecomeLinesWithNoSpeakerGuessed() {
+        let lines = RecapKeeper.lines(from: segments(words: 3))
+        XCTAssertEqual(lines.count, 1)
+        XCTAssertEqual(lines.first?.speaker, .other, "no on-device recognizer says who spoke, and Doddy doesn't guess")
+        XCTAssertEqual(RecapKeeper.language(of: recording(language: "pl-PL")), "pl")
+        XCTAssertEqual(RecapKeeper.language(of: recording(language: "en_GB")), "en")
+    }
+
+    @MainActor
+    func testATooShortRecordingIsNotRecappedEvenWhenAskedFor() async {
+        let result = await RecapKeeper.writeRecap(for: recording(), segments: segments(words: RecapRules.minimumWordsFromPerson - 1),
+                                                  explicit: true, defaults: defaults)
+        guard case .skipped(.tooShort) = result else { return XCTFail("\(result)") }
+    }
+
+    @MainActor
+    func testTheTapStandsInForTheSwitchButNeverForTheServerYes() async throws {
+        try XCTSkipIf(OnDeviceRecapWriter.isAvailable(languageCode: "pl"), "this device can write recaps itself")
+        // The switch is off and so is the server yes: a tap is not a yes to sending the words anywhere.
+        XCTAssertFalse(RecapKeeper.isOn(defaults))
+        let result = await RecapKeeper.writeRecap(for: recording(), segments: segments(words: 100), explicit: true, defaults: defaults)
+        guard case .skipped(.noWriter) = result else { return XCTFail("\(result)") }
+    }
+
+    @MainActor
+    func testASavedRecordingRecapIsOneNoteMarkedOnlyAfterTheReadBack() async throws {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let rec = recording()
+        let written = try ConversationRecap(kind: .recording, with: nil, endedAt: Date(), discussed: ["Termin wizyty"],
+                                            agreed: [], toDo: ["Zadzwonić w piątek"], writtenBy: .onDevice)
+        XCTAssertFalse(RecapKeeper.hasRecap(recording: rec.id, defaults: defaults))
+        let ok = await RecapKeeper.saveRecap(written, noteText: "Nagranie\n• Termin wizyty", recordingID: rec.id,
+                                             recordingTitle: "Wizyta", store: store, defaults: defaults)
+        XCTAssertTrue(ok)
+        XCTAssertTrue(RecapKeeper.hasRecap(recording: rec.id, defaults: defaults))
+        XCTAssertEqual(store.memories.first?.source, .conversationRecap)
+
+        // A save that fails is not marked.
+        let broken = MemoryStore(environment: .unavailable)
+        let other = recording()
+        let failed = await RecapKeeper.saveRecap(written, noteText: "x", recordingID: other.id, recordingTitle: "", store: broken,
+                                                 defaults: defaults)
+        XCTAssertFalse(failed)
+        XCTAssertFalse(RecapKeeper.hasRecap(recording: other.id, defaults: defaults))
+    }
+
+    @MainActor
+    func testNothingIsRecappedAutomaticallyWhileTheSwitchIsOff() async {
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]))
+        let saved = await RecapKeeper.rememberRecordings([RecordingListItem(recording: recording(), preview: nil)], store: store,
+                                                         defaults: defaults)
+        XCTAssertEqual(saved, 0)
+        XCTAssertTrue(store.memories.isEmpty)
     }
 }

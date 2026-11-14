@@ -7,7 +7,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { ErrandEffort } from "../config.js";
-import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, withMaxUses, type BudgetLeft, type ResearchBudget } from "./budget.js";
+import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, WEB_FETCH_MAX_CONTENT_TOKENS, withMaxUses, type BudgetLeft, type ResearchBudget } from "./budget.js";
 import { buildResult } from "./card.js";
 import { CardOutput, type ErrandResult, type FailureCode } from "./schema.js";
 
@@ -267,7 +267,7 @@ export async function runResearch(
     const r = await guarded(control.deadline, (signal) => api.research(messages, signal, room.left));
     if ("stop" in r) return stopped(r.stop);
     if ("error" in r) {
-      log("errand research request failed", { errandId: task.id, requests, error: errorCode(r.error) });
+      log("errand research request failed", { errandId: task.id, requests, error: errorCode(r.error), ...apiErrorDetail(r.error) });
       return failed("provider_error");
     }
     requests++;
@@ -308,7 +308,7 @@ export async function runResearch(
   const c = await guarded(new Date(Math.max(now().getTime(), control.deadline.getTime()) + CARD_GRACE_MS), (signal) => api.card(input, signal));
   if ("stop" in c) return stopped(c.stop);
   if ("error" in c) {
-    log("errand card request failed", { errandId: task.id, error: errorCode(c.error) });
+    log("errand card request failed", { errandId: task.id, error: errorCode(c.error), ...apiErrorDetail(c.error) });
     return failed("provider_error");
   }
   addUsage(usage, c.ok.usage);
@@ -325,14 +325,29 @@ function errorCode(err: unknown): string {
   return (err as Error)?.name?.slice(0, 40) ?? "error";
 }
 
+/**
+ * What an API refusal says about the request's shape, never its words (12 Nov 2026: the live shopping errand's
+ * "api_400" said nothing more): the error's type ("invalid_request_error") and the parameter path the message
+ * starts with ("messages.2.content.0"), when it starts with one. The rest of the message is left out, since it
+ * could quote the request.
+ */
+export function apiErrorDetail(err: unknown): { errorType?: string; at?: string } {
+  if (!(err instanceof Anthropic.APIError)) return {};
+  const body = err.error as { error?: { type?: unknown; message?: unknown } } | undefined;
+  const type = typeof body?.error?.type === "string" && /^[a-z_]{1,60}$/.test(body.error.type) ? body.error.type : undefined;
+  const message = typeof body?.error?.message === "string" ? body.error.message : "";
+  const at = /^([a-z_]+(?:\.[a-z0-9_]+){0,8})\s*:/i.exec(message)?.[1]?.slice(0, 80);
+  return { ...(type ? { errorType: type } : {}), ...(at ? { at } : {}) };
+}
+
 // ---------- the real API ----------
 
 export const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 export const RESEARCH_TOOLS = [
   // The tools as defined; `max_uses` comes from the errand's research budget (budget.ts, ADR-702), which narrows
-  // ADR-570's "no cap on look-ups": an owner who wants none sets the limits to 0.
+  // ADR-570's "no cap on look-ups": an owner who wants none sets the limits to 0. A fetched page is capped in size.
   { type: "web_search_20260209", name: "web_search" },
-  { type: "web_fetch_20260209", name: "web_fetch" },
+  { type: "web_fetch_20260209", name: "web_fetch", max_content_tokens: WEB_FETCH_MAX_CONTENT_TOKENS },
 ] as const;
 
 /** Claude through the Anthropic SDK: streamed research, then the card through structured output. */
@@ -361,7 +376,8 @@ export class AnthropicErrandApi implements ErrandModelApi {
       // Each resumed turn resends the whole history: cache it.
       cache_control: { type: "ephemeral" },
       system: RESEARCH_SYSTEM,
-      tools: withMaxUses(RESEARCH_TOOLS, left, this.budget) as never,
+      // Fixed for the whole errand: a changed `tools` invalidates the thinking blocks sent back (see budget.ts).
+      tools: withMaxUses(RESEARCH_TOOLS, this.budget) as never,
       messages: messages as never,
     }, { signal });
     return (await stream.finalMessage()) as unknown as ResearchMessage;

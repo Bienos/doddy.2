@@ -7,7 +7,7 @@
 // its conditions; until it is, the offer says `check: true`.
 // The page also exposes an app token for api.marketdino.pl; Doddy doesn't use it (public page only).
 // Alcohol leaflets are skipped (their hotspots were not all flagged isAlcohol).
-import { currentWeek, fetchOfficial, isObject, isoDay, moneyOf, officialUrl, str, validEan } from "./common.js";
+import { currentWeek, fetchOfficial, isObject, isoDay, moneyOf, officialUrl, scriptText, str, validEan } from "./common.js";
 import type { ChainAdapter, ChainRead, DataProduct, LeafletPage, LeafletRead } from "../types.js";
 
 export const DINO_HOSTS = ["marketdino.pl", "api.marketdino.pl"] as const;
@@ -77,10 +77,10 @@ export function unflatten(flat: unknown): unknown {
 
 /** The leaflets in the page's Nuxt payload, or undefined when the payload isn't there. */
 export function nuxtLeaflets(html: string): unknown[] | undefined {
-  const m = /<script[^>]*\bid="__NUXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i.exec(html);
-  if (!m) return undefined;
+  const payload = scriptText(html, (tag) => /\bid="__NUXT_DATA__"/i.test(tag), true);
+  if (payload === undefined) return undefined;
   let flat: unknown;
-  try { flat = JSON.parse(m[1]!); } catch { return undefined; }
+  try { flat = JSON.parse(payload); } catch { return undefined; }
   const root = unflatten(flat);
   const pinia = isObject(root) ? root.pinia : undefined;
   const leaflet = isObject(pinia) ? pinia.leaflet : undefined;

@@ -20,6 +20,8 @@ import UIKit
 /// - `report`: the shopping report PDF the app makes for that task, its two pages full screen.
 /// - `island:<state>`: the app's real voice Live Activity in one real state (the one a conversation
 ///   sends), for iOS to draw on the simulator's island and Lock Screen. No conversation behind it.
+/// - `running:<focus|stopwatch|timer|windDown>`: that timer running, so Home shows its row and its screen opens
+///   from there (they start by voice since decision 2026-11-10-timers-by-voice); `running:none` stops them all.
 ///
 /// Nothing here ships: the whole file is `#if DEBUG`, and nothing runs without the launch argument.
 /// NOT COMPILED OR RUN in the authoring environment (Linux, no Xcode): the hosted Mac job is the
@@ -48,6 +50,12 @@ enum ScreenFixtures {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 startIsland(id)
             }
+        } else if name.hasPrefix("running:") {
+            let kind = String(name.dropFirst("running:".count))
+            Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                await startRunning(kind)
+            }
         } else if name == "report" {
             Task {
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
@@ -60,6 +68,30 @@ enum ScreenFixtures {
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
                 presentCard(id, store: store)
             }
+        }
+    }
+
+    // MARK: A timer that runs
+
+    /// One of Doddy's timers running, so Home shows its row (decision 2026-11-10-timers-by-voice: Home's menu no
+    /// longer starts them; a conversation does). Started through each controller's own `start`, as the voice
+    /// handler does after the tap. The others are stopped and cleared first, because the controllers keep them in
+    /// UserDefaults across launches; `running:none` only clears, so later pictures show no row or island.
+    private static func startRunning(_ kind: String) async {
+        FocusController.shared.stop()
+        FocusController.shared.dismiss()
+        StopwatchController.shared.stop()
+        StopwatchController.shared.dismiss()
+        for purpose in [CountdownSession.Purpose.timer, .windDown] {
+            CountdownController.shared.stop(purpose)
+            CountdownController.shared.dismiss(purpose)
+        }
+        switch kind {
+        case "focus": await FocusController.shared.start(minutes: 25, label: "Quarterly report")
+        case "stopwatch": StopwatchController.shared.start(label: "Run")
+        case "timer": await CountdownController.shared.start(seconds: 8 * 60, purpose: .timer, label: "Pasta")
+        case "windDown": await CountdownController.shared.start(seconds: 10 * 60, purpose: .windDown, label: nil)
+        default: break
         }
     }
 
@@ -184,7 +216,7 @@ enum ScreenFixtures {
             return .deleteEvent(toolCallID: call, event: CalendarEventSummary(
                 title: "Dentist", start: start, end: start.addingTimeInterval(hour), allDay: false))
         case "map":
-            return .map(toolCallID: call, place: "Biedronka, ul. Hoża 9")
+            return .map(toolCallID: call, trip: MapTrip(place: "Biedronka, ul. Hoża 9"))
         case "shortcut":
             return .shortcut(toolCallID: call, name: "Good night")
         case "camera":

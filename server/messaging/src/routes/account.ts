@@ -48,6 +48,9 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
   const ipSecret = deps.cipher?.derivedKey("client-address");
 
   // Anonymous account: no email, no name. The app keeps the returned token in the Keychain.
+  // Off unless ANONYMOUS_ACCOUNTS=1 (decision 2026-11-08-required-account): every new account here then comes from
+  // a sign-in with a Doddy account (`POST /v1/accounts/sign-in`), and this answers 403 sign_in_required. Device tokens
+  // already given out keep working.
   // Limited per client IP only: no Authorization header can buy a fresh bucket here (ADR-175).
   // On top of 10 an hour per address (counted in memory), accounts per UTC day are capped per address and for the whole
   // server, counted in the database in the same transaction that makes the account (ADR-702): accounts cost nothing,
@@ -55,6 +58,7 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
   app.post("/v1/accounts", {
     config: { rateLimit: { max: 10, timeWindow: "1 hour", keyGenerator: (req) => "ip:" + req.ip } },
   }, async (req, reply) => {
+    if (!deps.anonymousAccounts) return reply.code(403).send({ error: "sign_in_required" });
     const accountId = randomUUID();
     const deviceId = randomUUID();
     const { token, hash } = newDeviceToken();
@@ -185,6 +189,21 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
         `UPDATE devices SET apns_token = $2, apns_environment = $3, apns_token_invalid_at = NULL WHERE id = $1`,
         [deviceId, body.token, body.environment]);
     });
+    return reply.code(204).send();
+  });
+
+  // Signing out on this iPhone (security audit 2026-11-09, finding 1). The device row is the whole of this iPhone's
+  // authority here: its token (stored as a hash) and its push binding are columns of it, so deleting it ends
+  // both in one statement: the token is refused from then on, and no later push is addressed to this iPhone.
+  // Other iPhones of the account are untouched. Only an iPhone of a Doddy account can do this: signing in
+  // again makes a new device row, whereas the only device of an anonymous account is the only way back in.
+  // A repeat with the same token is answered 401 (the token no longer exists), which the app reads as "done".
+  app.delete("/v1/device", { preHandler: auth }, async (req, reply) => {
+    const { rowCount } = await db.query(
+      `DELETE FROM devices d USING accounts a
+        WHERE d.id = $1 AND a.id = d.account_id AND a.auth_subject IS NOT NULL`,
+      [principal(req).deviceId]);
+    if (!rowCount) return reply.code(409).send({ error: "device_not_signed_in_to_an_account" });
     return reply.code(204).send();
   });
 

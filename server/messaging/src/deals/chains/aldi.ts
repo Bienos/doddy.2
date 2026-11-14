@@ -16,6 +16,7 @@
 //   price before the first cut, kept as the regular price.
 // Alcohol is skipped.
 import { currentWeek, fetchOfficial, isObject, isoDay, moneyOf, str } from "./common.js";
+import { spanAt } from "../../htmlScan.js";
 import { parseSize } from "../match.js";
 import { parsePrice } from "../vision.js";
 import type { ChainAdapter, ChainRead, Condition, DataProduct, LeafletInfo, Money } from "../types.js";
@@ -27,10 +28,10 @@ const ALCOHOL = /alkohol|\bpiw[ao]?\b|\bwin[ao]?\b|w[oó]dk|whisk|likier|\bgin\b
 
 /** The offers object in the page's payload, or undefined when it isn't there. */
 function offerPayload(html: string): Record<string, unknown> | undefined {
-  const m = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+  const m = spanAt(html, '<script id="__NEXT_DATA__" type="application/json">', "</script>");
   if (!m) return undefined;
   let data: unknown;
-  try { data = JSON.parse(m[1]!); } catch { return undefined; }
+  try { data = JSON.parse(html.slice(m.contentStart, m.contentEnd)); } catch { return undefined; }
   const props = isObject(data) && isObject(data.props) && isObject(data.props.pageProps) ? data.props.pageProps : undefined;
   let api: unknown = props?.apiData;
   if (typeof api === "string") { try { api = JSON.parse(api); } catch { return undefined; } }

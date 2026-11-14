@@ -4,7 +4,9 @@ import WidgetKit
 
 /// Keeps the widgets' snapshot (ADR-219) equal to what is in Doddy: rewritten after notes, lists,
 /// pins or reminders change, and read back. Ticks from a widget arrive here, in the app's process
-/// (`ToggleListItemIntent`), and go through the same store as a tick in the app.
+/// (`ToggleListItemIntent`), and go through the same store as a tick in the app. With the Face ID lock
+/// on (ADR-723, `AppLockPolicy.widgetsShowContent`) the widgets and the watch get a locked snapshot with
+/// nothing of the person's, and a tick changes nothing.
 @MainActor
 final class WidgetSync {
     static let shared = WidgetSync()
@@ -43,13 +45,16 @@ final class WidgetSync {
         let pinned = PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes))
         let showReminderText = UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
         let current = reminders?.reminders ?? []
+        let appLockOn = AppLock.shared.lockOn
         let snapshot = WidgetSnapshot.make(
             memories: shareable, lists: store.lists, pinned: pinned, reminders: current,
-            showReminderText: showReminderText, isOn: Self.isOn, now: now, parking: ParkingStore.current(), hidesDoddy: Self.hidesDoddy)
-        // The Apple Watch gets the same content, under its own switch (ADR-232), applied there.
+            showReminderText: showReminderText, isOn: Self.isOn, now: now, parking: ParkingStore.current(), hidesDoddy: Self.hidesDoddy,
+            appLockOn: appLockOn)
+        // The Apple Watch gets the same content, under its own switch (ADR-232), applied there; the Face ID
+        // lock applies to it as to the widgets.
         PhoneWatchLink.shared.send(WidgetSnapshot.make(
             memories: shareable, lists: store.lists, pinned: pinned, reminders: current,
-            showReminderText: showReminderText, isOn: true, now: now, hidesDoddy: Self.hidesDoddy))
+            showReminderText: showReminderText, isOn: true, now: now, hidesDoddy: Self.hidesDoddy, appLockOn: appLockOn))
         guard isAvailable else { return }
         // Same content as last time: no write, no widget reload (the time stamp alone isn't news).
         if let lastWritten, lastWritten.hasSameContent(as: snapshot) { return }
@@ -68,8 +73,13 @@ final class WidgetSync {
     }
 
     /// A widget tap on a list item. Only changes the item when the widget showed it as it is now;
-    /// returns what the read-back store says happened.
+    /// returns what the read-back store says happened. With the Face ID lock on nothing changes: the
+    /// widget was drawn before the lock was turned on, and is redrawn locked.
     func tick(listID: UUID, itemID: UUID, shownDone: Bool) async -> WidgetTick {
+        guard AppLockPolicy.widgetsShowContent(lockOn: AppLock.shared.lockOn) else {
+            refresh()
+            return .locked
+        }
         guard let store else { return .failed }
         await store.reload()
         let item = store.list(id: listID)?.items.first { $0.id == itemID }

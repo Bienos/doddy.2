@@ -9,10 +9,11 @@ import { ChatContext } from "../src/memory/schema.js";
 import { fakeServer, fixture, signedOut } from "./fakeServer.js";
 
 /**
- * The chats kept in this browser (localStorage, never on the server) go whenever the sign-in ends,
- * by whichever road it ends (ADR-604, ADR-715): Sign out, a Sign out that finds the server already
- * agrees, Settings, and a session that ended while a page was in use. Each test checks the stored
- * copy itself, not only the screen, because that copy is what a later visitor to this browser could read.
+ * The chats kept in this tab (sessionStorage, never on the server; versions before 14 Nov 2026 used
+ * localStorage) go whenever the sign-in ends, by whichever road it ends (ADR-604, ADR-715): Sign out,
+ * a Sign out that finds the server already agrees, Settings, and a session that ended while a page was
+ * in use. Each test checks the stored copy itself, in both places, not only the screen, because that
+ * copy is what a later visitor to this browser could read.
  */
 
 const STORAGE_KEY = "doddy.web.chats.v1";
@@ -20,18 +21,16 @@ const current = fixture("web/session-current") as { session: { id: string } };
 const SESSION_ID = current.session.id;
 const SLOW = { timeout: 5_000 };
 
-const keepAChat = () =>
-  window.localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ owner: SESSION_ID, threads: [{ id: "t1", title: "Something private", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Something private", at: 1 }] }] }),
-  );
-const stored = () => window.localStorage.getItem(STORAGE_KEY);
+const aChat = JSON.stringify({ owner: SESSION_ID, threads: [{ id: "t1", title: "Something private", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Something private", at: 1 }] }] });
+const keepAChat = () => window.sessionStorage.setItem(STORAGE_KEY, aChat);
+/** What is left of a chat, wherever it could be: null only when neither this tab nor localStorage holds one. */
+const stored = () => window.sessionStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(STORAGE_KEY);
 
 type Routes = Parameters<typeof fakeServer>[0];
 function renderAt(path: string, routes: Routes) {
   const server = fakeServer({
     "GET /v1/web/session": { body: current },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     "GET /v1/web/chat/context": { body: ChatContext.parse(fixture("web/chat-context")) },
     "GET /v1/web/documents": { body: fixture("web/documents-ready") },
     "GET /v1/web/sessions": { body: { sessions: [current.session] } },
@@ -74,6 +73,15 @@ describe("the chats kept in this browser go with the sign-in, by every road it c
     keepAChat();
     renderAt("/apps", { "GET /v1/tools": signedOut });
     await signInPage();
+    expect(stored()).toBeNull();
+  });
+
+  test("so do chats an older version left in localStorage", async () => {
+    window.localStorage.setItem(STORAGE_KEY, aChat);
+    renderAt("/documents", { "DELETE /v1/web/session": { body: { signedOut: true } } });
+    await userEvent.click(await screen.findByRole("button", { name: "Sign out" }, SLOW));
+    await signInPage();
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
     expect(stored()).toBeNull();
   });
 

@@ -6,7 +6,17 @@ import SwiftUI
 /// the user delete one or export them as text. Nothing here is sent anywhere.
 struct RememberedConversationsView: View {
     let store: ConversationLogStore
+    @Environment(MemoryStore.self) private var memories
     @State private var pendingDelete: ConversationLog?
+    @State private var notice: String?
+
+    /// Deletes the conversation and, when the person chose it, the recap note made from it.
+    private func delete(_ log: ConversationLog, alsoRecap: Bool) {
+        Task {
+            let outcome = await ConversationDeletion.delete(log, alsoRecap: alsoRecap, logs: store, memories: memories)
+            notice = outcome == .recapNotDeleted ? ConversationLogDeleteCopy.recapNotDeleted : nil
+        }
+    }
 
     private var newestFirst: [ConversationLog] {
         store.logs.sorted { $0.startedAt > $1.startedAt }
@@ -37,8 +47,11 @@ struct RememberedConversationsView: View {
                 Section {
                     ForEach(newestFirst) { log in
                         NavigationLink {
-                            ConversationLogDetailView(log: log, isSentNextTime: sentNextTime.contains(log.id)) {
-                                store.remove(log.id)
+                            ConversationLogDetailView(
+                                log: log, isSentNextTime: sentNextTime.contains(log.id),
+                                hasRecap: ConversationDeletion.linkedRecapID(for: log, store: memories) != nil
+                            ) { alsoRecap in
+                                delete(log, alsoRecap: alsoRecap)
                             }
                         } label: {
                             ConversationLogRow(log: log, isSentNextTime: sentNextTime.contains(log.id))
@@ -57,6 +70,11 @@ struct RememberedConversationsView: View {
             if let problem = store.problem {
                 Label(problem, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(Theme.error)
+            }
+            if let notice {
+                Label(notice, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(Theme.error)
+                    .accessibilityIdentifier("conversations.recapNotDeleted")
             }
         }
         .scrollContentBackground(.hidden)
@@ -81,13 +99,25 @@ struct RememberedConversationsView: View {
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { log in
-            Button("Delete", role: .destructive) {
-                store.remove(log.id)
-                pendingDelete = nil
+            if ConversationDeletion.linkedRecapID(for: log, store: memories) != nil {
+                Button("Delete conversation and recap note", role: .destructive) {
+                    delete(log, alsoRecap: true)
+                    pendingDelete = nil
+                }
+                Button("Delete conversation, keep recap note", role: .destructive) {
+                    delete(log, alsoRecap: false)
+                    pendingDelete = nil
+                }
+            } else {
+                Button("Delete", role: .destructive) {
+                    delete(log, alsoRecap: false)
+                    pendingDelete = nil
+                }
             }
             Button("Cancel", role: .cancel) { pendingDelete = nil }
-        } message: { _ in
-            Text(ConversationLogDeleteCopy.message)
+        } message: { log in
+            Text(ConversationDeletion.linkedRecapID(for: log, store: memories) != nil
+                 ? ConversationLogDeleteCopy.messageWithRecap : ConversationLogDeleteCopy.message)
         }
     }
 }
@@ -125,9 +155,11 @@ private struct ConversationLogRow: View {
 private struct ConversationLogDetailView: View {
     let log: ConversationLog
     let isSentNextTime: Bool
-    let onDelete: () -> Void
+    let hasRecap: Bool
+    let onDelete: (_ alsoRecap: Bool) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var confirmDelete = false
+    @State private var alsoRecap = false
     /// Deleting removes the row that pushed this screen, which pops it by itself; so the screen
     /// closes first and the delete happens once it has gone, to avoid popping twice.
     @State private var deleteWhenGone = false
@@ -145,7 +177,7 @@ private struct ConversationLogDetailView: View {
             Section("What was said") {
                 ForEach(Array(log.lines.enumerated()), id: \.offset) { _, line in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(line.fromUser ? "You" : "Doddy (AI)")
+                        Text(line.fromUser ? "You" : "Doddy")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(line.fromUser ? Theme.accentText : Theme.secondaryText)
                         Text(line.text)
@@ -164,19 +196,34 @@ private struct ConversationLogDetailView: View {
         .foregroundStyle(Theme.ink)
         .navigationTitle("Conversation")
         .navigationBarTitleDisplayMode(.inline)
-        .onDisappear { if deleteWhenGone { onDelete() } }
+        .onDisappear { if deleteWhenGone { onDelete(alsoRecap) } }
         .confirmationDialog("Delete this conversation?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                deleteWhenGone = true
-                dismiss()
+            if hasRecap {
+                Button("Delete conversation and recap note", role: .destructive) {
+                    alsoRecap = true
+                    deleteWhenGone = true
+                    dismiss()
+                }
+                Button("Delete conversation, keep recap note", role: .destructive) {
+                    alsoRecap = false
+                    deleteWhenGone = true
+                    dismiss()
+                }
+            } else {
+                Button("Delete", role: .destructive) {
+                    deleteWhenGone = true
+                    dismiss()
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text(ConversationLogDeleteCopy.message)
+            Text(hasRecap ? ConversationLogDeleteCopy.messageWithRecap : ConversationLogDeleteCopy.message)
         }
     }
 }
 
 private enum ConversationLogDeleteCopy {
-    static let message = NSLocalizedString("It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs may keep its own record as described in Settings › Privacy.", comment: "")
+    static let message = NSLocalizedString("This removes the conversation history from this iPhone. Saved notes and recap notes stay and may still be used. Copies on Doddy's server or ElevenLabs may remain.", comment: "")
+    static let messageWithRecap = NSLocalizedString("This removes the conversation history from this iPhone. Doddy also made a recap note from it: you can delete that too, or keep it. Copies on Doddy's server or ElevenLabs may remain.", comment: "")
+    static let recapNotDeleted = NSLocalizedString("The conversation was deleted, but its recap note couldn't be deleted and is still kept. You can delete it from Notes.", comment: "")
 }

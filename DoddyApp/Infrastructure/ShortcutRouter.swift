@@ -111,6 +111,10 @@ final class ShortcutRouter {
         isWeeklyPlanPresented = false
         isRecordingsPresented = false
         isCallRecapsPresented = false
+        isMessagesRequested = false
+        isRadarRequested = false
+        isPriceAlertsRequested = false
+        priceCheckLink = nil
         translatorPreset = nil
         talkToDoddyOpened = false
         checkInBriefing = nil
@@ -270,6 +274,41 @@ final class ShortcutRouter {
         isCallRecapsPresented = true
     }
 
+    /// A finished task's or file's push was tapped (owner, 10 Nov 2026): Home opens Messages, where Doddy's
+    /// message about it is. Navigation only: it starts nothing and sends nothing. Home takes it once.
+    var isMessagesRequested = false
+
+    func messagesOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in messagesOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isMessagesRequested = true
+    }
+
+    /// A radar push was tapped (decision 2026-11-13-radar-fixes): Home opens On my radar, where "Doddy spotted" lists what
+    /// the server found. Navigation only: it starts nothing and sends nothing. Home takes it once (its `.onChange`, the
+    /// change described in the decision; until it is in, the tap opens Doddy and nothing more).
+    var isRadarRequested = false
+
+    func radarOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in radarOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isRadarRequested = true
+    }
+
+    /// A price-alert push was tapped (decision 2026-11-14-price-alerts-screen): Home opens Shopping, which opens Price
+    /// alerts, where what each alert found is read from the server. Navigation only: it starts nothing and sends nothing.
+    /// The Shopping screen takes it once (its `.onChange`).
+    var isPriceAlertsRequested = false
+
+    func priceAlertsOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in priceAlertsOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isPriceAlertsRequested = true
+    }
+
     /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and
     /// "Open Latest Recording" all come here. Navigation only: it never starts or stops anything.
     var isRecordingsPresented = false
@@ -335,6 +374,24 @@ final class ShortcutRouter {
     func takeTalkToDoddyOpening() -> Bool {
         defer { talkToDoddyOpened = false }
         return talkToDoddyOpened
+    }
+
+    /// A product link shared from Safari or a shop app with "Check the price" (docs/implementation/SHOPPING.md "Check
+    /// this"). Home opens the Shopping screen, which takes it into its "Check this" card. Nothing is read from the
+    /// shop and nothing is sent until the person taps there.
+    var priceCheckLink: String?
+
+    /// Called by the app when it picks the shared link up (after the Face ID lock, if there is one). Text with no
+    /// web address in it is ignored.
+    func priceCheckInvoked(text: String) {
+        guard SharedShopPage.parse(text) != nil else { return }
+        priceCheckLink = text
+    }
+
+    /// The waiting link, once.
+    func takePriceCheckLink() -> String? {
+        defer { priceCheckLink = nil }
+        return priceCheckLink
     }
 
     /// Called from `SaveToDoddyIntent.perform()`. Shows the text on the capture screen, or keeps

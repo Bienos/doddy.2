@@ -47,14 +47,22 @@ action_policy:
   # Exception (owner, 2026-10-21; ADR-575): public lookups that read nothing of the user's and change
   # nothing run at once (AskFirst.publicLookups: weather, Wikipedia, web, news, places, sums, conversions).
   ask_first:
-    applies_to: every_tool_every_platform_except_public_lookups
+    applies_to: every_tool_that_changes_sends_deletes_calls_or_pays
     public_lookups_run_at_once: [calculate, convert_units, convert_currency, web_search, news_search, find_places, geocode_place, get_weather, wikipedia_search, wikipedia_summary]
     # Exception (owner, 2026-11-09; decision docs/decisions/2026-11-09-restaurant-calls-one-tap.md): a text to the
     # user's own verified number (text_me) goes at once, without a card, only while Texts from Doddy (consent sms-v1)
     # is on. Texts to anyone else are not possible (contact_policy.text_recipients). The same text is not sent twice
     # in a row, and an unknown outcome is never sent again (contact_policy.unknown_text_outcome).
     own_number_text_runs_at_once: [text_me]
-    reads: spoken_yes_or_tap_for_that_one_call
+    # Change (owner, 2026-11-11; decision docs/decisions/2026-11-11-asked-for-runs-at-once.md): what the user asks
+    # for is the yes. Looks at the user's own things, reads through an online account or Claude, and Doddy's own
+    # small actions that are undone in one step run at once, with no card and no spoken question. The standing
+    # consents stay: each Connections switch is allowed once on its own sheet, an account is connected once, and
+    # screen sharing is started by the person in iOS's own sheet. Changes keep their card (DOD-07).
+    own_looks_run_at_once: [search_memories, read_list, read_calendar, find_free_time, lookup_contact, upcoming_birthdays, find_photos, look_at_screen, read_steps, read_health_week, list_alarms, check_stopwatch, check_focus, check_errands, find_deals, parking_spot_find]
+    own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap]
+    server_reads_run_at_once: every_online_account_read_and_ask_claude_and_make_document
+    reads: run_at_once_when_the_user_asked
     changes: tap_on_card_with_exact_payload
     one_yes_covers: one_action
     # ADR-570 (owner, 2026-10-21), changed by ADR-716 and ADR-702: handing a task over (hand_over_errand)
@@ -108,7 +116,9 @@ contact_policy:
   unknown_inbound_calls: fixed_message_no_ai
   # Owner, 9 Nov 2026 (decision 2026-11-09-call-backs-and-contact-calls): a caller Doddy dialled on a user's behalf
   # is put through to that user's verified number, Doddy's number as caller ID, no AI and no recording. Matched by a
-  # keyed hash of the number, kept while the account exists. Everyone else still hears the fixed message.
+  # keyed hash of the number. Proposal of 12 Nov 2026 (decision 2026-11-12-call-back-limits, owner approval pending):
+  # a route lasts 7 days after the last dial, only one user with a fresh route and calls on is put through, at most 3
+  # times a day for 15 minutes. Everyone else still hears the fixed message.
   callback_inbound_calls: forwarded_to_the_user_doddy_called_for_no_ai
   unknown_text_outcome: never_resent_lookup_at_provider
   recording: off
@@ -144,7 +154,9 @@ contact_policy:
     end: "08:00"
     timezone: last_reported_by_device
     timezone_fallback: Europe/Warsaw
-    applies_to: [scheduled_calls]
+    # radar_alert_pushes: On my radar's "as it happens" notifications wait outside quiet hours
+    # (decision 2026-11-10-radar-alerts, server/messaging/src/news/radar.ts); a daily summary comes at the time the person chose.
+    applies_to: [scheduled_calls,radar_alert_pushes]
     override: per_call_on_card
 release_gates:
   blocking: [unapproved_external_write, false_action_success, cross_user_data_leak, unauthorized_memory_access, prompt_injection_permission_bypass, unsafe_emotional_manipulation]

@@ -139,6 +139,9 @@ struct RootView: View {
     @State private var homePath: [UUID] = []
     /// How tall the transcript sheet opens (ADR-595): full for Transcript, half for a card.
     @State private var voiceDetent: PresentationDetent = .large
+    /// The conversation's sheet as the pop-up card (owner, 10 Nov 2026): only what waits for the user
+    /// or what Doddy just made. The Transcript button and "Show the conversation" show all of it.
+    @State private var voiceAsCard = false
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -237,8 +240,12 @@ struct RootView: View {
                 lockLifted()
             }
         }
-        // Signed in: a server that didn't answer about the account last time is asked again.
-        .task { await DoddyAccountServers.catchUp() }
+        // Signed in: whose data this iPhone holds is recorded before anything is sent (decision
+        // 2026-11-12-local-data-owner), then a server that didn't answer about the account last time is asked again.
+        .task {
+            await DoddyAccountServers.claimLocalData()
+            await DoddyAccountServers.catchUp()
+        }
         .task {
             let notesLoad = LaunchWork.signposter.beginInterval("Notes load")
             await store.reload()
@@ -255,7 +262,6 @@ struct RootView: View {
             // Logbook (ADR-602): once the notes are read, the days that are due.
             Logbook.sync(store: store)
             await noteReminders.refreshOnForeground()
-            if scenePhase == .active { listeningIndicatorBecameActive() }
             pickUpSharedItem()
             // The weekly "Open Doddy faster" reminder, if it is still wanted (ADR-559).
             await OpenWaysReminderScheduler.refresh(router.setup)
@@ -275,8 +281,13 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 Task { await noteReminders.refreshOnForeground() }
-                // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged.
-                Task { await ErrandsModel.shared.refresh() }
+                // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged. While one
+                // still runs, the app asks again every 30 s as long as it stays open (12 Nov 2026), so its result reaches
+                // Messages without waiting for a push.
+                Task {
+                    await ErrandsModel.shared.refresh()
+                    ErrandsModel.shared.watchWhileRunning()
+                }
                 // Studio (ADR-740): asked again only while something is being made.
                 if StudioModel.shared.hasOpenItems { Task { await StudioModel.shared.refresh() } }
                 FocusController.shared.refresh()
@@ -309,6 +320,8 @@ struct RootView: View {
             // The app switcher's picture of Doddy: with the Face ID lock on, an opaque cover while he isn't in front (ADR-723).
             if phase != .active { PrivacyCover.shared.update(sceneIsActive: false) }
             if phase == .background {
+                // Nothing asks Doddy's server about tasks while the app is away; a push or the next return does.
+                ErrandsModel.shared.stopWatching()
                 // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
                 UnfinishedNoteStore.shared.flush()
                 // Logbook (ADR-602): today so far, at most once an hour.
@@ -323,7 +336,6 @@ struct RootView: View {
                 if AppLock.shared.isLocked, !lockCovered { lockEngaged() }
                 PrivacyCover.shared.update(sceneIsActive: true)
             }
-            if phase == .active { listeningIndicatorBecameActive() }
             // On later returns, only the separately opted-in listen-on-open preference applies.
             switch phase {
             case .background: opening.appWentToBackground()
@@ -433,7 +445,10 @@ struct RootView: View {
     /// screen with it, as the shortcut does. Nothing is saved until Save there.
     private func pickUpSharedItem() {
         // While the Face ID lock is up the shared text stays in the inbox; it is picked up after the unlock (ADR-723).
-        guard !AppLock.shared.isLocked, let item = ShareInboxFile.take() else { return }
+        guard !AppLock.shared.isLocked else { return }
+        // A product link shared with "Check the price": the Shopping screen opens with it ready, and reads nothing yet.
+        if let link = ShareInboxFile.take(slot: .priceCheck) { ShortcutRouter.shared.priceCheckInvoked(text: link.text) }
+        guard let item = ShareInboxFile.take() else { return }
         ShortcutRouter.shared.saveToDoddyInvoked(text: item.text)
     }
 
@@ -465,14 +480,17 @@ struct RootView: View {
     /// A conversation with a card waiting for the user opens its transcript, half height (ADR-595). Not over
     /// the Face ID cover: `lockLifted` does it after the unlock.
     private func presentTranscriptIfNeeded() {
-        guard HomeConversation.shared.needsYou, !router.isVoicePresented, !AppLock.shared.isLocked else { return }
-        voiceDetent = .medium
-        router.isVoicePresented = true
+        guard HomeConversation.shared.needsYou else { return }
+        presentCard()
     }
 
-    private func listeningIndicatorBecameActive() {
-        // The listening indicator above every screen (ADR-361).
-        ListeningIndicatorWindow.shared.install()
+    /// The pop-up card from the bottom: a card to answer, or something Doddy just made. Open
+    /// already (card or transcript), it stays as it is; never over the Face ID cover.
+    private func presentCard() {
+        guard !router.isVoicePresented, !AppLock.shared.isLocked else { return }
+        voiceAsCard = true
+        voiceDetent = .medium
+        router.isVoicePresented = true
     }
 
     /// A sheet or cover from the router is up (motion v2: Doddy is hidden while it is).
@@ -558,15 +576,27 @@ struct RootView: View {
         // up from the bottom, half height, when a card needs the user.
         .sheet(isPresented: $router.isVoicePresented, onDismiss: {
             voiceDetent = .large
+            voiceAsCard = false
             router.showWaitingDraft()
         }) {
-            VoiceView()
+            VoiceView(asCard: voiceAsCard, onShowConversation: {
+                voiceAsCard = false
+                voiceDetent = .large
+            })
                 .presentationDetents([.medium, .large], selection: $voiceDetent)
                 .presentationDragIndicator(.visible)
+                .presentationBackgroundInteraction(voiceAsCard ? .enabled(upThrough: .medium) : .disabled)
         }
         .onChange(of: HomeConversation.shared.needsYou) { _, needsYou in
             guard needsYou else { return }
             presentTranscriptIfNeeded()
+        }
+        // Something new Doddy made or found comes up as the card too, not only in the transcript.
+        .onChange(of: HomeConversation.shared.resultsToShow) { old, new in
+            // Only for something added, not when a card was closed.
+            let added = Set(new.split(separator: "|")).subtracting(old.split(separator: "|"))
+            guard !added.isEmpty else { return }
+            presentCard()
         }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             OpenDoddyWaysView(model: router.setup)
@@ -615,6 +645,14 @@ struct RootView: View {
         .onChange(of: router.isRecordingsPresented) { _, presented in
             if presented { selectedTab = .home }
         }
+        // On my radar is a sheet on Home too: a radar push tapped on another tab comes back to Home first.
+        .onChange(of: router.isRadarRequested) { _, requested in
+            if requested { selectedTab = .home }
+        }
+        // Shopping is a sheet on Home too: a price-alert push tapped on another tab comes back to Home first.
+        .onChange(of: router.isPriceAlertsRequested) { _, requested in
+            if requested { selectedTab = .home }
+        }
         // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
         .onContinueUserActivity(CSSearchableItemActionType) { activity in
             guard let memoryID = SpotlightSync.memoryID(from: activity) else { return }
@@ -649,6 +687,7 @@ struct RootView: View {
                 selectedTab = .home
                 if HomeConversation.shared.forTranscript != nil || VoiceSessionController.runningConversation != nil {
                     voiceDetent = .medium
+                    voiceAsCard = HomeConversation.shared.needsYou
                     router.showConversationStartedElsewhere()
                 }
             }

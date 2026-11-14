@@ -101,7 +101,7 @@ struct AppEnvironment: Sendable {
                 toolExecutor: UnavailableToolExecutor(),
                 noteReminders: noteReminders,
                 // Notifications, texts, calls and news say "needs setup" until a messaging server is set;
-                // a feature the build hides (decision 2026-11-07-release-scope) says "not in this version", whatever the server.
+                // a feature a scope hides (none does since 10 Nov 2026, decision 2026-11-10-no-beta-scope) says "not in this version", whatever the server.
                 capabilities: .shipping(serverConfigured: ServerConfig.baseURL() != nil).hiding(ReleaseScopeStore.current),
                 privacy: .v1Voice,
                 storageProblem: nil,

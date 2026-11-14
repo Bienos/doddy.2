@@ -5,5 +5,19 @@
     "deploymentEnabled": {
       "claude/*": false
     }
-  }
+  },
+  "functions": {
+    "api/voice-auth.js": {
+      "maxDuration": 30
+    },
+    "api/voice-cron.js": {
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/voice-cron",
+      "schedule": "23 3 * * *"
+    }
+  ]
 }

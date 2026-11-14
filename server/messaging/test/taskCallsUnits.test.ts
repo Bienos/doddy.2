@@ -5,7 +5,7 @@ import { describe, test } from "node:test";
 import { TwilioCallClient } from "../src/providers/taskCalls.js";
 import { checkAgentSafety } from "../src/taskCalls/agentSafety.js";
 import { isValidElevenLabsSignature, signElevenLabs } from "../src/taskCalls/elevenLabsSignature.js";
-import { audit, buildCallResult, findSpan, type Line, type ResultFacts } from "../src/taskCalls/result.js";
+import { audit, buildCallResult, findSpan, termsIn, type Line, type ResultFacts } from "../src/taskCalls/result.js";
 import { agentAnswerTwiml, calleeHandoverTwiml, parseAgentTwiml, sayAndHangUp, takeoverPromptTwiml } from "../src/taskCalls/twiml.js";
 import { compliantAgent, EL_TWIML } from "./helpers.js";
 
@@ -95,7 +95,7 @@ describe("agent drift check", () => {
 });
 
 describe("answer card", () => {
-  const opening = "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?";
+  const opening = "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?";
   const base = (transcript: Line[], over: Partial<ResultFacts> = {}): ResultFacts => ({
     endReason: "completed", answered: true, voiceConnected: true, takenOverAtSecs: null, durationSecs: 40,
     question: "Czy laptop z serwisu jest gotowy?", callbackLine: "Sprawdzę to u Anny i oddzwonię.",
@@ -147,6 +147,34 @@ describe("answer card", () => {
     assert.equal(buildCallResult(base([], { endReason: "busy", answered: false, voiceConnected: false })).nextStep.kind, "retry");
     assert.equal(buildCallResult(base([], { endReason: "twilio_refused", answered: false, voiceConnected: false })).outcome, "not_placed");
     assert.equal(buildCallResult(base([], { endReason: "voice_unavailable" })).outcome, "voice_unavailable");
+  });
+
+  test("times, days and prices are read from what was said, in digits or in words", () => {
+    const t = (s: string) => { const x = termsIn(s); return [[...x.times].sort(), [...x.days].sort(), [...x.prices], x.condition]; };
+    assert.deepEqual(t("Mamy o 20."), [["8:00"], [], [], false]);
+    assert.deepEqual(t("Może być 20:30 albo o 19.45?"), [["7:45", "8:30"], [], [], false]);
+    assert.deepEqual(t("Na dwudziestą pierwszą, albo o wpół do ósmej."), [["7:30", "9:00"], [], [], false]);
+    assert.deepEqual(t("O siódmej wieczorem."), [["7:00"], [], [], false], "the same key as 19:00");
+    assert.deepEqual(t("Stolik dla 4 osób jest wolny do 21:00, po 20 minutach sprzątamy."), [[], [], [], false]);
+    assert.deepEqual(t("W sobotę 15 listopada, albo 16.11."), [[], ["d15.11", "d16.11", "m11", "w6"], [], false]);
+    assert.deepEqual(t("Zadatek 1 500 zł przelewem."), [[], [], ["1500"], true]);
+    assert.deepEqual(t("Z góry dziękuję, zapraszamy jutro."), [[], [], [], false], "thanks in advance and relative days are no terms");
+  });
+
+  test("on an ask call, yes to another time is flagged when the card names a time; plain agreement is a commitment on any call", () => {
+    // The laptop card names no time, so a time in the answer is the answer, not another offer.
+    const plain = buildCallResult(base([d(opening), c("Tak, gotowy, proszę przyjść jutro o 10."), d("Dobrze, dziękuję, do widzenia.")]));
+    assert.deepEqual(plain.warnings, []);
+    // A card that asks about 19:00: "o 21" is another time, and "pasuje" agrees to it.
+    const q = "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy mają Państwo wolny stolik dla dwóch osób dziś o 19:00?";
+    const r = buildCallResult(base([d(q), c("O 19 nie, ale o 21 mamy."), d("Dobrze, pasuje.")], { allowedTexts: [q] }));
+    assert.deepEqual(r.warnings.map((w) => w.kind), ["possible_other_booking"]);
+    assert.equal(r.confidence, "low");
+    assert.equal(r.nextStep.kind, "call_yourself");
+    const same = buildCallResult(base([d(q), c("Tak, o 19 mamy."), d("Dobrze, dziękuję, do widzenia.")], { allowedTexts: [q] }));
+    assert.deepEqual(same.warnings, [], "yes to the card's own time");
+    assert.deepEqual(audit([d(opening), c("Zapisać Panią?"), d("Tak, proszę nas zapisać."), d("Niech będzie.")], [opening]).map((x) => x.kind),
+      ["possible_commitment", "possible_commitment"]);
   });
 
   test("Doddy's own lines are checked for promises and numbers it wasn't given", () => {

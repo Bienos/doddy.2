@@ -13,8 +13,10 @@ import Foundation
 /// Calls answered before the switch was turned on are left alone.
 @MainActor
 enum RecapKeeper {
+    private static var conversationsInFlight: Set<String> = []
     /// Turning the switch on or off. On records when, so only conversations after it are recapped.
     static func setRemember(_ on: Bool, defaults: UserDefaults = .standard, now: Date = Date()) {
+        defaults.set(UUID().uuidString, forKey: RecapSettings.rememberEpochKey)
         defaults.set(on, forKey: RecapSettings.rememberKey)
         if on {
             defaults.set(now.timeIntervalSince1970, forKey: RecapSettings.rememberSinceKey)
@@ -35,6 +37,17 @@ enum RecapKeeper {
     static func since(_ defaults: UserDefaults = .standard) -> Date? {
         guard let seconds = defaults.object(forKey: RecapSettings.rememberSinceKey) as? Double else { return nil }
         return Date(timeIntervalSince1970: seconds)
+    }
+
+    /// Which recap note belongs to which conversation, and which conversations were deleted.
+    static func links(_ defaults: UserDefaults = .standard) -> RecapLinks {
+        RecapLinks(stored: defaults.string(forKey: RecapLinks.key))
+    }
+
+    /// Reads, changes and writes the links in one step. Everything here runs on the main actor with no
+    /// suspension in between, so two changes cannot overwrite each other.
+    static func updateLinks(_ defaults: UserDefaults = .standard, _ change: (RecapLinks) -> RecapLinks) {
+        defaults.set(change(links(defaults)).stored, forKey: RecapLinks.key)
     }
 
     static func ledger(_ defaults: UserDefaults = .standard) -> RecapLedger {
@@ -86,50 +99,83 @@ enum RecapKeeper {
         case refused
         /// The note couldn't be saved and read back: nothing claimed, nothing marked.
         case notSaved
+        /// The person deleted the conversation while its recap was being written: no recap was kept.
+        case sourceDeleted
     }
 
     /// After a conversation with Doddy ends: a recap note, written on this iPhone, if the switch is on, the
     /// conversation isn't Private and the person said enough. `startedAt` identifies the conversation, so
-    /// it is recapped once.
+    /// it is recapped once. `conversationID` is the kept conversation's id: the saved note is linked to it, so
+    /// deleting the conversation can offer to delete the note, and a deleted conversation gets no recap.
     @discardableResult
     static func recapConversation(lines: [RecapModelIO.Line], startedAt: Date, endedAt: Date, isPrivate: Bool,
-                                  store: MemoryStore, defaults: UserDefaults = .standard) async -> ConversationOutcome {
+                                  conversationID: UUID? = nil,
+                                  store: MemoryStore, defaults: UserDefaults = .standard,
+                                  onDeviceAvailable: Bool? = nil,
+                                  write: @MainActor (RecapWriter, [RecapModelIO.Line], String) async throws -> Data = writeConversation) async -> ConversationOutcome {
         let personWords = lines.filter { $0.speaker == .person }.map(\.text).joined(separator: " ")
         let language = languageCode
         let decision = RecapPolicy.decide(kind: .voiceConversation, rememberOn: isOn(defaults), isPrivate: isPrivate,
                                           wordsFromPerson: RecapPolicy.wordCount(personWords),
-                                          onDeviceAvailable: OnDeviceRecapWriter.isAvailable(languageCode: language),
+                                          onDeviceAvailable: onDeviceAvailable ?? OnDeviceRecapWriter.isAvailable(languageCode: language),
                                           serverYes: serverYes(defaults))
         guard case .recap(let writer) = decision else {
             if case .skip(let why) = decision { return .skipped(why) }
             return .refused
         }
         let key = "voice_conversation:\(Int64((startedAt.timeIntervalSince1970 * 1000).rounded()))"
-        guard writer == .onDevice || writer == .server, !ledger(defaults).contains(key),
+        guard writer == .onDevice || writer == .server, !ledger(defaults).contains(key), !conversationsInFlight.contains(key),
               RecapPolicy.endedAfterSwitchOn(endedAt, since: since(defaults)) else { return .notNew }
+        if let conversationID, links(defaults).isDeleted(conversationID) { return .sourceDeleted }
+        let consentSince = since(defaults)
+        let consentEpoch = defaults.string(forKey: RecapSettings.rememberEpochKey)
+        conversationsInFlight.insert(key)
+        defer { conversationsInFlight.remove(key) }
         let recap: ConversationRecap
         let text: String
         do {
-            let answer: Data
-            if writer == .onDevice {
-                answer = try await OnDeviceRecapWriter.write(kind: .voiceConversation, lines: lines, languageCode: language)
-            } else {
-                answer = try await ServerRecapClient(server: ServerConfig.client())
-                    .write(kind: .voiceConversation, lines: lines, languageCode: language)
-            }
+            let answer = try await write(writer, lines, language)
             recap = try RecapModelIO.read(answer, kind: .voiceConversation, with: nil, endedAt: endedAt,
                                           writtenBy: writer, conversation: RecapModelIO.plainText(lines))
             text = try RecapMemoryText.text(recap, labels: labels(for: recap))
         } catch {
             return .refused
         }
+        // A model can outlive the person's consent. An off/on cycle is a new permission epoch,
+        // not permission to complete an older extraction. Never mark it in the ledger on refusal.
+        guard !Task.isCancelled, isOn(defaults), since(defaults) == consentSince,
+              defaults.string(forKey: RecapSettings.rememberEpochKey) == consentEpoch else {
+            return .skipped(.switchedOff)
+        }
+        guard writer != .server || serverYes(defaults) else { return .skipped(.noWriter) }
+        guard !ledger(defaults).contains(key) else { return .notNew }
+        if let conversationID, links(defaults).isDeleted(conversationID) { return .sourceDeleted }
         do {
-            _ = try await store.save(text: text, category: .other, source: .conversationRecap, capturedAt: recap.endedAt)
+            let saved = try await store.save(text: text, category: .other, source: .conversationRecap,
+                                             capturedAt: recap.endedAt)
             defaults.set(ledger(defaults).adding(key).stored, forKey: RecapSettings.ledgerKey)
+            if let conversationID {
+                // The conversation may have been deleted while the note was being saved. Then the note
+                // goes too; if it can't be removed it stays linked, so it is still found and reported.
+                if links(defaults).isDeleted(conversationID) {
+                    if (try? await store.delete(id: saved.id)) != nil { return .sourceDeleted }
+                    updateLinks(defaults) { $0.linking(conversation: conversationID, memory: saved.id, evenIfDeleted: true) }
+                } else {
+                    updateLinks(defaults) { $0.linking(conversation: conversationID, memory: saved.id) }
+                }
+            }
             return .saved
         } catch {
             return .notSaved
         }
+    }
+
+    private static func writeConversation(_ writer: RecapWriter, _ lines: [RecapModelIO.Line], _ language: String) async throws -> Data {
+        if writer == .onDevice {
+            return try await OnDeviceRecapWriter.write(kind: .voiceConversation, lines: lines, languageCode: language)
+        }
+        return try await ServerRecapClient(server: ServerConfig.client())
+            .write(kind: .voiceConversation, lines: lines, languageCode: language)
     }
 
     static func labels(for recap: ConversationRecap) -> RecapMemoryText.Labels {
@@ -137,6 +183,8 @@ enum RecapKeeper {
         let title: String = switch (recap.kind, recap.with) {
         case (.voiceConversation, _):
             String(format: NSLocalizedString("Conversation with Doddy, %@", comment: "Recap note title: when"), date)
+        case (.recording, _):
+            String(format: NSLocalizedString("Recording, %@", comment: "Recap note title: when"), date)
         case (_, let with?):
             String(format: NSLocalizedString("Call with %@, %@", comment: "Recap note title: who, when"), with, date)
         case (_, nil):

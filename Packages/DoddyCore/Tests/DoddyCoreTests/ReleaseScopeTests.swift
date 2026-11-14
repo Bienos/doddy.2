@@ -2,8 +2,8 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// The release scope (decision 2026-11-07-release-scope): one list that hides a feature's every way in, and the tools the
-/// live agent loses with it. Checked against `voice-agent/tools.json`, so a tool that belongs to no
+/// The release scope (decision 2026-11-07-release-scope, reversed by 2026-11-10-no-beta-scope: every build shows everything):
+/// one list that can hide a feature's every way in, and the tools the live agent would lose with it. Checked against `voice-agent/tools.json`, so a tool that belongs to no
 /// feature and isn't core fails here before it can slip into a build unplaced.
 final class ReleaseScopeTests: XCTestCase {
     private let repoRoot = URL(fileURLWithPath: #filePath)
@@ -54,49 +54,34 @@ final class ReleaseScopeTests: XCTestCase {
         XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.findDeals))
     }
 
-    func testShippingKeepsTheProductAndHidesTheRest() {
+    func testShippingShowsEverything() {
+        // Owner, 10 Nov 2026: "forget the beta as if it didn't exist". `shipping` hides nothing.
         let scope = ReleaseScope.shipping
-        // Shown: what the beta promises (V1_SCOPE.md).
-        // The translator is shown too (owner, 8 Nov 2026: decision 2026-11-08-translator-in-beta).
-        for feature in [Feature.messages, .photosAndCamera, .translator] {
-            XCTAssertTrue(scope.shows(feature), "\(feature)")
-        }
-        for tool in ReleaseScope.coreTools {
-            XCTAssertNil(scope.hiddenFeature(forTool: tool), "\(tool) is core and must run")
-        }
-        // Hidden: every server feature, every vendor, every permission the beta doesn't ask for.
-        for feature in [Feature.deals, .errands, .onlineAccounts, .phoneCalls, .callCases, .recordings, .homeKit,
-                        .planCard, .parking, .leaveBy, .placeReminders] {
-            XCTAssertFalse(scope.shows(feature), "\(feature)")
-        }
-        for tool in CloudToolName.all {
-            XCTAssertNotNil(scope.hiddenFeature(forTool: tool), "\(tool) runs on the server: hidden in the beta")
-        }
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.findDeals), .deals)
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.handOverErrand), .errands)
-        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.startTranslator), "the translator runs in the beta")
-        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.stopTranslator))
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.proposePlan), .planCard)
-        // Merged into main after the list was first written (8 Nov): placed, and hidden in the beta.
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.makeSomething), .studio)
-        XCTAssertEqual(scope.hiddenFeature(forTool: PaymentToolName.payForPage), .payments)
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.lostWallet), .lostWallet)
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.draftInvoice), .invoices)
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.textMe), .updates)
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.callMeLater), .phoneCalls)
-        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.callPlaces), .callCases)
+        XCTAssertEqual(scope, .everything)
+        XCTAssertEqual(scope.hidden, [])
+        for feature in Feature.allCases { XCTAssertTrue(scope.shows(feature), "\(feature)") }
+        for connection in VoiceConnection.allCases { XCTAssertTrue(scope.shows(connection), "\(connection)") }
+        for tool in try! specNames() { XCTAssertNil(scope.hiddenFeature(forTool: tool), "\(tool) must run in the shipping scope") }
+        // The ones the beta used to hide, named so a regression shows which.
+        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.handOverErrand))
+        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.makePresentation))
+        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.proposePlan))
+        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.makeSomething))
+        XCTAssertNil(scope.hiddenFeature(forTool: PaymentToolName.payForPage))
+        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.callPlaces))
+        XCTAssertNil(scope.hiddenFeature(forTool: CloudToolName.draftEmail))
     }
 
-    func testShippingConnectionsFollowTheirFeature() {
-        let scope = ReleaseScope.shipping
-        // Each hidden feature with a switch takes its switch with it; the product's switches stay.
+    func testAScopeThatHidesFeaturesStillWorks() {
+        // The machinery is kept for a future decision to hide something again.
+        let scope = ReleaseScope(hidden: [.errands, .homeKit])
+        XCTAssertEqual(scope.hiddenFeature(forTool: VoiceToolName.handOverErrand), .errands)
+        XCTAssertNil(scope.hiddenFeature(forTool: VoiceToolName.setTimer))
         XCTAssertFalse(scope.shows(VoiceConnection.home))
-        XCTAssertFalse(scope.shows(VoiceConnection.blik))
-        XCTAssertFalse(scope.shows(VoiceConnection.steps))
-        XCTAssertFalse(scope.shows(VoiceConnection.presentations))
-        for connection in [VoiceConnection.calendar, .reminders, .contacts, .timers, .maps, .shortcuts, .messages, .photos, .camera] {
-            XCTAssertTrue(scope.shows(connection), "\(connection)")
-        }
+        XCTAssertTrue(scope.shows(VoiceConnection.calendar))
+    }
+
+    func testEveryFeaturesSwitchIsTheSwitchItsToolsNeed() {
         // A feature's switch is the switch its tools need, so the gate and the screen agree.
         for feature in Feature.allCases {
             guard let connection = feature.connection else { continue }
@@ -104,38 +89,48 @@ final class ReleaseScopeTests: XCTestCase {
         }
     }
 
-    func testHiddenToolsAreSortedAndInTheSpec() throws {
-        let hidden = ReleaseScope.shipping.hiddenTools
+    func testShippingToolsAreAllInTheSpec() throws {
+        // Since 10 Nov 2026 the agent keeps every tool in the spec: nothing is taken off it.
+        XCTAssertEqual(ReleaseScope.shipping.hiddenTools, [])
+        let spec = try specNames()
+        let shownFeatureTools = Set(Feature.allCases.filter { ReleaseScope.shipping.shows($0) }.flatMap(\.tools))
+        XCTAssertEqual(spec, ReleaseScope.coreTools.union(shownFeatureTools), "every tool in tools.json is reachable")
+    }
+
+    func testHiddenToolsOfAScopeAreSortedAndInTheSpec() throws {
+        let hidden = ReleaseScope(hidden: Set(Feature.allCases)).hiddenTools
         XCTAssertEqual(hidden, hidden.sorted())
         XCTAssertEqual(Set(hidden).count, hidden.count)
         XCTAssertEqual(Set(hidden).subtracting(try specNames()), [], "a hidden tool the agent doesn't have")
-        // The agent keeps exactly the core tools and the shown features' tools.
         let kept = try specNames().subtracting(hidden)
-        let shownFeatureTools = Set(Feature.allCases.filter { ReleaseScope.shipping.shows($0) }.flatMap(\.tools))
-        XCTAssertEqual(kept, ReleaseScope.coreTools.union(shownFeatureTools))
+        XCTAssertEqual(kept, ReleaseScope.coreTools)
     }
 
     // MARK: Languages
 
-    func testShippingOffersPolishEnglishAndTheIphonesLanguage() {
+    func testShippingOffersEveryLanguage() {
         let scope = ReleaseScope.shipping
-        XCTAssertEqual(scope.languages, [.english, .polish, .followPhone])
-        XCTAssertEqual(scope.languageChoices(current: .polish), [.english, .polish, .followPhone])
-        // A choice from an older build stays visible, in the list's order, so it can be changed.
-        XCTAssertEqual(scope.languageChoices(current: .german), [.english, .german, .polish, .followPhone])
-        XCTAssertEqual(ReleaseScope.everything.languageChoices(current: .german), AppLanguage.allCases)
+        XCTAssertEqual(scope.languages, AppLanguage.allCases)
+        XCTAssertEqual(scope.languageChoices(current: .german), AppLanguage.allCases)
+        // A scope that isn't `everything` offers the two a native speaker has read, plus the current choice.
+        let other = ReleaseScope(hidden: [.errands])
+        XCTAssertEqual(other.languages, [.english, .polish, .followPhone])
+        XCTAssertEqual(other.languageChoices(current: .german), [.english, .german, .polish, .followPhone])
     }
 
     // MARK: The capability catalog
+
+    func testShippingLeavesTheCapabilitiesAsTheyAre() {
+        let catalog = CapabilityCatalog.shipping(serverConfigured: true)
+        XCTAssertEqual(catalog.hiding(ReleaseScope.shipping).statuses, catalog.statuses)
+    }
 
     func testHidingMarksTheFeaturesCapabilitiesLimited() {
         let catalog = CapabilityCatalog.shipping(serverConfigured: true)
         XCTAssertEqual(catalog.status(of: .textAssistant), .available)
         XCTAssertEqual(catalog.status(of: .pushUpdates), .available)
-        let hidden = catalog.hiding(ReleaseScope.shipping)
-        // Messages is shown in the beta: unchanged.
+        let hidden = catalog.hiding(ReleaseScope(hidden: [.updates, .dailyNews, .sharedLists]))
         XCTAssertEqual(hidden.status(of: .textAssistant), .available)
-        // Updates, news and shared lists are hidden: limited, with the note.
         XCTAssertEqual(hidden.status(of: .pushUpdates), .limited(CapabilityCatalog.notInThisVersion))
         XCTAssertEqual(hidden.status(of: .textUpdates), .limited(CapabilityCatalog.notInThisVersion))
         XCTAssertEqual(hidden.status(of: .newsDigests), .limited(CapabilityCatalog.notInThisVersion))
@@ -168,7 +163,9 @@ final class ReleaseScopeTests: XCTestCase {
         // Decision 2026-11-08-debug-shows-every-feature: a fresh Debug install shows every feature.
         XCTAssertEqual(ReleaseScope.debug(showEverything: nil), .everything)
         XCTAssertEqual(ReleaseScope.debug(showEverything: true), .everything)
+        // `shipping` is `everything` since 10 Nov 2026 (decision 2026-11-10-no-beta-scope), so the switch changes nothing.
         XCTAssertEqual(ReleaseScope.debug(showEverything: false), .shipping)
+        XCTAssertEqual(ReleaseScope.debug(showEverything: false), .everything)
         XCTAssertTrue(ReleaseScope.debugShowsEverythingByDefault)
     }
 
@@ -176,7 +173,8 @@ final class ReleaseScopeTests: XCTestCase {
 
     func testParkingQuickActionGoesWithTheFeature() {
         XCTAssertEqual(QuickAction.shown(hasParkingSpot: true, scope: .everything).last, .parking)
-        XCTAssertEqual(QuickAction.shown(hasParkingSpot: true, scope: .shipping), [.talk, .newNote, .find])
+        XCTAssertEqual(QuickAction.shown(hasParkingSpot: true, scope: .shipping).last, .parking, "shown since 10 Nov 2026")
+        XCTAssertEqual(QuickAction.shown(hasParkingSpot: true, scope: ReleaseScope(hidden: [.parking])), [.talk, .newNote, .find])
         XCTAssertEqual(QuickAction.shown(hasParkingSpot: false, scope: .everything), [.talk, .newNote, .find])
     }
 }

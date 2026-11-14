@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Decided by:** owner. Asked for: "doddy should send sms from his numbers on his own right … why not remove them [the call limits] and let doddy like find number and call restirant get info and then send message me or notfication in app with result and or like used booking servie instead if available". Then "ok" to the three choices below, as proposed in the same session.
-- **Status:** accepted. Steps 1 and 2 (the server side) applied in #265; step 3 (texts without a tap) in #274; step 4 (calls from a conversation) in the pull request that changes this line; step 5 to follow.
+- **Status:** accepted. Steps 1 and 2 (the server side) applied in #265; step 3 (texts without a tap) in #274; step 4 (calls from a conversation) in the pull request that changes this line; step 5 (booking pages) in the pull request that adds `2026-11-11-salon-booking-pages`.
 - **Replaces:** for the steps below only, parts of ADR-500 to 507 (`docs/decisions/calls.md`: one callee per approval, "ask" only, never commits) and of ADR-752 (`text_me` needs a tap).
 
 ## Why

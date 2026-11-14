@@ -94,4 +94,60 @@ final class MeaningSearchTests: XCTestCase {
         let others = try (0..<20).map { _ in (record: try note("keys"), vector: [Float](arrayLiteral: 0, 1, 0, 0)) }
         XCTAssertEqual(MeaningSearch.rank(query: [1, 0, 0, 0], notes: notes + others).count, MeaningSearch.maxHits)
     }
+
+    private actor SuspendedEmbedder: MeaningEmbedder {
+        private var waiting: CheckedContinuation<Void, Never>?
+        private var started: CheckedContinuation<Void, Never>?
+        private var didStart = false
+        private var suspended = false
+        private var calls: [String] = []
+
+        func vector(for text: String) async -> [Float]? {
+            calls.append(text)
+            if text == "dumplings", !suspended {
+                suspended = true
+                didStart = true
+                started?.resume(); started = nil
+                await withCheckedContinuation { waiting = $0 }
+            }
+            return text == "keys" ? [0, 1] : [1, 0]
+        }
+
+        func waitForNote() async {
+            if didStart { return }
+            await withCheckedContinuation { started = $0 }
+        }
+        func resume() { waiting?.resume(); waiting = nil }
+        func count(_ text: String) -> Int { calls.filter { $0 == text }.count }
+    }
+
+    func testInvalidationDuringEmbeddingDropsResultsAndDoesNotRestoreVector() async throws {
+        let embedder = SuspendedEmbedder()
+        let index = MeaningIndex(embedder: embedder)
+        let notes = [try note("dumplings"), try note("keys")]
+        let search = Task { await index.search("pierogi", in: notes, excluding: []) }
+        await embedder.waitForNote()
+        await index.invalidate(notes[0].id)
+        await embedder.resume()
+        let stale = await search.value
+        XCTAssertTrue(stale.isEmpty, "A suspended search cannot return a deleted/corrected note")
+        _ = await index.search("pierogi", in: notes, excluding: [])
+        let calls = await embedder.count("dumplings")
+        XCTAssertEqual(calls, 2, "The suspended pass must not put the invalidated vector back")
+    }
+
+    func testClearDuringEmbeddingAlsoInvalidatesSuspendedWork() async throws {
+        let embedder = SuspendedEmbedder()
+        let index = MeaningIndex(embedder: embedder)
+        let notes = [try note("dumplings"), try note("keys")]
+        let search = Task { await index.search("pierogi", in: notes, excluding: []) }
+        await embedder.waitForNote()
+        await index.clear()
+        await embedder.resume()
+        let stale = await search.value
+        XCTAssertTrue(stale.isEmpty)
+        _ = await index.search("pierogi", in: notes, excluding: [])
+        let calls = await embedder.count("dumplings")
+        XCTAssertEqual(calls, 2)
+    }
 }

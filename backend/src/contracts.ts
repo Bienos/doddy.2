@@ -193,6 +193,8 @@ export const ErrorCode = z.enum([
   "refused",
   /** A sign-in or device already linked elsewhere (decision 2026-11-08-required-account). Not retried. */
   "account_conflict",
+  /** make_document was asked with too little to go on (decision 2026-11-10-files-ask-for-details). Nothing was made or counted; ask the user and send it again. */
+  "need_details",
   "internal",
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;
@@ -212,6 +214,8 @@ export const ErrorResponseSchema = z
   .strict();
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
-export const HealthSchema = z
-  .object({ status: z.literal("ok"), mode: Mode, api: z.literal("v1"), capabilities: z.array(z.string()) })
-  .strict();
+/** `GET /v1/health`, open to anyone: its status and nothing else (12 Nov 2026). 503 with "unavailable". */
+export const HealthSchema = z.object({ status: z.enum(["ok", "unavailable"]) }).strict();
+
+/** `GET /v1/server`, signed in (an iPhone token, or a browser session for Doddy Web): demo data or real. */
+export const ServerInfoSchema = z.object({ mode: Mode }).strict();

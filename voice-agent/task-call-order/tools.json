@@ -1,0 +1,16 @@
+{
+  "format": "doddy-voice-tools/1",
+  "note": "The order agent 'Doddy (orders for you)' (decision docs/decisions/2026-11-12-food-by-phone.md) has no webhook or client tools on purpose: it can only talk. It may say one server-built confirmation line for the one order the user approved; it cannot pay, send, open links, read memories or transfer. voice_agent_spec.py --agent task-call-order fails if anything else is added; the server's drift check (server/messaging/src/taskCalls/agentSafety.ts) refuses calls if the live agent has anything else.",
+  "tools": [],
+  "system_tools": [
+    {
+      "name": "end_call",
+      "description": "End the call after saying goodbye: once the order is confirmed, they can't take it, or anything outside the order was asked."
+    },
+    {
+      "name": "voicemail_detection",
+      "description": "Use when a voicemail greeting or answering machine answers. Leave no message.",
+      "voicemail_message": ""
+    }
+  ]
+}

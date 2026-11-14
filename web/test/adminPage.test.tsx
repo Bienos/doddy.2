@@ -15,7 +15,7 @@ const notFound = { status: 404, body: { error: { code: "not_found", message: "No
 function renderAdmin(path = "/admin", routes: Record<string, unknown> = {}, language: "en" | "pl" = "en") {
   const server = fakeServer({
     "GET /v1/web/session": { body: fixture("web/session-current") },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     "GET /v1/web/owner": { body: fixture("web/owner-flag") },
     "GET /v1/web/owner/overview": { body: fixture("web/owner-overview") },
     "GET /v1/web/owner/accounts": { body: fixture("web/owner-accounts") },
@@ -210,6 +210,29 @@ describe("the admin dashboard", () => {
     const nav = await screen.findByRole("navigation", { name: "Workspace" });
     expect(within(nav).queryByRole("link", { name: "Admin" })).toBeNull();
     expect(screen.queryByText("Doddy Admin")).toBeNull();
+  });
+
+  test("a sign-in older than the panel allows is asked to sign in again, and no account is shown", async () => {
+    const refused = { status: 422, body: { error: { code: "refused", message: "For safety, the owner panel opens only within 15 minutes of signing in. Sign out, sign in again, then open it." } } };
+    const { seen } = renderAdmin("/admin", {
+      "GET /v1/web/owner/overview": refused,
+      "GET /v1/web/owner/accounts": refused,
+      "DELETE /v1/web/session": { body: { signedOut: true } },
+    });
+    expect(await screen.findByRole("alert")).toHaveTextContent("For safety, the owner panel opens only within 15 minutes of signing in.");
+    expect(screen.queryByRole("heading", { level: 2, name: "Needs attention" })).toBeNull();
+    expect(screen.queryByText("tomek@example.com")).toBeNull();
+    expect(screen.getByRole("link", { name: "Back to Doddy" })).toHaveAttribute("href", "/");
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(await screen.findByRole("heading", { name: "Sign in to Doddy" })).toBeInTheDocument();
+    expect(seen.filter((s) => s.method === "DELETE").map((s) => s.path)).toEqual(["/v1/web/session"]);
+  });
+
+  test("the same, in Polish", async () => {
+    const refused = { status: 422, body: { error: { code: "refused", message: "x" } } };
+    renderAdmin("/admin", { "GET /v1/web/owner/overview": refused, "GET /v1/web/owner/accounts": refused }, "pl");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Dla bezpieczeństwa panel właściciela otwiera się tylko w ciągu 15 minut od zalogowania.");
+    expect(screen.getByRole("button", { name: "Wyloguj się" })).toBeInTheDocument();
   });
 
   test("an owner finds the dashboard in the menu; nobody else does", async () => {

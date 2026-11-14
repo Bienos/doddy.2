@@ -386,8 +386,31 @@ public actor DoddyServerClient {
         try await getJSON("/v1/updates/\(id.uuidString.lowercased())", timeout: timeout)
     }
 
+    /// One `DELETE /v1/account` with the token this iPhone keeps, saying exactly what the server answered (decision
+    /// 2026-11-12-account-deletion-truth): no token is `.noToken` and a refused one `.refused`, never "deleted". The
+    /// token is forgotten after a 204 or a 401, as it is dead either way. For deleting a Doddy account, whose steps
+    /// are `AccountErasurePlan.run`.
+    public func deleteAccountWithStoredToken() async -> AccountErasurePlan.Attempt {
+        guard let token = try? credentials.load() else { return .noToken }
+        let attempt = await deleteAccount(withToken: token)
+        if attempt == .deleted || attempt == .refused { try? credentials.delete() }
+        return attempt
+    }
+
+    /// `DELETE /v1/account` with a token the caller holds: the Doddy account's own one, just minted. Nothing is kept.
+    public func deleteAccount(withToken token: String) async -> AccountErasurePlan.Attempt {
+        guard let response = try? await send(.delete, "/v1/account", body: nil, token: token) else { return .failed }
+        switch response.status {
+        case 204: return .deleted
+        case 401: return .refused
+        default: return .failed
+        }
+    }
+
     /// Erases the account and everything the server holds for it, then forgets the token.
-    /// Memories are not affected: they were never on the server.
+    /// Memories are not affected: they were never on the server. Settings › Messaging uses it for this iPhone's
+    /// own messaging data; deleting a Doddy account uses `deleteAccountWithStoredToken` and `AccountErasurePlan`,
+    /// which never count a missing or refused token as deleted.
     public func deleteAccount() async throws {
         guard let token = try credentials.load() else { return }
         let response = try await send(.delete, "/v1/account", body: nil, token: token)
@@ -503,13 +526,20 @@ private struct ErrorBody: Decodable { let error: String?; let fields: [String]? 
 
 /// ISO 8601 timestamps as the messaging server writes them (with or without fractional seconds).
 public enum ServerDates {
+    // Made once (11 Nov 2026): sorting On my radar's 40 cards parsed every date twice per comparison, each time with
+    // two new formatters, on every redraw. ISO8601DateFormatter is thread-safe once configured.
+    nonisolated(unsafe) private static let fractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    nonisolated(unsafe) private static let plain = ISO8601DateFormatter()
+
     public static func parse(_ text: String) -> Date? {
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return fractional.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+        fractional.date(from: text) ?? plain.date(from: text)
     }
 
     public static func format(_ date: Date) -> String {
-        ISO8601DateFormatter().string(from: date)
+        plain.string(from: date)
     }
 }

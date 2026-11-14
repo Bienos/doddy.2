@@ -14,12 +14,16 @@
 // None was listed on 30 Oct, so a leaflet is skipped on any sign of one: an age-gate marker in its own block, or an
 // alcohol word in its text, an image's alt text or its page file names.
 import { currentWeek, dayMonth, decodeEntities, fetchOfficial, officialUrl } from "./common.js";
+import { forwardFinder, replaceSpans, spanAt, startTags, stripTags } from "../../htmlScan.js";
 import type { ChainAdapter, ChainRead, LeafletInfo, LeafletRead } from "../types.js";
 
 export const LECLERC_HOSTS = ["leclerc.pl", "www.leclerc.pl"] as const;
 export const LECLERC_LISTING = "https://leclerc.pl/gazetki/";
 /** Pages handed to the service per request, all leaflets together (its screening reads at most 120). */
 export const LECLERC_MAX_PAGES = 120;
+/** The catalog takes every current page (13 Nov 2026: nine leaflets, cut at 120 on every scan of 12 Nov), up to this,
+ * and spreads the reads over its scans and its daily budget. */
+export const LECLERC_CATALOG_MAX_PAGES = 600;
 const ALCOHOL = /alkohol|\bwin[ao]?\b|\bpiw(?:o|a|ny|ne|na)?\b|w[oó]dk|whisk|likier|\bgin\b|\brum\b|szampan|prosecco|\btrunk/i;
 const AGE_GATE = /adult|inactive-newspaper|pe[łl]noletn/i;
 
@@ -58,26 +62,36 @@ export function datesFromText(text: string, today: string): Pick<LeafletInfo, "v
 export function parseListing(html: string, today: string): ListedLeaflet[] | undefined {
   const list = html.indexOf('class="newspapers-list"');
   if (list < 0) return undefined;
-  const starts = [...html.matchAll(/<article\b[^>]*\bid="newspaper-(\d{1,12})"[^>]*>/g)].filter((m) => m.index! > list);
-  const end = (from: number) => {
-    const stops = ["</main>", 'id="adultModal"'].map((s) => html.indexOf(s, from)).filter((i) => i >= 0);
-    return Math.min(html.length, ...stops);
-  };
+  // The <article> tags with id="newspaper-N" (the last such id in a tag, as the regex's greedy `[^>]*` had it).
+  const starts = [...startTags(html, /<article\b/g)].flatMap((tag) => {
+    const ids = [...tag.text.matchAll(/\bid="newspaper-(\d{1,12})"/g)];
+    const id = ids[ids.length - 1]?.[1];
+    return id && tag.index > list ? [{ index: tag.index, id }] : [];
+  });
+  const mainAt = forwardFinder(html, "</main>");
+  const modalAt = forwardFinder(html, 'id="adultModal"');
+  const end = (from: number) => Math.min(html.length, mainAt(from)?.index ?? html.length, modalAt(from)?.index ?? html.length);
   if (starts.length === 0 && html.slice(list, end(list)).includes("<article")) return undefined;
   const out: ListedLeaflet[] = [];
+  const seen = new Set<string>();
   starts.forEach((m, i) => {
-    const id = m[1]!;
-    if (out.some((l) => l.id === id)) return;
-    const block = html.slice(m.index!, Math.min(starts[i + 1]?.index ?? html.length, end(m.index!)));
-    const content = /<div class="entry-content">([\s\S]*?)<\/div>/.exec(block)?.[1] ?? "";
-    const text = decodeEntities(content.replace(/<button[\s\S]*?<\/button>/gi, " ").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+    const id = m.id;
+    if (seen.has(id)) return;
+    seen.add(id);
+    const block = html.slice(m.index, Math.min(starts[i + 1]?.index ?? html.length, end(m.index)));
+    const entry = spanAt(block, '<div class="entry-content">', "</div>");
+    const content = entry ? block.slice(entry.contentStart, entry.contentEnd) : "";
+    const text = decodeEntities(stripTags(replaceSpans(content, /<button/gi, /<\/button>/gi, " "))).replace(/\s+/g, " ").trim();
     const alts = [...block.matchAll(/\balt="([^"]*)"/g)].map((a) => decodeEntities(a[1]!));
     // Desktop pages ("src", not the mobile set or the "thumb" originals); a shop site's copy has a plain `pages: [...]`.
-    const set = /var\s+pagesDesktop\s*=\s*\[([\s\S]*?)\]\s*;/.exec(block)?.[1] ?? /\bpages\s*:\s*\[([\s\S]*?)\]/.exec(block)?.[1] ?? "";
+    const desktop = spanAt(block, /var\s+pagesDesktop\s*=\s*\[/g, /\]\s*;/g) ?? spanAt(block, /\bpages\s*:\s*\[/g, "]");
+    const set = desktop ? block.slice(desktop.contentStart, desktop.contentEnd) : "";
     const images: string[] = [];
+    const kept = new Set<string>();
     for (const s of set.matchAll(/\bsrc\s*:\s*["']([^"']+)["']/g)) {
       const u = officialUrl(s[1], LECLERC_HOSTS, LECLERC_LISTING);
-      if (u && u.pathname.startsWith("/wp-content/uploads/") && !images.includes(u.toString())) images.push(u.toString());
+      const href = u?.toString();
+      if (u && href && u.pathname.startsWith("/wp-content/uploads/") && !kept.has(href)) { kept.add(href); images.push(href); }
     }
     // Inline placeholder images (base64) are left out of the age-gate check: they are noise, not markup.
     const alcohol = AGE_GATE.test(block.replace(/data:[^"'\s)]*/g, "")) || [text, ...alts, ...images.map(fileWords)].some((s) => ALCOHOL.test(s));
@@ -123,7 +137,7 @@ export const leclerc: ChainAdapter = {
     if (!r.ok) return r.read;
     const listed = parseListing(r.body.toString("utf8"), ctx.today);
     if (!listed) return { kind: "failed", reason: "unreadable_listing" };
-    const { leaflets, dropped, empty } = leclercLeaflets(listed, ctx.today);
+    const { leaflets, dropped, empty } = leclercLeaflets(listed, ctx.today, ctx.forCatalog ? LECLERC_CATALOG_MAX_PAGES : LECLERC_MAX_PAGES);
     if (leaflets.length === 0) return empty ? { kind: "failed", reason: "no_pages" } : { kind: "no_leaflet" };
     // Pages left out (the cap, a leaflet without readable pages) mean "nothing matched" can't be claimed.
     const incomplete = dropped ? "page_cap" : empty ? "some_leaflets_failed" : undefined;

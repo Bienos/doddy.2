@@ -5,7 +5,7 @@
   - "Calling back should redirect them to the person who owns that's Doddy";
   - "I want to be able to tell Doddy by voice to call someone … but [he] should know what's purpose of that call";
   - answers to three questions: call-backs **always** (not 7 days or 24 hours); when someone says "don't call me again", **only notify the user**; I may **deploy the messaging server** myself once the code is merged.
-- **Status:** call-backs applied in the pull request that adds this file; calling a contact by voice planned (below)
+- **Status:** call-backs applied in the pull request that adds this file; calling a contact by voice planned (below). How long a route lasts and what happens when two users called the same number: replaced by `2026-11-12-call-back-limits` (proposal, owner approval pending)
 - **Replaces:** `contact_policy.unknown_inbound_calls` for one group of callers (see Decision)
 
 ## Why

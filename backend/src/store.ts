@@ -1,6 +1,8 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { ConnectionReason, ConnectionStatus, Receipt } from "./contracts.js";
-import { type Database, type DatabaseOptions, openDatabase, type Queryable } from "./db.js";
+import { type Database, type DatabaseOptions, openDatabase, type Queryable, SCHEMA } from "./db.js";
+import { AppError } from "./errors.js";
+import { requestCredential } from "./requestCredential.js";
 
 /**
  * Small durable store (Postgres, ADR-525). Holds only what the backend needs: the internal-user →
@@ -34,6 +36,9 @@ export interface ConnectionRow {
   last_checked_at: number | null;
 }
 
+/** What the owner panel showed (`owner_audit.action`): the totals, the list of accounts, or one account's own Logbook. */
+export type OwnerAction = "overview" | "accounts" | "account_logbook";
+
 /** A remote connection Doddy queued for removal, and whose it is. */
 export interface QueuedCleanup {
   connectionId: string;
@@ -49,6 +54,56 @@ export interface CleanupRow {
   attempts: number;
   last_error: string | null;
   created_at: number;
+  /** When the sweep may try again (ms); null: at the next sweep. */
+  next_try_at: number | null;
+  /** When it was reported stuck (ms; CLEANUP_RETRY.stuckAfter failures, or no way to remove it here); null: not stuck. */
+  stuck_at: number | null;
+}
+
+/** One failed try at a queued removal: what kind it is, how many tries so far, when the next is due, and whether this failure made it stuck. */
+export interface CleanupFailure {
+  provider: string;
+  attempts: number;
+  nextTryAt: number;
+  /** True only on the failure that made it stuck, so it is reported once. */
+  stuckNow: boolean;
+  reason: string;
+}
+
+/**
+ * The warning a stuck removal gets, once: its kind, tries and reason, never an id. The operator lists
+ * stuck removals with `npm run cleanups:stuck` (`Store.stuckCleanups`).
+ */
+export function stuckCleanupLine(failure: CleanupFailure): Record<string, unknown> {
+  return {
+    level: "warn",
+    event: "cleanup_stuck",
+    provider: failure.provider,
+    attempts: failure.attempts,
+    reason: failure.reason,
+    action:
+      failure.reason === "no_remover"
+        ? "This server has no way to remove this kind of account at its provider (for supabase_auth: SUPABASE_SECRET_KEY). Set it; the sweep keeps trying."
+        : "A removal owed at a provider keeps failing. The sweep keeps trying; run `npm run cleanups:stuck` to see which.",
+  };
+}
+
+/** What linking an account to an iPhone's earlier data did (decision 2026-11-08-required-account). */
+export type AccountLinkOutcome = "linked" | "already" | "subject_taken" | "user_taken" | "account_has_data";
+
+/** An account that took over an iPhone's data: the account (a Supabase user id), the data's user id, and when. */
+export interface AccountLinkRow {
+  subject: string;
+  user_id: string;
+  linked_at: number;
+}
+
+/** Ways into the data that ended with a link: browser sessions, Apple or Google sign-ins, joined iPhones, unused codes. */
+export interface LinkEnded {
+  webSessions: number;
+  webIdentities: number;
+  deviceJoins: number;
+  pending: number;
 }
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -76,6 +131,7 @@ export const ERASED_TABLES = [
   "web_accounts",
   "device_joins",
   "account_links",
+  "account_link_codes",
   "logbook_state",
   "logbook_days",
   "memory_state",
@@ -94,7 +150,9 @@ export const ERASED_TABLES = [
  *   (ADR-563); the same iPhone signs in again to the same id and is still the owner.
  * - `token_floor`: one number per person, the second before which their earlier sign-in tokens no
  *   longer work (ADR-709). It is written by the erasure itself; deleting it would bring back the
- *   very tokens the person just cut off. It is dropped once every token it covers has expired.
+ *   very tokens the person just cut off. It is also the erasure's tombstone: a request let in before
+ *   the cut-off can't write the person's rows back (`refuseIfCutOff`). It is dropped once every token
+ *   it covers has expired.
  * Usage counters (`usage`) have no `user_id` column. A person's own counters stay until their day or
  * month is pruned: counts only, and erasing must not reset a daily cap. Server-wide ones are never touched.
  */
@@ -102,6 +160,13 @@ export const KEPT_ON_ERASE = ["cleanups", "device_owner", "token_floor"] as cons
 
 /** The `cleanups.provider` of a Supabase Auth user owed a removal (a linked Google or Apple sign-in, ADR-818). */
 export const SUPABASE_AUTH_CLEANUP = "supabase_auth";
+
+/**
+ * The `cleanups.provider` of a copy of a person's document at Anthropic (`connection_id` is the file id,
+ * nothing else about it). Written when the file is first seen, removed only when the provider confirms
+ * the deletion, and kept through account erasure until then (`KEPT_ON_ERASE`).
+ */
+export const ANTHROPIC_FILE_CLEANUP = "anthropic_file";
 
 /** A device session token lives 30 days at most; a cut-off older than this covers no live token any more (ADR-709). */
 const TOKEN_FLOOR_KEPT_DAYS = 31;
@@ -120,11 +185,22 @@ export interface UserErasure {
 }
 
 /**
- * The hourly sweep's retry of queued remote removals: only rows older than five minutes (a request
- * may still be working on a newer one), at most 20 a sweep, and 24 tries (a day) per row. A row
- * past that stays visible as `failed` and is still retried before the user's next Connect.
+ * The hourly sweep's retry of queued remote removals (each one is a live grant at a provider, or a
+ * Supabase user with a name and email, so it is never given up):
+ * - only rows older than five minutes (`afterMs`: a request may still be working on a newer one);
+ * - at most 20 a sweep, the most overdue first;
+ * - after each failure the next try waits longer: 5 minutes, then twice as long each time, at most a
+ *   day (`retryDelayMs`). The sweep runs hourly, so the first few tries are an hour apart, then 3, 5,
+ *   11 and 21 hours, then daily. There is no last try;
+ * - after `stuckAfter` failures (about 15 hours of failing) a row is reported stuck once (`cleanup_stuck`
+ *   in the log, `stuck_at` for `npm run cleanups:stuck`), and keeps being retried.
  */
-export const CLEANUP_RETRY = { afterMs: 5 * 60_000, perSweep: 20, maxTries: 24 } as const;
+export const CLEANUP_RETRY = { afterMs: 5 * 60_000, perSweep: 20, firstDelayMs: 5 * 60_000, maxDelayMs: 24 * 3_600_000, stuckAfter: 8 } as const;
+
+/** How long after its `failures`-th failure a queued removal is tried again. */
+export function retryDelayMs(failures: number): number {
+  return Math.min(CLEANUP_RETRY.maxDelayMs, CLEANUP_RETRY.firstDelayMs * 2 ** Math.max(0, failures - 1));
+}
 
 /**
  * The schema, idempotent. Timestamps are milliseconds since 1970 (BIGINT). `seq` gives receipts a
@@ -170,6 +246,9 @@ export const SCHEMA_SQL = `
     last_error TEXT,
     created_at BIGINT NOT NULL
   );
+  -- Retried without a last try (CLEANUP_RETRY): when the next try is due, and when it was reported stuck.
+  ALTER TABLE cleanups ADD COLUMN IF NOT EXISTS next_try_at BIGINT;
+  ALTER TABLE cleanups ADD COLUMN IF NOT EXISTS stuck_at BIGINT;
   CREATE TABLE IF NOT EXISTS receipts (
     operation_id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -198,6 +277,10 @@ export const SCHEMA_SQL = `
     finished_at BIGINT
   );
   CREATE INDEX IF NOT EXISTS approvals_writes ON approvals(user_id, capability, args_digest, finished_at);
+  ALTER TABLE approvals ADD COLUMN IF NOT EXISTS started_at BIGINT;
+  ALTER TABLE approvals ADD COLUMN IF NOT EXISTS request_digest TEXT;
+  ALTER TABLE approvals ADD COLUMN IF NOT EXISTS result_word TEXT;
+  ALTER TABLE approvals ADD COLUMN IF NOT EXISTS result_summary TEXT;
   CREATE TABLE IF NOT EXISTS tool_switches (
     user_id TEXT NOT NULL,
     tool TEXT NOT NULL,
@@ -289,6 +372,16 @@ export const SCHEMA_SQL = `
     user_id TEXT NOT NULL UNIQUE,
     linked_at BIGINT NOT NULL
   );
+  -- A one-time code the iPhone's own device session asked for (\`POST /v1/account/link-device/start\`),
+  -- so an account takes over that iPhone's data only when the iPhone itself started it a moment ago.
+  -- Only its hash is kept. The link uses it up, and an unused one goes when it expires.
+  CREATE TABLE IF NOT EXISTS account_link_codes (
+    code_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS account_link_codes_user ON account_link_codes(user_id);
   CREATE TABLE IF NOT EXISTS device_joins (
     device_user_id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -386,7 +479,66 @@ export const SCHEMA_SQL = `
     received_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
+  -- One row each time the owner panel showed something (web/owner.ts). Ids, a word for what was
+  -- opened and a time only: no email, name, count, word or credential, and no column that could hold one.
+  -- The ids are opaque and the rows are pruned after a year (OWNER_AUDIT_KEPT_DAYS). Account erasure does not
+  -- touch them, so an erased account id can stay in a row until then (decision 2026-11-14-owner-panel-fresh-sign-in).
+  -- No semicolons in these comments: SCHEMA_SQL is split on them.
+  CREATE TABLE IF NOT EXISTS owner_audit (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    at BIGINT NOT NULL,
+    actor_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('overview', 'accounts', 'account_logbook')),
+    target_id TEXT
+  );
+  CREATE INDEX IF NOT EXISTS owner_audit_at ON owner_audit(at);
 `;
+
+/**
+ * Row level security on the backend's schema, and no use of it by Supabase's API roles (decision
+ * 2026-11-12-backend-schema-not-exposed). Run after SCHEMA_SQL on every start, in the same transaction,
+ * one whole statement each (the DO blocks hold semicolons, so they aren't split like SCHEMA_SQL):
+ * - every table in the schema that the backend's role owns gets row level security, with no policies
+ *   and NOT forced. A table's owner isn't held to it unless it is forced, so the backend (the owner:
+ *   `doddy_backend` on Supabase, `postgres` in PGlite) reads and writes as before; any other role that
+ *   isn't BYPASSRLS sees no rows. Only tables without it are altered, so a start after the first changes
+ *   nothing, and a table added later gets it at the next start;
+ * - `anon` and `authenticated`, where they exist (Supabase; not PGlite or a plain Postgres), lose what
+ *   they hold on the schema and its tables. On Supabase the schema is owned by `postgres`, so the backend's
+ *   role can take back only what it granted itself; a refused change is a notice, never a failed start.
+ */
+export const SCHEMA_GUARDS: readonly string[] = [
+  `DO $$
+  DECLARE t record;
+  BEGIN
+    FOR t IN
+      SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = '${SCHEMA}' AND c.relkind IN ('r', 'p') AND NOT c.relrowsecurity AND pg_has_role(c.relowner, 'USAGE')
+    LOOP
+      EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY', '${SCHEMA}', t.relname);
+    END LOOP;
+  END $$`,
+  `DO $$
+  DECLARE r text;
+  BEGIN
+    FOREACH r IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+      CONTINUE WHEN NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r);
+      IF has_schema_privilege(r, '${SCHEMA}', 'USAGE') OR has_schema_privilege(r, '${SCHEMA}', 'CREATE') THEN
+        EXECUTE format('REVOKE ALL ON SCHEMA %I FROM %I', '${SCHEMA}', r);
+      END IF;
+      IF EXISTS (
+        SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = '${SCHEMA}' AND c.relkind IN ('r', 'p')
+          AND has_table_privilege(r, c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+      ) THEN
+        EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA %I FROM %I', '${SCHEMA}', r);
+      END IF;
+    END LOOP;
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'privileges of the API roles on the backend schema left as they were';
+  END $$`,
+];
 
 /**
  * An Apple or Google sign-in linked to a Doddy account (ADR-818). `identity_id` is the Supabase Auth
@@ -484,12 +636,13 @@ export class Store {
     await this.db.query("SELECT 1");
   }
 
-  /** Opens the database and makes sure every table exists. */
+  /** Opens the database and makes sure every table exists, with row level security on (SCHEMA_GUARDS). */
   static async open(options: DatabaseOptions): Promise<Store> {
     const db = await openDatabase(options);
     try {
       await db.transaction(async (tx) => {
         for (const statement of SCHEMA_SQL.split(";").map((s) => s.trim()).filter(Boolean)) await tx.query(statement);
+        for (const statement of SCHEMA_GUARDS) await tx.query(statement);
       });
     } catch (error) {
       await db.close().catch(() => {});
@@ -511,6 +664,20 @@ export class Store {
     return ((await q.query<T>(sql, params)).rows[0] as T | undefined) ?? null;
   }
 
+  /**
+   * Refuses a write for `userId` made by a request whose sign-in dates from before the person's cut-off
+   * second, i.e. a request let in just before their account was deleted (`requestCredential.ts`): the
+   * same answer as a token past its cut-off. It runs inside the write's own SERIALIZABLE transaction,
+   * so a deletion committing at the same moment either is seen here or sees the write and deletes it.
+   * A write with no request around it (a sweep, a test) or for someone else isn't checked.
+   */
+  private async refuseIfCutOff(q: Queryable, userId: string): Promise<void> {
+    const credential = requestCredential.getStore();
+    if (!credential || credential.userId !== userId) return;
+    const row = await this.one<{ valid_after: number }>(q, "SELECT valid_after FROM token_floor WHERE user_id = $1", [userId]);
+    if (row && credential.issuedAt < row.valid_after) throw new AppError("unauthenticated");
+  }
+
   // ------------------------------------------------------------ identity
 
   /** Stable, random Composio user ID per internal user. Never an email, never shared. */
@@ -518,6 +685,8 @@ export class Store {
     return this.db.transaction(async (tx) => {
       const row = await this.one<{ composio_user_id: string }>(tx, "SELECT composio_user_id FROM users WHERE user_id = $1", [userId]);
       if (row) return row.composio_user_id;
+      // A deleted person's `users` row is never made again by a request that started before the deletion.
+      await this.refuseIfCutOff(tx, userId);
       const id = `doddy_${randomBytes(16).toString("hex")}`;
       await tx.query("INSERT INTO users (user_id, composio_user_id, created_at) VALUES ($1, $2, $3)", [userId, id, now]);
       return id;
@@ -701,7 +870,7 @@ export class Store {
        VALUES ($1, $2, $3, 'pending', 0, NULL, $4)
        ON CONFLICT (connection_id) DO UPDATE SET
          user_id = EXCLUDED.user_id, provider = EXCLUDED.provider, state = 'pending', attempts = 0,
-         last_error = NULL, created_at = EXCLUDED.created_at`,
+         last_error = NULL, created_at = EXCLUDED.created_at, next_try_at = NULL, stuck_at = NULL`,
       [connectionId, userId, provider, now],
     );
   }
@@ -710,26 +879,54 @@ export class Store {
     await this.db.query("DELETE FROM cleanups WHERE connection_id = $1", [connectionId]);
   }
 
-  async failCleanup(connectionId: string, errorCode: string): Promise<void> {
-    await this.db.query(
-      "UPDATE cleanups SET state = 'failed', attempts = attempts + 1, last_error = $1 WHERE connection_id = $2",
-      [errorCode, connectionId],
-    );
+  /**
+   * One more failed try: counted, the next one put off (`retryDelayMs`), and the row marked stuck on
+   * the `CLEANUP_RETRY.stuckAfter`-th failure, or at once when `errorCode` is `no_remover` (this server
+   * can't remove that kind at all). Null when the row is gone (removed meanwhile).
+   */
+  failCleanup(connectionId: string, errorCode: string, now: number): Promise<CleanupFailure | null> {
+    return this.db.transaction(async (tx) => {
+      const row = await this.one<{ provider: string; attempts: number; stuck_at: number | null }>(
+        tx,
+        "SELECT provider, attempts, stuck_at FROM cleanups WHERE connection_id = $1",
+        [connectionId],
+      );
+      if (!row) return null;
+      const attempts = row.attempts + 1;
+      const nextTryAt = now + retryDelayMs(attempts);
+      const stuckNow = row.stuck_at === null && (attempts >= CLEANUP_RETRY.stuckAfter || errorCode === "no_remover");
+      await tx.query(
+        `UPDATE cleanups SET state = 'failed', attempts = $1, last_error = $2, next_try_at = $3, stuck_at = CASE WHEN $4::boolean THEN $5::bigint ELSE stuck_at END
+         WHERE connection_id = $6`,
+        [attempts, errorCode, nextTryAt, stuckNow, now, connectionId],
+      );
+      return { provider: row.provider, attempts, nextTryAt, stuckNow, reason: errorCode };
+    });
   }
 
   /**
-   * Queued removals of these providers to try again: older than `before` (so a request still
-   * working on one isn't raced), tried fewer than `maxAttempts` times, oldest first.
+   * Queued removals of these providers to try again now: queued more than CLEANUP_RETRY.afterMs ago
+   * (so a request still working on one isn't raced) and due (`next_try_at`), the most overdue first.
+   * However often a row failed, it comes back when due: there is no last try. `queuedBefore` moves the
+   * first cut-off for a kind whose work can run longer than CLEANUP_RETRY.afterMs (a document job).
    */
-  async cleanupsToRetry(providers: readonly string[], before: number, maxAttempts: number, limit: number): Promise<QueuedCleanup[]> {
+  async cleanupsToRetry(providers: readonly string[], now: number, limit: number, queuedBefore = now - CLEANUP_RETRY.afterMs): Promise<QueuedCleanup[]> {
     if (providers.length === 0) return [];
     const rows = (await this.db.query<{ connection_id: string; user_id: string; provider: string }>(
       `SELECT connection_id, user_id, provider FROM cleanups
-       WHERE provider = ANY($1::text[]) AND created_at < $2 AND attempts < $3
-       ORDER BY created_at ASC LIMIT $4`,
-      [[...providers], before, maxAttempts, limit],
+       WHERE provider = ANY($1::text[]) AND created_at < $2 AND COALESCE(next_try_at, 0) <= $3
+       ORDER BY COALESCE(next_try_at, 0) ASC, created_at ASC LIMIT $4`,
+      [[...providers], queuedBefore, now, limit],
     )).rows;
     return rows.map((r) => ({ connectionId: r.connection_id, userId: r.user_id, provider: r.provider }));
+  }
+
+  /** Removals reported stuck, oldest first, for the operator (`npm run cleanups:stuck`). */
+  async stuckCleanups(): Promise<Omit<CleanupRow, "user_id">[]> {
+    return (await this.db.query<Omit<CleanupRow, "user_id">>(
+      `SELECT connection_id, provider, state, attempts, last_error, created_at, next_try_at, stuck_at FROM cleanups
+       WHERE stuck_at IS NOT NULL ORDER BY stuck_at ASC, created_at ASC`,
+    )).rows;
   }
 
   cleanupFor(userId: string, provider: string): Promise<CleanupRow | null> {
@@ -743,10 +940,13 @@ export class Store {
   // ------------------------------------------------------------ receipts
 
   async saveReceipt(userId: string, receipt: Receipt, now: number): Promise<void> {
-    await this.db.query(
-      "INSERT INTO receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
-      [receipt.operationId, userId, now, JSON.stringify(receipt)],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await tx.query(
+        "INSERT INTO receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+        [receipt.operationId, userId, now, JSON.stringify(receipt)],
+      );
+    });
   }
 
   async receipts(userId: string, limit: number): Promise<Receipt[]> {
@@ -777,7 +977,10 @@ export class Store {
   }
 
   async setToolEnabled(userId: string, tool: string, enabled: boolean, now: number): Promise<void> {
-    await this.setToolEnabledIn(this.db, userId, tool, enabled, now);
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await this.setToolEnabledIn(tx, userId, tool, enabled, now);
+    });
   }
 
   private async setToolEnabledIn(q: Queryable, userId: string, tool: string, enabled: boolean, now: number): Promise<void> {
@@ -791,15 +994,19 @@ export class Store {
   /** Turns off every tool of the given names at once (used when an account is disconnected). */
   async disableTools(userId: string, tools: readonly string[], now: number): Promise<void> {
     await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
       for (const tool of tools) await this.setToolEnabledIn(tx, userId, tool, false, now);
     });
   }
 
   async saveToolReceipt(userId: string, receipt: { operationId: string }, now: number): Promise<void> {
-    await this.db.query(
-      "INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
-      [receipt.operationId, userId, now, JSON.stringify(receipt)],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await tx.query(
+        "INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+        [receipt.operationId, userId, now, JSON.stringify(receipt)],
+      );
+    });
   }
 
   async toolReceipts(userId: string, limit: number): Promise<unknown[]> {
@@ -813,10 +1020,13 @@ export class Store {
   // ------------------------------------------------------------ payments
 
   async savePaymentReceipt(userId: string, receipt: { operationId: string }, now: number): Promise<void> {
-    await this.db.query(
-      "INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
-      [receipt.operationId, userId, now, JSON.stringify(receipt)],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await tx.query(
+        "INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES ($1, $2, $3, $4)",
+        [receipt.operationId, userId, now, JSON.stringify(receipt)],
+      );
+    });
   }
 
   async paymentReceipts(userId: string, limit: number): Promise<unknown[]> {
@@ -829,11 +1039,14 @@ export class Store {
 
   /** Written before the first byte of a payment is signed or sent. */
   async insertPayment(row: { paymentId: string; userId: string; now: number; host: string; amount: number; network: string; urlHash: string; validBefore: number }): Promise<void> {
-    await this.db.query(
-      `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'signing')`,
-      [row.paymentId, row.userId, row.now, row.now, row.host, row.amount, row.network, row.urlHash, row.validBefore],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, row.userId);
+      await tx.query(
+        `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'signing')`,
+        [row.paymentId, row.userId, row.now, row.now, row.host, row.amount, row.network, row.urlHash, row.validBefore],
+      );
+    });
   }
 
   async setPaymentStatus(paymentId: string, status: "signing" | "sent" | "settled" | "declined" | "unknown" | "not_sent", now: number, transactionHash: string | null = null): Promise<void> {
@@ -911,6 +1124,8 @@ export class Store {
     const DAY = 86_400_000;
     const dayCutoff = `day:${new Date(now - 62 * DAY).toISOString().slice(0, 10)}`;
     const monthCutoff = `month:${new Date(now - 400 * DAY).toISOString().slice(0, 7)}`;
+    // `hour:` periods were written only by the account-link count before it moved to `day:`; none is read after its hour.
+    const hourCutoff = `hour:${new Date(now - DAY).toISOString().slice(0, 13)}`;
     return this.db.transaction(async (tx) => {
       const run = async (sql: string, ...params: (string | number)[]) => (await tx.query(sql, params)).rowCount;
       const receipts = async (table: "receipts" | "tool_receipts" | "payment_receipts") =>
@@ -923,7 +1138,8 @@ export class Store {
         approvals: await run("DELETE FROM approvals WHERE expires_at < $1", now - DAY),
         usage:
           (await run("DELETE FROM usage WHERE period LIKE 'day:%' AND period < $1", dayCutoff)) +
-          (await run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < $1", monthCutoff)),
+          (await run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < $1", monthCutoff)) +
+          (await run("DELETE FROM usage WHERE period LIKE 'hour:%' AND period < $1", hourCutoff)),
         receipts: await receipts("receipts"),
         toolReceipts: await receipts("tool_receipts"),
         paymentReceipts: await receipts("payment_receipts"),
@@ -1048,10 +1264,13 @@ export class Store {
   /** A new document while Claude works on it. Returns its unguessable ID (144 random bits). */
   async startDocument(userId: string, name: string, mime: string, now: number): Promise<string> {
     const id = randomBytes(18).toString("base64url");
-    await this.db.query(
-      "INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'working', $3, $4, NULL, $5)",
-      [id, userId, name, mime, now],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, userId);
+      await tx.query(
+        "INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'working', $3, $4, NULL, $5)",
+        [id, userId, name, mime, now],
+      );
+    });
     return id;
   }
 
@@ -1061,6 +1280,14 @@ export class Store {
 
   async failDocument(id: string): Promise<void> {
     await this.db.query("UPDATE documents SET status = 'failed', body = NULL WHERE id = $1 AND status = 'working'", [id]);
+  }
+
+  /**
+   * Files still "working" past `olderThanMs` have lost their job (it runs in the server's memory, so a restart ends it) and
+   * become "failed", so their link says so instead of waiting for good. Returns how many.
+   */
+  async failStaleDocuments(now: number, olderThanMs: number): Promise<number> {
+    return (await this.db.query("UPDATE documents SET status = 'failed', body = NULL WHERE status = 'working' AND created_at < $1", [now - olderThanMs])).rowCount;
   }
 
   async getDocument(id: string): Promise<DocumentRow | null> {
@@ -1156,6 +1383,25 @@ export class Store {
 
   // ------------------------------------------------------------ Owner panel (decision 2026-11-09-usage-counts-on-by-default)
   // Read only, and only for the owner panel (`web/owner.ts`), which checks the caller first.
+
+  /**
+   * Records one use of the owner panel, before its answer is sent. `targetId` is the account whose own
+   * Logbook was opened, for that action only. Ids, an action word and a time: nothing the panel showed.
+   */
+  async recordOwnerUse(use: { at: number; actorId: string; sessionId: string; action: OwnerAction; targetId: string | null }): Promise<void> {
+    await this.db.query("INSERT INTO owner_audit (at, actor_id, session_id, action, target_id) VALUES ($1, $2, $3, $4, $5)", [
+      use.at,
+      use.actorId,
+      use.sessionId,
+      use.action,
+      use.targetId,
+    ]);
+  }
+
+  /** Records of owner-panel use older than `oldest` (ms) go. Separate from `prune` so its counts stay as they were. */
+  async pruneOwnerAudit(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM owner_audit WHERE at < $1", [oldest])).rowCount;
+  }
 
   /** Every user's Logbook days from `since` on, oldest first. */
   async allLogbookDays(since: string): Promise<(LogbookDayRow & { user_id: string })[]> {
@@ -1566,24 +1812,111 @@ export class Store {
    * - `subject_taken`: the account already took over other data;
    * - `user_taken`: another account took over this data;
    * - `account_has_data`: the account has data of its own, which would have to be merged.
+   * The route links only with a code the iPhone asked for (`linkAccountWithCode`); this is for tests and
+   * tools that already know both ids.
    */
-  linkAccount(subject: string, userId: string, now: number): Promise<"linked" | "already" | "subject_taken" | "user_taken" | "account_has_data"> {
-    return this.db.transaction(async (tx) => {
-      const mine = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
-      if (mine) return mine.user_id === userId ? "already" : "subject_taken";
-      if (await this.one<{ one: number }>(tx, "SELECT 1 AS one FROM account_links WHERE user_id = $1", [userId])) return "user_taken";
-      if (subject !== userId) {
-        for (const table of ERASED_TABLES) {
-          if (table === "account_links") continue;
-          if (await this.one<{ one: number }>(tx, `SELECT 1 AS one FROM ${table} WHERE user_id = $1 LIMIT 1`, [subject])) return "account_has_data";
-        }
+  linkAccount(subject: string, userId: string, now: number): Promise<AccountLinkOutcome> {
+    return this.db.transaction((tx) => this.linkAccountIn(tx, subject, userId, now));
+  }
+
+  private async linkAccountIn(tx: Queryable, subject: string, userId: string, now: number): Promise<AccountLinkOutcome> {
+    const mine = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
+    if (mine) return mine.user_id === userId ? "already" : "subject_taken";
+    if (await this.one<{ one: number }>(tx, "SELECT 1 AS one FROM account_links WHERE user_id = $1", [userId])) return "user_taken";
+    if (subject !== userId) {
+      for (const table of ERASED_TABLES) {
+        if (table === "account_links" || table === "account_link_codes") continue;
+        if (await this.one<{ one: number }>(tx, `SELECT 1 AS one FROM ${table} WHERE user_id = $1 LIMIT 1`, [subject])) return "account_has_data";
       }
-      // Two links at once: the keys decide, and the loser reads what won.
-      const inserted = await tx.query("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", [subject, userId, now]);
-      if (inserted.rowCount === 1) return "linked";
-      const now2 = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
-      return now2 ? (now2.user_id === userId ? "already" : "subject_taken") : "user_taken";
+    }
+    // Two links at once: the keys decide, and the loser reads what won.
+    const inserted = await tx.query("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", [subject, userId, now]);
+    if (inserted.rowCount === 1) return "linked";
+    const now2 = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM account_links WHERE subject = $1", [subject]);
+    return now2 ? (now2.user_id === userId ? "already" : "subject_taken") : "user_taken";
+  }
+
+  /**
+   * A one-time link code for this iPhone's own user id, asked for by its own device session. Any earlier
+   * code of this iPhone stops working. Only the hash is stored.
+   */
+  async createAccountLinkCode(userId: string, codeHash: string, now: number, ttlMs: number): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.query("DELETE FROM account_link_codes WHERE user_id = $1", [userId]);
+      await tx.query("INSERT INTO account_link_codes (code_hash, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)", [codeHash, userId, now, now + ttlMs]);
     });
+  }
+
+  /**
+   * The account `subject` takes over the data of the iPhone the code was issued to. The code is used up
+   * in the same transaction, whatever the outcome; `bad_code` when it is unknown, used or expired.
+   */
+  linkAccountWithCode(subject: string, codeHash: string, now: number): Promise<AccountLinkOutcome | "bad_code"> {
+    return this.db.transaction(async (tx) => {
+      const code = await this.one<{ user_id: string }>(
+        tx,
+        "DELETE FROM account_link_codes WHERE code_hash = $1 AND expires_at > $2 RETURNING user_id",
+        [codeHash, now],
+      );
+      if (!code) return "bad_code";
+      return this.linkAccountIn(tx, subject, code.user_id, now);
+    });
+  }
+
+  /** Link codes past their expiry (never used). Hourly, with the other sweeps. */
+  async pruneAccountLinkCodes(now: number): Promise<number> {
+    return (await this.db.query("DELETE FROM account_link_codes WHERE expires_at < $1", [now])).rowCount;
+  }
+
+  /**
+   * The iPhone takes its data back from the account that took it over, within `windowMs` of the link.
+   * `not_linked` when there is no link (also a repeat after a lost answer); `too_late` past the window.
+   */
+  undoAccountLink(userId: string, now: number, windowMs: number): Promise<{ outcome: "undone" | "not_linked" | "too_late"; ended: LinkEnded | null }> {
+    return this.db.transaction(async (tx) => {
+      const link = await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE user_id = $1", [userId]);
+      if (!link) return { outcome: "not_linked", ended: null };
+      if (now - Number(link.linked_at) > windowMs) return { outcome: "too_late", ended: null };
+      return { outcome: "undone", ended: await this.unlinkIn(tx, link, now) };
+    });
+  }
+
+  /**
+   * The operator ends a link, whenever it was made (`npm run account:unlink`): found by the account (a
+   * Supabase user id, `subject`) or by the data's user id. Null when there is no such link.
+   */
+  unlinkAccount(id: string, now: number): Promise<(AccountLinkRow & { ended: LinkEnded }) | null> {
+    return this.db.transaction(async (tx) => {
+      const link =
+        (await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE subject = $1", [id])) ??
+        (await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE user_id = $1", [id]));
+      if (!link) return null;
+      return { ...link, linked_at: Number(link.linked_at), ended: await this.unlinkIn(tx, link, now) };
+    });
+  }
+
+  /**
+   * Removes the link and every way into the data opened since it was made, so the account keeps no way
+   * in: browser sessions (revoked), Apple or Google sign-ins linked to the data, other iPhones that joined
+   * it, and sign-in codes and tickets not yet used. Data written meanwhile stays with the data. The
+   * iPhone's own device token works again: it is refused only while its data is linked.
+   */
+  private async unlinkIn(tx: Queryable, link: AccountLinkRow, now: number): Promise<LinkEnded> {
+    const since = Number(link.linked_at);
+    await tx.query("DELETE FROM account_links WHERE subject = $1", [link.subject]);
+    const count = async (sql: string) => (await tx.query(sql, [link.user_id, since])).rowCount;
+    return {
+      webSessions: (await tx.query(
+        "UPDATE web_sessions SET revoked_at = $3 WHERE user_id = $1 AND created_at >= $2 AND revoked_at IS NULL",
+        [link.user_id, since, now],
+      )).rowCount,
+      webIdentities: await count("DELETE FROM web_identities WHERE user_id = $1 AND created_at >= $2"),
+      deviceJoins: await count("DELETE FROM device_joins WHERE user_id = $1 AND created_at >= $2"),
+      pending:
+        (await count("DELETE FROM web_link_codes WHERE user_id = $1 AND created_at >= $2")) +
+        (await count("DELETE FROM web_link_pending WHERE user_id = $1 AND created_at >= $2")) +
+        (await count("DELETE FROM web_oauth_states WHERE user_id = $1 AND created_at >= $2")),
+    };
   }
 
   // ------------------------------------------------------------ an iPhone using another account (ADR-819)
@@ -1702,11 +2035,14 @@ export class Store {
   }): Promise<{ approvalId: string; expiresAt: number }> {
     const approvalId = randomUUID();
     const expiresAt = input.now + input.ttlSeconds * 1000;
-    await this.db.query(
-      `INSERT INTO approvals (approval_id, user_id, capability, account_id, args_digest, created_at, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.now, expiresAt],
-    );
+    await this.db.transaction(async (tx) => {
+      await this.refuseIfCutOff(tx, input.userId);
+      await tx.query(
+        `INSERT INTO approvals (approval_id, user_id, capability, account_id, args_digest, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.now, expiresAt],
+      );
+    });
     return { approvalId, expiresAt };
   }
 
@@ -1760,12 +2096,74 @@ export class Store {
     return row !== null;
   }
 
-  /** Records what happened after a used approval ran (ADR-322). Only the first record counts. */
-  async finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number): Promise<void> {
-    await this.db.query(
-      "UPDATE approvals SET outcome = $1, external_id = $2, finished_at = $3 WHERE approval_id = $4 AND consumed_at IS NOT NULL AND outcome IS NULL",
-      [outcome, externalId, now, approvalId],
+  /**
+   * A write's run takes its approval before anything else, its lookup included: one atomic step that
+   * only one run can win, so a repeat that arrives meanwhile finds it taken and is told the first try
+   * is still running, instead of racing it. Same checks as `approvalIssuedFor`, plus the arguments
+   * when `argsDigest` is given (a write without a lookup). `requestDigest` is what this run asked
+   * for, kept so a repeat can be held to the same request.
+   */
+  async startApproval(input: {
+    approvalId: string; userId: string; capability: string; accountId: string; argsDigest: string | null; requestDigest: string; now: number;
+  }): Promise<boolean> {
+    const changed = await this.db.query(
+      `UPDATE approvals SET started_at = $7, request_digest = $6
+       WHERE approval_id = $1 AND user_id = $2 AND capability = $3 AND account_id = $4 AND ($5::text IS NULL OR args_digest = $5)
+         AND started_at IS NULL AND consumed_at IS NULL AND expires_at > $7`,
+      [input.approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.requestDigest, input.now],
     );
+    return changed.rowCount === 1;
+  }
+
+  /**
+   * Gives back an approval a run took but never used: the write wasn't sent (a limit, busy, the lookup
+   * found nothing or something else), so the user's yes still works. Never once it was used.
+   */
+  async releaseApproval(approvalId: string, startedAt: number): Promise<void> {
+    await this.db.query(
+      "UPDATE approvals SET started_at = NULL, request_digest = NULL WHERE approval_id = $1 AND started_at = $2 AND consumed_at IS NULL",
+      [approvalId, startedAt],
+    );
+  }
+
+  /**
+   * Records what happened after a used approval ran (ADR-322). Only the first record counts. For a
+   * write that went through, `result` is its fixed result word and receipt summary (no names, no
+   * text), which a repeat answers with.
+   */
+  async finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number, result: { word: string | null; summary: string } | null = null): Promise<void> {
+    await this.db.query(
+      `UPDATE approvals SET outcome = $1, external_id = $2, finished_at = $3, result_word = $5, result_summary = $6
+       WHERE approval_id = $4 AND consumed_at IS NOT NULL AND outcome IS NULL`,
+      [outcome, externalId, now, approvalId, result?.word ?? null, result?.summary ?? null],
+    );
+  }
+
+  /**
+   * A write's approval that a run took or used, for the same user, tool and account: what that first
+   * run asked for and, once it finished, how it ended. Null when no run has it (never started, given
+   * back, or not this user's). `outcome` null: still running, or the server stopped mid-run.
+   */
+  async approvalRun(input: { approvalId: string; userId: string; capability: string; accountId: string }): Promise<ApprovalRun | null> {
+    const row = await this.one<{
+      args_digest: string; request_digest: string | null; consumed_at: number | null; outcome: WriteOutcome | null;
+      external_id: string | null; result_word: string | null; result_summary: string | null;
+    }>(
+      this.db,
+      `SELECT args_digest, request_digest, consumed_at, outcome, external_id, result_word, result_summary FROM approvals
+       WHERE approval_id = $1 AND user_id = $2 AND capability = $3 AND account_id = $4 AND (started_at IS NOT NULL OR consumed_at IS NOT NULL)`,
+      [input.approvalId, input.userId, input.capability, input.accountId],
+    );
+    if (!row) return null;
+    return {
+      argsDigest: row.args_digest,
+      requestDigest: row.request_digest,
+      used: row.consumed_at !== null,
+      outcome: row.outcome,
+      externalId: row.external_id,
+      resultWord: row.result_word,
+      resultSummary: row.result_summary,
+    };
   }
 
   /**
@@ -1788,18 +2186,58 @@ export class Store {
     return row ? { outcome: row.outcome, externalId: row.external_id } : null;
   }
 
-  /** The newest run of the same write (user, tool, arguments) since `since` that did or may have gone through. */
+  /**
+   * Every used approval for this user, tool and account since `since`, newest first, whatever its
+   * arguments. Flight booking binds its account to the Duffel offer (`duffel:<offer id>`), so this is
+   * every try at booking that offer: one that did or may have gone through blocks another
+   * (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+   */
+  async usedApprovals(input: { userId: string; capability: string; accountId: string; since: number }): Promise<{
+    outcome: WriteOutcome | null;
+    externalId: string | null;
+    consumedAt: number;
+  }[]> {
+    const result = await this.db.query<{ outcome: WriteOutcome | null; external_id: string | null; consumed_at: number }>(
+      `SELECT outcome, external_id, consumed_at FROM approvals
+       WHERE user_id = $1 AND capability = $2 AND account_id = $3 AND consumed_at IS NOT NULL AND consumed_at >= $4
+       ORDER BY consumed_at DESC LIMIT 20`,
+      [input.userId, input.capability, input.accountId, input.since],
+    );
+    return result.rows.map((r) => ({ outcome: r.outcome, externalId: r.external_id, consumedAt: Number(r.consumed_at) }));
+  }
+
+  /**
+   * The newest run of the same write (user, tool, arguments) since `since` that did or may have gone
+   * through. A run that started and hasn't finished (still running, or the server stopped mid-run) may
+   * still go through, so it counts as `outcome_unknown` from the time it started.
+   */
   async latestWrite(input: { userId: string; capability: string; argsDigest: string; since: number }): Promise<{ outcome: WriteOutcome; finishedAt: number } | null> {
-    const row = await this.one<{ outcome: WriteOutcome; finished_at: number }>(
+    const row = await this.one<{ outcome: WriteOutcome; at: number }>(
       this.db,
-      `SELECT outcome, finished_at FROM approvals
-       WHERE user_id = $1 AND capability = $2 AND args_digest = $3 AND finished_at >= $4 AND outcome IN ('succeeded', 'outcome_unknown')
-       ORDER BY finished_at DESC LIMIT 1`,
+      `SELECT COALESCE(outcome, 'outcome_unknown') AS outcome, COALESCE(finished_at, started_at) AS at FROM approvals
+       WHERE user_id = $1 AND capability = $2 AND args_digest = $3
+         AND ((finished_at >= $4 AND outcome IN ('succeeded', 'outcome_unknown')) OR (outcome IS NULL AND started_at >= $4))
+       ORDER BY at DESC LIMIT 1`,
       [input.userId, input.capability, input.argsDigest, input.since],
     );
-    return row ? { outcome: row.outcome, finishedAt: row.finished_at } : null;
+    return row ? { outcome: row.outcome, finishedAt: Number(row.at) } : null;
   }
 }
 
 /** How a used approval's run ended (ADR-322). */
 export type WriteOutcome = "succeeded" | "outcome_unknown" | "failed";
+
+/** A write's approval as its first run left it (`Store.approvalRun`). */
+export interface ApprovalRun {
+  /** What the approval was issued for (for a write with a lookup, that includes the target the card showed). */
+  argsDigest: string;
+  /** What the first run asked for: its arguments (and time zone), without any looked-up target. Null for runs before this was kept. */
+  requestDigest: string | null;
+  /** Used: the write was (or was about to be) sent. */
+  used: boolean;
+  outcome: WriteOutcome | null;
+  externalId: string | null;
+  /** The first run's result word ("sent", "changed", …) and receipt summary, when it went through. */
+  resultWord: string | null;
+  resultSummary: string | null;
+}

@@ -105,8 +105,10 @@ await send(ID_B, -10, 0.8);
 await send(ID_C, -8, 0, [-7, -3]);
 // ID_D never turned Logbook on.
 
-write("owner-flag", (await rig.call("GET", "/v1/web/owner", { token: USER_A })).body);
-write("owner-overview", (await rig.call("GET", "/v1/web/owner/overview?days=30", { token: USER_A })).body);
-write("owner-accounts", (await rig.call("GET", "/v1/web/owner/accounts?days=30", { token: USER_A })).body);
-write("owner-account-logbook", (await rig.call("GET", `/v1/web/owner/accounts/${ID_B}/logbook`, { token: USER_A })).body);
+// The panel is for a browser that has just signed in (decision 2026-11-14-owner-panel-fresh-sign-in).
+const cookie = await rig.signIn(await rig.code(USER_A));
+write("owner-flag", (await rig.call("GET", "/v1/web/owner", { cookie })).body);
+write("owner-overview", (await rig.call("GET", "/v1/web/owner/overview?days=30", { cookie })).body);
+write("owner-accounts", (await rig.call("GET", "/v1/web/owner/accounts?days=30", { cookie })).body);
+write("owner-account-logbook", (await rig.call("GET", `/v1/web/owner/accounts/${ID_B}/logbook`, { cookie })).body);
 await rig.close();

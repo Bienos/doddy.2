@@ -6,7 +6,9 @@ final class CapabilityIntroductionTests: XCTestCase {
     func testShippingBuildMentionsRemindersAndConfirmationNotTheOldDenial() {
         for serverConfigured in [true, false] {
             let text = CapabilityIntroduction.text(for: .shipping(serverConfigured: serverConfigured))
-            XCTAssertTrue(text.hasPrefix("I'm an AI assistant, not a person."))
+            XCTAssertTrue(text.hasPrefix("Your notes are kept on this iPhone."))
+            // Owner, 11 Nov 2026: no "AI" label for Doddy in the app's words.
+            XCTAssertFalse(text.contains(" AI"))
             XCTAssertTrue(text.contains("I can add a reminder"))
             XCTAssertTrue(text.contains("only after you confirm each one on screen"))
             // ADR-578: apps are allowed from the conversation, the first time one is needed.
@@ -25,10 +27,10 @@ final class CapabilityIntroductionTests: XCTestCase {
         XCTAssertFalse(text.contains("I can add a reminder"))
     }
 
-    func testAlwaysPointsToTheDataFlowScreen() {
+    func testAlwaysPointsToThePrivacyPolicy() {
         for catalog in [CapabilityCatalog.m0, .v1Voice, .shipping(serverConfigured: true)] {
-            // The screen moved off Home's menu on 9 Nov 2026; the paragraph names where it is now.
-            XCTAssertTrue(CapabilityIntroduction.text(for: catalog).hasSuffix("Settings › Privacy › What leaves this iPhone shows everything that is sent, and where."))
+            // Owner, 10 Nov 2026: what is sent belongs in the Privacy Policy, linked under the paragraph.
+            XCTAssertTrue(CapabilityIntroduction.text(for: catalog).hasSuffix("What I send, and where, is in the Privacy Policy."))
         }
     }
 
@@ -36,10 +38,11 @@ final class CapabilityIntroductionTests: XCTestCase {
         let english = CapabilityIntroduction.text(for: .shipping(serverConfigured: true))
         let polish = CapabilityIntroduction.text(for: .shipping(serverConfigured: true), language: .polish)
         XCTAssertNotEqual(polish, english)
-        XCTAssertTrue(polish.hasPrefix("Jestem AI, nie człowiekiem."))
+        XCTAssertTrue(polish.hasPrefix("Twoje notatki są przechowywane na tym iPhonie."))
+        XCTAssertFalse(polish.contains(" AI"))
         XCTAssertTrue(polish.contains("ElevenLabs"))
         XCTAssertTrue(polish.contains("potwierdzasz na ekranie"))
-        XCTAssertTrue(polish.hasSuffix("Ustawienia › Prywatność › Co opuszcza tego iPhone’a pokazuje wszystko, co jest wysyłane, i dokąd."))
+        XCTAssertTrue(polish.hasSuffix("Co wysyłam i dokąd, opisuje Polityka prywatności."))
         XCTAssertTrue(CapabilityIntroduction.text(for: .m0, language: .polish)
             .contains("W tej wersji nie mogę dodawać przypomnień ani korzystać z innych aplikacji."))
         XCTAssertFalse(CapabilityIntroduction.text(for: .m0, language: .polish).contains("ElevenLabs"))

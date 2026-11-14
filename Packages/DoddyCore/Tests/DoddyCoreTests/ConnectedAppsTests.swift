@@ -161,6 +161,15 @@ final class ConnectedAppsSupportTests: XCTestCase {
         XCTAssertEqual(ConnectionCallback.result(from: verifier, expectedScheme: "doddy-dev", attemptId: id), .verifier(sessionUri: "composio://s/1"))
     }
 
+    func testOnlyTheirOwnCloseCountsAsCancelingTheSignIn() {
+        XCTAssertFalse(ConnectionCallback.endedWithoutTheirChoice(WebAuthenticationError.canceled))
+        XCTAssertTrue(ConnectionCallback.endedWithoutTheirChoice(WebAuthenticationError.failed), "a sheet that failed to open is not a cancel")
+        struct Odd: Error {}
+        XCTAssertTrue(ConnectionCallback.endedWithoutTheirChoice(Odd()))
+        XCTAssertFalse(ConnectionCallback.couldNotFinishMessage.localizedCaseInsensitiveContains("cancel"))
+        XCTAssertTrue(ConnectionCallback.couldNotFinishMessage.contains("Nothing was connected"), "it still says nothing was kept")
+    }
+
     func testMemoryTextNamesTheSourceAndLocalTime() throws {
         let result = try decode(EventsResult.self, "events-result-mock")
         XCTAssertEqual(

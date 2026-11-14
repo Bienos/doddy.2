@@ -1,5 +1,7 @@
 # Build and test
 
+Memory retrieval diagnostics (10 Nov 2026): see [memory/RAG implementation evidence](docs/architecture/memory-rag/DODDY-MEMORY-RAG-IMPLEMENTATION.md). The opt-in `DODDY_MEMORY_BENCHMARK=1 swift test --package-path Packages/DoddyCore --filter MemoryRetrievalBenchmarkTests` runs synthetic quality and timing fixtures without keys, user data or model calls. Routine tests skip these observational benchmarks. Run on a quiet machine in the same configuration before/after; Mac results do not establish iPhone voice latency. Static checks require a current Python (the existing generator uses Python 3.12+ syntax), PyYAML, ReportLab and Matplotlib.
+
 How to build Doddy, run its tests and checks, and what CI runs. What is live is in [STATUS.md](STATUS.md); each
 platform's page is in [docs/platforms/](docs/platforms/README.md).
 
@@ -17,7 +19,7 @@ its unit and UI tests in the iPhone simulator. Nothing in CI runs on a real iPho
 | Node.js 22 | `backend/`, `server/`, `gateway/`, `web/`, `site/`, `tools/secrets/` | `backend/` asks for ≥ 22.22.3 (`@composio/core`); `server/messaging/` for ≥ 22.12 |
 | A disposable Postgres database | `server/messaging/` database tests | `TEST_DATABASE_URL`; CI uses Postgres 16. The tests drop its schema |
 | macOS with Xcode 26.6 | building the app, unit and UI tests | the version CI pins (`.github/workflows/ios.yml`, `xcodeVersion` in `project.yml`) |
-| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | generating `Doddy.xcodeproj` | `brew install xcodegen`; a development tool, not shipped |
+| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | generating `Doddy.xcodeproj` | `brew install xcodegen` on your own Mac; a development tool, not shipped. GitHub's Mac jobs use a pinned version instead (below) |
 
 Deployment target: **iOS 17.0**, iPhone and iPad (`TARGETED_DEVICE_FAMILY 1,2` in `project.yml`). Swift language
 mode 6.
@@ -48,6 +50,60 @@ Generated files (string catalogs, site pages, blog, web assets, tokens) are neve
 `scripts/regen.sh`, then `scripts/ci.sh --only checks`. One `regen.sh` run is enough: `tools/build_site_i18n.py` runs
 last, because it translates the English pages that `build_blog.py` and `build_day.py` write; `scripts/test_regen.sh`
 (in the `checks` group) checks that.
+
+Privacy manifests: `scripts/check_privacy_manifest.sh` (in the `checks` group, through
+`scripts/test_check_privacy_manifest.sh`) checks each bundle's `PrivacyInfo.xcprivacy` against the Swift built into
+it: the app, and the widgets, Share and screen extensions, which link DoddyCore and so have manifests of their own.
+The app manifest's collected data types must equal DoddyCore's `DataFlow.collectedData`, which names the rows of
+"What leaves this iPhone" behind each type: `swift test --package-path Packages/DoddyCore --filter PrivacyManifestTests`
+(on Linux add the flags above). Change the list and the manifest together.
+
+Voice startup regression tests (no provider calls or microphone):
+`swift test --package-path Packages/DoddyCore --filter 'VoiceTokenSupplyTests|VoiceTokenShelfTests|VoiceStartTimelineTests|VoiceNetworkPreparationTests'`
+(on Linux add the same flags as `make test-core`). These cover an unfinished warm-up joined by a press,
+single use under concurrent presses, late answers after clear/sign-out, different servers, refusal without
+duplicate retries, and the existing expiry/cool-down rules. On an iPhone, test a tap just after opening,
+after sign-in/consent and after ending a conversation; end while connecting and sign out while a token is
+pending. Check `voice-audio`: one request when the tap joins a warm-up (`token warming`), then
+`voice first speaking event after start`. Measure audible playback separately; an SDK speaking event can
+arrive before audio. No device latency has been measured for this fix.
+
+Action Button readiness: `TalkStartRulesTests` covers the pre-deadline wait, successful handoff,
+actual failure and four-second timeout, including readiness/failure arriving at the deadline.
+On an unlocked iPhone with voice already configured, press the **Talk to Doddy control** from
+another app: check for a connecting popup before the greeting, then ask a question, request an
+action and check that its approval card still requires approval. Test cold/warm starts, denied
+microphone/Live Activities, an interrupted start and a second press to end. An unready timeout
+must offer to open Doddy and must never start a delayed microphone afterward. Expansion and
+background microphone behaviour require a device; simulator compilation alone cannot verify them.
+
+Action Button audio session (decision `2026-11-12-action-button-audio-and-island`):
+`swift test --package-path Packages/DoddyCore --filter ConversationAudioHoldsTests` covers who sets the session
+up (LiveKit for every start but one without opening Doddy), a stale hold dropped by a newer start, and a late
+release that must not switch off a newer conversation's session. On an iPhone, press the Action Button with
+music playing in another app: the `voice-audio` connect line says `audio session held by Doddy … mixing with
+other apps ON`, Doddy is heard and hears you, the music keeps playing, and after Stop the log says `audio session
+given back to LiveKit`. The island faces come from `python3 -I tools/whole_doddy/cut_faces.py .`; a second run
+must change nothing.
+
+Provider network preparation: `VoiceNetworkPreparationTests` covers every permission/readiness gate,
+the two-minute request budget and its independence from token use, plus content-free SDK timing formatting.
+The native `DoddyTests/VoiceNetworkHostTests` checks our prewarm host against the pinned ElevenLabs
+SDK using its offline provided-token path. On a device, compare cold/warm room and agent-ready timings
+(`voice transport timing`) and separately measure audible speech; no room or microphone should start
+before a tap. The prewarm log says requested, because LiveKit's internal HEAD runs asynchronously and
+swallows network failures; it cannot establish that a connection was prepared or the HEAD succeeded.
+
+Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
+`DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
+SQL files, 001 to 039 on 14 Nov 2026, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
+or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
+the same commit.
+
+Doddy Web's browser tests (`npm run e2e --prefix web`: the real backend in mock mode and Chromium) run in
+`scripts/ci.sh --only node` only where a Playwright Chromium is installed (`PLAYWRIGHT_BROWSERS_PATH`). The hosted
+`node` job has none, so CI lists them SKIPPED, never passed; run them by hand (`docs/platforms/web.md`, "Test").
+With a Chromium of another build than the pinned Playwright, point `PLAYWRIGHT_CHROMIUM` at its `chrome` binary.
 
 ### Gateway (Node, no network, no keys)
 
@@ -81,7 +137,27 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds come from Xcode Cloud only (ADR-697,
 `docs/implementation/XCODE_CLOUD.md`).
 
+**Pinned tool versions in CI.** The Mac jobs install XcodeGen with `scripts/install_xcodegen.sh`: the
+exact release in the script (2.46.0), downloaded from its GitHub release and unpacked only when its SHA-256 equals the
+checksum in the script. To move it, change `version` and `sha256` together in a pull request of their own; the checks
+group tests the installer with a stand-in download (`scripts/test_install_xcodegen.sh`). Render's builds of `backend/`
+and `server/messaging/` run `npm ci --ignore-scripts` (none of their locked packages has an install script; if one
+gains one, remove the flag for that service; `scripts/check_render_install_scripts.py`, in the checks group, fails
+when a folder installed with the flag has a locked package with an install script, or a lifecycle script of its own),
+while `web/`, whose build tool esbuild has an install script, installs as before. The same group fails when a tracked
+file downloads something and hands it straight to a shell (`scripts/check_no_pipe_to_shell.py`): download to a file,
+check its SHA-256, then run it, as `scripts/install_xcodegen.sh` does. `web/` tests run on Vitest 4.1.12.
+
+The Ubuntu 24.04 checks/Swift/Node/messaging jobs install the same dependency packages through
+`scripts/ci_install_ubuntu_packages.sh`. If the default apt sources fail, it retries
+with isolated package lists from the HTTPS kernel.org Ubuntu mirror, authenticated
+by the runner's existing Ubuntu archive keyring. Release, updates, security and
+backports stay on Noble; signature/TLS checks and all test commands stay enabled.
+Both attempts are bounded and a failed fallback fails the job. The checks group
+tests primary success, download/install failures, fallback failure and cleanup.
+
 **Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-684)** runs these jobs side by side:
+
 - `changes` (Ubuntu, seconds): `scripts/ci_needs_mac.sh` decides whether the pull request needs the macOS build
   (any changed file that can reach an Xcode target or its tests), and `scripts/ci_groups.sh` decides which Linux
   groups it needs. An unlisted path, or no list, runs everything.
@@ -93,7 +169,10 @@ and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds c
   `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
   once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; then the
   simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
-  simulator sometimes freezes during it: ADR-764). It no longer
+  simulator sometimes freezes during it: ADR-764). A UI test that failed only because the app would not start
+  ("Failed to launch", "Failed to get launch progress") is run once more on a restarted simulator; any other
+  failure fails the step as before (`scripts/ci_launch_failures.sh`, decision `2026-11-13-ui-launch-retry`).
+  It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
 - Pushes to `main` (ADR-811) run every job, each commit in its own run that nothing cancels; pull requests
@@ -103,12 +182,10 @@ and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds c
   7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
   test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
-  2.19.0). `Config/Package.resolved` is meant to lock every package they pull in too, but **it isn't committed
-  yet** (7 Nov 2026). Until it is, `make project`, `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` print
-  that there are no pins, and CI records "App package versions match Config/Package.resolved" as SKIPPED. Each
-  Mac run keeps what it resolved as the `app-package-resolved` artifact; committing that file as
-  `Config/Package.resolved` turns the check on, and from then on CI fails if resolution changes it. To move
-  versions later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
+  2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
+  `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution
+  changes it, and each Mac run keeps what it resolved as the `app-package-resolved` artifact. To move versions
+  later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
   `docs/decisions/2026-11-07-reproducible-app-builds.md`).
 - The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a
   download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
@@ -117,8 +194,14 @@ and Xcode Cloud's `ci_scripts/ci_post_clone.sh` generate it. TestFlight builds c
 - Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
   Release-only error shows up before Xcode Cloud archives.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
-  is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths) and
-  doesn't carry the owner's `owner-approved` label. Adding the label reruns it.
+  is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths: also
+  dependency manifests and lockfiles, CI scripts and the `Makefile`, agent settings, skills and prompts,
+  nested `CLAUDE.md`/`AGENTS.md`, `site/api/`, `server/voice-token/` and `.env.op` files) and doesn't carry
+  the `owner-approved` label. Adding the label reruns it. The guard script runs from the default branch,
+  never from the pull request, so a change to the list applies from the next pull request after it merges;
+  the job has a read-only token and no secrets, and only fetches the pull request's merge commit to list its
+  files. `.github/CODEOWNERS` names the owner for the same paths. To try the list locally:
+  `git diff --name-only origin/main... | scripts/check_sensitive_paths.sh`.
 - `Vercel blocked status` (`.github/workflows/vercel-blocked-status.yml`, decision
   `2026-11-09-vercel-blocked-status`): an old Vercel account still connected to the repository marks every push
   "Account is blocked."; on `claude/…` branches, which the live team doesn't build (ADR-498), this replaces that
@@ -259,6 +342,12 @@ Without the backend you can drive the same flow with curl, e.g.
    also needs `DODDY_LIVE_CHECK_USER_ID` and `DODDY_LIVE_CHECK_TIME_ZONE`, or it prints NOT RUN and exits 2).
 6. **Disconnect** in the app. It blocks reads immediately and asks Composio to revoke and delete the connection; if that
    can't be confirmed the app says so — disconnect again or remove access in your Google Account.
+
+### Flights (decision `2026-11-11-flights-kiwi-search-duffel-booking`)
+Live mode only, each part off by default: `FLIGHT_SEARCH_ENABLED=1` (Kiwi.com's public MCP server, no key),
+`DUFFEL_ACCESS_TOKEN=duffel_test_…` (Duffel search), and `FLIGHT_BOOKING_ENABLED=1` (Duffel test bookings; the server
+refuses to book with a live key). Offline tests: `cd backend && npm run build && node --test dist/test/flights.test.js`
+(fake Kiwi and Duffel clients; no network, no key).
 
 ### Troubleshooting
 | Symptom | Likely cause |

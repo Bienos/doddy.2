@@ -23,7 +23,7 @@ function renderApp(path = "/", language?: Language) {
 
 const signedInRoutes = {
   "GET /v1/web/session": { body: fixture("web/session-current") },
-  "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+  "GET /v1/server": { body: { mode: "live" } },
   "GET /v1/web/documents": { body: fixture("web/documents-ready") },
   "GET /v1/tools": { body: fixture("online-accounts/catalog-gmail-on") },
   "GET /v1/tools/receipts": { body: fixture("online-accounts/receipts") },
@@ -98,10 +98,12 @@ describe("signing in", () => {
   });
 
   test("a session that ended while the page was closed takes this browser's chats with it", async () => {
+    window.sessionStorage.setItem("doddy.web.chats.v1", JSON.stringify({ owner: "someone", threads: [] }));
     window.localStorage.setItem("doddy.web.chats.v1", JSON.stringify({ owner: "someone", threads: [] }));
     fakeServer({ "GET /v1/web/session": signedOut });
     renderApp("/", "en");
     expect(await screen.findByRole("heading", { name: "Sign in to Doddy" })).toBeInTheDocument();
+    expect(window.sessionStorage.getItem("doddy.web.chats.v1")).toBeNull();
     expect(window.localStorage.getItem("doddy.web.chats.v1")).toBeNull();
   });
 
@@ -214,9 +216,25 @@ describe("the workspace", () => {
   });
 
   test("a demo server says so on every page", async () => {
-    fakeServer({ ...signedInRoutes, "GET /v1/health": { body: { status: "ok", mode: "mock", api: "v1", capabilities: [] } } });
+    const { seen } = fakeServer({ ...signedInRoutes, "GET /v1/server": { body: { mode: "mock" } } });
     renderApp("/", "en");
     expect(await screen.findByRole("note")).toHaveTextContent("Demo server");
+    // It asks with the browser's session; the open health check says nothing about the mode.
+    expect(seen.find((s) => s.path === "/v1/server")?.credentials).toBe("same-origin");
+    expect(seen.some((s) => s.path === "/v1/health")).toBe(false);
+  });
+
+  test("a live server, or one that doesn't say, shows no demo banner", async () => {
+    for (const routes of [signedInRoutes, { ...signedInRoutes, "GET /v1/server": { status: 404, body: { error: { code: "not_found", message: "Not found." } } } }]) {
+      const { seen } = fakeServer(routes);
+      const { unmount } = renderApp("/", "en");
+      await waitFor(() => expect(seen.some((s) => s.path === "/v1/server")).toBe(true));
+      // Let the answer arrive and render before looking.
+      await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+      expect(screen.queryByText(/Demo server/)).toBeNull();
+      expect(seen.some((s) => s.path === "/v1/health")).toBe(false);
+      unmount();
+    }
   });
 
   test("an unknown address shows a page, not a blank screen", async () => {

@@ -75,6 +75,29 @@ check: boolean;
   cut?: { percent: number };
   /** At most this many per customer, as the leaflet says. */
   limit?: number;
+  /** How it matched the item (13 Nov 2026): "exact", its own words name the item; "brand", it names the brand or model
+   * the item names and is the same thing, or it is named only by a brand or model of the thing the item names (AirPods
+   * for "słuchawki"); "similar", only in `similar`: a substitute, never the item ("podobne, ale nie to samo"). Absent
+   * from a server older than it. */
+  match?: OfferMatch;
+  /** When the page or the chain's data it came from was read, the leaflet's dates and whether the chain's leaflets
+   * were read whole (13 Nov 2026). Absent from a server older than it. */
+  leafletRead?: LeafletReadInfo;
+}
+
+/** How a product matched an item through the code: by its own words, or through its brand or model (brands.ts). */
+export type MatchKind = "exact" | "brand";
+export type OfferMatch = MatchKind | "similar";
+
+/** When and how completely the source of an offer or a promotion was read (13 Nov 2026). */
+export interface LeafletReadInfo {
+  /** ISO time: the catalog's read of that page (or of the chain's data), or this search's own read. */
+  readAt: string;
+  /** The leaflet's own dates, when the chain gives them. */
+  validFrom?: string;
+  validTo?: string;
+  /** Every page of the chain's current leaflets was read. False: a cheaper offer may be on a page not read. */
+  complete: boolean;
 }
 
 /** app/card: the price needs the chain's app or loyalty card; deposit: a container deposit is added at the
@@ -95,6 +118,8 @@ export interface Promotion {
   validFrom?: string;
   validTo?: string;
   source: { url: string; page?: number };
+  /** As on an offer (13 Nov 2026). */
+  leafletRead?: LeafletReadInfo;
 }
 
 /** Sent only when fewer pages were read than were worth reading (the page cap, time, an image that
@@ -103,11 +128,17 @@ export interface Promotion {
  * offers its data gave), `read` those the reader read. A cheaper offer may be on the rest. */
 export interface PagesRead { read: number; of: number }
 
+/** For a chain answered from the leaflet catalog (13 Nov 2026): when the catalog's last scan read it, and whether it read
+ * all of it (false: some pages or parts weren't read, so a cheaper offer may be on them). Absent for a chain read live
+ * for this answer: it was read at `checkedAt`, and `status` and `pages` say how much, as before. */
+export interface RowRead { readAt?: string; complete?: boolean }
+
 export type ChainRow =
-  | { chain: Chain; status: "checked"; leaflet: LeafletInfo; pages?: PagesRead }
+  | ({ chain: Chain; status: "checked"; leaflet: LeafletInfo; pages?: PagesRead } & RowRead)
   | { chain: Chain; status: "link_only"; leafletUrl: string }
-  | { chain: Chain; status: "failed"; pages?: PagesRead }
-  | { chain: Chain; status: "no_match" | "no_leaflet" | "blocked" };
+  | ({ chain: Chain; status: "failed"; pages?: PagesRead } & RowRead)
+  | ({ chain: Chain; status: "no_match" } & RowRead)
+  | { chain: Chain; status: "no_leaflet" | "blocked" };
 
 /** "Search further" (ADR-666): addresses for the person to open, never fetched. `buyUrl` is the same search
  * page through an affiliate network, only where a programme covers the shop (ADR-612). */
@@ -161,12 +192,17 @@ export interface DataProduct {
   matchText?: string;
 }
 
-/** One leaflet page the reader may read. `text` is the chain's own text for the page (Lidl). */
-export interface LeafletPage { number: number; imageUrl: string; url: string; text?: string }
+/** One leaflet page the reader may read. `text` is the chain's own text for the page (Lidl). `smallerImageUrl`: a
+ * smaller rendition the chain itself publishes (Lidl's 1200 px `image` beside its 2400 px `zoom`), tried once when the
+ * main image can't be fetched or sent for its size (13 Nov 2026). */
+export interface LeafletPage { number: number; imageUrl: string; url: string; text?: string; smallerImageUrl?: string }
 
 /** How the service picks pages to read: every page in order (image-only leaflets), pages whose published
  * text matches an item, pages holding a matched data product (to confirm its conditions), or none. */
 export type PageStrategy = "all" | "text" | "confirm" | "none";
+
+/** The key of one page's read: "leaflet index:page number". */
+export const pageKey = (li: number, page: number) => `${li}:${page}`;
 
 export interface LeafletRead {
   leaflet: LeafletInfo;
@@ -188,6 +224,10 @@ export interface ChainContext {
   /** Today in Warsaw, YYYY-MM-DD. */
   today: string;
   signal: AbortSignal;
+  /** The leaflet catalog's scan (13 Nov 2026): the adapter gives every current leaflet and page it would otherwise cut
+   * for one search's time (Lidl's fifth leaflet, E.Leclerc's pages past 120); the scan spreads the reads over its
+   * scans and its daily budget. */
+  forCatalog?: boolean;
 }
 
 export interface ChainAdapter {
@@ -215,6 +255,9 @@ export interface DealsModelApi {
   readPage(req: { image: PageImage; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<PageOutput>>;
   /** Says which candidates are each item, by id only. Throws on API errors. */
   pick(req: { queries: readonly string[]; candidates: PickCandidate[][] }, signal: AbortSignal): Promise<ModelReply<PickOutput>>;
+  /** Reads every product and promotion on one page, for the leaflet catalog (decision 2026-11-12-leaflet-catalog).
+   * Throws on API errors. A model without it can't fill the catalog's image pages. */
+  readCatalogPage?(req: { image: PageImage; chain: ReadChain }, signal: AbortSignal): Promise<ModelReply<PageOutput>>;
   /** Says which of several page images could hold each item (ADR-662), without reading them. Throws on API
    * errors. A model without it reads image-only leaflets page by page, as before. */
   screenPages?(req: { images: readonly PageImage[]; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<ScreenOutput>>;
@@ -235,6 +278,13 @@ export interface DealsSettings {
   dailyForNewAccounts?: number;
   /** Hours after which an account without a verified phone number counts as established. Absent: 24. */
   newAccountHours?: number;
+  /** The leaflet catalog (decision 2026-11-12-leaflet-catalog). Absent or off: every search reads live, as before. */
+  catalog?: {
+    enabled: boolean; everyHours: number; maxPagesPerChain: number;
+    /** Input plus output tokens the scans may spend per chain and in all, per day in Warsaw (13 Nov 2026). Absent: the
+     * defaults in catalog.ts. */
+    dailyTokensPerChain?: number; dailyTokens?: number;
+  };
 }
 
 /** Settings for an injected DealsDeps without its own (tests). The environment's DEALS_ENABLED defaults to "0". */

@@ -1,0 +1,258 @@
+{
+  "metadata": {
+    "date": "2026-11-10",
+    "baseline": "7a651eb27a20e04cab6663e107726a161d9dd7d1",
+    "host": "arm64 macOS 27.0.1",
+    "configuration": "SwiftPM Debug, Swift 6.4.2",
+    "warmups": 2,
+    "samples_per_workload": 20,
+    "percentile": "nearest rank",
+    "limitations": [
+      "Synthetic local SQLite only; no iPhone audio or battery measurement",
+      "One before and one after run; no randomized paired trials or statistical confidence intervals",
+      "No paid/provider calls; no user content"
+    ]
+  },
+  "measurements": [
+    {
+      "database_bytes": 729088,
+      "hits": 1,
+      "kind": "exact",
+      "label": "baseline",
+      "notes": 1000,
+      "p50_ms": 20.069584,
+      "p95_ms": 21.820666,
+      "samples": 20
+    },
+    {
+      "database_bytes": 729088,
+      "hits": 0,
+      "kind": "none",
+      "label": "baseline",
+      "notes": 1000,
+      "p50_ms": 18.403625,
+      "p95_ms": 19.621708,
+      "samples": 20
+    },
+    {
+      "database_bytes": 729088,
+      "hits": 1,
+      "kind": "typo",
+      "label": "baseline",
+      "notes": 1000,
+      "p50_ms": 18.05325,
+      "p95_ms": 19.530375,
+      "samples": 20
+    },
+    {
+      "database_bytes": 729088,
+      "hits": 1,
+      "kind": "bilingual",
+      "label": "baseline",
+      "notes": 1000,
+      "p50_ms": 18.942084,
+      "p95_ms": 20.611042,
+      "samples": 20
+    },
+    {
+      "database_bytes": 2240512,
+      "hits": 1,
+      "kind": "exact",
+      "label": "baseline",
+      "notes": 5000,
+      "p50_ms": 94.740208,
+      "p95_ms": 105.305417,
+      "samples": 20
+    },
+    {
+      "database_bytes": 2240512,
+      "hits": 0,
+      "kind": "none",
+      "label": "baseline",
+      "notes": 5000,
+      "p50_ms": 92.621375,
+      "p95_ms": 103.863042,
+      "samples": 20
+    },
+    {
+      "database_bytes": 2240512,
+      "hits": 1,
+      "kind": "typo",
+      "label": "baseline",
+      "notes": 5000,
+      "p50_ms": 96.074333,
+      "p95_ms": 106.483542,
+      "samples": 20
+    },
+    {
+      "database_bytes": 2240512,
+      "hits": 1,
+      "kind": "bilingual",
+      "label": "baseline",
+      "notes": 5000,
+      "p50_ms": 101.542042,
+      "p95_ms": 152.9315,
+      "samples": 20
+    },
+    {
+      "database_bytes": 4149248,
+      "hits": 1,
+      "kind": "exact",
+      "label": "baseline",
+      "notes": 10000,
+      "p50_ms": 116.255875,
+      "p95_ms": 140.376125,
+      "samples": 20
+    },
+    {
+      "database_bytes": 4149248,
+      "hits": 0,
+      "kind": "none",
+      "label": "baseline",
+      "notes": 10000,
+      "p50_ms": 97.935375,
+      "p95_ms": 114.70175,
+      "samples": 20
+    },
+    {
+      "database_bytes": 4149248,
+      "hits": 1,
+      "kind": "typo",
+      "label": "baseline",
+      "notes": 10000,
+      "p50_ms": 98.154709,
+      "p95_ms": 109.239583,
+      "samples": 20
+    },
+    {
+      "database_bytes": 4149248,
+      "hits": 1,
+      "kind": "bilingual",
+      "label": "baseline",
+      "notes": 10000,
+      "p50_ms": 103.006125,
+      "p95_ms": 112.840833,
+      "samples": 20
+    },
+    {
+      "database_bytes": 729088,
+      "hits": 1,
+      "kind": "exact",
+      "label": "after",
+      "notes": 1000,
+      "p50_ms": 16.263292,
+      "p95_ms": 21.782542,
+      "samples": 20
+    },
+    {
+      "database_bytes": 729088,
+      "hits": 0,
+      "kind": "none",
+      "label": "after",
+      "notes": 1000,
+      "p50_ms": 17.510208,
+      "p95_ms": 17.997125,
+      "samples": 20
+    },
+    {
+      "database_bytes": 729088,
+      "hits": 1,
+      "kind": "typo",
+      "label": "after",
+      "notes": 1000,
+      "p50_ms": 16.560542,
+      "p95_ms": 18.370583,
+      "samples": 20
+    },
+    {
+      "database_bytes": 729088,
+      "hits": 1,
+      "kind": "bilingual",
+      "label": "after",
+      "notes": 1000,
+      "p50_ms": 17.235708,
+      "p95_ms": 17.827333,
+      "samples": 20
+    },
+    {
+      "database_bytes": 2240512,
+      "hits": 1,
+      "kind": "exact",
+      "label": "after",
+      "notes": 5000,
+      "p50_ms": 87.405542,
+      "p95_ms": 99.273417,
+      "samples": 20
+    },
+    {
+      "database_bytes": 2240512,
+      "hits": 0,
+      "kind": "none",
+      "label": "after",
+      "notes": 5000,
+      "p50_ms": 63.667292,
+      "p95_ms": 77.841583,
+      "samples": 20
+    },
+    {
+      "database_bytes": 2240512,
+      "hits": 1,
+      "kind": "typo",
+      "label": "after",
+      "notes": 5000,
+      "p50_ms": 61.291875,
+      "p95_ms": 64.796792,
+      "samples": 20
+    },
+    {
+      "database_bytes": 2240512,
+      "hits": 1,
+      "kind": "bilingual",
+      "label": "after",
+      "notes": 5000,
+      "p50_ms": 63.519542,
+      "p95_ms": 71.590917,
+      "samples": 20
+    },
+    {
+      "database_bytes": 4149248,
+      "hits": 1,
+      "kind": "exact",
+      "label": "after",
+      "notes": 10000,
+      "p50_ms": 61.561917,
+      "p95_ms": 63.082667,
+      "samples": 20
+    },
+    {
+      "database_bytes": 4149248,
+      "hits": 0,
+      "kind": "none",
+      "label": "after",
+      "notes": 10000,
+      "p50_ms": 59.591041,
+      "p95_ms": 63.497458,
+      "samples": 20
+    },
+    {
+      "database_bytes": 4149248,
+      "hits": 1,
+      "kind": "typo",
+      "label": "after",
+      "notes": 10000,
+      "p50_ms": 65.715625,
+      "p95_ms": 70.200458,
+      "samples": 20
+    },
+    {
+      "database_bytes": 4149248,
+      "hits": 1,
+      "kind": "bilingual",
+      "label": "after",
+      "notes": 10000,
+      "p50_ms": 64.88475,
+      "p95_ms": 69.624541,
+      "samples": 20
+    }
+  ]
+}

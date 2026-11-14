@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { ClaudeSettings } from "../config.js";
+import { DECK_PLAN_STEP, DECK_WRITE_STEP, demoDeck, demoDeckPlan } from "../decks/demo.js";
 import { ProviderError, type ProviderDetail } from "../errors.js";
+import { demoTravelReading, TRAVEL_READING_STEP } from "../travel/claudeReader.js";
+import { demoBrief, UNDERSTAND_STEP } from "../travel/plan.js";
 
 /**
  * Claude for Doddy (ADR-564): quick writing and summaries, and documents made with Claude's own
@@ -112,13 +115,32 @@ export interface ClaudeFile {
   summary: string;
 }
 
+/**
+ * Where a provider's copies of a person's document are written down, durably, before anything else can
+ * go wrong. Ids only: never a name or any content.
+ */
+export interface ProviderFileLedger {
+  /** A copy exists at the provider. Written down before the call returns. */
+  track(fileId: string): Promise<void>;
+  /** The provider confirmed the copy is gone. */
+  confirmed(fileId: string): Promise<void>;
+  /** Deleting it did not work now; it stays owed. */
+  failed(fileId: string): Promise<void>;
+}
+
 export interface ClaudeProvider {
   readonly mode: "mock" | "live";
   isConfigured(): boolean;
   /** Quick answer, summary or short writing. */
   ask(args: AskClaudeArgs, signal: AbortSignal): Promise<{ text: string }>;
-  /** One finished file. Slow (often one to three minutes); run in the background. */
-  makeDocument(args: MakeDocumentArgs, signal: AbortSignal): Promise<ClaudeFile>;
+  /**
+   * One finished file. Slow (often one to three minutes); run in the background. `files` is told of
+   * every copy Claude makes at the provider the moment it is seen, so a deletion still owed survives a
+   * crash, a restart and the person's account being erased.
+   */
+  makeDocument(args: MakeDocumentArgs, signal: AbortSignal, files?: ProviderFileLedger): Promise<ClaudeFile>;
+  /** Deletes one copy at the provider: `removed` once it is gone (or was already), else `failed` to try again later. */
+  deleteFile(id: string, signal: AbortSignal): Promise<"removed" | "failed">;
   /**
    * One JSON answer constrained to `schema` (structured output), for Ask Doddy (ADR-587). Throws
    * `ClaudeRefusal` when the model declines and `ProviderError` for everything else that fails.
@@ -132,11 +154,24 @@ export interface StructuredInput {
   /** JSON Schema of the answer; every object needs `additionalProperties: false`. */
   schema: Record<string, unknown>;
   maxTokens: number;
+  /** How hard Claude thinks. Default "low" (Ask Doddy wants a quick answer); a deck's outline uses "medium". */
+  effort?: "low" | "medium" | "high";
+  /** Which step asks, for the mock's demo answers. Never sent to Anthropic. */
+  name?: string;
+  /**
+   * When Anthropic refuses the request as invalid (a 400 that isn't about the key, the balance or the
+   * model), ask once more without the compiled schema: the schema goes into the prompt instead and the
+   * answer is parsed as JSON. Only for callers whose own code checks the whole answer afterwards, as a
+   * deck's does (`checkDeck`). Off by default: Ask Doddy keeps the compiled schema or fails.
+   */
+  promptFallback?: boolean;
 }
 
 export interface StructuredResult {
   value: unknown;
   usage: { inputTokens: number; outputTokens: number };
+  /** Set when the answer came through `promptFallback`: what Anthropic said to the compiled schema (content-free). */
+  schemaRefused?: ProviderDetail;
 }
 
 /** The model declined to answer (`stop_reason: "refusal"`). Not retried. */
@@ -162,12 +197,17 @@ export function claudeCard(tool: ClaudeToolName, args: Record<string, unknown>):
     return { title: "Ask Claude?", lines: [`${capitalize(String(args.task))}: ${String(args.request)}`, ...material, where], confirmLabel: "Yes, ask" };
   }
   const info = KIND_INFO[args.kind as DocumentKind];
+  // A deck is researched first (decision 2026-11-10-better-presentations): the card says where its topic goes.
+  const research = args.kind === "deck" ? [DECK_RESEARCH_LINE] : [];
   return {
     title: `Make a ${info.label} with Claude?`,
-    lines: [`"${String(args.title)}"`, String(args.request), ...material, "It takes one to three minutes; Doddy gives you a link to open it.", where],
+    lines: [`"${String(args.title)}"`, String(args.request), ...material, ...research, "It takes one to three minutes; Doddy gives you a link to open it.", where],
     confirmLabel: "Yes, make it",
   };
 }
+
+export const DECK_RESEARCH_LINE =
+  "To research it, Doddy's server looks the topic up on Wikipedia and, if your web search is on, on the web (Monid). Pictures come only from Wikimedia Commons, with their author and licence.";
 
 const capitalize = (s: string) => (s ? s[0]!.toUpperCase() + s.slice(1) : s);
 
@@ -195,6 +235,9 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     private readonly baseUrl: string = ANTHROPIC_BASE_URL,
   ) {}
 
+  /** Steps whose compiled schema Anthropic refused while the same request without it worked; kept until the server restarts. */
+  private readonly schemaRefused = new Map<string, ProviderDetail>();
+
   isConfigured(): boolean {
     return this.settings.apiKey !== "";
   }
@@ -209,7 +252,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     return { text };
   }
 
-  async makeDocument(args: MakeDocumentArgs, signal: AbortSignal): Promise<ClaudeFile> {
+  async makeDocument(args: MakeDocumentArgs, signal: AbortSignal, files?: ProviderFileLedger): Promise<ClaudeFile> {
     const info = KIND_INFO[args.kind];
     if (info.skill === null) {
       const response = await this.messages(
@@ -226,57 +269,102 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
       return { name: fileName(args.title, info.ext), mime: info.mime, bytes: Buffer.from(text, "utf8"), summary: "" };
     }
 
-    const skills = [{ type: "anthropic", skill_id: info.skill, version: "latest" }];
-    const tools = [{ type: "code_execution_20250825", name: "code_execution" }];
-    const messages: { role: "user" | "assistant"; content: unknown }[] = [
-      {
-        role: "user",
-        content: userContent(`Make a ${info.label} titled "${args.title}".\n${args.request}`, args.material, `Save it as one .${info.ext} file.`),
-      },
-    ];
-    let response = await this.messages({ model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { skills }, tools, messages }, signal);
-    const fileIds = new Set(fileIdsOf(response.content));
-    for (let i = 0; i < MAX_PAUSE_TURNS && response.stop_reason === "pause_turn"; i++) {
-      const containerId = response.container?.id;
-      if (!containerId) throw new ProviderError("malformed_provider_result");
-      messages.push({ role: "assistant", content: response.content });
-      response = await this.messages(
-        { model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { id: containerId, skills }, tools, messages },
-        signal,
-      );
-      for (const id of fileIdsOf(response.content)) fileIds.add(id);
-    }
-    if (response.stop_reason === "pause_turn") throw new ProviderError("provider_timeout");
-
-    // The file Doddy wants: the last one with the right extension, else the last one made.
-    const candidates = [...fileIds];
-    let chosen: { id: string; name: string; mime: string } | null = null;
-    for (const id of candidates.reverse()) {
-      const meta = await this.fileMeta(id, signal);
-      if (!chosen) chosen = meta;
-      if (meta.name.toLowerCase().endsWith(`.${info.ext}`)) {
-        chosen = meta;
-        break;
+    // Every copy made at the provider is written down as soon as it is seen and deleted in `finally`,
+    // whatever fails in between (a download, a timeout, a pause that never ends). A deletion that does
+    // not work stays owed in the ledger, where the hourly sweep and an account erasure keep at it.
+    const fileIds = new Set<string>();
+    const note = async (ids: readonly string[]) => {
+      for (const id of ids) {
+        if (fileIds.has(id)) continue;
+        fileIds.add(id);
+        // A ledger that can't write must not lose the document: the delete below still runs.
+        await files?.track(id).catch(() => {});
       }
+    };
+    try {
+      const skills = [{ type: "anthropic", skill_id: info.skill, version: "latest" }];
+      const tools = [{ type: "code_execution_20250825", name: "code_execution" }];
+      const messages: { role: "user" | "assistant"; content: unknown }[] = [
+        {
+          role: "user",
+          content: userContent(`Make a ${info.label} titled "${args.title}".\n${args.request}`, args.material, `Save it as one .${info.ext} file.`),
+        },
+      ];
+      let response = await this.messages({ model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { skills }, tools, messages }, signal);
+      await note(fileIdsOf(response.content));
+      for (let i = 0; i < MAX_PAUSE_TURNS && response.stop_reason === "pause_turn"; i++) {
+        const containerId = response.container?.id;
+        if (!containerId) throw new ProviderError("malformed_provider_result");
+        messages.push({ role: "assistant", content: response.content });
+        response = await this.messages(
+          { model: this.settings.model, max_tokens: 16_000, system: DOCUMENT_SYSTEM, container: { id: containerId, skills }, tools, messages },
+          signal,
+        );
+        await note(fileIdsOf(response.content));
+      }
+      if (response.stop_reason === "pause_turn") throw new ProviderError("provider_timeout");
+
+      // The file Doddy wants: the last one with the right extension, else the last one made.
+      const candidates = [...fileIds];
+      let chosen: { id: string; name: string; mime: string } | null = null;
+      for (const id of candidates.reverse()) {
+        const meta = await this.fileMeta(id, signal);
+        if (!chosen) chosen = meta;
+        if (meta.name.toLowerCase().endsWith(`.${info.ext}`)) {
+          chosen = meta;
+          break;
+        }
+      }
+      if (!chosen) throw new ProviderError("malformed_provider_result");
+      const bytes = await this.fileContent(chosen.id, signal);
+      return { name: fileName(args.title, info.ext), mime: info.mime, bytes, summary: textOf(response.content).slice(0, 300) };
+    } finally {
+      await this.releaseFiles([...fileIds], files);
     }
-    if (!chosen) throw new ProviderError("malformed_provider_result");
-    const bytes = await this.fileContent(chosen.id, signal);
-    // Best effort: Doddy keeps its own copy for a week; Anthropic's copy isn't needed.
-    for (const id of fileIds) void this.deleteFile(id).catch(() => {});
-    return { name: fileName(args.title, info.ext), mime: info.mime, bytes, summary: textOf(response.content).slice(0, 300) };
+  }
+
+  /** Deletes the copies and tells the ledger what the provider confirmed. Never throws: the ledger keeps what is owed. */
+  private async releaseFiles(ids: readonly string[], files: ProviderFileLedger | undefined): Promise<void> {
+    await Promise.allSettled(
+      ids.map(async (id) => {
+        // Not tied to the job's signal: a job that timed out still has copies to delete.
+        const result = await this.deleteFile(id, AbortSignal.timeout(10_000));
+        await (result === "removed" ? files?.confirmed(id) : files?.failed(id));
+      }),
+    );
   }
 
   /**
-   * Structured output (`output_config.format` with a JSON schema) at low effort: Ask Doddy wants a
-   * short, quick answer. Thinking blocks, if any, are skipped; only the text block is the answer.
+   * Structured output (`output_config.format` with a JSON schema), at low effort unless the caller
+   * asks for more: Ask Doddy wants a short, quick answer. Thinking blocks, if any, are skipped; only
+   * the text block is the answer.
    */
   async structured(input: StructuredInput, signal: AbortSignal): Promise<StructuredResult> {
+    const key = input.name ?? "";
+    if (input.promptFallback && this.schemaRefused.has(key)) {
+      return { ...(await this.structuredOnce(input, "prompt", signal)), schemaRefused: this.schemaRefused.get(key)! };
+    }
+    try {
+      return await this.structuredOnce(input, "schema", signal);
+    } catch (error) {
+      const refused = input.promptFallback && error instanceof ProviderError && isRequestRefusal(error.detail) ? error.detail : undefined;
+      if (!refused) throw error;
+      // The same request with the schema as words. If this fails too, that failure is the one reported.
+      const result = await this.structuredOnce(input, "prompt", signal);
+      // Only now is it known that the schema was the reason: later calls for this step skip the refused request.
+      this.schemaRefused.set(key, refused);
+      return { ...result, schemaRefused: refused };
+    }
+  }
+
+  private async structuredOnce(input: StructuredInput, mode: "schema" | "prompt", signal: AbortSignal): Promise<StructuredResult> {
+    const effort = input.effort ?? "low";
     const response = await this.messages(
       {
         model: this.settings.model,
         max_tokens: input.maxTokens,
-        system: input.system,
-        output_config: { effort: "low", format: { type: "json_schema", schema: input.schema } },
+        system: mode === "schema" ? input.system : `${input.system}\n\n${schemaAsWords(input.schema)}`,
+        output_config: mode === "schema" ? { effort, format: { type: "json_schema", schema: input.schema } } : { effort },
         messages: [{ role: "user", content: input.user }],
       },
       signal,
@@ -286,7 +374,8 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     if (response.stop_reason === "max_tokens") throw new ProviderError("malformed_provider_result");
     let value: unknown;
     try {
-      value = JSON.parse(textOf(response.content));
+      const text = textOf(response.content);
+      value = JSON.parse(mode === "schema" ? text : jsonObjectIn(text));
     } catch {
       throw new ProviderError("malformed_provider_result");
     }
@@ -318,8 +407,18 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     return bytes;
   }
 
-  private async deleteFile(id: string): Promise<void> {
-    await this.fetchImpl(`${this.baseUrl}/v1/files/${encodeURIComponent(id)}`, { method: "DELETE", headers: this.headers(), signal: AbortSignal.timeout(10_000) });
+  /**
+   * `DELETE /v1/files/{id}`: 200 `file_deleted` means gone, and 404 means it already was. Anything else
+   * (429, 5xx, a refused key, no answer) is not a confirmation: it stays owed and is tried again.
+   */
+  async deleteFile(id: string, signal: AbortSignal): Promise<"removed" | "failed"> {
+    try {
+      const response = await this.fetchImpl(`${this.baseUrl}/v1/files/${encodeURIComponent(id)}`, { method: "DELETE", headers: this.headers(), signal });
+      await response.body?.cancel().catch(() => {});
+      return response.ok || response.status === 404 ? "removed" : "failed";
+    } catch {
+      return "failed";
+    }
   }
 
   private async send(path: string, init: RequestInit & { signal: AbortSignal }): Promise<Response> {
@@ -352,11 +451,60 @@ const HINTS: [string, RegExp][] = [
   ["credit_balance", /credit balance|billing|purchase credits/i],
   ["api_key", /api[ -]?key|x-api-key|authentication/i],
   ["model", /\bmodel\b/i],
+  // Before "output_config" and "schema": a schema Anthropic can't compile is its own answer to act on.
+  ["grammar", /grammar|too complex|union types|optional parameters|strict tools/i],
   ["output_config", /output_config|effort|json_schema|output format/i],
-  ["schema", /\bschema\b/i],
+  ["schema", /\bschemas?\b/i],
   ["max_tokens", /max_tokens/i],
+  ["too_long", /too long|too large|exceeds? the|context window/i],
+  ["encoding", /surrogate|utf-?8|unicode|not valid json|invalid json|could not parse/i],
   ["workspace", /workspace|organization|permission/i],
 ];
+
+/**
+ * For a message no fixed hint names: the words in it that belong to the API's own vocabulary, in order
+ * ("words:messages_content_empty"). Any other word is dropped, so nothing of what was sent can be kept.
+ */
+const API_WORDS = new Set(
+  ("messages message content system role user assistant text block blocks image document tool tools thinking stream streaming request body field fields " +
+    "property properties parameter parameters type types format json object array string number integer boolean enum const anyof required additional " +
+    "invalid unsupported supported allowed permitted missing empty unexpected extra unknown duplicate malformed must cannot exceeds exceeded " +
+    "maximum minimum limit size length bytes tokens characters long large short many nested depth recursive compiled compilation timeout " +
+    "container skills skill beta header version temperature budget citations prefill cache").split(" "),
+);
+function apiWords(message: string): string | null {
+  const found: string[] = [];
+  for (const word of message.toLowerCase().split(/[^a-z_]+/)) {
+    if (API_WORDS.has(word) && !found.includes(word)) found.push(word);
+    if (found.length === 8) break;
+  }
+  return found.length ? `words:${found.join("_")}` : null;
+}
+
+/** Hints that say the request itself is fine: the key, the balance, the model or the account is what's wrong. */
+const NOT_THE_REQUEST = new Set(["credit_balance", "api_key", "model", "workspace"]);
+
+/** A 400 about the shape of the request (its schema, most often), not about the key, the balance or the model. */
+export function isRequestRefusal(detail: ProviderDetail | undefined): detail is ProviderDetail {
+  return !!detail && detail.status === 400 && (detail.hint === null || !NOT_THE_REQUEST.has(detail.hint));
+}
+
+/** The schema as part of the prompt, for the one retry without structured output. */
+export function schemaAsWords(schema: Record<string, unknown>): string {
+  return [
+    "Answer with exactly one JSON object that is valid against the JSON Schema below, and nothing else: no words before or after it and no code fence.",
+    "Every property the schema lists is required; add no others.",
+    `<json_schema>\n${JSON.stringify(schema)}\n</json_schema>`,
+  ].join("\n");
+}
+
+/** The JSON object in an answer written without structured output: a code fence or words around it are dropped. */
+export function jsonObjectIn(text: string): string {
+  const from = text.indexOf("{");
+  const to = text.lastIndexOf("}");
+  if (from < 0 || to <= from) throw new Error("no JSON object");
+  return text.slice(from, to + 1);
+}
 
 /** What Anthropic's error body says, reduced to the log's detail. A body that isn't JSON gives the status only. */
 export async function anthropicDetail(response: Response): Promise<ProviderDetail> {
@@ -367,7 +515,7 @@ export async function anthropicDetail(response: Response): Promise<ProviderDetai
     const rawType = body?.error?.type;
     if (typeof rawType === "string" && ERROR_TYPE.test(rawType)) type = rawType;
     const message = body?.error?.message;
-    if (typeof message === "string") hint = HINTS.find(([, pattern]) => pattern.test(message))?.[0] ?? null;
+    if (typeof message === "string") hint = HINTS.find(([, pattern]) => pattern.test(message))?.[0] ?? apiWords(message);
   } catch {
     // Not JSON: the status is all there is.
   }
@@ -411,9 +559,17 @@ export class MockClaudeProvider implements ClaudeProvider {
     const info = KIND_INFO[args.kind];
     return { name: fileName(args.title, info.ext), mime: info.mime, bytes: Buffer.from(`DEMO ${info.label}: ${args.title}`), summary: `DEMO ${info.label}.` };
   }
-  /** Demo: a short answer that cites the first note it was offered, if any. */
+  /** Demo documents make no copy at a provider, so there is nothing to delete. */
+  async deleteFile(): Promise<"removed" | "failed"> {
+    return "removed";
+  }
+  /** Demo: a short answer that cites the first note it was offered, if any; for a deck, the demo plan and outline. */
   async structured(input: StructuredInput): Promise<StructuredResult> {
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
+    if (input.name === DECK_PLAN_STEP) return { value: demoDeckPlan(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
+    if (input.name === DECK_WRITE_STEP) return { value: demoDeck(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
+    if (input.name === TRAVEL_READING_STEP) return { value: demoTravelReading(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
+    if (input.name === UNDERSTAND_STEP) return { value: demoBrief(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
     const props = (input.schema.properties ?? {}) as { sources?: { items?: { enum?: string[] } } };
     const first = props.sources?.items?.enum?.[0];
     // Notes are n1…, conversations c1…, the chat's account parts their own names (ADR-604).

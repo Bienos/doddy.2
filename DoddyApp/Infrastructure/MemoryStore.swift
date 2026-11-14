@@ -8,6 +8,7 @@ import Observation
 @Observable
 final class MemoryStore {
     let environment: AppEnvironment
+    private let meaningIndex: MeaningIndex?
     /// Notes only. Lists (ADR-216) are `memories` rows too, but live in `lists` with their items.
     private(set) var memories: [MemoryRecord] = []
     /// Every stored correction (ADR-252), reloaded with the memories, for history and exports.
@@ -44,8 +45,9 @@ final class MemoryStore {
     /// "What Doddy did": a deleted note takes the text its rows kept for Undo with it (review C2).
     var activity: ActivityLogStore?
 
-    init(environment: AppEnvironment) {
+    init(environment: AppEnvironment, meaningIndex: MeaningIndex? = nil) {
         self.environment = environment
+        self.meaningIndex = meaningIndex
     }
 
     var isStorageAvailable: Bool { environment.capabilities.isAvailable(.memoryStorage) }
@@ -113,6 +115,7 @@ final class MemoryStore {
 
     func correct(id: UUID, text: String) async throws -> MemoryRecord {
         let record = try await environment.memoryRepository.update(id: id, currentText: text)
+        await meaningIndex?.invalidate(id)
         await environment.noteReminders?.refreshContent(forMemory: id)
         await reload()
         return record
@@ -133,6 +136,7 @@ final class MemoryStore {
         let audio = recordings[id]
         let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
+        await meaningIndex?.invalidate(id)
         activity?.forget(memoryID: id)
         // Only one deleted note can be undone, so the photo of the one before it goes for good.
         if let old = recentlyDeletedPhoto { environment.photoFiles.delete(old.fileName) }
@@ -186,19 +190,51 @@ final class MemoryStore {
 
     /// Adds notes from an export; returns only what was committed and read back (ADR-178).
     /// Notes, corrections and list items are one transaction: on failure nothing was added.
+    ///
+    /// `privateIDs` are the added notes that were private when the file was made (ADR-310). They are marked
+    /// Private, and the mark read back, **before** the notes are added, so no screen, widget or server copy sees one
+    /// as an ordinary note; if the mark can't be kept nothing is added, and a failed restore puts the marks back as
+    /// they were. A mark for a note that turned out not to be added is taken back.
     func restore(
-        _ records: [MemoryRecord], corrections: [MemoryCorrection] = [], listItems: [ListItem] = []
+        _ records: [MemoryRecord], corrections: [MemoryCorrection] = [], listItems: [ListItem] = [],
+        privateIDs: Set<UUID> = []
     ) async throws -> [MemoryRecord] {
-        // Items go back only into lists this restore adds; a list already here keeps its own items.
-        let added = try await environment.memoryRepository.restore(records, corrections: corrections, listItems: listItems)
+        let defaults = UserDefaults.standard
+        let before = defaults.string(forKey: PrivateNotes.storageKey)
+        let marking = PrivateNotes.markingBeforeRestore(stored: before, incoming: privateIDs)
+        func putMarksBack() {
+            if let before { defaults.set(before, forKey: PrivateNotes.storageKey) } else { defaults.removeObject(forKey: PrivateNotes.storageKey) }
+        }
+        if !marking.newlyMarked.isEmpty {
+            defaults.set(marking.stored, forKey: PrivateNotes.storageKey)
+            guard privateIDs.isSubset(of: PrivateNotes(stored: defaults.string(forKey: PrivateNotes.storageKey)).ids) else {
+                putMarksBack()
+                throw MemoryStoreError.verificationFailed
+            }
+        }
+        let added: [MemoryRecord]
+        do {
+            // Items go back only into lists this restore adds; a list already here keeps its own items.
+            added = try await environment.memoryRepository.restore(records, corrections: corrections, listItems: listItems).records
+        } catch {
+            putMarksBack()
+            throw error
+        }
+        if !marking.newlyMarked.isEmpty {
+            let settled = PrivateNotes.settlingAfterRestore(
+                stored: defaults.string(forKey: PrivateNotes.storageKey), newlyMarked: marking.newlyMarked, added: Set(added.map(\.id)))
+            defaults.set(settled, forKey: PrivateNotes.storageKey)
+        }
+        await meaningIndex?.clear()
         await reload()
-        return added.records
+        return added
     }
 
     /// No undo: deleting everything is final.
     func deleteAll() async throws {
         recentlyDeleted = nil
         try await environment.memoryRepository.deleteAll()
+        await meaningIndex?.clear()
         activity?.forgetNotes()
         environment.photoFiles.deleteOrphans(keeping: [])
         recentlyDeletedPhoto = nil
@@ -212,6 +248,15 @@ final class MemoryStore {
 
     func recall(_ question: String) async throws -> RecallOutcome {
         try await environment.recallService.recall(question, limit: 20)
+    }
+
+    /// The newest notes voice may see when a search found nothing, read fresh from storage so a
+    /// note saved during the call counts. Private notes are left out before the limit. A failed
+    /// read gives none, and the reply stays a plain "not found".
+    func newestNotesForVoice(excluding privateIDs: Set<UUID>) async -> NewestNotes {
+        guard let snapshot = try? await environment.memoryRepository.voiceStartupSnapshot(excluding: privateIDs) else { return .none }
+        let photoIDs = Set(((try? await environment.photoRepository.allPhotos()) ?? []).map(\.memoryID))
+        return NewestNotes.pick(snapshot.notes, excluding: privateIDs, withPhoto: photoIDs)
     }
 }
 

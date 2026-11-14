@@ -9,7 +9,7 @@ import { loadConfig } from "../src/config.js";
 import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsCallRegistrar } from "../src/providers/elevenlabs.js";
 import { isValidTwilioSignature, TwilioClient, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
-import { approvalHash, callApprovalHash, textApprovalHash } from "../src/approval.js";
+import { approvalHash, callApprovalHash, textApprovalHash, deliveryApprovalHash } from "../src/approval.js";
 import { callOpening, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
 import { DEFAULT_ABUSE_LIMITS } from "../src/config.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES } from "../src/phoneCountries.js";
@@ -169,6 +169,11 @@ test("approval hashes reproduce the shared vectors (contracts/phone/approval-vec
       assert.ok(quiet === "0" || quiet === "1", v.description);
       assert.equal(callApprovalHash(to!, at!, reason!, quiet === "1").toString("hex"), v.sha256, v.description);
     }
+    if (version === "doddy-approval-1" && kind === "delivery") {
+      const [, , id, fee, currency, pickup, dropoff, dropoffPhone, items, note] = v.fields;
+      assert.equal(deliveryApprovalHash(id!, Number(fee), currency!, { pickup: pickup!, dropoff: dropoff!, dropoffPhone: dropoffPhone!, items: items!, note: note! })
+        .toString("hex"), v.sha256, v.description);
+    }
   }
   assert.ok(file.vectors.some((v) => v.fields[1] === "call"), "call vectors are there too (ADR-754)");
 });
@@ -235,7 +240,7 @@ test("the contact policy in doddy_rules.yaml matches what the server enforces", 
       value("call_reason_max_length")].map(Number),
     [SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALL_LATE_MINUTES, SCHEDULED_CALLS_PENDING_MAX, CALL_REASON_MAX_LENGTH]);
   assert.deepEqual([value("start"), value("end"), value("timezone_fallback"), value("applies_to"), value("scheduled_call_unknown_outcome")],
-    [`"${formatClock(QUIET_HOURS_DEFAULT.start)}"`, `"${formatClock(QUIET_HOURS_DEFAULT.end)}"`, DEFAULT_TIME_ZONE, "[scheduled_calls]",
+    [`"${formatClock(QUIET_HOURS_DEFAULT.start)}"`, `"${formatClock(QUIET_HOURS_DEFAULT.end)}"`, DEFAULT_TIME_ZONE, "[scheduled_calls,radar_alert_pushes]",
       "never_placed_again"]);
   assert.doesNotMatch(block, /\+\d{6,}/, "no phone number in the rules file");
 });

@@ -4,6 +4,8 @@ Owner, 24 Oct 2026: "Wszystko rób" (do everything), after a list that included 
 
 Status, 24 Oct 2026: built on the server and in DoddyCore and the app, and **compiled and tested on the hosted Mac job** (run 40123163712 on `3b06a1c`: build, unit tests and UI tests passed); nothing has run against a real shop or on a device, and no UI test opens the watch screens. See "Built and checked" at the end.
 
+Live, 12 Nov 2026: on for everyone on `doddy-messaging` (`WATCHES_ENABLED=1`, set on the owner's instruction "Włącz też pilnowanie cen"; the server's start log reports `"watches": true` on every start since 12:41 UTC that day). `render.yaml` keeps the default `"0"`, as it does for `ERRANDS_ENABLED` and `RADAR_ALERTS_ENABLED`: the live value is the one set on the service. Still no voice tool, and no watch has been seen to fire on a real shop.
+
 ## 1. What it does
 
 On a pick of a shopping result, "Pilnuj ceny" shows one card with the exact words below. After the user's tap, Doddy's server reads that shop's own page a few times a day for 30 days and sends one notification when the confirmed price is at or below the user's number. Then it stops. The user can stop it, or delete it, any time.

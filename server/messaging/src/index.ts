@@ -1,4 +1,6 @@
 import { buildApp } from "./app.js";
+import { dealWatchContextFor } from "./deals/dealWatches.js";
+import { JakdojadePartnerClient } from "./integrations/jakdojade.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
 import { createAccountVerifier } from "./doddyAccount.js";
@@ -10,7 +12,7 @@ import { studioContext } from "./studio/context.js";
 import { modelLabel } from "./studio/models.js";
 import { watchContext } from "./watches/context.js";
 import { fileWatchContext } from "./fileWatches.js";
-import { log, runWorkerLoop } from "./workerLoop.js";
+import { catalogContext, log, radarContext, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
@@ -19,28 +21,38 @@ const providers = providersFrom(config);
 const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   accounts: config.supabaseUrl ? createAccountVerifier({ projectUrl: config.supabaseUrl }) : null,
+  anonymousAccounts: config.anonymousAccounts,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
-  fileWatches: { origin: config.documentsOrigin },
+  jakdojade: config.jakdojade ? new JakdojadePartnerClient(async () => config.jakdojade ?? null) : undefined,
+  fileWatches: { origin: config.documentsOrigin }, radar: { enabled: config.radarAlertsEnabled },
   contactTexts: config.contactTextsEnabled,
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
 const app = await buildApp(deps);
 const calls = callsAvailable(deps);
 app.log.info({
+  // Without either, a new iPhone gets no account here (sign-in answers 503 not_configured, anonymous 403).
+  doddyAccounts: !!config.supabaseUrl, anonymousAccounts: config.anonymousAccounts,
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
   calls: calls.inbound, outboundCalls: calls.outbound,
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
+  newsSummary: !!providers.news.summary.summarizer, newsSummaryModel: config.newsSummarySettings.model,
   twilioDeleteAfterMinutes: providers.deleteAfterMinutes,
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
   studio: !!(providers.studio.api && providers.cipher), studioModels: modelLabel(config.studioSettings.models),
-  assistant: !!providers.assistant.responder, assistantModel: config.assistantSettings.model,
+  assistant: !!providers.assistant.responder, screenLook: !!providers.assistant.screen, assistantModel: config.assistantSettings.model,
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
   dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,
   contactTexts: config.contactTextsEnabled && !!providers.cipher && !!providers.sms,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
+  radarAlerts: config.radarAlertsEnabled,
+  leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,
+  dealWatches: config.dealWatchSettings.enabled && config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled && !!providers.cipher,
+  deliveries: config.uberDirect ? config.uberDirect.mode : false,
   ceidg: !!providers.ceidg,
+  jakdojade: !!config.jakdojade,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
@@ -55,8 +67,13 @@ if (config.runWorkerInWeb) {
   const studioCtx = studioContext(db, providers.studio, providers.cipher, providers.push, log);
   const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
   const fileWatchCtx = fileWatchContext(db, { origin: config.documentsOrigin }, providers.cipher, providers.push, log);
+  const radarCtx = radarContext(db, config.radarAlertsEnabled, providers.news, providers.push, providers.cipher, config.quietHours);
+  const dealWatchCtx = dealWatchContextFor({ db, ...providers, quietHours: config.quietHours }, log);
+  const catalogCtx = catalogContext(db, providers.deals, dealWatchCtx);
   workerDone = runWorkerLoop(db, {
-    ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, scheduledCalls: scheduledCallsFrom(config, providers),
+    ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, radar: radarCtx,
+    catalog: catalogCtx, dealWatches: dealWatchCtx,
+    scheduledCalls: scheduledCallsFrom(config, providers),
   }, () => stopping);
 }
 

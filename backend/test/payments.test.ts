@@ -5,14 +5,14 @@ import { afterEach, test } from "node:test";
 import { z } from "zod";
 import { testLimits } from "../src/config.js";
 import { DEMO_PAY_TO, MockPaymentSeller } from "../src/payments/mockSeller.js";
-import { PaymentPreparedSchema, PaymentReceiptSchema, PaymentReceiptsSchema, PaymentResultSchema, PaymentStatusSchema } from "../src/payments/contracts.js";
-import type { HttpResult } from "../src/payments/net.js";
+import { PaymentPageCardSchema, PaymentPreparedSchema, PaymentReceiptSchema, PaymentReceiptsSchema, PaymentResultSchema, PaymentStatusSchema } from "../src/payments/contracts.js";
+import type { HttpResult, SellerHttp } from "../src/payments/net.js";
 import { PaymentsService } from "../src/payments/service.js";
 import { MockPaymentWallet } from "../src/payments/wallet.js";
 import { NETWORKS } from "../src/payments/x402.js";
 import { Store } from "../src/store.js";
 import { USER_A, USER_B } from "./helpers.js";
-import { defaultPolicy, enable, NONCE, pay, paidRequests, prepare, type PayRig, SHOP, startPay, status } from "./paymentsRig.js";
+import { defaultPolicy, enable, NONCE, pageCard, pay, paidRequests, prepare, type PayRig, readPrice, SHOP, startPay, status } from "./paymentsRig.js";
 
 let rig: PayRig;
 afterEach(async () => rig?.close());
@@ -23,7 +23,9 @@ const ID_A = "00000000-0000-4000-8000-00000000000a";
 const wallet = () => rig.wallet as MockPaymentWallet;
 // Copy the rows so deepStrictEqual compares plain objects.
 const rows = async (sql: string, ...params: (string | number)[]) => (await rig.store.db.query<Record<string, unknown>>(sql, params)).rows.map((r) => ({ ...r }));
-const approvals = async () => (await rows("SELECT * FROM approvals")).length;
+/** Approvals to PAY (the terms). Approvals to read a page are counted apart. */
+const approvals = async () => (await rows("SELECT * FROM approvals WHERE capability = 'pay_x402'")).length;
+const readApprovals = async () => (await rows("SELECT * FROM approvals WHERE capability = 'pay_x402_read'")).length;
 const used = async (token = USER_A) => (await status(rig, token)).body.limits.usedToday;
 
 /** switch on -> prepare -> pay, returning every step. */
@@ -96,9 +98,162 @@ test("payments never appear in the existing tools catalog or receipts", async ()
 
 test("payment routes need a signed-in person", async () => {
   rig = await startPay();
-  for (const [method, path] of [["GET", "/v1/payments"], ["GET", "/v1/payments/receipts"], ["PUT", "/v1/payments/switch"], ["POST", "/v1/payments/prepare"], ["POST", "/v1/payments/pay"]] as const) {
+  for (const [method, path] of [["GET", "/v1/payments"], ["GET", "/v1/payments/receipts"], ["PUT", "/v1/payments/switch"], ["POST", "/v1/payments/page"], ["POST", "/v1/payments/prepare"], ["POST", "/v1/payments/pay"]] as const) {
     const res = await rig.call(method, path, { token: null, body: method === "GET" ? undefined : {} });
     assert.equal(res.status, 401, `${method} ${path}`);
+  }
+});
+
+// ------------------------------------------------------------------ nothing is read before the person's yes
+
+test("the page card reads nothing: it shows the site and the path and returns a read approval for that one address", async () => {
+  rig = await startPay();
+  await enable(rig);
+  const res = await pageCard(rig, "https://demo-shop.example/articles/42#comments");
+  assert.equal(res.status, 200, res.text);
+  assert.deepEqual(PaymentPageCardSchema.parse(res.body).page, { host: "demo-shop.example", path: "/articles/42" });
+  assert.equal(res.body.mode, "mock");
+  assert.equal(res.body.preview.title, "Check the price on demo-shop.example?");
+  assert.deepEqual(res.body.preview.lines, [
+    "Site: demo-shop.example",
+    "Page: /articles/42",
+    "Doddy opens this page to read its price only after you say yes. Nothing is paid yet.",
+  ]);
+  assert.equal(res.body.preview.confirmLabel, "Check the price");
+  assert.equal(Date.parse(res.body.expiresAt) - rig.clock.ms, 120_000);
+  assert.deepEqual(rig.seller.requests, [], "not one request reached the page before the person said yes");
+  assert.equal(await readApprovals(), 1);
+  assert.equal(await approvals(), 0, "no approval to pay exists yet");
+  assert.equal(wallet().signed.length, 0);
+});
+
+test("the price is read only with the page card's approval for the same address, and only once", async () => {
+  rig = await startPay();
+  await enable(rig);
+  await enable(rig, USER_B);
+  const card = (await pageCard(rig)).body;
+
+  // No approval at all, one that was never issued, or one for another page: refused, nothing read.
+  assert.equal((await rig.call("POST", "/v1/payments/prepare", { body: { url: SHOP } })).status, 400, "the approval is required");
+  const never = await readPrice(rig, "00000000-0000-4000-8000-000000000001");
+  assert.equal(never.status, 403);
+  assert.equal(never.body.error.receipt.errorCode, "confirmation_required");
+  assert.equal(never.body.error.message, "Doddy opens a payment page only after you say yes to its address. Nothing was read or paid.");
+  for (const other of ["https://demo-shop.example/articles/43", "https://demo-shop.example/articles/42/", "https://other-shop.example/articles/42"]) {
+    assert.equal((await readPrice(rig, card.approvalId, other)).status, 403, other);
+  }
+  assert.equal((await readPrice(rig, card.approvalId, SHOP, { token: USER_B })).status, 403, "another person can't use it");
+  assert.deepEqual(rig.seller.requests, [], "nothing was read");
+
+  // The right one reads the page once, then is used up.
+  const read = await readPrice(rig, card.approvalId);
+  assert.equal(read.status, 200, read.text);
+  assert.equal(rig.seller.requests!.length, 1);
+  const again = await readPrice(rig, card.approvalId);
+  assert.equal(again.status, 403);
+  assert.equal(again.body.error.receipt.errorCode, "confirmation_required");
+  assert.equal(rig.seller.requests!.length, 1, "one yes, one read");
+
+  // An approval to pay is not an approval to read, and the read approval can't pay.
+  assert.equal((await readPrice(rig, read.body.approvalId)).status, 403);
+  const fresh = (await pageCard(rig)).body;
+  assert.equal((await pay(rig, fresh.approvalId)).status, 403);
+  assert.equal(rig.seller.requests!.length, 1, "the refused calls read nothing");
+  assert.equal(wallet().signed.length, 0);
+});
+
+test("pay reads the page again only for someone holding a live approval to pay", async () => {
+  rig = await startPay();
+  await enable(rig);
+  for (const approvalId of ["00000000-0000-4000-8000-000000000001", (await pageCard(rig, "https://demo-shop.example/b")).body.approvalId]) {
+    const res = await pay(rig, approvalId, "https://demo-shop.example/b");
+    assert.equal(res.status, 403);
+    assert.equal(res.body.error.receipt.errorCode, "confirmation_required");
+  }
+  assert.deepEqual(rig.seller.requests, []);
+});
+
+test("a read approval runs out after two minutes and then reads nothing", async () => {
+  rig = await startPay();
+  await enable(rig);
+  const card = (await pageCard(rig)).body;
+  rig.clock.advance(121_000);
+  const res = await readPrice(rig, card.approvalId);
+  assert.equal(res.status, 403);
+  assert.equal(res.body.error.receipt.errorCode, "confirmation_required");
+  assert.deepEqual(rig.seller.requests, []);
+});
+
+test("two reads racing on one approval read the page once", async () => {
+  rig = await startPay({ limits: { userConcurrency: 2 } });
+  await enable(rig);
+  const card = (await pageCard(rig)).body;
+  const results = await Promise.allSettled([
+    rig.payments.prepare(ID_A, { url: SHOP, approvalId: card.approvalId }),
+    rig.payments.prepare(ID_A, { url: SHOP, approvalId: card.approvalId }),
+  ]);
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(rig.seller.requests!.length, 1);
+});
+
+test("a query string is refused unless the site is listed for one; the card shows the query it would open", async () => {
+  rig = await startPay();
+  await enable(rig);
+  for (const url of ["https://demo-shop.example/a?q=what-the-person-said", "https://demo-shop.example/a?", "https://api.demo-shop.example/a?x=1"]) {
+    const res = await pageCard(rig, url);
+    if (url.endsWith("?")) {
+      assert.equal(res.status, 200, "a bare ? carries nothing and is dropped");
+      assert.equal(res.body.page.path, "/a");
+      continue;
+    }
+    assert.equal(res.status, 400, url);
+    assert.equal(res.body.error.receipt.errorCode, "url_query", url);
+    assert.doesNotMatch(JSON.stringify(res.body), /what-the-person-said/);
+  }
+  // pay checks the address the same way, so a query can't come in through the last step either.
+  assert.equal((await pay(rig, "00000000-0000-4000-8000-000000000001", "https://demo-shop.example/a?q=1")).body.error.receipt.errorCode, "url_query");
+  assert.deepEqual(rig.seller.requests, []);
+  await rig.close();
+
+  rig = await startPay({ policy: defaultPolicy({ queryHosts: ["demo-shop.example"] }) });
+  await enable(rig);
+  const listed = await pageCard(rig, "https://demo-shop.example/a?id=7");
+  assert.equal(listed.status, 200, listed.text);
+  assert.equal(listed.body.page.path, "/a?id=7");
+  assert.match(listed.body.preview.lines[1], /^Page: \/a\?id=7$/);
+  assert.equal((await pageCard(rig, "https://other-shop.example/a?id=7")).status, 400);
+  assert.equal((await prepare(rig, "https://demo-shop.example/a?id=7")).status, 200, "and the price is read at that exact address");
+  assert.equal(rig.seller.requests!.at(-1)!.url, "https://demo-shop.example/a?id=7");
+});
+
+test("live mode without a list of sites refuses every payment route and reads nothing", async () => {
+  const store = await Store.memory();
+  const seen: string[] = [];
+  const http: SellerHttp = { get: async (url) => { seen.push(url); throw new Error("must not be called"); } };
+  const liveWallet = { kind: "coinbase_cdp" as const, mode: "live" as const, address: `0x${"11".repeat(20)}`, signTransferAuthorization: async () => { throw new Error("must not sign"); } };
+  try {
+    const live = new PaymentsService({ store, mode: "live", wallet: liveWallet, http, policy: defaultPolicy(), limits: testLimits() });
+    const s = await live.status(ID_A);
+    assert.deepEqual([s.wallet.kind, s.wallet.configured, s.enabled], ["coinbase_cdp", false, false]);
+    for (const attempt of [
+      () => live.setSwitch(ID_A, { enabled: true }),
+      () => live.page(ID_A, { url: SHOP }),
+      () => live.prepare(ID_A, { url: SHOP, approvalId: "00000000-0000-4000-8000-000000000001" }),
+      () => live.pay(ID_A, { url: SHOP, approvalId: "00000000-0000-4000-8000-000000000001" }),
+    ]) {
+      await assert.rejects(attempt(), (e: { code: string; options: { receipt: { errorCode: string } } }) =>
+        e.code === "live_not_configured" && e.options.receipt.errorCode === "sites_not_set_up");
+    }
+    assert.deepEqual(seen, []);
+
+    // With a list, the same live service shows a page card (and still reads nothing for it).
+    const listed = new PaymentsService({ store, mode: "live", wallet: liveWallet, http, policy: defaultPolicy({ allowedHosts: ["demo-shop.example"] }), limits: testLimits() });
+    await listed.setSwitch(ID_A, { enabled: true });
+    assert.equal((await listed.page(ID_A, { url: SHOP })).page.host, "demo-shop.example");
+    await assert.rejects(listed.page(ID_A, { url: "https://other-shop.example/a" }), (e: { options: { receipt: { errorCode: string } } }) => e.options.receipt.errorCode === "url_host_not_allowed");
+    assert.deepEqual(seen, []);
+  } finally {
+    await store.close();
   }
 });
 
@@ -165,7 +320,7 @@ test("a approved payment signs once for exactly the approved terms and reports t
 });
 
 test("receipts list what was prepared and paid, newest first, without page paths", async () => {
-  rig = await startPay();
+  rig = await startPay({ policy: defaultPolicy({ queryHosts: ["demo-shop.example"] }) });
   await purchase("https://demo-shop.example/private-topic?q=secret-research-topic");
   const list = (await rig.call("GET", "/v1/payments/receipts")).body.receipts;
   assert.deepEqual(list.map((r: any) => r.operation), ["pay", "switch"]);
@@ -454,6 +609,13 @@ test("requests are strict: a model cannot name a wallet, amount, recipient, netw
     { url: SHOP, wallet: "0x1111111111111111111111111111111111111111" }, { url: SHOP, network: "base" }, { url: SHOP, asset: "ETH" },
     {}, { url: 7 }, { url: "x" }, { url: SHOP, approvalId },
   ]) {
+    const res = await rig.call("POST", "/v1/payments/page", { body });
+    assert.equal(res.status, 400, JSON.stringify(body));
+  }
+  for (const body of [
+    { url: SHOP }, { approvalId }, { url: SHOP, approvalId: "nope" }, { url: SHOP, approvalId, amount: "0.01" },
+    { url: SHOP, approvalId, payTo: "0x1111111111111111111111111111111111111111" }, { url: SHOP, approvalId, network: "base" },
+  ]) {
     const res = await rig.call("POST", "/v1/payments/prepare", { body });
     assert.equal(res.status, 400, JSON.stringify(body));
   }
@@ -490,6 +652,7 @@ test("an allow-list of sites limits where Doddy may pay", async () => {
   const other = await prepare(rig, "https://other-shop.example/a");
   assert.equal(other.status, 400);
   assert.equal(other.body.error.receipt.errorCode, "url_host_not_allowed");
+  assert.equal(rig.seller.requests!.length, 2, "only the two listed pages were read, each after its card");
 });
 
 // ------------------------------------------------------------------ what the voice agent is told
@@ -634,13 +797,14 @@ test("contracts/payments fixtures (decoded by the Swift tests) match the server'
   const schemaFor = (name: string) =>
     name.startsWith("status-") ? PaymentStatusSchema
     : name.startsWith("error-") ? failure
+    : name.startsWith("page-card") ? PaymentPageCardSchema
     : name.startsWith("prepared") ? PaymentPreparedSchema
     : name === "paid" ? PaymentResultSchema
     : name === "receipts" ? PaymentReceiptsSchema
     : name.startsWith("switch-result") ? switched
     : null;
   const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
-  assert.ok(files.length >= 14, "the fixtures exist (npm run fixtures)");
+  assert.ok(files.length >= 16, "the fixtures exist (npm run fixtures)");
   for (const file of files) {
     const schema = schemaFor(file.replace(/\.json$/, ""));
     assert.ok(schema, `a schema for ${file}`);

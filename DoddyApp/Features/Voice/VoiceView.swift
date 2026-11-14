@@ -7,6 +7,10 @@ import UIKit
 /// Dynamic Island and the Lock Screen show it with Mute and End); it ends when the user taps End,
 /// from the island, or when the connection drops.
 struct VoiceView: View {
+    /// Shown as a card from the bottom (owner, 10 Nov 2026: "pop-up z dołu"): only what waits for the
+    /// user, or what Doddy just made, without the transcript. "Show the conversation" opens all of it.
+    var asCard = false
+    var onShowConversation: (() -> Void)? = nil
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
@@ -30,8 +34,11 @@ struct VoiceView: View {
     @State private var takenPhoto: Data?
     /// The new note opened with that photo.
     @State private var photoNote: TakenPhoto?
-    /// "What leaves this iPhone", opened from the note under the transcript.
+    /// "What leaves this iPhone", opened from the one-time listening notice.
     @State private var showDataFlow = false
+    /// The one-time notice that Doddy keeps listening until End (the footnote under every transcript
+    /// was removed, owner, 10 Nov 2026). Home still says he is an AI, not a person.
+    @AppStorage("voice.listeningNoticeSeen") private var listeningNoticeSeen = false
 
     /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
     /// Debug builds may go straight to the agent without a DODDY voice account (ADR-551).
@@ -52,7 +59,7 @@ struct VoiceView: View {
             .readableColumn()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.canvas)
-            .navigationTitle("Talk to Doddy")
+            .navigationTitle(asCard ? Text(verbatim: "") : Text("Talk to Doddy"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -177,9 +184,16 @@ struct VoiceView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        statusHeader(controller)
+                        if asCard {
+                            cardHeader(controller)
+                        } else {
+                            statusHeader(controller)
+                            if !listeningNoticeSeen && controller.translator == nil {
+                                listeningNotice
+                            }
+                        }
 
-                        if controller.audioPausedByOtherApp && controller.isLive {
+                        if !asCard && controller.audioPausedByOtherApp && controller.isLive {
                             Label("Another app has Doddy's audio. He can't hear you until it lets go.", systemImage: "pause.circle")
                                 .font(.footnote)
                                 .foregroundStyle(Theme.secondaryText)
@@ -198,7 +212,7 @@ struct VoiceView: View {
                         }
                         #endif
 
-                        if controller.isPrivate {
+                        if !asCard && controller.isPrivate {
                             Label {
                                 // Names the voice that runs this conversation (engineering audit, 7 Nov 2026).
                                 Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
@@ -219,9 +233,11 @@ struct VoiceView: View {
                                 .id("translatorSummary")
                         }
 
-                        ForEach(controller.lines) { line in
-                            transcriptLine(line)
-                                .id(line.id)
+                        if !asCard {
+                            ForEach(controller.lines) { line in
+                                transcriptLine(line)
+                                    .id(line.id)
+                            }
                         }
 
                         if let pending = controller.pendingAction {
@@ -251,6 +267,18 @@ struct VoiceView: View {
                             .padding(16)
                             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
                             .id("callBooking")
+                        }
+
+                        if controller.callPlacing {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                Text("Calling you…")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                            .id("callPlacing")
                         }
 
                         if let status = controller.reminderStatus {
@@ -332,9 +360,15 @@ struct VoiceView: View {
                                 .id("accountNeeded")
                         }
 
-                        ForEach(controller.documents, id: \.url) { document in
-                            documentCard(document)
+                        // The pop-up card leaves out a file still being made: Home's island says it (owner, 13 Nov 2026).
+                        ForEach(controller.documents.filter { !asCard || MadeFileStart.popsUpCard($0) }, id: \.url) { document in
+                            documentCard(document, about: controller.documentBriefs[document.url], keptInMessages: !controller.isPrivate)
                                 .id("document-\(document.url.absoluteString)")
+                        }
+
+                        if !controller.flightLinks.isEmpty {
+                            flightsCard(controller.flightLinks)
+                                .id("flights")
                         }
 
                         if let card = controller.contactCard {
@@ -347,13 +381,31 @@ struct VoiceView: View {
                                 .id("parkingCard")
                         }
 
-                        dataFootnote
+                        if asCard, let onShowConversation {
+                            Button(action: onShowConversation) {
+                                Label("Show the conversation", systemImage: "text.bubble")
+                            }
+                            .buttonStyle(SecondaryButtonStyle())
+                            .accessibilityIdentifier("voice.showConversation")
+                        }
+
+                        // The end of everything above, lines and cards (owner review, 13 Nov 2026).
+                        Color.clear
+                            .frame(height: 1)
+                            .accessibilityHidden(true)
+                            .id(Self.conversationEnd)
                     }
                     .padding(24)
                     .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.15), value: controller.lines.count)
                 }
+                // A new line scrolls to the end of everything, not to the line: the cards come after the
+                // lines, and scrolling to the last line pushed a card waiting below it off the screen while
+                // Doddy kept talking (owner review, 13 Nov 2026: "karty chowają się pod transkrypcją").
                 .onChange(of: controller.lines.count) { _, _ in
-                    if let last = controller.lines.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
+                    if !controller.lines.isEmpty { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(Self.conversationEnd, anchor: .bottom) } }
+                }
+                .onChange(of: controller.documents.first?.url) { _, url in
+                    if let url { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("document-\(url.absoluteString)", anchor: .bottom) } }
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
@@ -443,6 +495,17 @@ struct VoiceView: View {
         .onChange(of: controller.presentationReady) { _, ready in
             if let ready { sharingPresentation = ready }
         }
+        // The pop-up goes away by itself once nothing on it is left: the card was answered, or each
+        // result was closed. The conversation goes on on Home.
+        .onChange(of: cardIsEmpty(controller)) { _, empty in
+            if asCard, empty { dismiss() }
+        }
+    }
+
+    /// Nothing the pop-up card would show.
+    private func cardIsEmpty(_ controller: VoiceSessionController) -> Bool {
+        !HomeConversation.shared.needsYou && HomeConversation.shared.resultsToShow.isEmpty
+            && controller.pendingAction == nil && controller.accessRequest == nil && controller.accountNeeded == nil
     }
 
     private func planBinding(_ controller: VoiceSessionController) -> Binding<PlanAskRequest?> {
@@ -545,20 +608,41 @@ struct VoiceView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Two short lines instead of the old paragraph. What is sent, to whom and when, now that the
-    /// settings can change it, is on "What leaves this iPhone": it reads the current switches.
-    private var dataFootnote: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Doddy is an AI, not a person.")
-            Text("He keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.")
-            Button("What leaves this iPhone") { showDataFlow = true }
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Theme.accentText)
-                .accessibilityIdentifier("voice.dataFlow")
+    /// Shown once, at the top of the first transcript: the footnote under every transcript is gone
+    /// (owner, 10 Nov 2026), but nobody should find out late that the microphone stays on.
+    private var listeningNotice: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Doddy keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.",
+                  systemImage: "waveform")
+                .font(.footnote)
+            HStack(spacing: 16) {
+                Button("What leaves this iPhone") { showDataFlow = true }
+                    .accessibilityIdentifier("voice.dataFlow")
+                Spacer()
+                Button("OK") { listeningNoticeSeen = true }
+                    .accessibilityIdentifier("voice.listeningNoticeOK")
+            }
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Theme.accentText)
         }
-        .font(.footnote)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
         .foregroundStyle(Theme.secondaryText)
-        .padding(.top, 8)
+    }
+
+    /// The pop-up's top line: Doddy and what the card is, instead of the transcript's status pill.
+    private func cardHeader(_ controller: VoiceSessionController) -> some View {
+        HStack(spacing: 12) {
+            VoiceDoddyView(art: screenArt(controller), height: 44)
+            Text(controller.pendingAction != nil || controller.accessRequest != nil || controller.accountNeeded != nil
+                 ? NSLocalizedString("Doddy needs your tap", comment: "Pop-up card header")
+                 : NSLocalizedString("From Doddy", comment: "Pop-up card header"))
+                .font(.headline)
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("voice.cardHeader")
     }
 
     /// Card for anything that changes data or opens another app. Nothing happens until the user taps.
@@ -701,11 +785,27 @@ struct VoiceView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
-        case .map(_, let place):
-            Text("Open this in Maps?")
-                .font(.headline)
-            Text(place)
-                .font(.body)
+        case .map(_, let trip):
+            if trip.isRoute {
+                Text("Directions in Maps?")
+                    .font(.headline)
+            } else {
+                Text("Open this in Maps?")
+                    .font(.headline)
+            }
+            if trip.isRoute {
+                Label(trip.from ?? NSLocalizedString("Where you are now", comment: "Route card: the start when the user named none"), systemImage: "circle")
+                    .foregroundStyle(Theme.secondaryText)
+                Label(trip.place, systemImage: "mappin.circle.fill")
+                    .font(.body)
+                if let mode = trip.mode {
+                    Label(Self.travelModeText(mode), systemImage: Self.travelModeSymbol(mode))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            } else {
+                Text(trip.place)
+                    .font(.body)
+            }
         case .shortcut(_, let name):
             Text("Run this Shortcut?")
                 .font(.headline)
@@ -734,6 +834,15 @@ struct VoiceView: View {
             blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
         case .callLater(_, let draft, let to, let quietHours):
             callLaterContent(draft, to: to, quietHours: quietHours, controller: controller)
+        case .callNow(_, let to):
+            // Decision 2026-11-10-call-me-now-by-voice: the same call as Settings, Phone calls, Call me now.
+            Text("Call you now?")
+                .font(.headline)
+            Text(String(format: NSLocalizedString("From Doddy's number to your number ending %@", comment: ""), String(to.suffix(3))))
+                .foregroundStyle(Theme.secondaryText)
+            Text("Your phone rings when you tap. When you answer, you talk to Doddy on Doddy's phone line. Twilio places the call.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .callTask(_, let preview):
             callTaskContent(preview)
         case .presentation(_, let draft):
@@ -1172,7 +1281,7 @@ struct VoiceView: View {
         case .timer: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Don't start", comment: ""))
         case .alarm: (NSLocalizedString("Set alarm", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .cancelAlarm: (NSLocalizedString("Turn off", comment: ""), NSLocalizedString("Keep it", comment: ""))
-        case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
+        case .map(_, let trip): (trip.isRoute ? NSLocalizedString("Start directions", comment: "Route card: opens Apple Maps with the route") : NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .blik: (NSLocalizedString("I'll send it myself", comment: "BLIK card: the user sends it in their bank app"), NSLocalizedString("Not now", comment: ""))
@@ -1181,7 +1290,10 @@ struct VoiceView: View {
         case .home: (NSLocalizedString("Yes", comment: ""), NSLocalizedString("No", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
-        case .callTask: (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
+        case .callNow: (NSLocalizedString("Call me", comment: ""), NSLocalizedString("Don't call", comment: ""))
+        case .callTask(_, let preview):
+            preview.isOrder ? (NSLocalizedString("Call and order", comment: ""), NSLocalizedString("Don't order", comment: ""))
+                            : (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
         // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
@@ -1208,9 +1320,18 @@ struct VoiceView: View {
     /// comes back. The one tap approves exactly this.
     @ViewBuilder
     private func callTaskContent(_ preview: CallTaskPreview) -> some View {
-        Text(preview.places.count == 1 ? NSLocalizedString("Call this place for you?", comment: "")
-                                       : NSLocalizedString("Call these places for you?", comment: ""))
-            .font(.headline)
+        if preview.isOrder {
+            Text("Order from this place for you?")
+                .font(.headline)
+        } else if preview.isBooking {
+            Text(preview.places.count == 1 ? NSLocalizedString("Book at this place for you?", comment: "")
+                                           : NSLocalizedString("Book at one of these places for you?", comment: ""))
+                .font(.headline)
+        } else {
+            Text(preview.places.count == 1 ? NSLocalizedString("Call this place for you?", comment: "")
+                                           : NSLocalizedString("Call these places for you?", comment: ""))
+                .font(.headline)
+        }
         ForEach(Array(preview.places.enumerated()), id: \.offset) { index, place in
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: "\(index + 1). \(place.callee.name)")
@@ -1225,6 +1346,50 @@ struct VoiceView: View {
         Text("Numbers from Doddy's place search.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
+        // A booking (decision 2026-11-12-book-agent): exactly what may be booked, and the one sentence that accepts it.
+        if let first = preview.places.first, let booking = first.booking {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Booking")
+                    .font(.footnote.weight(.semibold))
+                if let service = booking.service { Text(verbatim: service) }
+                if let size = booking.partySize {
+                    Text(String(format: NSLocalizedString("People: %d", comment: "booking party size"), size))
+                }
+                Text(verbatim: "\(booking.date), \(booking.time)")
+                    .monospacedDigit()
+                Text(String(format: NSLocalizedString("Under the name %@", comment: "booking name"), booking.name))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voice.callTask.booking")
+            callTaskConfirmLine(first.confirmLine)
+        }
+        // An order (decision 2026-11-12-food-by-phone): exactly what may be ordered, where it goes, the cap,
+        // that payment is on delivery or pickup only, and the one sentence that accepts it.
+        if let first = preview.places.first, let order = first.order {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Order")
+                    .font(.footnote.weight(.semibold))
+                ForEach(Array(order.lines.enumerated()), id: \.offset) { _, line in
+                    Text(verbatim: "\(line.quantity) × \(line.name)" + (line.note.map { " (\($0))" } ?? ""))
+                }
+                if let delivery = order.delivery {
+                    Text(verbatim: "\(delivery.street)\(delivery.apartment.map { " m. \($0)" } ?? ""), \(delivery.postcode) \(delivery.city)")
+                    Text(String(format: NSLocalizedString("Courier's phone: %@", comment: "order delivery phone"), delivery.phone))
+                        .monospacedDigit()
+                } else {
+                    Text("Pickup at the restaurant")
+                }
+                Text(String(format: NSLocalizedString("Under the name %@", comment: "booking name"), order.name))
+                Text(String(format: NSLocalizedString("Doddy accepts no total above %lld zł", comment: "order cap"), order.maxTotalPln))
+                Text("Payment on delivery or at pickup. Doddy never gives card details.")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voice.callTask.order")
+            callTaskConfirmLine(first.confirmLine)
+        }
         if let first = preview.places.first {
             Text("Doddy says:")
                 .font(.footnote.weight(.semibold))
@@ -1242,7 +1407,8 @@ struct VoiceView: View {
             }
         }
         if preview.places.count > 1 {
-            Text("One at a time, in this order. Doddy stops at the first yes.")
+            Text(preview.isBooking ? NSLocalizedString("One at a time, in this order. Doddy stops at the first booking.", comment: "")
+                                   : NSLocalizedString("One at a time, in this order. Doddy stops at the first yes.", comment: ""))
                 .font(.footnote)
         }
         Text(preview.textResult ? NSLocalizedString("You get a notification and a text with the answer.", comment: "")
@@ -1252,6 +1418,22 @@ struct VoiceView: View {
         if preview.callableNow == false {
             Label("It's outside calling hours (8:00 to 23:00), so the first call can't start now.", systemImage: "moon")
                 .font(.footnote)
+        }
+    }
+
+    /// "Doddy accepts only with:" and the one sentence the server built; shared by a booking and an order.
+    @ViewBuilder
+    private func callTaskConfirmLine(_ confirm: String?) -> some View {
+        if let confirm {
+            Text("Doddy accepts only with:")
+                .font(.footnote.weight(.semibold))
+            Text(verbatim: confirm)
+                .font(.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+                .accessibilityIdentifier("voice.callTask.confirmLine")
         }
     }
 
@@ -1613,17 +1795,85 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
+    /// The id of the empty view after the last line and card, which a new line scrolls to.
+    private static let conversationEnd = "conversationEnd"
+
     /// ADR-564: a file Claude is making. The link opens in Safari: Quick Look shows the deck,
     /// document or PDF, with Share to save or send it; until it's ready the page says so.
-    private func documentCard(_ document: RunDocument) -> some View {
+    /// `about` is what the person asked for (`ThreadDelivery.madeFileBrief`), so the card says what the file is.
+    /// A file still being made is one quiet line with nothing to tap (owner, 13 Nov 2026): it arrives in Messages.
+    /// In a private conversation nothing reaches Messages, so the line keeps Open: this is the only place the file is.
+    @ViewBuilder
+    private func documentCard(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
+        if MadeFileStart.showsNote(document) {
+            fileBeingMadeRow(document, about: about, keptInMessages: keptInMessages)
+        } else {
+            readyDocumentCard(document, about: about, keptInMessages: keptInMessages)
+        }
+    }
+
+    /// No spinner: the conversation doesn't hear when the file is done, so the row says only where it will be.
+    private func fileBeingMadeRow(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "doc.badge.clock")
+                .font(.title3)
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                MadeFileIslandNote.title(document.kind)
+                    .font(.headline)
+                let name = MadeFileStart.shownName(document)
+                if !name.isEmpty {
+                    Text(verbatim: name)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                if let about {
+                    Text(about)
+                        .font(.callout)
+                        .lineLimit(3)
+                }
+                if keptInMessages {
+                    Text("It lands in Messages when it's ready.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                } else {
+                    Text("This conversation is private, so it isn't kept in Messages. Open it here when it's ready.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    Button {
+                        UIApplication.shared.open(document.url)
+                    } label: {
+                        Label("Open", systemImage: "arrow.up.forward.app")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.openDocument")
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: keptInMessages ? .combine : .contain)
+        .accessibilityIdentifier("voice.fileBeingMade")
+    }
+
+    private func readyDocumentCard(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("\(document.label) from Claude", systemImage: "doc.richtext")
                 .font(.headline)
             Text(document.name)
                 .foregroundStyle(Theme.secondaryText)
-            Text("It takes a minute or two. Open it now; it shows the file as soon as it's ready.")
-                .font(.callout)
-                .foregroundStyle(Theme.secondaryText)
+            if let about {
+                Text(about)
+                    .font(.callout)
+                    .lineLimit(4)
+            }
+            if keptInMessages {
+                Text("It's in Messages and in Files too.")
+                    .font(.callout)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             Button {
                 UIApplication.shared.open(document.url)
             } label: {
@@ -1631,6 +1881,31 @@ struct VoiceView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .accessibilityIdentifier("voice.openDocument")
+            MadeFileShareButton(link: document.url)
+                .buttonStyle(SecondaryButtonStyle())
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// find_flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): each flight opens on Kiwi.com,
+    /// where the user books and pays. Doddy books nothing here.
+    private func flightsCard(_ links: [RunLink]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Flights on Kiwi.com", systemImage: "airplane")
+                .font(.headline)
+            Text("Prices from Kiwi.com just now; they can change. You book and pay on Kiwi.com.")
+                .font(.callout)
+                .foregroundStyle(Theme.secondaryText)
+            ForEach(links, id: \.url) { link in
+                Button {
+                    UIApplication.shared.open(link.url)
+                } label: {
+                    Label(link.title, systemImage: "arrow.up.forward.app")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("voice.openFlight")
+            }
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
@@ -1914,6 +2189,23 @@ struct VoiceView: View {
         }
     }
 
+    /// How the route card says the way to travel.
+    static func travelModeText(_ mode: MapTravelMode) -> String {
+        switch mode {
+        case .driving: NSLocalizedString("By car", comment: "Route card")
+        case .walking: NSLocalizedString("On foot", comment: "Route card")
+        case .transit: NSLocalizedString("By public transport", comment: "Route card")
+        }
+    }
+
+    static func travelModeSymbol(_ mode: MapTravelMode) -> String {
+        switch mode {
+        case .driving: "car.fill"
+        case .walking: "figure.walk"
+        case .transit: "tram.fill"
+        }
+    }
+
     /// "Repeats every week until Thu 31 Dec 2026" (ADR-282), in the iPhone's language.
     static func repeatText(_ repeats: CalendarRepeat) -> String {
         let base = switch repeats.frequency {
@@ -2004,7 +2296,8 @@ struct VoiceView: View {
         switch controller.phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")
-        case .thinking: NSLocalizedString("Working on it…", comment: "")
+        // Named after the tool that runs, "still" after a while (decision 2026-11-12-voice-turn-feedback).
+        case .thinking: controller.turnFeedback.statusText
         case .speaking: NSLocalizedString("Speaking", comment: "")
         case .ended: NSLocalizedString("Conversation ended", comment: "")
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")

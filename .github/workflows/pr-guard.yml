@@ -1,9 +1,18 @@
 # The owner's label gate (ADR-811). A pull request that changes how Doddy is signed, configured,
 # deployed or governed (entitlements, Info.plist, Xcode specs, Xcode Cloud scripts, deploy configs,
-# secrets manifest, voice agent specs, migrations, CI and agent rules: scripts/check_sensitive_paths.sh)
-# needs the `owner-approved` label before the `sensitive-paths` check passes. Adding or removing the
-# label reruns only this small workflow, not the hour-long build in ios.yml.
-# Reads the pull request's own files and labels; no secrets, nothing written.
+# secrets manifest, voice agent specs, migrations, dependency manifests, CI and agent rules:
+# scripts/check_sensitive_paths.sh) needs the `owner-approved` label before the `sensitive-paths`
+# check passes. Adding or removing the label reruns only this small workflow, not the hour-long
+# build in ios.yml.
+#
+# What runs, with which token: `pull_request` with a GITHUB_TOKEN that can only read the repository
+# (`permissions` below), and no secrets. The working tree is the default branch, so the guard script
+# that decides is the default branch's copy, never the pull request's: a pull request can't change
+# the list it is checked against (an edit to the list applies from the next pull request after it
+# merges). The pull request's test merge commit is fetched as git objects only, to list its files;
+# none of its files is checked out or run. Keep it that way. If this ever moves to
+# `pull_request_target` (which runs with the repository's secrets), it must still never check out
+# or run the pull request's files.
 # Actions are pinned to full commit SHAs as in ios.yml (ADR-715).
 name: PR guard
 
@@ -24,24 +33,34 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      # The default branch, not the pull request: the guard script below comes from here.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The pull request is checked out as its test merge commit; HEAD^1..HEAD is what it changes.
-          fetch-depth: 2
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
 
       - name: Which files does this pull request change?
+        env:
+          # The pull request's test merge commit; its first parent is the base branch, so
+          # MERGE_SHA^1..MERGE_SHA is exactly what the pull request changes.
+          MERGE_SHA: ${{ github.sha }}
         run: |
           set -eu
+          # Git objects only (the merge commit and its parents), for the diff. Nothing is checked out.
+          git fetch --no-tags --no-recurse-submodules --depth=2 origin "$MERGE_SHA"
           # Unlike ios.yml, an unreadable list is an error here: "no files" would pass the gate.
-          if ! git rev-parse --verify -q 'HEAD^2' >/dev/null; then
-            echo "The checkout isn't the pull request's test merge commit, so its files can't be listed." >&2
+          if ! git rev-parse --verify -q "$MERGE_SHA^2" >/dev/null; then
+            echo "$MERGE_SHA isn't the pull request's test merge commit, so its files can't be listed." >&2
             exit 1
           fi
           # --no-renames: a moved file is listed under both paths, so moving a sensitive file counts.
-          git diff --name-only --no-renames 'HEAD^1' HEAD > "$RUNNER_TEMP/changed.txt"
+          git diff --name-only --no-renames "$MERGE_SHA^1" "$MERGE_SHA" > "$RUNNER_TEMP/changed.txt"
           echo "$(wc -l < "$RUNNER_TEMP/changed.txt") changed file(s)."
 
       - name: Sensitive paths need the owner-approved label
         env:
           OWNER_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'owner-approved') }}
-        run: scripts/check_sensitive_paths.sh < "$RUNNER_TEMP/changed.txt"
+        run: |
+          set -eu
+          echo "Guard script from the default branch at $(git rev-parse --short HEAD)."
+          scripts/check_sensitive_paths.sh < "$RUNNER_TEMP/changed.txt"

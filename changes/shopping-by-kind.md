@@ -1,0 +1,3 @@
+Shopping gets "Shops by kind" under its one field: five tiles (groceries & household, fashion & shoes, electronics, home & garden, other), each opening a page with a field for that kind, the shops Doddy works with there and what it does at each. Groceries check this week's leaflets; the other kinds hand over "Find me this" behind the same yes card, with the kind added as one line under the words. #407's and #423's screen is otherwise untouched; no Compare view and no watched prices by kind yet.
+Decision `2026-11-13-shopping-by-kind`. DoddyCore `ShopCategory` + `ShopCategoryTests`. Needs no deploy.
+Ran: `tools/build_strings_catalog.py --check`; the Swift is built and tested by this pull request's CI. Not seen on a device.

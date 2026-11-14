@@ -37,14 +37,16 @@ Also sent: today's date and weekday in the browser's time zone (`timeZone`, vali
 - **Cost:** the same daily caps as Ask Doddy (50 per person, 500 for the server), taken before anything is read. A server without a chat model answers `ready: false` and the page offers no box.
 - **Logs:** counts and tokens only, plus whether the account was read (tested: no document name, receipt summary, Logbook number or question). When Claude says no, the log line also carries `providerStatus`, `providerError` (Anthropic's own error type, e.g. `authentication_error`) and `providerHint` from a fixed list (`credit_balance`, `api_key`, `model`, `output_config`, `schema`, `max_tokens`, `workspace`). Anthropic's message text is never kept, since an invalid-request message can quote what was sent. The same fields are on Ask Doddy, `ask_claude` and document failures. The person still sees only the plain error.
 
-## The list of chats is kept in this browser only (`web/src/chat/threads.ts`)
+## The list of chats is kept in this tab only (`web/src/chat/threads.ts`)
 
-ChatGPT keeps chats on its servers. Here they are kept **only in the browser's localStorage**, never on Doddy's server:
+ChatGPT keeps chats on its servers. Here they are kept **only in the tab's `sessionStorage`**, never on Doddy's server (since 14 Nov 2026, decision `2026-11-14-owner-panel-fresh-sign-in`; before that, in `localStorage`, which survives closing the browser):
 - tied to the browser sign-in (the session id): another sign-in's chats are deleted, never shown; Sign out and an ended session delete them;
+- a reload or a move between pages keeps them; **closing the tab forgets them**, and so does opening the page in a new tab;
+- what an older version left in `localStorage` is moved into the tab when it is this sign-in's and deleted otherwise, as soon as the page knows who is signed in; nothing of a chat is written to `localStorage` any more (a test checks the questions, answers and cited notes);
 - up to 40 chats of 80 turns; when storage is full the oldest go; when storage is blocked the page says chats last until the page is closed;
 - "Delete all chats" (with a confirmation) and a delete button per chat.
 
-What this means: the questions, answers and the cited note texts sit in this browser's storage until signed out. Anyone using the same browser profile while signed in could read them, as they could read the pages. Keeping chats on the server (so they follow the person to another browser) is a decision for the owner (below).
+What this means: the questions, answers and the cited note texts sit in this tab's storage until it is closed or signed out, and are not left on the disk of a computer someone else may use next. Anyone using the same tab while signed in could read them, as they could read the pages. Keeping chats on the server (so they follow the person to another browser) is a decision for the owner (below).
 
 ## Data that is new to Anthropic
 
@@ -52,7 +54,7 @@ Before ADR-604 the web chat sent Claude only the best-matching notes and excerpt
 
 ## Decisions for the owner
 
-1. **Where chats are kept.** Now: this browser only (recommended for a first version: no new server data). Alternative: on Doddy's server, encrypted like kept conversations, so they follow you; needs a retention and a delete.
+1. **Where chats are kept.** Now: this tab only (recommended for a first version: no new server data; a closed tab forgets them). Alternative: on Doddy's server, encrypted like kept conversations, so they follow you; needs a retention and a delete.
 2. **Send all parts every time, or only the ones a question needs.** Now: all, compact (a few KB). Choosing per question would send less but needs either keyword rules (fragile in Polish) or a second model call.
 3. **Polish wording** is the agent's draft, like the rest of Doddy Web.
 
@@ -76,7 +78,7 @@ Before ADR-604 the web chat sent Claude only the best-matching notes and excerpt
 | Model output is a proposal, typed code validates | `readAnswer` + per-request alias enum (`chat.ts`) | citation of an unknown part discarded | none known | — |
 | Tool, document and account content is data | JSON blocks in the user message, none in `CHAT_SYSTEM` | planted strings never in the instructions | — | — |
 | Never invent memory or numbers | counts computed in code (`logbookDigest.ts`, `memoryConversationStats`); instructions forbid guessing | digest totals; part states "off" | the model's wording is unverified with the real model | don't say the chat "knows everything about you" |
-| Never claim saved without a verified storage operation | chats saved only in localStorage, and the page says so; "not kept" shown when storage fails | storage full and blocked | — | "saved in this browser", never "saved" |
+| Never claim saved without a verified storage operation | chats saved only in this tab's sessionStorage, and the page says so; "not kept" shown when storage fails | storage full and blocked; nothing in localStorage | — | "kept in this tab", never "saved" |
 | No external writes from the chat | no tools | — | — | — |
 | Content-free logs | `memory_chat` log line: counts, tokens, `account: true` | planted document name, receipt and question | — | — |
 | Cross-user isolation | every read keyed by the session's user id | another person's apps, documents, receipts, Logbook | concurrency not exercised (PGlite) | — |

@@ -1,5 +1,7 @@
 # Audio privacy signal and stop: status (ADR-361)
 
+> **Update 9 Nov 2026 (owner, decision `docs/decisions/2026-11-09-no-listening-pill.md`):** the pill below ("Doddy is listening · Stop listening") is gone from every screen; `ListeningIndicatorWindow` and `ListeningIndicatorPill` were deleted. iOS's orange microphone dot, the voice screen's own End and Siri's "Stop listening in Doddy" remain. The pill text below is history.
+>
 > **Update 20 Oct 2026 (ADR-549):** "Hey Doddy" was removed, so the listening indicator and Stop listening now cover two microphone users: the conversation and a voice memo. References to "Hey Doddy" below are history.
 
 Date: 2026-10-11. Owner instruction: "do the Polish pass then OP-024" (audio privacy signal and stop), from the research backlog. User story: "Stop listening now." → "Stopped." Acceptance: audio capture actually closed.

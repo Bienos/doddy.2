@@ -435,6 +435,22 @@ struct IslandCompactTrailingView: View {
     }
 }
 
+/// The voice conversation's small island, right side: always the waves' own 48 x 26 pt, whatever
+/// Doddy is doing (12 Nov 2026, decision `2026-11-12-action-button-audio-and-island`). iOS sizes
+/// the small island to what it holds, so the waves while he listens or talks and the narrower dots
+/// or symbol while he thinks, connects or a card waits made the island shrink and grow on every
+/// turn. The dots, symbol, time or language codes sit in the middle of the same space. Only the
+/// voice activity uses it; timers and tools keep their own widths.
+struct IslandVoiceCompactTrailingView: View {
+    let scene: IslandScene
+    let startedAt: Date
+
+    var body: some View {
+        IslandCompactTrailingView(scene: scene, startedAt: startedAt)
+            .frame(width: IslandAuroraView.size.width, height: IslandAuroraView.size.height)
+    }
+}
+
 /// His voice on the small island as Home's fine lines (owner, 1 Nov 2026: option C, "Aurora, like
 /// Home", ADR-683): orange to amber to rose, highest in the middle, fading at their ends. Calm while
 /// he hears you. While he talks outside the app, each beat (about every 0.6 s) gives the lines a new
@@ -443,9 +459,9 @@ struct IslandCompactTrailingView: View {
 struct IslandAuroraView: View {
     let scene: IslandScene
 
-    static let size = CGSize(width: 38, height: 26)
-    /// Seven solid, round-ended bars like the iPhone's call island (owner, 9 Nov 2026).
-    static let lineWidth: CGFloat = 3.4
+    static let size = CGSize(width: 48, height: 26)
+    /// Home's fine lines (ADR-683, option C), back on 10 Nov 2026 (owner: the older lines were better).
+    static let lineWidth: CGFloat = 1.35
 
     var body: some View {
         let columns = scene.aurora
@@ -457,8 +473,12 @@ struct IslandAuroraView: View {
                     ? Color(red: column.colour.red, green: column.colour.green, blue: column.colour.blue)
                     : Color.islandSecondary
                 Capsule()
-                    .fill(colour)
-                    .frame(width: Self.lineWidth, height: max(Self.lineWidth, Self.size.height * CGFloat(column.height)))
+                    .fill(LinearGradient(stops: [
+                        .init(color: colour.opacity(0), location: 0),
+                        .init(color: colour.opacity(0.92), location: 0.5),
+                        .init(color: colour.opacity(0), location: 1),
+                    ], startPoint: .top, endPoint: .bottom))
+                    .frame(width: Self.lineWidth, height: max(1.5, Self.size.height * CGFloat(column.height)))
             }
         }
         .frame(width: Self.size.width, height: Self.size.height)

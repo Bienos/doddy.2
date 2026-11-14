@@ -33,8 +33,11 @@ extension DataFlowState {
             webConversationsKept: defaults.bool(forKey: WebMemoryModel.conversationsKey),
             inFaktKeySaved: AccountKeyStore.manager(for: .inFakt).state().isSaved,
             textsToDoddyOn: defaults.bool(forKey: PreferenceKey.textsToDoddyOn),
-            recapsOnServer: flag(RecapSettings.rememberKey, default: RecapSettings.rememberDefault)
-                && flag(RecapSettings.serverWriterKey, default: RecapSettings.serverWriterDefault))
+            recapsOnServer: flag(RecapSettings.serverWriterKey, default: RecapSettings.serverWriterDefault),
+            phoneRecapsOn: flag(RecapSettings.rememberKey, default: RecapSettings.rememberDefault),
+            // The same rule as LogbookModel.isOn: absent means on (decision 2026-11-09-usage-counts-on-by-default).
+            logbookOn: flag(LogbookModel.onKey, default: true),
+            doddyAccountsSet: DoddyAccountSetup.config() != nil)
     }
 }
 
@@ -56,6 +59,8 @@ struct DataFlowView: View {
     @AppStorage(WebMemoryModel.notesKey) private var webNotesKept = false
     @AppStorage(WebMemoryModel.conversationsKey) private var webConversationsKept = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
+    // Logbook's switch (Settings › Doddy on the web): its row and the intro follow it.
+    @AppStorage(LogbookModel.onKey) private var logbookOn = true
 
     /// The @AppStorage values above redraw this screen when a switch changes; the state itself is
     /// read by `DataFlowState.current()`, which Settings' Privacy rows use too (ADR-447).
@@ -65,7 +70,10 @@ struct DataFlowView: View {
         let rows = DataFlow.rows(state)
         List {
             Section {
-                Text("Where your information goes, based on your settings right now. Nothing is sold, and there are no ads or analytics.")
+                // "No analytics" is true only while Logbook is off (decision 2026-11-09-usage-counts-on-by-default).
+                Text(state.logbookOn
+                     ? "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads. Logbook counts how you use Doddy, never your words; its row below says where the counts go."
+                     : "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads or analytics.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }

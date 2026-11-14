@@ -76,6 +76,19 @@ final class NewsFollowingTests: XCTestCase {
         XCTAssertNil(odd.publishedDate)
         XCTAssertNil(odd.ageText(now: now, polish: true))
         XCTAssertEqual(odd.sourceInitial, "•")
+        XCTAssertEqual(card.alsoFrom, [], "an older server's card names no other publisher")
+        XCTAssertNil(card.alsoFromLine(polish: true))
+    }
+
+    func testCardNamesTheOtherPublishersOfTheSameStory() throws {
+        // The server groups one story from several publishers (decision 2026-11-13-news-more-sources).
+        let json = #"{"fetchedAt":"2026-11-13T09:00:00.000Z","keywordSearch":false,"cards":[{"id":"ef56","title":"Orlen podnosi ceny paliw","summary":"","url":"https://rmf24.pl/orlen","source":"RMF24","publishedAt":"2026-11-13T08:00:00.000Z","follows":["Polska"],"alsoFrom":[{"source":"Onet","url":"https://onet.pl/orlen"},{"source":"TVN24","url":"https://tvn24.pl/orlen"},{"source":"RMF24","url":"https://rmf24.pl/x"}]},{"id":"gh78","title":"Bad list","summary":"","url":"https://x.pl/1","source":"X","publishedAt":"2026-11-13T08:00:00.000Z","follows":[],"alsoFrom":"nonsense"}]}"#
+        let page = try JSONDecoder().decode(NewsFeedPage.self, from: Data(json.utf8))
+        let card = page.cards[0]
+        XCTAssertEqual(card.alsoFrom.map(\.source), ["Onet", "TVN24", "RMF24"])
+        XCTAssertEqual(card.alsoFromLine(polish: true), "Też: Onet i TVN24", "the card's own publisher is not named again")
+        XCTAssertEqual(card.alsoFromLine(polish: false), "Also: Onet and TVN24")
+        XCTAssertEqual(page.cards[1].alsoFrom, [], "a list the app can't read is left out, the card still shows")
     }
 
     func testAgeTextSteps() throws {

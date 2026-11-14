@@ -6,9 +6,11 @@ import Foundation
 /// also carries every earlier wording (ADR-252) and its original. Same data as
 /// `MemoryExport.plainText`, newest first as given.
 public enum MarkdownExport {
-    /// `lists` (ADR-216) follow the notes as Markdown task lists: open items, then ticked ones.
+    /// `lists` (ADR-216) follow the notes as Markdown task lists: open items, then ticked ones. A note or list
+    /// named in `privateIDs` gets a "Private: yes" line.
     public static func markdown(
-        _ records: [MemoryRecord], lists: [DoddyList] = [], corrections: [MemoryCorrection] = [], exportedAt: Date
+        _ records: [MemoryRecord], lists: [DoddyList] = [], corrections: [MemoryCorrection] = [],
+        privateIDs: Set<UUID> = [], exportedAt: Date
     ) -> String {
         let byNote = Dictionary(grouping: corrections, by: \.memoryID)
         let iso = ISO8601DateFormatter()
@@ -21,6 +23,7 @@ public enum MarkdownExport {
             lines += quote(record.currentText)
             lines.append("")
             var details = ["Source: \(record.source.rawValue)"]
+            if privateIDs.contains(record.id) { details.append("Private: yes") }
             if record.userEdited {
                 details.append("Corrected: \(record.updatedAt.map(iso.string(from:)) ?? "date unavailable")")
             }
@@ -46,6 +49,10 @@ public enum MarkdownExport {
             for list in lists {
                 lines.append("## \(list.name)")
                 lines.append("")
+                if privateIDs.contains(list.id) {
+                    lines.append("Private: yes")
+                    lines.append("")
+                }
                 lines += list.open.map { "- [ ] \($0.text)" }
                 lines += list.done.map { "- [x] \($0.text)" }
                 lines.append("")

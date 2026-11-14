@@ -17,8 +17,17 @@ extension DoddyAccountModel {
         let model = DoddyAccountModel(
             config: DoddyAccountSetup.config(), transport: URLSessionTransport.shared,
             store: DoddyAccountKeychain(), authenticator: SystemWebAuthenticator())
-        model.afterSignIn = { session in await DoddyAccountServers.bringEarlierData(session) }
-        model.afterSignOut = { DoddyAccountServers.forgetAccountTokens() }
+        model.afterSignIn = { session in
+            // Whose data this iPhone holds is recorded first; nothing goes to an account that doesn't own it
+            // (decision 2026-11-12-local-data-owner, `LocalDataOwnership.swift`).
+            await DoddyAccountServers.claimLocalData()
+            await DoddyAccountServers.bringEarlierData(session)
+        }
+        model.afterSignOut = {
+            DoddyAccountServers.forgetAccountTokens()
+            VoiceTokenWarmer.shared.clear()
+            DoddyAccountServers.stopUploadsAfterSignOut()
+        }
         return model
     }()
 }
@@ -56,26 +65,50 @@ enum DoddyAccountServers {
         defaults.set(use.rawValue, forKey: key(kind, server))
     }
 
+    /// Messaging-server tokens this iPhone signed out of but the server hasn't yet said it forgot (security
+    /// audit 2026-11-09, finding 1). Written down before the token leaves the Keychain slot the app uses.
+    static let revocations = PendingDeviceRevocations(store: ServerPendingRevocationStore(), transport: URLSessionTransport.shared)
+
+    /// Asks the messaging server again about every token still owed a revocation. Needs no sign-in: the
+    /// token itself is the proof, and it is used for nothing else.
+    static func retryRevocations() async {
+        guard revocations.count > 0, let server = ServerConfig.baseURL() else { return }
+        await revocations.retry(server: server)
+    }
+
+    /// Whether the account that started some work waiting on a server is still the one signed in. Read
+    /// `DoddyAccountModel.shared.identityEpoch` before the wait and pass it here after: false means the person
+    /// signed out (or another account signed in) meanwhile, and the answer must not be kept.
+    private static func stillSignedIn(since epoch: Int) -> Bool {
+        let model = DoddyAccountModel.shared
+        return model.isSignedIn && model.identityEpoch == epoch
+    }
+
     // MARK: The first sign-in, and catching up
 
     /// After a new sign-in: the backend links this iPhone's earlier data (or says it takes accounts),
     /// and the messaging server signs this iPhone in to the account. Each answer decides how that
     /// server is used from now on; "try again later" leaves it as it was, for `catchUp`.
     static func bringEarlierData(_ session: DoddyAccountSession) async {
+        // What the account is when this starts: anything kept below is dropped if that changed while a server answered.
+        let epoch = DoddyAccountModel.shared.identityEpoch
+        await retryRevocations()
         // A kept session's access token runs out after about an hour. Sent expired, the backend answers 401,
         // which reads as "doesn't take accounts yet" (and is remembered) or "nothing to link". Refresh first.
         guard let fresh = await DoddyAccountModel.shared.freshSession(), fresh.userID == session.userID else { return }
-        await linkBackend(fresh)
-        await signInMessaging(fresh)
+        await linkBackend(fresh, epoch: epoch)
+        await signInMessaging(fresh, epoch: epoch)
     }
 
     /// At launch, signed in: a server that didn't answer before is asked again.
     static func catchUp() async {
+        // First, signed in or not: a sign-out that couldn't reach the messaging server still owes it that.
+        await retryRevocations()
         guard let session = DoddyAccountModel.shared.session else { return }
         await bringEarlierData(session)
     }
 
-    private static func linkBackend(_ session: DoddyAccountSession) async {
+    private static func linkBackend(_ session: DoddyAccountSession, epoch: Int) async {
         guard let server = DeviceSession.serverURL(), use(.backend, server) != .account else { return }
         let earlier = KeychainSessionStore.read()?.token(for: server).flatMap { $0.hasPrefix("ds1.") ? $0 : nil }
         let decided: DoddyAccountServerUse?
@@ -88,12 +121,15 @@ enum DoddyAccountServers {
             decided = await DoddyAccountLink.probeBackend(server: server, account: session, transport: URLSessionTransport.shared)
         }
         guard let decided else { return }
+        // The answer took a while (a sleeping server takes about 20 seconds): if the person signed out meanwhile,
+        // it is not kept. Writing it now would put the signed-out account's token back (audit finding 2).
+        guard stillSignedIn(since: epoch) else { return }
         set(decided, .backend, server)
         // From now on every backend client finds the account's token where it found the device's.
         if decided == .account { KeychainSessionStore.save(session.accessToken, issuedBy: server) }
     }
 
-    private static func signInMessaging(_ session: DoddyAccountSession) async {
+    private static func signInMessaging(_ session: DoddyAccountSession, epoch: Int) async {
         guard let server = ServerConfig.baseURL(), use(.messaging, server) != .account else { return }
         let store = ServerKeychainStore()
         let earlier = try? store.load()
@@ -106,6 +142,12 @@ enum DoddyAccountServers {
         }
         switch outcome {
         case .signedIn(_, let deviceToken):
+            // Signed out while the server was answering: the server made (or linked) a token for an account
+            // this iPhone no longer has. It is not kept, and the server is told to forget it right away.
+            guard stillSignedIn(since: epoch) else {
+                await revocations.revoke(deviceToken, server: server)
+                return
+            }
             // Counted only once this iPhone kept its token (DOD-08).
             if (try? store.save(deviceToken)) != nil { set(.account, .messaging, server) }
         case .notSetUp, .conflict:
@@ -156,8 +198,15 @@ enum DoddyAccountServers {
         let model = DoddyAccountModel.shared
         guard model.isConfigured, let server = ServerConfig.baseURL(), use(.messaging, server) == .account else { return nil }
         guard let session = model.session else { throw ServerError.accountMissing }
+        let epoch = model.identityEpoch
         switch await DoddyAccountLink.signInMessaging(server: server, account: session, earlierDeviceToken: nil, transport: URLSessionTransport.shared) {
-        case .signedIn(_, let token): return token
+        case .signedIn(_, let token):
+            // The caller stores what it is given: not for an account that signed out while the server answered.
+            guard stillSignedIn(since: epoch) else {
+                await revocations.revoke(token, server: server)
+                throw ServerError.accountMissing
+            }
+            return token
         case .notSetUp: return nil
         case .conflict, .accountRefused, .retryLater: throw ServerError.offline
         }
@@ -181,6 +230,9 @@ enum DoddyAccountServers {
     /// 1. the messaging server deletes its account (phone number, updates);
     /// 1b. an account made with Apple has Sign in with Apple ended at Apple (`revokeApple`, decision
     ///    2026-11-09-apple-revoke-for-doddy-accounts); Apple failing is said at the end and doesn't stop the rest;
+    /// 1c. the voice server deletes the account's voice conversations at ElevenLabs (`deleteVoiceConversations`, decision
+    ///    2026-11-12-voice-conversations-per-account). Like the servers above, no answer stops here and leaves the person
+    ///    signed in; an answer with some still pending goes on, and the end says so (`VoiceConversationErasure`);
     /// 2. the backend deletes what it keeps and, with it, the sign-in at the account service (its
     ///    cleanup queue, decision 2026-11-08-required-account), and disconnects the online accounts;
     /// 3. this iPhone's own voice account, if it still has one, is deleted the way it always was;
@@ -196,10 +248,15 @@ enum DoddyAccountServers {
             model.message = NSLocalizedString("Doddy's server isn't set up for Doddy accounts yet, so it can't delete yours. Nothing was deleted. Try again later.", comment: "")
             return
         }
-        if let messaging = ServerConfig.client() {
-            do {
-                try await messaging.deleteAccount()
-            } catch {
+        if let messaging = ServerConfig.client(), let server = ServerConfig.baseURL() {
+            // Decision 2026-11-12-account-deletion-truth: no token on this iPhone, or a refused one, is not "deleted".
+            // The account's own token is minted and the delete tried once more; only a 204, or the server saying it
+            // takes no Doddy accounts, counts (`AccountErasurePlan`).
+            let outcome = await AccountErasurePlan.run(
+                deleteWithStoredToken: { await messaging.deleteAccountWithStoredToken() },
+                mintAccountToken: { await mintMessagingToken(server) },
+                deleteWithToken: { token in await messaging.deleteAccount(withToken: token) })
+            guard outcome.isConfirmed else {
                 model.message = NSLocalizedString("Doddy's server didn't confirm deleting your messaging data, so nothing else was deleted and you're still signed in. Check your connection and try again.", comment: "")
                 return
             }
@@ -211,6 +268,14 @@ enum DoddyAccountServers {
         // Before the backend removes the sign-in at the account service: the voice server checks the
         // account's token to end Sign in with Apple. A failure doesn't stop the deletion; it is said at the end.
         let appleLine = await revokeApple()
+        // Also before the backend removes the sign-in: the voice server checks the account's token for this too.
+        // Unlike Apple, this is Doddy's own server, so with no answer nothing more is deleted and the person stays
+        // signed in to try again (asking again is harmless: it answers 0 and 0 once everything is gone).
+        let conversations = await deleteVoiceConversations()
+        guard conversations.mayContinue else {
+            model.message = NSLocalizedString("Your messaging data was deleted, but Doddy's voice server didn't confirm deleting your voice conversations, so you're still signed in. Check your connection and try again.", comment: "")
+            return
+        }
         guard await DeviceSession.ensure(server: backend) else {
             model.message = NSLocalizedString("Your messaging data was deleted, but Doddy couldn't reach his server to delete the rest, so you're still signed in. Check your connection and try again.", comment: "")
             return
@@ -230,8 +295,46 @@ enum DoddyAccountServers {
         let userID = model.session?.userID
         await model.signOut()
         if let userID { UserDefaults.standard.removeObject(forKey: appleRevokedKey(userID)) }
+        // The agreement to keep voice conversations belonged to this account; the next one is asked again. Nothing
+        // asks yet (`VoiceConsent.requiredVersion` is nil), so this only clears what was never written.
+        VoiceConsent.withdraw()
         let done = NSLocalizedString("Your Doddy account was deleted and this iPhone is signed out. Notes on this iPhone stay.", comment: "")
-        model.message = [done, serverLine, voiceLine, appleLine].compactMap { $0 }.joined(separator: " ")
+        // Voice conversations are named as deleted only when the voice server confirmed all of them (DOD-08).
+        let conversationsLine: String? = switch conversations.finalLine {
+        case .deleted:
+            NSLocalizedString("Your voice conversations were deleted.", comment: "")
+        case .stillDeleting:
+            NSLocalizedString("Some of your voice conversations are still being deleted. Doddy's server keeps trying every day until they're gone.", comment: "")
+        case nil:
+            nil
+        }
+        model.message = [done, serverLine, conversationsLine, voiceLine, appleLine].compactMap { $0 }.joined(separator: " ")
+    }
+
+    /// Step 1c of `deleteAccount`: the voice server deletes the account's voice conversations at ElevenLabs and answers
+    /// counts. Sends the Doddy account's token and this iPhone's old per-install id (`PreferenceKey.voiceUserID`), so
+    /// conversations from before the account's own user id existed are found too. No token, or no answer: not confirmed.
+    private static func deleteVoiceConversations() async -> VoiceConversationErasure.Outcome {
+        guard let token = try? await DoddyAccountModel.shared.accessToken() else { return .notConfirmed }
+        let attempt = await VoiceAuthAPI.shared.deleteConversations(
+            accountToken: token, installID: UserDefaults.standard.string(forKey: PreferenceKey.voiceUserID))
+        return VoiceConversationErasure.outcome(attempt)
+    }
+
+    /// The Doddy account's own token for the messaging server, asked for with the account as after a sign-in
+    /// (`POST /v1/accounts/sign-in`), for deleting its account there when this iPhone keeps no token or a refused
+    /// one (decision 2026-11-12-account-deletion-truth). Used for that one delete and not kept. A refused account
+    /// token is refreshed and asked once more, as `signInMessaging` does.
+    private static func mintMessagingToken(_ server: URL) async -> AccountErasurePlan.Mint {
+        let model = DoddyAccountModel.shared
+        guard let session = await model.freshSession() else { return .failed }
+        var answer = await DoddyAccountLink.signInMessaging(
+            server: server, account: session, earlierDeviceToken: nil, transport: URLSessionTransport.shared)
+        if answer == .accountRefused, (try? await model.refreshAfterRefusal()) != nil, let fresh = model.session {
+            answer = await DoddyAccountLink.signInMessaging(
+                server: server, account: fresh, earlierDeviceToken: nil, transport: URLSessionTransport.shared)
+        }
+        return AccountErasurePlan.Mint(answer)
     }
 
     // MARK: Sign in with Apple, ended when the account is deleted
@@ -267,10 +370,19 @@ enum DoddyAccountServers {
         return NSLocalizedString("Doddy couldn't end its Sign in with Apple link. To remove it yourself, open Settings, tap your name, then Sign in with Apple, choose Doddy and tap Stop Using Apple ID.", comment: "")
     }
 
-    /// Signed out: the account's tokens go from where the clients find them.
+    /// Signed out, or another account took this iPhone over: the account's tokens go from where the clients find
+    /// them, and the messaging server is told to forget this iPhone (security audit 2026-11-09, finding 1).
+    /// Local first and immediate; the server's side is written down as owed before the token leaves the
+    /// Keychain slot the app uses, and tried now and again later until the server answers (`revocations`).
     static func forgetAccountTokens() {
         if let server = DeviceSession.serverURL(), use(.backend, server) == .account { KeychainSessionStore.delete() }
-        if let server = ServerConfig.baseURL(), use(.messaging, server) == .account { try? ServerKeychainStore().delete() }
+        guard let server = ServerConfig.baseURL(), use(.messaging, server) == .account else { return }
+        let store = ServerKeychainStore()
+        let token = try? store.load()
+        if let token { revocations.add(token) }
+        try? store.delete()
+        guard let token else { return }
+        Task { await revocations.revoke(token, server: server) }
     }
 }
 

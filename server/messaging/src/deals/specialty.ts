@@ -2,6 +2,7 @@
 // of thing (pets, shoes, home) is asked only when an item is that kind of thing, so "masło" never sends a
 // request to a shoe shop. E.Leclerc (about 45 hypermarkets) is asked only when the person picks it, because its
 // image leaflets cost a screening on every search. All of this is code: no model decides which shop is asked.
+import { marksIn, markThings } from "./brands.js";
 import type { Chain } from "./types.js";
 
 export type ShopKind = "pets" | "shoes" | "home";
@@ -31,12 +32,13 @@ const WORDS: Record<ShopKind, RegExp> = {
   home: /\b(panel|podlog|wykladzin|dywan|chodnik|drzwi|plytk|kafelk|tapet|firan|zaslon|rolet|karnisz|listw|wycieraczk|laminat|wylozyn|klamk|oscieznic)/,
 };
 
-/** The kinds of the person's items ("karma dla kota" → pets). */
+/** The kinds of the person's items ("karma dla kota" → pets; since 13 Nov 2026 also a pet-food brand alone: "Whiskas"). */
 export function itemKinds(items: readonly string[]): Set<ShopKind> {
   const kinds = new Set<ShopKind>();
   for (const item of items) {
     const f = fold(item);
     for (const [kind, re] of Object.entries(WORDS) as [ShopKind, RegExp][]) if (re.test(f)) kinds.add(kind);
+    if (markThings(marksIn(item)).some((c) => c.group === "pet")) kinds.add("pets");
   }
   return kinds;
 }
