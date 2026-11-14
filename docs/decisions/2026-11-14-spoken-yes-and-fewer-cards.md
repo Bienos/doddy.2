@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-14
 - **Decided by:** owner, 14 Nov 2026: "Ogólnie … co chwilę trzeba coś potwierdzać … karty potwierdzenia lepiej nie cb to mówi a nie potrzebuje kliknięcia zawsze … to psuje flow", then chose "„Tak” głosem na wszystko" (a spoken yes for everything; only payments and bookings keep a tap) and allowed building on #453
-- **Status:** accepted; step 1 of 3 in the pull request that adds this file
+- **Status:** accepted. Step 1 (the table) in the pull request that added this file; step 2a (a spoken yes answers every card but tap-only ones) in the next; steps 2b, 2c and 3 open (below)
 - **Replaces:** in part, `2026-11-11-asked-for-runs-at-once` ("changes keep their card") and the `changes: tap_on_card_with_exact_payload` line of `docs/trust/config/doddy_rules.yaml`, once step 2 lands
 
 ## Why
@@ -23,8 +23,15 @@ Three tiers (`ConfirmationTiers` in DoddyCore):
 
 Steps:
 1. **This pull request:** the table and its tests in DoddyCore. Nothing in the app reads it yet.
-2. **The app follows the table** (after #453 is merged): the voice controller runs the at-once tools without their card and says what it did, keeps Undo, lets the own-payload cards take a spoken yes, and keeps tap only for the third tier. `doddy_rules.yaml`, `voice-agent/tools.json`, `scripts/voice_agent_spec.py` and `docs/trust/ASK_FIRST.md` change in the same pull request, so the rules never say something the code doesn't do.
+2. **The app follows the table**, in three parts so each stays reviewable:
+   - **2a, a spoken yes answers the cards.** Every card but the tap-only ones takes the person's own yes (`SpokenConfirmation` in DoddyCore, `spokenAnswer` in the voice controller): the strict `SpokenYes`, from the user's side only, at least **one second** after the card appeared (Doddy has begun reading it out; words left over from before don't count) and within its 120 s, and never while the card waits for the person to choose something (several places Maps found for a note's reminder). A card that changes on screen counts from its change. The cards `AskFirst` makes (removing from a list, forgetting the parking spot, a task handed over, a Studio job, opening a food app) are `.yesFirst` and turn back into a tap once outside text is in the conversation; the tools' own payload cards and the server's write cards are checked against the tier as it is when the yes is heard. `doddy_rules.yaml`, `voice-agent/tools.json` (`x_doddy.ask`: `yes_or_tap` for 64 tools, `tap` for the three), `scripts/voice_agent_spec.py`, `scripts/check_forbidden_capabilities.sh`, `docs/trust/ASK_FIRST.md` and the screens' "only after you tap" lines change with it.
+   - **2b, at once.** The at-once tools that change nothing or already have Undo lose their card: `save_memory`, `create_reminder`, `add_ingredients`, `undo_last`, the drafts and hand-overs (`draft_message`, `draft_blik_transfer`, `draft_invoice`, `make_presentation`, `lost_wallet`, `open_map`, `open_camera`, `open_food_app`, the last four only while Doddy is on screen, so "opened" is never said of something iOS didn't open).
+   - **2c, Undo first, then at once.** `set_timer`, `set_alarm`, `create_list`, `remind_me_about_note`, `remind_when_to_leave` and saving the parking spot have no Undo in "What Doddy did" (`ActivityUndo`), and a new parking spot replaces the old one for good; each keeps its card, answered by a yes, until it has one.
 3. **The live agent** (the owner's separate word, after a TestFlight build with step 2): the prompt's "A spoken yes is not enough there" and the tools' descriptions change to "read the exact payload, then a yes is enough; payments and bookings need a tap". Changing the agent first would tell people to say yes to an app that still waits for a tap.
+
+Known gaps of 2a, said plainly:
+- **The yes words** cover English, Polish, German, French, Spanish, Italian, Dutch and Portuguese (`SpokenYes`). Croatian, Japanese and Chinese have none, so there the English "yes" is the only spoken yes, and those screens show the English line about it. Adding words for them is the owner's call (the list's own comment).
+- **The agent still says "tap"** until step 3: its prompt and tool descriptions are unchanged, so a person may hear "tap the card" and find that "tak" also works.
 
 ## Consequences
 - Fewer stops: a timer, an alarm, a reminder or a note from the Action Button no longer needs the phone in hand; a message or a calendar change needs only "tak" after Doddy reads it.

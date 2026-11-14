@@ -612,7 +612,7 @@ struct VoiceView: View {
     /// (owner, 10 Nov 2026), but nobody should find out late that the microphone stays on.
     private var listeningNotice: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Doddy keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap for it.",
+            Label("Doddy keeps listening if you leave the app, until you tap End. Nothing is saved, sent or opened unless you tap or say yes on its card.",
                   systemImage: "waveform")
                 .font(.footnote)
             HStack(spacing: 16) {
@@ -636,7 +636,9 @@ struct VoiceView: View {
         HStack(spacing: 12) {
             VoiceDoddyView(art: screenArt(controller), height: 44)
             Text(controller.pendingAction != nil || controller.accessRequest != nil || controller.accountNeeded != nil
-                 ? NSLocalizedString("Doddy needs your tap", comment: "Pop-up card header")
+                 ? (controller.pendingTakesSpokenYes
+                    ? NSLocalizedString("Say yes, or tap", comment: "Pop-up card header when a spoken yes answers the card")
+                    : NSLocalizedString("Doddy needs your tap", comment: "Pop-up card header"))
                  : NSLocalizedString("From Doddy", comment: "Pop-up card header"))
                 .font(.headline)
             Spacer(minLength: 0)
@@ -1066,7 +1068,7 @@ struct VoiceView: View {
             ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                 Label(item, systemImage: "square")
             }
-            Text("Fix the name if Doddy misheard. Nothing is made until you tap Create list.")
+            Text("Fix the name if Doddy misheard. Nothing is made until you tap Create list or say yes.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         case .noteReminder(_, _, let noteText, let savedAt, let target):
@@ -1097,7 +1099,7 @@ struct VoiceView: View {
                 Text(line)
                     .font(.body)
             }
-            Text(needsTap ? "Nothing changes until you tap." : "Say yes, or tap. Nothing is looked at before that.")
+            Text(needsTap ? "Nothing changes until you tap." : "Say yes, or tap. Nothing happens before that.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         case .cloudRead(_, _, let preview, _, let mode):
