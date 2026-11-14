@@ -43,9 +43,15 @@ AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call",
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
-# ASK-01: a read takes the user's spoken yes or a tap; a change only a tap. ADR-575: a public
-# lookup (the web, the weather, Wikipedia, news, places, sums, conversions) runs at once.
+# ASK-01: a tool shows a card first ("yes_or_tap" or "tap") or runs at once ("runs_now"). ADR-575: a public
+# lookup (the web, the weather, Wikipedia, news, places, sums, conversions) runs at once. Since 14 Nov 2026
+# (decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md) a card takes the person's own spoken yes or a
+# tap ("yes_or_tap"), except money and bookings, which take a tap only ("tap"). The app also asks for a tap once text
+# from outside is in the conversation; that is per conversation, so it isn't written here.
 ASK = {"yes_or_tap", "tap", "runs_now"}
+# Money and bookings: a tap only. The same set is `ConfirmationTiers.tapOnly` in DoddyCore; ToolCatalogTests keeps
+# tools.json in step with it.
+TAP_ONLY = {"pay_for_page", "book_flight", "call_places"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
 PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
                   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
@@ -316,8 +322,10 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: ASK-01 needs every tool that asks to run on the phone, where the app asks first; only a runs_now lookup may run on the web")
         if x.get("ask") not in ASK:
             errors.append(f"tool {name}: x_doddy.ask must be one of {sorted(ASK)} (ASK-01)")
-        if (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
-            errors.append(f"tool {name}: x_doddy.ask 'tap' and confirm_on_screen go together (ASK-01)")
+        if (x.get("ask") in ("tap", "yes_or_tap")) != bool(x.get("confirm_on_screen")):
+            errors.append(f"tool {name}: x_doddy.ask 'tap' or 'yes_or_tap' and confirm_on_screen go together (ASK-01)")
+        if (x.get("ask") == "tap") != (name in TAP_ONLY):
+            errors.append(f"tool {name}: only money and bookings ({', '.join(sorted(TAP_ONLY))}) are 'tap'; every other card is 'yes_or_tap' (decision 2026-11-14-spoken-yes-and-fewer-cards)")
         if runs_now and name not in RUNS_NOW:
             errors.append(f"tool {name}: only the public lookups, translator start/stop, text_me, looks at the user's own things and Doddy's own small actions may run without asking (ADR-575, ADR-619, decisions 2026-11-09-restaurant-calls-one-tap and 2026-11-11-asked-for-runs-at-once); a tool that changes, sends, deletes, calls or pays keeps its card")
         if not runs_now and name in RUNS_NOW:

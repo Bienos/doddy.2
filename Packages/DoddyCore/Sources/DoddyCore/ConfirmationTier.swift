@@ -95,3 +95,13 @@ public enum SpokenConfirmation {
         return SpokenYes.isYes(words)
     }
 }
+
+extension ConfirmationTiers {
+    /// What `voice-agent/tools.json` says for a tool (`x_doddy.ask`), the agent's half of the same rule: `runs_now`
+    /// for what the app runs at once without a card (`AskFirst.runsAtOnce`), `tap` for money and bookings, and
+    /// `yes_or_tap` for every other tool, which shows a card the person's spoken yes or a tap answers.
+    public static func specAsk(for tool: String) -> RealtimeToolSpec.Ask {
+        if AskFirst.runsAtOnce(tool) { return .runsNow }
+        return tier(for: tool) == .tapOnly ? .tap : .yesOrTap
+    }
+}

@@ -272,11 +272,15 @@ final class VoiceSessionController {
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? {
         didSet {
+            // A new card, or the person changed what it shows: a spoken yes counts from now (`SpokenConfirmation`).
+            if pendingAction != oldValue { pendingShownAt = pendingAction == nil ? nil : Date() }
             syncIsland()
             // ADR-616: a new card opens the island up while Doddy isn't on screen.
             if oldValue == nil, pendingAction != nil { expandIslandForCard() }
         }
     }
+    /// When the card now up appeared, or last changed (decision 2026-11-14-spoken-yes-and-fewer-cards).
+    private var pendingShownAt: Date?
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
     /// The payment card the voice agent asked for (ADR-736). Only a page address came from the agent; the card
@@ -2048,20 +2052,32 @@ final class VoiceSessionController {
 
     /// DOD-07, on top of `AskFirst.need(for:)`: once text from outside has reached this conversation, the few tools that
     /// could carry it out of the phone (a text, a file or a question to Claude with material, a look at the screen,
-    /// items on a shared list) ask for a tap too, and `make_document` and the first look always do
-    /// (`AskFirst.need(for:in:listIsShared:)`). True when it showed that card and the call stops here; false when the
-    /// session rule adds nothing, or the user already tapped for exactly this call, and the baseline check follows.
-    private func asksBecauseOfOutsideContent(_ call: ClientToolCallEvent, request: VoiceToolRequest) async -> Bool {
+    /// items on a shared list) ask for a tap too, and `make_document` and the first look always do; so do the cards a
+    /// spoken yes answers otherwise (`AskFirst.need(for:in:listIsShared:)`). `.cardShown` when it showed that card and
+    /// the call stops here; `.tapped` when the user tapped it for exactly this call; `.notHeld` when the session rule
+    /// adds nothing and the baseline check follows.
+    private func asksBecauseOfOutsideContent(_ call: ClientToolCallEvent, request: VoiceToolRequest) async -> SessionAsk {
         let onSharedList = await targetsSharedList(request)
         let need = AskFirst.need(for: request, in: outsideContent, listIsShared: onSharedList, polish: Self.cardsInPolish)
-        guard need != AskFirst.need(for: request, polish: Self.cardsInPolish), case .tapFirst(let card) = need else { return false }
+        guard need != AskFirst.need(for: request, polish: Self.cardsInPolish), case .tapFirst(let card) = need else { return .notHeld }
         guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
             askLedger.asked(call.toolCallId, request: request, needsTap: true, at: Date())
             propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: true, toolName: call.toolName, parameters: call.parametersData),
                     toolCallID: call.toolCallId)
-            return true
+            return .cardShown
         }
-        return false
+        return .tapped
+    }
+
+    /// What the outside-content rule did with a call.
+    private enum SessionAsk {
+        /// It holds nothing back: the call asks, or runs, as `AskFirst.need(for:)` says.
+        case notHeld
+        /// It showed its tap-only card; the call stops here until the tap.
+        case cardShown
+        /// The person tapped that card for exactly this call (the ledger's yes is used up), so the call asks nothing
+        /// more: a card a spoken yes could have answered (`.yesFirst`) is not shown a second time.
+        case tapped
     }
 
     /// True when `request` adds to or ticks items on a list that other people are on. Their changes sync to everyone
@@ -2988,13 +3004,15 @@ final class VoiceSessionController {
                 return
             }
         }
-        // ASK-01 (ADR-483) as it stands since 11 Nov 2026: a change with no card of its own waits here for the
-        // user's tap for exactly this call. Tools with a payload card of their own (and the server's writes)
-        // ask through that card. What the user asked to see or start of their own runs at once (`.runsNow`).
-        if await asksBecauseOfOutsideContent(call, request: request) { return }
+        // ASK-01 (ADR-483) as it stands since 14 Nov 2026: a change with no card of its own waits here for the
+        // user's tap, or their own spoken yes (`spokenAnswer`), for exactly this call; after outside text, a tap only.
+        // Tools with a payload card of their own (and the server's writes) ask through that card. What the user asked
+        // to see or start of their own runs at once (`.runsNow`). Decision 2026-11-14-spoken-yes-and-fewer-cards.
+        let sessionAsk = await asksBecauseOfOutsideContent(call, request: request)
+        if sessionAsk == .cardShown { return }
         switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
         case .yesFirst(let card), .tapFirst(let card):
-            guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
+            guard sessionAsk == .tapped || askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
                 let needsTap = AskFirst.needsTap(AskFirst.need(for: request))
                 askLedger.asked(call.toolCallId, request: request, needsTap: needsTap, at: Date())
                 propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
@@ -4026,18 +4044,36 @@ final class VoiceSessionController {
         }
     }
 
-    /// ASK-01: the user's own words while a read's card is up. Only a short, clear yes counts
-    /// (`SpokenYes`); a change never runs on words, only on a tap.
+    /// The user's own words while a card is up (decision 2026-11-14-spoken-yes-and-fewer-cards, replacing "a change
+    /// never runs on words"). A short, clear yes (`SpokenYes`), said at least a second after the card appeared and
+    /// while it still waits, runs exactly what the card shows, as its button would, unless the tool is tap only
+    /// (money, bookings, anything unclassified, and every change once text from outside is in this conversation) or
+    /// the card waits for the person to choose something on it (`SpokenConfirmation`). Anything else leaves the card
+    /// up for a tap. Only the user's own transcribed words reach here; the agent's, a tool's or a page's never do.
     private func spokenAnswer(_ text: String) async {
-        guard let action = pendingAction else { return }
-        let id: String
+        guard let action = pendingAction, let shownAt = pendingShownAt,
+              let call = callsAsReceived[action.toolCallID] else { return }
+        let now = Date()
+        let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parameters)
+        let tier = ConfirmationTiers.tier(for: request, toolName: call.toolName, outsideContentSeen: outsideContent.outsideContentSeen)
+        guard SpokenConfirmation.runs(text, tier: tier, cardShownAt: shownAt, now: now, waitsForAChoice: action.waitsForAChoice) else { return }
         switch action {
-        case .ask(let callID, _, false, _, _), .cloudRead(let callID, _, _, _, _): id = callID
-        default: return
+        case .ask(let id, _, let needsTap, _, _):
+            // AskFirst's own card keeps the ledger's contract: one yes, for exactly this request, used once. An ask
+            // made with needsTap (the session rule's cards after outside text) is never answered by words.
+            guard !needsTap, askLedger.answer(.userSaid(text), for: id, at: now) == .granted, pendingAction == action else { return }
+            pendingAction = nil
+            await runAsked(action, attempt: startAttempt)
+        case .cloudRead(let id, _, _, _, _):
+            guard askLedger.answer(.userSaid(text), for: id, at: now) == .granted, pendingAction == action else { return }
+            pendingAction = nil
+            await runAsked(action, attempt: startAttempt)
+        default:
+            // The tool's own payload card, or the server's write card with its single-use approval for exactly these
+            // arguments: the same path as the card's button, for the card as it is on screen now.
+            guard pendingAction == action else { return }
+            await confirmPendingAction()
         }
-        guard askLedger.answer(.userSaid(text), for: id, at: Date()) == .granted, pendingAction == action else { return }
-        pendingAction = nil
-        await runAsked(action, attempt: startAttempt)
     }
 
     /// The user tapped the card. The approval is for exactly the arguments the card showed. A lost
@@ -5351,6 +5387,13 @@ private final class AttemptRef: @unchecked Sendable {
 }
 
 private extension VoiceSessionController.PendingAction {
+    /// The card asks the person to choose something a "yes" doesn't say: which of several places Apple Maps found for
+    /// a note's reminder. A spoken yes leaves it up for a tap (`SpokenConfirmation`).
+    var waitsForAChoice: Bool {
+        if case .noteReminder(_, _, _, _, .place(let results, _)) = self { return results.count > 1 }
+        return false
+    }
+
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {

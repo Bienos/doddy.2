@@ -169,16 +169,18 @@ final class AskFirstTests: XCTestCase {
         XCTAssertEqual(AskFirst.need(for: .parkingSpot(.find)), .runsNow)
 
         // The spec the live agent is built from says `runs_now` for exactly the tools the app runs at
-        // once, and `tap` for every other one. Nothing is left that a spoken yes could answer.
+        // once, `tap` for money and bookings, and `yes_or_tap` for every other card (decision
+        // 2026-11-14-spoken-yes-and-fewer-cards).
         let spec = try repoSpec()
         XCTAssertFalse(spec.isEmpty)
         for tool in spec {
             XCTAssertEqual(AskFirst.runsAtOnce(tool.name), tool.ask == .runsNow, "\(tool.name): tools.json says \(String(describing: tool.ask))")
             XCTAssertEqual(tool.ask == .runsNow, !tool.confirmOnScreen, "\(tool.name): runs_now and confirm_on_screen")
+            XCTAssertEqual(tool.ask, ConfirmationTiers.specAsk(for: tool.name), tool.name)
         }
-        XCTAssertEqual(Set(spec.compactMap(\.ask)), [.runsNow, .tap])
+        XCTAssertEqual(Set(spec.compactMap(\.ask)), [.runsNow, .tap, .yesOrTap])
         XCTAssertEqual(spec.filter { $0.ask == nil }.map(\.name), [])
-        XCTAssertEqual(spec.filter { $0.ask == .yesOrTap }.map(\.name), [], "no tool is yes_or_tap any more")
+        XCTAssertEqual(Set(spec.filter { $0.ask == .tap }.map(\.name)), ["pay_for_page", "book_flight", "call_places"])
         let specRunsNow = Set(spec.filter { $0.ask == .runsNow }.map(\.name))
         XCTAssertEqual(
             specRunsNow,
@@ -207,8 +209,8 @@ final class AskFirstTests: XCTestCase {
         for name in ["save_memory", "create_calendar_event", "delete_calendar_event", "send_email", "hand_over_errand",
                      "make_something", "call_places", "remove_from_list"] {
             XCTAssertNotNil(ToolCatalog.descriptor(name), "\(name) is a tool the app has")
-            XCTAssertFalse(AskFirst.runsAtOnce(name), "\(name) still needs a tap")
-            XCTAssertEqual(spec.first { $0.name == name }?.ask, .tap, name)
+            XCTAssertFalse(AskFirst.runsAtOnce(name), "\(name) still shows its card")
+            XCTAssertEqual(spec.first { $0.name == name }?.ask, name == "call_places" ? .tap : .yesOrTap, name)
             XCTAssertNotEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name)
         }
     }

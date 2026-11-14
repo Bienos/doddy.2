@@ -231,14 +231,16 @@ if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_onl
   echo "FAIL: password, passkey or credential-provider APIs; only Sign in with Apple is allowed (ADR-494)." >&2; status=1
 fi
 # ASK-01 (ADR-483) as it stands since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once): a tool that changes,
-# sends, deletes, calls or pays must run on the phone behind a card ('tap' with confirm_on_screen). Only the tools in
-# scripts/voice_agent_spec.py's RUNS_NOW may run at once: ADR-575's public lookups, translator start and stop
-# (ADR-619), text_me to the user's own number, looks at the user's own things, reads through Doddy's server and
-# Doddy's own small actions. RUNS_NOW mirrors AskFirst.runsAtOnce in DoddyCore, which ToolCatalogTests pins.
+# sends, deletes, calls or pays must run on the phone behind a card ('yes_or_tap' or 'tap', with confirm_on_screen).
+# Only the tools in scripts/voice_agent_spec.py's RUNS_NOW may run at once: ADR-575's public lookups, translator start
+# and stop (ADR-619), text_me to the user's own number, looks at the user's own things, reads through Doddy's server and
+# Doddy's own small actions. RUNS_NOW mirrors AskFirst.runsAtOnce in DoddyCore, which ToolCatalogTests pins. Since
+# 14 Nov 2026 (decision 2026-11-14-spoken-yes-and-fewer-cards) a card takes a spoken yes, except money and bookings
+# (voice_agent_spec.py's TAP_ONLY, DoddyCore's ConfirmationTiers.tapOnly), which must stay 'tap'.
 if ! python3 -I - voice-agent/tools.json scripts <<'PY'
 import json, sys
 sys.path.insert(0, sys.argv[2])
-from voice_agent_spec import RUNS_NOW, RUNS_NOW_MODES, RUNS_NOW_OWN_TEXT, PUBLIC_LOOKUPS
+from voice_agent_spec import RUNS_NOW, RUNS_NOW_MODES, RUNS_NOW_OWN_TEXT, PUBLIC_LOOKUPS, TAP_ONLY
 PHONE_ONLY = RUNS_NOW - PUBLIC_LOOKUPS
 bad = []
 for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
@@ -249,14 +251,17 @@ for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
         if x.get("confirm_on_screen") or name not in RUNS_NOW or (name in PHONE_ONLY and x.get("runs_on") != "phone"):
             bad.append(name)
         continue
-    if x.get("runs_on") != "phone" or x.get("ask") != "tap" or not x.get("confirm_on_screen"):
+    if x.get("runs_on") != "phone" or x.get("ask") not in ("tap", "yes_or_tap") or not x.get("confirm_on_screen"):
+        bad.append(name)
+    elif (x.get("ask") == "tap") != (name in TAP_ONLY):
+        # Money and bookings take a tap only; a spoken yes is never enough there.
         bad.append(name)
 if bad:
     print("tools without an ask:", ", ".join(map(str, bad)))
     sys.exit(1)
 PY
 then
-  echo "FAIL: ASK-01: every voice tool that changes something must run on the phone behind a card (x_doddy.ask 'tap' with confirm_on_screen); only voice_agent_spec.py's RUNS_NOW may run at once (decision 2026-11-11-asked-for-runs-at-once)." >&2; status=1
+  echo "FAIL: ASK-01: every voice tool that changes something must run on the phone behind a card (x_doddy.ask 'yes_or_tap', or 'tap' for money and bookings, with confirm_on_screen); only voice_agent_spec.py's RUNS_NOW may run at once (decisions 2026-11-11-asked-for-runs-at-once, 2026-11-14-spoken-yes-and-fewer-cards)." >&2; status=1
 fi
 voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
 if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then

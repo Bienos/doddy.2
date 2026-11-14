@@ -87,6 +87,16 @@ final class SpokenConfirmationTests: XCTestCase {
         XCTAssertFalse(ConfirmationTier.tapOnly.acceptsSpokenYes)
     }
 
+    func testTheSpecSaysWhatTheAppDoes() {
+        XCTAssertEqual(ConfirmationTiers.specAsk(for: "web_search"), .runsNow)
+        XCTAssertEqual(ConfirmationTiers.specAsk(for: "add_to_list"), .runsNow)
+        XCTAssertEqual(ConfirmationTiers.specAsk(for: "send_email"), .yesOrTap)
+        XCTAssertEqual(ConfirmationTiers.specAsk(for: "set_timer"), .yesOrTap, "still shows its card until it runs at once")
+        XCTAssertEqual(ConfirmationTiers.specAsk(for: "pay_for_page"), .tap)
+        XCTAssertEqual(ConfirmationTiers.specAsk(for: "call_places"), .tap)
+        XCTAssertEqual(ConfirmationTiers.specAsk(for: "no_such_tool"), .tap, "unknown fails safe")
+    }
+
     // MARK: The tier of a call as it came in
 
     func testTheParkingSpotsTierIsItsActions() {
