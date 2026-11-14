@@ -29,18 +29,24 @@ struct VoiceTokenClient: Sendable {
     /// The status, the body and the reply's Retry-After header, which says how long a 429 lasts (the
     /// message reads it in minutes, hours or "tomorrow", ADR-712).
     private func post(agent: VoiceAgentKind) async throws(VoiceTokenError) -> (Int, Data, String?) {
-        var request = URLRequest(url: endpoint, timeoutInterval: 15)
-        request.httpMethod = "POST"
-        if let body = agent.requestBody {
-            request.httpBody = body
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Decision 2026-11-12-one-token-per-server: signed in to a Doddy account, the voice server's own session for it
+        // goes first (made once with the account's token, kept, renewed); the account's own token is what is sent when no
+        // session can be had (an older server, the exchange not completing) or the session was refused twice, exactly as
+        // before. A 401 for a session is forgotten and asked for once more. Any other answer, a rate limit included, is
+        // read as it always was. The rules are `VoiceTokenAttempt` in DoddyCore, tested on Linux.
+        let withAccount = await VoiceTokenAttempt.run(
+            sessionToken: { await DoddyAccountServers.voiceSessionToken() },
+            sessionRefused: { token in await DoddyAccountServers.voiceSessionRefused(token) },
+            accountToken: { await DoddyAccountServers.voiceAccountToken() },
+            send: { bearer in await attempt(agent: agent, bearer: bearer) })
+        if let withAccount {
+            let answer = try withAccount.get()
+            return (answer.status, answer.body, answer.retryAfter)
         }
-        var accessToken: String?
-        // Decision 2026-11-08-required-account: the Doddy account's token, unless this iPhone still has its
-        // own voice session (that one works whether or not the voice server takes accounts yet).
-        let accountToken = await DoddyAccountServers.voiceAccountToken()
-        if let accountToken { accessToken = accountToken }
-        else { do { accessToken = try await VoiceAuthSession.shared.bearerToken() }
+        // No Doddy account token of any kind (signed out, or none could be had): this iPhone's own older voice session,
+        // which works whether or not the voice server takes accounts yet.
+        let bearer: String
+        do { bearer = try await VoiceAuthSession.shared.bearerToken() }
         catch let error as VoiceAuthFailure {
             switch error {
             case .offline: throw .offline
@@ -52,8 +58,22 @@ struct VoiceTokenClient: Sendable {
             }
         } catch {
             throw .badResponse
-        } }
-        if let accessToken { request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization") }
+        }
+        let answer = try await attempt(agent: agent, bearer: bearer).get()
+        // A refused account token says nothing about the voice session, so only this path forgets it.
+        if answer.status == 401 { await VoiceAuthSession.shared.serverRejectedSession() }
+        return (answer.status, answer.body, answer.retryAfter)
+    }
+
+    /// One request to the token server with this bearer. A request that couldn't be made is the failure, never retried here.
+    private func attempt(agent: VoiceAgentKind, bearer: String) async -> Result<VoiceTokenAnswer, VoiceTokenError> {
+        var request = URLRequest(url: endpoint, timeoutInterval: 15)
+        request.httpMethod = "POST"
+        if let body = agent.requestBody {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
         let data: Data
         let response: URLResponse
         // One ephemeral session per fetch, as before, but released when it is done (review H11):
@@ -67,14 +87,12 @@ struct VoiceTokenClient: Sendable {
         } catch {
             // Only a missing or lost connection is "offline"; a cancelled request, a timeout and a
             // refused secure connection each say what happened (ADR-681).
-            throw VoiceTokenServer.loadingFailure(error)
+            return .failure(VoiceTokenServer.loadingFailure(error))
         }
         // An answer from any other address than the one asked isn't read.
-        guard BearerHost.answered(response.url, sameAs: endpoint) else { throw .badResponse }
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        // A refused account token says nothing about the voice session, so that one is left alone.
-        if status == 401, accountToken == nil { await VoiceAuthSession.shared.serverRejectedSession() }
-        return (status, data, (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After"))
+        guard BearerHost.answered(response.url, sameAs: endpoint) else { return .failure(.badResponse) }
+        let http = response as? HTTPURLResponse
+        return .success(VoiceTokenAnswer(status: http?.statusCode ?? 0, body: data, retryAfter: http?.value(forHTTPHeaderField: "Retry-After")))
     }
 }
 

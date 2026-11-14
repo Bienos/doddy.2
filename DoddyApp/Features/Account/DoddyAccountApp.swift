@@ -69,9 +69,17 @@ enum DoddyAccountServers {
     /// audit 2026-11-09, finding 1). Written down before the token leaves the Keychain slot the app uses.
     static let revocations = PendingDeviceRevocations(store: ServerPendingRevocationStore(), transport: URLSessionTransport.shared)
 
-    /// Asks the messaging server again about every token still owed a revocation. Needs no sign-in: the
-    /// token itself is the proof, and it is used for nothing else.
+    /// The voice server's own session for the signed-in Doddy account, and the sign-outs still owed to that server
+    /// (decision 2026-11-12-one-token-per-server). The rules are `VoiceAccountSessions` in DoddyCore, tested on Linux; the
+    /// Keychain slots are `VoiceAccountSessionKeychain` and `ServerPendingRevocationStore.voiceSessions`.
+    static let voiceSessions = VoiceAccountSessions(
+        pairs: VoiceAccountSessionKeychain(), owed: ServerPendingRevocationStore.voiceSessions,
+        accounts: SignedInVoiceAccount(), endpoint: { VoiceConfig.authEndpoint }, transport: URLSessionTransport.shared)
+
+    /// Asks the messaging server again about every token still owed a revocation, and the voice server about every
+    /// session still owed a sign-out. Needs no sign-in: the token itself is the proof, and it is used for nothing else.
     static func retryRevocations() async {
+        await voiceSessions.retryOwed()
         guard revocations.count > 0, let server = ServerConfig.baseURL() else { return }
         await revocations.retry(server: server)
     }
@@ -216,11 +224,27 @@ enum DoddyAccountServers {
     /// account. An older voice session kept in the Keychain from an earlier build no longer wins over it:
     /// it can be dead, and then a signed-in person was told "Your voice session expired" at the start
     /// (8 Nov 2026, decision 2026-11-08-voice-prefers-doddy-account). Signed out: nil, and the voice
-    /// session is used as before.
+    /// session is used as before. Since decision 2026-11-12-one-token-per-server this is the fallback: the voice server's
+    /// own session for the account goes first (`voiceSessionToken`), and this token is sent only when no session can be
+    /// had, which is exactly what was sent before that decision (the server accepts both for one release).
     static func voiceAccountToken() async -> String? {
         let model = DoddyAccountModel.shared
         guard model.isSignedIn else { return nil }
         return try? await model.accessToken()
+    }
+
+    /// For the voice token server (decision 2026-11-12-one-token-per-server): its own access token for the signed-in
+    /// account. Made with a fresh account token when this iPhone has none (or the server refused it), renewed with the
+    /// rotating refresh token, and kept in the Keychain. Nil when signed out or when no session can be had now (an
+    /// older server, a limit, offline); `VoiceTokenClient` then sends `voiceAccountToken()` as before.
+    static func voiceSessionToken() async -> String? {
+        guard DoddyAccountModel.shared.isSignedIn else { return nil }
+        return await voiceSessions.accessToken()
+    }
+
+    /// The voice token server refused the session's access token (401): forget it here and end it at the server.
+    static func voiceSessionRefused(_ token: String) {
+        voiceSessions.refused(token)
     }
 
     // MARK: Deleting the account
@@ -385,6 +409,10 @@ enum DoddyAccountServers {
     /// Local first and immediate; the server's side is written down as owed before the token leaves the
     /// Keychain slot the app uses, and tried now and again later until the server answers (`revocations`).
     static func forgetAccountTokens() {
+        // The voice server's session for this account (decision 2026-11-12-one-token-per-server): gone from this iPhone
+        // before this returns, its sign-out written down as owed and tried now and at each launch until the server
+        // answers. Nothing says it ended until it did (DOD-08). Deleting the account comes through here too.
+        voiceSessions.signedOut()
         if let server = DeviceSession.serverURL(), use(.backend, server) == .account { KeychainSessionStore.delete() }
         guard let server = ServerConfig.baseURL(), use(.messaging, server) == .account else { return }
         let store = ServerKeychainStore()
@@ -393,6 +421,21 @@ enum DoddyAccountServers {
         try? store.delete()
         guard let token else { return }
         Task { await revocations.revoke(token, server: server) }
+    }
+}
+
+/// Who is signed in, and the account's own token for the exchange with the voice server (`VoiceAccountSessions`).
+@MainActor
+struct SignedInVoiceAccount: VoiceAccountTokenSource {
+    var accountID: String? { DoddyAccountModel.shared.session?.userID }
+
+    func freshToken() async -> String? {
+        try? await DoddyAccountModel.shared.accessToken()
+    }
+
+    /// The server refused the token: a new one now, once (as `signInMessaging` does).
+    func tokenAfterRefusal() async -> String? {
+        try? await DoddyAccountModel.shared.refreshAfterRefusal()
     }
 }
 
