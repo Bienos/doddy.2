@@ -34,7 +34,9 @@ const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
  * @property {string} [ELEVENLABS_API_KEY]  server-only secret
  * @property {string} [ELEVENLABS_AGENT_ID] the authenticated Doddy agent
  * @property {string} [ELEVENLABS_TRANSLATOR_AGENT_ID] the authenticated translator-only agent; defaults to DEFAULT_TRANSLATOR_AGENT_ID
- * @property {string} [DODDY_SESSION_SIGNING_KEY] also makes the keyed hashes that tie a conversation to its account
+ * @property {string} [DODDY_SESSION_SIGNING_KEY] the master key (`src/keys.js`); also makes the keyed hashes that tie a conversation to its account, unless DODDY_IDENTIFIER_KEY is set
+ * @property {string} [DODDY_SESSION_SIGNING_KEY_PREVIOUS] optional, for a rotation: accepted for checking only
+ * @property {string} [DODDY_IDENTIFIER_KEY] optional, for a rotation: the key of those keyed hashes, kept when the signing key changes
  * @property {string} [DODDY_TOKENS_PER_HOUR] per DODDY account; default 30
  * @property {string} [DODDY_TOKENS_PER_DAY] per DODDY account per UTC day; default 150
  * @property {string} [DODDY_GLOBAL_TOKENS_PER_HOUR] global shared limit; default 100

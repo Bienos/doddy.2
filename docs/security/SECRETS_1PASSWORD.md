@@ -42,7 +42,7 @@ A reference such as `op://doddy-prod/openai-api/credential` names a vault, an it
 |---|---|---|---|---|
 | `ELEVENLABS_API_KEY` | `elevenlabs-api` | `vercel:doddy-voice-token`, `render:doddy-messaging` | yes | yes |
 | `OPENAI_API_KEY` | `openai-api` | `vercel:doddy-voice-token`, `vercel:doddy-gateway`, `render:doddy-messaging` | yes | yes |
-| `DODDY_SESSION_SIGNING_KEY` | `voice-token-session-signing-key` | `vercel:doddy-voice-token` | **no**: changing it signs everyone out and changes the Apple ids the server derives from it and the ids under which each account's voice conversations are recorded | yes |
+| `DODDY_SESSION_SIGNING_KEY` | `voice-token-session-signing-key` | `vercel:doddy-voice-token` | **no**: replacing it is a written procedure (`server/voice-token/README.md`, "Rotating the signing key"); done any other way it changes the Apple ids the server derives from it and the ids under which each account's voice conversations are recorded | yes |
 | `UPSTASH_REDIS_REST_TOKEN` | `upstash-voice-token` | `vercel:doddy-voice-token` | yes | no |
 | `CRON_SECRET` | `voice-token-cron-secret` | `vercel:doddy-voice-token` | yes | no |
 | `UPSTASH_REDIS_REST_TOKEN` | `upstash-gateway` | `vercel:doddy-gateway` | yes | no |
@@ -145,7 +145,7 @@ The text comes from `rotate` in the manifest.
 |---|---|
 | `ELEVENLABS_API_KEY` (server/voice-token, server/messaging) | Make a new key in ElevenLabs, put it here, sync and redeploy both hosts, then delete the old key in ElevenLabs. A host still holding the deleted key can't start voice or phone calls. |
 | `OPENAI_API_KEY` (server/voice-token, gateway, server/messaging) | Make a new key in the OpenAI project, put it here, sync and redeploy all three, then revoke the old one. Plan: one key per service at the next rotation. |
-| `DODDY_SESSION_SIGNING_KEY` (server/voice-token) | Signs everyone out and changes the pseudonymous Apple subject ids. Rotate only with a written plan; never as part of a sync. |
+| `DODDY_SESSION_SIGNING_KEY` (server/voice-token) | Follow `server/voice-token/README.md`, "Rotating the signing key": first set `DODDY_IDENTIFIER_KEY` to the current value (so the pseudonymous Apple subject ids and the conversation record keys stay as they are), then put the current value in `DODDY_SESSION_SIGNING_KEY_PREVIOUS` and a new one here. Nobody is signed out. Keep the previous key up to 400 days, the longest an Apple link is kept sealed. Never as part of a sync. |
 | `UPSTASH_REDIS_REST_TOKEN` (server/voice-token) | Reset the token in Upstash, put it here, sync and redeploy. The server fails closed until it has the new token. |
 | `UPSTASH_REDIS_REST_TOKEN` (gateway) | Only if the gateway uses Upstash directly; a Vercel Marketplace store sets KV_REST_API_* itself. Reset in Upstash, sync, redeploy. |
 | `GATEWAY_TOKEN_SECRET` (gateway) | Signs every device out and resets the hashed counters in the store. Rotate only on purpose. |
