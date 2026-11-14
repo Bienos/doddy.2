@@ -24,7 +24,8 @@ import type { MemoryService } from "./service.js";
  *  - All of it is data, never instructions. There are no tools: it can only answer.
  *  - Nothing is stored on the server: the page sends the earlier turns it shows. Logs carry counts
  *    and tokens only.
- *  - Each question counts against the same daily caps as Ask Doddy, before anything is read.
+ *  - Each question counts against the person's daily total shared with Ask Doddy, and against the
+ *    chat's own server-wide pool (`service:web_chat`), before anything is read.
  */
 
 export const CHAT_TIMEOUT_MS = 30_000;
@@ -72,7 +73,7 @@ export class MemoryChat {
       memory: MemoryService;
       store: Store;
       claude: ClaudeProvider | null;
-      limits: Pick<Limits, "userDailyAsk" | "serviceDailyAsk">;
+      limits: Pick<Limits, "userDailyAsk" | "serviceDailyWebChat">;
       /** The account's other parts (ADR-604). Without it the chat reads kept notes and conversations only. */
       account?: AccountContext;
       log?: (line: Record<string, unknown>) => void;
@@ -117,13 +118,16 @@ export class MemoryChat {
       }
     }
 
-    // The same daily caps as Ask Doddy, taken before anything is decrypted, read or sent.
+    // Each person's daily total is the one Ask Doddy on the iPhone counts against (`user:<id>:ask`), so
+    // using both doesn't double it. The server-wide pool is the browser chat's own (`service:web_chat`),
+    // not Ask Doddy's, so neither can use up the other's. All of it is taken before anything is
+    // decrypted, read or sent, and all-or-nothing: a refusal counts against neither.
     const nowMs = this.deps.now?.() ?? Date.now();
     const day = `day:${new Date(nowMs).toISOString().slice(0, 10)}`;
     const allowed = await this.deps.store.reserveUsage(
       [
         { counter: `user:${userId}:ask`, period: day, limit: this.deps.limits.userDailyAsk },
-        { counter: "service:ask", period: day, limit: this.deps.limits.serviceDailyAsk },
+        { counter: "service:web_chat", period: day, limit: this.deps.limits.serviceDailyWebChat },
       ],
       1,
     );

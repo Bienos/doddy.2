@@ -184,7 +184,7 @@ Before people can sign in (owner):
 
 Doddy Web can sign in with Google or Apple: into the person's own account once they have linked one to it (from the
 iPhone, or from a browser signed in with a code), and, for someone new, into a new account made on the web after they
-press "Create my Doddy account" (`DODDY_WEB_SIGNUP=open`, the default; owner, 3 Nov 2026). This is separate from `DODDY_AUTH_MODE`: the iPhone keeps its own session,
+press "Create my Doddy account" (only with `DODDY_WEB_SIGNUP=open`, which the owner asked for on 3 Nov 2026; since decision `2026-11-12-voice-token-fair-share` the default is `off`, and a new person is asked to make the account in the iPhone app first). This is separate from `DODDY_AUTH_MODE`: the iPhone keeps its own session,
 and the auth mode stays `signed`. Checked on 3 Nov 2026: in the project `doddy-gateway` (`sliondswemhneuzehpoq`),
 Google and Apple are **off** and email is on; no one has signed in through it.
 
@@ -208,7 +208,8 @@ Owner steps, in this order (each is in your own account; nothing here is a secre
 5. **Render → `doddy` → Environment:** `SUPABASE_URL=https://sliondswemhneuzehpoq.supabase.co` and
    `SUPABASE_PUBLISHABLE_KEY=` the project's publishable key (Supabase → Project Settings → API keys, `sb_publishable_…`;
    never the `sb_secret_…` one: the server refuses to start with it). Optional: `DODDY_WEB_SIGNIN_PROVIDERS=google` to
-   offer Google alone until Apple is set up; `DODDY_WEB_SIGNUP=off` to stop new accounts on the web.
+   offer Google alone until Apple is set up; `DODDY_WEB_SIGNUP=open` to let new accounts be made on the web (unset or
+   `off`: Google and Apple open an existing account only, and a new person is told to make theirs in the iPhone app first).
    **Recommended:** `SUPABASE_SECRET_KEY` (the `sb_secret_…` key, from 1Password item `supabase-secret-key`). With it,
    deleting a Doddy account also deletes the person's Supabase sign-in (their name and email); without it the deletion
    says that part is still owed, and it stays in Supabase until you remove it there (Authentication, Users).

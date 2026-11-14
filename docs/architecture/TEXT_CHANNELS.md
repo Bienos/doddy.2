@@ -6,7 +6,7 @@
 
 | Piece | State |
 |---|---|
-| `MemoryChat.answer(userId, question, history)` (`backend/src/memory/chat.ts`) | Built and tested. Claude Haiku 5.5, notes and conversations as data, no tools, shared daily caps (50 per person, 500 for everyone). Not deployed. |
+| `MemoryChat.answer(userId, question, history)` (`backend/src/memory/chat.ts`) | Built and tested. Claude Haiku 5.5, notes and conversations as data, no tools, a per-person daily total shared with Ask Doddy (50) and a server-wide pool of its own (`service:web_chat`, 200 a day; a text channel calling it would draw from that pool unless given its own). Not deployed. |
 | Twilio inbound webhook `POST /webhooks/twilio/sms` (`server/messaging`) | Built, signature-checked. Handles only STOP and START today; any other text is ignored. Not yet run with real Twilio. |
 | Verified phone numbers (`phone_numbers`, Twilio Verify) | In the **messaging server's** database, tied to its anonymous account, not to the backend user that owns the kept notes. |
 | Outbox for outgoing texts, consent per wording version, STOP honoured | Built in `server/messaging` (S1). |
