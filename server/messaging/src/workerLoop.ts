@@ -28,6 +28,8 @@ import { runCatalogPass, type CatalogContext } from "./deals/catalog.js";
 import { PoliteFetcher } from "./deals/fetcher.js";
 import { warsawDay } from "./deals/chains/common.js";
 import { ADAPTERS, type DealsDeps } from "./deals/service.js";
+import { checkDealWatches, tellDealWatches, tidyDealWatches, type DealWatchContext } from "./deals/dealWatches.js";
+import type { ReadChain } from "./deals/types.js";
 
 import { log } from "./log.js";
 
@@ -55,6 +57,8 @@ export interface WorkerDeps {
   radar?: RadarContext;
   /** The leaflet catalog's scans (decision 2026-11-12-leaflet-catalog); only with DEALS_CATALOG_ENABLED=1. */
   catalog?: CatalogContext;
+  /** Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): told and tidied in the catalog's loop. */
+  dealWatches?: DealWatchContext;
   /** Calling codes a text may go to, checked again when it is sent (ADR-704); how long call-back routes last. */
   limits?: Pick<AbuseLimits, "allowedCountryCodes"> & Partial<Pick<AbuseLimits, "callbackRouteDays">>;
   /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753): the main account's... */
@@ -88,7 +92,7 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
   if (deps.fileWatches) loops.push(fileWatchLoop(deps.fileWatches, shouldStop));
   if (deps.radar) loops.push(radarLoop(deps.radar, shouldStop));
-  if (deps.catalog) loops.push(catalogLoop(deps.catalog, shouldStop));
+  if (deps.catalog) loops.push(catalogLoop(deps.catalog, deps.dealWatches, shouldStop));
   await Promise.all(loops);
 }
 
@@ -97,7 +101,7 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
  * older than DEALS_CATALOG_EVERY_HOURS, one at a time; a scan reads only pages it hasn't read before. Its own loop, so
  * minutes of page reads never hold back pushes. Logs codes and counts only.
  */
-async function catalogLoop(ctx: CatalogContext, shouldStop: () => boolean) {
+async function catalogLoop(ctx: CatalogContext, dealWatches: DealWatchContext | undefined, shouldStop: () => boolean) {
   while (!shouldStop()) {
     try {
       const counts = await runCatalogPass(ctx, shouldStop);
@@ -105,17 +109,31 @@ async function catalogLoop(ctx: CatalogContext, shouldStop: () => boolean) {
     } catch (err) {
       log("leaflet catalog pass failed", { error: (err as Error).message });
     }
+    // Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): offers held by quiet hours are told when they
+    // end, ended watches are deleted. The checks themselves run after a pass that scanned a chain (afterScans).
+    if (dealWatches) {
+      try {
+        const told = await tellDealWatches(dealWatches);
+        const tidied = await tidyDealWatches(dealWatches);
+        if (Object.keys(told).length || Object.keys(tidied).length) log("deal watch passes", { ...told, ...tidied });
+      } catch (err) {
+        log("deal watch pass failed", { error: err instanceof Error ? err.name : "unknown" });
+      }
+    }
     await pause(5 * 60_000, shouldStop);
   }
 }
 
-/** The catalog worker's context, or undefined while leaflets or the catalog are off. */
-export function catalogContext(db: Db, deals: DealsDeps | undefined): CatalogContext | undefined {
+/** The catalog worker's context, or undefined while leaflets or the catalog are off. With deal watches, each pass that
+ * scanned a chain checks them against what it kept. */
+export function catalogContext(db: Db, deals: DealsDeps | undefined, dealWatches?: DealWatchContext): CatalogContext | undefined {
   const c = deals?.settings.catalog;
   if (!deals || !deals.settings.enabled || !c?.enabled) return undefined;
   return {
     db, adapters: ADAPTERS, fetcher: deals.fetcher ?? new PoliteFetcher(), model: deals.scanModel, everyHours: c.everyHours,
-    maxPagesPerChain: c.maxPagesPerChain, now: () => new Date(), today: () => warsawDay(new Date()), log,
+    maxPagesPerChain: c.maxPagesPerChain, dailyTokensPerChain: c.dailyTokensPerChain, dailyTokens: c.dailyTokens,
+    now: () => new Date(), today: () => warsawDay(new Date()), log,
+    ...(dealWatches?.enabled ? { afterScans: (chains: ReadChain[]) => checkDealWatches(dealWatches, chains) } : {}),
   };
 }
 

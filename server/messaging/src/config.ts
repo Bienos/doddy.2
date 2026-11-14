@@ -1,7 +1,8 @@
 import type { DealsSettings } from "./deals/types.js";
 import { DEFAULT_RESEARCH_BUDGET, type ResearchBudget } from "./errands/budget.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES, parseCountryCodes } from "./phoneCountries.js";
-import { DEFAULT_NEWS_WRITER_CAPS, type NewsWriterCaps } from "./news/usage.js";
+import { DEFAULT_NEWS_SUMMARY_CAPS, DEFAULT_NEWS_WRITER_CAPS, type NewsWriterCaps } from "./news/usage.js";
+import type { NewsSummarySettings } from "./news/summary.js";
 import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "./serverUsage.js";
 import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
 import { parseSearchShops, type SearchShop } from "./deals/further.js";
@@ -112,6 +113,14 @@ const schema = z.object({
   NEWS_WRITER_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(DEFAULT_NEWS_WRITER_CAPS.perAccount),
   NEWS_WRITER_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(DEFAULT_NEWS_WRITER_CAPS.perServer),
   NEWS_WRITER_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(100000).default(DEFAULT_NEW_ACCOUNT_POOL.news),
+  // Article summaries for On my radar (POST /v1/news/summary, owner 13 Nov 2026): "1" lets the app ask for a short summary of
+  // a story's article, written by NEWS_SUMMARY_MODEL from the publisher's page (read politely, robots.txt and the AI-input
+  // content signal honoured). Needs ANTHROPIC_API_KEY too. "0" (the default) answers 503 summary_off. The caps count the
+  // summaries the model writes per UTC day, per account and for the server; a cached summary counts nothing.
+  NEWS_SUMMARY_ENABLED: z.enum(["0", "1"]).default("0"),
+  NEWS_SUMMARY_MODEL: z.string().regex(MODEL_ID).default("claude-haiku-5-5"),
+  NEWS_SUMMARY_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(DEFAULT_NEWS_SUMMARY_CAPS.perAccount),
+  NEWS_SUMMARY_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(DEFAULT_NEWS_SUMMARY_CAPS.perServer),
   // Replies to the user's texts (ADR-753) use ANTHROPIC_API_KEY, with this model (owner decision 7).
   TEXT_REPLY_MODEL: optional, // default claude-opus-5-5
   // Hours after a message or call is final before its record is deleted at Twilio (ADR-753).
@@ -139,6 +148,8 @@ const schema = z.object({
   ELEVENLABS_TASK_AGENT_ID: optional,
   // The booking agent (decision 2026-11-12-book-agent). Absent: "book" tasks answer 503 booking_not_configured.
   ELEVENLABS_TASK_BOOK_AGENT_ID: optional,
+  // The order agent (decision 2026-11-12-food-by-phone). Absent: "order" tasks answer 503 order_not_configured.
+  ELEVENLABS_TASK_ORDER_AGENT_ID: optional,
   // Secret of the ElevenLabs post-call webhook (HMAC).
   ELEVENLABS_WEBHOOK_SECRET: z.string().min(16).optional(),
   // Spoken after the AI disclosure. "off" until the owner confirms the legal basis (calls.md).
@@ -183,6 +194,10 @@ const schema = z.object({
   PRICE_ELEVENLABS_USD_PER_CREDIT: z.coerce.number().positive().max(1).optional(),
   // Twilio's own voice for the short fixed lines (apology, goodbye, "przekazuję rozmowę").
   TASK_CALL_SAY_VOICE: z.string().regex(/^[A-Za-z0-9.\-]{1,40}$/).default("Polly.Ewa"),
+
+  // Texts to the user's contacts from Doddy's number (decision docs/decisions/2026-11-09-texts-to-contacts.md):
+  // one tap per text, at most 50 a day per account. Off by default: "0" answers 503 contact_texts_off and queues nothing.
+  CONTACT_TEXTS_ENABLED: z.enum(["0", "1"]).default("0"),
 
   // Errands (ADR-570, docs/implementation/ERRANDS.md): Doddy researches a task in the background.
   // Off by default ("0" refuses new errands and starts no queued one); "1" runs them when
@@ -260,6 +275,21 @@ const schema = z.object({
   DEALS_CATALOG_EVERY_HOURS: z.coerce.number().int().min(1).max(48).default(6),
   // Pages sent to the reader per chain per scan; the rest wait for the next scan. 0: only the chains' own data.
   DEALS_CATALOG_MAX_PAGES: z.coerce.number().int().min(0).max(400).default(160),
+  // The scans' daily token budget (13 Nov 2026; decision 2026-11-13-leaflet-results-and-deal-watches): input plus output
+  // tokens per Warsaw day, per chain and for all chains together. Past it, the pages wait for the next day; a page
+  // already read is never read again for the same leaflet. 0: no new page is read.
+  DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN: z.coerce.number().int().min(0).max(50_000_000).default(1_500_000),
+  DEALS_CATALOG_DAILY_TOKENS: z.coerce.number().int().min(0).max(200_000_000).default(6_000_000),
+  // Deal watches (13 Nov 2026, same decision): "let me know when butter is under 5 zł", checked in code against the
+  // catalog after its scans, at most once a day per watch, with no page read. "0" (the default) answers 503
+  // deal_watches_disabled and checks nothing; "1" also needs MEMORY_ENCRYPTION_KEY and DEALS_CATALOG_ENABLED=1.
+  DEAL_WATCHES_ENABLED: z.enum(["0", "1"]).default("0"),
+  DEAL_WATCHES_MAX_PER_ACCOUNT: z.coerce.number().int().min(1).max(50).default(10),
+  DEAL_WATCHES_MAX_PER_SERVER: z.coerce.number().int().min(1).max(1_000_000).default(5000),
+  // Pushes from deal watches per account in any 24 hours; past it, matches are shown in the app only.
+  DEAL_WATCHES_PUSHES_PER_DAY: z.coerce.number().int().min(0).max(20).default(3),
+  // How long a watch lasts; it is deleted, with what it found, when it ends.
+  DEAL_WATCHES_DAYS: z.coerce.number().int().min(1).max(365).default(60),
   DEALS_SCREEN_PAGES: z.coerce.number().int().min(0).max(200).default(120),
   DEALS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   DEALS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
@@ -356,11 +386,14 @@ export interface TaskCallConfig {
   elevenLabsApiKey: string; agentId: string; webhookSecret: string;
   /** The booking agent (decision 2026-11-12-book-agent); absent while it isn't set up. */
   bookAgentId?: string;
+  /** The order agent (decision 2026-11-12-food-by-phone); absent while it isn't set up. */
+  orderAgentId?: string;
 }
 
-/** The booking agent is optional: calls that only ask work without it (decision 2026-11-12-book-agent). */
-export const withBookAgent = (c: Omit<TaskCallConfig, "bookAgentId"> | undefined, bookAgentId: string | undefined): TaskCallConfig | undefined =>
-  c && (bookAgentId ? { ...c, bookAgentId } : c);
+/** The booking and order agents are optional: calls that only ask work without them (decisions 2026-11-12-book-agent, 2026-11-12-food-by-phone). */
+export const withBookAgent = (c: Omit<TaskCallConfig, "bookAgentId" | "orderAgentId"> | undefined, bookAgentId: string | undefined,
+  orderAgentId?: string | undefined): TaskCallConfig | undefined =>
+  c && { ...c, ...(bookAgentId ? { bookAgentId } : {}), ...(orderAgentId ? { orderAgentId } : {}) };
 
 export interface TaskCallSettings {
   killSwitch: boolean; notice: RecordingNotice; limits: TaskCallLimits; prices: TaskCallPrices; sayVoice: string;
@@ -393,6 +426,13 @@ export interface ShoppingSettings {
 
 /** Price watches: `enabled` is the env switch only; the cipher and the fetcher are checked where wired. */
 export interface WatchSettings { enabled: boolean; maxOpen: number; checkHours: number }
+
+/** Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): `enabled` is the env switch only; the cipher and
+ * the catalog are checked where wired. */
+export interface DealWatchSettings { enabled: boolean; maxPerAccount: number; maxPerServer: number; pushesPerDay: number; days: number }
+
+/** Settings for an injected deal-watch context without its own (tests): on, 10 an account, 3 pushes a day, 60 days. */
+export const DEFAULT_DEAL_WATCH_SETTINGS: DealWatchSettings = { enabled: true, maxPerAccount: 10, maxPerServer: 5000, pushesPerDay: 3, days: 60 };
 
 /** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
 export interface AssistantSettings {
@@ -462,6 +502,8 @@ export interface Config {
   gnewsApiKey?: string;
   /** Daily caps on digests by the AI writer (NEWS_WRITER_DAILY_*). */
   newsWriterCaps: Required<NewsWriterCaps>;
+  /** Article summaries for On my radar (NEWS_SUMMARY_*, off by default). */
+  newsSummarySettings: NewsSummarySettings;
   textReplyModel?: string;
   twilioRecordDeleteAfterHours: number;
   /**
@@ -476,6 +518,8 @@ export interface Config {
   elevenLabsWebhookSecret?: string;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
+  /** Texts to the user's contacts (decision 2026-11-09-texts-to-contacts); off unless CONTACT_TEXTS_ENABLED=1. */
+  contactTextsEnabled: boolean;
   shoppingSettings: ShoppingSettings;
   dealsSettings: DealsSettings;
   /** "Search further" under a leaflet answer (ADR-666). */
@@ -485,6 +529,8 @@ export interface Config {
   /** CEIDG (ADR-685): only with a token; the base is checked to be CEIDG's own host when the client is made. */
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
+  /** Deal watches against the leaflet catalog (DEAL_WATCHES_ENABLED, off by default). */
+  dealWatchSettings: DealWatchSettings;
   /** On my radar alerts (RADAR_ALERTS_ENABLED, off by default): routes store alerts and the worker checks them. */
   radarAlertsEnabled: boolean;
   /** Uber Direct (decision 2026-11-12-uber-direct-deliveries): only when enabled and all three credentials are set. */
@@ -567,6 +613,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       perAccount: e.NEWS_WRITER_DAILY_PER_ACCOUNT, perServer: e.NEWS_WRITER_DAILY_PER_SERVER,
       newAccountPool: e.NEWS_WRITER_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
     },
+    newsSummarySettings: {
+      enabled: e.NEWS_SUMMARY_ENABLED === "1", model: e.NEWS_SUMMARY_MODEL,
+      dailyPerAccount: e.NEWS_SUMMARY_DAILY_PER_ACCOUNT, dailyPerServer: e.NEWS_SUMMARY_DAILY_PER_SERVER,
+    },
     textReplyModel: e.TEXT_REPLY_MODEL,
     twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,
     twilioTaskRecords: all<{ accountSid: string; authToken: string }>({
@@ -578,14 +628,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,
     },
     elevenLabsWebhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
-    taskCalls: withBookAgent(all<Omit<TaskCallConfig, "bookAgentId">>({
+    taskCalls: withBookAgent(all<Omit<TaskCallConfig, "bookAgentId" | "orderAgentId">>({
       twilioAccountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
       twilioAuthToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
       fromNumber: e.TASK_CALL_FROM_NUMBER ?? e.DODDY_PHONE_NUMBER,
       elevenLabsApiKey: e.ELEVENLABS_API_KEY,
       agentId: e.ELEVENLABS_TASK_AGENT_ID,
       webhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
-    }), e.ELEVENLABS_TASK_BOOK_AGENT_ID),
+    }), e.ELEVENLABS_TASK_BOOK_AGENT_ID, e.ELEVENLABS_TASK_ORDER_AGENT_ID),
     taskCallSettings: {
       killSwitch: e.TASK_CALLS_KILL_SWITCH === "1",
       notice: e.CALL_RECORDING_NOTICE,
@@ -607,6 +657,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       blockedNumbers: e.TASK_CALL_BLOCKED_NUMBERS,
       transcriptPhoneNumbers: e.CALL_TRANSCRIPT_PHONE_NUMBERS,
     },
+    contactTextsEnabled: e.CONTACT_TEXTS_ENABLED === "1",
     errandSettings: {
       enabled: e.ERRANDS_ENABLED === "1",
       model: e.ERRANDS_MODEL,
@@ -636,7 +687,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES, screenPages: e.DEALS_SCREEN_PAGES,
       dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
       dailyForNewAccounts: e.DEALS_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
-      catalog: { enabled: e.DEALS_CATALOG_ENABLED === "1", everyHours: e.DEALS_CATALOG_EVERY_HOURS, maxPagesPerChain: e.DEALS_CATALOG_MAX_PAGES },
+      catalog: {
+        enabled: e.DEALS_CATALOG_ENABLED === "1", everyHours: e.DEALS_CATALOG_EVERY_HOURS, maxPagesPerChain: e.DEALS_CATALOG_MAX_PAGES,
+        dailyTokensPerChain: e.DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN, dailyTokens: e.DEALS_CATALOG_DAILY_TOKENS,
+      },
+    },
+    dealWatchSettings: {
+      enabled: e.DEAL_WATCHES_ENABLED === "1", maxPerAccount: e.DEAL_WATCHES_MAX_PER_ACCOUNT, maxPerServer: e.DEAL_WATCHES_MAX_PER_SERVER,
+      pushesPerDay: e.DEAL_WATCHES_PUSHES_PER_DAY, days: e.DEAL_WATCHES_DAYS,
     },
     dealsSearchShops: e.DEALS_SEARCH_SHOPS,
     ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,

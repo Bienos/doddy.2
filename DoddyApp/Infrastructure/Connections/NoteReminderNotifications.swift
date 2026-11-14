@@ -197,6 +197,14 @@ extension TimerBanners {
             }
             return
         }
+        // A new leaflet offer for a price alert (decision 2026-11-14-price-alerts-screen): Shopping opens on Price alerts. The
+        // push says only its kind, never the item, the shop or the price.
+        if serverPush?.opensShopping == true {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.priceAlertsOpened() }
+            }
+            return
+        }
         // The weekly tidy-up (ADR-228) opens its screen; nothing changes until the user taps.
         if TidyUp.isTidyUp(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

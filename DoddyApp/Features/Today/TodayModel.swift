@@ -155,6 +155,107 @@ final class TodayModel {
         await refresh()
     }
 
+    // MARK: Changing, deleting and adding (owner, 13 Nov 2026: "zero edycji")
+
+    /// Writes the edit the sheet made to exactly the reminder the row showed: Reminders is read again first, and
+    /// nothing is written unless it still looks as shown (`ReminderTick`). "Saved" only once Reminders reads the
+    /// change back (DOD-08); otherwise it says so and asks the person to check.
+    func edit(_ reminder: ReminderSummary, title: String, due: ReminderDue?) async {
+        guard !busyReminders.contains(reminder.id) else { return }
+        busyReminders.insert(reminder.id)
+        defer { busyReminders.remove(reminder.id) }
+        undoable = nil
+        guard !paused, isOn(.reminders) else {
+            reminderNotice = NSLocalizedString("Reminders are off for Doddy, so nothing was changed.", comment: "")
+            await refresh()
+            return
+        }
+        guard let before = devices.reminderSnapshot(id: reminder.id),
+              ReminderTick.stillAsShown(reminder, now: before, local: .current) else {
+            reminderNotice = String(format: NSLocalizedString("“%@” changed in Reminders, so it was left as it is. This is how it is now.", comment: ""), reminder.title)
+            await refresh()
+            return
+        }
+        let change: ReminderChange
+        switch ReminderEdit.change(title: title, due: due, from: before) {
+        case .success(let planned): change = planned
+        case .failure(.nothingChanged): return
+        case .failure(.emptyTitle): reminderNotice = NSLocalizedString("A reminder needs a title, so nothing was changed.", comment: ""); return
+        case .failure(.titleTooLong): reminderNotice = NSLocalizedString("That title is too long for Reminders, so nothing was changed.", comment: ""); return
+        }
+        let shown = (try? ReminderEdit.title(title).get()) ?? reminder.title
+        do {
+            switch try devices.changeReminder(before, change) {
+            case .verified:
+                reminderNotice = String(format: NSLocalizedString("Changed: %@. Checked in Reminders.", comment: ""), shown)
+            case .unconfirmed:
+                reminderNotice = String(format: NSLocalizedString("Reminders took the change to “%@” but didn't show it afterwards. Check it there.", comment: ""), shown)
+            case .changedElsewhere:
+                reminderNotice = String(format: NSLocalizedString("“%@” changed in Reminders, so it was left as it is. This is how it is now.", comment: ""), reminder.title)
+            }
+        } catch {
+            reminderNotice = String(format: NSLocalizedString("“%@” wasn't changed. %@", comment: ""), reminder.title, UserFacingError.message(for: error))
+        }
+        await refresh()
+    }
+
+    /// Deletes exactly the reminder the row showed, if it still looks as shown; "deleted" only when Reminders no
+    /// longer has it.
+    func delete(_ reminder: ReminderSummary) async {
+        guard !busyReminders.contains(reminder.id) else { return }
+        busyReminders.insert(reminder.id)
+        defer { busyReminders.remove(reminder.id) }
+        undoable = nil
+        guard !paused, isOn(.reminders) else {
+            reminderNotice = NSLocalizedString("Reminders are off for Doddy, so nothing was deleted.", comment: "")
+            await refresh()
+            return
+        }
+        guard let before = devices.reminderSnapshot(id: reminder.id),
+              ReminderTick.stillAsShown(reminder, now: before, local: .current) else {
+            reminderNotice = String(format: NSLocalizedString("“%@” changed in Reminders, so it was left as it is. This is how it is now.", comment: ""), reminder.title)
+            await refresh()
+            return
+        }
+        do {
+            switch try devices.deleteReminder(before) {
+            case .verified:
+                reminderNotice = String(format: NSLocalizedString("Deleted: %@. Checked in Reminders.", comment: ""), reminder.title)
+            case .unconfirmed:
+                reminderNotice = String(format: NSLocalizedString("Reminders may still have “%@”. Check it there.", comment: ""), reminder.title)
+            case .changedElsewhere:
+                reminderNotice = String(format: NSLocalizedString("“%@” changed in Reminders, so it was left as it is. This is how it is now.", comment: ""), reminder.title)
+            }
+        } catch {
+            reminderNotice = String(format: NSLocalizedString("“%@” wasn't deleted. %@", comment: ""), reminder.title, UserFacingError.message(for: error))
+        }
+        await refresh()
+    }
+
+    /// Adds a reminder to the default list, then reads it back: "added" only when Reminders has it with this title.
+    func add(title: String, due: ReminderDue?) async {
+        undoable = nil
+        guard !paused, isOn(.reminders) else {
+            reminderNotice = NSLocalizedString("Reminders are off for Doddy, so nothing was added.", comment: "")
+            return
+        }
+        guard case .success(let checked) = ReminderEdit.title(title) else {
+            reminderNotice = NSLocalizedString("A reminder needs a title, so nothing was added.", comment: "")
+            return
+        }
+        do {
+            let id = try devices.save(ReminderWrite(ReminderDraft(title: checked, due: due, notes: nil)))
+            if let back = devices.reminderSnapshot(id: id), back.title == checked {
+                reminderNotice = String(format: NSLocalizedString("Added: %@. Checked in Reminders.", comment: ""), checked)
+            } else {
+                reminderNotice = String(format: NSLocalizedString("Reminders took “%@” but didn't show it afterwards. Check it there.", comment: ""), checked)
+            }
+        } catch {
+            reminderNotice = String(format: NSLocalizedString("“%@” wasn't added. %@", comment: ""), checked, UserFacingError.message(for: error))
+        }
+        await refresh()
+    }
+
     /// Undo of the last tick (DOD-09): reopens it only if it is still done as read back, then reads
     /// it again.
     func undoTick() async {

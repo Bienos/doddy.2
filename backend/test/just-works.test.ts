@@ -242,6 +242,9 @@ test("make_document: answers at once with a link; the link says 'still making', 
   assert.equal(res.status, 200, res.text);
   assert.match(res.body.text, /^started: Claude is making the deck "Q4 plan: Doddy\/beta"/);
   assert.doesNotMatch(res.body.text, /https?:\/\//, "the voice agent never gets the link");
+  // Owner, 13 Nov 2026: nothing waits on the screen for a tap while the file is made, so the agent isn't told there is.
+  assert.doesNotMatch(res.body.text, /card|on the user's screen/i, "no card is promised");
+  assert.match(res.body.text, /doesn't need to tap anything/);
   assert.equal(res.body.document.status, "working");
   assert.equal(res.body.document.name, "Q4 plan Doddybeta.pptx");
   const link = new URL(res.body.document.url);

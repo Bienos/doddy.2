@@ -2,6 +2,18 @@
 
 Owner, 28 Oct 2026 (in Polish): a news "plugin" where you follow what you want, shown like an Instagram feed, built on keywords, and by default "what's happening in Poland". Branch `claude/message-tracking-plugin-rd0cbn`. **On the default branch since 7 Nov 2026 (#195, through `claude/magical-cray-4299gg`); compiled and tested in #195's hosted Mac job (run 42004675828, 5 Nov); not seen on a device. `doddy-messaging` serves `POST /v1/news/feed` since its 7 Nov deploy of `174ba21`.** Status of each part is at the end; the "Not run" list there is from 28 Oct.
 
+## More publishers, one story once, fewer fetches (13 Nov 2026, branch `claude/news-more-sources`)
+
+Owner, 13 Nov 2026 (in Polish): Daily news and On my radar should give better, more accurate results from more sources, and be optimised. Decision `docs/decisions/2026-11-13-news-more-sources.md` (every feed added and left out, with the reason). Daily news and the radar stay two lists; follows stay on the iPhone.
+
+| Part | Where | State |
+|---|---|---|
+| 78 catalog feeds from 49 publishers (was 33), 36 in Polish; Poland reads TVN24, Polsat News (its Poland feed now), RMF24, Onet, Interia, Wirtualna Polska, Gazeta Wyborcza, Rzeczpospolita, Notes from Poland; every topic but AI has Polish publishers; each feed has a language | `server/messaging/src/news/catalog.ts` | Every new feed fetched (the server's user agent, through the build machine's proxy), parsed and checked against robots.txt on 13 Nov; not from Render |
+| One card per story: the same link (canonicalised) or a near-same headline from another publisher; the card names up to three others ("Też: Onet i TVN24") | `news/dedupe.ts`, `rank.ts`, `feed.ts` (`alsoFrom`); DoddyCore `NewsCard.alsoFromLine`; `FollowingView.swift` (`StoryCard`) | Server and DoddyCore tested; the view line **not compiled** |
+| Publishers alternate; the reader's language a little first; a story several publishers carry ranks a little higher | `rank.ts` (`DIVERSITY_PENALTY`, `LANGUAGE_BONUS`, `CORROBORATION_BONUS`) | Tested |
+| Radar alerts: the same story from another publisher within 72 hours is not a new hit (no second push); alert words also looked for in the other publishers' headlines | `news/radar.ts` (`collect`, `matchingStories`) | Tested against PostgreSQL 16; alerts still **off** on the server |
+| Each feed read once per request or pass, fetched once in the process at a time (shared by Daily news and the radar worker), 8 at once at most, asked "changed since?" (ETag / Last-Modified, migration `036_news_cache_validators.sql`); the cache keeps 72 hours of stories; logs with counts and times only | `news/reader.ts`, `safeFetch.ts`, `sources.ts` | Tested; 40 of the 78 feeds answered 304 to their own validators from here |
+
 ## Fixes from the owner's review (13 Nov 2026, branch `claude/radar-fixes`)
 
 Owner's review of 12 Nov 2026 (`docs/strategy/PRZEGLAD_APLIKACJI_2026-11-12.md` section 6), decision `docs/decisions/2026-11-13-radar-fixes.md`.
@@ -10,7 +22,7 @@ Owner's review of 12 Nov 2026 (`docs/strategy/PRZEGLAD_APLIKACJI_2026-11-12.md` 
 |---|---|---|
 | "Tell me…" and its line under a follow, and the Add sheet's "tell me when", only once `GET /v1/news/radar` said `available: true`; a follow with flag words or a server check can still be changed; a check is never said to run once the server says it checks nothing | DoddyCore `RadarAlertsAvailability`, `RadarTellMe` (`RadarOffer.swift`); `FollowDetail`, `RadarAlertFields`, `RadarAddSheet`, `RadarAlertSheet`; `FollowingModel.alertsAvailability`, `loadRadar` (asks the server after a refused re-send) | Rules tested (`RadarOfferTests`); model type-checked; views **not compiled** |
 | The voice reply names "the On my radar screen (in Polish "Na radarze"…)" and offers looking there as the next step, never claiming it opened it; the "What Doddy did" row is "Add to radar" / „Dodaj do radaru” | `VoiceToolReply.newsFollow`, `RadarScreen`, `ActivityLog`, `ActivityText` | Tested (`NewsFollowVoiceTests`); `voice-agent/tools.json` unchanged |
-| A radar push carries `{"doddy":{"kind":"radar"}}` (kind only) and its tap goes to `ShortcutRouter.radarOpened()` | `server/messaging/src/outbox.ts` `pushData`; DoddyCore `ServerPushKind.radar`; `NoteReminderNotifications.swift` (`TimerBanners`) | Server and DoddyCore tested; handler **not compiled**. **Home doesn't open the sheet yet:** the `.onChange(of: router.isRadarRequested)` in `HomeView.swift` is written out in the decision (that file is held by other pull requests) |
+| A radar push carries `{"doddy":{"kind":"radar"}}` (kind only) and its tap goes to `ShortcutRouter.radarOpened()` | `server/messaging/src/outbox.ts` `pushData`; DoddyCore `ServerPushKind.radar`; `NoteReminderNotifications.swift` (`TimerBanners`) | Server and DoddyCore tested; handler **not compiled**. Home opens On my radar on `router.isRadarRequested` (`HomeView.swift`), and Root brings a tap from another tab back to Home (`RootView.swift`); not seen on a device |
 | Settings › Daily news says its topics are only for the daily message and On my radar is a separate list | `NewsSettingsView.swift` | **Not compiled**; the merge itself is a proposal in the decision |
 
 ## On my radar: fixes, Add sheet, own feeds and alerts (10 Nov 2026, branch `claude/radar-alerts`)
@@ -22,7 +34,7 @@ Owner, 10 Nov 2026 (in Polish): "I added a cryptocurrency section and it doesn't
 | Part | Where | State |
 |---|---|---|
 | Matching that allows for Polish and English endings, case and diacritics; phrases in order | `server/messaging/src/news/match.ts`, DoddyCore `RadarMatch`, fixture `schemas/fixtures/radar_match_v1.json` | Tested on both sides (31 shared cases) |
-| Words looked for in every catalog feed (33) and the person's own feeds, not only their other follows | `gatherItems(…, { keywordPool: "catalog" })`, feed route | Tested |
+| Words looked for in every catalog feed (33; 78 since 13 Nov 2026) and the person's own feeds, not only their other follows | `gatherItems(…, { keywordPool: "catalog" })`, feed route | Tested |
 | Crypto: CoinDesk (canonical address), Cointelegraph, Decrypt, The Block, Bitcoin.pl; Europe + BBC News; a short publisher name per catalog feed | `news/catalog.ts` | Feeds fetched and parsed here on 10 Nov; not from Render |
 | Per follow: its publishers and whether each answered, or how many feeds were searched; every follow gets its best 4 stories in the 40 | `POST /v1/news/feed` → `follows[]`; `buildFeed` | Tested |
 | Tap a follow: only its stories, its sources, its "tell me" line, "Nothing from the last two days for …" | `FollowingView.swift`, `RadarViews.swift` (`FollowDetail`) | **Not compiled** (no Xcode) |
@@ -44,7 +56,7 @@ Home › ••• › **Following** (Polish: *Śledzone*). Across the top, a ro
 - the headline and up to three lines of the publisher's summary;
 - three quiet actions: open the full story, save it as a note on this iPhone (headline, summary, publisher and link), share the link.
 
-A new person follows one thing: **"Co się dzieje w Polsce" / "What's happening in Poland"**, which is the server's `poland` topic (TVN24, Polsat News, Notes from Poland, Rzeczpospolita feeds; `server/messaging/src/news/catalog.ts`). **Follow** adds a topic from the server's catalog (the same ten as Daily news) or the person's own words: a name and comma-separated keywords. **Edit** reorders the row or stops following. At most ten follows.
+A new person follows one thing: **"Co się dzieje w Polsce" / "What's happening in Poland"**, which is the server's `poland` topic (TVN24, Polsat News, Notes from Poland, Rzeczpospolita feeds; since 13 Nov 2026 also RMF24, Onet, Interia, Wirtualna Polska and Gazeta Wyborcza; `server/messaging/src/news/catalog.ts`). **Follow** adds a topic from the server's catalog (the same ten as Daily news) or the person's own words: a name and comma-separated keywords. **Edit** reorders the row or stops following. At most ten follows.
 
 What it is **not**: there is no AI anywhere in it. A card is the publisher's headline, summary, picture and link as the feed carried them; nothing is written, picked or summarised by Doddy. Nothing is pushed: it is a screen the person opens. (Since 10 Nov 2026, above: an alert the person turns on can push, and a daily summary may have AI lines, labelled.) Daily news (ADR-174, `N1_NEWS_STATUS.md`) is unchanged and separate.
 
@@ -54,8 +66,9 @@ What it is **not**: there is no AI anywhere in it. A card is the publisher's hea
 iPhone: NewsFollowList (UserDefaults "news.follows")
    │  POST /v1/news/feed { language, follows: [{catalogId} | {label, keywords}], limit }
    ▼
-Server: gatherItems (shared news_cache, feeds 30 min, GNews 60 min) ─▶ buildFeed (shortlist: 48 h, dedupe by link and title,
-        ≤6 per publisher, a keyword follow only where the words appear) ─▶ cards, newest first (≤40)
+Server: gatherItems (FeedReader over the shared news_cache: feeds 30 min, conditional refresh; GNews 60 min) ─▶ buildFeed
+        (shortlist: 48 h, one card per story across publishers with the others named, publishers alternating, ≤6 per publisher,
+        a keyword follow only where the words appear) ─▶ cards, newest first (≤40)
    ▼
 iPhone: NewsFeedSections.group (Today / Yesterday / Earlier) ─▶ FollowingView
 ```
@@ -71,7 +84,8 @@ iPhone: NewsFeedSections.group (Today / Yesterday / Earlier) ─▶ FollowingVie
 |---|---|
 | `server/messaging/src/news/feed.ts` | `buildFeed`: the cards from the gathered items |
 | `server/messaging/src/news/feeds.ts` | `imageUrl` on a `NewsItem`, `itemImage` |
-| `server/messaging/src/news/rank.ts` | `shortlist` takes `{ limit, perSource, windowHours }` (digest defaults unchanged) |
+| `server/messaging/src/news/rank.ts` | `shortlist` takes `{ limit, perSource, windowHours, language, sentTitles }` (digest defaults unchanged); one entry per story since 13 Nov 2026 |
+| `server/messaging/src/news/dedupe.ts`, `reader.ts` | The same story across publishers; reading feeds once, a few at a time, conditionally (13 Nov 2026) |
 | `server/messaging/src/news/digest.ts` | `gatherItems`, shared by the digest and the feed |
 | `server/messaging/src/routes/news.ts` | `POST /v1/news/feed` (60 an hour per account) |
 | `Packages/DoddyCore/Sources/DoddyCore/NewsFollowing.swift` | `NewsFollow`, `NewsFollowList`, `NewsFeedRequest`, `NewsCard`, `NewsFeedSections`, `DoddyServerClient.newsFeed` |

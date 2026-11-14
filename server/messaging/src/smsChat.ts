@@ -6,6 +6,9 @@
 // Doddy's). Nothing the person wrote is stored or logged; the reply is queued encrypted and erased
 // once sent, like every other text. One reply per Twilio message id, so a retried webhook never
 // answers or counts twice.
+// The sender number is the only sign of who wrote a text and code can't prove it, so the words may not be the
+// person's. What code does instead: the reply goes only to the account's own number, it carries no link
+// (untrustedWords.ts), and it counts against the daily caps like every other text.
 import { randomUUID } from "node:crypto";
 import type { Db } from "./db.js";
 import type { AssistantDeps } from "./assistant/deps.js";
@@ -13,6 +16,7 @@ import { LIMITS } from "./assistant/request.js";
 import { addTokens, reserve } from "./assistant/usage.js";
 import type { TextCipher } from "./crypto.js";
 import { enqueue, IdempotencyConflict, SmsDailyLimit } from "./outbox.js";
+import { withoutLinks } from "./untrustedWords.js";
 
 /** Longest reply sent, in characters. Polish letters make a text UCS-2 (67 per part), so 600 is at most 9 parts. */
 export const SMS_REPLY_MAX = 600;
@@ -23,6 +27,8 @@ export const SMS_CHAT_COPY = {
   limit: "Limit pytań do Doddy'ego na dziś się skończył. Spróbuj jutro.",
   unavailable: "Doddy nie może teraz odpowiedzieć. Spróbuj za chwilę albo napisz w aplikacji.",
   off: "Doddy nie odpowiada teraz na SMS-y. Napisz do niego w aplikacji.",
+  /** Where a link in the answer was: texts from Doddy's number carry no links. */
+  link: "[link pominięty]",
 } as const;
 
 export type SmsChatOutcome = "ignored" | "duplicate" | "answered" | "limit" | "unavailable" | "off";
@@ -113,9 +119,12 @@ export async function handleSmsChat(deps: SmsChatDeps, from: string, body: strin
       return "unavailable";
     }
     const needsApp = outcome.proposal !== undefined || outcome.plan !== undefined;
+    // The sender is known by its number alone and that can't be proven here: the words that steered the model may be
+    // someone else's. So the answer, which goes out from Doddy's own number, never carries a link.
+    const answer = withoutLinks(outcome.answer, SMS_CHAT_COPY.link);
     const reply = needsApp
-      ? fitSms(outcome.answer, SMS_REPLY_MAX - [...SMS_CHAT_COPY.needsApp].length - 2) + "\n\n" + SMS_CHAT_COPY.needsApp
-      : fitSms(outcome.answer);
+      ? fitSms(answer, SMS_REPLY_MAX - [...SMS_CHAT_COPY.needsApp].length - 2) + "\n\n" + SMS_CHAT_COPY.needsApp
+      : fitSms(answer);
     await send(reply);
     log("sms chat answered", {
       accountId, model: responder.model, card: needsApp, chars: [...reply].length,

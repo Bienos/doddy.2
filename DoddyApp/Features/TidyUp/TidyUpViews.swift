@@ -126,7 +126,7 @@ struct TidyUpView: View {
                         section("Lists with everything ticked") {
                             ForEach(lists) { list in
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(list.name).font(.headline)
+                                    Text(verbatim: list.name).font(.headline)
                                     Text(verbatim: String(format: NSLocalizedString("%lld ticked", comment: ""), list.done.count)).font(.footnote).foregroundStyle(Theme.secondaryText)
                                     Button("Clear the ticked items") { Task { await clear(list) } }
                                     Button(role: .destructive) { confirmDelete = list.record } label: { Text("Delete the list") }

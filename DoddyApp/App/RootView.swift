@@ -645,6 +645,14 @@ struct RootView: View {
         .onChange(of: router.isRecordingsPresented) { _, presented in
             if presented { selectedTab = .home }
         }
+        // On my radar is a sheet on Home too: a radar push tapped on another tab comes back to Home first.
+        .onChange(of: router.isRadarRequested) { _, requested in
+            if requested { selectedTab = .home }
+        }
+        // Shopping is a sheet on Home too: a price-alert push tapped on another tab comes back to Home first.
+        .onChange(of: router.isPriceAlertsRequested) { _, requested in
+            if requested { selectedTab = .home }
+        }
         // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
         .onContinueUserActivity(CSSearchableItemActionType) { activity in
             guard let memoryID = SpotlightSync.memoryID(from: activity) else { return }

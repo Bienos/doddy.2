@@ -16,6 +16,8 @@
 | Privacy disclosure | The privacy screen saying nothing leaves the phone when something does | The screen is built from the address in use and the real data flows (ADR-721) | DoddyCore tests |
 | Voice token server | A few accounts using the shared limits; a copied refresh token | Sign-in throttle per address, daily caps, a reused refresh token ends the session (ADR-712) | voice-token tests, including real Redis scripts |
 | Site waitlist admin | Password guessing; a third-party script on the admin page | Its own policy; a wait on a wrong password (ADR-714) | Site tests. A Vercel Firewall rate limit is an owner setting |
+| Sign-out and the messaging server (audit 9 Nov 2026) | A signed-out iPhone's copied token still works; its push address still gets private notifications; a late refresh or server answer restores a signed-out account | `DELETE /v1/device` ends one iPhone's token and push binding; the app keeps the call owed until answered; an epoch makes late answers change nothing | Messaging tests on Postgres, DoddyCore tests on Linux. App wiring not compiled; no device check. See `AUDIT_2026-11-09_REMEDIATION.md` |
+| Copies of a person's documents at Anthropic (audit 9 Nov 2026) | A copy left behind by a failed download, a restart, a refused delete or an account erasure | File ids written down when seen, deleted in `finally`, `200`/`404` only counts, hourly retry, kept through erasure | Backend tests (PGlite, scripted Anthropic). Not run against Anthropic |
 | CI | Mutable action tags | Actions pinned to commit SHAs (ADR-715) | Pins compared with the tags on GitHub |
 
 ## Open items for the owner

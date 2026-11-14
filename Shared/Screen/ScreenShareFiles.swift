@@ -26,20 +26,49 @@ enum ScreenShareFiles {
     static func writeFrame(_ jpeg: Data, capturedAt: Date, startedAt: Date) throws {
         guard let frameURL, let stateURL else { throw CocoaError(.fileNoSuchFile) }
         try jpeg.write(to: frameURL, options: Self.writeOptions)
+        // An atomic write makes a new file each time, so the mark is put on again each time.
+        Self.excludeFromBackup(frameURL)
         let state = ScreenShareState(live: true, startedAt: startedAt, frameAt: capturedAt, frameBytes: jpeg.count)
         try state.encoded().write(to: stateURL, options: Self.writeOptions)
+        Self.excludeFromBackup(stateURL)
     }
 
     static func markStarted(at date: Date) throws {
         guard let stateURL else { throw CocoaError(.fileNoSuchFile) }
         if let frameURL { try? FileManager.default.removeItem(at: frameURL) }
         try ScreenShareState(live: true, startedAt: date).encoded().write(to: stateURL, options: Self.writeOptions)
+        Self.excludeFromBackup(stateURL)
     }
 
     /// Sharing ended (or was paused): the picture is deleted, so nothing of the screen stays on disk.
     static func markEnded() {
         if let frameURL { try? FileManager.default.removeItem(at: frameURL) }
         if let stateURL { try? FileManager.default.removeItem(at: stateURL) }
+    }
+
+    // MARK: Cleaned by the app
+
+    /// A picture left behind is deleted at launch and when the app comes back to the front, by the rule in
+    /// `ScreenFrameRetention` (the extension deletes it itself when sharing ends). One that stays, or can't be
+    /// deleted, is marked out of backups.
+    static func sweep(_ moment: ScreenFrameRetention.Moment, now: Date = Date()) {
+        guard let frameURL else { return }
+        let exists = FileManager.default.fileExists(atPath: frameURL.path)
+        let state = stateURL.flatMap { try? Data(contentsOf: $0) }.flatMap(ScreenShareState.decoded)
+        if ScreenFrameRetention.shouldDeleteFrame(at: moment, frameExists: exists, state: state, now: now) {
+            try? FileManager.default.removeItem(at: frameURL)
+        }
+        if FileManager.default.fileExists(atPath: frameURL.path) { excludeFromBackup(frameURL) }
+    }
+
+    /// Neither the picture nor the state file belongs in a backup of this iPhone.
+    static func excludeFromBackup(_ url: URL) {
+        #if canImport(Darwin)
+        var url = url
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? url.setResourceValues(values)
+        #endif
     }
 
     // MARK: Read by the app

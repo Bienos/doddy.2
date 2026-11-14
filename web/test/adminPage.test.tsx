@@ -212,6 +212,29 @@ describe("the admin dashboard", () => {
     expect(screen.queryByText("Doddy Admin")).toBeNull();
   });
 
+  test("a sign-in older than the panel allows is asked to sign in again, and no account is shown", async () => {
+    const refused = { status: 422, body: { error: { code: "refused", message: "For safety, the owner panel opens only within 15 minutes of signing in. Sign out, sign in again, then open it." } } };
+    const { seen } = renderAdmin("/admin", {
+      "GET /v1/web/owner/overview": refused,
+      "GET /v1/web/owner/accounts": refused,
+      "DELETE /v1/web/session": { body: { signedOut: true } },
+    });
+    expect(await screen.findByRole("alert")).toHaveTextContent("For safety, the owner panel opens only within 15 minutes of signing in.");
+    expect(screen.queryByRole("heading", { level: 2, name: "Needs attention" })).toBeNull();
+    expect(screen.queryByText("tomek@example.com")).toBeNull();
+    expect(screen.getByRole("link", { name: "Back to Doddy" })).toHaveAttribute("href", "/");
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(await screen.findByRole("heading", { name: "Sign in to Doddy" })).toBeInTheDocument();
+    expect(seen.filter((s) => s.method === "DELETE").map((s) => s.path)).toEqual(["/v1/web/session"]);
+  });
+
+  test("the same, in Polish", async () => {
+    const refused = { status: 422, body: { error: { code: "refused", message: "x" } } };
+    renderAdmin("/admin", { "GET /v1/web/owner/overview": refused, "GET /v1/web/owner/accounts": refused }, "pl");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Dla bezpieczeństwa panel właściciela otwiera się tylko w ciągu 15 minut od zalogowania.");
+    expect(screen.getByRole("button", { name: "Wyloguj się" })).toBeInTheDocument();
+  });
+
   test("an owner finds the dashboard in the menu; nobody else does", async () => {
     renderAdmin("/");
     const nav = await screen.findByRole("navigation", { name: "Workspace" });

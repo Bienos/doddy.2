@@ -62,12 +62,12 @@ private struct ListCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text(list.name).font(.headline)
+                Text(verbatim: list.name).font(.headline)
                 Spacer()
-                Text(list.summary).font(.subheadline).foregroundStyle(Theme.secondaryText)
+                Text(verbatim: list.summary).font(.subheadline).foregroundStyle(Theme.secondaryText)
             }
             if !list.open.isEmpty {
-                Text(list.open.prefix(5).map(\.text).joined(separator: ", "))
+                Text(verbatim: list.open.prefix(5).map(\.text).joined(separator: ", "))
                     .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
                     .lineLimit(2)
@@ -161,7 +161,7 @@ struct ListDetailView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(list.name).font(.largeTitle.weight(.medium)).accessibilityAddTraits(.isHeader)
+                    Text(verbatim: list.name).font(.largeTitle.weight(.medium)).accessibilityAddTraits(.isHeader)
                         .accessibilityIdentifier("list.name")
                     Text(list.summary).font(.subheadline).foregroundStyle(Theme.secondaryText)
                     if homeList?.id == list.id {
@@ -355,7 +355,7 @@ struct ListDetailView: View {
                 // Shared lists (ADR-285): who else added or ticked it, on this iPhone only.
                 let who = sharing.label(for: item)
                 if !who.isEmpty {
-                    Text(Self.whoText(who))
+                    Text(verbatim: Self.whoText(who))
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -735,7 +735,7 @@ struct NewListSheet: View {
                                 items = ListTemplates.items(from: template, plus: existing).joined(separator: "\n")
                             } label: {
                                 HStack {
-                                    Text(template.name)
+                                    Text(verbatim: template.name)
                                     Spacer()
                                     Text(String(format: NSLocalizedString("%lld items", comment: ""), template.items.count))
                                         .foregroundStyle(Theme.secondaryText)

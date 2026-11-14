@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-12
 - **Decided by:** owner, 12 Nov 2026: "Both and merge" (the restaurant's page and ordering by phone), then, on the two open questions: **pay on delivery only**, and the **address typed on the card each time**.
-- **Status:** proposed design; no code yet. Built in the steps below, each its own pull request, after `2026-11-12-food-by-voice` (#355, merged 12 Nov 2026).
+- **Status:** design merged (#371). Step 1 (server and agent folder) is in the pull request that adds this line; step 3a (DoddyCore model and parser, #435) is merged; step 3b (the card, the availability check and the `order_*` fields of `call_places` in `tools.json`) is in its own pull request. Built in the steps below, each its own pull request, after `2026-11-12-food-by-voice` (#355, merged 12 Nov 2026).
 - **Replaces:** nothing. Extends `2026-11-12-book-agent` (same pattern, a third agent) and sits beside `2026-11-12-food-by-voice` (the person's own app, no phone call).
 
 ## Why
@@ -27,6 +27,20 @@ No delivery company lets another app order on a person's own account in Poland (
 - An order by phone is a purchase in the person's name and shares a home address and phone number with a third party. The card is the only place they come from, the confirmation sentence is fixed, and the address is erased with the task.
 - Doddy can't check that food arrives; the push says what the seller said, not that it was delivered.
 - Before anyone but the owner uses it, the open questions of `calls.md` (a legal basis for transcribing the other side, a never-call-me list) still apply, and now also: what a restaurant may do with a number it was given by an AI caller.
+
+## What step 1 changed from the design above
+- **The courier's phone** is a Polish number kept as nine digits ("600 000 000"; a typed "+48" is dropped), so the call audit never reads it as a PESEL.
+- **Number audit:** a postcode or phone number that is on the card (`doddy_order`) is no longer "a number Doddy wasn't given"; without that every delivery order would have ended "unclear". A number that isn't on the card still warns.
+- **With #396 (booking audit, no goal in the prompt):** the order prompt has no `{{doddy_goal}}` either (the card holds it; the server sends a fixed sentence). The new audit flags a yes while the seller offers another time, price or a condition; for an order the only price that counts is one **above the card's highest total**, so the seller naming the total or a dish price, or a delivery time, is the answer and not an offer, while prepayment and a total above the cap are. Without this every real order would have ended "unclear".
+- **Erased with the task:** the brief (address, phone) is deleted the moment the task ends, not when the phone acknowledges the result.
+- **Agent and spec:** `voice-agent/task-call-order/` (prompt, session, no tools beyond `end_call` and voicemail), `TASK_ORDER_AGENT_SPEC`, `scripts/voice_agent_spec.py check --agent task-call-order` in `scripts/ci.sh`, `setup-task-call-agent.mjs --agent order`. Migration `037_order_calls.sql` only widens two CHECKs.
+- **Off until set up** (owner queue 61): without `ELEVENLABS_TASK_ORDER_AGENT_ID`, 503 `order_not_configured`; `/v1/call-cases/availability` gains `order`, `orderAgentConfigured`, `orderAgentProblems`.
+- An order is meant to go through a task (one place). A single call case of kind `order` is accepted by the server like a booking one, but its brief is then deleted only when the phone acknowledges the result.
+
+## What step 3 changed from the design above
+- **No separate `order_by_phone` tool.** Like a booking, an order is `call_places` with `order_*` fields and exactly one place (`order_name`, `order_item_names` with `order_item_quantities` and optional `order_item_notes`, then `order_street`, `order_apartment`, `order_postcode`, `order_city`, `order_phone` or `order_pickup`, and optional `order_max_total_pln`). The tool stays `ask: tap`, `confirm_on_screen`; one tool is one place for the owner to attach, not two. The quantities are digit strings, because the voice agent's tool arrays hold strings only.
+- **The card** shows the lines, the address as typed (or "Pickup at the restaurant"), the courier's phone, the name, the highest total, "Payment on delivery or at pickup. Doddy never gives card details.", the server's confirmation sentence, and a **Call and order** button. Without `order: true` from `/v1/call-cases/availability` the tool answers "ordering by phone isn't switched on" and no card is shown.
+- Not on the live main agent: `call_places` is `not_synced` (owner queue 48).
 
 ## Not decided here
 - A cap default and whether to allow pickup in the first release (proposed: both).

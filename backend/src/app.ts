@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { AccountEraser } from "./account.js";
-import { AssistService } from "./assist.js";
+import { type AssistReply, AssistService } from "./assist.js";
+import { ASK_DEDUP, RequestOnce } from "./idempotency.js";
 import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
@@ -24,7 +25,7 @@ import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
-import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
+import { ANTHROPIC_FILE_CLEANUP, Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
 import { UsageLimiter } from "./policy.js";
 import { ShopifyUcpService } from "./shopify/ucp.js";
 import { TOOLKITS } from "./tools/catalog.js";
@@ -40,7 +41,7 @@ import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
 import { SocialSignIn, SupabaseUserRemover } from "./web/social.js";
-import { OwnerPanel, SupabaseUserDirectory } from "./web/owner.js";
+import { OWNER_AUDIT_KEPT_DAYS, OwnerPanel, SupabaseUserDirectory } from "./web/owner.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -185,12 +186,17 @@ export async function buildApp(
   // Deleting the account (ADR-674): each connection is removed by the provider that made it, and
   // each linked Google or Apple sign-in at Supabase, with the secret key (ADR-818).
   const supabaseUsers = config.web?.social?.secretKey ? new SupabaseUserRemover(config.web.social.projectUrl, config.web.social.secretKey) : null;
+  // Finished Ask Doddy answers kept a few minutes in memory so a repeated request id is not paid for twice; account deletion drops them.
+  const askOnce = new RequestOnce<AssistReply>(ASK_DEDUP);
   const accountEraser = new AccountEraser({
+    forget: (userId) => void askOnce.forgetUser(userId),
     store,
     removers: [
       { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
       { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
       ...(supabaseUsers ? [supabaseUsers] : []),
+      // A document's copy at Anthropic still owed a deletion when the account is erased: removed now, or kept queued.
+      ...(claude ? [{ providers: [ANTHROPIC_FILE_CLEANUP], remove: (id: string, signal: AbortSignal) => claude.deleteFile(id, signal) }] : []),
     ],
     timeoutMs: config.limits.providerTimeoutMs,
     floors,
@@ -244,7 +250,7 @@ export async function buildApp(
   // Anonymous Shop MCP calls create carts and checkouts but cannot charge or place orders.
   const shopify = config.mode === "live" ? (overrides.shopify === undefined ? new ShopifyUcpService() : overrides.shopify) : null;
   // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
-  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
+  const assist = new AssistService({ store, once: askOnce, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
@@ -283,6 +289,7 @@ export async function buildApp(
       .then(() => store.failStaleDocuments(Date.now(), DOCUMENT_STALE_AFTER_MS))
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
+      .then(() => store.pruneOwnerAudit(Date.now() - OWNER_AUDIT_KEPT_DAYS * 86_400_000))
       .then(() => store.pruneTokenFloors(Date.now()))
       .then(() => store.pruneAccountLinkCodes(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))

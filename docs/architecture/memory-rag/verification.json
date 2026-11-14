@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-10",
+  "implementation_base": "b000ee19d83b8c345a4abf119d1b147fbefafd21",
+  "initial_audit_baseline": "7a651eb27a20e04cab6663e107726a161d9dd7d1",
+  "swift": [
+    {
+      "bundle": "DoddyPersistenceTests.xctest",
+      "total": 207,
+      "skipped": 2,
+      "failed": 0
+    },
+    {
+      "bundle": "DoddyDesignTokensTests.xctest",
+      "total": 10,
+      "skipped": 0,
+      "failed": 0
+    },
+    {
+      "bundle": "DoddyCoreTests.xctest",
+      "total": 2661,
+      "skipped": 0,
+      "failed": 0
+    }
+  ],
+  "checks": {
+    "pass": 26,
+    "fail": 1,
+    "failure": "Existing scripts/studio_skills.sh uses GNU sed -i and 0,/range syntax; macOS BSD sed does not create the broken-SVG test fixture."
+  },
+  "iphone_unit_tests": {
+    "passed": 168,
+    "failed": 0,
+    "skipped": 1,
+    "simulator": "iPhone 18 Pro / iOS 27.2",
+    "configuration": "Debug; signing disabled for test invocation only"
+  },
+  "not_run": [
+    "Physical device voice sessions",
+    "End-to-end first audio latency",
+    "Battery and iPhone peak RAM",
+    "Live provider or production validation",
+    "Full UI interaction suite",
+    "Broad natural-language answer correctness / false-memory evaluation"
+  ]
+}

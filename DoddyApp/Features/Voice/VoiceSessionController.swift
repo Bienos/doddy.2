@@ -363,6 +363,17 @@ final class VoiceSessionController {
     /// What each file in `documents` is about, by its link: the request the agent gave `make_document`
     /// (`ThreadDelivery.madeFileBrief`). In memory only, like `documents`.
     private(set) var documentBriefs: [URL: String] = [:]
+    /// A file still being made (owner, 13 Nov 2026, decision 2026-11-13-file-being-made-island-note): instead of the
+    /// pop-up card, Home's island drops a small note saying what Doddy is making, for `MadeFileStart.noteSeconds`.
+    /// Nothing on it needs a tap; the file arrives in Messages when the server says it is ready.
+    struct MadeFileNote: Equatable, Identifiable {
+        let id = UUID()
+        let document: RunDocument
+        /// False in a private conversation: nothing from it reaches Messages, so the file opens from the transcript.
+        let keptInMessages: Bool
+    }
+    private(set) var madeFileNote: MadeFileNote?
+    @ObservationIgnored private var madeFileNoteClear: Task<Void, Never>?
     /// find_flights: the latest search's flights on Kiwi.com, as buttons (never read out by the agent).
     private(set) var flightLinks: [RunLink] = []
     private(set) var isMuted = false {
@@ -1004,6 +1015,9 @@ final class VoiceSessionController {
         earlyToken: Task<Result<String, VoiceTokenError>, Never>?
     ) async {
         let auth: ElevenLabsConfiguration
+        // The account-derived user id the voice server sent with the token, when it sent one (decision
+        // 2026-11-12-voice-conversations-per-account). Deleting the account finds the conversations by it.
+        var accountUserID: String?
         switch mode {
         case .tokenServer(let endpoint):
             let fetched: Result<String, VoiceTokenError>
@@ -1025,6 +1039,7 @@ final class VoiceSessionController {
             switch fetched {
             case .success(let token):
                 auth = .conversationToken(token)
+                accountUserID = VoiceTokenUserIDs.shared.take(forToken: token)
             case .failure(let error):
                 let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
                 Self.audioLog.notice("\(tokenNote, privacy: .public)")
@@ -1050,7 +1065,13 @@ final class VoiceSessionController {
         let sessionNote = audioHold == nil ? "set up by LiveKit" : "held by Doddy: \(Self.describeAudioSession())"
         let connectNote = "connecting to ElevenLabs: attempt \(attempt), audio session \(sessionNote)"
         Self.audioLog.notice("\(connectNote, privacy: .public)")
-        let startConfig = config
+        // This iPhone's own id, unless the server sent an account id this app accepts (`VoiceUserIDPolicy`). A `let`:
+        // the start below captures it in a concurrent closure.
+        let startConfig: ConversationConfig = {
+            var withUser = config
+            if let accountID = VoiceUserIDPolicy.accepted(accountUserID) { withUser.userId = accountID }
+            return withUser
+        }()
         do {
             // At most `StartLimit.seconds` (ADR-686). One that connects after the limit anyway is
             // ended here, so nothing keeps listening.
@@ -1391,7 +1412,7 @@ final class VoiceSessionController {
         let recapLines = kept.map { RecapModelIO.Line(speaker: $0.fromUser ? .person : .doddy, text: $0.text) }
         let memories = store
         Task { await RecapKeeper.recapConversation(lines: recapLines, startedAt: log.startedAt, endedAt: log.endedAt,
-                                                   isPrivate: isPrivate, store: memories) }
+                                                   isPrivate: isPrivate, conversationID: log.id, store: memories) }
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         logs.append(log)
     }
@@ -2956,10 +2977,13 @@ final class VoiceSessionController {
                 return
             }
             do {
-                let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
+                let recall = ShareableRecallService(base: store.environment.recallService) { PrivateNotesStore.current().ids }
+                let outcome = try await recall.recall(query, limit: 20)
                 // No word matched: the newest notes too, e.g. one saved during this call.
                 let newest = outcome == .noMatch ? await store.newestNotesForVoice(excluding: PrivateNotesStore.current().ids) : .none
-                await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query, newest: newest))
+                let currentPrivacy = PrivateNotesStore.current()
+                let shareableNewest = NewestNotes.pick(newest.notes, excluding: currentPrivacy.ids, withPhoto: newest.withPhoto)
+                await reply(call.toolCallId, VoiceToolReply.search(currentPrivacy.shareable(outcome), question: query, newest: shareableNewest))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
@@ -3815,7 +3839,7 @@ final class VoiceSessionController {
                 let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
                 await keepMadeDocument(result, from: cloud)
                 keepFlightLinks(result)
-                await reply(toolCallID, VoiceToolReply.cloudResult(result))
+                await reply(toolCallID, madeFileReply(result))
             } else {
                 // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
                 // single-use approval; the read runs only after the user's yes (runAskedCloudRead).
@@ -3843,7 +3867,7 @@ final class VoiceSessionController {
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
             await keepMadeDocument(result, from: cloud)
-            await reply(toolCallID, VoiceToolReply.cloudResult(result))
+            await reply(toolCallID, madeFileReply(result))
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
         }
@@ -3867,6 +3891,8 @@ final class VoiceSessionController {
         case .ready: flashIsland(.resultReady(.document))
         case .working:
             flashIsland(.resultReady(.documentStarted))
+            // In the app: the island's small note, not the pop-up card (MadeFileStart.popsUpCard).
+            showMadeFileNote(document)
             // One notification when it is done, if the messaging server is set up for it.
             FileReadyPush.watch(document)
         case .failed: break
@@ -3874,6 +3900,30 @@ final class VoiceSessionController {
         // Also Doddy's own message in Messages, with the file to open and share from (owner, 10 Nov 2026).
         // A private conversation keeps nothing on this iPhone, so it adds nothing there either.
         if !isPrivate { await ThreadInbox.deliver(document: document, about: about, polish: Self.cardsInPolish) }
+    }
+
+    /// Home's island note for a file being made: up for a few seconds, then gone by itself.
+    private func showMadeFileNote(_ document: RunDocument) {
+        guard MadeFileStart.showsNote(document) else { return }
+        madeFileNote = MadeFileNote(document: document, keptInMessages: !isPrivate)
+        madeFileNoteClear?.cancel()
+        madeFileNoteClear = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(MadeFileStart.noteSeconds))
+            guard !Task.isCancelled else { return }
+            self?.madeFileNote = nil
+        }
+    }
+
+    /// What the agent hears for a server tool's result. A file still being made gets the phone's own words, with no
+    /// card or tap in them, and no promise of Messages in a private conversation (`MadeFileStart.voiceReply`).
+    private func madeFileReply(_ result: RunResult) -> String {
+        MadeFileStart.voiceReply(result, keptInMessages: !isPrivate) ?? VoiceToolReply.cloudResult(result)
+    }
+
+    /// A tap on the island note puts it away sooner. Nothing else happens.
+    func dismissMadeFileNote() {
+        madeFileNoteClear?.cancel()
+        madeFileNote = nil
     }
 
     /// ADR-563: what the agent hears when a server tool fails. An account that isn't connected gets
@@ -4216,6 +4266,11 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.callTaskBookingOff)
             return
         }
+        // Ordering food needs the order agent on the server (decision 2026-11-12-food-by-phone).
+        if draft.order != nil, availability.order != true {
+            await reply(toolCallID, VoiceToolReply.callTaskOrderOff)
+            return
+        }
         guard !callerFirstName.isEmpty else {
             await reply(toolCallID, VoiceToolReply.callTaskNoName)
             return
@@ -4243,7 +4298,7 @@ final class VoiceSessionController {
         guard approval.state != "unknown" else { return (VoiceToolReply.callTaskUnknown, true) }
         let first = preview.places.first?.callee.name ?? ""
         return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult,
-                                               booking: preview.isBooking), true)
+                                               booking: preview.isBooking, order: preview.isOrder), true)
     }
 
     // MARK: Calls from Doddy's number later (ADR-754)

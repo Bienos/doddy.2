@@ -126,6 +126,18 @@ struct HomeView: View {
                 }
             }
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: conversation.live == nil)
+            // A file Doddy started making (owner, 13 Nov 2026): a small note drops out of the island for a few
+            // seconds instead of the pop-up card. Nothing on it needs a tap; the file arrives in Messages.
+            .overlay(alignment: .top) {
+                if let note = conversation.live?.madeFileNote {
+                    MadeFileIslandNote(document: note.document, keptInMessages: note.keptInMessages) {
+                        conversation.live?.dismissMadeFileNote()
+                    }
+                    .id(note.id)
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.4, anchor: .top).combined(with: .opacity))
+                }
+            }
+            .animation(reduceMotion ? nil : .spring(duration: 0.45, bounce: 0.2), value: conversation.live?.madeFileNote?.id)
             .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.2), value: showFiles)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
@@ -136,9 +148,7 @@ struct HomeView: View {
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: $showShopping) { ShoppingHubView() }
             .sheet(isPresented: $showFood) { FoodView() }
-            .sheet(isPresented: $showPolandPack) {
-                PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
-            }
+            .sheet(isPresented: $showPolandPack) { PolandPackView() }
             .sheet(isPresented: $showTrips, onDismiss: { TripsModel.shared.reload() }) { TripsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
@@ -168,6 +178,24 @@ struct HomeView: View {
                 guard requested else { return }
                 router.isMessagesRequested = false
                 showAsk = true
+            }
+            // A radar story's push, tapped (decision 2026-11-13-radar-fixes): On my radar, where "Doddy spotted" lists it.
+            .onChange(of: router.isRadarRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isRadarRequested = false
+                guard scope.shows(.following) else { return }
+                showFollowing = true
+            }
+            // A price-alert push, tapped (decision 2026-11-14-price-alerts-screen): Shopping opens, and it opens Price alerts and
+            // clears the request. Where Shopping is hidden in this build, nothing opens and the request is dropped.
+            .onChange(of: router.isPriceAlertsRequested, initial: true) { _, requested in
+                guard requested else { return }
+                guard scope.shows(.deals) else {
+                    router.isPriceAlertsRequested = false
+                    return
+                }
+                guard !showShopping else { return }
+                showShopping = true
             }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
@@ -313,10 +341,11 @@ struct HomeView: View {
                 // The food-delivery apps the owner adds to (11 Nov 2026): one row each, opened from here, nothing sent.
                 Button { showFood = true } label: { Label("Food", systemImage: "fork.knife") }
                     .accessibilityIdentifier("home.food")
-                // Poland Pack reads official local data only when opened; no startup request.
+                // My city (was Poland Pack, "Polska na co dzień", until 13 Nov 2026): the weather, warnings, air and NBP
+                // rates, read from official sources only when opened; no startup request.
                 Button { showPolandPack = true } label: {
-                    Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
-                          systemImage: "mappin.and.ellipse")
+                    Label(NotificationLanguage.current == .polish ? "Moje miasto" : "My city",
+                          systemImage: "building.2")
                 }
                 .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.

@@ -8,6 +8,7 @@ import type { Brief, FactKind } from "./brief.js";
 import { GRACE_SECS, RING_SECS } from "./hours.js";
 import { bookingConfirmLine, bookingLines, bookingWhat, bookingWhen, type Booking } from "./booking.js";
 import { callbackLine, factLines, forbiddenList, openingLine } from "./opening.js";
+import { orderConfirmLine, orderLines, orderSummary, type Order } from "./order.js";
 import { formatPolish, type DestinationKind } from "./phone.js";
 
 /** The variables the task-call agent receives; its prompt may use exactly these (plus doddy_attempt). */
@@ -29,6 +30,10 @@ export interface AgentVariables {
   doddy_booking?: string;
   /** Booking calls only: the one sentence that accepts exactly that booking. */
   doddy_booking_confirm_line?: string;
+  /** Order calls only (decision 2026-11-12-food-by-phone): the approved order, one detail per line. */
+  doddy_order?: string;
+  /** Order calls only: the one sentence that accepts exactly that order. */
+  doddy_order_confirm_line?: string;
 }
 export const AGENT_VARIABLE_NAMES = [
   "doddy_opening_line", "doddy_question", "doddy_principal", "doddy_callee", "doddy_goal", "doddy_facts",
@@ -38,10 +43,15 @@ export const AGENT_VARIABLE_NAMES = [
 export const BOOK_AGENT_VARIABLE_NAMES = [
   ...AGENT_VARIABLE_NAMES, "doddy_booking", "doddy_booking_confirm_line",
 ] as const satisfies readonly (keyof AgentVariables)[];
+/** The order agent's variables: the ask agent's plus the order (voice-agent/task-call-order/session.json). */
+export const ORDER_AGENT_VARIABLE_NAMES = [
+  ...AGENT_VARIABLE_NAMES, "doddy_order", "doddy_order_confirm_line",
+] as const satisfies readonly (keyof AgentVariables)[];
 /** What a live prompt from before 12 Nov 2026 reads as the goal: about the question or the booking on the card, nothing more. */
 export const GOAL_FOR_LIVE_PROMPT = {
   ask: "Uzyskać odpowiedź na pytanie poniżej.",
   book: "Zarezerwować dokładnie to, co opisano poniżej.",
+  order: "Zamówić dokładnie to, co opisano poniżej.",
 } as const;
 /** Added at answer time so the post-call webhook can be matched to the attempt. Not in the prompt. */
 export const ATTEMPT_VARIABLE = "doddy_attempt";
@@ -49,7 +59,7 @@ export const ATTEMPT_VARIABLE = "doddy_attempt";
 export interface CallPayload {
   format: 1;
   caseId: string;
-  kind: "ask" | "book";
+  kind: "ask" | "book" | "order";
   language: "pl";
   display: {
     callee: { name: string; phone: string; destinationKind: DestinationKind; source: Brief["callee"]["source"]; sourceLabel: string | null };
@@ -59,6 +69,8 @@ export interface CallPayload {
     facts: { kind: FactKind; text: string }[];
     /** Booking calls only: exactly what may be booked. */
     booking?: Booking;
+    /** Order calls only: exactly what may be ordered, and where it goes. Erased with the payload. */
+    order?: Order;
     forbidden: string[];
     notice: RecordingNotice;
     maxDurationSecs: number;
@@ -80,6 +92,7 @@ export function compilePayload({ caseId, brief, destination, fromNumber, notice 
   const question = /[?？]$/.test(brief.question) ? brief.question : `${brief.question}?`;
   const facts = brief.facts.map((f) => ({ kind: f.kind, text: f.text }));
   const booking = brief.kind === "book" ? brief.booking : undefined;
+  const order = brief.kind === "order" ? brief.order : undefined;
   return {
     format: 1,
     caseId,
@@ -95,7 +108,9 @@ export function compilePayload({ caseId, brief, destination, fromNumber, notice 
       question,
       facts,
       ...(booking ? { booking } : {}),
-      forbidden: forbiddenList(g, facts.map((f) => f.kind), booking ? `${bookingWhat(booking)}, ${bookingWhen(booking)}, na nazwisko ${booking.name}` : undefined),
+      ...(order ? { order } : {}),
+      forbidden: forbiddenList(g, facts.map((f) => f.kind), booking ? `${bookingWhat(booking)}, ${bookingWhen(booking)}, na nazwisko ${booking.name}` : undefined,
+        order ? orderSummary(order) : undefined),
       notice,
       maxDurationSecs: brief.maxDurationSecs,
     },
@@ -117,6 +132,7 @@ export function compilePayload({ caseId, brief, destination, fromNumber, notice 
         doddy_callback_line: callbackLine(g),
         doddy_max_minutes: String(Math.round(brief.maxDurationSecs / 60)),
         ...(booking ? { doddy_booking: bookingLines(booking), doddy_booking_confirm_line: bookingConfirmLine(booking) } : {}),
+        ...(order ? { doddy_order: orderLines(order), doddy_order_confirm_line: orderConfirmLine(order) } : {}),
       },
     },
   };
@@ -162,6 +178,7 @@ export function previewOf(payload: CallPayload, digest: Buffer, approvableUntil:
     facts: d.facts,
     kind: payload.kind,
     ...(d.booking ? { booking: d.booking, confirmLine: payload.agent.variables.doddy_booking_confirm_line } : {}),
+    ...(d.order ? { order: d.order, confirmLine: payload.agent.variables.doddy_order_confirm_line } : {}),
     forbidden: d.forbidden,
     callbackLine: payload.agent.variables.doddy_callback_line,
     maxDurationSecs: d.maxDurationSecs,

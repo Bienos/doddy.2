@@ -3,7 +3,7 @@
 ## Shipped in the app
 | Package | Version | Licence | Used for |
 |---|---|---|---|
-| [GRDB.swift](https://github.com/groue/GRDB.swift) | 7.9.0 (exact in `Packages/DoddyCore/Package.swift`, locked in its `Package.resolved`) | MIT | SQLite access, migrations, FTS5 (M1, ADR-003) |
+| [GRDB.swift](https://github.com/groue/GRDB.swift) | 7.12.0 (exact in `Packages/DoddyCore/Package.swift`, locked in its `Package.resolved`) | MIT | SQLite access, migrations, FTS5 (M1, ADR-003) |
 | [swift-crypto](https://github.com/apple/swift-crypto) (+ swift-asn1) | 3.15.1 (exact in `Packages/DoddyCore/Package.swift`, locked in its `Package.resolved`) | Apache-2.0 | **Linux only**: the CryptoKit API for testing the encrypted backup (ADR-222) in CI. The iPhone app uses Apple's CryptoKit and doesn't link it |
 | [ElevenLabs Swift SDK](https://github.com/elevenlabs/elevenlabs-swift-sdk) | 3.3.1 (exact pin in `project.yml`) | MIT | Voice conversations with the ElevenLabs agent (V1) |
 | [LiveKit Swift SDK](https://github.com/livekit/client-sdk-swift) | 2.19.0 (exact pin in `project.yml` since 7 Nov 2026; the ElevenLabs SDK itself asks for ≥ 2.10.0) | Apache-2.0 | Real-time audio transport used by the ElevenLabs SDK. Also a direct dependency of the app since ADR-207, so the app can set its audio session and a conversation survives other apps' sound |
@@ -69,7 +69,7 @@ Pinned exactly in `web/package.json`; locked in `web/package-lock.json`.
 | react-router | 7.18.4 | MIT | Pages |
 | zod | 3.25.76 | MIT | Checking the server's replies |
 
-Build and test only (not in the built page): vite 7.3.7, @vitejs/plugin-react 5.2.0, typescript 5.9.3, vitest 3.2.7,
+Build and test only (not in the built page): vite 7.3.7, @vitejs/plugin-react 5.2.0, typescript 5.9.3, vitest 4.1.12,
 jsdom 27.4.0, @testing-library/dom 10.4.2, @testing-library/jest-dom 6.9.1, @testing-library/react 16.3.3,
 @testing-library/user-event 14.6.8, @playwright/test 1.56.1, and @types/node, @types/react, @types/react-dom. All MIT
 except typescript and Playwright (Apache-2.0).
@@ -87,7 +87,7 @@ use Node's built-in modules only.
 | Tool | Used for | Licence | Note |
 |---|---|---|---|
 | Swift 6.1 Linux toolchain (swift.org) | `Packages/DoddyCore` tests on Linux | Apache-2.0 w/ runtime exception | CI's `swift` job uses the official `swift:6.1-noble` image. On 7 Nov 2026, 6.1.3 ran `make test-core`: 2416 tests, 0 failures. 6.1.0 crashes while compiling DoddyCore, so use 6.1.3 or newer. Toolchains downloaded by hand (6.3.3 earlier, 6.1.0 and 6.1.3 on 7 Nov) came over HTTPS; their **GPG signatures were not verified** |
-| XcodeGen | generating the Xcode project | MIT | `brew install xcodegen`; CI installs Homebrew's current version (not pinned). 2.44.1 was built on Linux once to validate `project.yml` |
+| XcodeGen | generating the Xcode project | MIT | `brew install xcodegen` on your own Mac. GitHub's Mac jobs install version 2.46.0 from its GitHub release file after a SHA-256 check (`scripts/install_xcodegen.sh`). 2.44.1 was built on Linux once to validate `project.yml` |
 | Xcode / iOS SDK | app build | Apple developer terms | Xcode 26.6 on the `macos-26` runner, pinned in `.github/workflows/ios.yml` and `project.yml` (`xcodeVersion`) |
 | Node.js 22 | servers, Doddy Web and site tests | MIT | every `package.json` but `site/`'s sets `engines`; CI uses `actions/setup-node` with `22` |
 

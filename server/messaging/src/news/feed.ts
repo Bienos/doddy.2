@@ -16,6 +16,8 @@ export interface FeedCard {
   imageUrl?: string;
   /** The follows this story belongs to, by label, in the order the person listed them. */
   follows: string[];
+  /** The same story from other publishers (name and their own link), when there are any (13 Nov 2026). */
+  alsoFrom?: { source: string; url: string }[];
 }
 
 export const FEED_LIMIT = 40;
@@ -25,13 +27,14 @@ export const FEED_PER_SOURCE = 6;
 export const FEED_PER_FOLLOW = 4;
 
 /**
- * Picks the cards: the last two days, deduplicated by link and title, at most six per publisher,
- * a keyword follow only where the words really appear. Every follow first gets its best few, so a
- * busy topic such as Poland (four publishers) can't crowd a quiet one out of the 40; the rest are the
- * best-fitting stories (`shortlist`). They are shown newest first, the way a feed reads.
+ * Picks the cards: the last two days, one card per story (the same link, or the same headline from several
+ * publishers, which the card then names), at most six per publisher, a keyword follow only where the words
+ * really appear, the reader's language a little first. Every follow first gets its best few, so a busy topic
+ * such as Poland (nine publishers) can't crowd a quiet one out of the 40; the rest are the best-fitting stories
+ * (`shortlist`). They are shown newest first, the way a feed reads.
  */
-export function buildFeed(topics: TopicItems[], now: Date, limit = FEED_LIMIT): FeedCard[] {
-  const all = shortlist(topics, new Set(), now, { limit: 10 * FEED_LIMIT, perSource: FEED_PER_SOURCE, windowHours: FEED_WINDOW_HOURS });
+export function buildFeed(topics: TopicItems[], now: Date, limit = FEED_LIMIT, language?: "en" | "pl"): FeedCard[] {
+  const all = shortlist(topics, new Set(), now, { limit: 10 * FEED_LIMIT, perSource: FEED_PER_SOURCE, windowHours: FEED_WINDOW_HOURS, language });
   const chosen = new Set<string>();
   for (const label of new Set(topics.map((t) => t.label))) {
     let n = 0;
@@ -60,6 +63,7 @@ export function buildFeed(topics: TopicItems[], now: Date, limit = FEED_LIMIT): 
       publishedAt: c.publishedAt,
       ...(c.imageUrl ? { imageUrl: c.imageUrl } : {}),
       follows: [...new Set(c.topics)].sort((a, b) => (order.get(a) ?? 99) - (order.get(b) ?? 99)),
+      ...(c.alsoFrom.length ? { alsoFrom: c.alsoFrom.map(({ source, url }) => ({ source, url })) } : {}),
     }));
 }
 

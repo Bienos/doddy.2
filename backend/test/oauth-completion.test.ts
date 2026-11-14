@@ -222,6 +222,26 @@ test("browser return routes only forward allowlisted parameters to the configure
   assert.deepEqual([...new URL(verify.headers.get("location")!).searchParams.keys()], ["session_uri"]);
 });
 
+test("the browser return is logged by field name and shape only, never by value", async () => {
+  h = await harness();
+  const attempt = "8b0c7f1e-2d3a-4b5c-9d8e-0f1a2b3c4d5e";
+  await h.call("GET", `/v1/oauth/return?attempt=${attempt}&status=success&connected_account_id=ca_SECRETACCOUNT`, { token: null });
+  // An attempt id with another parameter glued onto it (one `?` too many) is the case this log must reveal.
+  await h.call("GET", `/v1/oauth/return?attempt=${attempt}?status=success&connected_account_id=ca_SECRETACCOUNT&x y=1`, { token: null });
+  await h.call("GET", "/v1/oauth/verify?session_uri=composio://session/SECRET-SESSION", { token: null });
+
+  const lines = h.logs.map((l) => JSON.parse(l) as Record<string, unknown>).filter((l) => l.event === "oauth_return");
+  assert.equal(lines.length, 3);
+  assert.deepEqual(lines[0], { level: "info", correlationId: lines[0]!.correlationId, event: "oauth_return", kind: "return", names: ["attempt", "status", "connected_account_id"], attemptOk: true, statusOk: true, accountOk: true });
+  assert.equal(lines[1]!.attemptOk, false, "a malformed attempt id shows up as not ok");
+  assert.equal(lines[1]!.statusOk, false, "and so does the status that was swallowed into it");
+  assert.deepEqual(lines[1]!.names, ["attempt", "connected_account_id", "other"], "an odd name is reported as `other`");
+  assert.deepEqual({ kind: lines[2]!.kind, sessionUriOk: lines[2]!.sessionUriOk }, { kind: "verify", sessionUriOk: true });
+
+  const dump = h.logs.join("\n");
+  for (const secret of ["SECRETACCOUNT", "SECRET-SESSION", attempt]) assert.ok(!dump.includes(secret), `leaked: ${secret}`);
+});
+
 test("cancel and denial are recorded as such, not as failures of Doddy or as success", async () => {
   h = await harness();
   const s1 = await h.call("POST", `${CAL}/connect`, { body: {} });

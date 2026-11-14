@@ -1,4 +1,5 @@
 import { buildApp } from "./app.js";
+import { dealWatchContextFor } from "./deals/dealWatches.js";
 import { JakdojadePartnerClient } from "./integrations/jakdojade.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
@@ -24,6 +25,7 @@ const deps = {
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
   jakdojade: config.jakdojade ? new JakdojadePartnerClient(async () => config.jakdojade ?? null) : undefined,
   fileWatches: { origin: config.documentsOrigin }, radar: { enabled: config.radarAlertsEnabled },
+  contactTexts: config.contactTextsEnabled,
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
 const app = await buildApp(deps);
@@ -34,6 +36,7 @@ app.log.info({
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
   calls: calls.inbound, outboundCalls: calls.outbound,
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
+  newsSummary: !!providers.news.summary.summarizer, newsSummaryModel: config.newsSummarySettings.model,
   twilioDeleteAfterMinutes: providers.deleteAfterMinutes,
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
@@ -42,9 +45,11 @@ app.log.info({
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
   dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,
+  contactTexts: config.contactTextsEnabled && !!providers.cipher && !!providers.sms,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   radarAlerts: config.radarAlertsEnabled,
   leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,
+  dealWatches: config.dealWatchSettings.enabled && config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled && !!providers.cipher,
   deliveries: config.uberDirect ? config.uberDirect.mode : false,
   ceidg: !!providers.ceidg,
   jakdojade: !!config.jakdojade,
@@ -63,10 +68,11 @@ if (config.runWorkerInWeb) {
   const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
   const fileWatchCtx = fileWatchContext(db, { origin: config.documentsOrigin }, providers.cipher, providers.push, log);
   const radarCtx = radarContext(db, config.radarAlertsEnabled, providers.news, providers.push, providers.cipher, config.quietHours);
-  const catalogCtx = catalogContext(db, providers.deals);
+  const dealWatchCtx = dealWatchContextFor({ db, ...providers, quietHours: config.quietHours }, log);
+  const catalogCtx = catalogContext(db, providers.deals, dealWatchCtx);
   workerDone = runWorkerLoop(db, {
     ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, radar: radarCtx,
-    catalog: catalogCtx,
+    catalog: catalogCtx, dealWatches: dealWatchCtx,
     scheduledCalls: scheduledCallsFrom(config, providers),
   }, () => stopping);
 }

@@ -161,7 +161,9 @@ enum TalkInIsland {
         guard !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
-        noteShortcutRan()
+        // How old this process is and how long iOS took to load Doddy before this press (the timeline below
+        // begins here, so it can't show that): fixed words and seconds only.
+        log.notice("talk start launch: \(LaunchWork.launchTiming().line(), privacy: .public)")
         // Where the seconds go between the press and a connected conversation (decision 2026-11-10-voice-start-timing):
         // fixed stage words and seconds only, on the "voice-audio" log, whatever way the start ends.
         let requestedAt = ProcessInfo.processInfo.systemUptime
@@ -172,16 +174,11 @@ enum TalkInIsland {
             if !handedBack { log.notice("talk start timing: \(timeline.line(at: ProcessInfo.processInfo.systemUptime), privacy: .public)") }
         }
 
+        // The checks that need nothing but this iPhone come first, so a press that can't start never flashes
+        // an island. None of them waits.
         // The terms come first (ADR-581); the "Before we start" step needs the screen.
         guard !LegalAcceptanceStore.isNeeded else {
             throw refused("terms not accepted", needsApp: NSLocalizedString("Open Doddy to accept the terms first.", comment: ""))
-        }
-        // iOS can run the intent before `DoddyApp.init` has set the stores, on a cold launch: wait a moment
-        // for them instead of refusing "voice input unavailable".
-        await IntentStores.waitForStore()
-        guard let store = IntentStores.store, store.environment.capabilities.isAvailable(.voiceInput) else {
-            throw refused("voice input unavailable",
-                          needsApp: NSLocalizedString("Doddy's voice isn't available right now. Open Doddy to see why.", comment: ""))
         }
         // The conversation hands the agent the saved notes, so it never starts past the Face ID lock.
         guard !AppLock.shared.isLocked else {
@@ -199,14 +196,33 @@ enum TalkInIsland {
         let auth = VoiceAuthSession.shared
         // A Doddy account needs no restore of the older voice login, which refreshed it over the network
         // on a press (`TalkStartAccount`). The token request refreshes the account's own token itself.
-        if TalkStartAccount.needsRestore(
+        let needsRestore = TalkStartAccount.needsRestore(
             accountSignedIn: DoddyAccountModel.shared.isSignedIn,
-            voiceSessionSecondsLeft: auth.voiceSessionSecondsLeft) {
-            await auth.restore()
+            voiceSessionSecondsLeft: auth.voiceSessionSecondsLeft)
+        let voiceNotSetUp = NSLocalizedString("Open Doddy and start a conversation once to set up his voice. After that this works without opening him.", comment: "")
+        // Without a restore the gate is read now, before the island; with one, after it (below).
+        if !needsRestore, !(auth.hasVoiceAccess() && VoiceProviderConsent.isGranted()) {
+            throw refused("voice not set up", needsApp: voiceNotSetUp)
         }
+
+        // The island first (decision 2026-11-13-island-first): up now as "Connecting…", before anything below
+        // waits. Every way out of this start from here on ends it, unless a conversation took it over.
+        let shownByPress = showIslandFirst()
+        timeline.mark(.islandShown, at: ProcessInfo.processInfo.systemUptime)
+        defer { settleIslandFirst(shownByPress: shownByPress) }
+        noteShortcutRan()
+
+        // iOS can run the intent before `DoddyApp.init` has set the stores, on a cold launch: wait a moment
+        // for them instead of refusing "voice input unavailable".
+        await IntentStores.waitForStore()
+        guard let store = IntentStores.store, store.environment.capabilities.isAvailable(.voiceInput) else {
+            throw refused("voice input unavailable",
+                          needsApp: NSLocalizedString("Doddy's voice isn't available right now. Open Doddy to see why.", comment: ""))
+        }
+        if needsRestore { await auth.restore() }
         timeline.mark(.account, at: ProcessInfo.processInfo.systemUptime)
         guard auth.hasVoiceAccess(), VoiceProviderConsent.isGranted() else {
-            throw refused("voice not set up", needsApp: NSLocalizedString("Open Doddy and start a conversation once to set up his voice. After that this works without opening him.", comment: ""))
+            throw refused("voice not set up", needsApp: voiceNotSetUp)
         }
 
         // iOS may have started Doddy just for this, before any screen loaded the profile.
@@ -302,6 +318,33 @@ enum TalkInIsland {
         // Doddy came to the front while it started: iOS doesn't show his island over him, but Home
         // holds the conversation and shows it, so nothing is put over the app. The transcript sheet
         // comes up by itself only when a card needs the user (`HomeConversation.needsYou`).
+    }
+
+    /// Puts the island up now as "Connecting…" (decision 2026-11-13-island-first), with the greeting Doddy will
+    /// open with, as the conversation shows it while it connects. True only when this press put it up: false when
+    /// one was already up (not this press's) or iOS refused it, and then the conversation asks again itself and
+    /// says so if it is refused. The conversation takes this island over at its own "Connecting…".
+    private static func showIslandFirst() -> Bool {
+        let island = VoiceLiveActivity.shared
+        guard !island.isShowing else { return false }
+        // The profile only if a screen already loaded it; the greeting gains the name when the conversation starts.
+        let profile = IntentStores.profiles.flatMap { $0.hasLoaded ? $0.profile : nil } ?? .empty
+        var state = DoddyVoiceAttributes.ContentState(status: .connecting, isMuted: false, greeting: greeting(for: profile))
+        // ADR-617: the island speaks the language of Doddy's screens, as the conversation's own state does.
+        state.language = Bundle.main.preferredLocalizations.first
+        island.show(state, startedAt: .now)
+        let shown = island.isShowing
+        let word = shown ? "shown" : "refused by iOS"
+        log.notice("talk in the island: island \(word, privacy: .public) before the set-up")
+        return shown
+    }
+
+    /// The island the press put up stays only if a conversation is connecting or live; otherwise it goes at once.
+    private static func settleIslandFirst(shownByPress: Bool) {
+        let live = VoiceSessionController.current != nil
+        guard TalkIslandFirst.afterwards(shownByPress: shownByPress, conversationLive: live) == .end else { return }
+        log.notice("talk in the island: the press's island was ended, no conversation took it over")
+        VoiceLiveActivity.shared.end()
     }
 
     /// Whether the start's `controller.start` has returned, read by the polling intent.

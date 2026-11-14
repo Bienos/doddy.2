@@ -58,7 +58,7 @@ Every gap is a visible `<span class="ph" data-ph="ID">` on the page: `[OWNER: â€
 
 ### Processors, agreements, providers
 - [ ] **D1** Which data processing agreements exist, and each company's role (processor, sub-processor, independent controller). P `#processors`. The page lists: ElevenLabs, OpenAI (the model behind ElevenLabs, and the Realtime voice), Anthropic, Composio, Monid / Search1API / LiteScrape, Open-Meteo, Wikipedia, Apple, ECB, Vercel, Upstash, Render, Supabase, Google Analytics / Fonts. Twilio and GNews are mentioned only under the messaging server, which no shipped build reaches.
-- [ ] **D2** Which model the live ElevenLabs agent uses at release. P `#voice-provider`. Read from the live agent on 24 Oct 2026: an OpenAI model (`gpt-6-luna`); `voice-agent/session.json` still says `gemini-3.5-flash` (values "as read on 2026-10-09") and is out of date. Since version 2026-10-25 the page names OpenAI and still flags it.
+- [ ] **D2** Which model the live ElevenLabs agent uses at release. P `#voice-provider`. Read from the live agent on 24 Oct 2026: an OpenAI model (`gpt-6-luna`); `voice-agent/session.json` said `gemini-3.5-flash` until 10 Nov 2026, when it was updated from the live agent (still `gpt-6-luna`); `PRIVACY_POLICY_DRAFT.md` was corrected the same day. Since version 2026-10-25 the page names OpenAI and still flags it.
 - [ ] **D3** Each provider's training and retention terms (ElevenLabs, Google, OpenAI, Anthropic). P `#ai-training`. The page says *we* don't train on user data (no training code exists in the repo); it makes no claim for the providers.
 
 ### International transfers

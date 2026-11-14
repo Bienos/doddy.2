@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import {
-  labelCondition, leafletDates, NATURA_LEAFLET, NATURA_PROMOTIONS, natura, parseNaturaLeaflet, parseNaturaPromotions, plainText,
+  labelCondition, leafletDates, NATURA_LEAFLET, NATURA_MAX_BYTES, NATURA_PROMOTIONS, natura, parseNaturaLeaflet, parseNaturaPromotions, plainText,
   printedUnit, productLabels,
 } from "../src/deals/chains/natura.js";
 import { PoliteFetcher } from "../src/deals/fetcher.js";
@@ -286,14 +286,22 @@ describe("Natura: reading the shop", () => {
     assert.equal(r.incomplete, "leaflet_in_part,first_page_only", "the carousel is part of the leaflet; one page of the promotions");
   });
 
-  test("a promotions page over the fetcher's cap: the leaflet alone, read in part", async () => {
-    const big = listingPage() + `<!-- ${"x".repeat(200_000)} -->`;
+  test("a promotions page over Natura's own cap (6 MB): the leaflet alone, read in part", async () => {
+    const big = listingPage() + `<!-- ${"x".repeat(NATURA_MAX_BYTES)} -->`;
     const web = shopWeb({ [NATURA_LEAFLET]: leafletPage(), [NATURA_PROMOTIONS]: big });
-    const r = ok(await natura.read(ctx(web, ["szampon"], new PoliteFetcher({ fetch: web.fetch, maxBytes: 150_000 }))));
+    const r = ok(await natura.read(ctx(web, ["szampon"], new PoliteFetcher({ fetch: web.fetch }))));
     assert.equal(r.leaflets.length, 1);
     assert.equal(r.leaflets[0]!.leaflet.url, NATURA_LEAFLET);
     assert.equal(r.incomplete, "leaflet_in_part,some_pages_failed");
     assert.equal(web.hits(NATURA_PROMOTIONS), 1, "not retried");
+  });
+
+  test("the 3.9 MB promotions page of 13 Nov 2026 is read: past the fetcher's 3 MB, inside Natura's 6 MB", async () => {
+    const page = listingPage() + `<!-- ${"x".repeat(3_900_000 - listingPage().length)} -->`;
+    const web = shopWeb({ [NATURA_LEAFLET]: leafletPage(), [NATURA_PROMOTIONS]: page });
+    const r = ok(await natura.read(ctx(web, ["szampon"], new PoliteFetcher({ fetch: web.fetch }))));
+    assert.deepEqual(r.leaflets.map((l) => l.leaflet.url), [NATURA_LEAFLET, NATURA_PROMOTIONS]);
+    assert.equal(r.incomplete, "leaflet_in_part,first_page_only", "no page failed; the leaflet's PDF is still not read");
   });
 
   test("an ended leaflet's products aren't offered; the promotions still are, the shampoo among them", async () => {

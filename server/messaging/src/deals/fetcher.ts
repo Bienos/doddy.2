@@ -29,7 +29,13 @@ export interface FetchPageOptions {
   aiInput?: boolean;
   /** Stops the fetch early (the caller's own deadline). */
   signal?: AbortSignal;
+  /** A larger cap for one page known to be bigger than the fetcher's own (Natura's promotions page was 3.9 MB on
+   * 13 Nov 2026), never above LARGE_PAGE_MAX_BYTES. */
+  maxBytes?: number;
 }
+
+/** The most a caller may raise the cap to, for one page. */
+export const LARGE_PAGE_MAX_BYTES = 8 * 1024 * 1024;
 
 export interface PageFetcher {
   fetchPage(url: string, opts?: FetchPageOptions): Promise<FetchResult>;
@@ -396,12 +402,13 @@ export class PoliteFetcher implements PageFetcher {
           if (body !== "too_large" && body.length && looksLikeChallenge(res.headers, body)) return { kind: "blocked", reason: "challenge" };
           return { kind: "failed", reason: `http_${status}` };
         }
+        const cap = opts.maxBytes && opts.maxBytes > this.maxBytes ? Math.min(opts.maxBytes, LARGE_PAGE_MAX_BYTES) : this.maxBytes;
         const declared = Number(res.headers.get("content-length") ?? "");
-        if (Number.isFinite(declared) && declared > this.maxBytes) {
+        if (Number.isFinite(declared) && declared > cap) {
           discard(res);
           return { kind: "failed", reason: "too_large" };
         }
-        const body = await readCapped(res, this.maxBytes);
+        const body = await readCapped(res, cap);
         if (body === "too_large") return { kind: "failed", reason: "too_large" };
         if (looksLikeChallenge(res.headers, body)) return { kind: "blocked", reason: "challenge" };
         return { kind: "ok", status, contentType: res.headers.get("content-type") ?? "", body, finalUrl: url.toString() };

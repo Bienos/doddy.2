@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-13
 - **Decided by:** owner, 12 to 13 Nov 2026, in the review `docs/strategy/PRZEGLAD_APLIKACJI_2026-11-12.md` section 6 ("Ukryć „Daj znać…” do czasu włączenia alertów", "Poprawić tekst odpowiedzi głosowej i dać „Pokaż” jako następny krok", "powiadomienie ma otwierać radar", "połączyć radar z „Wiadomościami dnia”"), then "Wszystko dawaj". Parts 4 and 5 below are proposals, owner approval pending.
-- **Status:** applied in the pull request from branch `claude/radar-fixes` (parts 1 to 3; part 3 needs one more change in `HomeView.swift`, below)
+- **Status:** applied in #401 (parts 1 to 3) and, for Home opening the sheet, in the pull request from branch `claude/radar-push-opens-radar`
 - **Replaces:** nothing; builds on `2026-11-10-radar-alerts` and `2026-11-11-radar-alerts-by-voice`
 
 ## Why
@@ -20,16 +20,17 @@ The review found, on `main` at 12 Nov 2026:
    - A check the server once took is never said to run once the server says it checks nothing (`RadarTellMe.line`).
    - `FollowingModel.loadRadar` asks the server what it holds even after a refused re-send, so a refused send no longer leaves the answer unknown.
 2. **The voice names the screen as the app does.** `VoiceToolReply.newsFollow` says "the On my radar screen (in Polish "Na radarze"; Home, the ••• menu, then On my radar)" and asks the agent to offer one next step in the same sentence: they can look there now. No voice tool opens a screen, so the reply also says "Never promise a story; you can't open the screen for them, so never say you did". The (now unused) card lines, the "What Doddy did" row ("Add to radar" / „Dodaj do radaru”; rows kept under the old title "Follow in Following" show the new Polish too) and the privacy screen's description of what goes to the messaging server (`DataFlow.swift`, English only as before) say the same. `voice-agent/tools.json` is unchanged.
-3. **A radar notification opens On my radar.** The messaging server's `pushData` maps `radar:` keys to `{ kind: "radar" }` (the kind only: never the follow, the story or the words; no `content-available`). DoddyCore `ServerPushKind.radar` (`opensRadar`); the app's notification handler (`TimerBanners`, in `NoteReminderNotifications.swift`) calls `ShortcutRouter.radarOpened()`, which asks the Face ID lock like every other way in and sets `isRadarRequested`. **Still needed, in `HomeView.swift`** (held by other pull requests, so not edited here), next to the `isMessagesRequested` handler:
+3. **A radar notification opens On my radar.** The messaging server's `pushData` maps `radar:` keys to `{ kind: "radar" }` (the kind only: never the follow, the story or the words; no `content-available`). DoddyCore `ServerPushKind.radar` (`opensRadar`); the app's notification handler (`TimerBanners`, in `NoteReminderNotifications.swift`) calls `ShortcutRouter.radarOpened()`, which asks the Face ID lock like every other way in and sets `isRadarRequested`. Home opens the sheet with this, next to the `isMessagesRequested` handler (added on branch `claude/radar-push-opens-radar`, with a check that the build shows On my radar):
    ```swift
    // A radar story's push, tapped (decision 2026-11-13-radar-fixes): On my radar, where "Doddy spotted" lists it.
    .onChange(of: router.isRadarRequested, initial: true) { _, requested in
        guard requested else { return }
        router.isRadarRequested = false
+       guard scope.shows(.following) else { return }
        showFollowing = true
    }
    ```
-   and, so a tap from another tab comes back to Home first, in `RootView.swift` next to the Recordings line: `.onChange(of: router.isRadarRequested) { _, requested in if requested { selectedTab = .home } }`. Until then a tap opens Doddy and nothing more, as before.
+   and, so a tap from another tab comes back to Home first, in `RootView.swift` next to the Recordings line: `.onChange(of: router.isRadarRequested) { _, requested in if requested { selectedTab = .home } }`.
 4. **Daily news and the radar (proposal).** For now Settings › Daily news says under its topics that they are only for the daily message and that On my radar is a separate list (a footer; nothing else changes). Proposed, in separate pull requests, each needing the owner's yes:
    1. One list: what is on the radar is what the daily message covers. Daily news keeps its own settings (on or off, time, notification or text, language) and loses its own topics, own words and own feeds.
    2. The daily message then needs the radar's follows on Doddy's server, which today keeps them only for follows the person let it check. So turning the daily message on asks the same explicit consent as the radar's server switch, with the same footer saying what the server keeps.

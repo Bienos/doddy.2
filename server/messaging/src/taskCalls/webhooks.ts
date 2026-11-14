@@ -240,7 +240,7 @@ const envelope = z.object({ type: z.string(), data: z.object({ agent_id: z.strin
  */
 export async function onPostCall(ctx: TaskCallContext, json: unknown): Promise<void> {
   const env = envelope.safeParse(json);
-  if (!env.success || ![ctx.agentIdFor("ask"), ctx.agentIdFor("book")].includes(env.data.data.agent_id)) return;
+  if (!env.success || ![ctx.agentIdFor("ask"), ctx.agentIdFor("book"), ctx.agentIdFor("order")].includes(env.data.data.agent_id)) return;
   if (env.data.type !== "post_call_transcription") return;
   const parsed = conversationSchema.safeParse(env.data.data);
   if (!parsed.success) { ctx.log("post-call payload unreadable", {}); return; }

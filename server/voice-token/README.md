@@ -11,9 +11,13 @@ The app calls two routes:
 
 - `POST /api/voice-auth`: Apple identity-token verification, refresh-token rotation, sign-out, and
   DODDY voice-session deletion. ElevenLabs must be configured before a voice account
-  session can be created.
+  session can be created. `delete-conversations` deletes an account's voice conversations (below).
 - `POST /api/voice-token`: validates an active DODDY session and returns an ElevenLabs conversation
-  token. ElevenLabs is the only voice (9 Nov 2026); a request that names OpenAI gets `400 unknown_provider`.
+  token and the account's keyed `userId` (below). ElevenLabs is the only voice (9 Nov 2026); a request that
+  names OpenAI gets `400 unknown_provider`.
+
+One more route is for Vercel, not the app: `GET /api/voice-cron`, called once a day (`vercel.json` crons) to
+retry voice conversation deletions that are still owed. It needs `CRON_SECRET` and does nothing without it.
 
 Access tokens last 10 minutes and stay in app memory. Opaque refresh tokens rotate on use and last
 30 days; the app stores the current refresh token and Apple user identifier in the iOS Keychain with
@@ -41,7 +45,8 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `UPSTASH_REDIS_REST_TOKEN` | Secret for that store. Never log or expose it to the app. |
 | `ELEVENLABS_API_KEY` | Owner-held ElevenLabs API credential. |
 | `ELEVENLABS_AGENT_ID` | The DODDY agent ID configured by the owner. |
-| `ELEVENLABS_TRANSLATOR_AGENT_ID` | Optional. The translator-only agent (no tools; `voice-agent/translator/`). A request with the body `{"agent":"translator"}` gets a token for it. When unset, the id in `src/handler.js` (`DEFAULT_TRANSLATOR_AGENT_ID`, public) is used, so nothing has to be set. Any other `agent` value is a 400 `unknown_agent`; no body is the main agent, as before. |
+| `ELEVENLABS_TRANSLATOR_AGENT_ID` | Optional. The translator-only agent (no tools; `voice-agent/translator/`). A request with the body `{"agent":"translator"}` gets a token for it. When unset, the id in `src/conversations.js` (`DEFAULT_TRANSLATOR_AGENT_ID`, public) is used, so nothing has to be set. Any other `agent` value is a 400 `unknown_agent`; no body is the main agent, as before. |
+| `CRON_SECRET` | Secret, at least 16 characters, in 1Password (item `voice-token-cron-secret`). Vercel sends it as `Authorization: Bearer …` to the daily retry of voice conversation deletions (`/api/voice-cron`). Without it that route answers 503 and does nothing; an owed deletion then waits until it is set. Nothing else reads it. |
 | `DODDY_TOKENS_PER_HOUR` | Optional shared per-account issuance limit; defaults to `30`. |
 | `DODDY_TOKENS_PER_DAY` | Optional per-account issuance limit per UTC day, on top of the hourly one; defaults to `150` (ADR-712). |
 | `DODDY_GLOBAL_TOKENS_PER_HOUR` | Optional shared global issuance limit; defaults to `100`. |
@@ -50,6 +55,62 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `APPLE_TEAM_ID` | Optional, with the next two: the Apple Developer team ID. Lets "Delete voice account" also revoke Sign in with Apple (ADR-524). |
 | `APPLE_SIGN_IN_KEY_ID` | The key ID of a Sign in with Apple key (Apple Developer › Certificates, Identifiers & Profiles › Keys). |
 | `APPLE_SIGN_IN_PRIVATE_KEY` | That key's `.p8` file contents (PEM; literal `\n` line breaks work). Secret: 1Password only. |
+
+### Voice conversations deleted with the account (decision `2026-11-12-voice-conversations-per-account`)
+
+Deleting a Doddy account also deletes its voice conversations at ElevenLabs. The retention at ElevenLabs has
+no time limit (owner, 13 Nov 2026), so nothing ages out: only these steps remove a conversation. Code:
+`src/conversations.js`, the token in `src/handler.js`, the action in `src/voice-auth.js`, the retry in `src/cron.js`.
+
+- **Recording.** `GET /v1/convai/conversation/token` at ElevenLabs answers `{ token, conversation_id }` (ElevenLabs'
+  public API reference, read 13 Nov 2026; not yet seen against the live service). When the server issues a token it
+  keeps that id under the account, in the same Redis store, as a sorted set at
+  `doddy:voice:v1:conversations:<recordKey>`. `recordKey` is a keyed hash (HMAC-SHA-256 with
+  `DODDY_SESSION_SIGNING_KEY`, as the Apple subjects are) of the account: a Doddy account (`account:<id>`) or an
+  older Apple voice account. The app never sends an id, so a deletion only reaches what the server itself recorded.
+  The set **never expires** and holds at most 5 000 ids per account; past that the oldest are let go of (they are
+  still found by `userId`, below). Redis holds ids and the times they were issued, never words.
+- **`userId`.** The token answer is `{ token, userId }`. `userId` is another keyed hash of the account (32 hex
+  characters) that the app passes to ElevenLabs when the conversation starts, so conversations can also be found by
+  listing, `GET /v1/convai/conversations?agent_id=…&user_id=…`, if an id was ever missed. An app from before this
+  doesn't pass it and still works.
+- **If it can't be recorded:** the id can't be written to Redis → `503 server_not_configured` and **no token** (the log
+  says `conversation_id: not_recorded`). ElevenLabs answers without a usable `conversation_id` → the token is
+  handed out with `userId` and the log says `conversation_id: missing`. A missing signing key or a store without
+  recording is `500 server_not_configured` before anything is sent to ElevenLabs.
+- **`POST /api/voice-auth` `{ "action": "delete-conversations", "installUserId"?: "<uuid>" }`** takes a **Doddy
+  account's access token** as the Bearer, like `apple-revoke` (a voice session's token is refused with 401). The
+  server (1) lists the account's `userId`, and `installUserId` if the app sent one, in Doddy's agents (the main agent
+  and the translator agent: no other agent is ever listed or deleted in, and a listed conversation must name one
+  of them itself), adds what it finds to the record, (2) deletes each recorded id with
+  `DELETE /v1/convai/conversations/{id}` and reads it back with `GET`: **an id counts as deleted only when that read
+  answers 404**, and only then leaves the record. `installUserId` is the iPhone's old per-install id, for
+  conversations from before `userId` existed; it is accepted only in the shape the app makes it (a UUID), so it can't
+  name other people's conversations, and it is one more `user_id` to look for, nothing else. The answer is
+  `{ "deleted": n, "pending": m }`, counts only. `pending` is the ids not confirmed gone, plus one when a list could
+  not be read to the end or there is no ElevenLabs key, because what is there is then unknown: **it is never 0 unless
+  everything is confirmed.** One request works for about 9 seconds or 300 ids; what is left stays owed. The
+  action counts against the same per-caller limits as a sign-in (`DODDY_SIGNINS_PER_CLIENT_HOUR` / `_DAY`, keyed
+  by account), and a refused call never reaches ElevenLabs. An unreachable store is `503`, never a count.
+- **`delete-account` (an older Apple voice account)** does the same for that account's recorded conversations before
+  its session is deleted and adds `conversations: { deleted, pending }` to its answer. ElevenLabs failing never keeps
+  the account.
+- **Owed deletions.** An account with `pending` above 0 stays in the Redis hash `doddy:voice:v1:conversations-owed`
+  with the user ids to look for again (its own `userId` and any `installUserId`, which is held there only until
+  nothing is owed). A daily Vercel cron (`23 3 * * *`, `GET /api/voice-cron`, `maxDuration` 60 s) tries each owed
+  account again for up to 45 seconds and removes it when nothing is left. The cron checks
+  `Authorization: Bearer $CRON_SECRET` against `CRON_SECRET` (compared as digests) and does nothing without it: **the
+  owner must set `CRON_SECRET`** (below). Known limits: a conversation started on another device in the minutes
+  after the deletion, while its short-lived account token still works, is recorded but not owed; and rotating
+  `DODDY_SESSION_SIGNING_KEY` changes every `recordKey` and `userId`, so conversations recorded before are no longer
+  found by them (`secrets/manifest.json` says so).
+- **Logs** carry the action, status, timing and counts (`deleted`, `pending`; for the cron `accounts`, `deleted`,
+  `pending`) and a fixed word for the recording. Never an id, a `userId`, a `recordKey`, a token or a word.
+
+To set `CRON_SECRET`: make a random value of at least 16 characters, save it in 1Password as the item
+`voice-token-cron-secret` (vault `doddy-prod`), sync it to the Vercel project `doddy-voice-token` with
+`tools/secrets/sync.mjs` and redeploy (`docs/security/SECRETS_1PASSWORD.md`). Until then the app's deletion still
+deletes what it can at once; only the daily retry waits.
 
 ### Revoking Sign in with Apple for a Doddy account (decision `2026-11-09-apple-revoke-for-doddy-accounts`)
 
@@ -126,7 +187,8 @@ agent IDs are cleared on launch; the old tester code Keychain item is deleted.
   100 for everyone). Lower `DODDY_TOKENS_PER_HOUR` or raise `DODDY_GLOBAL_TOKENS_PER_HOUR` to move
   that; it is the owner's choice of cost against convenience.
 - Request sizes, method, provider, upstream timeout, and provider response shape are checked.
-- No content, credentials, Apple subject, or user/account identifier is written to application logs.
+- No content, credentials, Apple subject, or user/account identifier is written to application logs. Neither is a
+  conversation id: deleting voice conversations logs counts only.
 - The server has no in-memory session or rate-limit fallback.
 
 ## Run server tests
