@@ -119,8 +119,8 @@ final class ToolCatalogTests: XCTestCase {
         // action in the catalog, and only its "find" runs at once.
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.parkingSpot)?.approval, .card)
         XCTAssertEqual(AskFirst.need(for: .parkingSpot(.find)), .runsNow)
-        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: .parkingSpot(.clear))))
-        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: .parkingSpot(.save(note: nil)))))
+        guard case .yesFirst = AskFirst.need(for: .parkingSpot(.clear)) else { return XCTFail("forgetting the spot shows a card") }
+        XCTAssertEqual(AskFirst.need(for: .parkingSpot(.save(note: nil))), .ownPayloadCard)
     }
 
     func testEveryToolThatAsksRunsOnThePhoneWhereTheAppCanAsk() throws {

@@ -141,26 +141,39 @@ final class ErrandLinkTests: XCTestCase {
         }
     }
 
-    // MARK: A spoken yes can no longer start a task
+    // MARK: A spoken yes starts a task again (decision 2026-11-14-spoken-yes-and-fewer-cards), except after outside text
 
-    func testASpokenYesNeverStartsAnErrandAndOneTapDoes() {
+    func testASpokenYesStartsAnErrandUnlessTextFromOutsideIsInTheConversationAndOneTapAlwaysDoes() {
         let request = VoiceToolRequest.handOverErrand(draft())
         let need = AskFirst.need(for: request)
-        guard case .tapFirst = need else { return XCTFail("a tap is needed, got \(need)") }
-        XCTAssertTrue(AskFirst.needsTap(need))
+        guard case .yesFirst = need else { return XCTFail("the card takes a yes or a tap, got \(need)") }
+        XCTAssertFalse(AskFirst.needsTap(need))
 
         // The shopping kind of task is the same.
         let shopping = VoiceToolRequest.handOverErrand(draft(kind: .shopping, priorities: ["Cisza"]))
-        guard case .tapFirst = AskFirst.need(for: shopping) else { return XCTFail("a shopping task needs a tap too") }
+        guard case .yesFirst = AskFirst.need(for: shopping) else { return XCTFail("a shopping task takes a yes too") }
 
+        // ADR-716's worry was a yes to something else. The yes must be only a yes, and the voice controller also
+        // wants it a second after the card appeared (`SpokenConfirmation`); a page or an email in the conversation
+        // makes it a tap again, because words from there could have asked for the task.
+        var afterAPage = OutsideContentSession()
+        afterAPage.noteRun(of: "web_search")
+        let tapAfterAPage = AskFirst.need(for: request, in: afterAPage)
+        guard case .tapFirst = tapAfterAPage else { return XCTFail("after a page only a tap starts a task, got \(tapAfterAPage)") }
         var ledger = AskLedger()
-        ledger.asked("c1", request: request, needsTap: AskFirst.needsTap(need), at: now)
-        XCTAssertTrue(ledger.waitingForSpokenYes().isEmpty, "no spoken yes is waited for")
-        // A yes to another question, or anything the microphone heard, in the app's languages.
+        ledger.asked("c1", request: request, needsTap: AskFirst.needsTap(tapAfterAPage), at: now)
+        XCTAssertTrue(ledger.waitingForSpokenYes().isEmpty, "no spoken yes is waited for after outside text")
         for said in ["tak", "Tak, proszę.", "yes", "Yes please", "ok", "okay", "sure", "go ahead", "jasne", "zrób to", "ja", "oui", "sí", "sim", "vale"] {
             XCTAssertEqual(ledger.answer(.userSaid(said), for: "c1", at: now.addingTimeInterval(2)), .stillWaiting, said)
         }
         XCTAssertFalse(ledger.mayRun("c1", request: request, at: now.addingTimeInterval(3)), "no tap: nothing is handed over")
+
+        // Without outside text, the person's own short yes starts exactly this task, once.
+        ledger.asked("c0", request: request, needsTap: AskFirst.needsTap(need), at: now)
+        XCTAssertEqual(ledger.answer(.userSaid("tak, ale do Paryża"), for: "c0", at: now.addingTimeInterval(2)), .stillWaiting)
+        XCTAssertEqual(ledger.answer(.userSaid("tak"), for: "c0", at: now.addingTimeInterval(2)), .granted)
+        XCTAssertTrue(ledger.mayRun("c0", request: request, at: now.addingTimeInterval(3)))
+        XCTAssertFalse(ledger.mayRun("c0", request: request, at: now.addingTimeInterval(4)), "once")
 
         // One tap runs it once, for exactly these words.
         ledger.asked("c2", request: request, needsTap: true, at: now)

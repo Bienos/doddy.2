@@ -99,6 +99,10 @@ extension AskFirst {
     ///   somewhere other than the screen has been seen.
     /// - `add_to_list` and `check_off` on a shared list (`listIsShared`, decided by the app from the list it
     ///   resolved): a tap with the exact items, unless every item is in what the user just said.
+    /// - A card a spoken yes could answer (`.yesFirst`: removing from a list, forgetting the parking spot, a task
+    ///   handed over, a Studio job) needs a tap once text from outside has been seen, with the same words, as its tier
+    ///   says (decision `2026-11-14-spoken-yes-and-fewer-cards`). Opening a food app is on the at-once tier, so its card
+    ///   keeps taking a yes.
     /// A call that already asks keeps its ask. Nothing here runs anything: a tap is still answered through
     /// `AskLedger`, once, for exactly this request.
     public static func need(
@@ -106,6 +110,9 @@ extension AskFirst {
         calendar: Calendar = .current, polish: Bool = false
     ) -> Need {
         let baseline = need(for: request, calendar: calendar, polish: polish)
+        if case .yesFirst(let card) = baseline, session.outsideContentSeen, ownCardTier(request, outsideContentSeen: true) != .atOnce {
+            return .tapFirst(card)
+        }
         guard baseline == .runsNow else { return baseline }
         switch request {
         case .textMe(let body):
@@ -128,6 +135,20 @@ extension AskFirst {
         default:
             return baseline
         }
+    }
+
+    /// The tier of a card made in `need(for:)`, by its request. One nobody named here is treated as tap only.
+    static func ownCardTier(_ request: VoiceToolRequest, outsideContentSeen: Bool) -> ConfirmationTier? {
+        let tool: String
+        switch request {
+        case .parkingSpot(let action): return ConfirmationTiers.tier(forParking: action, outsideContentSeen: outsideContentSeen)
+        case .removeFromList: tool = VoiceToolName.removeFromList
+        case .handOverErrand: tool = VoiceToolName.handOverErrand
+        case .makeSomething: tool = VoiceToolName.makeSomething
+        case .openFoodApp: tool = VoiceToolName.openFoodApp
+        default: return nil
+        }
+        return ConfirmationTiers.tier(for: tool, outsideContentSeen: outsideContentSeen)
     }
 }
 

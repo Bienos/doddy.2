@@ -67,14 +67,14 @@ final class AskFirstPolishTests: XCTestCase {
     }
 
     func testTheRemoveAndForgetCardsArePolish() {
-        guard case .tapFirst(let remove) = AskFirst.need(for: .removeFromList(list), polish: true) else {
-            return XCTFail("removing from a list still needs a tap")
+        guard case .yesFirst(let remove) = AskFirst.need(for: .removeFromList(list), polish: true) else {
+            return XCTFail("removing from a list still shows its card")
         }
         XCTAssertEqual(remove.title, "Usunąć z listy „Zakupy”?")
         XCTAssertEqual(remove.lines, ["mleko"], "exactly what goes, as the user said it")
         XCTAssertEqual(remove.confirmLabel, "Usuń")
-        guard case .tapFirst(let forget) = AskFirst.need(for: .parkingSpot(.clear), polish: true) else {
-            return XCTFail("forgetting the parking spot still needs a tap")
+        guard case .yesFirst(let forget) = AskFirst.need(for: .parkingSpot(.clear), polish: true) else {
+            return XCTFail("forgetting the parking spot still shows its card")
         }
         XCTAssertEqual(forget.title, "Zapomnieć miejsce parkowania?")
         XCTAssertEqual(forget.lines, ["Jedyne miejsce zapisane na tym iPhonie zostanie usunięte."])
@@ -82,11 +82,11 @@ final class AskFirstPolishTests: XCTestCase {
     }
 
     func testEnglishStaysAsItWas() {
-        guard case .tapFirst(let remove) = AskFirst.need(for: .removeFromList(list)) else { return XCTFail() }
+        guard case .yesFirst(let remove) = AskFirst.need(for: .removeFromList(list)) else { return XCTFail() }
         XCTAssertEqual(remove.title, "Remove from Zakupy?")
         XCTAssertEqual(remove.lines, ["mleko"])
         XCTAssertEqual(remove.confirmLabel, "Remove")
-        guard case .tapFirst(let forget) = AskFirst.need(for: .parkingSpot(.clear)) else { return XCTFail() }
+        guard case .yesFirst(let forget) = AskFirst.need(for: .parkingSpot(.clear)) else { return XCTFail() }
         XCTAssertEqual(forget.title, "Forget your parking spot?")
         XCTAssertEqual(forget.lines, ["The one spot kept on this iPhone is removed."])
         XCTAssertEqual(forget.confirmLabel, "Forget it")
@@ -96,7 +96,7 @@ final class AskFirstPolishTests: XCTestCase {
         for request in requests() {
             let english = AskFirst.need(for: request, calendar: calendar)
             let polish = AskFirst.need(for: request, calendar: calendar, polish: true)
-            XCTAssertTrue(AskFirst.needsTap(english), "\(request) still needs a tap")
+            XCTAssertNotNil(card(english), "\(request) still shows a card")
             XCTAssertEqual(AskFirst.needsTap(english), AskFirst.needsTap(polish), "\(request)")
             guard let en = card(english), let pl = card(polish) else { XCTFail("no card for \(request)"); continue }
             XCTAssertNotEqual(en.title, pl.title, "\(request) has an English title in Polish")
