@@ -184,7 +184,11 @@ tests primary success, download/install failures, fallback failure and cleanup.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
   2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
   `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution
-  changes it, and each Mac run keeps what it resolved as the `app-package-resolved` artifact. To move versions
+  changes it, and each Mac run keeps what it resolved as the `app-package-resolved` artifact. Xcode Cloud's resolve
+  call also passes `-onlyUsePackageVersionsFromResolvedFile`, so it fetches only the pinned versions and fails when
+  the file is out of date (`DODDY_PACKAGES_FREE=1` in the workflow lifts that for one build; not tried on Xcode Cloud
+  yet, `docs/implementation/XCODE_CLOUD.md`). `Packages/DoddyCore/Package.resolved` (committed) pins the package's
+  own dependencies for its tests; Xcode Cloud's script deletes its copy of it before resolving. To move versions
   later: `make update-packages` on a Mac, then commit `Config/Package.resolved` (decision
   `docs/decisions/2026-11-07-reproducible-app-builds.md`).
 - The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a

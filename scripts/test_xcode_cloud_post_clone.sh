@@ -126,5 +126,63 @@ fresh; printf '{ "pins" : [], "version" : 3 }\n' > "$work/repo/Config/Package.re
 [ $? -eq 0 ] || fail "installing the pins should succeed: $(cat "$work/out")"
 cmp -s "$work/repo/Config/Package.resolved" "$pins" || fail "Config/Package.resolved should be copied into the project unchanged"
 
+# Stand-ins for the tools step 1 and step 6 call, so nothing is downloaded, generated or resolved (and a
+# Mac running this test doesn't change its own Xcode defaults or install anything from Homebrew).
+mkdir -p "$work/fakebin"
+printf '#!/bin/sh\necho "$@" >> "%s/xcodebuild-calls"\n' "$work" > "$work/fakebin/xcodebuild"
+printf '#!/bin/sh\necho "$@" >> "%s/defaults-calls"\n' "$work" > "$work/fakebin/defaults"
+printf '#!/bin/sh\necho "$@" >> "%s/brew-calls"\nexit 1\n' "$work" > "$work/fakebin/brew"
+chmod +x "$work/fakebin/xcodebuild" "$work/fakebin/defaults" "$work/fakebin/brew"
+# A stand-in scripts/install_xcodegen.sh (exit code $1; 0 prints the folder of a stand-in `xcodegen`).
+fake_install() {
+  mkdir -p "$work/repo/scripts" "$work/xg"
+  printf '#!/bin/sh\n[ "%s" = 0 ] || { echo "stand-in: the download failed" >&2; exit %s; }\necho "%s/xg"\n' "$1" "$1" "$work" \
+    > "$work/repo/scripts/install_xcodegen.sh"
+  printf '#!/bin/sh\necho "$@" >> "%s/xcodegen-calls"\n' "$work" > "$work/xg/xcodegen"
+  chmod +x "$work/xg/xcodegen"
+  rm -f "$work/xcodegen-calls" "$work/brew-calls"
+}
+run_tools() {  # env assignments..., with the stand-ins first on PATH; XcodeGen is not skipped
+  env -i PATH="$work/fakebin:$PATH" CI_PRIMARY_REPOSITORY_PATH="$work/repo" DODDY_SKIP_RESOLVE=1 \
+    "$@" sh "$script" > "$work/out" 2>&1
+}
+
+# XcodeGen: the installer's folder goes first on PATH, and nothing is installed from Homebrew.
+fresh; fake_install 0; run_tools
+[ $? -eq 0 ] || fail "with the pinned XcodeGen installed the script should succeed: $(cat "$work/out")"
+grep -qx 'generate --spec project.yml' "$work/xcodegen-calls" 2>/dev/null || fail "the project should be generated with the installer's XcodeGen (calls: $(cat "$work/xcodegen-calls" 2>/dev/null))"
+[ ! -e "$work/brew-calls" ] || fail "XcodeGen must not come from Homebrew (the version would not be pinned)"
+fresh; fake_install 1; run_tools
+[ $? -ne 0 ] || fail "when the pinned XcodeGen can't be installed the build must stop"
+grep -q "couldn't install the pinned XcodeGen" "$work/out" || fail "and say so"
+[ ! -e "$work/xcodegen-calls" ] || fail "and never fall back to another XcodeGen"
+[ ! -e "$work/brew-calls" ] || fail "and never fall back to Homebrew"
+
+# Package resolution (step 6): with the committed pins in the project it may only use the pinned versions.
+only_flag=-onlyUsePackageVersionsFromResolvedFile
+has() { case "$1" in *"$2"*) return 0 ;; *) return 1 ;; esac; }
+run_resolve() {  # env assignments..., with the stand-ins first on PATH; resolution is not skipped
+  rm -f "$work/xcodebuild-calls"
+  env -i PATH="$work/fakebin:$PATH" CI_PRIMARY_REPOSITORY_PATH="$work/repo" DODDY_SKIP_XCODEGEN=1 \
+    "$@" sh "$script" > "$work/out" 2>&1
+  status=$?
+  calls=$(cat "$work/xcodebuild-calls" 2>/dev/null || true)
+}
+with_pins() { fresh; printf '{ "pins" : [], "version" : 3 }\n' > "$work/repo/Config/Package.resolved"; }
+with_pins; run_resolve
+[ $status -eq 0 ] || fail "resolving with the pins installed should succeed: $(cat "$work/out")"
+has "$calls" "-resolvePackageDependencies" || fail "packages should be resolved (calls: $calls)"
+has "$calls" "$only_flag" || fail "with pins installed only the pinned versions may be used (calls: $calls)"
+[ "$(printf '%s\n' "$calls" | wc -l | tr -d ' ')" = 1 ] || fail "one resolve call expected (calls: $calls)"
+fresh; run_resolve
+[ $status -eq 0 ] || fail "resolving without pins should succeed: $(cat "$work/out")"
+has "$calls" "-resolvePackageDependencies" || fail "without pins packages are still resolved (calls: $calls)"
+! has "$calls" "$only_flag" || fail "without pins there is nothing to hold the resolver to, so no restriction (calls: $calls)"
+with_pins; run_resolve DODDY_PACKAGES_FREE=1
+[ $status -eq 0 ] || fail "DODDY_PACKAGES_FREE=1 should succeed: $(cat "$work/out")"
+! has "$calls" "$only_flag" || fail "DODDY_PACKAGES_FREE=1 lets the resolver move versions (calls: $calls)"
+with_pins; run_resolve DODDY_PACKAGES_FREE=0
+has "$calls" "$only_flag" || fail "only the exact value 1 frees the resolver, so a typo can't loosen the pins (calls: $calls)"
+
 if [ "$failures" -ne 0 ]; then echo "FAIL: $failures check(s)"; exit 1; fi
 echo "PASS: ci_post_clone.sh sets the build number, commit, team, bundle ID and push entitlements and refuses bad values"

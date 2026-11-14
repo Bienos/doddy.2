@@ -133,12 +133,11 @@ reset; run FAKE_ZIP="$tmp/empty.zip" XCODEGEN_SHA256="$empty_sha"
 [ ! -e "$dest/xcodegen" ] || fail "nothing is installed from a file without the tool"
 ok "a file without the tool in it stops the install"
 
-# 8. The workflows use this script and not an unpinned install. (Xcode Cloud's ci_scripts/ is switched in a
-# pull request of its own, which adds ci_scripts/*.sh to this check.)
-if grep -n -E '^[[:space:]]*(run:[[:space:]]*)?(HOMEBREW_[A-Z_]*=[0-9A-Za-z]+[[:space:]]+)?brew install xcodegen' .github/workflows/*.yml; then
-  fail "a workflow still runs 'brew install xcodegen'"
+# 8. The workflow and Xcode Cloud use this script and not an unpinned install.
+if grep -n -E '^[[:space:]]*(run:[[:space:]]*)?(HOMEBREW_[A-Z_]*=[0-9A-Za-z]+[[:space:]]+)?brew install xcodegen' .github/workflows/*.yml ci_scripts/*.sh; then
+  fail "a workflow or ci_scripts/ still runs 'brew install xcodegen'"
 else
-  ok "no workflow installs XcodeGen from Homebrew"
+  ok "no workflow or ci_scripts file installs XcodeGen from Homebrew"
 fi
 
 if [ "$failures" -ne 0 ]; then echo "FAIL: $failures check(s)"; exit 1; fi
