@@ -2,13 +2,13 @@
   "format": "doddy-voice-session/1",
   "note": "Phone agent settings (S2; calls routed through Doddy's server since ADR-750). Doddy's server lets a call through and passes these variables with ElevenLabs register-call (server/messaging/src/routes/twilioVoice.ts); the placeholders below are only for tests in the ElevenLabs dashboard.",
   "first_message": {
-    "en": "{{doddy_call_opening}}"
+    "pl": "{{doddy_call_opening}}"
   },
   "languages": [
-    "en"
+    "pl"
   ],
   "variables": {
-    "doddy_call_opening": "The first sentence, set by the server and never by the model, always saying Doddy is an AI (DOD-03): \"Hi, this is Doddy, an AI assistant. How can I help?\", or on a scheduled call \"...You asked me to call you about this: <reason>\" (in Polish when the call was asked for in Polish)",
+    "doddy_call_opening": "The first sentence, set by the server and never by the model, always saying Doddy is an AI (DOD-03): \"Cześć, tu Doddy, asystent AI. W czym mogę pomóc?\" for a Polish (+48) number and \"Hi, this is Doddy, an AI assistant. How can I help?\" for any other, or on a scheduled call the same with the approved reason, in the language the call was asked for in (server/messaging/src/calls.ts callOpening)",
     "doddy_call_reason": "none | the reason for a scheduled call, as the user approved it on the card (ADR-754)",
     "doddy_caller": "known | unknown | calls_off | unavailable",
     "doddy_direction": "inbound | outbound",
@@ -28,8 +28,8 @@
       "agent_output_audio_format": "ulaw_8000",
       "user_input_audio_format": "ulaw_8000"
     },
-    "max_duration_seconds": 300,
-    "tts_as_read": {"model_id": "eleven_v4_turbo", "voice_id": "jGk1sjruA9wQTyWDbhL9", "speed": 1.0, "stability": 0.5, "note": "Read from the live agent on 10 Nov 2026 (agtvrsn_7501m6egft9sf7yrwn3xwqvkxk2w, read only); the setup script sets no voice. The live agent differs from this file in three places, kept here as designed until the owner decides (voice-agent/README.md, Phone agent): first message (live: a fixed Polish sentence instead of {{doddy_call_opening}}), language (live: pl) and max_duration_seconds (live: 600)."},
+    "max_duration_seconds": 600,
+    "tts_as_read": {"model_id": "eleven_v4_turbo", "voice_id": "jGk1sjruA9wQTyWDbhL9", "speed": 1.0, "stability": 0.5, "note": "Read from the live agent on 10 Nov 2026 (agtvrsn_7501m6egft9sf7yrwn3xwqvkxk2w, read only); the setup script sets no voice. Language pl and 600 s follow the live agent since 14 Nov 2026 (owner: \"wybierz best options\", voice-agent/README.md, Phone agent)."},
     "secret_variables": {
       "secret__doddy_session": "Per-call session id; only ever placed in tool headers, never shown to the model"
     },
@@ -40,7 +40,7 @@
       "doddy_pin": "not_set",
       "doddy_direction": "inbound",
       "doddy_call_reason": "none",
-      "doddy_call_opening": "Hi, this is Doddy, an AI assistant. How can I help?"
+      "doddy_call_opening": "Cześć, tu Doddy, asystent AI. W czym mogę pomóc?"
     },
     "workspace_secrets": {
       "doddy_tool_secret": "ELEVENLABS_TOOL_SECRET (same value as on the server)"

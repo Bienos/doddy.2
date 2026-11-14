@@ -150,6 +150,7 @@ export const ERASED_TABLES = [
   "web_link_pending",
   "web_accounts",
   "device_joins",
+  "device_cutoffs",
   "account_links",
   "account_link_codes",
   "logbook_state",
@@ -409,6 +410,41 @@ export const SCHEMA_SQL = `
     created_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS device_joins_user ON device_joins(user_id);
+  -- Decision 2026-11-12-account-and-device-tokens (c): every iPhone that signed in with its device id, kept so its account
+  -- can list it and revoke it. Ids and times only: no token, no hash of one, no content. device_id is random and is what a
+  -- token and the list name. device_user_id is the iPhone's own user id. The account it uses now is its join in device_joins
+  -- (while that is on), else its own user id. revoked_at is set once and never cleared: a revoked iPhone stays revoked
+  CREATE TABLE IF NOT EXISTS devices (
+    device_id TEXT PRIMARY KEY,
+    device_user_id TEXT NOT NULL UNIQUE,
+    first_seen_at BIGINT NOT NULL,
+    last_seen_at BIGINT NOT NULL,
+    revoked_at BIGINT
+  );
+  -- Decision 2026-11-12-one-token-per-server: an iPhone's account session (POST /v1/session/account) is a row here too.
+  -- account_id is the Doddy account (its Supabase user id) the session is for, null for a row the device sign-in made. For an
+  -- account row device_user_id is derived from the account and the device id together, so one iPhone has one row per account
+  -- and never shares a row with the device-session path. Ids and times only, as above
+  ALTER TABLE devices ADD COLUMN IF NOT EXISTS account_id TEXT;
+  CREATE INDEX IF NOT EXISTS devices_account ON devices(account_id) WHERE account_id IS NOT NULL;
+  -- One number per account: the second before which a device token that names no iPhone (one made before iPhones were
+  -- stored, 30 days at most) no longer works. Written by a revoke and by an unlink that ends joins. Dropped after 31 days
+  CREATE TABLE IF NOT EXISTS device_cutoffs (
+    user_id TEXT PRIMARY KEY,
+    valid_after BIGINT NOT NULL
+  );
+  -- The linked sign-in a join was made with (a web_identities id, null for a join made before this was kept) and when the
+  -- join was last made. A join lasts DODDY_DEVICE_JOIN_DAYS from then unless the iPhone signs in with it again
+  ALTER TABLE device_joins ADD COLUMN IF NOT EXISTS identity_id TEXT;
+  ALTER TABLE device_joins ADD COLUMN IF NOT EXISTS renewed_at BIGINT;
+  -- The first start of this version over an earlier database: an iPhone that already joined an account gets its row, with
+  -- first and last seen set to now, and every earlier join counts from now, so nobody is cut off the day this ships.
+  -- Later starts find nothing to do. Everyone else gets a row at their next sign-in
+  INSERT INTO devices (device_id, device_user_id, first_seen_at, last_seen_at)
+    SELECT gen_random_uuid()::text, device_user_id, (extract(epoch FROM now()) * 1000)::bigint, (extract(epoch FROM now()) * 1000)::bigint
+    FROM device_joins WHERE renewed_at IS NULL
+    ON CONFLICT (device_user_id) DO NOTHING;
+  UPDATE device_joins SET renewed_at = (extract(epoch FROM now()) * 1000)::bigint WHERE renewed_at IS NULL;
   CREATE TABLE IF NOT EXISTS web_link_pending (
     code_hash TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -623,6 +659,53 @@ export interface WebSessionRow {
   expires_at: number;
 }
 
+/**
+ * An iPhone of an account, as the list reads it (`devices.ts`). The `join_*` columns are the join it uses the account
+ * with, and null when the account is the iPhone's own.
+ */
+export interface DeviceListRow {
+  device_id: string;
+  first_seen_at: number;
+  last_seen_at: number;
+  revoked_at: number | null;
+  join_provider: string | null;
+  join_created_at: number | null;
+  join_renewed_at: number | null;
+}
+
+/** What the verifier needs to know about one stored iPhone. The join is the one it has now, expired or not. */
+export interface DeviceStateRow {
+  device_user_id: string;
+  revoked_at: number | null;
+  last_seen_at: number;
+  join_user_id: string | null;
+  join_renewed_at: number | null;
+  /** The Doddy account an account session was made for (`registerAccountDevice`); null for a row the device sign-in made. */
+  account_id: string | null;
+}
+
+/** What `Store.registerAccountDevice` needs and answers (`devices.ts`). */
+export interface AccountDeviceRegistration {
+  /** The Doddy account (its Supabase user id). */
+  accountId: string;
+  /** The derived key of this account on this iPhone (`accountSession.ts`), the row's `device_user_id`. */
+  deviceKey: string;
+  /** A fresh random row id, used only if a row has to be made (or a revoked one replaced). */
+  id: string;
+  /** When, in ms. */
+  now: number;
+  /** The second (since 1970) the session will be dated: refused if the account was cut off at or after it. */
+  issuedAt: number;
+  /** Live (not revoked) iPhones one account may have. */
+  maxPerAccount: number;
+}
+export type AccountDeviceResult = { kind: "stored"; id: string; how: "new" | "renewed" | "returned" } | { kind: "limit" } | { kind: "cut_off" };
+
+/** What a committed change to the iPhones tells a listener (`Store.onDevicesChanged`): cut-offs just written, for this instance to apply at once. */
+export interface DeviceChange {
+  cutoffs: { userId: string; validAfter: number }[];
+}
+
 /** A document without its file, for lists (ADR-600). */
 export interface DocumentSummaryRow {
   id: string;
@@ -690,6 +773,28 @@ const bytes = (value: unknown): Buffer | null => (value === null || value === un
 
 export class Store {
   private constructor(readonly db: Database) {}
+
+  private readonly deviceListeners = new Set<(change: DeviceChange) => void>();
+
+  /**
+   * Told once a change to which iPhones may sign in, or to which account one uses, has committed: a revoke, a join made
+   * or ended, an account erased. The registry (`devices.ts`) drops what it remembered about iPhones, so the change counts
+   * on the very next request. Returns the way to stop listening.
+   */
+  onDevicesChanged(listener: (change: DeviceChange) => void): () => void {
+    this.deviceListeners.add(listener);
+    return () => void this.deviceListeners.delete(listener);
+  }
+
+  private devicesChanged(cutoffs: DeviceChange["cutoffs"] = []): void {
+    for (const listener of this.deviceListeners) {
+      try {
+        listener({ cutoffs });
+      } catch {
+        // What a listener does with the news can't undo a change that has committed.
+      }
+    }
+  }
 
   /** Encrypts documents' names and files (decision 2026-11-12-documents-at-rest). Null: no files are made or read. */
   private documentSeal: DocumentSeal | null = null;
@@ -1229,7 +1334,13 @@ export class Store {
    * first (in the same transaction), so a grant is never forgotten; the caller removes them and the
    * hourly sweeps retry what fails. Server-wide counters and the owner binding stay (`KEPT_ON_ERASE`).
    */
-  eraseUser(userId: string, now: number, accountSubjects: readonly string[] = []): Promise<UserErasure> {
+  async eraseUser(userId: string, now: number, accountSubjects: readonly string[] = []): Promise<UserErasure> {
+    const erased = await this.eraseUserIn(userId, now, accountSubjects);
+    this.devicesChanged();
+    return erased;
+  }
+
+  private eraseUserIn(userId: string, now: number, accountSubjects: readonly string[]): Promise<UserErasure> {
     return this.db.transaction(async (tx) => {
       const openAttempts = (await tx.query<AttemptRow>("SELECT * FROM attempts WHERE user_id = $1 AND consumed_at IS NULL", [userId])).rows;
       await this.endAttempts(tx, openAttempts, now);
@@ -1245,8 +1356,13 @@ export class Store {
       const subjects = [...new Set([...accountSubjects, ...linked.map((l) => l.subject)])];
       for (const subject of subjects) await this.queueCleanupIn(tx, subject, userId, SUPABASE_AUTH_CLEANUP, now);
       const deleted = {} as UserErasure["deleted"];
-      // ADR-819: an iPhone whose own account this is stops using another one too.
+      // ADR-819: an iPhone whose own account this is stops using another one too. Its row goes with the account;
+      // another account's iPhones that used this one only lose that join (device_joins below), and keep their rows.
       await tx.query("DELETE FROM device_joins WHERE device_user_id = $1", [userId]);
+      await tx.query("DELETE FROM devices WHERE device_user_id = $1", [userId]);
+      // Decision 2026-11-12-one-token-per-server: the iPhones this account signed in with an account session go with it, so
+      // every session that names one is refused (the cut-off below ends them too, for the ones that survive nothing else).
+      for (const account of new Set([userId, ...subjects])) await tx.query("DELETE FROM devices WHERE account_id = $1", [account]);
       for (const table of ERASED_TABLES) deleted[table] = (await tx.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId])).rowCount;
       let remaining = 0;
       for (const table of ERASED_TABLES) {
@@ -2114,27 +2230,31 @@ export class Store {
    * The iPhone takes its data back from the account that took it over, within `windowMs` of the link.
    * `not_linked` when there is no link (also a repeat after a lost answer); `too_late` past the window.
    */
-  undoAccountLink(userId: string, now: number, windowMs: number): Promise<{ outcome: "undone" | "not_linked" | "too_late"; ended: LinkEnded | null }> {
-    return this.db.transaction(async (tx) => {
+  async undoAccountLink(userId: string, now: number, windowMs: number): Promise<{ outcome: "undone" | "not_linked" | "too_late"; ended: LinkEnded | null }> {
+    const result = await this.db.transaction(async (tx) => {
       const link = await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE user_id = $1", [userId]);
-      if (!link) return { outcome: "not_linked", ended: null };
-      if (now - Number(link.linked_at) > windowMs) return { outcome: "too_late", ended: null };
-      return { outcome: "undone", ended: await this.unlinkIn(tx, link, now) };
+      if (!link) return { outcome: "not_linked" as const, ended: null };
+      if (now - Number(link.linked_at) > windowMs) return { outcome: "too_late" as const, ended: null };
+      return { outcome: "undone" as const, ended: await this.unlinkIn(tx, link, now) };
     });
+    if (result.ended) this.devicesChanged();
+    return result;
   }
 
   /**
    * The operator ends a link, whenever it was made (`npm run account:unlink`): found by the account (a
    * Supabase user id, `subject`) or by the data's user id. Null when there is no such link.
    */
-  unlinkAccount(id: string, now: number): Promise<(AccountLinkRow & { ended: LinkEnded }) | null> {
-    return this.db.transaction(async (tx) => {
+  async unlinkAccount(id: string, now: number): Promise<(AccountLinkRow & { ended: LinkEnded }) | null> {
+    const result = await this.db.transaction(async (tx) => {
       const link =
         (await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE subject = $1", [id])) ??
         (await this.one<AccountLinkRow>(tx, "SELECT subject, user_id, linked_at FROM account_links WHERE user_id = $1", [id]));
       if (!link) return null;
       return { ...link, linked_at: Number(link.linked_at), ended: await this.unlinkIn(tx, link, now) };
     });
+    if (result) this.devicesChanged();
+    return result;
   }
 
   /**
@@ -2163,27 +2283,236 @@ export class Store {
 
   // ------------------------------------------------------------ an iPhone using another account (ADR-819)
 
-  /** The account this iPhone (its own device user) uses instead of its own, or null. */
-  async deviceJoin(deviceUserId: string): Promise<{ user_id: string; provider: string; created_at: number } | null> {
-    return this.one<{ user_id: string; provider: string; created_at: number }>(
+  /**
+   * The account this iPhone (its own device user) uses instead of its own, or null. With `notBefore` (a time in ms) a join
+   * last made before it has ended and reads as none: callers pass now minus DODDY_DEVICE_JOIN_DAYS.
+   */
+  async deviceJoin(
+    deviceUserId: string,
+    notBefore = 0,
+  ): Promise<{ user_id: string; provider: string; created_at: number; renewed_at: number } | null> {
+    return this.one<{ user_id: string; provider: string; created_at: number; renewed_at: number }>(
       this.db,
-      "SELECT user_id, provider, created_at FROM device_joins WHERE device_user_id = $1",
-      [deviceUserId],
+      "SELECT user_id, provider, created_at, renewed_at FROM device_joins WHERE device_user_id = $1 AND renewed_at > $2",
+      [deviceUserId, notBefore],
     );
   }
 
-  /** This iPhone now signs in to `userId` (replacing any earlier choice). */
-  async setDeviceJoin(deviceUserId: string, userId: string, provider: string, now: number): Promise<void> {
-    await this.db.query(
-      `INSERT INTO device_joins (device_user_id, user_id, provider, created_at) VALUES ($1, $2, $3, $4)
-       ON CONFLICT (device_user_id) DO UPDATE SET user_id = EXCLUDED.user_id, provider = EXCLUDED.provider, created_at = EXCLUDED.created_at`,
-      [deviceUserId, userId, provider, now],
-    );
+  /**
+   * This iPhone now signs in to `userId` (replacing any earlier choice), with the linked sign-in `identityId` it was made
+   * with. Signing in again with the same account renews the join and keeps the moment it was first made. The iPhone's row
+   * is made here if it has none yet, so every join has an iPhone to list.
+   */
+  async setDeviceJoin(deviceUserId: string, userId: string, provider: string, now: number, identityId: string | null = null): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.query(
+        `INSERT INTO device_joins (device_user_id, user_id, provider, created_at, identity_id, renewed_at) VALUES ($1, $2, $3, $4, $5, $4)
+         ON CONFLICT (device_user_id) DO UPDATE SET
+           created_at = CASE WHEN device_joins.user_id = EXCLUDED.user_id THEN device_joins.created_at ELSE EXCLUDED.created_at END,
+           user_id = EXCLUDED.user_id, provider = EXCLUDED.provider, identity_id = EXCLUDED.identity_id, renewed_at = EXCLUDED.renewed_at`,
+        [deviceUserId, userId, provider, now, identityId],
+      );
+      await tx.query(
+        "INSERT INTO devices (device_id, device_user_id, first_seen_at, last_seen_at) VALUES ($1, $2, $3, $3) ON CONFLICT (device_user_id) DO NOTHING",
+        [randomUUID(), deviceUserId, now],
+      );
+    });
+    this.devicesChanged();
   }
 
   /** Back to the iPhone's own account. False when it wasn't using another. */
   async removeDeviceJoin(deviceUserId: string): Promise<boolean> {
-    return (await this.db.query("DELETE FROM device_joins WHERE device_user_id = $1", [deviceUserId])).rowCount === 1;
+    const left = (await this.db.query("DELETE FROM device_joins WHERE device_user_id = $1", [deviceUserId])).rowCount === 1;
+    if (left) this.devicesChanged();
+    return left;
+  }
+
+  // ------------------------------------------------------------ stored iPhones (decision 2026-11-12-account-and-device-tokens, part c)
+
+  /**
+   * An iPhone has signed in: makes its row (with `id`) or finds it, and notes that it was seen. Returns the row's id, or
+   * null when the iPhone was revoked: signing in doesn't undo that. One statement, so a revoke committing at the same
+   * moment is either seen here or ends the token this sign-in is about to make (`DeviceRegistry.allows`).
+   */
+  async registerDevice(deviceUserId: string, now: number, id: string): Promise<string | null> {
+    const row = await this.one<{ device_id: string }>(
+      this.db,
+      `INSERT INTO devices (device_id, device_user_id, first_seen_at, last_seen_at) VALUES ($1, $2, $3, $3)
+       ON CONFLICT (device_user_id) DO UPDATE SET last_seen_at = GREATEST(devices.last_seen_at, EXCLUDED.last_seen_at)
+       WHERE devices.revoked_at IS NULL
+       RETURNING device_id`,
+      [id, deviceUserId, now],
+    );
+    return row?.device_id ?? null;
+  }
+
+  /** True when this iPhone (its own user id) was revoked. No row, or a row that isn't revoked: false. */
+  async isDeviceRevoked(deviceUserId: string): Promise<boolean> {
+    return (await this.one<{ one: number }>(this.db, "SELECT 1 AS one FROM devices WHERE device_user_id = $1 AND revoked_at IS NOT NULL", [deviceUserId])) !== null;
+  }
+
+  /** What the verifier needs about one stored iPhone, or null when there is no such row. */
+  async deviceState(deviceId: string): Promise<DeviceStateRow | null> {
+    const row = await this.one<DeviceStateRow>(
+      this.db,
+      `SELECT d.device_user_id, d.revoked_at, d.last_seen_at, d.account_id, j.user_id AS join_user_id, j.renewed_at AS join_renewed_at
+       FROM devices d LEFT JOIN device_joins j ON j.device_user_id = d.device_user_id
+       WHERE d.device_id = $1`,
+      [deviceId],
+    );
+    return row ? { ...row, revoked_at: row.revoked_at === null ? null : Number(row.revoked_at), last_seen_at: Number(row.last_seen_at) } : null;
+  }
+
+  /**
+   * Notes that a live iPhone was seen, but only when its last note is at least `minGapMs` old, so a busy iPhone writes about
+   * once an hour and not once a request. True when it wrote.
+   */
+  async touchDevice(deviceId: string, now: number, minGapMs: number): Promise<boolean> {
+    return (
+      (await this.db.query("UPDATE devices SET last_seen_at = $2 WHERE device_id = $1 AND revoked_at IS NULL AND last_seen_at <= $2::bigint - $3::bigint", [deviceId, now, minGapMs])).rowCount === 1
+    );
+  }
+
+  /**
+   * An iPhone signs in to the backend with the Doddy account's own token (`POST /v1/session/account`, `accountSession.ts`):
+   * makes its row for this account, or finds it, and notes that it was seen. One row per account and iPhone, whatever the
+   * number of exchanges (`deviceKey` is the same each time). All in one transaction, so a deletion or a second exchange
+   * committing at the same moment is either seen here or ends what this makes:
+   * - the account was cut off at or after `issuedAt` (deleted a moment ago): no row, `cut_off`;
+   * - a live row: `renewed`, the same id, last seen moved;
+   * - a revoked row: the account's own fresh sign-in is the deliberate way back, so the row gets a NEW id and is live again.
+   *   What named the old id stays dead (a token that names a row the database no longer has is refused);
+   * - no row: made, unless the account already has `maxPerAccount` live iPhones (`limit`, nothing written). When its rows (live
+   *   and revoked) reach the limit, its revoked ones are cleared first so they can't pile up.
+   * Never touches a row the device sign-in made.
+   */
+  async registerAccountDevice(input: AccountDeviceRegistration): Promise<AccountDeviceResult> {
+    const result = await this.db.transaction(async (tx): Promise<AccountDeviceResult> => {
+      const floor = await this.one<{ valid_after: number }>(tx, "SELECT valid_after FROM token_floor WHERE user_id = $1", [input.accountId]);
+      if (floor && Number(floor.valid_after) > input.issuedAt) return { kind: "cut_off" };
+      const known = await this.one<{ device_id: string; revoked_at: number | null; account_id: string | null }>(
+        tx,
+        "SELECT device_id, revoked_at, account_id FROM devices WHERE device_user_id = $1",
+        [input.deviceKey],
+      );
+      if (known && known.account_id !== input.accountId) throw new Error("an account row was expected");
+      if (known && known.revoked_at === null) {
+        await tx.query("UPDATE devices SET last_seen_at = GREATEST(last_seen_at, $2) WHERE device_id = $1", [known.device_id, input.now]);
+        return { kind: "stored", id: known.device_id, how: "renewed" };
+      }
+      const count = async (where: string) =>
+        Number((await this.one<{ n: number | string }>(tx, `SELECT count(*) AS n FROM devices WHERE account_id = $1 ${where}`, [input.accountId]))?.n ?? 0);
+      if ((await count("AND revoked_at IS NULL")) >= input.maxPerAccount) return { kind: "limit" };
+      if ((await count("")) >= input.maxPerAccount) {
+        await tx.query("DELETE FROM devices WHERE account_id = $1 AND revoked_at IS NOT NULL AND device_user_id <> $2", [input.accountId, input.deviceKey]);
+      }
+      if (known) {
+        await tx.query("UPDATE devices SET device_id = $2, revoked_at = NULL, first_seen_at = $3, last_seen_at = $3 WHERE device_user_id = $1", [input.deviceKey, input.id, input.now]);
+        return { kind: "stored", id: input.id, how: "returned" };
+      }
+      await tx.query("INSERT INTO devices (device_id, device_user_id, first_seen_at, last_seen_at, account_id) VALUES ($1, $2, $3, $3, $4)", [input.id, input.deviceKey, input.now, input.accountId]);
+      return { kind: "stored", id: input.id, how: "new" };
+    });
+    // A row cleared or given a new id: anything remembered about the old one is dropped now.
+    if (result.kind === "stored" && result.how !== "renewed") this.devicesChanged();
+    return result;
+  }
+
+  /**
+   * The iPhones that use `accountId` now, oldest first: those whose join to it hasn't ended (`joinNotBefore`, a time in ms),
+   * those with no join whose own user id it is, and those this account signed in with an account session (the account itself,
+   * or an account that took over the data of `accountId`). Revoked ones are listed, marked.
+   */
+  async listDevices(accountId: string, joinNotBefore: number, limit: number): Promise<DeviceListRow[]> {
+    const rows = (
+      await this.db.query<DeviceListRow>(
+        `SELECT d.device_id, d.first_seen_at, d.last_seen_at, d.revoked_at,
+                j.provider AS join_provider, j.created_at AS join_created_at, j.renewed_at AS join_renewed_at
+         FROM devices d LEFT JOIN device_joins j ON j.device_user_id = d.device_user_id AND j.renewed_at > $2
+         WHERE j.user_id = $1 OR (j.device_user_id IS NULL AND d.device_user_id = $1) OR d.account_id = $1
+            OR EXISTS (SELECT 1 FROM account_links l WHERE l.user_id = $1 AND l.subject = d.account_id)
+         ORDER BY d.first_seen_at, d.device_id LIMIT $3`,
+        [accountId, joinNotBefore, limit],
+      )
+    ).rows;
+    return rows.map((r) => ({
+      ...r,
+      first_seen_at: Number(r.first_seen_at),
+      last_seen_at: Number(r.last_seen_at),
+      revoked_at: r.revoked_at === null ? null : Number(r.revoked_at),
+    }));
+  }
+
+  /**
+   * Revokes one iPhone of `accountId`, the one asking. Null when no iPhone with that id uses that account now (an unknown
+   * id and another account's look the same). Otherwise the moment it was revoked, read back from what is stored: a repeat
+   * answers the first moment. The first revoke also cuts off the account's tokens that name no iPhone (`device_cutoffs`):
+   * one of them may be this iPhone's, from before iPhones were stored. A write that fails throws, so no one is told a
+   * revoke happened that didn't.
+   */
+  async revokeDevice(accountId: string, deviceId: string, joinNotBefore: number, now: number): Promise<number | null> {
+    const done = await this.db.transaction(async (tx) => {
+      const row = await this.one<{ device_user_id: string; revoked_at: number | null; join_user_id: string | null; account_id: string | null }>(
+        tx,
+        `SELECT d.device_user_id, d.revoked_at, d.account_id, CASE WHEN j.renewed_at > $2 THEN j.user_id END AS join_user_id
+         FROM devices d LEFT JOIN device_joins j ON j.device_user_id = d.device_user_id WHERE d.device_id = $1`,
+        [deviceId, joinNotBefore],
+      );
+      if (!row) return null;
+      if (row.account_id !== null) {
+        // An iPhone's account session: the account's own, or the account that took over its data. Its tokens name this
+        // row, so ending the row ends them; there are none that name no iPhone to cut off, and nobody else's are touched.
+        const mine =
+          row.account_id === accountId ||
+          (await this.one<{ one: number }>(tx, "SELECT 1 AS one FROM account_links WHERE subject = $1 AND user_id = $2", [row.account_id, accountId])) !== null;
+        if (!mine) return null;
+        if (row.revoked_at === null) await tx.query("UPDATE devices SET revoked_at = $2 WHERE device_id = $1 AND revoked_at IS NULL", [deviceId, now]);
+        return { cutoffs: [] as DeviceChange["cutoffs"] };
+      }
+      const uses = row.join_user_id ?? row.device_user_id;
+      if (uses !== accountId) return null;
+      if (row.revoked_at !== null) return { cutoffs: [] as DeviceChange["cutoffs"] };
+      await tx.query("UPDATE devices SET revoked_at = $2 WHERE device_id = $1 AND revoked_at IS NULL", [deviceId, now]);
+      const cutoffs: DeviceChange["cutoffs"] = [];
+      for (const account of new Set([uses, row.device_user_id])) cutoffs.push(await this.cutOffDeviceTokens(tx, account, now));
+      return { cutoffs };
+    });
+    if (!done) return null;
+    this.devicesChanged(done.cutoffs);
+    const stored = await this.one<{ revoked_at: number | null }>(this.db, "SELECT revoked_at FROM devices WHERE device_id = $1", [deviceId]);
+    if (!stored || stored.revoked_at === null) throw new Error("the revoke was not stored");
+    return Number(stored.revoked_at);
+  }
+
+  /** The second before which this account's tokens that name no iPhone no longer work; 0 when none was cut off. */
+  async deviceCutoff(userId: string): Promise<number> {
+    return Number((await this.one<{ valid_after: number }>(this.db, "SELECT valid_after FROM device_cutoffs WHERE user_id = $1", [userId]))?.valid_after ?? 0);
+  }
+
+  /** Cuts off the account's tokens that name no iPhone, dated up to now. Inside the caller's transaction. */
+  private async cutOffDeviceTokens(tx: Queryable, userId: string, now: number): Promise<{ userId: string; validAfter: number }> {
+    const validAfter = Math.floor(now / 1000) + 1;
+    await tx.query(
+      `INSERT INTO device_cutoffs (user_id, valid_after) VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET valid_after = GREATEST(device_cutoffs.valid_after, EXCLUDED.valid_after)`,
+      [userId, validAfter],
+    );
+    return { userId, validAfter };
+  }
+
+  /**
+   * iPhones not seen since `before` (a time in ms) and never revoked. A revoked iPhone of the device sign-in is kept, so waiting
+   * never brings it back. An iPhone's account session has no such rule (the account's own sign-in is the way back, and
+   * makes a new row), so its revoked row goes when it has been idle as long.
+   */
+  async pruneDevices(before: number): Promise<number> {
+    return (await this.db.query("DELETE FROM devices WHERE last_seen_at < $1 AND (revoked_at IS NULL OR account_id IS NOT NULL)", [before])).rowCount;
+  }
+
+  /** Cut-offs older than any token they cover (31 days, like `pruneTokenFloors`). */
+  async pruneDeviceCutoffs(now: number): Promise<number> {
+    const before = Math.floor(now / 1000) - TOKEN_FLOOR_KEPT_DAYS * 86_400;
+    return (await this.db.query("DELETE FROM device_cutoffs WHERE valid_after < $1", [before])).rowCount;
   }
 
   /**
@@ -2207,9 +2536,26 @@ export class Store {
     );
   }
 
-  /** Removes one of `userId`'s linked sign-ins. False when it isn't theirs. */
-  async unlinkWebIdentity(userId: string, identityId: string): Promise<boolean> {
-    return (await this.db.query("DELETE FROM web_identities WHERE identity_id = $1 AND user_id = $2", [identityId, userId])).rowCount === 1;
+  /**
+   * Removes one of `userId`'s linked sign-ins. False when it isn't theirs. Every iPhone join made with it ends in the same
+   * transaction: a join that names the sign-in, and one made before joins named it (no sign-in recorded) with the same
+   * kind of sign-in, so an unlink can end a little more than it needs to and never less. The iPhones go back to their own
+   * accounts and their rows stay. Tokens that name no iPhone and belong to the account are cut off too (`device_cutoffs`),
+   * because one of them may be an iPhone whose join just ended.
+   */
+  async unlinkWebIdentity(userId: string, identityId: string, now = Date.now()): Promise<boolean> {
+    const ended = await this.db.transaction(async (tx) => {
+      const removed = await tx.query<{ provider: string }>("DELETE FROM web_identities WHERE identity_id = $1 AND user_id = $2 RETURNING provider", [identityId, userId]);
+      if (removed.rowCount !== 1) return null;
+      const joins = await tx.query(
+        "DELETE FROM device_joins WHERE user_id = $1 AND (identity_id = $2 OR (identity_id IS NULL AND provider = $3))",
+        [userId, identityId, removed.rows[0]!.provider],
+      );
+      return { cutoffs: joins.rowCount > 0 ? [await this.cutOffDeviceTokens(tx, userId, now)] : [] };
+    });
+    if (!ended) return false;
+    this.devicesChanged(ended.cutoffs);
+    return true;
   }
 
   /** The live session behind a cookie's token hash: not revoked, not expired, not idle too long. */

@@ -1,6 +1,6 @@
 import { buildApp } from "./app.js";
 import { ConfigError, loadConfig } from "./config.js";
-import { listeningLine } from "./startLine.js";
+import { listeningLine, notStartingLines } from "./startLine.js";
 
 try {
   const config = loadConfig();
@@ -21,7 +21,7 @@ try {
   process.on("SIGTERM", stop);
 } catch (error) {
   if (error instanceof ConfigError) {
-    process.stderr.write(`Not starting. ${error.message}\n`);
+    process.stderr.write(`${notStartingLines(error.problems)}\n`);
     process.exit(78);
   }
   throw error;
