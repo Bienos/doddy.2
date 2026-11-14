@@ -16,19 +16,31 @@ export class MemoryCipher {
   }
 
   encrypt(plaintext: string, aad: string): Buffer {
-    const iv = randomBytes(12);
-    const cipher = createCipheriv("aes-256-gcm", this.key, iv);
-    cipher.setAAD(Buffer.from(aad));
-    const body = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
-    return Buffer.concat([iv, cipher.getAuthTag(), body]);
+    return this.encryptBytes(Buffer.from(plaintext, "utf8"), aad);
   }
 
   /** Throws when the blob was altered, belongs to another row or was made with another key. */
   decrypt(blob: Buffer, aad: string): string {
-    if (blob.length < 28) throw new Error("ciphertext too short");
+    return this.decryptBytes(blob, aad).toString("utf8");
+  }
+
+  /** The same layout for bytes that aren't text (a file Doddy made). */
+  encryptBytes(plaintext: Buffer, aad: string): Buffer {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv("aes-256-gcm", this.key, iv);
+    cipher.setAAD(Buffer.from(aad));
+    const body = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+    return Buffer.concat([iv, cipher.getAuthTag(), body]);
+  }
+
+  decryptBytes(blob: Buffer, aad: string): Buffer {
+    if (blob.length < SEAL_OVERHEAD) throw new Error("ciphertext too short");
     const decipher = createDecipheriv("aes-256-gcm", this.key, blob.subarray(0, 12));
     decipher.setAAD(Buffer.from(aad));
-    decipher.setAuthTag(blob.subarray(12, 28));
-    return Buffer.concat([decipher.update(blob.subarray(28)), decipher.final()]).toString("utf8");
+    decipher.setAuthTag(blob.subarray(12, SEAL_OVERHEAD));
+    return Buffer.concat([decipher.update(blob.subarray(SEAL_OVERHEAD)), decipher.final()]);
   }
 }
+
+/** What encryption adds to a plaintext: the 12-byte IV and the 16-byte tag. */
+export const SEAL_OVERHEAD = 28;

@@ -8,7 +8,7 @@ import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedS
 import { DeviceSessionIssuer } from "../src/deviceSession.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { testLimits } from "../src/config.js";
-import { DocumentLinks } from "../src/documents.js";
+import { DocumentLinks, DocumentSeal } from "../src/documents.js";
 import { createHandler } from "../src/http.js";
 import { MockCalendarProvider } from "../src/providers/mock.js";
 import { ConnectedAppsService } from "../src/service.js";
@@ -98,6 +98,8 @@ export async function startWeb(
   } = {},
 ): Promise<WebRig> {
   const store = await Store.memory();
+  // As on the server: files are encrypted with the memory key, and without it none are made (decision 2026-11-12-documents-at-rest).
+  store.sealDocumentsWith(o.memoryKey === null ? null : new DocumentSeal(new MemoryCipher(o.memoryKey ?? Buffer.alloc(32, 5))));
   const clock = new Clock(Date.parse("2026-10-22T10:00:00Z"));
   const logs: string[] = [];
   const origin = o.origin ?? WEB_ORIGIN;

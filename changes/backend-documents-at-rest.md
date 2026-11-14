@@ -1,0 +1,3 @@
+Backend: documents are encrypted at rest (file and name, with `DODDY_MEMORY_KEY`; older rows encrypted once by the hourly sweep), a file's receipt names its kind only, and a file's signed link lasts 24 hours, is checked against the file's own account on every open and is served sandboxed (decision `2026-11-12-documents-at-rest`).
+Ran: `npm run typecheck` and `npm test` in `backend/` (PGlite). Not run: a hosted Postgres, the iPhone app, Quick Look in Safari under the sandbox policy on a device.
+Deploy: set `DODDY_MEMORY_KEY` on `doddy` first (owner queue 96), or making files says "not set up". Links made before the deploy say "expired".
