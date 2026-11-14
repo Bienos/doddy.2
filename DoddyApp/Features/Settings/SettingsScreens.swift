@@ -712,6 +712,13 @@ struct AdvancedSettingsView: View {
                     WelcomePreferences.requestReplay()
                 }
                 .accessibilityIdentifier("settings.welcomeAgain")
+                // How long Doddy's last starts took, to read without a Mac (decision 2026-11-14-start-timing-on-the-phone).
+                NavigationLink {
+                    StartTimingView()
+                } label: {
+                    Text("Start timing")
+                }
+                .accessibilityIdentifier("settings.startTiming")
             }
             // Studio (ADR-740): kept here, not on Home's menu (it has no room for a twelfth row, ADR-652) or
             // Settings' first page (ADR-633). Studio is off on the server until the owner turns it on, and says so
