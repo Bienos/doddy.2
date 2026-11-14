@@ -8,6 +8,7 @@ import { type Tab, type UserFilter, TABS } from "../admin/logic.js";
 import { OverviewTab } from "../admin/OverviewTab.js";
 import { ToolsTab } from "../admin/ToolsTab.js";
 import { UsersTab } from "../admin/UsersTab.js";
+import { useSession } from "../auth/session.js";
 import { ErrorState, Loading } from "../components/States.js";
 import { useI18n } from "../i18n/i18n.js";
 import { OWNER_PERIODS } from "../owner/schema.js";
@@ -47,6 +48,9 @@ export default function AdminPage() {
   };
 
   if (overview.resource.error?.code === "not_found") return <Navigate to="/" replace />;
+  // The server opens the panel only within minutes of signing in (decision 2026-11-14-owner-panel-fresh-sign-in):
+  // nothing is shown, and what was on screen goes, until the owner signs in again.
+  if (overview.resource.error?.code === "refused" || accounts.resource.error?.code === "refused") return <SignInAgain />;
 
   const o = overview.resource.data;
   const list = accounts.resource.data?.accounts ?? [];
@@ -94,6 +98,43 @@ export default function AdminPage() {
             {tab === "growth" ? <GrowthTab o={o} /> : null}
           </div>
         ) : null}
+      </main>
+    </div>
+  );
+}
+
+/** The panel is shut until this browser signs in again; signing out is the way to that. */
+function SignInAgain() {
+  const { t } = useI18n();
+  const { signOut } = useSession();
+  const [working, setWorking] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const out = async () => {
+    setWorking(true);
+    setFailed(false);
+    try {
+      await signOut();
+    } catch {
+      setFailed(true);
+      setWorking(false);
+    }
+  };
+  return (
+    <div className="adm">
+      <header className="adm-top">
+        <div className="adm-brand">
+          <strong>{t("admin.title")}</strong>
+        </div>
+        <NavLink to="/" className="adm-btn">{t("admin.back")}</NavLink>
+      </header>
+      <main id="main" className="adm-main">
+        <p role="alert">{t("admin.reauth")}</p>
+        {failed ? <p role="alert">{t("common.error.network")}</p> : null}
+        <p>
+          <button type="button" className="adm-btn" onClick={() => void out()} disabled={working}>
+            {working ? t("app.signingOut") : t("app.signOut")}
+          </button>
+        </p>
       </main>
     </div>
   );

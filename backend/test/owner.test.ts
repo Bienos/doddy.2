@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { DEV_IDENTITIES } from "../src/auth.js";
-import { type DirectoryUser, type GetJson, SupabaseUserDirectory, type UserDirectory } from "../src/web/owner.js";
+import { type DirectoryUser, type GetJson, OWNER_AUDIT_KEPT_DAYS, OWNER_FRESH_MS, SupabaseUserDirectory, type UserDirectory } from "../src/web/owner.js";
 import { USER_A, USER_B } from "./helpers.js";
 import { startWeb, type WebRig } from "./webRig.js";
 
@@ -54,21 +54,131 @@ async function send(r: WebRig, token: string, ...days: ReturnType<typeof day>[])
 
 const directory = (users: DirectoryUser[] | null): UserDirectory => ({ list: async () => users });
 
+/**
+ * The owner at a browser that has just signed in. The panel is for a browser only, and only for one
+ * that signed in recently (`OWNER_FRESH_MS`); the rig's clock stands still unless a test moves it.
+ */
+const ownerCookies = new WeakMap<WebRig, string>();
+async function ownerCookie(r: WebRig): Promise<string> {
+  let cookie = ownerCookies.get(r);
+  if (!cookie) {
+    cookie = await r.signIn(await r.code(USER_A));
+    ownerCookies.set(r, cookie);
+  }
+  return cookie;
+}
+const ownerGet = async (r: WebRig, path: string) => r.call("GET", path, { cookie: await ownerCookie(r) });
+
 const people: DirectoryUser[] = [
   { id: ID_A, email: "owner@example.com", name: "Owner", method: "apple", createdAt: "2026-10-01T08:00:00Z", lastSignInAt: "2026-10-22T07:00:00Z" },
   { id: ID_B, email: "tomek@example.com", name: "Tomek", method: "google", createdAt: "2026-10-20T12:00:00Z", lastSignInAt: "2026-10-21T18:00:00Z" },
 ];
 
-test("anyone not named as an owner is told there is nothing here, from the iPhone or a browser", async () => {
+const PANEL_PATHS = ["/v1/web/owner", "/v1/web/owner/overview", "/v1/web/owner/accounts", `/v1/web/owner/accounts/${ID_B}/logbook`];
+
+test("anyone not named as an owner is told there is nothing here, and nothing is recorded", async () => {
   rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
-  for (const path of ["/v1/web/owner", "/v1/web/owner/overview", "/v1/web/owner/accounts", `/v1/web/owner/accounts/${ID_A}/logbook`]) {
-    const phone = await rig.call("GET", path, { token: USER_B });
-    assert.equal(phone.status, 404, path);
-    assert.equal(phone.body.error.code, "not_found");
+  const browserB = await rig.signIn(await rig.code(USER_B));
+  for (const path of PANEL_PATHS) {
+    const browser = await rig.call("GET", path, { cookie: browserB });
+    assert.equal(browser.status, 404, path);
+    assert.equal(browser.body.error.code, "not_found");
     assert.equal((await rig.call("GET", path)).status, 401, `${path} signed out`);
   }
-  const browserB = await rig.signIn(await rig.code(USER_B));
-  assert.equal((await rig.call("GET", "/v1/web/owner/overview", { cookie: browserB })).status, 404);
+  assert.deepEqual((await rig.store.db.query("SELECT * FROM owner_audit")).rows, [], "a refused caller leaves no row");
+});
+
+test("the panel is for a browser only: the iPhone's own session can't open it, not even the owner's", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
+  for (const path of PANEL_PATHS) {
+    for (const token of [USER_A, USER_B]) {
+      const phone = await rig.call("GET", path, { token });
+      assert.equal(phone.status, 401, `${path} with ${token}`);
+      assert.equal(phone.body.error.code, "unauthenticated");
+      assert.ok(!phone.text.includes("example.com"), "no account is named in the refusal");
+    }
+  }
+  assert.deepEqual((await rig.store.db.query("SELECT * FROM owner_audit")).rows, [], "nothing was shown, so nothing is recorded");
+});
+
+test(`the panel opens only within ${OWNER_FRESH_MS / 60_000} minutes of the browser signing in, and a refused request shows nothing`, async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
+  const cookie = await rig.signIn(await rig.code(USER_A));
+  const paths = ["/v1/web/owner/overview", "/v1/web/owner/accounts", `/v1/web/owner/accounts/${ID_B}/logbook`];
+
+  rig.clock.advance(OWNER_FRESH_MS);
+  for (const path of paths) assert.equal((await rig.call("GET", path, { cookie })).status, 200, `${path} at the last moment of the window`);
+  const shown = (await rig.store.db.query("SELECT count(*) AS n FROM owner_audit")).rows[0] as { n: string };
+  assert.equal(Number(shown.n), 3);
+
+  rig.clock.advance(1);
+  for (const path of paths) {
+    const late = await rig.call("GET", path, { cookie });
+    assert.equal(late.status, 422, path);
+    assert.equal(late.body.error.code, "refused");
+    assert.match(late.body.error.message, /sign in again/i);
+    assert.ok(!late.text.includes("example.com") && !late.text.includes("Tomek"), "no account is named in the refusal");
+  }
+  assert.equal(Number((await rig.store.db.query("SELECT count(*) AS n FROM owner_audit")).rows[0]!.n), 3, "a refusal shows nothing, so records nothing");
+
+  // The menu's question (is this an owner?) holds no data, so it still answers: the page then says why it is shut.
+  assert.deepEqual((await rig.call("GET", "/v1/web/owner", { cookie })).body, { owner: true });
+
+  // Signing in again opens it again, for a new window.
+  const again = await rig.signIn(await rig.code(USER_A));
+  assert.equal((await rig.call("GET", "/v1/web/owner/overview", { cookie: again })).status, 200);
+});
+
+test("each use of the panel is recorded with who, which browser, what and when, and holds no content or secret", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
+  await send(rig, USER_B, day(iso(0), 3, { get_weather: { done: 1 } }));
+  const cookie = await rig.signIn(await rig.code(USER_A));
+  const session = (await rig.call("GET", "/v1/web/session", { cookie })).body.session.id as string;
+  const t0 = rig.clock.ms;
+
+  assert.equal((await rig.call("GET", "/v1/web/owner", { cookie })).status, 200, "the menu's question is not a use of the data");
+  assert.equal((await rig.call("GET", "/v1/web/owner/overview?days=7", { cookie })).status, 200);
+  rig.clock.advance(1_000);
+  assert.equal((await rig.call("GET", "/v1/web/owner/accounts", { cookie })).status, 200);
+  rig.clock.advance(1_000);
+  assert.equal((await rig.call("GET", `/v1/web/owner/accounts/${ID_B}/logbook`, { cookie })).status, 200);
+
+  const rows = (await rig.store.db.query<{ at: string; actor_id: string; session_id: string; action: string; target_id: string | null }>("SELECT at, actor_id, session_id, action, target_id FROM owner_audit ORDER BY id")).rows;
+  assert.deepEqual(
+    rows.map((r) => ({ at: Number(r.at), actor_id: r.actor_id, session_id: r.session_id, action: r.action, target_id: r.target_id })),
+    [
+      { at: t0, actor_id: ID_A, session_id: session, action: "overview", target_id: null },
+      { at: t0 + 1_000, actor_id: ID_A, session_id: session, action: "accounts", target_id: null },
+      { at: t0 + 2_000, actor_id: ID_A, session_id: session, action: "account_logbook", target_id: ID_B },
+    ],
+  );
+
+  // The record has no column that could hold a word, a count, an email or a credential, and none of those is in it.
+  const columns = (await rig.store.db.query<{ column_name: string }>("SELECT column_name FROM information_schema.columns WHERE table_name = 'owner_audit' ORDER BY column_name")).rows.map((c) => c.column_name);
+  assert.deepEqual(columns, ["action", "actor_id", "at", "id", "session_id", "target_id"]);
+  const dump = JSON.stringify((await rig.store.db.query("SELECT * FROM owner_audit")).rows);
+  for (const secret of ["example.com", "Tomek", "owner@", "get_weather", cookie, USER_A, USER_B]) assert.ok(!dump.includes(secret), `leaked: ${secret}`);
+});
+
+test("the panel shows nothing it could not record: a failed record is a failed request", async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
+  const cookie = await rig.signIn(await rig.code(USER_A));
+  await rig.store.db.query("DROP TABLE owner_audit");
+  for (const path of ["/v1/web/owner/overview", "/v1/web/owner/accounts", `/v1/web/owner/accounts/${ID_B}/logbook`]) {
+    const res = await rig.call("GET", path, { cookie });
+    assert.equal(res.status, 500, path);
+    assert.ok(!res.text.includes("example.com"), "no account in the failure");
+  }
+});
+
+test(`records older than ${OWNER_AUDIT_KEPT_DAYS} days are pruned, newer ones stay`, async () => {
+  rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
+  const now = Date.parse("2026-10-22T10:00:00Z");
+  const old = now - (OWNER_AUDIT_KEPT_DAYS + 1) * DAY;
+  const edge = now - OWNER_AUDIT_KEPT_DAYS * DAY;
+  for (const at of [old, edge, now]) await rig.store.recordOwnerUse({ at, actorId: ID_A, sessionId: "s", action: "overview", targetId: null });
+  assert.equal(await rig.store.pruneOwnerAudit(now - OWNER_AUDIT_KEPT_DAYS * DAY), 1);
+  assert.deepEqual((await rig.store.db.query<{ at: string }>("SELECT at FROM owner_audit ORDER BY at")).rows.map((r) => Number(r.at)), [edge, now]);
 });
 
 test("without owner accounts the routes don't exist at all", async () => {
@@ -104,7 +214,7 @@ test("the owner sees each account with its email, method and its own days", asyn
   rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
   await send(rig, USER_B, day(iso(-2), 1), day(iso(0), 3, { get_weather: { failed: 2 } }));
 
-  const res = await rig.call("GET", "/v1/web/owner/accounts?days=30", { token: USER_A });
+  const res = await ownerGet(rig, "/v1/web/owner/accounts?days=30");
   assert.equal(res.status, 200, res.text);
   const tomek = res.body.accounts.find((a: { email: string }) => a.email === "tomek@example.com");
   assert.equal(tomek.userId, ID_B);
@@ -118,7 +228,7 @@ test("the owner sees each account with its email, method and its own days", asyn
   const owner = res.body.accounts.find((a: { email: string }) => a.email === "owner@example.com");
   assert.equal(owner.logbook, "never", "the owner's own iPhone never set it");
 
-  const days = await rig.call("GET", `/v1/web/owner/accounts/${ID_B}/logbook`, { token: USER_A });
+  const days = await ownerGet(rig, `/v1/web/owner/accounts/${ID_B}/logbook`);
   assert.equal(days.status, 200);
   assert.deepEqual(days.body.days.map((d: { day: string }) => d.day), [iso(-2), iso(0)]);
 });
@@ -126,20 +236,22 @@ test("the owner sees each account with its email, method and its own days", asyn
 test("an owner named by the Doddy account that took over an iPhone's earlier data is recognised", async () => {
   const account = "6b0c8f7e-2a41-4c3d-9e6f-0123456789ab";
   rig = await startWeb({ owner: { accounts: [account] } });
-  assert.equal((await rig.call("GET", "/v1/web/owner", { token: USER_A })).status, 404, "not linked yet");
+  const browserA = await rig.signIn(await rig.code(USER_A));
+  const browserB = await rig.signIn(await rig.code(USER_B));
+  assert.equal((await rig.call("GET", "/v1/web/owner", { cookie: browserA })).status, 404, "not linked yet");
   await rig.store.db.query("INSERT INTO account_links (subject, user_id, linked_at) VALUES ($1, $2, $3)", [account, ID_A, Date.now()]);
-  assert.equal((await rig.call("GET", "/v1/web/owner", { token: USER_A })).status, 200);
-  assert.equal((await rig.call("GET", "/v1/web/owner", { token: USER_B })).status, 404);
+  assert.equal((await rig.call("GET", "/v1/web/owner", { cookie: browserA })).status, 200);
+  assert.equal((await rig.call("GET", "/v1/web/owner", { cookie: browserB })).status, 404);
 });
 
 test("without Supabase's account list the panel says so and still counts Logbook", async () => {
   rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(null) } });
   await send(rig, USER_B, day(iso(0), 1));
-  const overview = (await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body;
+  const overview = (await ownerGet(rig, "/v1/web/owner/overview")).body;
   assert.equal(overview.directory, false);
   assert.equal(overview.accounts.total, null);
   assert.equal(overview.periodDays, 30, "the default period");
-  const accounts = (await rig.call("GET", "/v1/web/owner/accounts", { token: USER_A })).body;
+  const accounts = (await ownerGet(rig, "/v1/web/owner/accounts")).body;
   assert.equal(accounts.accounts.length, 1);
   assert.equal(accounts.accounts[0].userId, ID_B);
   assert.equal(accounts.accounts[0].email, null);
@@ -191,7 +303,7 @@ test("engagement counts accounts that used Doddy today, this week and this month
   await send(rig, USER_B, day(iso(0), 2), day(iso(-20), 1));
   await sendFor(rig, U3, day(iso(-25), 1));
 
-  const o = (await rig.call("GET", "/v1/web/owner/overview?days=30", { token: USER_A })).body;
+  const o = (await ownerGet(rig, "/v1/web/owner/overview?days=30")).body;
   assert.deepEqual(o.engagement, { today: 2, week: 2, month: 3, dailyAverage: 0.2 });
   // The day of zeros (iso(-8)) is not use: one account on iso(-12), none on iso(-8).
   const at = (offset: number) => o.logbook.activeByDay.find((d: { day: string }) => d.day === iso(offset)).accounts;
@@ -226,7 +338,7 @@ test("the shape of conversations: lengths, endings, languages, and when people t
   });
   await send(rig, USER_A, wednesday, thursday);
 
-  const c = (await rig.call("GET", "/v1/web/owner/overview?days=7", { token: USER_A })).body;
+  const c = (await ownerGet(rig, "/v1/web/owner/overview?days=7")).body;
   assert.deepEqual(c.conversations.lengths, { under_1: 1, "1_3": 1, "3_5": 1, "5_10": 1 });
   assert.deepEqual(c.conversations.ended, { you: 2, doddy: 1, quiet: 1, dropped: 0 });
   assert.deepEqual(c.conversations.languages, { pl: 2, en: 1 });
@@ -251,7 +363,7 @@ test("activation: of the accounts that joined in the period, how many used Doddy
   await send(rig, USER_B, day(iso(0), 1), day("2026-10-02", 1));
   await sendFor(rig, U3, day("2026-09-27", 1));
 
-  const o = (await rig.call("GET", "/v1/web/owner/overview?days=30", { token: USER_A })).body;
+  const o = (await ownerGet(rig, "/v1/web/owner/overview?days=30")).body;
   assert.deepEqual(o.activation, { joined: 4, activated: 2 });
   assert.equal(o.cohorts.length, 8);
   assert.deepEqual(o.cohorts.map((c: { week: string }) => c.week), ["2026-08-31", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19"]);
@@ -266,7 +378,7 @@ test("activation: of the accounts that joined in the period, how many used Doddy
 test("no cohorts or activation without Supabase's account list, because nobody's join date is known", async () => {
   rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(null) } });
   await send(rig, USER_A, day(iso(0), 1));
-  const o = (await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body;
+  const o = (await ownerGet(rig, "/v1/web/owner/overview")).body;
   assert.deepEqual(o.cohorts, []);
   assert.deepEqual(o.activation, { joined: 0, activated: 0 });
   assert.equal(o.engagement.today, 1, "engagement still comes from Logbook");
@@ -275,7 +387,7 @@ test("no cohorts or activation without Supabase's account list, because nobody's
 test("each account carries its last day of use and its conversations over the last 14 days", async () => {
   rig = await startWeb({ owner: { accounts: [ID_A], directory: directory(people) } });
   await send(rig, USER_B, day(iso(-2), 1), day(iso(0), 3), day(iso(-1), 0));
-  const res = (await rig.call("GET", "/v1/web/owner/accounts?days=30", { token: USER_A })).body;
+  const res = (await ownerGet(rig, "/v1/web/owner/accounts?days=30")).body;
   const tomek = res.accounts.find((a: { email: string }) => a.email === "tomek@example.com");
   assert.equal(tomek.lastActiveDay, iso(0));
   assert.equal(tomek.trend.length, 14);
@@ -297,18 +409,18 @@ test("the account list is read once for a minute, and a failed read is asked aga
     },
   };
   rig = await startWeb({ owner: { accounts: [ID_A], directory: counting } });
-  await rig.call("GET", "/v1/web/owner/overview", { token: USER_A });
-  await rig.call("GET", "/v1/web/owner/accounts", { token: USER_A });
-  await rig.call("GET", "/v1/web/owner/overview?days=7", { token: USER_A });
+  await ownerGet(rig, "/v1/web/owner/overview");
+  await ownerGet(rig, "/v1/web/owner/accounts");
+  await ownerGet(rig, "/v1/web/owner/overview?days=7");
   assert.equal(reads, 1, "one read serves the overview, the accounts and a new period");
-  assert.equal((await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body.directory, true);
+  assert.equal((await ownerGet(rig, "/v1/web/owner/overview")).body.directory, true);
   await rig.close();
 
   reads = 0;
   fail = true;
   rig = await startWeb({ owner: { accounts: [ID_A], directory: counting } });
-  assert.equal((await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body.directory, false);
+  assert.equal((await ownerGet(rig, "/v1/web/owner/overview")).body.directory, false);
   fail = false;
-  assert.equal((await rig.call("GET", "/v1/web/owner/overview", { token: USER_A })).body.directory, true, "a failure wasn't kept");
+  assert.equal((await ownerGet(rig, "/v1/web/owner/overview")).body.directory, true, "a failure wasn't kept");
   assert.equal(reads, 2);
 });
