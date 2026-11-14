@@ -126,6 +126,35 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("errands", state).what.contains("Serper"), "shopping tasks name the offer source")
     }
 
+    /// SHOPPING.md "Shopify": a search or a cart goes to Doddy's server, which asks Shopify's Shop service. The row says
+    /// what is sent and what isn't, that nothing is bought, and that nothing is sent without the server or while
+    /// Connections are paused.
+    func testShopifyRowSaysWhatGoesWhereAndThatNothingIsBought() {
+        XCTAssertFalse(row("shopify", base).isActive)
+        XCTAssertEqual(row("shopify", base).note, "Nothing has been sent to Doddy's server yet.")
+        XCTAssertFalse(DataFlow.networkSummary(base).contains("Shopify"))
+        var state = base
+        state.doddyServerSet = true
+        let shopify = row("shopify", state)
+        XCTAssertTrue(shopify.isActive)
+        XCTAssertTrue(shopify.destination.contains("Doddy server"))
+        XCTAssertTrue(shopify.destination.contains("Shopify's Shop service"))
+        for part in ["The words you search for", "variant ID", "the shop's domain", "the quantity",
+                     "no name, account, address or payment detail of yours"] {
+            XCTAssertTrue(shopify.what.contains(part), part)
+        }
+        XCTAssertTrue(shopify.when.contains("when you tap search"), "a search starts from the person's tap, never by itself")
+        XCTAssertTrue(shopify.when.contains("places no order and takes no payment"))
+        XCTAssertTrue(shopify.note?.contains("doesn't log the words you search for") ?? false)
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("Shopify's Shop service, asked by your Doddy server"))
+        state.pauseAll = true
+        XCTAssertFalse(row("shopify", state).isActive, "paused: nothing is sent")
+        XCTAssertEqual(row("shopify", state).note, "Connections are paused, so Shopify shops aren't searched.")
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("Shopify"))
+        // No AI service reads a Shopify search.
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("Shopify"))
+    }
+
     /// SHOPPING_WATCH.md (ADR-614): a watched price goes to the messaging server, which reads the shop's page;
     /// the notification has no product words, nothing is bought, no AI service is involved, and nothing is sent
     /// without a server or while Connections are paused.
@@ -276,7 +305,7 @@ final class DataFlowSummaryTests: XCTestCase {
         // ElevenLabs is the only voice (9 Nov 2026): nothing names OpenAI for voice.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "ElevenLabs (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
+            "ElevenLabs (voice); Anthropic (Ask Doddy); Anthropic (your screen, when you share it and ask about it); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
         XCTAssertTrue(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("OpenAI (while talking)"))
         var state = everything
@@ -636,5 +665,120 @@ final class DataFlowCallsAndUpdatesTests: XCTestCase {
         XCTAssertTrue(on?.when.contains("ElevenLabs keeps its own copy") ?? false, "the row doesn't claim the call is gone everywhere")
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("recaps of calls to Doddy's phone line"))
         XCTAssertTrue(DataFlow.networkSummary(state).contains("recaps of calls to Doddy's phone line"))
+    }
+}
+
+/// Logbook, the Messages copy, the Doddy account and the screen look (12 Nov 2026): rows read from LogbookDay,
+/// ThreadSync, DoddyAccount and the screen-look route, and the Analytics line derived from Logbook's switch.
+final class DataFlowLogbookAndCopiesTests: XCTestCase {
+    private let base = DataFlowState(
+        rememberConversations: false, shareProfileWithVoice: false, tokenServerSet: false,
+        connectionsOn: [], pauseAll: false, doddyServerSet: false, askDoddyOn: false, askDoddyUsesNotes: true)
+
+    private func row(_ id: String, _ state: DataFlowState) -> DataFlowRow {
+        DataFlow.rows(state).first { $0.id == id }!
+    }
+
+    /// Decision 2026-11-09-usage-counts-on-by-default: Logbook is on unless turned off, sends counts only, and its row
+    /// follows the switch and the server.
+    func testLogbookRowFollowsItsSwitchAndSaysCountsOnly() throws {
+        XCTAssertTrue(base.logbookOn, "on unless the person turned it off, like LogbookModel")
+        let before = row("logbook", base)
+        XCTAssertFalse(before.isActive, "nothing is sent before this iPhone has signed in to Doddy's server")
+        XCTAssertEqual(before.note, "Logbook is on, but this iPhone hasn't signed in to Doddy's server yet, so nothing has been sent.")
+
+        var state = base
+        state.doddyServerSet = true
+        let on = row("logbook", state)
+        XCTAssertTrue(on.isActive)
+        XCTAssertTrue(on.what.hasPrefix("Counts only"))
+        XCTAssertTrue(on.what.contains("Never a word anyone said, a note's text, a name, a place or an address."))
+        XCTAssertTrue(on.what.contains("Private notes and private conversations aren't counted."))
+        XCTAssertTrue(on.when.contains("unless you turn it off in Settings › Doddy on the web"))
+        let note = try XCTUnwrap(on.note)
+        XCTAssertTrue(note.contains("Doddy's team can see them with your account"), "the owner's dashboard is said")
+        XCTAssertTrue(note.contains("go with it to Anthropic"), "the web chat reads the counts")
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("Logbook: counts of how you use Doddy, never words"))
+
+        state.logbookOn = false
+        let off = row("logbook", state)
+        XCTAssertFalse(off.isActive)
+        XCTAssertEqual(off.note, "Logbook is off, so nothing is counted or sent. Turning it off asks Doddy's server to delete the counts it holds.")
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("Logbook"))
+    }
+
+    /// Settings › Privacy's Analytics line comes from Logbook's switch, never fixed text: never "not built" while
+    /// Logbook counts, and never "On" once it is off.
+    func testAnalyticsLineIsDerivedFromLogbook() {
+        var state = base
+        state.doddyServerSet = true
+        let on = DataFlow.analyticsSummary(state)
+        XCTAssertTrue(on.hasPrefix("On: Logbook sends counts of how you use Doddy, never words, to Doddy's server"))
+        XCTAssertTrue(on.contains("Doddy's team can see them"))
+        XCTAssertTrue(on.contains("Turn it off in Settings › Doddy on the web"))
+        XCTAssertFalse(on.contains("not built"))
+
+        state.doddyServerSet = false
+        XCTAssertTrue(DataFlow.analyticsSummary(state).hasPrefix("On: Logbook counts how you use Doddy, never words; nothing has been sent yet."))
+
+        state.logbookOn = false
+        let off = DataFlow.analyticsSummary(state)
+        XCTAssertTrue(off.hasPrefix("Off: Logbook is off"))
+        XCTAssertFalse(off.contains("On:"))
+        state.doddyServerSet = true
+        XCTAssertTrue(DataFlow.analyticsSummary(state).hasPrefix("Off:"), "off stays off whatever the server")
+        // The analytics line and the row never disagree.
+        for logbookOn in [true, false] {
+            for server in [true, false] {
+                var s = base
+                s.logbookOn = logbookOn
+                s.doddyServerSet = server
+                XCTAssertEqual(DataFlow.analyticsSummary(s).hasPrefix("On: Logbook sends"), row("logbook", s).isActive)
+            }
+        }
+    }
+
+    /// Messages on the web: the thread's text goes to Doddy's server after every change, never a photo or a file's link.
+    func testMessagesCopyRowSaysWhatIsCopiedAndHowItIsDeleted() throws {
+        XCTAssertFalse(row("messagesCopy", base).isActive)
+        XCTAssertTrue(row("messagesCopy", base).note?.hasPrefix("Nothing has been sent to Doddy's server yet.") ?? false)
+        var state = base
+        state.doddyServerSet = true
+        let copy = row("messagesCopy", state)
+        XCTAssertTrue(copy.isActive, "there is no switch: it follows the server")
+        XCTAssertTrue(copy.what.contains("newest 200 messages"))
+        XCTAssertTrue(copy.what.contains("only that it had one"), "never the photo")
+        XCTAssertTrue(copy.what.contains("never the file or its link"))
+        let note = try XCTUnwrap(copy.note)
+        XCTAssertTrue(note.contains("Stored encrypted; Doddy's server can read it"))
+        XCTAssertTrue(note.contains("Delete conversation in Messages deletes this copy too"))
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("a copy of Messages for the web"))
+    }
+
+    /// Decision 2026-11-08-required-account: the sign-in has a row, and it names the email address.
+    func testDoddyAccountRowNamesTheEmailAddressAndFollowsTheBuild() {
+        XCTAssertFalse(row("doddyAccount", base).isActive, "a build without accounts sends nothing there")
+        var state = base
+        state.doddyAccountsSet = true
+        let account = row("doddyAccount", state)
+        XCTAssertTrue(account.isActive)
+        XCTAssertTrue(account.destination.contains("Supabase"))
+        XCTAssertTrue(account.what.contains("email address"))
+        XCTAssertTrue(account.note?.contains("Deleting your account") ?? false)
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("Supabase (your Doddy account's sign-in)"))
+    }
+
+    /// Decision 2026-11-09-doddy-looks-at-the-screen: one picture per question, to the server and Anthropic, kept by neither Doddy server.
+    func testScreenLookRowNamesAnthropicAndThatNothingIsKept() throws {
+        XCTAssertFalse(row("screenLook", base).isActive)
+        var state = base
+        state.messagingServerSet = true
+        let look = row("screenLook", state)
+        XCTAssertTrue(look.isActive)
+        XCTAssertTrue(look.destination.contains("Anthropic"))
+        XCTAssertTrue(look.what.contains("Only while you share your screen with Doddy"))
+        XCTAssertTrue(look.when.contains("more than 10 seconds old is never sent"))
+        XCTAssertTrue(try XCTUnwrap(look.note).contains("keeps neither the picture nor the question"))
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (your screen, when you share it and ask about it)"))
     }
 }

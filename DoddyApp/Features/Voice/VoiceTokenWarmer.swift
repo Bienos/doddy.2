@@ -125,6 +125,20 @@ final class VoiceTokenWarmer {
         return token
     }
 
+    /// A translator conversation talks to its own agent (decision 2026-11-12-translator-agent), so a token held
+    /// ahead for the main agent is no use to it: this fetches one now, with the same checks as `token(endpoint:)`
+    /// (Pause all, the voice data notice, the same account), and leaves the shelf as it is.
+    func translatorToken(endpoint: URL) async throws(VoiceTokenError) -> String {
+        guard !Self.paused, VoiceProviderConsent.isGranted() else { clear(); throw .cancelled }
+        guard let owner = Self.owner else { throw .sessionExpired }
+        let token = try await VoiceTokenClient(endpoint: endpoint).fetchToken(agent: .translator)
+        guard !Self.paused, VoiceProviderConsent.isGranted(), owner == Self.owner else {
+            clear()
+            throw .cancelled
+        }
+        return token
+    }
+
     private static func fetch(_ endpoint: URL) async -> Result<String, VoiceTokenError> {
         do throws(VoiceTokenError) {
             return .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
@@ -136,5 +150,7 @@ final class VoiceTokenWarmer {
     /// Sign-out, account change, Pause all, consent withdrawn: nothing held survives.
     func clear() {
         supply.clear()
+        // The account ids that came with those tokens go with them (decision 2026-11-12-voice-conversations-per-account).
+        VoiceTokenUserIDs.shared.forget()
     }
 }

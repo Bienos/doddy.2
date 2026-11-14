@@ -140,7 +140,7 @@ test("signing in must come from the web app itself (no Origin, another origin, o
   assert.equal((await rig.call("POST", "/v1/web/session", { browser: true, body: { code } })).status, 200);
 });
 
-test("sign-in tries are limited per client and for the whole server, before the code is checked", async () => {
+test("sign-in tries are limited per client before the code is checked, and wrong codes for the whole server", async () => {
   const SERVICE = 30;
   rig = await startWeb({ trustProxy: true, limits: { perClientPerQuarter: REDEEM_LIMITS.perClientPerQuarter, servicePerHour: SERVICE } });
   const wrong = (ip: string) => rig!.call("POST", "/v1/web/session", { browser: true, body: { code: "AAAA-AAAA" }, headers: { "x-forwarded-for": `9.9.9.9, ${ip}` } });
@@ -155,12 +155,23 @@ test("sign-in tries are limited per client and for the whole server, before the 
   rig.clock.advance(15 * MINUTE);
   assert.equal((await wrong("1.1.1.1")).status, 401);
 
-  // Server-wide: once the hour's tries are used up, sign-in waits for the next hour, for everyone.
+  // Server-wide, only wrong codes count: right ones never use up the hour.
   rig.clock.advance(60 * MINUTE);
+  const signIn = async (ip: string, code: string) =>
+    (await rig!.call("POST", "/v1/web/session", { browser: true, body: { code }, headers: { "x-forwarded-for": ip } })).status;
+  for (let i = 0; i < 12; i++) assert.equal(await signIn(`11.0.0.${i}`, await rig.code()), 200, `right code ${i}`);
+  // Wrong codes from many places spend the hour's budget...
   for (let i = 0; i < SERVICE; i++) assert.equal((await wrong(`10.0.0.${i}`)).status, 401);
-  const late = await rig.code();
-  assert.equal((await rig.call("POST", "/v1/web/session", { browser: true, body: { code: late }, headers: { "x-forwarded-for": "3.3.3.3" } })).status, 429);
-  assert.equal(REDEEM_LIMITS.servicePerHour, 2_000, "production: high enough that one person can't easily lock everyone out");
+  // ...yet a right code still gets in, and a first wrong try is still only "didn't work".
+  assert.equal(await signIn("3.3.3.3", await rig.code()), 200, "a right code succeeds when the budget is spent");
+  assert.equal((await wrong("5.5.5.5")).status, 401);
+  // While it is spent, a client that already had a wrong code waits out the quarter hour, right code or not.
+  const held = await rig.code();
+  assert.equal(await signIn("5.5.5.5", held), 429);
+  assert.equal(await signIn("6.6.6.6", held), 200, "the held try didn't use the code up");
+  rig.clock.advance(15 * MINUTE);
+  assert.equal(await signIn("5.5.5.5", await rig.code()), 200, "next quarter hour");
+  assert.equal(REDEEM_LIMITS.servicePerHour, 2_000, "production: wrong codes from many places are held back, never everyone");
 });
 
 test("parallel tries can't get past the limit: each one is reserved before the code is read", async () => {
@@ -216,6 +227,11 @@ test("a browser session reads the workspace lists and nothing that runs tools or
   assert.equal((await rig.call("GET", "/v1/tools/receipts", { cookie })).status, 200);
   assert.equal((await rig.call("GET", "/v1/web/documents", { cookie })).status, 200);
   assert.equal((await rig.call("GET", "/v1/web/sessions", { cookie })).status, 200);
+  // The "Demo server" banner's question (the open health check no longer answers it).
+  const server = await rig.call("GET", "/v1/server", { cookie });
+  assert.equal(server.status, 200);
+  assert.deepEqual(server.body, { mode: "mock" });
+  assert.equal((await rig.call("GET", "/v1/server")).status, 401, "not without the session");
   // Same-origin headers don't widen it.
   for (const [method, path, body] of [
     ["POST", "/v1/tools/prepare", { tool: "web_search", arguments: { query: "x" } }],

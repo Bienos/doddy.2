@@ -27,7 +27,7 @@ const reply = (text: string, sources: unknown[] = []) => ({ body: { text, source
 function renderAt(path: string, routes: Routes, language: Language = "en") {
   const server = fakeServer({
     "GET /v1/web/session": { body: fixture("web/session-current") },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     "GET /v1/web/chat/context": { body: context() },
     ...routes,
   });

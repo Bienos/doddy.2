@@ -7,8 +7,9 @@ import os
 struct VoiceTokenClient: Sendable {
     let endpoint: URL
     private static let log = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
-    /// ElevenLabs conversation token. Sends no body: ElevenLabs is the only voice (9 Nov 2026).
-    func fetchToken() async throws(VoiceTokenError) -> String {
+    /// ElevenLabs conversation token. Sends no body for the main agent (ElevenLabs is the only voice, 9 Nov 2026);
+    /// translating asks for its own agent, which has no tools (decision 2026-11-12-translator-agent).
+    func fetchToken(agent: VoiceAgentKind = .main) async throws(VoiceTokenError) -> String {
         // How long the token server took, on the "voice-audio" log with the start's other stages
         // (decision 2026-11-10-voice-start-timing): seconds only.
         let began = ProcessInfo.processInfo.systemUptime
@@ -16,15 +17,24 @@ struct VoiceTokenClient: Sendable {
             let took = VoiceStartTimeline.text(ProcessInfo.processInfo.systemUptime - began)
             Self.log.notice("voice token request took \(took, privacy: .public)")
         }
-        let (status, data, retryAfter) = try await post()
-        return try VoiceTokenServer.token(status: status, body: data, retryAfter: retryAfter).get()
+        let (status, data, retryAfter) = try await post(agent: agent)
+        let token = try VoiceTokenServer.token(status: status, body: data, retryAfter: retryAfter).get()
+        // Decision 2026-11-12-voice-conversations-per-account: the server's keyed id for this account comes with the
+        // token. It is kept with that token until the token is used, so the conversation starts with the user id
+        // that belongs to it (`VoiceUserIDPolicy`); an answer without one leaves the install id, as before.
+        VoiceTokenUserIDs.shared.remember(VoiceTokenServer.userID(fromAnswer: data), forToken: token)
+        return token
     }
 
     /// The status, the body and the reply's Retry-After header, which says how long a 429 lasts (the
     /// message reads it in minutes, hours or "tomorrow", ADR-712).
-    private func post() async throws(VoiceTokenError) -> (Int, Data, String?) {
+    private func post(agent: VoiceAgentKind) async throws(VoiceTokenError) -> (Int, Data, String?) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"
+        if let body = agent.requestBody {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
         var accessToken: String?
         // Decision 2026-11-08-required-account: the Doddy account's token, unless this iPhone still has its
         // own voice session (that one works whether or not the voice server takes accounts yet).
@@ -51,12 +61,16 @@ struct VoiceTokenClient: Sendable {
         let session = URLSession(configuration: .ephemeral)
         defer { session.finishTasksAndInvalidate() }
         do {
-            (data, response) = try await session.data(for: request)
+            // Redirects are refused, as for the messaging server, so the bearer token never follows one
+            // (decision 2026-11-12-local-data-owner).
+            (data, response) = try await session.data(for: request, delegate: ServerHTTPTransport.RefuseRedirects())
         } catch {
             // Only a missing or lost connection is "offline"; a cancelled request, a timeout and a
             // refused secure connection each say what happened (ADR-681).
             throw VoiceTokenServer.loadingFailure(error)
         }
+        // An answer from any other address than the one asked isn't read.
+        guard BearerHost.answered(response.url, sameAs: endpoint) else { throw .badResponse }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         // A refused account token says nothing about the voice session, so that one is left alone.
         if status == 401, accountToken == nil { await VoiceAuthSession.shared.serverRejectedSession() }
@@ -109,6 +123,33 @@ actor VoiceAuthAPI {
         return reply.appleRevoked
     }
 
+    /// Before the account is deleted (decision 2026-11-12-voice-conversations-per-account): the voice server deletes the
+    /// account's voice conversations at ElevenLabs, reads each one back, and answers counts. It takes the Doddy
+    /// account's token, like `revokeApple`, and the install id this iPhone gave ElevenLabs before there was an account
+    /// id, so older conversations go too. The status and body go to `VoiceConversationErasure`, which decides what
+    /// counts as confirmed; nothing is thrown, because a failure is an answer ("not confirmed"), not an error to show.
+    func deleteConversations(accountToken: String, installID: String?) async -> VoiceConversationErasure.Attempt {
+        guard let endpoint = VoiceConfig.authEndpoint,
+              let body = try? JSONSerialization.data(withJSONObject: VoiceConversationErasure.requestBody(installID: installID))
+        else { return .failed }
+        // The server works for up to about 10 seconds before it answers with what is left.
+        var request = URLRequest(url: endpoint, timeoutInterval: 30)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accountToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = body
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.finishTasksAndInvalidate() }
+        let (data, response): (Data, URLResponse)
+        // Redirects refused and the answer read only from the address asked, as for every request here that carries a token.
+        do { (data, response) = try await session.data(for: request, delegate: ServerHTTPTransport.RefuseRedirects()) }
+        catch { return .failed }
+        guard BearerHost.answered(response.url, sameAs: endpoint),
+              let status = (response as? HTTPURLResponse)?.statusCode
+        else { return .failed }
+        return VoiceConversationErasure.attempt(status: status, body: data)
+    }
+
     private func post<T: Decodable>(_ body: [String: Any], bearer: String? = nil) async throws -> T {
         guard let endpoint = VoiceConfig.authEndpoint else { throw VoiceAuthFailure.serverNotConfigured }
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
@@ -119,8 +160,11 @@ actor VoiceAuthAPI {
         let (data, response): (Data, URLResponse)
         let session = URLSession(configuration: .ephemeral)
         defer { session.finishTasksAndInvalidate() }
-        do { (data, response) = try await session.data(for: request) }
+        // Redirects refused and the answer read only from the address asked, as for the token above
+        // (decision 2026-11-12-local-data-owner): these requests carry a session or account token.
+        do { (data, response) = try await session.data(for: request, delegate: ServerHTTPTransport.RefuseRedirects()) }
         catch { throw VoiceAuthFailure.offline }
+        guard BearerHost.answered(response.url, sameAs: endpoint) else { throw VoiceAuthFailure.badResponse }
         guard let status = (response as? HTTPURLResponse)?.statusCode else { throw VoiceAuthFailure.badResponse }
         guard (200..<300).contains(status) else {
             // A 429 on a sign-in is the server's limit per caller address, not Apple's token failing to

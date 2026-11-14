@@ -161,26 +161,24 @@ enum TalkInIsland {
         guard !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
-        noteShortcutRan()
+        // How old this process is and how long iOS took to load Doddy before this press (the timeline below
+        // begins here, so it can't show that): fixed words and seconds only.
+        log.notice("talk start launch: \(LaunchWork.launchTiming().line(), privacy: .public)")
         // Where the seconds go between the press and a connected conversation (decision 2026-11-10-voice-start-timing):
         // fixed stage words and seconds only, on the "voice-audio" log, whatever way the start ends.
-        var timeline = VoiceStartTimeline(startedAt: ProcessInfo.processInfo.systemUptime)
+        let requestedAt = ProcessInfo.processInfo.systemUptime
+        var timeline = VoiceStartTimeline(startedAt: requestedAt)
         // After a hand-back the connect task writes the line itself, when it ends.
         var handedBack = false
         defer {
             if !handedBack { log.notice("talk start timing: \(timeline.line(at: ProcessInfo.processInfo.systemUptime), privacy: .public)") }
         }
 
+        // The checks that need nothing but this iPhone come first, so a press that can't start never flashes
+        // an island. None of them waits.
         // The terms come first (ADR-581); the "Before we start" step needs the screen.
         guard !LegalAcceptanceStore.isNeeded else {
             throw refused("terms not accepted", needsApp: NSLocalizedString("Open Doddy to accept the terms first.", comment: ""))
-        }
-        // iOS can run the intent before `DoddyApp.init` has set the stores, on a cold launch: wait a moment
-        // for them instead of refusing "voice input unavailable".
-        await IntentStores.waitForStore()
-        guard let store = IntentStores.store, store.environment.capabilities.isAvailable(.voiceInput) else {
-            throw refused("voice input unavailable",
-                          needsApp: NSLocalizedString("Doddy's voice isn't available right now. Open Doddy to see why.", comment: ""))
         }
         // The conversation hands the agent the saved notes, so it never starts past the Face ID lock.
         guard !AppLock.shared.isLocked else {
@@ -198,14 +196,33 @@ enum TalkInIsland {
         let auth = VoiceAuthSession.shared
         // A Doddy account needs no restore of the older voice login, which refreshed it over the network
         // on a press (`TalkStartAccount`). The token request refreshes the account's own token itself.
-        if TalkStartAccount.needsRestore(
+        let needsRestore = TalkStartAccount.needsRestore(
             accountSignedIn: DoddyAccountModel.shared.isSignedIn,
-            voiceSessionSecondsLeft: auth.voiceSessionSecondsLeft) {
-            await auth.restore()
+            voiceSessionSecondsLeft: auth.voiceSessionSecondsLeft)
+        let voiceNotSetUp = NSLocalizedString("Open Doddy and start a conversation once to set up his voice. After that this works without opening him.", comment: "")
+        // Without a restore the gate is read now, before the island; with one, after it (below).
+        if !needsRestore, !(auth.hasVoiceAccess() && VoiceProviderConsent.isGranted()) {
+            throw refused("voice not set up", needsApp: voiceNotSetUp)
         }
+
+        // The island first (decision 2026-11-13-island-first): up now as "Connecting…", before anything below
+        // waits. Every way out of this start from here on ends it, unless a conversation took it over.
+        let shownByPress = showIslandFirst()
+        timeline.mark(.islandShown, at: ProcessInfo.processInfo.systemUptime)
+        defer { settleIslandFirst(shownByPress: shownByPress) }
+        noteShortcutRan()
+
+        // iOS can run the intent before `DoddyApp.init` has set the stores, on a cold launch: wait a moment
+        // for them instead of refusing "voice input unavailable".
+        await IntentStores.waitForStore()
+        guard let store = IntentStores.store, store.environment.capabilities.isAvailable(.voiceInput) else {
+            throw refused("voice input unavailable",
+                          needsApp: NSLocalizedString("Doddy's voice isn't available right now. Open Doddy to see why.", comment: ""))
+        }
+        if needsRestore { await auth.restore() }
         timeline.mark(.account, at: ProcessInfo.processInfo.systemUptime)
         guard auth.hasVoiceAccess(), VoiceProviderConsent.isGranted() else {
-            throw refused("voice not set up", needsApp: NSLocalizedString("Open Doddy and start a conversation once to set up his voice. After that this works without opening him.", comment: ""))
+            throw refused("voice not set up", needsApp: voiceNotSetUp)
         }
 
         // iOS may have started Doddy just for this, before any screen loaded the profile.
@@ -219,6 +236,7 @@ enum TalkInIsland {
             log.notice("talk in the island: a conversation started meanwhile")
             return
         }
+        try Task.checkCancellation()
         let controller = VoiceSessionController(store: store)
         started = controller
         // Home shows the conversation from here on (ADR-595), so opening Doddy during it leaves the
@@ -233,16 +251,42 @@ enum TalkInIsland {
         let greetingLine = greeting(for: profile)
         let mode = VoiceConfig.connectionMode
         let startTask = Task { @MainActor in
-            await controller.start(mode, profile: profile, wakeGreeting: greetingLine, withoutOpeningApp: true)
+            // A timeout can cancel this task before it gets its first turn. Never let that
+            // abandoned press open the microphone later, after the foreground fallback.
+            guard !Task.isCancelled else { run.finished = true; return }
+            await controller.start(mode, profile: profile, wakeGreeting: greetingLine, withoutOpeningApp: true,
+                                   requestedAt: requestedAt)
             run.finished = true
         }
         var waited: TimeInterval = 0
         let waitStart = ProcessInfo.processInfo.systemUptime
         while TalkStartHandoff.decide(islandReady: controller.backgroundStartReady, startEnded: run.finished || controller.phase.endedStart, waited: waited) == .keepWaiting {
-            try? await Task.sleep(for: .milliseconds(40))
+            do {
+                try await Task.sleep(for: .milliseconds(40))
+            } catch {
+                await cancelStart(startTask, controller: controller)
+                throw error
+            }
             waited = ProcessInfo.processInfo.systemUptime - waitStart
         }
         timeline.mark(.island, at: ProcessInfo.processInfo.systemUptime)
+        if TalkStartHandoff.decide(islandReady: controller.backgroundStartReady,
+                                   startEnded: run.finished || controller.phase.endedStart,
+                                   waited: waited) == .timedOut {
+            await cancelStart(startTask, controller: controller)
+            throw refused("island start timed out", needsApp: TalkButton.openDoddyToTalk)
+        }
+        // A deliberate press asks for the popup immediately, still labelled Connecting.
+        // Waiting for the first speaking event made an otherwise working start look inert.
+        // iOS owns whether the expansion is shown; no claim that the agent can hear yet.
+        // Only with Settings › "Expand when Doddy speaks" on, which is off unless the owner turned it
+        // on (owner, 9 Nov 2026: only the small island; 12 Nov: "it switches from big to small"). The
+        // conversation's own expansion (`IslandExpansion`) already follows the same switch.
+        let expands = LaunchPreferencesMigration.islandExpands(
+            UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool)
+        if expands, controller.backgroundStartReady, controller.isLive {
+            VoiceLiveActivity.shared.expand()
+        }
         if !(run.finished || controller.phase.endedStart) {
             handedBack = true
             let handedTimeline = timeline
@@ -276,8 +320,43 @@ enum TalkInIsland {
         // comes up by itself only when a card needs the user (`HomeConversation.needsYou`).
     }
 
+    /// Puts the island up now as "Connecting…" (decision 2026-11-13-island-first), with the greeting Doddy will
+    /// open with, as the conversation shows it while it connects. True only when this press put it up: false when
+    /// one was already up (not this press's) or iOS refused it, and then the conversation asks again itself and
+    /// says so if it is refused. The conversation takes this island over at its own "Connecting…".
+    private static func showIslandFirst() -> Bool {
+        let island = VoiceLiveActivity.shared
+        guard !island.isShowing else { return false }
+        // The profile only if a screen already loaded it; the greeting gains the name when the conversation starts.
+        let profile = IntentStores.profiles.flatMap { $0.hasLoaded ? $0.profile : nil } ?? .empty
+        var state = DoddyVoiceAttributes.ContentState(status: .connecting, isMuted: false, greeting: greeting(for: profile))
+        // ADR-617: the island speaks the language of Doddy's screens, as the conversation's own state does.
+        state.language = Bundle.main.preferredLocalizations.first
+        island.show(state, startedAt: .now)
+        let shown = island.isShowing
+        let word = shown ? "shown" : "refused by iOS"
+        log.notice("talk in the island: island \(word, privacy: .public) before the set-up")
+        return shown
+    }
+
+    /// The island the press put up stays only if a conversation is connecting or live; otherwise it goes at once.
+    private static func settleIslandFirst(shownByPress: Bool) {
+        let live = VoiceSessionController.current != nil
+        guard TalkIslandFirst.afterwards(shownByPress: shownByPress, conversationLive: live) == .end else { return }
+        log.notice("talk in the island: the press's island was ended, no conversation took it over")
+        VoiceLiveActivity.shared.end()
+    }
+
     /// Whether the start's `controller.start` has returned, read by the polling intent.
     @MainActor private final class StartRun { var finished = false }
+
+    private static func cancelStart(_ task: Task<Void, Never>, controller: VoiceSessionController) async {
+        task.cancel()
+        // stop invalidates the controller's attempt before any await: a late token/context/SDK
+        // answer cannot revive it. Do not await the uncooperative network operation itself.
+        await controller.stop()
+        await VoiceLiveActivity.shared.settle()
+    }
 
     private static func refused(_ check: String, needsApp message: String) -> StartProblem {
         log.notice("talk in the island not started: \(check, privacy: .public)")

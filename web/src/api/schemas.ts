@@ -109,6 +109,9 @@ export type ToolkitView = z.infer<typeof ToolkitView>;
 export const ToolsCatalog = z.object({ mode: z.enum(["mock", "live"]), toolkits: z.array(ToolkitView) });
 export type ToolsCatalog = z.infer<typeof ToolsCatalog>;
 
+/** `GET /v1/server` (signed in): whether the server runs on demo data. The open health check says only its status. */
+export const ServerInfo = z.object({ mode: z.enum(["mock", "live"]) });
+
 export const ReceiptStatus = z.enum(["succeeded", "failed", "canceled", "blocked", "outcome_unknown"]);
 export type ReceiptStatus = z.infer<typeof ReceiptStatus>;
 

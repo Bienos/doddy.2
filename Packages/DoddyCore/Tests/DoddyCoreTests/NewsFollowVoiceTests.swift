@@ -42,7 +42,7 @@ final class NewsFollowVoiceTests: XCTestCase {
         XCTAssertEqual(AskFirst.need(for: .followNews(.topic(id: "poland"))), .runsNow)
         XCTAssertTrue(AskFirst.ownSmallActions.contains(VoiceToolName.followNews))
         // What is followed is still described exactly.
-        XCTAssertEqual(ask.cardLines, ["“CPK”", "Stories with: CPK, lotnisko", "Shown in Following, in Home's menu"])
+        XCTAssertEqual(ask.cardLines, ["“CPK”", "Stories with: CPK, lotnisko", "Shown in On my radar (Home › •••)"])
         XCTAssertEqual(NewsFollowAsk.topic(id: "poland").cardLines.first, "Topic: What's happening in Poland")
         let descriptor = try XCTUnwrap(ToolCatalog.descriptor("follow_news"))
         XCTAssertEqual(descriptor.effect, .localChange)
@@ -79,10 +79,72 @@ final class NewsFollowVoiceTests: XCTestCase {
         }
         let row = try XCTUnwrap(ActivityRequest.describe(.followNews(.words(name: "CPK", keywords: ["CPK"])), calendar: .current))
         XCTAssertEqual(row.app, .news)
-        XCTAssertEqual(row.title, "Follow in Following")
+        XCTAssertEqual(row.title, "Add to radar")
         XCTAssertEqual(row.detail, "“CPK”")
         XCTAssertFalse(row.isLookup)
-        XCTAssertEqual(ActivityText.title("Follow in Following", .polish), "Śledź w Śledzonych")
+        XCTAssertEqual(ActivityText.title("Add to radar", .polish), "Dodaj do radaru")
+        XCTAssertEqual(ActivityText.title("Follow in Following", .polish), "Dodaj do radaru", "rows kept before the rename")
         XCTAssertEqual(ActivityApp.news.title, "On my radar")
+    }
+
+    /// Owner's review, 12 Nov 2026 (section 6): the reply pointed to "Following", a name the app no longer shows.
+    func testRepliesNameOnMyRadarAndOfferToLookThere() {
+        let cpk = NewsFollow.words(label: "CPK", keywords: ["CPK"])
+        let kept = RadarAlert(followID: cpk.id, words: ["lotnisko"], how: .app)
+        let replies = [NewsFollowOutcome.added(cpk), .alreadyFollowing(cpk), .full, .notKept].map { VoiceToolReply.newsFollow($0) }
+            + [VoiceToolReply.newsFollow(.added(cpk), alert: .kept(kept)),
+               VoiceToolReply.newsFollow(.added(cpk), alert: .hereOnly(reason: "no server"))]
+        for reply in replies {
+            XCTAssertFalse(reply.contains("Following"), reply)
+        }
+        let added = VoiceToolReply.newsFollow(.added(cpk))
+        XCTAssertTrue(added.contains("On my radar") && added.contains("Na radarze"), "named as the app shows it, in both languages")
+        XCTAssertTrue(added.contains("Next step to offer"), "the next step is to look there")
+        XCTAssertTrue(added.contains("never say you did"), "no voice tool opens the screen, so Doddy never says he opened it")
+        XCTAssertTrue(VoiceToolReply.newsFollow(.full).contains("On my radar"))
+        for polish in [false, true] {
+            for ask in [NewsFollowAsk.topic(id: "sport"), .words(name: "CPK", keywords: ["CPK"])] {
+                XCTAssertTrue(ask.cardLines(polish: polish).last?.contains(polish ? "Na radarze" : "On my radar") == true)
+            }
+        }
+        XCTAssertEqual(NewsFollowAsk.topic(id: "sport").cardLines(polish: true).last, "Artykuły pojawią się w „Na radarze” (ekran główny › •••)")
+        XCTAssertEqual(RadarScreen.name(polish: true), "Na radarze")
+        XCTAssertEqual(RadarScreen.name(polish: false), ActivityApp.news.title)
+    }
+
+    func testAlertsAskedByVoice() throws {
+        // Words alone mean "as it happens".
+        let ask = try XCTUnwrap(NewsFollowAsk.parse(topic: nil, name: "CPK", words: nil, alertWords: ["lotnisko"]).get())
+        XCTAssertEqual(ask.base, .words(name: "CPK", keywords: ["CPK"]))
+        XCTAssertEqual(ask.alertAsk?.how, .instant)
+        XCTAssertEqual(ask.alertAsk?.words, ["lotnisko"])
+        // A time alone means one summary a day.
+        let daily = try XCTUnwrap(NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, tellMe: "daily", dailyTime: "08:30").get())
+        XCTAssertEqual(daily.alertAsk?.how, .daily)
+        XCTAssertEqual(daily.alertAsk?.dailyTime, "08:30")
+        // No alert arguments: the follow is as before.
+        XCTAssertEqual(try NewsFollowAsk.parse(topic: "sport", name: nil, words: nil).get(), .topic(id: "sport"))
+        // The sheet's own refusals: a whole topic as it happens needs words; bad time; bad mode; bad words.
+        let refused: [Result<NewsFollowAsk, NewsFollowRefusal>] = [
+            NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, tellMe: "instant"),
+            NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, alertWords: ["x"]),
+            NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, alertWords: ["ok words"], tellMe: "weekly"),
+            NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, tellMe: "daily", dailyTime: "25:99"),
+        ]
+        for result in refused {
+            guard case .failure = result else { return XCTFail("should be refused") }
+        }
+        XCTAssertEqual(NewsFollowAsk.parse(topic: "sport", name: nil, words: nil, tellMe: "app"), .success(.alerting(.topic(id: "sport"), NewsFollowAlertAsk(words: [], how: .app, dailyTime: "18:00"))))
+        XCTAssertEqual(ask.name, "CPK")
+        XCTAssertEqual(ask.cardLines.count, 4, "the card also says how the alert works")
+    }
+
+    func testTheReplySaysWhatTheAlertEndedAs() {
+        let follow = NewsFollow.words(label: "CPK", keywords: ["CPK"])
+        let kept = RadarAlert(followID: follow.id, words: ["lotnisko"], how: .instant)
+        XCTAssertTrue(VoiceToolReply.newsFollow(.added(follow), alert: .kept(kept)).contains("alert kept"))
+        XCTAssertTrue(VoiceToolReply.newsFollow(.added(follow), alert: .hereOnly(reason: "no server")).contains("alert not on the server"))
+        XCTAssertEqual(VoiceToolReply.newsFollow(.full, alert: .kept(kept)), VoiceToolReply.newsFollow(.full), "nothing added: no alert claim")
+        XCTAssertEqual(VoiceToolReply.newsFollow(.added(follow), alert: nil), VoiceToolReply.newsFollow(.added(follow)))
     }
 }

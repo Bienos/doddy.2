@@ -1,0 +1,16 @@
+{
+  "format": "doddy-voice-tools/1",
+  "note": "The booking agent 'Doddy (books for you)' (decision docs/decisions/2026-11-12-book-agent.md) has no webhook or client tools on purpose: it can only talk. It may say one server-built confirmation line for the one booking the user approved; it cannot pay, send, read memories or transfer. voice_agent_spec.py --agent task-call-book fails if anything else is added; the server's drift check (server/messaging/src/taskCalls/agentSafety.ts) refuses calls if the live agent has anything else.",
+  "tools": [],
+  "system_tools": [
+    {
+      "name": "end_call",
+      "description": "End the call after saying goodbye: once the booking is confirmed, they can't make it, or anything outside the booking was asked."
+    },
+    {
+      "name": "voicemail_detection",
+      "description": "Use when a voicemail greeting or answering machine answers. Leave no message.",
+      "voicemail_message": ""
+    }
+  ]
+}

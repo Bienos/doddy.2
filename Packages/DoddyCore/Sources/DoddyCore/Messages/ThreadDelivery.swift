@@ -37,7 +37,9 @@ public enum ThreadDelivery {
 
     /// The message for a file Doddy started making in a voice conversation. The file opens from it and is shared
     /// from it once ready; until then its page says it is still being made. Nil when nothing can be shown.
-    public static func document(_ document: RunDocument, polish: Bool, now: Date, id: UUID = UUID()) -> ThreadMessage? {
+    /// `about` says what the file is (owner, 13 Nov 2026: files made by voice get a description too, like the
+    /// ones from a Messages card): `madeFileBrief(of:)`, under the first line, clipped like `ThreadMessage.fileAbout`.
+    public static func document(_ document: RunDocument, about: String? = nil, polish: Bool, now: Date, id: UUID = UUID()) -> ThreadMessage? {
         guard let file = ThreadDocument(document) else { return nil }
         let name = file.name.trimmingCharacters(in: .whitespacesAndNewlines)
         let shown = name.isEmpty ? file.label : name
@@ -52,7 +54,17 @@ public enum ThreadDelivery {
         case .failed:
             return nil
         }
-        return ThreadMessage(id: id, sender: .doddy, text: text, createdAt: now, delivery: .sent, basis: .general, document: file)
+        let described = [text, ThreadMessage.fileAbout(about)].compactMap { $0 }.joined(separator: "\n\n")
+        return ThreadMessage(id: id, sender: .doddy, text: described, createdAt: now, delivery: .sent, basis: .general, document: file)
+    }
+
+    /// What a file made by voice is about: the `request` the agent gave `make_document` (what it should contain,
+    /// for whom, how long, in the person's language), clipped like `ThreadMessage.fileAbout`. Nil for any other
+    /// tool, or when there is no request. It describes what the person asked for, not what the file turned out to
+    /// say: nothing here has read the file.
+    public static func madeFileBrief(of call: CloudToolCall) -> String? {
+        guard call.name == CloudToolName.makeDocument, case .string(let request)? = call.arguments["request"] else { return nil }
+        return ThreadMessage.fileAbout(request)
     }
 
     /// Whether the thread already has a bubble for this file, so a second look adds nothing.

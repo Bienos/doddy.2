@@ -190,14 +190,44 @@ final class MemoryStore {
 
     /// Adds notes from an export; returns only what was committed and read back (ADR-178).
     /// Notes, corrections and list items are one transaction: on failure nothing was added.
+    ///
+    /// `privateIDs` are the added notes that were private when the file was made (ADR-310). They are marked
+    /// Private, and the mark read back, **before** the notes are added, so no screen, widget or server copy sees one
+    /// as an ordinary note; if the mark can't be kept nothing is added, and a failed restore puts the marks back as
+    /// they were. A mark for a note that turned out not to be added is taken back.
     func restore(
-        _ records: [MemoryRecord], corrections: [MemoryCorrection] = [], listItems: [ListItem] = []
+        _ records: [MemoryRecord], corrections: [MemoryCorrection] = [], listItems: [ListItem] = [],
+        privateIDs: Set<UUID> = []
     ) async throws -> [MemoryRecord] {
-        // Items go back only into lists this restore adds; a list already here keeps its own items.
-        let added = try await environment.memoryRepository.restore(records, corrections: corrections, listItems: listItems)
+        let defaults = UserDefaults.standard
+        let before = defaults.string(forKey: PrivateNotes.storageKey)
+        let marking = PrivateNotes.markingBeforeRestore(stored: before, incoming: privateIDs)
+        func putMarksBack() {
+            if let before { defaults.set(before, forKey: PrivateNotes.storageKey) } else { defaults.removeObject(forKey: PrivateNotes.storageKey) }
+        }
+        if !marking.newlyMarked.isEmpty {
+            defaults.set(marking.stored, forKey: PrivateNotes.storageKey)
+            guard privateIDs.isSubset(of: PrivateNotes(stored: defaults.string(forKey: PrivateNotes.storageKey)).ids) else {
+                putMarksBack()
+                throw MemoryStoreError.verificationFailed
+            }
+        }
+        let added: [MemoryRecord]
+        do {
+            // Items go back only into lists this restore adds; a list already here keeps its own items.
+            added = try await environment.memoryRepository.restore(records, corrections: corrections, listItems: listItems).records
+        } catch {
+            putMarksBack()
+            throw error
+        }
+        if !marking.newlyMarked.isEmpty {
+            let settled = PrivateNotes.settlingAfterRestore(
+                stored: defaults.string(forKey: PrivateNotes.storageKey), newlyMarked: marking.newlyMarked, added: Set(added.map(\.id)))
+            defaults.set(settled, forKey: PrivateNotes.storageKey)
+        }
         await meaningIndex?.clear()
         await reload()
-        return added.records
+        return added
     }
 
     /// No undo: deleting everything is final.

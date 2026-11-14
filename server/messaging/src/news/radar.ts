@@ -7,11 +7,14 @@ import { canPush, EncryptionNotConfigured, enqueue } from "../outbox.js";
 import type { PushSender } from "../providers/types.js";
 import { inQuietHours, QUIET_HOURS_DEFAULT, type QuietHours } from "../quietHours.js";
 import { catalogById } from "./catalog.js";
+import { StoryIndex } from "./dedupe.js";
 import { gatherItems, type FollowedTopic, type NewsDeps } from "./digest.js";
 import { matchedKeywords } from "./match.js";
 import { shortlist, type Candidate } from "./rank.js";
+import { FeedReader } from "./reader.js";
 import { checkUrl } from "./safeFetch.js";
 import { isValidTimeZone, nextRunAt } from "./schedule.js";
+import { reserveWriter } from "./usage.js";
 import { shorten, validateLines } from "./writer.js";
 
 // On my radar alerts (owner, 10 Nov 2026; decision 2026-11-10-radar-alerts). A follow stays on the iPhone
@@ -39,6 +42,9 @@ export const KEEP_HITS_DAYS = 14;
 const HITS_PER_CHECK = 20;
 const BATCH = 10;
 const WINDOW_HOURS = 48;
+/** A new story whose headline matches one found for the account this recently (from another publisher) is not a new hit. */
+const KNOWN_HITS_HOURS = 72;
+const KNOWN_HITS_MAX = 300;
 
 const word = z.string().trim().min(2).max(40);
 
@@ -166,10 +172,13 @@ interface Claimed extends AlertRow {
 
 /**
  * One pass: claims the alerts that are due and moves their next check (and a daily alert's next summary)
- * forward first, so a crash can't repeat a push; then checks each. Returns counts only.
+ * forward first, so a crash can't repeat a push; then checks each. The pass reads each feed once, however many
+ * alerts look at it (reader.ts). Returns counts only (feeds read, how each was answered, and the time taken).
  */
 export async function runRadarPass(ctx: RadarContext): Promise<Record<string, number>> {
   const now = ctx.now();
+  const started = Date.now();
+  const reader = new FeedReader(ctx.db, ctx.news.feeds, { now });
   const counts: Record<string, number> = {};
   const add = (k: string, n = 1) => { if (n) counts[k] = (counts[k] ?? 0) + n; };
   const due = await inTransaction(ctx.db, async (c) => {
@@ -197,7 +206,9 @@ export async function runRadarPass(ctx: RadarContext): Promise<Record<string, nu
   add("claimed", due.length);
   for (const alert of due) {
     try {
-      add("found", await collect(ctx, alert, now));
+      const got = await collect(ctx, alert, now, reader);
+      add("found", got.found);
+      add("same_story", got.sameStory);
       if (alert.mode === "instant") add(await tellInstant(ctx, alert, now));
       else if (alert.tell) add(await tellDaily(ctx, alert, now));
     } catch (err) {
@@ -209,35 +220,68 @@ export async function runRadarPass(ctx: RadarContext): Promise<Record<string, nu
   }
   const pruned = await ctx.db.query("DELETE FROM radar_hits WHERE found_at < $1", [new Date(now.getTime() - KEEP_HITS_DAYS * 86_400_000)]);
   add("pruned", pruned.rowCount ?? 0);
+  if (due.length) {
+    // Counts only: how many feeds the pass read and how each was answered, and how long it took.
+    add("feeds", reader.stats.feeds);
+    add("feeds_from_cache", reader.stats.fromCache);
+    add("feeds_fetched", reader.stats.fetched);
+    add("feeds_not_modified", reader.stats.notModified);
+    add("feeds_failed", reader.stats.failed);
+    add("feeds_shared", reader.stats.shared);
+    add("ms", Math.max(1, Date.now() - started));
+  }
   return counts;
 }
 
-/** The stories of the alert's follow that are new since it was turned on and mention its words. */
+/**
+ * The stories of the alert's follow that are new since it was turned on and mention its words: in the headline or
+ * summary, or in another publisher's headline for the same story (`alsoFrom`).
+ */
 export function matchingStories(alert: Pick<AlertRow, "keywords" | "alert_words" | "watch_from">, candidates: Candidate[]) {
   return candidates.flatMap((c) => {
     if (!c.publishedAt || Date.parse(c.publishedAt) <= alert.watch_from.getTime()) return [];
-    const text = `${c.title}\n${c.summary}`;
+    const text = [c.title, c.summary, ...(c.alsoFrom ?? []).map((a) => a.title)].join("\n");
     const matched = matchedKeywords(text, alert.alert_words.length ? alert.alert_words : alert.keywords);
     if (alert.alert_words.length && matched.length === 0) return [];
     return [{ candidate: c, matched }];
   });
 }
 
-/** Reads the follow's feeds (shared cache) and records new matching stories once per account. */
-async function collect(ctx: RadarContext, alert: Claimed, now: Date): Promise<number> {
+/**
+ * Reads the follow's feeds (the pass's reader, over the shared cache) and records new matching stories once per
+ * account: once per link (the table's own rule) and, since 13 Nov 2026, once per story: a headline that matches one
+ * found for the account in the last KNOWN_HITS_HOURS, from another publisher, is counted as `sameStory` and not
+ * recorded, so "as it happens" never pushes the same news twice.
+ */
+async function collect(ctx: RadarContext, alert: Claimed, now: Date, reader: FeedReader): Promise<{ found: number; sameStory: number }> {
   const topic: FollowedTopic = { catalog_id: alert.catalog_id, label: alert.label, keywords: alert.keywords, feed_url: alert.feed_url };
-  const gathered = await gatherItems(ctx.db, ctx.news, [topic], [], alert.language, now, { keywordPool: "catalog" });
-  const candidates = shortlist(gathered, new Set(), now, { limit: 80, perSource: 30, windowHours: WINDOW_HOURS });
+  const gathered = await gatherItems(ctx.db, ctx.news, [topic], [], alert.language, now, { keywordPool: "catalog", reader });
+  const candidates = shortlist(gathered, new Set(), now, { limit: 80, perSource: 30, windowHours: WINDOW_HOURS, language: alert.language });
+  const matching = matchingStories(alert, candidates).slice(0, HITS_PER_CHECK);
+  if (matching.length === 0) return { found: 0, sameStory: 0 };
+  const { rows: known } = await ctx.db.query<{ title: string; hex: string }>(
+    `SELECT title, encode(url_hash, 'hex') AS hex FROM radar_hits WHERE account_id = $1 AND found_at > $2
+      ORDER BY found_at DESC LIMIT ${KNOWN_HITS_MAX}`, [alert.account_id, new Date(now.getTime() - KNOWN_HITS_HOURS * 3_600_000)]);
+  const knownLinks = new Set(known.map((k) => k.hex));
+  const stories = new StoryIndex<number>();
+  known.forEach((k, i) => stories.add(i, k.title, `hit:${k.hex}`));
   let found = 0;
-  for (const { candidate: c, matched } of matchingStories(alert, candidates).slice(0, HITS_PER_CHECK)) {
+  let sameStory = 0;
+  for (const { candidate: c, matched } of matching) {
+    if (knownLinks.has(c.urlHash.toString("hex"))) continue; // recorded before: nothing new
+    if (stories.has(c.title) || c.alsoFrom.some((a) => stories.has(a.title))) {
+      sameStory++;
+      continue;
+    }
     const r = await ctx.db.query(
       `INSERT INTO radar_hits (id, account_id, alert_id, url_hash, title, summary, url, source, published_at, matched, found_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT (account_id, url_hash) DO NOTHING`,
       [randomUUID(), alert.account_id, alert.id, c.urlHash, c.title.slice(0, 300), c.summary.slice(0, 400), c.url.slice(0, 2000),
         c.source.slice(0, 120), c.publishedAt, matched, now]);
     found += r.rowCount ?? 0;
+    stories.add(-1, c.title, c.url);
   }
-  return found;
+  return { found, sameStory };
 }
 
 interface HitRow { id: string; title: string; summary: string; url: string; source: string; published_at: Date }
@@ -301,7 +345,7 @@ async function tellDaily(ctx: RadarContext, alert: Claimed, now: Date): Promise<
   });
   if (late > DAILY_MAX_LATE_MS) return "daily_too_late";
   if (waiting.length === 0) return "nothing_new";
-  const lines = await summaryLines(ctx, alert, waiting);
+  const lines = await summaryLines(ctx, alert, waiting, now);
   return inTransaction(ctx.db, async (c) => {
     const still = new Set((await untold(c, alert.id)).map((h) => h.id));
     const covered = waiting.filter((h) => still.has(h.id));
@@ -316,14 +360,17 @@ async function tellDaily(ctx: RadarContext, alert: Claimed, now: Date): Promise<
 /**
  * The summary's lines. With a news writer on the server it picks and phrases up to five stories from their
  * headline and summary only, and validateLines keeps only lines for stories that exist; otherwise, or if it
- * fails, the newest headlines word for word. Each line names its publisher.
+ * fails, the newest headlines word for word. Each line names its publisher. The writer counts against the same daily
+ * caps as the digests (src/news/usage.ts); past one, the headlines.
  */
-async function summaryLines(ctx: RadarContext, alert: Claimed, hits: HitRow[]): Promise<{ lines: string[]; aiWritten: boolean }> {
+async function summaryLines(ctx: RadarContext, alert: Claimed, hits: HitRow[], now: Date): Promise<{ lines: string[]; aiWritten: boolean }> {
   const candidates: Candidate[] = hits.slice(0, 25).map((h, i) => ({
     id: `s${i + 1}`, title: h.title, summary: h.summary, url: h.url, source: h.source, publishedAt: h.published_at.toISOString(),
-    topics: [alert.label], score: 0, urlHash: Buffer.alloc(0),
+    topics: [alert.label], score: 0, urlHash: Buffer.alloc(0), alsoFrom: [],
   }));
-  if (ctx.news.writer) {
+  const reserved = ctx.news.writer ? await reserveWriter(ctx.db, alert.account_id, ctx.news.writerCaps, now) : undefined;
+  if (reserved && reserved !== "ok") ctx.log("radar summary writer skipped, daily limit", { scope: reserved });
+  if (ctx.news.writer && reserved === "ok") {
     try {
       const picks = validateLines(await ctx.news.writer.write({ language: alert.language, topics: [alert.label], candidates }), candidates);
       if (picks.length) return { lines: picks.slice(0, 3).map((p) => `${p.line} (${p.candidate.source})`), aiWritten: true };

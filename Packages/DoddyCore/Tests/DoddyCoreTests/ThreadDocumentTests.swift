@@ -19,6 +19,22 @@ final class ThreadDocumentTests: XCTestCase {
         XCTAssertEqual(unnamed.text, "PDF", "never an empty text")
     }
 
+    func testAFileBubbleSaysWhatTheFileIsWhenItIsKnown() throws {
+        // 12 Nov 2026: the brief the person said yes to becomes the bubble's words; the name stays on the file's card.
+        let document = ThreadDocument(url: link, name: "Kraków.pptx", kind: "deck")
+        let message = ThreadMessage.file(document, about: "  Six slides on\nKraków's history\tfor a school talk. ", now: t0)
+        XCTAssertEqual(message.text, "Six slides on Kraków's history for a school talk.")
+        XCTAssertEqual(ThreadDelivery.caption(of: message), "Six slides on Kraków's history for a school talk.", "shown above the file's card")
+        XCTAssertEqual(ThreadMessage.file(document, about: "   ", now: t0).text, "Kraków.pptx", "nothing to say: the name, as before")
+        XCTAssertNil(ThreadDelivery.caption(of: ThreadMessage.file(document, now: t0)))
+
+        let long = String(repeating: "słowo ", count: 100)
+        let clipped = try XCTUnwrap(ThreadMessage.fileAbout(long))
+        XCTAssertTrue(clipped.hasSuffix("…"))
+        XCTAssertLessThanOrEqual(clipped.count, ThreadMessage.fileAboutLimit + 1)
+        XCTAssertFalse(clipped.dropLast().hasSuffix(" "), "cut at a word")
+    }
+
     func testOnlyAWorkingOrReadyFileOnAnHTTPSLinkBecomesABubble() {
         XCTAssertNotNil(ThreadDocument(RunDocument(url: link, name: "a", kind: "doc", status: .ready)))
         XCTAssertNotNil(ThreadDocument(RunDocument(url: link, name: "a", kind: "doc", status: .working)))

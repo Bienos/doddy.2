@@ -163,6 +163,9 @@ final class ShoppingTests: XCTestCase {
         XCTAssertTrue(reply.hasPrefix("started: "))
         XCTAssertTrue(reply.contains("Nothing is bought, ordered or sent."))
         XCTAssertTrue(VoiceToolReply.errandStarted(try fixtureDraft(kind: nil)).contains("Nothing is booked, bought or sent."))
+        // 12 Nov 2026: a notification is promised only if the user allowed them.
+        XCTAssertFalse(reply.contains("gets a notification when it's done"))
+        XCTAssertTrue(reply.contains("with a notification if the user allowed Doddy's notifications"))
     }
 
     // MARK: Create and preview

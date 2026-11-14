@@ -57,11 +57,13 @@ final class MotionEvidenceTests: XCTestCase {
         let app = launch(debug: false, hideArt: true)
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
         XCTAssertEqual(everythingOfHim(in: app).count, 0)
-        // Settings: the privacy line starts at the row's edge, not after a 73 pt box.
+        // Settings: the header line starts at the row's edge, not after a 73 pt box. The line is the header's
+        // "Set how Doddy sounds…" since 12 Nov 2026 (#356 moved "You choose each saved memory…" to Doddy's memory
+        // page; this test still looked for the old one and failed on every push to main from then on).
         app.goToTab("settings")
-        let privacy = app.staticTexts["You choose each saved memory. See the original, edit it or remove it."]
-        XCTAssertTrue(privacy.waitForExistence(timeout: 5))
-        XCTAssertLessThan(privacy.frame.minX, 60)
+        let header = app.staticTexts["Set how Doddy sounds, what he remembers and what he can use."]
+        XCTAssertTrue(header.waitForExistence(timeout: 5))
+        XCTAssertLessThan(header.frame.minX, 60)
         // Memories: the empty notebook's heading follows the picker, not a 150 pt box.
         app.goToTab("memories")
         let heading = app.staticTexts["No memories yet"]

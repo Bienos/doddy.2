@@ -472,7 +472,7 @@ def hero() -> str:
             <a class="button" id="start-day" href="#late">Start the day</a>
             <a class="text-link" href="/#join">Join early access</a>
           </div>
-          <p class="fineprint">Scripted demonstrations, each labelled with what's built today. Doddy is an AI, not a person.</p>
+          <p class="fineprint">Scripted demonstrations, each labelled with what's built today.</p>
         </div>
         <div class="stage" role="group" aria-label="Doddy and seven everyday objects. Pick one to jump to its moment of the day.">
           <div class="stage-glow" aria-hidden="true"></div>
@@ -576,10 +576,10 @@ TAIL = '''
         </ul>
         <!-- i18n:switcher-footer --><!-- /i18n:switcher-footer -->
       </div>
-      <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
+      <p>Doddy is a digital companion, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
       <p>The scenes on this page are scripted demonstrations. Each one says whether it is built, in testing, or later, maybe.</p>
       <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>
-      <p>Google Analytics also measures visits and sets cookies.</p>
+      <p data-ga-note hidden>If you allow it, Google Analytics also measures visits and sets cookies. <button type="button" class="foot-choice" data-analytics-choices>Analytics choices</button></p>
       <p>© 2026 Doddy</p>
     </div>
   </footer>

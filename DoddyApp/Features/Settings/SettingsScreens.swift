@@ -135,9 +135,10 @@ struct AppearanceSettingsView: View {
 
 // MARK: Voice and interaction
 
-/// Settings › Voice: how he sounds and talks, who runs his voice, starting on open, the island, Siri and
-/// Back Tap, and the voice account. Personality, the island and Siri were their own Settings rows until
-/// ADR-633.
+/// Settings › Voice and personality: one page for how he sounds and talks, starting on open, the island, Siri and Back
+/// Tap, and how he comes across (12 Nov 2026, decision `2026-11-12-settings-one-voice-page`). Before, this page opened a
+/// second one for the personality, both were called "Voice", and the voice account was a section at the bottom: that is
+/// on Settings › Account now. Personality, the island and Siri were their own Settings rows until ADR-633.
 struct VoiceSettingsView: View {
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
     @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = false
@@ -147,9 +148,6 @@ struct VoiceSettingsView: View {
 
     var body: some View {
         Form {
-            Section {
-                PersonalityLinkRow()
-            }
             Section {
                 Toggle(isOn: $listenOnOpen) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -167,6 +165,7 @@ struct VoiceSettingsView: View {
             } footer: {
                 Text("Your voice and the conversation go to the voice service only after you agree, the first time you talk. iOS shows its orange dot while Doddy listens.")
             }
+            VoiceStyleSections()
             Section {
                 // The island's expansion: iPhone only (ADR-432, ADR-453).
                 if DeviceSupport.hasDynamicIsland {
@@ -179,22 +178,13 @@ struct VoiceSettingsView: View {
                     if DeviceSupport.hasBackTap { Text("Siri and Back Tap") } else { Text("Siri") }
                 }
                 .accessibilityIdentifier("settings.ways")
+            } header: {
+                Text("Opening Doddy")
             }
-            Section("Account") {
-                VoiceAccountSettings()
-                StatusRow(title: "Connection", value: connectionText)
-                    .accessibilityIdentifier("settings.voiceConnection")
-            }
+            PersonalitySections()
         }
         .settingsPage()
-        .navigationTitle("Voice")
-    }
-
-    private var connectionText: String {
-        if VoiceSessionKeychain.refreshToken() != nil { return NSLocalizedString("Doddy voice account", comment: "") }
-        // Decision 2026-11-08-required-account: the Doddy account also opens voice.
-        if DoddyAccountModel.shared.isSignedIn { return NSLocalizedString("Your Doddy account", comment: "") }
-        return NSLocalizedString("Sign in on first use", comment: "")
+        .navigationTitle("Voice and personality")
     }
 }
 
@@ -409,8 +399,10 @@ struct MemoriesSettingsView: View {
             // Studio (ADR-740): the topics and the opened copies kept here. The items stay on
             // Doddy's server until they are deleted in Studio (said below).
             StudioModel.shared.forgetLocal()
-            // The typed conversation with Doddy (ADR-585): messages kept on this iPhone.
+            // The typed conversation with Doddy (ADR-585): messages kept on this iPhone. The files Doddy made until
+            // now are not offered again (decision 2026-11-12-deleted-files-stay-gone).
             try await environment.messageThreadRepository.deleteAll()
+            FilesShownSinceStore.conversationDeleted()
             // Recordings (ADR-588): their audio and words, on this iPhone only. One being made is
             // stopped and saved first, then goes with the rest.
             await RecordingCoordinator.shared.stop()

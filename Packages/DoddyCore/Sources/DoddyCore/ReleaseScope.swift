@@ -68,6 +68,8 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case onlineAccounts
     /// The web, the news and places, looked up through the server (ADR-575).
     case webSearch
+    /// Flights: Kiwi.com search and Duffel booking through the server (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+    case flights
     /// Claude on the server: summaries, rewrites, and files it makes (ADR-574).
     case claudeDocuments
     /// This week's leaflets, "Cheapest this week" (ADR-609).
@@ -76,6 +78,9 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case errands
     /// "Pilnuj ceny" (ADR-614).
     case priceWatch
+    /// Shopify shops: product search and a merchant-owned checkout, through Doddy's server and Shopify's Shop service
+    /// (docs/implementation/SHOPPING.md "Shopify"). Nothing is paid or ordered in Doddy. No voice tool yet.
+    case shopifyShopping
     /// The feed of what the person follows (ADR-656).
     case following
     /// The daily digest by push or text (ADR-174).
@@ -123,7 +128,9 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .birthdays: [VoiceToolName.upcomingBirthdays]
         case .steps: [VoiceToolName.readSteps]
         case .onlineAccounts: CloudToolName.all.subtracting(Feature.webSearch.tools).subtracting(Feature.claudeDocuments.tools)
+            .subtracting(Feature.flights.tools)
         case .webSearch: [CloudToolName.webSearch, "news_search", "find_places"]
+        case .flights: CloudToolName.flightTools
         case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument]
         case .deals: [VoiceToolName.findDeals]
         case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands]
@@ -144,7 +151,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .lostWallet: [VoiceToolName.lostWallet]
         case .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
              .recordings, .sharedLists, .shoppingModeLockScreen, .placeReminders, .eveningWrapUp, .weeklyLookBack,
-             .weeklyPlan, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .parcels:
+             .weeklyPlan, .files, .doddyWeb, .cloudMemory, .priceWatch, .shopifyShopping, .dailyNews, .parcels:
             []
         // "What's on my screen?" asks the Messages route's Claude, with its key, switch and daily caps
         // (decision 2026-11-09-doddy-looks-at-the-screen), so it comes and goes with Messages.
@@ -277,6 +284,8 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.lookupContact, VoiceToolName.draftMessage,
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
         VoiceToolName.openMap, VoiceToolName.runShortcut,
+        // Home's Food button is in every scope, so opening a food app by voice is too (decision 2026-11-12-food-by-voice).
+        VoiceToolName.openFoodApp,
         VoiceToolName.noteCapabilityGap,
     ]).union(ToolCatalog.webLookups)
 }

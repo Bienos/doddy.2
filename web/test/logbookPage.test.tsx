@@ -17,7 +17,7 @@ type Routes = Parameters<typeof fakeServer>[0];
 function renderLogbook(language: Language = "en", path = "/logbook#example", routes: Routes = {}) {
   const server = fakeServer({
     "GET /v1/web/session": { body: fixture("web/session-current") },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     "GET /v1/web/logbook": { body: fixture("web/logbook-off") },
     ...routes,
   });
@@ -46,7 +46,7 @@ describe("Logbook, At a glance", () => {
     expect(screen.getByRole("tab", { name: /At a glance/ })).toHaveAttribute("aria-selected", "true");
     // The session check, the health check, the menu's owner check and the Logbook read: no writes.
     await waitFor(() =>
-      expect(seen.map((s) => `${s.method} ${s.path}`).sort()).toEqual(["GET /v1/health", "GET /v1/web/logbook", "GET /v1/web/owner", "GET /v1/web/session"]),
+      expect(seen.map((s) => `${s.method} ${s.path}`).sort()).toEqual(["GET /v1/server", "GET /v1/web/logbook", "GET /v1/web/owner", "GET /v1/web/session"]),
     );
   });
 

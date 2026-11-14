@@ -4,6 +4,8 @@ import { CdpKeyError, type CdpSettings, loadCdpKeys } from "./payments/coinbase.
 import { NETWORK_IDS, NETWORKS, type NetworkId, parseUsdc } from "./payments/x402.js";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
 import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
+import { DUFFEL_DEFAULT_URL } from "./flights/duffel.js";
+import { KIWI_DEFAULT_URL } from "./flights/kiwi.js";
 
 /**
  * Environment configuration. Every value is read once at start-up and validated.
@@ -89,8 +91,13 @@ export interface PaymentsSettings {
   confirmAmount: number;
   userDaily: number;
   serviceDaily: number;
-  /** Empty: any public https site. Each payment still needs its own approval. */
+  /**
+   * Empty: any public https site, which only mock mode accepts. Live mode with a wallet refuses to start without
+   * a list. Each payment still needs its own approvals: one to read the page, one to pay it.
+   */
   allowedHosts: string[];
+  /** Sites whose payment page addresses may keep a query string ("?..."). Empty: none may. */
+  queryHosts: string[];
   /** Live mode with wallet "coinbase_cdp" only. */
   cdp: CdpSettings | null;
 }
@@ -151,6 +158,12 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
+  /**
+   * Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking), live mode only. `kiwiUrl` null: no
+   * Kiwi.com search. `duffelToken` null: no Duffel search or booking. Booking also needs `bookingEnabled`
+   * and a Duffel test key.
+   */
+  flights: { kiwiUrl: string | null; duffelToken: string | null; duffelBaseUrl: string; bookingEnabled: boolean };
   payments: PaymentsSettings;
   /** Doddy Web (ADR-600). Null: no web routes and no web pages on this server. */
   web: WebSettings | null;
@@ -283,6 +296,12 @@ const EnvSchema = z.object({
   COMPOSIO_OUTLOOK_TOOLKIT_VERSION: z.string().optional(),
   MONID_API_KEY: z.string().optional(),
   MONID_BASE_URL: z.string().default(MONID_DEFAULT_BASE_URL),
+  /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Each is off until the owner sets it. */
+  FLIGHT_SEARCH_ENABLED: z.enum(["0", "1"]).default("0"),
+  KIWI_MCP_URL: z.string().default(KIWI_DEFAULT_URL),
+  DUFFEL_ACCESS_TOKEN: z.string().optional(),
+  DUFFEL_BASE_URL: z.string().default(DUFFEL_DEFAULT_URL),
+  FLIGHT_BOOKING_ENABLED: z.enum(["0", "1"]).default("0"),
   DODDY_PAYMENTS_WALLET: z.enum(["none", "coinbase_cdp"]).default("none"),
   DODDY_PAYMENTS_NETWORK: z.enum(NETWORK_IDS).default("base-sepolia"),
   DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC: z.string().default("0.25"),
@@ -290,6 +309,7 @@ const EnvSchema = z.object({
   DODDY_PAYMENTS_USER_DAILY_USDC: z.string().default("1.00"),
   DODDY_PAYMENTS_SERVICE_DAILY_USDC: z.string().default("5.00"),
   DODDY_PAYMENTS_ALLOWED_HOSTS: z.string().default(""),
+  DODDY_PAYMENTS_QUERY_HOSTS: z.string().default(""),
   CDP_API_KEY_ID: z.string().optional(),
   CDP_API_KEY_SECRET: z.string().optional(),
   CDP_WALLET_SECRET: z.string().optional(),
@@ -510,6 +530,26 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
   }
 
+  // Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Live mode only; each part off by default.
+  const httpsOrigin = (name: string, value: string): string | null => {
+    try {
+      const url = new URL(value);
+      if (url.protocol === "https:" && (url.pathname === "/" || url.pathname === "")) return url.origin;
+    } catch {
+      // reported below
+    }
+    problems.push(`${name} must be an https origin without a path`);
+    return null;
+  };
+  const duffelToken = e.DODDY_MODE === "live" ? (e.DUFFEL_ACCESS_TOKEN ?? "").trim() : "";
+  if (duffelToken !== "" && !/^duffel_(test|live)_[A-Za-z0-9_-]{8,}$/.test(duffelToken)) problems.push("DUFFEL_ACCESS_TOKEN must look like duffel_test_… or duffel_live_…");
+  const flights = {
+    kiwiUrl: e.DODDY_MODE === "live" && e.FLIGHT_SEARCH_ENABLED === "1" ? httpsOrigin("KIWI_MCP_URL", e.KIWI_MCP_URL) : null,
+    duffelToken: duffelToken !== "" ? duffelToken : null,
+    duffelBaseUrl: httpsOrigin("DUFFEL_BASE_URL", e.DUFFEL_BASE_URL) ?? DUFFEL_DEFAULT_URL,
+    bookingEnabled: e.FLIGHT_BOOKING_ENABLED === "1",
+  };
+
   // Claude (ADR-564). Live mode only; mock mode answers with offline demo text.
   const claudeKey = e.DODDY_MODE === "live" ? (e.ANTHROPIC_API_KEY ?? "").trim() : "";
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
@@ -595,6 +635,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     composio,
     toolkits,
     monid,
+    flights,
     payments,
     web,
     trustProxy: e.DODDY_TRUST_PROXY === "1",
@@ -655,8 +696,15 @@ function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): Payment
     problems.push("DODDY_PAYMENTS_NETWORK must be base-sepolia: paying on a network with real money is not approved (ADR-737)");
   }
 
-  const allowedHosts = e.DODDY_PAYMENTS_ALLOWED_HOSTS.split(",").map((h) => h.trim().toLowerCase()).filter((h) => h !== "");
+  const hosts = (value: string) => value.split(",").map((h) => h.trim().toLowerCase()).filter((h) => h !== "");
+  const allowedHosts = hosts(e.DODDY_PAYMENTS_ALLOWED_HOSTS);
   if (allowedHosts.some((h) => !HOSTNAME.test(h))) problems.push("DODDY_PAYMENTS_ALLOWED_HOSTS must be comma-separated host names like example.com");
+  // A model chooses the page; with a real wallet it may only be one of the sites the owner listed.
+  if (e.DODDY_MODE === "live" && e.DODDY_PAYMENTS_WALLET !== "none" && allowedHosts.length === 0) {
+    problems.push("DODDY_PAYMENTS_ALLOWED_HOSTS must list the sites Doddy may pay when DODDY_MODE=live and DODDY_PAYMENTS_WALLET is set");
+  }
+  const queryHosts = hosts(e.DODDY_PAYMENTS_QUERY_HOSTS);
+  if (queryHosts.some((h) => !HOSTNAME.test(h))) problems.push("DODDY_PAYMENTS_QUERY_HOSTS must be comma-separated host names like example.com");
 
   let cdp: CdpSettings | null = null;
   const names = ["CDP_API_KEY_ID", "CDP_API_KEY_SECRET", "CDP_WALLET_SECRET", "CDP_PAYMENT_ACCOUNT_ADDRESS"] as const;
@@ -686,6 +734,7 @@ function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): Payment
     userDaily,
     serviceDaily,
     allowedHosts,
+    queryHosts,
     cdp,
   };
 }

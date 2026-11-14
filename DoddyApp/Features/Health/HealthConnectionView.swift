@@ -493,8 +493,9 @@ struct HealthShareConsentSheet: View {
                     VStack(alignment: .leading, spacing: 10) {
                         if kind == .messages {
                             point(Text("Only the summary you see goes: the week's numbers, no raw data from Health."))
-                            point(Text("It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked."))
-                            point(Text("Your message and the answer are saved in Messages on this iPhone until you delete them."))
+                            // HealthShareConsent version 2 (12 Nov 2026): the Messages copy for the web (ThreadSync) is said.
+                            point(Text("It goes to Doddy's server and to Claude (Anthropic), which writes the answer. The server that asks Claude doesn't keep or log what you write, only how many questions you asked."))
+                            point(Text("Your message and the answer stay in Messages on this iPhone until you delete them. A copy of their text is kept, encrypted, on Doddy's server so Doddy on the web can show it; deleting the conversation in Messages deletes it there too."))
                             point(Text("Nothing is sent by itself: each time, Messages opens with the text and you tap Send."))
                         } else {
                             point(Text("When you ask something like \"How did my week go?\", Doddy asks first, and only after your yes does his voice hear the same summary: the week's numbers, no raw data from Health."))

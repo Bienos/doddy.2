@@ -83,9 +83,18 @@ struct PresentationReadyCard: View {
 /// iOS's share sheet for one file: Keynote, Files, AirDrop, Mail and the rest are iOS's choice.
 struct FileShareSheet: UIViewControllerRepresentable {
     let url: URL
+    /// Called once when the sheet's work is over, whether the file was shared or the person cancelled. A file
+    /// made only for sharing (a transcript) is deleted here. Nil for files that stay (presentations, downloads).
+    var onFinished: (@MainActor () -> Void)?
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        if let onFinished {
+            controller.completionWithItemsHandler = { _, _, _, _ in
+                MainActor.assumeIsolated { onFinished() }
+            }
+        }
+        return controller
     }
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}

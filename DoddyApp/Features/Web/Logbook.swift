@@ -8,7 +8,9 @@ import Foundation
 enum Logbook {
     @MainActor static let shared = LogbookModel(
         makeClient: { await LogbookClientFactory.ready() },
-        renewClient: { await LogbookClientFactory.renewed() })
+        renewClient: { await LogbookClientFactory.renewed() },
+        // Only the account that owns this iPhone's data gets its counts (decision 2026-11-12-local-data-owner).
+        uploadGate: { DoddyAccountServers.localDataUpload() })
 
     /// Everything a day's counts are made from, read from the app's stores now.
     @MainActor static func sources(store: MemoryStore) -> LogbookSources {

@@ -1,4 +1,0 @@
-Messages: every file Doddy makes (deck, Word, Excel, PDF, text) shows up as soon as it is asked for and appears by itself when finished; before, only finished files showed, only when Messages was opened afterwards, and only with Ask Doddy on.
-- A file still being made is a card ("Doddy is still making this"); Messages refreshes every 6 s while one is being made, 30 s otherwise. The list no longer needs Ask Doddy (the person's own files, their own session; no question or note is sent). Owner can restore the gate.
-- DoddyCore `ThreadAttachments.inProgress` + 3 tests; `MadeDocumentsModel.refresh(clearingDownloads:)`; `MessagesView.keepFilesFresh`. Doc: `docs/implementation/MESSAGES_ATTACHMENTS.md`.
-- Not compiled, not run (no Swift toolchain): `make test-core`, the app build, a device check. Not done: a push or badge when a file is ready; Studio, Drive and Notion files.

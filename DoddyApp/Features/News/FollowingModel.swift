@@ -20,6 +20,7 @@ protocol FollowingBackend: Sendable {
     func radarState() async throws -> RadarServerState
     func saveRadar(_ request: RadarAlertsRequest) async throws -> RadarServerState
     func markRadarSeen(ids: [String]) async throws -> Int
+    func summarizeStory(url: String, title: String?, language: String) async throws -> NewsSummary
 }
 
 extension DoddyServerClient: FollowingBackend {}
@@ -54,12 +55,25 @@ final class FollowingModel {
     var message: String?
     /// Ids of stories saved to notes in this session, so the bookmark fills in.
     private(set) var savedStoryIDs: Set<String> = []
+    /// AI summaries asked for in this session, by story id (owner, 13 Nov 2026). Kept in memory only.
+    private(set) var summaries: [String: SummaryState] = [:]
+
+    enum SummaryState: Equatable {
+        case loading
+        case ready(NewsSummary)
+        case failed(NewsSummaryProblem)
+    }
+
     /// The follow whose stories alone are shown (a tap on its circle); nil shows them all.
     var selectedFollowID: String? {
         didSet { if selectedFollowID != oldValue { regroup() } }
     }
     /// What Doddy's server checks for this account and what it found; nil until asked.
     private(set) var radar: RadarServerState?
+
+    /// Whether Doddy's server checks follows, from its own last answer only (decision 2026-11-13-radar-fixes): "Tell me…"
+    /// and the server's ways of telling are offered only when it said yes.
+    var alertsAvailability: RadarAlertsAvailability { RadarAlertsAvailability(radar) }
 
     nonisolated static var polish: Bool { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish }
     var language: String { Self.polish ? "pl" : "en" }
@@ -274,13 +288,12 @@ final class FollowingModel {
         return UpdatesModel.text(for: error)
     }
 
-    /// Asks the server what it checks and what it found. A change that didn't reach it earlier is sent first.
+    /// Asks the server what it checks and what it found. A change that didn't reach it earlier is sent first; if the
+    /// server refused it (for example because it checks nothing yet), it is still asked what it holds, so the screen
+    /// knows whether to offer alerts at all (13 Nov 2026: before, a refused send left that unknown).
     func loadRadar() async {
         guard let backend else { return }
-        if defaults.bool(forKey: Self.needsSyncKey) {
-            await syncRadar()
-            return
-        }
+        if defaults.bool(forKey: Self.needsSyncKey), await syncRadar() { return }
         if let state = try? await backend.radarState() { radar = state }
     }
 
@@ -350,6 +363,30 @@ final class FollowingModel {
 
     /// Saves the headline, publisher and link as a note on this iPhone. "Saved" only after the store
     /// returned the record; a failure says so and saves nothing.
+    /// Asks Doddy's server for an AI summary of this story, once per session (a ready one is kept; a failed one can be
+    /// asked again). Only on the person's tap: the story's link and headline go to the server, the page's text to
+    /// Anthropic. "Pause all connections" stops it like every other request.
+    func summarize(_ card: NewsCard) async {
+        if case .ready = summaries[card.id] { return }
+        if summaries[card.id] == .loading { return }
+        guard !UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) else {
+            message = NSLocalizedString("Connections are paused, so nothing was sent.", comment: "")
+            return
+        }
+        guard let backend else {
+            summaries[card.id] = .failed(.off)
+            return
+        }
+        summaries[card.id] = .loading
+        do {
+            summaries[card.id] = .ready(try await backend.summarizeStory(url: card.url, title: card.title, language: language))
+        } catch let problem as NewsSummaryProblem {
+            summaries[card.id] = .failed(problem)
+        } catch {
+            summaries[card.id] = .failed(.failed)
+        }
+    }
+
     func save(_ card: NewsCard, repository: any MemoryRepository = AppEnvironment.shared.memoryRepository) async {
         message = nil
         do {

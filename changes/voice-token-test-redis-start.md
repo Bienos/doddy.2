@@ -1,0 +1,2 @@
+Tests: the voice token server's Redis tests start their local `redis-server` on a port the operating system gives (not a random guess), retry up to 3 times with 5 seconds each, and stop waiting at once if the server has exited. A busy CI runner failed "local redis-server started" once on 13 Nov 2026.
+Ran: `npm test --prefix server/voice-token` three times, 71 of 71 each; `scripts/ci.sh --only checks`. No server code changed.

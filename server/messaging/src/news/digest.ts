@@ -7,8 +7,11 @@ import { ALL_CATALOG_FEEDS, catalogById, type CatalogFeed } from "./catalog.js";
 import { pushBody, smsBody } from "./compose.js";
 import type { NewsItem } from "./feeds.js";
 import { shortlist, type TopicItems } from "./rank.js";
+import { FeedReader } from "./reader.js";
 import { localDate, nextRunAt } from "./schedule.js";
 import { cached, searchQuery, type FeedSource, type NewsSearch } from "./sources.js";
+import type { NewsSummaryDeps } from "./summary.js";
+import { reserveWriter, type NewsWriterCaps } from "./usage.js";
 import { shorten, validateLines, type DigestWriter } from "./writer.js";
 
 export interface NewsDeps {
@@ -19,6 +22,10 @@ export interface NewsDeps {
   cipher?: TextCipher;
   /** Texts queued per UTC day, per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
   smsCaps?: { perAccount: number; perServer: number };
+  /** Digests the writer may write per UTC day: per account, for the server, for new accounts. Default DEFAULT_NEWS_WRITER_CAPS. */
+  writerCaps?: NewsWriterCaps;
+  /** Article summaries for On my radar (POST /v1/news/summary): the switch, Claude Haiku, the polite fetcher, the cache. */
+  summary?: NewsSummaryDeps;
 }
 
 export const MAX_TOPICS = 10;
@@ -35,13 +42,19 @@ export interface DigestResult {
 
 interface Settings { timezone: string; language: "en" | "pl"; channels: Channel[] }
 
+/** Headlines from the account's digests of the last this many days: the same story isn't told again from another publisher. */
+export const TOLD_TITLES_DAYS = 3;
+
 /**
  * Builds today's digest for one account, keeps it for the app, and hands it to the outbox for the
  * chosen channels. Every link and source comes from a fetched feed or search result; the AI only
  * chooses and phrases. With no channel (none chosen, or the chosen ones aren't set up any more)
- * the digest is still kept and readable in the app (ADR-174).
+ * the digest is still kept and readable in the app (ADR-174). A scheduler pass hands in its `reader`
+ * so a feed several digests share is read once (reader.ts).
  */
-export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kind: "scheduled" | "manual", now = new Date()): Promise<DigestResult> {
+export async function buildDigest(
+  db: Db, news: NewsDeps, accountId: string, kind: "scheduled" | "manual", now = new Date(), sharedReader?: FeedReader,
+): Promise<DigestResult> {
   const { rows: st } = await db.query<Settings>(
     "SELECT timezone, language, channels FROM news_settings WHERE account_id = $1", [accountId]);
   const settings = st[0];
@@ -59,18 +72,31 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
     return { ...r, digestId };
   };
 
+  const started = Date.now();
+  const reader = sharedReader ?? new FeedReader(db, news.feeds, { now });
   try {
-    const topics = await gatherTopics(db, news, accountId, settings.language, now);
+    const topics = await gatherTopics(db, news, accountId, settings.language, now, reader);
     if (topics.length === 0) return finish({ status: "empty", errorCode: "no_topics" });
     const { rows: sent } = await db.query<{ hex: string }>(
       `SELECT encode(url_hash, 'hex') AS hex FROM news_sent WHERE account_id = $1 AND sent_at > now() - interval '14 days'`,
       [accountId]);
-    const candidates = shortlist(topics, new Set(sent.map((s) => s.hex)), now);
+    // The headlines this account was told lately: the same story from another publisher counts as sent (dedupe.ts).
+    const { rows: told } = await db.query<{ title: string }>(
+      `SELECT i.title FROM news_digest_items i JOIN news_digests d ON d.id = i.digest_id
+        WHERE d.account_id = $1 AND d.created_at > now() - make_interval(days => $2)
+        ORDER BY d.created_at DESC LIMIT 100`, [accountId, TOLD_TITLES_DAYS]);
+    const candidates = shortlist(topics, new Set(sent.map((s) => s.hex)), now,
+      { language: settings.language, sentTitles: told.map((t) => t.title) });
+    // Counts and time only, never a headline, topic or address.
+    log("news digest gathered", { candidates: candidates.length, ms: Date.now() - started, ...(sharedReader ? {} : reader.stats) });
     if (candidates.length === 0) return finish({ status: "empty" });
 
     let picks: { candidate: (typeof candidates)[number]; line: string }[] = [];
     let aiWritten = false;
-    if (news.writer) {
+    // Counted before the writer is asked (src/news/usage.ts). Past a daily cap: plain headlines, as when it is down.
+    const reserved = news.writer ? await reserveWriter(db, accountId, news.writerCaps, now) : undefined;
+    if (reserved && reserved !== "ok") log("news writer skipped, daily limit", { scope: reserved });
+    if (news.writer && reserved === "ok") {
       try {
         picks = validateLines(await news.writer.write({
           language: settings.language, topics: topics.map((t) => t.label), candidates,
@@ -114,21 +140,23 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
         }
       }
     });
+    // writer_daily_limit: plain headlines because a daily cap on the writer was reached (the app says "headlines only").
+    const capped = reserved && reserved !== "ok" ? "writer_daily_limit" : undefined;
     if (queued.length === 0) {
-      // Kept for the app. no_channel only when the user chose a channel that can't be used now.
-      return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : undefined });
+      // Kept for the app. no_channel only when the user chose a channel that can't be used now; it wins, as the app reads it.
+      return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : capped });
     }
-    return finish({ status: "queued", aiWritten });
+    return finish({ status: "queued", aiWritten, errorCode: capped });
   } catch {
     return finish({ status: "failed", errorCode: "build_error" });
   }
 }
 
-async function gatherTopics(db: Db, news: NewsDeps, accountId: string, language: "en" | "pl", now: Date): Promise<TopicItems[]> {
+async function gatherTopics(db: Db, news: NewsDeps, accountId: string, language: "en" | "pl", now: Date, reader: FeedReader): Promise<TopicItems[]> {
   const { rows: topics } = await db.query<FollowedTopic>(
     "SELECT catalog_id, label, keywords FROM news_topics WHERE account_id = $1 ORDER BY position", [accountId]);
   const { rows: feeds } = await db.query<{ url: string }>("SELECT url FROM news_feeds WHERE account_id = $1", [accountId]);
-  return gatherItems(db, news, topics, feeds.map((f) => f.url), language, now);
+  return gatherItems(db, news, topics, feeds.map((f) => f.url), language, now, { reader });
 }
 
 export interface FollowedTopic {
@@ -157,6 +185,8 @@ export interface GatherOptions {
   keywordPool?: "follows" | "catalog";
   /** Filled with each follow's sources, by label. */
   report?: Map<string, FollowSources>;
+  /** Shared by a request or a worker pass, so each feed is read once (reader.ts). Default: one for this call. */
+  reader?: FeedReader;
 }
 
 const hostOf = (url: string) => {
@@ -167,25 +197,26 @@ const hostOf = (url: string) => {
  * Fetches (through the shared cache) what the given topics and feeds carry right now. Used by the
  * daily digest with the account's saved topics, by the feed (ADR-656) with the follows the iPhone
  * sends along, which are never stored, and by radar alerts (decision 2026-11-10-radar-alerts).
- * A catalog story carries the publisher's short name ("CoinDesk"), not its feed's long title.
+ * A catalog story carries the publisher's short name ("CoinDesk"), not its feed's long title, and its language.
  */
 export async function gatherItems(
   db: Db, news: NewsDeps, topics: FollowedTopic[], feedUrls: string[], language: "en" | "pl", now: Date,
   options: GatherOptions = {},
 ): Promise<TopicItems[]> {
-  // One fetch per address per call, however many follows share it.
-  const fetched = new Map<string, Promise<{ ok: boolean; title?: string; items: NewsItem[] }>>();
-  const load = (url: string) => {
-    let pending = fetched.get(url);
-    if (!pending) {
-      pending = cached(db, `feed:${url}`, 30, () => news.feeds.fetchFeed(url));
-      fetched.set(url, pending);
-    }
-    return pending;
-  };
+  // One read per address per call (and per pass when a reader is shared), however many follows share it.
+  const reader = options.reader ?? new FeedReader(db, news.feeds, { now });
+  const load = (url: string) => reader.read(url);
+  const keywordTopics = topics.filter((x) => !x.catalog_id && !x.feed_url && x.keywords.length);
+  const catalogPool = options.keywordPool === "catalog" && keywordTopics.length > 0;
+  // Every feed this call reads, in one query of the cache; stale ones are fetched at once, a few at a time.
+  reader.preload([
+    ...topics.flatMap((t) => t.feed_url ? [t.feed_url] : (t.catalog_id ? catalogById.get(t.catalog_id)?.feeds.map((f) => f.url) ?? [] : [])),
+    ...feedUrls,
+    ...(catalogPool ? ALL_CATALOG_FEEDS.map((f) => f.url) : []),
+  ]);
   const named = async (f: CatalogFeed) => {
     const r = await load(f.url);
-    return { name: f.name, ok: r.ok, items: r.items.map((i) => ({ ...i, source: f.name })) };
+    return { name: f.name, ok: r.ok, items: r.items.map((i): NewsItem => ({ ...i, source: f.name, lang: f.lang })) };
   };
 
   const out: TopicItems[] = [];
@@ -214,9 +245,8 @@ export async function gatherItems(
     pool.push(...items);
     out.push({ label: language === "pl" ? "Twoje źródła" : "Your feeds", keywords: [], curated: true, items });
   }
-  const keywordTopics = topics.filter((x) => !x.catalog_id && !x.feed_url && x.keywords.length);
   let searchPool = pool;
-  if (options.keywordPool === "catalog" && keywordTopics.length) {
+  if (catalogPool) {
     const everything = await Promise.all(ALL_CATALOG_FEEDS.map(named));
     for (const f of ALL_CATALOG_FEEDS) read.add(f.url);
     searchPool = [...pool, ...everything.flatMap((r) => r.items)];
@@ -229,7 +259,8 @@ export async function gatherItems(
     if (news.search && q && searches < MAX_SEARCHES) {
       searches++;
       const since = new Date(now.getTime() - 36 * 3_600_000);
-      found = (await cached(db, `search:${language}:${q}`, 60, async () => ({ items: await news.search!.search(q, language, since) }))).items;
+      found = (await cached(db, `search:${language}:${q}`, 60, async () => ({ items: await news.search!.search(q, language, since) })))
+        .items.map((i) => ({ ...i, lang: language })); // searched in the reader's language
     }
     out.push({ label: t.label, keywords: t.keywords, curated: true, items: found });
     out.push({ label: t.label, keywords: t.keywords, curated: false, items: searchPool });
@@ -270,7 +301,13 @@ export async function runDueDigests(db: Db, news: NewsDeps, batch = 5, now = new
   } finally {
     client.release();
   }
-  for (const accountId of due) await buildDigest(db, news, accountId, "scheduled", now);
+  // One reader for the pass: a feed several digests share is read (and fetched, when stale) once.
+  if (due.length) {
+    const started = Date.now();
+    const reader = new FeedReader(db, news.feeds, { now });
+    for (const accountId of due) await buildDigest(db, news, accountId, "scheduled", now, reader);
+    log("news digests built", { digests: due.length, ms: Date.now() - started, ...reader.stats });
+  }
   // Housekeeping: interrupted builds, old dedupe rows, old digests.
   await db.query("UPDATE news_digests SET status = 'failed', error_code = 'interrupted' WHERE status = 'building' AND created_at < now() - interval '15 minutes'");
   await db.query("DELETE FROM news_sent WHERE sent_at < now() - interval '14 days'");

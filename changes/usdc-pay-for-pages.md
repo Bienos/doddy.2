@@ -1,3 +1,0 @@
-USDC pay-for-pages (x402, optional Coinbase wallet, Face ID card, `pay_for_page` by voice) is back in the code for review, **off by default**: no wallet unless the server is given one, each person's switch off, test network only (the server refuses a real-money network), the voice tool `not_synced` and not in the live prompt. ADR-734 to 737; owner approved review only (ADR-729).
-Ran: backend tests, typecheck, capability guard, voice spec, string catalogs, secrets check; the hosted run is the check for Swift. Not run: any screen on a simulator or device, Coinbase, a real seller, the live agent.
-Owner: mainnet, the ceilings and whether `pay_for_page` returns to the live agent stay open (`docs/implementation/PAYMENTS_STATUS.md`).

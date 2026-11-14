@@ -54,14 +54,17 @@ public enum PaymentAmount {
     }
 }
 
-/// The card that asks "pay this?" and what follows. One payment, one pass through these states:
+/// The card that asks "check the price here?", then "pay this?", and what follows. One payment, one pass
+/// through these states:
 ///
-///     idle -> preparing -> awaitingApproval -> authenticating -> paying -> paid
-///                                  |                 |             |-> failed       (nothing was paid)
-///                                  |                 |             `-> unconfirmed  (may have been paid)
-///                                  `-> idle (cancel) `-> awaitingApproval (Face ID not confirmed)
+///     idle -> openingPage -> awaitingPageApproval -> preparing -> awaitingApproval -> authenticating -> paying -> paid
+///                                  |                                  |                 |             |-> failed       (nothing was paid)
+///                                  `-> idle (cancel)                  |                 |             `-> unconfirmed  (may have been paid)
+///                                                                     `-> idle (cancel) `-> awaitingApproval (Face ID not confirmed)
 ///
 /// The rules that matter, each enforced by the shape of this type rather than by the screen:
+/// - The page a voice agent named is not read until the person has seen its site and path and tapped "Check the
+///   price": `prepare` is reachable only from `awaitingPageApproval`, once, with the server's approval for that page.
 /// - From the server's threshold up, the person also types the amount (checked here before Face ID, and again by the server).
 /// - The server is asked to pay at most once per approval: `pay` is reachable only from `authenticating`
 ///   after a confirmed check, and the next state is never one that can reach it again.
@@ -75,6 +78,11 @@ public enum PaymentAmount {
 public final class PaymentApprovalModel {
     public enum Phase: Equatable, Sendable {
         case idle
+        /// Asking the server for the page card. Nothing is read from the page.
+        case openingPage
+        /// The site and path are on screen; nothing has been read from the page until the person says yes.
+        case awaitingPageApproval(PaymentPageCard)
+        /// The person said yes to the page: the server is reading its price.
         case preparing
         case awaitingApproval(PaymentPrepared)
         case authenticating(PaymentPrepared)
@@ -108,7 +116,7 @@ public final class PaymentApprovalModel {
     /// True while a payment is being decided or sent: the card must stay up and Cancel must be off.
     public var isBusy: Bool {
         switch phase {
-        case .preparing, .authenticating, .paying: true
+        case .openingPage, .preparing, .authenticating, .paying: true
         default: false
         }
     }
@@ -122,6 +130,12 @@ public final class PaymentApprovalModel {
         case .awaitingApproval(let p), .authenticating(let p), .paying(let p): p
         default: nil
         }
+    }
+
+    /// The page card on screen, while it is the one asking.
+    public var pageCard: PaymentPageCard? {
+        if case .awaitingPageApproval(let card) = phase { return card }
+        return nil
     }
 
     /// The terms ask for the amount to be typed.
@@ -147,7 +161,7 @@ public final class PaymentApprovalModel {
         case .failed(let message, let receipt): .failed(message, receipt)
         case .unconfirmed(let message, let receipt): .unconfirmed(message, receipt)
         case .idle: .cancelled
-        case .preparing, .awaitingApproval, .authenticating, .paying: nil
+        case .openingPage, .awaitingPageApproval, .preparing, .awaitingApproval, .authenticating, .paying: nil
         }
     }
 
@@ -158,15 +172,16 @@ public final class PaymentApprovalModel {
         for waiter in pending { waiter.resume(returning: result) }
     }
 
-    /// Seconds left on the approval, if the server's time can be read.
+    /// Seconds left on the approval on screen (the page's or the terms'), if the server's time can be read.
     public func secondsLeft() -> Int? {
-        guard let prepared, let expiry = prepared.expiryDate else { return nil }
+        guard let expiry = pageCard?.expiryDate ?? prepared?.expiryDate else { return nil }
         return max(0, Int(expiry.timeIntervalSince(now()).rounded(.up)))
     }
 
     // MARK: Start
 
-    /// Asks the server for the exact terms of paying this page. Pays nothing.
+    /// Asks the server for the page card: the site and path it would open, and an approval to read that page.
+    /// Reads nothing and pays nothing.
     public func start(url address: String) async {
         guard case .idle = phase else { return }
         let page = address.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -177,10 +192,31 @@ public final class PaymentApprovalModel {
         notice = nil
         typedAmount = ""
         url = page
+        phase = .openingPage
+        do {
+            phase = .awaitingPageApproval(try await client.page(url: page))
+        } catch {
+            phase = .failed(error.userMessage, error.receipt)
+        }
+    }
+
+    // MARK: Check the price
+
+    /// The person tapped "Check the price" on the page card: only now may the server read the page, once, with the
+    /// approval it gave for that address. Pays nothing; the terms come next.
+    public func checkPrice() async {
+        // A second tap while the first is in flight lands here and does nothing.
+        guard case .awaitingPageApproval(let card) = phase, let url else { return }
+        if let expiry = card.expiryDate, expiry <= now() {
+            phase = .failed("This confirmation ran out. Nothing was read or paid. Start again to check the price.", nil)
+            return
+        }
+        notice = nil
         phase = .preparing
         do {
-            phase = .awaitingApproval(try await client.prepare(url: page))
+            phase = .awaitingApproval(try await client.prepare(url: url, approvalId: card.approvalId))
         } catch {
+            // Reading a price pays nothing, so any failure here is a plain failure.
             phase = .failed(error.userMessage, error.receipt)
         }
     }
@@ -247,9 +283,13 @@ public final class PaymentApprovalModel {
 
     // MARK: Cancel, finish, check again
 
-    /// Cancel before paying. Nothing was sent to the wallet or the seller; the approval simply runs out.
+    /// Cancel before paying. Nothing was sent to the wallet or the seller; the approval simply runs out. On the page
+    /// card, nothing was even read from the page.
     public func cancel() {
-        guard case .awaitingApproval = phase else { return }
+        switch phase {
+        case .awaitingPageApproval, .awaitingApproval: break
+        default: return
+        }
         typedAmount = ""
         phase = .idle
         notice = nil

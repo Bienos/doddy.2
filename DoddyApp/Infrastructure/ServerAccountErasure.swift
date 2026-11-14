@@ -5,15 +5,28 @@ import Foundation
 /// Messages copy, Logbook, documents) before the voice account goes. It says only what the server's
 /// receipt says; the rules are `AccountErasureOutcome` in DoddyCore, tested on Linux.
 enum ServerAccountErasure {
+    @MainActor
     static func run() async -> AccountErasureOutcome {
         // The token is used only with the server that issued it (`BoundSessionToken`), and the address is the
         // one `DeviceSession` allows: the built-in one in a shipped build, never one typed in Settings (ADR-720).
         // The device ID is not rotated here: the server would then see a new phone and the owner would become a guest.
-        guard let url = DeviceSession.serverURL(), KeychainSessionStore.read()?.token(for: url) != nil else { return .nothingThere }
+        guard let url = DeviceSession.serverURL() else { return .nothingThere }
+        // Decision 2026-11-12-account-deletion-truth: a session is made or renewed first when something may be there
+        // (a device ID, or the Doddy account): after a reinstall the Keychain can hold none while the server still
+        // keeps the data. Only then, so no device ID is made just to erase. "Nothing there" only when provably so.
+        let hasDeviceID = DeviceSession.hasDeviceID
+        let usesAccount = DoddyAccountServers.use(.backend, url) == .account
+        if hasDeviceID || usesAccount { await DeviceSession.ensure(server: url) }
+        let hasSession = KeychainSessionStore.read()?.token(for: url) != nil
+        switch AccountErasurePlan.backendStart(hasSession: hasSession, hasDeviceID: hasDeviceID, usesAccount: usesAccount) {
+        case .nothingThere: return .nothingThere
+        case .failed: return .failed
+        case .erase: break
+        }
         var result = await erase(url)
         // An expired session (tokens last 30 days): a fresh one, then once more. Deleting twice is harmless.
         if result == .failure(.unauthenticated), await DeviceSession.renew(server: url) { result = await erase(url) }
-        return AccountErasureOutcome.from(result)
+        return AccountErasurePlan.backendOutcome(result)
     }
 
     private static func erase(_ url: URL) async -> Result<AccountErasureReceipt, AccountErasureError> {

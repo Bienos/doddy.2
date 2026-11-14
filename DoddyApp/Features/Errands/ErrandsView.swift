@@ -322,13 +322,13 @@ struct ErrandsView: View {
 }
 
 /// The draft the yes card asks about.
-private struct TypedAsk: Identifiable {
+struct TypedAsk: Identifiable {
     let id = UUID()
     let draft: ErrandDraft
 }
 
 /// One line under the hand-over button: its outcome in words, with an icon (never colour alone).
-private struct HandOverNote: Equatable {
+struct HandOverNote: Equatable {
     enum Kind: Equatable {
         case confirmed, unsure, problem
 
@@ -354,7 +354,7 @@ private struct HandOverNote: Equatable {
 }
 
 /// One task in the list: its state in words, its title, the user's words and the day.
-private struct ErrandCardRow: View {
+struct ErrandCardRow: View {
     let errand: StoredErrand
     let isNew: Bool
 
@@ -431,7 +431,7 @@ struct ErrandStateChip: View {
 
 /// Shows exactly what goes to Doddy's server (the words, Doddy's note and the title, which the
 /// approval's digest covers) and what one tap allows. Only "Yes, go" sends anything.
-private struct TypedHandOverSheet: View {
+struct TypedHandOverSheet: View {
     let draft: ErrandDraft
     let done: @MainActor (ErrandsModel.HandOverOutcome) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -455,12 +455,23 @@ private struct TypedHandOverSheet: View {
                         field(NSLocalizedString("Doddy's note", comment: ""), draft.brief)
                         Text("The same for every typed task: Doddy writes no note of its own.")
                             .font(.caption).foregroundStyle(Theme.secondaryText)
+                        // "Find me this" from the Shopping screen: the order is part of what the yes covers.
+                        if draft.kind == .shopping {
+                            field(NSLocalizedString("What matters most, in order", comment: "the typed shopping task's card"), prioritiesText)
+                                .accessibilityIdentifier("errands.ask.priorities")
+                        }
                     }
                     .tasksCard()
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("Doddy searches the web and reads pages in the background, as often as this needs. The result waits in Tasks and in Messages.", systemImage: "magnifyingglass")
-                        Label("Nothing is booked, bought or sent.", systemImage: "hand.raised")
-                        Label("All three go to Doddy's server; the words and the note also go to Anthropic, whose Claude does the research. The server deletes its copy once this iPhone has saved the result.", systemImage: "lock")
+                        if draft.kind == .shopping {
+                            Label("Doddy looks for offers in shops in Poland in the background and reads each shop's own page. A price he couldn't confirm there isn't shown. The result waits in Shopping, in Tasks and in Messages.", systemImage: "magnifyingglass")
+                            Label("Nothing is booked, bought or sent.", systemImage: "hand.raised")
+                            Label("All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result.", systemImage: "lock")
+                        } else {
+                            Label("Doddy searches the web and reads pages in the background, as often as this needs. The result waits in Tasks and in Messages.", systemImage: "magnifyingglass")
+                            Label("Nothing is booked, bought or sent.", systemImage: "hand.raised")
+                            Label("All three go to Doddy's server; the words and the note also go to Anthropic, whose Claude does the research. The server deletes its copy once this iPhone has saved the result.", systemImage: "lock")
+                        }
                     }
                     .font(.footnote)
                     .foregroundStyle(Theme.ink)
@@ -500,6 +511,13 @@ private struct TypedHandOverSheet: View {
         }
         .interactiveDismissDisabled(model.isHandingOver)
         .presentationDetents([.large])
+    }
+
+    /// The priorities as they are sent, numbered in their order, or that none was chosen.
+    private var prioritiesText: String {
+        draft.priorities.isEmpty
+            ? NSLocalizedString("Nothing chosen", comment: "no shopping priorities")
+            : draft.priorities.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: " · ")
     }
 
     /// Each text in full, never cut: the approval covers all of it.

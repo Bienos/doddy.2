@@ -15,7 +15,7 @@ const notFound = { status: 404, body: { error: { code: "not_found", message: "No
 function renderAdmin(path = "/admin", routes: Record<string, unknown> = {}, language: "en" | "pl" = "en") {
   const server = fakeServer({
     "GET /v1/web/session": { body: fixture("web/session-current") },
-    "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+    "GET /v1/server": { body: { mode: "live" } },
     "GET /v1/web/owner": { body: fixture("web/owner-flag") },
     "GET /v1/web/owner/overview": { body: fixture("web/owner-overview") },
     "GET /v1/web/owner/accounts": { body: fixture("web/owner-accounts") },

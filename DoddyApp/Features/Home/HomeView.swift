@@ -61,8 +61,14 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
+    /// Shopping in one place: "Find me this", watched prices and the leaflets (ShoppingHubView).
+    @State private var showShopping = false
     /// Poland-first public information: IMGW, GIOŚ, NBP, InPost handoff and existing leaflets.
     @State private var showPolandPack = false
+    /// The food-delivery apps (Uber Eats, Wolt, Glovo, Pyszne.pl), each a tap away (decision 2026-11-11-food-button).
+    @State private var showFood = false
+    /// Trips found in booking emails (decision 2026-11-11-travel-agent-plan, TRAVEL_EMAILS.md).
+    @State private var showTrips = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -120,6 +126,18 @@ struct HomeView: View {
                 }
             }
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: conversation.live == nil)
+            // A file Doddy started making (owner, 13 Nov 2026): a small note drops out of the island for a few
+            // seconds instead of the pop-up card. Nothing on it needs a tap; the file arrives in Messages.
+            .overlay(alignment: .top) {
+                if let note = conversation.live?.madeFileNote {
+                    MadeFileIslandNote(document: note.document, keptInMessages: note.keptInMessages) {
+                        conversation.live?.dismissMadeFileNote()
+                    }
+                    .id(note.id)
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.4, anchor: .top).combined(with: .opacity))
+                }
+            }
+            .animation(reduceMotion ? nil : .spring(duration: 0.45, bounce: 0.2), value: conversation.live?.madeFileNote?.id)
             .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.2), value: showFiles)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
@@ -128,9 +146,10 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
-            .sheet(isPresented: $showPolandPack) {
-                PolandPackView(dealsEnabled: scope.shows(.deals), parcelTrackingEnabled: scope.shows(.parcels))
-            }
+            .sheet(isPresented: $showShopping) { ShoppingHubView() }
+            .sheet(isPresented: $showFood) { FoodView() }
+            .sheet(isPresented: $showPolandPack) { PolandPackView() }
+            .sheet(isPresented: $showTrips, onDismiss: { TripsModel.shared.reload() }) { TripsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
@@ -148,11 +167,24 @@ struct HomeView: View {
                 case .windDown: CountdownView(purpose: .windDown)
                 }
             }
+            // A product link shared from Safari or a shop app with "Check the price": the Shopping screen opens, and its
+            // "Check this" card takes the link (ShoppingHubView). Nothing is read from the shop until the person taps.
+            .onChange(of: router.priceCheckLink, initial: true) { _, link in
+                guard link != nil, scope.shows(.priceWatch), !showShopping else { return }
+                showShopping = true
+            }
             // A finished task's or file's push, tapped: Messages, where Doddy's message about it is.
             .onChange(of: router.isMessagesRequested, initial: true) { _, requested in
                 guard requested else { return }
                 router.isMessagesRequested = false
                 showAsk = true
+            }
+            // A radar story's push, tapped (decision 2026-11-13-radar-fixes): On my radar, where "Doddy spotted" lists it.
+            .onChange(of: router.isRadarRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isRadarRequested = false
+                guard scope.shows(.following) else { return }
+                showFollowing = true
             }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
@@ -200,12 +232,12 @@ struct HomeView: View {
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
                 Spacer()
-                // "Show screen" while Doddy talks (decision 2026-11-09-doddy-looks-at-the-screen): iOS's own
-                // sheet starts sharing; it comes and goes with Messages, whose server reads the picture.
-                // On the trailing side, beside the menu (owner, 11 Nov 2026: "ta kropka w złym miejscu, bo
-                // zasłania"): next to the transcript capsule iOS's round record glyph sat on the wordmark.
-                if conversation.live != nil, scope.shows(Feature.messages) {
-                    showScreenButton
+                // "Show screen" (decision 2026-11-09-doddy-looks-at-the-screen) is a capsule over Mute and End
+                // while Doddy talks (owner review, 13 Nov 2026). After the conversation, a small mark stays here
+                // only while the screen is still shared, so it can be stopped from Home. It comes and goes with
+                // Messages, whose server reads the picture.
+                if conversation.live == nil, scope.shows(Feature.messages) {
+                    ScreenShareCapsule(compact: true)
                 }
                 moreMenu
             }
@@ -238,14 +270,6 @@ struct HomeView: View {
         .buttonStyle(DoddyPressStyle())
         .foregroundStyle(Theme.ink)
         .accessibilityIdentifier("home.transcript")
-    }
-
-    /// Starts sharing the screen with Doddy through iOS's "Start Broadcast" sheet, so he can look when asked.
-    private var showScreenButton: some View {
-        ScreenShareButton(tint: UIColor(Theme.ink))
-            .frame(width: 36, height: 36)
-            .background(Theme.quietSurface, in: Circle())
-            .frame(width: 44, height: 44)
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
@@ -296,10 +320,21 @@ struct HomeView: View {
                     Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                         .accessibilityIdentifier("home.deals")
                 }
-                // Poland Pack reads official local data only when opened; no startup request.
+                // Shopping in one place (owner, 11 Nov 2026): typing "Find me this", the searches handed over and
+                // watched prices. Shown when tasks are, because that is what a search is. "Cheapest this week"
+                // keeps its own row above: UI tests and Home's leaflet card open it directly.
+                if scope.shows(.errands) {
+                    Button { showShopping = true } label: { Label("Shopping", systemImage: "bag") }
+                        .accessibilityIdentifier("home.shopping")
+                }
+                // The food-delivery apps the owner adds to (11 Nov 2026): one row each, opened from here, nothing sent.
+                Button { showFood = true } label: { Label("Food", systemImage: "fork.knife") }
+                    .accessibilityIdentifier("home.food")
+                // My city (was Poland Pack, "Polska na co dzień", until 13 Nov 2026): the weather, warnings, air and NBP
+                // rates, read from official sources only when opened; no startup request.
                 Button { showPolandPack = true } label: {
-                    Label(NotificationLanguage.current == .polish ? "Polska na co dzień" : "Poland Pack",
-                          systemImage: "mappin.and.ellipse")
+                    Label(NotificationLanguage.current == .polish ? "Moje miasto" : "My city",
+                          systemImage: "building.2")
                 }
                 .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
@@ -307,6 +342,12 @@ struct HomeView: View {
                 if scope.shows(.following) {
                     Button { showFollowing = true } label: { Label("On my radar", systemImage: "dot.radiowaves.left.and.right") }
                         .accessibilityIdentifier("home.following")
+                }
+                // Trips from booking emails (owner, 11 Nov 2026: "the full list next to Tasks"). In this section,
+                // not the first, for the same reason as the leaflets above. Gmail is read only from its own button.
+                if scope.shows(.onlineAccounts) {
+                    Button { showTrips = true } label: { Label("Trips", systemImage: "airplane") }
+                        .accessibilityIdentifier("home.trips")
                 }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
@@ -344,6 +385,10 @@ struct HomeView: View {
             // A task Doddy finished in the background since the user last looked (ADR-570).
             if scope.shows(.errands), let finished = ErrandsModel.shared.newestUnseen {
                 errandFinishedCard(finished)
+            }
+            // The next trip, while one is close (owner: "Karta na Home, gdy jest wyjazd"), from the trips saved here.
+            if scope.shows(.onlineAccounts), let trip = TripsModel.shared.homeTrip {
+                TripHomeCardView(trip: trip) { showTrips = true }
             }
             // Leaflets looked up by voice (ADR-666): the list waits on its screen, one tap away.
             if scope.shows(.deals), DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {
@@ -512,8 +557,20 @@ struct HomeView: View {
         }
     }
 
-    /// While he talks (ADR-595): Mute and End, where Messages and Files are.
+    /// While he talks (ADR-595): Mute and End, where Messages and Files are, with "Show screen" over them.
     private func talkBar(_ live: VoiceSessionController) -> some View {
+        VStack(spacing: 8) {
+            if scope.shows(Feature.messages) {
+                ScreenShareCapsule()
+            }
+            muteAndEnd(live)
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func muteAndEnd(_ live: VoiceSessionController) -> some View {
         HStack(spacing: 12) {
             Button {
                 Task { await live.toggleMute() }
@@ -546,9 +603,6 @@ struct HomeView: View {
         .lineLimit(1)
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .foregroundStyle(Theme.ink)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
-        .frame(maxWidth: .infinity)
     }
 
     private var restBar: some View {

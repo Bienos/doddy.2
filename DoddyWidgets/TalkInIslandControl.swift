@@ -14,7 +14,8 @@ struct TalkInIslandControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: TalkButtonIntent()) {
-                Label("Talk to Doddy", systemImage: "waveform")
+                // The same face as `TalkToDoddyControl` (owner, 12 Nov 2026).
+                Label("Talk to Doddy", systemImage: "face.smiling.inverse")
             }
         }
         .displayName("Talk to Doddy")

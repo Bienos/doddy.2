@@ -43,6 +43,10 @@ export async function runTaskCallPasses(ctx: TaskCallContext, state: { lastSweep
     state.lastSweep = Date.now();
     await run("orphans", () => sweepOrphans(ctx));
     await run("drift", async () => (await ctx.drift.refresh()).length);
+    // The booking agent too, once it is set up (decision 2026-11-12-book-agent); not set up is not a problem here.
+    if (ctx.agentIdFor("book")) await run("driftBook", async () => (await ctx.driftFor("book").refresh()).length);
+    // And the order agent (decision 2026-11-12-food-by-phone).
+    if (ctx.agentIdFor("order")) await run("driftOrder", async () => (await ctx.driftFor("order").refresh()).length);
   }
   return counts;
 }
@@ -167,11 +171,17 @@ async function buildAndStore(ctx: TaskCallContext, r: ResultRow) {
   let writer: WriterOutput | undefined;
   if (ctx.writer && payload && transcript.some((l) => l.speaker === "callee") && r.voice_connected_at) {
     try {
-      writer = await ctx.writer.write({ question: payload.display.question, goal: payload.display.goal, transcript });
+      writer = await ctx.writer.write({
+        question: payload.display.question, goal: payload.display.goal, transcript,
+        ...(payload.kind === "book" ? { booking: payload.agent.variables.doddy_booking ?? "" } : {}),
+        ...(payload.kind === "order" ? { order: payload.agent.variables.doddy_order ?? "" } : {}),
+      });
     } catch (err) {
       ctx.log("call result writer failed; using rules", { attemptId: r.attempt_id, error: (err as Error).message.slice(0, 80) });
     }
   }
+  // The one sentence that accepts the approved booking or order (decisions 2026-11-12-book-agent, 2026-11-12-food-by-phone).
+  const confirmLine = payload?.agent.variables.doddy_booking_confirm_line ?? payload?.agent.variables.doddy_order_confirm_line;
   const result = buildCallResult({
     endReason: (r.end_reason as never) ?? null,
     answered: r.answered_at !== null,
@@ -180,7 +190,12 @@ async function buildAndStore(ctx: TaskCallContext, r: ResultRow) {
     durationSecs: r.duration_secs,
     question: payload?.display.question ?? "",
     callbackLine: payload?.agent.variables.doddy_callback_line ?? "Sprawdzę to u",
-    allowedTexts: payload ? [payload.agent.variables.doddy_opening_line, payload.display.question, ...payload.display.facts.map((x) => x.text)] : [],
+    allowedTexts: payload ? [payload.agent.variables.doddy_opening_line, payload.display.question, ...payload.display.facts.map((x) => x.text),
+      ...(confirmLine ? [confirmLine] : []),
+      // An order's details (address, courier's phone) may be said after they take it: they are what the person typed on the card.
+      ...(payload.agent.variables.doddy_order ? [payload.agent.variables.doddy_order] : [])] : [],
+    ...(confirmLine ? { bookingConfirmLine: confirmLine } : {}),
+    ...(payload?.display.order ? { maxTotalPln: payload.display.order.maxTotalPln } : {}),
     transcript, source, voicemailToolUsed, writer,
   });
   const json = canonicalJson(result);
@@ -349,7 +364,15 @@ export async function runDeletions(ctx: Pick<TaskCallContext, "db" | "voice" | "
 /** Any conversation of the task agent older than a day that no waiting result needs is deleted. */
 export async function sweepOrphans(ctx: TaskCallContext): Promise<number> {
   const now = ctx.now();
-  const list = await ctx.voice.listConversations(ctx.config.agentId, Math.floor(now.getTime() / 1000) - 24 * 3600);
+  let queued = 0;
+  for (const agentId of [ctx.agentIdFor("ask"), ctx.agentIdFor("book"), ctx.agentIdFor("order")]) {
+    if (agentId) queued += await sweepAgent(ctx, agentId, now);
+  }
+  return queued;
+}
+
+async function sweepAgent(ctx: TaskCallContext, agentId: string, now: Date): Promise<number> {
+  const list = await ctx.voice.listConversations(agentId, Math.floor(now.getTime() / 1000) - 24 * 3600);
   if (list === "error") return 0;
   let queued = 0;
   for (const conv of list) {

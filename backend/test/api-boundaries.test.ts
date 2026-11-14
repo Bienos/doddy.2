@@ -159,8 +159,9 @@ test("an unverifiable grant (scopes not exposed) blocks live use", async () => {
 
 test("no write capability is reachable", async () => {
   h = await harness();
+  // The open health check advertises nothing at all, capabilities included (status only, 12 Nov 2026).
   const health = await h.call("GET", "/v1/health", { token: null });
-  assert.deepEqual(health.body.capabilities, ["calendar.listEvents"]);
+  assert.deepEqual(health.body, { status: "ok" });
   assert.equal(h.service.confirmations instanceof Object, true);
 });
 

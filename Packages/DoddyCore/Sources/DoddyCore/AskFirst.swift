@@ -163,6 +163,10 @@ public enum AskFirst {
             // Nothing outside Doddy changes, but it spends money and sends the user's words to Anthropic,
             // so only a tap starts it, like a handed-over task (ADR-716, ADR-742). The card shows the whole job.
             return .tapFirst(StudioAsk.card(job))
+        // Opening a food app hands the person over to it (decision 2026-11-12-food-by-voice): a tap on the card
+        // naming the app and the search, never on its own. Nothing is ordered here.
+        case .openFoodApp(let handoff):
+            return .tapFirst(handoff.card(polish: polish))
         // Taking something away keeps its card: a tap on exactly what goes.
         case .removeFromList(let request):
             return .tapFirst(AskCard(

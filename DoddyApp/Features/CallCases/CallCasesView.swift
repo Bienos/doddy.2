@@ -54,8 +54,9 @@ struct CallCasesView: View {
             }
         }) { item in
             if let model {
+                // "Who and why" first (decision 2026-11-13-calls-one-field-brief); the full editor is one tap from it.
                 NavigationStack {
-                    CallBriefEditorView(list: model, draft: item.draft, replacing: nil) { saved in
+                    CallBriefStartView(list: model, base: item.draft) { saved in
                         preparedCase = saved
                         editor = nil
                     }
@@ -126,21 +127,24 @@ struct CallCasesView: View {
                         }
                     }
                 }
-                Section("Cost") {
-                    let summary = model.costSummary
-                    LabeledContent("Calls", value: "\(summary.cases)")
-                    LabeledContent("Answered", value: "\(summary.answered)")
-                    LabeledContent("Known cost, all calls", value: String(format: "%.4f USD", Double(summary.knownTotalMicros) / 1_000_000))
-                    if let per = summary.perAnsweredMicros {
-                        LabeledContent("Per answered call", value: String(format: "%.4f USD", Double(per) / 1_000_000))
-                    }
-                    if summary.casesWithUnknownCost > 0 {
-                        Text(String(format: NSLocalizedString("%lld calls still have a part of their cost unknown or pending, so no average is shown for them.", comment: ""),
-                                    summary.casesWithUnknownCost))
+                // The money side is for whoever asks; the list is about the calls (owner review, 12 Nov 2026).
+                Section {
+                    DisclosureGroup("Cost") {
+                        let summary = model.costSummary
+                        LabeledContent("Calls", value: "\(summary.cases)")
+                        LabeledContent("Answered", value: "\(summary.answered)")
+                        LabeledContent("Known cost, all calls", value: String(format: "%.4f USD", Double(summary.knownTotalMicros) / 1_000_000))
+                        if let per = summary.perAnsweredMicros {
+                            LabeledContent("Per answered call", value: String(format: "%.4f USD", Double(per) / 1_000_000))
+                        }
+                        if summary.casesWithUnknownCost > 0 {
+                            Text(String(format: NSLocalizedString("%lld calls still have a part of their cost unknown or pending, so no average is shown for them.", comment: ""),
+                                        summary.casesWithUnknownCost))
+                                .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        }
+                        Text("Phone line and transcript from Twilio, Doddy's voice from ElevenLabs, the answer card from Claude. Twilio's price arrives after the call; the rest is estimated from documented prices.")
                             .font(.footnote).foregroundStyle(Theme.secondaryText)
                     }
-                    Text("Phone line and transcript from Twilio, Doddy's voice from ElevenLabs, the answer card from Claude. Twilio's price arrives after the call; the rest is estimated from documented prices.")
-                        .font(.footnote).foregroundStyle(Theme.secondaryText)
                 }
                 Section {
                     Button("Export my calls") { Task { exportText = await model.exportText() } }

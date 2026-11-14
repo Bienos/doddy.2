@@ -248,3 +248,45 @@ public enum TodayGlanceText {
         return (2...4).contains(last) && !(12...14).contains(lastTwo) ? few : many
     }
 }
+
+/// Changing or adding a reminder from Today (owner, 13 Nov 2026: "fajne te przypomnienia, ale zero edycji"). The screen
+/// picks a title and a date; this works out the one write `DeviceConnections` makes, so the rules are tested here.
+/// A due is moved or added, never cleared from this screen (a cleared due loses its alarm; Reminders does that).
+public enum ReminderEdit {
+    public enum Problem: Error, Equatable, Sendable { case emptyTitle, titleTooLong, nothingChanged }
+
+    /// The title as it will be written: trimmed, and checked against Reminders' limit Doddy keeps.
+    public static func title(_ text: String) -> Result<String, Problem> {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return .failure(.emptyTitle) }
+        if trimmed.count > ReminderDetails.maxTitleLength { return .failure(.titleTooLong) }
+        return .success(trimmed)
+    }
+
+    /// A due for a date picked on the screen: the day, and the hour and minute when it has a time, in `calendar`'s
+    /// zone. A day without a time floats, as the Reminders app keeps whole-day reminders.
+    public static func due(_ date: Date, hasTime: Bool, calendar: Calendar) -> ReminderDue {
+        let c = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        let year = c.year ?? 1970, month = c.month ?? 1, day = c.day ?? 1
+        guard hasTime else { return ReminderDue(year: year, month: month, day: day, timeZoneID: nil) }
+        return ReminderDue(year: year, month: month, day: day, hour: c.hour ?? 9, minute: c.minute ?? 0,
+                           timeZoneID: calendar.timeZone.identifier)
+    }
+
+    /// The change for an edited reminder: `.due` when only the due moves, `.details` with the new title (and the new
+    /// due, if it moved too) when the title changes. `due` nil keeps the reminder's due as it is.
+    public static func change(title text: String, due: ReminderDue?, from before: ReminderSnapshot) -> Result<ReminderChange, Problem> {
+        let title: String
+        switch Self.title(text) {
+        case .success(let checked): title = checked
+        case .failure(let problem): return .failure(problem)
+        }
+        let newTitle: String? = title == before.title ? nil : title
+        let dueMoved = due != nil && !EventChange.sameDue(before.due, due)
+        switch (newTitle, dueMoved) {
+        case (nil, false): return .failure(.nothingChanged)
+        case (nil, true): return .success(.due(due))
+        case (let renamed?, _): return .success(.details(newDue: dueMoved ? due : nil, ReminderDetailsChange(newTitle: renamed)))
+        }
+    }
+}

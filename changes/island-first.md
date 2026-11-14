@@ -1,0 +1,2 @@
+Action Button: the island comes up first, as "Connecting…", right after the checks that need only the iPhone; the store, profile, set-up, audio session, token and connect follow behind it. A refused or cancelled press ends it at once. New timing stage `island shown`. Decision `2026-11-13-island-first`.
+Ran: `make test-core` (Linux, Swift 6.1.2), `swiftc -parse` on `TalkInIsland.swift`, `scripts/ci.sh --only checks`. Not run: the app build and tests (no Xcode), anything on a device.

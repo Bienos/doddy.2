@@ -42,8 +42,9 @@ A reference such as `op://doddy-prod/openai-api/credential` names a vault, an it
 |---|---|---|---|---|
 | `ELEVENLABS_API_KEY` | `elevenlabs-api` | `vercel:doddy-voice-token`, `render:doddy-messaging` | yes | yes |
 | `OPENAI_API_KEY` | `openai-api` | `vercel:doddy-voice-token`, `vercel:doddy-gateway`, `render:doddy-messaging` | yes | yes |
-| `DODDY_SESSION_SIGNING_KEY` | `voice-token-session-signing-key` | `vercel:doddy-voice-token` | **no**: changing it signs everyone out and changes the Apple ids the server derives from it | yes |
+| `DODDY_SESSION_SIGNING_KEY` | `voice-token-session-signing-key` | `vercel:doddy-voice-token` | **no**: changing it signs everyone out and changes the Apple ids the server derives from it and the ids under which each account's voice conversations are recorded | yes |
 | `UPSTASH_REDIS_REST_TOKEN` | `upstash-voice-token` | `vercel:doddy-voice-token` | yes | no |
+| `CRON_SECRET` | `voice-token-cron-secret` | `vercel:doddy-voice-token` | yes | no |
 | `UPSTASH_REDIS_REST_TOKEN` | `upstash-gateway` | `vercel:doddy-gateway` | yes | no |
 | `GATEWAY_TOKEN_SECRET` | `gateway-token-secret` | `vercel:doddy-gateway` | **no**: changing it signs every device out of the typed assistant | yes |
 | `GATEWAY_INVITE_CODES` | `gateway-invite-codes` | `vercel:doddy-gateway` | yes | no |
@@ -56,6 +57,7 @@ A reference such as `op://doddy-prod/openai-api/credential` names a vault, an it
 | `TWILIO_TASK_AUTH_TOKEN` | `twilio-task-auth-token` | `render:doddy-messaging` | yes | no |
 | `ELEVENLABS_WEBHOOK_SECRET` | `elevenlabs-webhook-secret` | `render:doddy-messaging` | **no**: ElevenLabs makes it for the post-call webhook, and the host must hold exactly that value | no |
 | `MEMORY_ENCRYPTION_KEY` | `memory-encryption-key` | `render:doddy-messaging` | **no**: a different value makes stored memory copies and call notes unreadable | yes |
+| `MEMORY_ENCRYPTION_KEY_PREVIOUS` | `memory-encryption-key-previous` | `render:doddy-messaging` | **no**: set by hand only during a key rotation, removed once `scripts/reencrypt.mjs` reports nothing left | no |
 | `ELEVENLABS_TOOL_SECRET` | `elevenlabs-tool-secret` | `render:doddy-messaging` | **no**: it must change together with the ElevenLabs workspace secret `doddy_tool_secret` | yes |
 | `ANTHROPIC_API_KEY` | `anthropic-api` | `render:doddy-messaging` | yes | yes |
 | `GNEWS_API_KEY` | `gnews-api` | `render:doddy-messaging` | yes | yes |
@@ -154,7 +156,8 @@ The text comes from `rotate` in the manifest.
 | `MONID_API_KEY` (backend) | It spends Doddy's Monid wallet: revoke fast if it leaks. New key here, sync, deploy, revoke the old one. |
 | `APNS_PRIVATE_KEY` (server/messaging) | Make a new APNs key in the Apple Developer account, paste the .p8 text into this Secure Note, update APNS_KEY_ID on the host, sync, deploy, then revoke the old key. |
 | `TWILIO_AUTH_TOKEN` (server/messaging) | Make a new token in Twilio, put it here, sync and deploy, then retire the old one. Texts and verify codes fail while the host has a retired token. |
-| `MEMORY_ENCRYPTION_KEY` (server/messaging) | Never rotate casually: there is no re-encryption migration. 1Password's job here is the backup copy. |
+| `MEMORY_ENCRYPTION_KEY` (server/messaging) | Only with a version: the old value moves to `MEMORY_ENCRYPTION_KEY_PREVIOUS`, the new one gets `MEMORY_ENCRYPTION_KEY_VERSION` one higher, then `scripts/reencrypt.mjs` rewrites every row (`server/messaging/README.md`, "Rotating MEMORY_ENCRYPTION_KEY"). Keyed hashes start afresh. A deployed server refuses to start without it. 1Password's job here is the backup copy. |
+| `MEMORY_ENCRYPTION_KEY_PREVIOUS` (server/messaging) | Holds the key being retired. Remove it only after `scripts/reencrypt.mjs` exits 0; rows still on its version are unreadable without it. |
 | `ELEVENLABS_TOOL_SECRET` (server/messaging) | Change the ElevenLabs workspace secret and this value at the same time, or phone-call tools stop working. |
 | `ANTHROPIC_API_KEY` (server/messaging) | New key in the Anthropic console, put it here, sync and deploy, revoke the old one. Without it, news digests fall back to plain headlines. |
 | `GNEWS_API_KEY` (server/messaging) | New key from GNews, put it here, sync and deploy. |

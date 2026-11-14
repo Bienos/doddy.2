@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { AccountEraser } from "./account.js";
-import { AssistService } from "./assist.js";
+import { type AssistReply, AssistService } from "./assist.js";
+import { ASK_DEDUP, RequestOnce } from "./idempotency.js";
 import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
@@ -25,12 +26,16 @@ import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./provi
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
 import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
+import { UsageLimiter } from "./policy.js";
+import { ShopifyUcpService } from "./shopify/ucp.js";
 import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
+import { type DuffelClient, HttpDuffelClient } from "./flights/duffel.js";
+import { HttpKiwiClient, type KiwiClient } from "./flights/kiwi.js";
 import { AccountContext } from "./web/chatContext.js";
 import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
@@ -46,6 +51,8 @@ export async function buildApp(
     provider?: CalendarProvider;
     toolsProvider?: ToolsProvider;
     webSearch?: WebSearchProvider | null;
+    /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking); tests pass fakes. */
+    flights?: { kiwi: KiwiClient | null; duffel: DuffelClient | null; bookingEnabled: boolean } | null;
     claude?: ClaudeProvider | null;
     /** The model that chats with a person's kept notes and conversations (ADR-603). */
     chatClaude?: ClaudeProvider | null;
@@ -55,6 +62,7 @@ export async function buildApp(
     supabaseFetchJson?: FetchJson;
     paymentWallet?: PaymentWallet | null;
     sellerHttp?: SellerHttp;
+    shopify?: ShopifyUcpService | null;
   } = {},
 ) {
   const store =
@@ -79,7 +87,7 @@ export async function buildApp(
   const accountLinker = new AccountLinker({
     store,
     accounts: supabase,
-    // Proof of the iPhone's earlier data: its own device token, valid and not cut off (ADR-709).
+    // The iPhone's own device session (valid and not cut off, ADR-709) starts a link and can undo it.
     devices: config.sessionSigningKey ? new RevocableSessionVerifier(new SignedSessionVerifier(config.sessionSigningKey), floors) : null,
     floors,
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
@@ -93,6 +101,7 @@ export async function buildApp(
     publicBaseUrl: config.publicBaseUrl,
     appReturnUrl: config.appReturnUrl,
     completionMode: provider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
+    log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
   // Online accounts. Live: only toolkits with their own settings are connectable; the rest say so.
   let toolsProvider: ToolsProvider;
@@ -115,10 +124,26 @@ export async function buildApp(
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
   // Document links are signed with the session key; without one, make_document says "not set up".
   const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
+  // Booking emails are read by the small chat model (DODDY_CHAT_MODEL) when the server has one.
+  const travelClaude =
+    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : claude) : claude;
+  // Flights: live only, each part only when the owner set it (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+  const flights =
+    overrides.flights !== undefined
+      ? overrides.flights
+      : config.mode === "live"
+        ? {
+            kiwi: config.flights.kiwiUrl ? new HttpKiwiClient(config.flights.kiwiUrl) : null,
+            duffel: config.flights.duffelToken ? new HttpDuffelClient(config.flights.duffelToken, config.flights.duffelBaseUrl) : null,
+            bookingEnabled: config.flights.bookingEnabled,
+          }
+        : null;
   const tools = new CloudToolsService({
     store,
     provider: toolsProvider,
+    flights,
     claude,
+    travelClaude,
     documentLinks,
     webSearch,
     limits: config.limits,
@@ -159,7 +184,10 @@ export async function buildApp(
   // Deleting the account (ADR-674): each connection is removed by the provider that made it, and
   // each linked Google or Apple sign-in at Supabase, with the secret key (ADR-818).
   const supabaseUsers = config.web?.social?.secretKey ? new SupabaseUserRemover(config.web.social.projectUrl, config.web.social.secretKey) : null;
+  // Finished Ask Doddy answers kept a few minutes in memory so a repeated request id is not paid for twice; account deletion drops them.
+  const askOnce = new RequestOnce<AssistReply>(ASK_DEDUP);
   const accountEraser = new AccountEraser({
+    forget: (userId) => void askOnce.forgetUser(userId),
     store,
     removers: [
       { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
@@ -192,6 +220,7 @@ export async function buildApp(
       userDaily: config.payments.userDaily,
       serviceDaily: config.payments.serviceDaily,
       allowedHosts: config.payments.allowedHosts,
+      queryHosts: config.payments.queryHosts,
     },
     limits: config.limits,
   });
@@ -213,12 +242,17 @@ export async function buildApp(
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;
+  // Real Shopify/Shop MCP only. Offline/mock mode never invents products or carts.
+  // Anonymous Shop MCP calls create carts and checkouts but cannot charge or place orders.
+  const shopify = config.mode === "live" ? (overrides.shopify === undefined ? new ShopifyUcpService() : overrides.shopify) : null;
   // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
-  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
+  const assist = new AssistService({ store, once: askOnce, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
     payments,
+    shopify,
+    ...(shopify ? { shopifyLimiter: new UsageLimiter(store, config.limits) } : {}),
     verifier,
     deviceSessions,
     web,
@@ -226,8 +260,8 @@ export async function buildApp(
     account: accountEraser,
     accountLinker,
     documents: documentLinks ? { links: documentLinks, store } : null,
-    // Health asks the database and names the running commit (Render sets RENDER_GIT_COMMIT).
-    health: { ping: () => store.ping(), commit: process.env.RENDER_GIT_COMMIT?.slice(0, 12) || null },
+    // Health asks the database and answers with its status only; the running commit is in the start log.
+    health: { ping: () => store.ping() },
     appReturnUrl: config.appReturnUrl,
     maxBodyBytes: config.limits.maxBodyBytes,
     trustProxy: config.trustProxy,
@@ -252,6 +286,7 @@ export async function buildApp(
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => store.pruneTokenFloors(Date.now()))
+      .then(() => store.pruneAccountLinkCodes(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
     // Kept memory (ADR-603) is swept on its own, so a failure in the steps above can't skip it, and its
@@ -269,7 +304,7 @@ export async function buildApp(
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, payments, provider, assist };
+  return { server, store, service, tools, payments, shopify, provider, assist };
 }
 
 /** Which sign-ins this server accepts (ADR-526). */

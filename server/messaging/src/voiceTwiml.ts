@@ -23,6 +23,16 @@ const LINES = {
     pl: "Tu Doddy, asystent AI. Doddy jest teraz niedostępny. Spróbuj później. Do usłyszenia.",
     en: "This is Doddy, an AI assistant. Doddy isn't available right now. Please try again later. Goodbye.",
   },
+  // A call to the account's phone agent past the day's cap (per account or for the server).
+  daily_limit: {
+    pl: "Tu Doddy, asystent AI. Na dziś to już limit rozmów. Spróbuj jutro. Do usłyszenia.",
+    en: "This is Doddy, an AI assistant. That's the limit of calls for today. Please try again tomorrow. Goodbye.",
+  },
+  // A call-back that can't be put through (src/callbacks.ts). It says nothing about why, or about whom Doddy called for.
+  callback_unavailable: {
+    pl: "Tu Doddy, asystent AI. Nie mogę teraz połączyć tej rozmowy. Do usłyszenia.",
+    en: "This is Doddy, an AI assistant. I can't put this call through right now. Goodbye.",
+  },
 } as const;
 
 export type FixedLine = keyof typeof LINES;
