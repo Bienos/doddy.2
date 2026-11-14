@@ -100,11 +100,15 @@ Every item is a generic password under `com.bienos.doddy2.<name>`, marked "this 
 | `com.bienos.doddy2.voice-access-code` | the old tester code (removed at launch) | `keychainPersonalKeys` | always |
 | `com.bienos.doddy2.doddy-account` | the signed-in Doddy account's session | `keychainServerHandles` | with the account |
 | `com.bienos.doddy2.voice-session` | the older voice account's session | `keychainServerHandles` | with the account |
+| `com.bienos.doddy2.voice-account-session` | the voice server's own session for the signed-in Doddy account: its access and refresh tokens and which account they belong to (decision `2026-11-12-one-token-per-server`) | `keychainServerHandles` | with the account |
+| `com.bienos.doddy2.voice-account-session-owed` | refresh tokens of voice-server sessions this iPhone signed out of, whose sign-out the voice server hasn't yet confirmed; used for nothing but that one request | `keychainServerHandles` | with the account |
 | `com.bienos.doddy2.connected-apps` | the session token for Doddy's backend | `keychainServerHandles` | with the account |
 | `com.bienos.doddy2.server` | the device token for the messaging server | `keychainServerHandles` | with the account |
 | `com.bienos.doddy2.device` | this iPhone's device id, which mints backend sessions | `keychainServerHandles` | with the account |
 
 **The default erase keeps the sign-in** (`DeviceErasureScope.keepSignIn`): the account stays signed in so that it can be deleted next (that deletion needs these items), and so that an account which finds another account's data on this iPhone can erase it and take the empty iPhone over. `keychainServerHandles` is then not part of the plan. Signing out and deleting the account are their own steps, offered right after the erase and with the account deletion. Items without a service name, other Keychain classes and other access groups: the app writes none.
+
+**The voice server's session for the Doddy account** (`voice-account-session`, decision `2026-11-12-one-token-per-server`): signing out empties the slot before the sign-out returns, whatever the server says; the sign-out the server still owes is written down first in `voice-account-session-owed`, which holds only refresh tokens and is used for nothing but that request. It is tried at once and again at each launch and sign-in until the server answers (`VoiceAccountSessions`, `VoiceAccountSessionsTests`), and nothing says a session ended that the server did not confirm. The owed slot is the one item that outlives a sign-out and a reinstall (`ServerKeychainStore.clearLeftoversOnFreshInstall` leaves it alone, as it does the messaging server's); the default erase keeps it too, so erasing the iPhone's data cannot drop an obligation, and it goes with the account when the account is deleted. The slot of the session itself is cleared on a fresh install without asking the server (its session then ends by itself after 30 days, or at once when the account is deleted).
 
 ### What iOS keeps for Doddy
 

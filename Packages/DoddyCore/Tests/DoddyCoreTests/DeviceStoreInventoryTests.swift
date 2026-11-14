@@ -162,7 +162,7 @@ final class DeviceStoreInventoryTests: XCTestCase {
         XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.gateway", scope: .keepSignIn))
         XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.voice-access-code", scope: .keepSignIn))
         // The sign-in and what ties this iPhone to its servers stay, unless the account was deleted.
-        for name in ["doddy-account", "voice-session", "connected-apps", "server", "device"] {
+        for name in ["doddy-account", "voice-session", "voice-account-session", "voice-account-session-owed", "connected-apps", "server", "device"] {
             XCTAssertFalse(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.\(name)", scope: .keepSignIn), name)
             XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.\(name)", scope: .afterAccountDeleted), name)
         }
@@ -187,8 +187,26 @@ final class DeviceStoreInventoryTests: XCTestCase {
     func testServicesToKeepAreListedForTheResultLine() {
         XCTAssertEqual(
             Set(DeviceKeychain.keptServices(scope: .keepSignIn)),
-            ["com.bienos.doddy2.doddy-account", "com.bienos.doddy2.voice-session", "com.bienos.doddy2.connected-apps",
+            ["com.bienos.doddy2.doddy-account", "com.bienos.doddy2.voice-session", "com.bienos.doddy2.voice-account-session",
+             "com.bienos.doddy2.voice-account-session-owed", "com.bienos.doddy2.connected-apps",
              "com.bienos.doddy2.server", "com.bienos.doddy2.device"])
         XCTAssertEqual(DeviceKeychain.keptServices(scope: .afterAccountDeleted), [])
+    }
+
+    /// One token per server (decision 2026-11-12-one-token-per-server): the voice server's own session for the Doddy
+    /// account, and the sign-outs still owed to it, are Keychain items of their own. Both are kept while the person stays
+    /// signed in (erasing the iPhone's data must not sign them out, and a sign-out owed to the server must not be
+    /// forgotten by it) and erased, read back by the same store as the other sign-in items, once the account is deleted.
+    func testTheVoiceAccountSessionItemsAreRegisteredKeptWhileSignedInAndErasedWithTheAccount() {
+        let session = "com.bienos.doddy2.voice-account-session"
+        let owed = "com.bienos.doddy2.voice-account-session-owed"
+        XCTAssertEqual(DeviceKeychain.services.first { $0.name == session }?.role, .signIn)
+        XCTAssertEqual(DeviceKeychain.services.first { $0.name == owed }?.role, .serverTie)
+        for name in [session, owed] {
+            XCTAssertFalse(DeviceKeychain.shouldErase(service: name, scope: .keepSignIn), name)
+            XCTAssertTrue(DeviceKeychain.shouldErase(service: name, scope: .afterAccountDeleted), name)
+            XCTAssertEqual(DeviceKeychain.store(for: name), .keychainServerHandles, name)
+            XCTAssertFalse(DeviceKeychain.services.first { $0.name == name }?.holds.isEmpty ?? true, "\(name) needs a line saying what it holds")
+        }
     }
 }
