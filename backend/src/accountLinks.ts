@@ -31,7 +31,7 @@ export interface AccountLinkStore {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 /** A Supabase access token's claims, read without checking them: call it only on a header a verifier accepted. */
-function jwtClaims(header: string | undefined): Record<string, unknown> | null {
+export function jwtClaims(header: string | undefined): Record<string, unknown> | null {
   const token = bearer(header);
   if (!token) return null;
   const parts = token.split(".");
@@ -45,11 +45,30 @@ function jwtClaims(header: string | undefined): Record<string, unknown> | null {
 }
 
 /**
+ * The account an account session (`ds1` with `acc`, `POST /v1/session/account`) was made for, read without checking it: call
+ * it only on a header a verifier accepted. Null for any other token, a device session included.
+ */
+function accountSessionSubject(header: string | undefined): string | null {
+  const token = bearer(header);
+  const parts = token?.split(".");
+  if (!parts || parts.length !== 3 || parts[0] !== "ds1") return null;
+  try {
+    const claims = JSON.parse(Buffer.from(parts[1]!, "base64url").toString("utf8")) as Record<string, unknown> | null;
+    return claims?.acc === 1 && typeof claims.sub === "string" && UUID.test(claims.sub) ? claims.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The Doddy account (Supabase user id) behind an Authorization header the server's verifier already
- * accepted, or null when it is another kind of sign-in (a device token, a test's dev token). Its user
- * id may differ from the account's: an account that took over an iPhone's data works on that data.
+ * accepted: a Supabase access token's user, or the account an account session was made for. Null when it
+ * is another kind of sign-in (a device token, a test's dev token). Its user id may differ from the
+ * account's: an account that took over an iPhone's data works on that data.
  */
 export function accountSubjectOf(acceptedHeader: string | undefined): string | null {
+  const session = accountSessionSubject(acceptedHeader);
+  if (session !== null) return session;
   const sub = jwtClaims(acceptedHeader)?.sub;
   return typeof sub === "string" && UUID.test(sub) ? sub : null;
 }
@@ -60,7 +79,10 @@ export function accountSubjectOf(acceptedHeader: string | undefined): string | n
  *   linked one);
  * - an account deleted a moment ago stops at once (its cut-off second, like a device token's, ADR-709);
  * - a device token whose data now belongs to an account is refused: the iPhone signs in with the
- *   account, and the device id stops being a key to the data.
+ *   account, and the device id stops being a key to the data;
+ * - an account session (`POST /v1/session/account`) is the same account as its Supabase token: it gets the same
+ *   cut-off check and the same mapping to the data the account took over, read on every request, so a link made after the
+ *   session was issued counts at once. It is never refused for being linked: it is the account, not the device's key.
  */
 export class LinkedAccountVerifier implements SessionVerifier {
   constructor(
@@ -73,6 +95,14 @@ export class LinkedAccountVerifier implements SessionVerifier {
     const user = await this.inner.verify(header, now);
     if (!user) return null;
     try {
+      if (user.account !== undefined) {
+        // An account session: dated before the account's cut-off it is refused, as a Supabase token is; the account's data
+        // is the one it took over, if any.
+        const issuedAt = sessionTokenIssuedAt(header);
+        if (typeof issuedAt !== "number" || issuedAt < (await this.floors.floorOf(user.account, now.getTime()))) return null;
+        const linked = await this.links.linkedUserOf(user.account);
+        return linked ? { ...user, userId: linked } : user;
+      }
       if (sessionTokenIssuedAt(header) !== undefined) {
         // A device token (ds1): retired once an account took over its data.
         return (await this.links.isLinkedUser(user.userId)) ? null : user;
@@ -209,6 +239,8 @@ export class AccountLinker {
     if (sessionTokenIssuedAt(authorization) === undefined) throw new AppError("unauthenticated");
     const device = await devices.verify(authorization, now);
     if (!device) throw new AppError("unauthenticated", { message: "This iPhone's earlier sign-in isn't valid any more, so there is nothing to link." });
+    // An account session is the account's own, not this iPhone's earlier device sign-in: it has no earlier data to hand over.
+    if (device.account !== undefined) throw new AppError("unauthenticated", { message: "This iPhone's earlier sign-in isn't valid any more, so there is nothing to link." });
     if (device.scope === "ask") {
       throw new AppError("permission_insufficient", { message: "A guest sign-in keeps no data on Doddy's server, so there is nothing to link." });
     }
