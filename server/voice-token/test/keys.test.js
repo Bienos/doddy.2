@@ -125,6 +125,11 @@ function fakeStore() {
       sessions.delete(id);
       return 1;
     },
+    async revokeUserSessions(userId) {
+      let ended = 0;
+      for (const [id, session] of [...sessions]) if (session.userId === userId) { sessions.delete(id); ended += 1; }
+      return ended;
+    },
     async setAppleToken(userId, sealed) { appleTokens.set(userId, sealed); },
     async getAppleToken(userId) { return appleTokens.get(userId) ?? null; },
     async deleteAppleToken(userId) { appleTokens.delete(userId); },

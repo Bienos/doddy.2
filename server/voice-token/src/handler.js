@@ -70,9 +70,12 @@ export async function handleTokenRequest(request, env, deps = {}) {
   const log = deps.log ?? ((entry) => console.log(JSON.stringify(entry)));
   const now = deps.now ?? Date.now;
   const started = now();
+  // Which kind of token the request came with, once it has been checked (`tokenKind`): a fixed word, so the owner can see
+  // how many requests still use the Doddy account's own token before it stops being accepted here.
+  let auth;
   // `fields` go to the log; `body` (which may hold the token) never does.
   const finish = (status, error, fields = {}, body = { error }, headers = {}) => {
-    log({ event: "voice_token", status, error: error ?? null, ms: now() - started, ...fields });
+    log({ event: "voice_token", status, error: error ?? null, ms: now() - started, ...(auth ? { auth } : {}), ...fields });
     return json(status, body, headers);
   };
 
@@ -93,8 +96,10 @@ export async function handleTokenRequest(request, env, deps = {}) {
   let session;
   try {
     store = deps.authStore ?? sessionStoreFromEnv(env, { fetch: deps.storeFetch });
-    // A Doddy account (decision 2026-11-08-required-account) first, then this server's own Apple
-    // sign-in (ADR-522) while phones move over.
+    // A Doddy account's own token (decision 2026-11-08-required-account) first, then this server's own session: an
+    // Apple voice account's (ADR-522) or, from `account-session` (decision 2026-11-12-one-token-per-server), a Doddy
+    // account's. Both of the Doddy account's kinds come out as the same `account:<id>`, so they share every limit. The
+    // Doddy account's own token is accepted here for this release only, while phones move over.
     session = deps.authenticateSession
       ? await deps.authenticateSession(request)
       : (await authenticateDoddyAccount(request, env, { ...(deps.accountFetch ? { fetch: deps.accountFetch } : {}), now: now() }))
@@ -108,6 +113,7 @@ export async function handleTokenRequest(request, env, deps = {}) {
   // Every voice request needs a Doddy account session.
   if (!session) return finish(401, "session_expired", { provider });
   const userId = session.userId;
+  auth = tokenKind(session);
 
   const perHour = limitSetting(env.DODDY_TOKENS_PER_HOUR, DEFAULT_TOKENS_PER_HOUR);
   const perDay = limitSetting(env.DODDY_TOKENS_PER_DAY, DEFAULT_TOKENS_PER_DAY);
@@ -136,6 +142,17 @@ export async function handleTokenRequest(request, env, deps = {}) {
   }
 
   return elevenLabsToken(env, agentId, agent, fetchImpl, finish, { store, identity, now });
+}
+
+/**
+ * What kind of token a checked request came with, as the fixed word the log carries: `account_token` (a Doddy account's
+ * own token, which has no voice session), `account_session` (this server's own session for a Doddy account, made by the
+ * `account-session` action: its user id is the account's `account:<id>`) or `apple_session` (an older Apple voice account).
+ * Both of the first two count under the same `account:<id>`; this only tells them apart in the log.
+ */
+function tokenKind(session) {
+  if (session.sessionId === null || session.sessionId === undefined) return "account_token";
+  return typeof session.userId === "string" && session.userId.startsWith("account:") ? "account_session" : "apple_session";
 }
 
 /**
