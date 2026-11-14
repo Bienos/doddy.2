@@ -157,9 +157,11 @@ public struct RealtimeToolSpec: Equatable, Sendable, Decodable {
     /// ASK-01 (ADR-483): how the user says yes before the tool runs. Nil only in older specs
     /// (the phone agent); the app agent's spec check requires it on every tool.
     public enum Ask: String, Sendable, Decodable {
-        /// A read: the user's spoken yes or a tap.
+        /// A card that the user's own spoken yes or a tap answers (decision 2026-11-14-spoken-yes-and-fewer-cards):
+        /// every change but money and bookings. The app asks for a tap instead once text from outside is in the
+        /// conversation.
         case yesOrTap = "yes_or_tap"
-        /// A change: only a tap on the card.
+        /// Only a tap on the card: money and bookings (`ConfirmationTiers.tapOnly`).
         case tap
         /// A public lookup (web, news, places, sums, conversions): runs at once (ADR-575).
         case runsNow = "runs_now"

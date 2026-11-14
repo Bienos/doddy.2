@@ -44,10 +44,11 @@ final class FoodHandoffTests: XCTestCase {
         XCTAssertEqual(FoodHandoff.parse(app: "Wolt", search: String(repeating: "a", count: 80)).map(\.search), .success(String(repeating: "a", count: 80)))
     }
 
-    func testOnlyATapOpensTheAppAndTheCardSaysWhatAndThatTheOrderIsTheirs() throws {
+    func testAYesOrATapOpensTheAppAndTheCardSaysWhatAndThatTheOrderIsTheirs() throws {
         let handoff = try FoodHandoff.parse(app: "Wolt", search: "Sushi Kushi").get()
-        XCTAssertEqual(AskFirst.need(for: .openFoodApp(handoff)), .tapFirst(handoff.card(polish: false)))
-        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: .openFoodApp(handoff))))
+        // Decision 2026-11-14-spoken-yes-and-fewer-cards: the card stays, and the person's own spoken yes answers it.
+        XCTAssertEqual(AskFirst.need(for: .openFoodApp(handoff)), .yesFirst(handoff.card(polish: false)))
+        XCTAssertFalse(AskFirst.needsTap(AskFirst.need(for: .openFoodApp(handoff))))
         XCTAssertFalse(AskFirst.runsAtOnce(VoiceToolName.openFoodApp))
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.openFoodApp)?.approval, .card)
         let english = handoff.card(polish: false)

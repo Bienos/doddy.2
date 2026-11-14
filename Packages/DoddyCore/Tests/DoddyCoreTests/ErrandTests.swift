@@ -400,18 +400,19 @@ final class ErrandTests: XCTestCase {
 
     // MARK: Ask first (ASK-01) and the voice tools
 
-    /// ADR-716: handing a task over needs a tap on its card (the card's text is also tested in
-    /// ErrandLinkTests). Checking what a task found runs at once since decision 2026-11-11-asked-for-runs-at-once.
-    func testHandingOverNeedsATapAndCheckingRunsAtOnce() {
+    /// Handing a task over shows its card (ADR-716; the card's text is also tested in ErrandLinkTests), and a tap or
+    /// the person's own spoken yes answers it since decision 2026-11-14-spoken-yes-and-fewer-cards. Checking what a
+    /// task found runs at once since decision 2026-11-11-asked-for-runs-at-once.
+    func testHandingOverShowsItsCardAndCheckingRunsAtOnce() {
         let handOver = AskFirst.need(for: .handOverErrand(draft))
-        guard case .tapFirst(let card) = handOver else { return XCTFail("\(handOver)") }
+        guard case .yesFirst(let card) = handOver else { return XCTFail("\(handOver)") }
         XCTAssertEqual(card, ErrandAsk.handOverCard(draft))
         XCTAssertEqual(card.title, "Hand this to Doddy?")
         XCTAssertTrue(card.lines.contains("Your words, as Doddy will pass them on: \u{201C}\(rome)\u{201D}"))
         XCTAssertTrue(card.lines.contains("Doddy's own note, written by Doddy and not by you: \u{201C}\(draft.brief)\u{201D}"))
         XCTAssertTrue(card.lines.contains("Doddy searches the web and reads pages as often as this needs, in the background. The result waits in Tasks in the app when it's done."))
         XCTAssertEqual(card.lines.last, "Nothing is booked, bought or sent.")
-        XCTAssertTrue(AskFirst.needsTap(handOver))
+        XCTAssertFalse(AskFirst.needsTap(handOver))
         let check = AskFirst.need(for: .checkErrands(about: "Rzym"))
         XCTAssertEqual(check, .runsNow)
         XCTAssertFalse(AskFirst.needsTap(check))
@@ -426,7 +427,7 @@ final class ErrandTests: XCTestCase {
         }
     }
 
-    /// A tap runs the hand-over once and only for those words (a spoken yes can't: ErrandLinkTests).
+    /// A tap runs the hand-over once and only for those words (a spoken yes too: ErrandLinkTests).
     func testOneTapRunsTheHandOverOnceAndOnlyForThoseWords() {
         var ledger = AskLedger()
         let request = VoiceToolRequest.handOverErrand(draft)

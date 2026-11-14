@@ -36,14 +36,16 @@ final class ToolCatalogTests: XCTestCase {
             let approval = try XCTUnwrap(ToolCatalog.descriptor(tool.name)?.approval, tool.name)
             let tap = approval == .card || approval == .serverApproval
             XCTAssertEqual(tool.confirmOnScreen, tap, "\(tool.name): confirm_on_screen vs \(approval)")
-            // ASK-01: the spec says how the user answers, and it matches what the app asks for. Since
-            // decision 2026-11-11-asked-for-runs-at-once a tool either waits for a tap or runs at once:
-            // no approval and no spec entry is left that a spoken yes answers.
-            XCTAssertTrue(tap || approval == .runsNow, "\(tool.name): \(approval) is neither a tap nor at once")
-            XCTAssertEqual(tool.ask, tap ? .tap : .runsNow, tool.name)
+            // ASK-01: the spec says how the user answers, and it matches what the app asks for. A tool either
+            // shows a card or runs at once (decision 2026-11-11-asked-for-runs-at-once); a card takes the
+            // person's spoken yes or a tap, and money and bookings a tap only (decision
+            // 2026-11-14-spoken-yes-and-fewer-cards).
+            XCTAssertTrue(tap || approval == .runsNow, "\(tool.name): \(approval) is neither a card nor at once")
+            XCTAssertEqual(tool.ask, ConfirmationTiers.specAsk(for: tool.name), tool.name)
+            XCTAssertEqual(tool.ask == .runsNow, !tap, tool.name)
             XCTAssertEqual(tool.ask == .runsNow, AskFirst.runsAtOnce(tool.name), tool.name)
         }
-        XCTAssertEqual(try spec().filter { $0.ask == .yesOrTap }.map(\.name), [], "no tool is yes_or_tap any more")
+        XCTAssertEqual(Set(try spec().filter { $0.ask == .tap }.map(\.name)), ConfirmationTiers.tapOnly, "a tap only for money and bookings")
     }
 
     func testACardHasTimeToBeTapped() throws {
@@ -119,8 +121,8 @@ final class ToolCatalogTests: XCTestCase {
         // action in the catalog, and only its "find" runs at once.
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.parkingSpot)?.approval, .card)
         XCTAssertEqual(AskFirst.need(for: .parkingSpot(.find)), .runsNow)
-        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: .parkingSpot(.clear))))
-        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: .parkingSpot(.save(note: nil)))))
+        guard case .yesFirst = AskFirst.need(for: .parkingSpot(.clear)) else { return XCTFail("forgetting the spot shows a card") }
+        XCTAssertEqual(AskFirst.need(for: .parkingSpot(.save(note: nil))), .ownPayloadCard)
     }
 
     func testEveryToolThatAsksRunsOnThePhoneWhereTheAppCanAsk() throws {
