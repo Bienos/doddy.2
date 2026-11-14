@@ -69,14 +69,15 @@ test("two accounts' requests carry the identical marked prefix and differ only a
   assert.notDeepEqual(r.calls[0]!.body.messages, r.calls[1]!.body.messages);
 });
 
-test("the schema-as-words fallback marks the longer prompt it sends, and the schema request keeps its own", async () => {
+test("a schema Anthropic refuses is not mistaken for a refused mark: one marked request, then the schema as words, itself marked", async () => {
   const refusal = () => json({ error: { type: "invalid_request_error", message: "Schema is too complex" } }, 400);
-  const r = rig("claude-sonnet-5-5", [refusal, refusal, () => answer({ input_tokens: 1, output_tokens: 1 })]);
-  // First attempt (with the schema) is refused twice (once marked, once unmarked); the words fallback then works.
+  const r = rig("claude-sonnet-5-5", [refusal, () => answer({ input_tokens: 1, output_tokens: 1 })]);
   const result = await r.provider.structured({ ...input(LONG, "u"), promptFallback: true }, AbortSignal.timeout(1_000));
   assert.deepEqual(result.value, { answer: "ok" });
-  const last = r.calls[r.calls.length - 1]!.body;
-  assert.equal(last.output_config.format, undefined, "the last request carries the schema as words, not as a format");
+  assert.equal(r.calls.length, 2, "no extra request without the mark in between");
+  assert.equal(r.calls[0]!.body.output_config.format.type, "json_schema");
+  const last = r.calls[1]!.body;
+  assert.equal(last.output_config.format, undefined, "the second request carries the schema as words, not as a format");
   assert.ok(Array.isArray(last.system) && last.system[0].text.startsWith(LONG) && last.system[0].cache_control !== undefined, "the longer prompt is still one marked block");
 });
 
@@ -105,7 +106,7 @@ test("a document's continuation call is marked once the conversation is long eno
   assert.equal(small.calls[1]!.body.cache_control, undefined, "a short conversation is under the minimum");
 });
 
-test("if the provider refuses a request because of the mark, it is sent once more without it", async () => {
+test("if the provider refuses a request because of the mark (a 400 that names cache_control), it is sent once more without it", async () => {
   const r = rig("claude-sonnet-5-5", [() => json({ error: { type: "invalid_request_error", message: "cache_control not supported" } }, 400), () => answer({ input_tokens: 9, output_tokens: 2 })]);
   const result = await r.provider.structured(input(LONG, "u"), AbortSignal.timeout(1_000));
   assert.deepEqual(result.value, { answer: "ok" });
@@ -115,14 +116,29 @@ test("if the provider refuses a request because of the mark, it is sent once mor
   assert.equal(r.calls[1]!.body.system, LONG);
 });
 
-test("a 400 on a request with no cache mark is not retried", async () => {
-  const r = rig("claude-sonnet-5-5", [() => json({ error: { type: "invalid_request_error", message: "bad" } }, 400), () => answer({ input_tokens: 1, output_tokens: 1 })]);
+test("a 400 on a request with no cache mark is not retried, even one that names cache_control", async () => {
+  const r = rig("claude-sonnet-5-5", [() => json({ error: { type: "invalid_request_error", message: "cache_control: not allowed here" } }, 400), () => answer({ input_tokens: 1, output_tokens: 1 })]);
   await assert.rejects(r.provider.structured(input("short", "u"), AbortSignal.timeout(1_000)));
   assert.equal(r.calls.length, 1);
 });
 
+test("a 400 on a marked request that isn't about the mark (the key, the balance, a schema) is not retried without it", async () => {
+  for (const message of ["invalid x-api-key", "Your credit balance is too low", "model: claude-nope", "Schema is too complex"]) {
+    const r = rig("claude-sonnet-5-5", [() => json({ error: { type: "invalid_request_error", message } }, 400), () => answer({ input_tokens: 1, output_tokens: 1 })]);
+    await assert.rejects(r.provider.structured(input(LONG, "u"), AbortSignal.timeout(1_000)), message);
+    assert.equal(r.calls.length, 1, message);
+  }
+});
+
+test("a mark refused with a message that also names the model is still recognised as the mark", async () => {
+  const r = rig("claude-sonnet-5-5", [() => json({ error: { type: "invalid_request_error", message: "system.0.cache_control: not supported for this model" } }, 400), () => answer({ input_tokens: 1, output_tokens: 1 })]);
+  const result = await r.provider.structured(input(LONG, "u"), AbortSignal.timeout(1_000));
+  assert.deepEqual(result.value, { answer: "ok" });
+  assert.equal(r.calls.length, 2);
+});
+
 test("a 400 that persists without the mark is reported once, not retried again", async () => {
-  const refuse = () => json({ error: { type: "invalid_request_error", message: "bad" } }, 400);
+  const refuse = () => json({ error: { type: "invalid_request_error", message: "cache_control: nope" } }, 400);
   const r = rig("claude-sonnet-5-5", [refuse, refuse, () => answer({ input_tokens: 1, output_tokens: 1 })]);
   await assert.rejects(r.provider.structured(input(LONG, "u"), AbortSignal.timeout(1_000)));
   assert.equal(r.calls.length, 2, "one marked request and one unmarked retry, then the error");

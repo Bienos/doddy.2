@@ -455,9 +455,11 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
   }
 
   /**
-   * One call to /v1/messages. If the provider refuses (400) a request that carries a cache mark, it is
-   * sent once more without the mark: caching is an optimisation and must never be what stops an answer.
-   * A refused request wasn't processed, so the retry can't be paid for twice.
+   * One call to /v1/messages. If the provider refuses a request that carries a cache mark with a 400 that
+   * names the mark (hint `cache_control`), it is sent once more without it: caching is an optimisation and
+   * must never be what stops an answer. A 400 about anything else (a schema, the key, the balance) is not
+   * the mark's fault and is not retried here. A refused request wasn't processed, so the retry can't be
+   * paid for twice.
    */
   private async messages(body: Record<string, unknown>, signal: AbortSignal): Promise<MessageResponse> {
     let sending = body;
@@ -467,7 +469,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
         response = await this.send(`/v1/messages`, { method: "POST", headers: { ...this.headers(), "content-type": "application/json" }, body: JSON.stringify(sending), signal });
         break;
       } catch (error) {
-        if (error instanceof ProviderError && error.detail?.status === 400 && hasCacheControl(sending)) {
+        if (error instanceof ProviderError && error.detail?.status === 400 && error.detail.hint === "cache_control" && hasCacheControl(sending)) {
           sending = withoutCacheControl(sending);
           continue;
         }
@@ -533,6 +535,8 @@ const ERROR_TYPE = /^[a-z_]{1,40}$/;
  * since an invalid-request message can quote part of what was sent.
  */
 const HINTS: [string, RegExp][] = [
+  // First: a message about a cache mark can also name the model or a limit, and the retry without the mark is keyed on this one.
+  ["cache_control", /cache_control|cache control/i],
   ["credit_balance", /credit balance|billing|purchase credits/i],
   ["api_key", /api[ -]?key|x-api-key|authentication/i],
   ["model", /\bmodel\b/i],
