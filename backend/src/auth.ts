@@ -1,5 +1,6 @@
-import { createHmac, createPublicKey, type KeyObject, randomBytes, timingSafeEqual, verify as verifySignature } from "node:crypto";
+import { createPublicKey, type KeyObject, randomBytes, verify as verifySignature } from "node:crypto";
 import { AppError } from "./errors.js";
+import { keyringOf, PurposeKeys, type SigningKeys } from "./signingKeys.js";
 
 /**
  * Replaceable authenticated-session boundary. The rest of the backend only ever sees the
@@ -7,8 +8,9 @@ import { AppError } from "./errors.js";
  *
  * Three implementations exist:
  *  - `DevSessionVerifier`: fixed loopback-only test identities for mock mode (config refuses it elsewhere).
- *  - `SignedSessionVerifier`: HMAC-SHA256 tokens minted by the owner with `npm run session:mint`.
- *    Good enough for single-owner development.
+ *  - `SignedSessionVerifier`: HMAC-SHA256 tokens minted by the owner with `npm run session:mint`, and the
+ *    device sessions (ADR-563), signed with the session key of `signingKeys.ts`. Good enough for single-owner
+ *    development.
  *  - `SupabaseSessionVerifier`: access tokens from Supabase Auth, where people sign in with Apple
  *    or Google (ADR-526). The user ID is the Supabase user's UUID.
  */
@@ -70,9 +72,18 @@ interface SessionClaims {
 
 const b64url = (data: Buffer | string) => Buffer.from(data).toString("base64url");
 
+/**
+ * The token keeps the shape the app and the cut-off checks read: `ds1.<claims>.<signature>`. The signature is
+ * the key id and a MAC made with this purpose's own key (`signingKeys.ts`), and only the current key signs. A
+ * token made before key ids, signed with the master key directly (a 43-character signature), still verifies
+ * with the current or the previous master until it expires, so a deploy signs nobody out.
+ */
 export class SignedSessionVerifier implements SessionVerifier {
-  constructor(private readonly key: Buffer) {
-    if (key.length < 32) throw new Error("session signing key too short");
+  private readonly keys: PurposeKeys;
+
+  /** A master key alone, or the keyring (with a previous key during a rotation). */
+  constructor(keys: SigningKeys | Buffer) {
+    this.keys = keyringOf(keys).for("session");
   }
 
   mint(userId: string, now: Date, ttlSeconds: number, scope?: "ask"): string {
@@ -80,7 +91,7 @@ export class SignedSessionVerifier implements SessionVerifier {
     const iat = Math.floor(now.getTime() / 1000);
     const claims: SessionClaims = { v: 1, sub: userId, iat, exp: iat + ttlSeconds, ...(scope ? { scp: scope } : {}) };
     const payload = b64url(JSON.stringify(claims));
-    return `ds1.${payload}.${this.sign(payload)}`;
+    return `ds1.${payload}.${this.keys.sign(message(payload))}`;
   }
 
   verify(header: string | undefined, now: Date): AuthenticatedUser | null {
@@ -89,9 +100,10 @@ export class SignedSessionVerifier implements SessionVerifier {
     const parts = token.split(".");
     if (parts.length !== 3 || parts[0] !== "ds1") return null;
     const [, payload, signature] = parts as [string, string, string];
-    const expected = Buffer.from(this.sign(payload));
-    const given = Buffer.from(signature);
-    if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+    const shape = PurposeKeys.shapeOf(signature);
+    const genuine =
+      shape === "keyed" ? this.keys.verify(message(payload), signature) : shape === "earlier" ? this.keys.verifyEarlier(message(payload), signature) : false;
+    if (!genuine) return null;
     let claims: unknown;
     try {
       claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
@@ -103,11 +115,10 @@ export class SignedSessionVerifier implements SessionVerifier {
     if (claims.exp <= nowSeconds || claims.iat > nowSeconds + 60) return null;
     return claims.scp ? { userId: claims.sub, scope: claims.scp } : { userId: claims.sub };
   }
-
-  private sign(payload: string): string {
-    return createHmac("sha256", this.key).update(`ds1.${payload}`).digest("base64url");
-  }
 }
+
+/** What is signed: the token's own prefix and claims, exactly as the earlier format signed them. */
+const message = (payload: string) => `ds1.${payload}`;
 
 function isClaims(value: unknown): value is SessionClaims {
   if (typeof value !== "object" || value === null) return false;
@@ -393,8 +404,9 @@ export class TokenFloors {
  * owner-minted or device token is the one that lasts 30 days. A Supabase access token (an hour) is
  * Supabase's to end.
  *
- * Rotating the signing key still revokes every token at once, and changes every device's user ID
- * (see `deviceUserId`); that is unchanged. If the cut-off can't be read the request is refused with
+ * A signing key that is no longer held (neither current nor previous, `signingKeys.ts`) still revokes every
+ * token made with it at once. A device's user ID follows the identifier key, not the signing keys (see
+ * `deviceUserId`), so a rotation moves nobody's data. If the cut-off can't be read the request is refused with
  * "can't check your sign-in right now" (never a 401, which would make the app sign in again in a loop).
  */
 export class RevocableSessionVerifier implements SessionVerifier {
