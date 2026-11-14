@@ -1,4 +1,0 @@
-Messaging server: delete phone-agent conversations and task-call records with the account. Every phone-agent call keeps its ElevenLabs conversation id (recaps on or off), a 3-hourly sweep queues the phone agent's conversations no call owns, task calls and takeover legs are deleted at Twilio on the task account with its own credentials, and the dial log is pruned after 2 days. Retention table in `server/messaging/README.md`.
-Migration `032_task_call_records.sql` (031 is taken by an open pull request): `provider_deletions.account`, and a backfill of finished task calls.
-Ran: `npm run build`, the whole messaging suite against Postgres 16. Not run: against live Twilio or ElevenLabs.
-Deploy: nothing to set; with a Twilio subaccount for task calls, `TWILIO_TASK_ACCOUNT_SID`/`TWILIO_TASK_AUTH_TOKEN` must stay set on the worker too.

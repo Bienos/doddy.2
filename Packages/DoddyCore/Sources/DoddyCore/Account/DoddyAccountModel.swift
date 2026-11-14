@@ -8,7 +8,11 @@ import Observation
 // Rules (constitution DOD-08, "never claim what didn't happen"):
 // - `isSignedIn` is true only after Supabase answered with a checked session AND the store kept it;
 // - a session that can't be refreshed any more signs the person out, with a plain message;
-// - a refresh runs once at a time, however many callers ask.
+// - a refresh runs once at a time, however many callers ask;
+// - an answer that arrives after the account moved on (signed out, or another account signed in) changes
+//   nothing: every sign-out, sign-in and account change starts a new `identityEpoch`, and a refresh
+//   applies its result only if the epoch and the account are still the ones it started with (security
+//   audit 2026-11-09, finding 2). `@MainActor` doesn't give that: state can change at every `await`.
 
 /// Where the signed-in account is kept: the Keychain (this device only) in the app, memory in tests.
 public protocol DoddyAccountSessionStore: Sendable {
@@ -70,6 +74,12 @@ public final class DoddyAccountModel {
     @ObservationIgnored private let authenticator: any WebAuthenticator
     @ObservationIgnored private let now: @Sendable () -> Date
     @ObservationIgnored private var refreshing: Task<Result<DoddyAccountSession, DoddyAccountError>, Never>?
+    @ObservationIgnored private var epoch = 0
+
+    /// Changes whenever this iPhone's signed-in account is signed out, replaced or signed in again. Code
+    /// that waits on a server for the account (linking, a token for another server) reads it before
+    /// and after, and drops an answer that is for an account this iPhone no longer has.
+    public var identityEpoch: Int { epoch }
 
     public init(
         config: DoddyAccountConfig?, transport: any HTTPTransport, store: any DoddyAccountSessionStore,
@@ -180,39 +190,71 @@ public final class DoddyAccountModel {
         return try await refreshed(from: current).accessToken
     }
 
-    /// Ends the session at Supabase (best effort) and forgets it here.
+    /// Forgets the session here at once, then ends it at Supabase (best effort). Forgetting comes first, so
+    /// nothing still waiting on a server can bring the account back while the request is on its way.
     public func signOut() async {
-        if let session, let client { await client.signOut(session) }
+        let leaving = session
         forget(message: nil)
+        if let leaving, let client { await client.signOut(leaving) }
     }
 
     // MARK: Plumbing
 
     private func refreshed(from current: DoddyAccountSession) async throws(DoddyAccountError) -> DoddyAccountSession {
-        if let refreshing { return try await refreshing.value.get() }
         guard let client else { throw .notConfigured }
-        let now = self.now
-        let task = Task { @MainActor () -> Result<DoddyAccountSession, DoddyAccountError> in
-            do throws(DoddyAccountError) {
-                return .success(try await client.refresh(current, now: now()))
-            } catch {
-                return .failure(error)
+        // A refresh that is running always belongs to the current epoch: sign-out and sign-in end it (`newEpoch`).
+        let startedIn = epoch
+        let task: Task<Result<DoddyAccountSession, DoddyAccountError>, Never>
+        if let running = refreshing {
+            task = running
+        } else {
+            let now = self.now
+            task = Task { @MainActor [weak self] () -> Result<DoddyAccountSession, DoddyAccountError> in
+                let result: Result<DoddyAccountSession, DoddyAccountError>
+                do throws(DoddyAccountError) {
+                    result = .success(try await client.refresh(current, now: now()))
+                } catch {
+                    result = .failure(error)
+                }
+                // Applied here, once, for every caller waiting on this refresh.
+                return self?.apply(result, startedIn: startedIn, for: current.userID) ?? .failure(.signedOut)
             }
+            refreshing = task
         }
-        refreshing = task
         let result = await task.value
-        refreshing = nil
+        if refreshing == task { refreshing = nil }
+        // Resumed after the account moved on (a waiter that joined a refresh, or the one that started it):
+        // what it was given is for an account that is gone, so it gets nothing of it.
+        guard epoch == startedIn else { throw .signedOut }
+        return try result.get()
+    }
+
+    /// Applies a finished refresh to the account that asked for it, and only to that account: a result that
+    /// arrives after a sign-out, or after another account signed in, is dropped, whether it succeeded or
+    /// failed. A late failure must not sign out the new account, a late success must not bring the old one back.
+    private func apply(
+        _ result: Result<DoddyAccountSession, DoddyAccountError>, startedIn: Int, for userID: String
+    ) -> Result<DoddyAccountSession, DoddyAccountError> {
+        guard epoch == startedIn, session?.userID == userID else { return .failure(.signedOut) }
         switch result {
         case .success(let fresh):
-            guard store.save(fresh) else { throw .unavailable }
+            guard store.save(fresh) else { return .failure(.unavailable) }
             session = fresh
-            return fresh
+            return .success(fresh)
         case .failure(.signedOut):
             forget(message: DoddyAccountError.signedOut.userMessage)
-            throw .signedOut
-        case .failure(let error):
-            throw error
+            return .failure(.signedOut)
+        case .failure:
+            return result
         }
+    }
+
+    /// A new epoch: anything started in an earlier one is over. A refresh still on its way is cancelled as a
+    /// courtesy; what keeps it from changing anything is the epoch check, not the cancellation.
+    private func newEpoch() {
+        epoch += 1
+        refreshing?.cancel()
+        refreshing = nil
     }
 
     /// A new sign-in counts only once it is kept (DOD-08).
@@ -221,14 +263,20 @@ public final class DoddyAccountModel {
             message = "This iPhone couldn't keep your sign-in, so you aren't signed in. Try again."
             return false
         }
+        let previous = session
+        newEpoch()
         session = signedIn
         message = nil
         signInCount += 1
+        // Another account took this iPhone over without a sign-out: the earlier account's credentials on
+        // Doddy's servers go the way they do at a sign-out, before anything is signed in for the new one.
+        if let previous, previous.userID != signedIn.userID { afterSignOut?() }
         await afterSignIn?(signedIn)
         return true
     }
 
     private func forget(message: String?) {
+        newEpoch()
         store.delete()
         let wasSignedIn = session != nil
         session = nil

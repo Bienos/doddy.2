@@ -1,3 +1,0 @@
-iPhone: local data belongs to the account that made it; sign-out stops uploads (decision `2026-11-12-local-data-owner`). The Messages web copy, Memory on calls, notes and conversations kept on the server and Logbook send only to the account recorded as the iPhone's owner (`LocalDataOwner` in DoddyCore); a sign-out turns those switches off and ends the older voice session; the voice token client refuses redirects.
-Not yet: the "Erase Doddy's data on this iPhone" button (TODO in `Features/Account/LocalDataOwnership.swift`). Fresh-install Keychain clearing is in #388.
-Ran: DoddyCore Swift tests on Linux; `scripts/ci.sh --only checks`. Not compiled here: the app files (hosted `ios-build` is the first compile); nothing run on a device.

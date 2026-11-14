@@ -96,7 +96,7 @@ swallows network failures; it cannot establish that a connection was prepared or
 
 Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
 `DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
-SQL files, 001 to 038 on 13 Nov 2026, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
+SQL files, 001 to 038 on 14 Nov 2026, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
 or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
 the same commit.
 
@@ -310,7 +310,7 @@ It began on 9 Oct as a read-only Google Calendar view, which a Debug build still
 cd backend
 npm ci                    # installs the pinned versions from package-lock.json
 npm run typecheck         # type-checks against the installed @composio/core declarations
-npm test                  # builds, then 649 offline tests (8 Nov 2026, about 15 minutes here); no secrets, no network
+npm test                  # builds, then 860 offline tests (14 Nov 2026, about 9 minutes here); no secrets, no network
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
 ```
 `scripts/ci.sh --only backend` runs the same install, type-check and tests.

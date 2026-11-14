@@ -1,3 +1,0 @@
-Price watching is on for everyone: `WATCHES_ENABLED=1` was set on `doddy-messaging` on 12 Nov 2026 (owner: "Włącz też pilnowanie cen"); its start log says `"watches": true` since 12:41 UTC, and the app's `GET /v1/watches` calls reach it. `render.yaml` keeps the default `"0"` (like `ERRANDS_ENABLED`): the live value is set on the service.
-Also checked: Shopify in Shopping (#369) is live with the `doddy` deploy of 15:08 UTC (#374); `POST /v1/shopify/search` answers 401 without sign-in, a made-up route 404. No search against Shopify was made.
-Docs only: `docs/platforms/iphone.md`, `docs/implementation/SHOPPING_WATCH.md`, `docs/strategy/SKLEP_PROPOZYCJA_2026-11.md`. Not seen: a watch firing on a real shop.

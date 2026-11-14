@@ -35,6 +35,9 @@ class CountingClaude implements ClaudeProvider {
   async makeDocument(): Promise<never> {
     throw new Error("unused");
   }
+  async deleteFile(): Promise<"removed" | "failed"> {
+    return "removed";
+  }
   async structured(_input: StructuredInput): Promise<StructuredResult> {
     this.calls++;
     if (this.gate) await this.gate;

@@ -99,13 +99,22 @@ public final class ConnectedAppsModel {
                 return
             }
             let result: CompletionResult
+            var unfinished = false
             do {
                 let url = try await authenticator.authenticate(url: attempt.authorizationUrl!, callbackScheme: attempt.callbackScheme)
-                result = ConnectionCallback.result(from: url, expectedScheme: attempt.callbackScheme, attemptId: attempt.attemptId) ?? .canceled
+                if let parsed = ConnectionCallback.result(from: url, expectedScheme: attempt.callbackScheme, attemptId: attempt.attemptId) {
+                    result = parsed
+                } else {
+                    result = .canceled
+                    unfinished = true
+                }
             } catch {
                 result = .canceled
+                unfinished = ConnectionCallback.endedWithoutTheirChoice(error)
             }
             try await finish(attempt, result)
+            // The server records "canceled" so it can discard the half-made connection; the person is told the truth.
+            if unfinished { message = ConnectionCallback.couldNotFinishMessage }
         } catch {
             fail(error)
         }

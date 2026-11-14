@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { AppError } from "../errors.js";
-import type { Store } from "../store.js";
+import type { OwnerAction, Store } from "../store.js";
 import { type DaySummary, DaySummarySchema, isoDay, LOGBOOK_KEPT_DAYS, type LogbookView, readLogbookView } from "./logbook.js";
+import type { WebSessionContext } from "./sessions.js";
 
 /**
  * The owner panel (decision 2026-11-09-usage-counts-on-by-default): totals of every account's Logbook
@@ -9,7 +10,25 @@ import { type DaySummary, DaySummarySchema, isoDay, LOGBOOK_KEPT_DAYS, type Logb
  * what Logbook holds (`logbook.ts`); no words exist here to show. Only the accounts named in
  * DODDY_OWNER_ACCOUNTS see it; everyone else gets "not found", so the routes don't announce
  * themselves. One person still sees only their own Logbook page.
+ *
+ * Because it names every person who uses Doddy, it is stricter than the rest of the web app
+ * (decision 2026-11-14-owner-panel-fresh-sign-in): a browser only, never the iPhone's own session;
+ * only within `OWNER_FRESH_MS` of that browser signing in; and every use is recorded
+ * (`Store.recordOwnerUse`) before anything is shown.
  */
+
+/**
+ * The panel opens only for a browser that signed in this recently (a code from the iPhone, or Apple or
+ * Google). The same window as deleting the account or changing sign-in methods from a browser
+ * (`LINK_REAUTH_MS`): long enough to read the dashboard, short enough that a session cookie left
+ * behind or copied later opens nothing. Counted from the sign-in, not from the last request.
+ */
+export const OWNER_FRESH_MS = 15 * 60_000;
+
+/** How long a record of owner-panel use is kept. The housekeeping sweep prunes older ones. */
+export const OWNER_AUDIT_KEPT_DAYS = 365;
+
+export type { OwnerAction };
 
 /** One Doddy account as Supabase Auth knows it. */
 export interface DirectoryUser {
@@ -265,6 +284,22 @@ export class OwnerPanel {
   /** Anyone else is told there is nothing here. */
   async requireOwner(userId: string): Promise<void> {
     if (!(await this.isOwner(userId))) throw new AppError("not_found");
+  }
+
+  /**
+   * The gate in front of everything the panel shows. An owner's browser that signed in within
+   * `OWNER_FRESH_MS` passes, and the use is recorded first: if the record can't be written this throws
+   * and nothing is shown. Anyone else is "not found" (nothing recorded); an owner's older sign-in is
+   * asked to sign in again (nothing shown, nothing recorded: no data left the server).
+   * `targetId` is the account whose own Logbook is opened, for `account_logbook`.
+   */
+  async open(caller: { userId: string; session: WebSessionContext | null }, action: OwnerAction, targetId: string | null, now: Date): Promise<void> {
+    await this.requireOwner(caller.userId);
+    const session = caller.session;
+    if (!session || now.getTime() - session.createdAt > OWNER_FRESH_MS) {
+      throw new AppError("refused", { message: `For safety, the owner panel opens only within ${OWNER_FRESH_MS / 60_000} minutes of signing in. Sign out, sign in again, then open it.` });
+    }
+    await this.store.recordOwnerUse({ at: now.getTime(), actorId: caller.userId, sessionId: session.sessionId, action, targetId });
   }
 
   static period(raw: string | undefined): number {

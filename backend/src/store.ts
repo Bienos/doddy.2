@@ -36,6 +36,9 @@ export interface ConnectionRow {
   last_checked_at: number | null;
 }
 
+/** What the owner panel showed (`owner_audit.action`): the totals, the list of accounts, or one account's own Logbook. */
+export type OwnerAction = "overview" | "accounts" | "account_logbook";
+
 /** A remote connection Doddy queued for removal, and whose it is. */
 export interface QueuedCleanup {
   connectionId: string;
@@ -157,6 +160,13 @@ export const KEPT_ON_ERASE = ["cleanups", "device_owner", "token_floor"] as cons
 
 /** The `cleanups.provider` of a Supabase Auth user owed a removal (a linked Google or Apple sign-in, ADR-818). */
 export const SUPABASE_AUTH_CLEANUP = "supabase_auth";
+
+/**
+ * The `cleanups.provider` of a copy of a person's document at Anthropic (`connection_id` is the file id,
+ * nothing else about it). Written when the file is first seen, removed only when the provider confirms
+ * the deletion, and kept through account erasure until then (`KEPT_ON_ERASE`).
+ */
+export const ANTHROPIC_FILE_CLEANUP = "anthropic_file";
 
 /** A device session token lives 30 days at most; a cut-off older than this covers no live token any more (ADR-709). */
 const TOKEN_FLOOR_KEPT_DAYS = 31;
@@ -469,6 +479,20 @@ export const SCHEMA_SQL = `
     received_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
+  -- One row each time the owner panel showed something (web/owner.ts). Ids, a word for what was
+  -- opened and a time only: no email, name, count, word or credential, and no column that could hold one.
+  -- The ids are opaque and the rows are pruned after a year (OWNER_AUDIT_KEPT_DAYS). Account erasure does not
+  -- touch them, so an erased account id can stay in a row until then (decision 2026-11-14-owner-panel-fresh-sign-in).
+  -- No semicolons in these comments: SCHEMA_SQL is split on them.
+  CREATE TABLE IF NOT EXISTS owner_audit (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    at BIGINT NOT NULL,
+    actor_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('overview', 'accounts', 'account_logbook')),
+    target_id TEXT
+  );
+  CREATE INDEX IF NOT EXISTS owner_audit_at ON owner_audit(at);
 `;
 
 /**
@@ -883,15 +907,16 @@ export class Store {
   /**
    * Queued removals of these providers to try again now: queued more than CLEANUP_RETRY.afterMs ago
    * (so a request still working on one isn't raced) and due (`next_try_at`), the most overdue first.
-   * However often a row failed, it comes back when due: there is no last try.
+   * However often a row failed, it comes back when due: there is no last try. `queuedBefore` moves the
+   * first cut-off for a kind whose work can run longer than CLEANUP_RETRY.afterMs (a document job).
    */
-  async cleanupsToRetry(providers: readonly string[], now: number, limit: number): Promise<QueuedCleanup[]> {
+  async cleanupsToRetry(providers: readonly string[], now: number, limit: number, queuedBefore = now - CLEANUP_RETRY.afterMs): Promise<QueuedCleanup[]> {
     if (providers.length === 0) return [];
     const rows = (await this.db.query<{ connection_id: string; user_id: string; provider: string }>(
       `SELECT connection_id, user_id, provider FROM cleanups
        WHERE provider = ANY($1::text[]) AND created_at < $2 AND COALESCE(next_try_at, 0) <= $3
        ORDER BY COALESCE(next_try_at, 0) ASC, created_at ASC LIMIT $4`,
-      [[...providers], now - CLEANUP_RETRY.afterMs, now, limit],
+      [[...providers], queuedBefore, now, limit],
     )).rows;
     return rows.map((r) => ({ connectionId: r.connection_id, userId: r.user_id, provider: r.provider }));
   }
@@ -1359,6 +1384,25 @@ export class Store {
   // ------------------------------------------------------------ Owner panel (decision 2026-11-09-usage-counts-on-by-default)
   // Read only, and only for the owner panel (`web/owner.ts`), which checks the caller first.
 
+  /**
+   * Records one use of the owner panel, before its answer is sent. `targetId` is the account whose own
+   * Logbook was opened, for that action only. Ids, an action word and a time: nothing the panel showed.
+   */
+  async recordOwnerUse(use: { at: number; actorId: string; sessionId: string; action: OwnerAction; targetId: string | null }): Promise<void> {
+    await this.db.query("INSERT INTO owner_audit (at, actor_id, session_id, action, target_id) VALUES ($1, $2, $3, $4, $5)", [
+      use.at,
+      use.actorId,
+      use.sessionId,
+      use.action,
+      use.targetId,
+    ]);
+  }
+
+  /** Records of owner-panel use older than `oldest` (ms) go. Separate from `prune` so its counts stay as they were. */
+  async pruneOwnerAudit(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM owner_audit WHERE at < $1", [oldest])).rowCount;
+  }
+
   /** Every user's Logbook days from `since` on, oldest first. */
   async allLogbookDays(since: string): Promise<(LogbookDayRow & { user_id: string })[]> {
     return (
@@ -1441,6 +1485,22 @@ export class Store {
       )
     ).rows;
     return rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) }));
+  }
+
+  /**
+   * One page of one user's kept notes, in the same order as `memoryNoteRows`, and how many notes
+   * the user keeps in all. The user filter is in both queries; only the page's ciphertext leaves the database.
+   * The id breaks ties, so pages never overlap or skip a note that shares a capture time.
+   */
+  async memoryNoteRowsPage(userId: string, limit: number, offset: number): Promise<{ rows: MemoryNoteRow[]; total: number }> {
+    const [page, count] = await Promise.all([
+      this.db.query<MemoryNoteRow>(
+        "SELECT note_id, key_version, ciphertext, captured_at, received_at FROM memory_notes WHERE user_id = $1 ORDER BY captured_at DESC NULLS LAST, note_id LIMIT $2 OFFSET $3",
+        [userId, limit, offset],
+      ),
+      this.one<{ n: string }>(this.db, "SELECT count(*) AS n FROM memory_notes WHERE user_id = $1", [userId]),
+    ]);
+    return { rows: page.rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) })), total: Number(count?.n ?? 0) };
   }
 
   /**
